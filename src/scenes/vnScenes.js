@@ -34,7 +34,7 @@ export default class VNScene extends Phaser.Scene {
     const boxX = 50;
     const boxY = 440;
     const boxWidth = 700;
-    const boxHeight = 100;
+    const boxHeight = 150;
     const borderRadius = 20;
     const borderThickness = 4;
 
