@@ -25,12 +25,26 @@ export default class VNScene extends Phaser.Scene {
     this.text = this.dialogueLines[this.dialogueIndex];
     this.displayedText = '';
 
-    this.box = this.add.rectangle(400, 500, 700, 100, 0x222244, 0.8).setOrigin(0.5);
+    // Text Box with Border and Rounded Corners
+    const boxX = 50;
+    const boxY = 440;
+    const boxWidth = 700;
+    const boxHeight = 100;
+    const borderRadius = 20;
+    const borderThickness = 4;
 
-    this.textObject = this.add.text(50, 450, '', {
+    // Draw border
+    const border = this.add.graphics();
+    border.lineStyle(borderThickness, 0xffffff, 1); // White border
+    border.fillStyle(0x222244, 0.8); // Fill color
+    border.strokeRoundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius);
+    border.fillRoundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius);
+
+    // Text Object
+    this.textObject = this.add.text(boxX + 20, boxY + 15, '', {
       font: '24px Arial',
       color: '#fff',
-      wordWrap: { width: 700 }
+      wordWrap: { width: boxWidth - 40 }
     });
 
     this.input.on('pointerdown', () => {
