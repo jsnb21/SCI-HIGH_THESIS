@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { updateSoundVolumes } from './options';
+import { playExclusiveBGM } from '../audioUtils';
 
 // Visual Novel Scene class extending Phaser.Scene
 export default class VNScene extends Phaser.Scene {
@@ -12,10 +14,15 @@ export default class VNScene extends Phaser.Scene {
   }
 
   preload() {
-    // Load dialogue JSON and background image assets before scene starts
+    // JSON
     this.load.json('dialogue', 'data/dialogue.json');
+    
+    // Images
     this.load.image('vnBg', 'assets/img/bg/classroom_day.png'); // Background image
-    this.load.audio('selectSound', 'assets/audio/se/select.wav'); // Add this line
+    
+    // Audio
+    this.load.audio('se_select', 'assets/audio/se/se_select.wav');
+    this.load.audio('bgm_main', 'assets/audio/bgm/bgm_main-theme.mp3');
   }
 
   create() {
@@ -24,6 +31,13 @@ export default class VNScene extends Phaser.Scene {
     // Add and scale the background image to fit the screen
     const { width, height } = this.scale;
     this.add.image(width / 2, height / 2, 'vnBg').setDisplaySize(width, height);
+
+    // --- MUSIC LOGIC START ---
+    // Play exclusive BGM (stops any other BGM first)
+    playExclusiveBGM(this, 'bgm_main', { loop: true });
+    // Apply current volumes to all sounds
+    updateSoundVolumes(this);
+    // --- MUSIC LOGIC END ---
 
     // Retrieve dialogue lines from loaded JSON
     this.dialogueLines = this.cache.json.get('dialogue').lines;
@@ -65,7 +79,7 @@ export default class VNScene extends Phaser.Scene {
     // Start typing the first line of dialogue
     this.typeText(this.text);
 
-    this.selectSound = this.sound.add('selectSound'); // Add this line
+    this.selectSound = this.sound.add('se_select');
   }
 
   // Typing effect: gradually reveals text one character at a time

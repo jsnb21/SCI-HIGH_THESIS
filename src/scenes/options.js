@@ -1,5 +1,27 @@
 import Phaser from 'phaser';
 
+export let bgmVolume = 1;
+export let seVolume = 1;
+
+export function setBgmVolume(value) {
+    bgmVolume = value;
+}
+
+export function setSeVolume(value) {
+    seVolume = value;
+}
+
+// Utility to update volumes based on key name
+export function updateSoundVolumes(scene) {
+    scene.sound.sounds.forEach(sound => {
+        if (sound.key && sound.key.toLowerCase().includes('se')) {
+            sound.setVolume(seVolume);
+        } else if (sound.key && sound.key.toLowerCase().includes('bgm')) {
+            sound.setVolume(bgmVolume);
+        }
+    });
+}
+
 export default class OptionsScene extends Phaser.Scene {
     constructor() {
         super('OptionsScene');
@@ -14,15 +36,15 @@ export default class OptionsScene extends Phaser.Scene {
             color: '#ffff00'
         }).setOrigin(0.5);
 
-        // SFX Volume
-        this.add.text(width / 2 - 100, 180, 'SFX Volume', { font: '24px Arial', color: '#fff' }).setOrigin(1, 0.5);
-        this.sfxSlider = this.add.rectangle(width / 2 + 50, 180, 200, 10, 0x888888).setOrigin(0, 0.5).setInteractive();
-        this.sfxHandle = this.add.circle(width / 2 + 50 + (this.game.sfxVolume ?? 1) * 200, 180, 12, 0xffff00).setInteractive();
+        // SE Volume
+        this.add.text(width / 2 - 100, 180, 'SE Volume', { font: '24px Arial', color: '#fff' }).setOrigin(1, 0.5);
+        this.seSlider = this.add.rectangle(width / 2 + 50, 180, 200, 10, 0x888888).setOrigin(0, 0.5).setInteractive();
+        this.seHandle = this.add.circle(width / 2 + 50 + seVolume * 200, 180, 12, 0xffff00).setInteractive();
 
-        // Music Volume
-        this.add.text(width / 2 - 100, 240, 'Music Volume', { font: '24px Arial', color: '#fff' }).setOrigin(1, 0.5);
-        this.musicSlider = this.add.rectangle(width / 2 + 50, 240, 200, 10, 0x888888).setOrigin(0, 0.5).setInteractive();
-        this.musicHandle = this.add.circle(width / 2 + 50 + (this.game.musicVolume ?? 1) * 200, 240, 12, 0xffff00).setInteractive();
+        // BGM Volume
+        this.add.text(width / 2 - 100, 240, 'BGM Volume', { font: '24px Arial', color: '#fff' }).setOrigin(1, 0.5);
+        this.bgmSlider = this.add.rectangle(width / 2 + 50, 240, 200, 10, 0x888888).setOrigin(0, 0.5).setInteractive();
+        this.bgmHandle = this.add.circle(width / 2 + 50 + bgmVolume * 200, 240, 12, 0xffff00).setInteractive();
 
         // Back Button
         const backButton = this.add.text(width / 2, height - 80, 'Back', {
@@ -34,24 +56,24 @@ export default class OptionsScene extends Phaser.Scene {
             this.scene.start('MainMenu');
         });
 
-        // Drag logic for SFX slider
-        this.input.setDraggable(this.sfxHandle);
-        this.sfxHandle.on('drag', (pointer, dragX) => {
+        // Drag logic for SE slider
+        this.input.setDraggable(this.seHandle);
+        this.seHandle.on('drag', (pointer, dragX) => {
             dragX = Phaser.Math.Clamp(dragX, width / 2 + 50, width / 2 + 250);
-            this.sfxHandle.x = dragX;
+            this.seHandle.x = dragX;
             const value = (dragX - (width / 2 + 50)) / 200;
-            this.game.sfxVolume = value;
-            this.sound.volume = value;
+            setSeVolume(value);
+            updateSoundVolumes(this);
         });
 
-        // Drag logic for Music slider
-        this.input.setDraggable(this.musicHandle);
-        this.musicHandle.on('drag', (pointer, dragX) => {
+        // Drag logic for BGM slider
+        this.input.setDraggable(this.bgmHandle);
+        this.bgmHandle.on('drag', (pointer, dragX) => {
             dragX = Phaser.Math.Clamp(dragX, width / 2 + 50, width / 2 + 250);
-            this.musicHandle.x = dragX;
+            this.bgmHandle.x = dragX;
             const value = (dragX - (width / 2 + 50)) / 200;
-            this.game.musicVolume = value;
-            // You should set your music volume here if you have a music manager
+            setBgmVolume(value);
+            updateSoundVolumes(this);
         });
     }
 }
