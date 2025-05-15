@@ -28,6 +28,13 @@ export default class MainMenu extends Phaser.Scene {
             this.scene.start('VNScene');
         });
 
+        playButton.on('pointerover', () => {
+            playButton.setStyle({ color: '#ffffff' }); // Hover color: white
+        });
+        playButton.on('pointerout', () => {
+            playButton.setStyle({ color: '#ffff00' }); // Revert color
+        });
+
         // Continue Button
         const continueButton = this.add.text(width / 2, height / 2 + 120, 'Continue', {
             ...DEFAULT_TEXT_STYLE,
@@ -38,6 +45,13 @@ export default class MainMenu extends Phaser.Scene {
             // Add your continue logic here
         });
 
+        continueButton.on('pointerover', () => {
+            continueButton.setStyle({ color: '#ffffff' }); // Hover color: white
+        });
+        continueButton.on('pointerout', () => {
+            continueButton.setStyle({ color: '#ffff00' });
+        });
+
         // Options Button
         const optionsButton = this.add.text(width / 2, height / 2 + 180, 'Options', {
             ...DEFAULT_TEXT_STYLE,
@@ -46,6 +60,13 @@ export default class MainMenu extends Phaser.Scene {
 
         optionsButton.on('pointerdown', () => {
             // Add your options logic here
+        });
+
+        optionsButton.on('pointerover', () => {
+            optionsButton.setStyle({ color: '#ffffff' }); // Hover color: white
+        });
+        optionsButton.on('pointerout', () => {
+            optionsButton.setStyle({ color: '#ffff00' });
         });
     }
 }
