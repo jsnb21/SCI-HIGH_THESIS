@@ -2,13 +2,14 @@ import Phaser from 'phaser';
 import VNScene from '/src/scenes/vnScenes.js';
 import MainMenu from './scenes/mainmenu';
 import OptionsScene from './scenes/options.js';
+import MainHub from './scenes/mainhub.js';
 
 const config = {
   type: Phaser.AUTO,
   width: 816,
   height: 624,
   parent: 'game',
-  scene: [MainMenu, VNScene, OptionsScene]
+  scene: [MainMenu, VNScene, OptionsScene, MainHub]
 };
 
 export const DEFAULT_TEXT_STYLE = {

@@ -119,7 +119,7 @@ export default class VNScene extends Phaser.Scene {
       if (this.selectSound) this.selectSound.play(); // Play sound on next line
       this.typeText(this.text);
     } else {
-      this.textObject.setText("End of demo."); // No more lines
+      this.scene.start('MainHub'); // Transition to MainHub scene
     }
   }
 }
