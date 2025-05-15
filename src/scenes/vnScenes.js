@@ -13,8 +13,9 @@ export default class VNScene extends Phaser.Scene {
 
   preload() {
     // Load dialogue JSON and background image assets before scene starts
-    this.load.json('dialogue', '/data/dialogue.json');
+    this.load.json('dialogue', 'data/dialogue.json');
     this.load.image('vnBg', 'assets/img/bg/classroom_day.png'); // Background image
+    this.load.audio('selectSound', 'assets/audio/se/select.wav'); // Add this line
   }
 
   create() {
@@ -63,6 +64,8 @@ export default class VNScene extends Phaser.Scene {
 
     // Start typing the first line of dialogue
     this.typeText(this.text);
+
+    this.selectSound = this.sound.add('selectSound'); // Add this line
   }
 
   // Typing effect: gradually reveals text one character at a time
@@ -99,6 +102,7 @@ export default class VNScene extends Phaser.Scene {
     this.dialogueIndex++;
     if (this.dialogueIndex < this.dialogueLines.length) {
       this.text = this.dialogueLines[this.dialogueIndex];
+      if (this.selectSound) this.selectSound.play(); // Play sound on next line
       this.typeText(this.text);
     } else {
       this.textObject.setText("End of demo."); // No more lines

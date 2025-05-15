@@ -9,10 +9,20 @@ export default class MainMenu extends Phaser.Scene {
     preload() {
         // Load your background image
         this.load.image('menuBg', 'assets/img/mainmenu/SCI-HIGH_Title.png');
+        this.load.audio('hoverSound', 'assets/audio/se/select.wav');
+        this.load.audio('confirmSound', 'assets/audio/se/confirm.wav'); // Add this line
     }
 
     create() {
         const { width, height } = this.scale;
+        const hoverSound = this.sound.add('hoverSound');
+        const confirmSound = this.sound.add('confirmSound'); // Add this line
+
+        // Unlock audio context on first pointerdown
+        this.input.once('pointerdown', () => {
+            hoverSound.play({ volume: 0 }); // Play silently to unlock
+            hoverSound.stop();
+        });
 
         // Add background image (centered and stretched to fit)
         const bg = this.add.image(width / 2, height / 2, 'menuBg');
@@ -25,11 +35,13 @@ export default class MainMenu extends Phaser.Scene {
         }).setOrigin(0.5).setInteractive();
 
         playButton.on('pointerdown', () => {
+            confirmSound.play(); // Play confirm sound
             this.scene.start('VNScene');
         });
 
         playButton.on('pointerover', () => {
             playButton.setStyle({ color: '#ffffff' }); // Hover color: white
+            if (!hoverSound.isPlaying) hoverSound.play();
         });
         playButton.on('pointerout', () => {
             playButton.setStyle({ color: '#ffff00' }); // Revert color
@@ -42,11 +54,13 @@ export default class MainMenu extends Phaser.Scene {
         }).setOrigin(0.5).setInteractive();
 
         continueButton.on('pointerdown', () => {
+            confirmSound.play(); // Play confirm sound
             // Add your continue logic here
         });
 
         continueButton.on('pointerover', () => {
             continueButton.setStyle({ color: '#ffffff' }); // Hover color: white
+            if (!hoverSound.isPlaying) hoverSound.play();
         });
         continueButton.on('pointerout', () => {
             continueButton.setStyle({ color: '#ffff00' });
@@ -59,11 +73,13 @@ export default class MainMenu extends Phaser.Scene {
         }).setOrigin(0.5).setInteractive();
 
         optionsButton.on('pointerdown', () => {
-            // Add your options logic here
+            confirmSound.play(); // Play confirm sound
+            this.scene.start('OptionsScene'); // Switch to Options scene
         });
 
         optionsButton.on('pointerover', () => {
             optionsButton.setStyle({ color: '#ffffff' }); // Hover color: white
+            if (!hoverSound.isPlaying) hoverSound.play();
         });
         optionsButton.on('pointerout', () => {
             optionsButton.setStyle({ color: '#ffff00' });
