@@ -12,9 +12,14 @@ export default class VNScene extends Phaser.Scene {
 
   preload() {
     this.load.json('dialogue', '/data/dialogue.json');
+    this.load.image('vnBg', 'assets/img/bg/classroom_day.png'); // Add this line
   }
 
   create() {
+    // Background Image
+    const { width, height } = this.scale;
+    this.add.image(width / 2, height / 2, 'vnBg').setDisplaySize(width, height);
+
     this.dialogueLines = this.cache.json.get('dialogue').lines;
     this.dialogueIndex = 0;
     this.text = this.dialogueLines[this.dialogueIndex];
