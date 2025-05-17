@@ -9,18 +9,11 @@ export default class MainMenu extends Phaser.Scene {
     }
 
     preload() {
-        // Load your background image
+        // Load assets for main menu
         this.load.image('menuBg', 'assets/img/mainmenu/SCI-HIGH_Title.png', 'truetype');
-
-          // Font
-        this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf')
-
-        // Audio
-        // SE
+        this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
-
-        // Music
         this.load.audio('bgm_title', 'assets/audio/bgm/bgm_title.mp3');
     }
 
@@ -29,77 +22,90 @@ export default class MainMenu extends Phaser.Scene {
         const se_hoverSound = this.sound.add('se_select');
         const se_confirmSound = this.sound.add('se_confirm');
 
-        // Play exclusive BGM (stops any other BGM first)
+        // Play main menu BGM and update sound volumes
         playExclusiveBGM(this, 'bgm_title', { loop: true });
-
-        // Apply current volumes to all sounds
         updateSoundVolumes(this);
 
-        // Unlock audio context on first pointerdown
+        // Unlock audio context on first user interaction
         this.input.once('pointerdown', () => {
-            se_hoverSound.play({ volume: 0 }); // Play silently to unlock
+            se_hoverSound.play({ volume: 0 });
             se_hoverSound.stop();
         });
 
-        // Add background image (centered and stretched to fit)
+        // Add and scale background image
         const bg = this.add.image(width / 2, height / 2, 'menuBg');
         bg.setDisplaySize(width, height);
 
-        // Play Game Button
+        // --- Play Game Button ---
         const playButton = this.add.text(width / 2, (height / 2) + 60, 'Play Game', {
             ...DEFAULT_TEXT_STYLE,
             color: '#ffff00'
         }).setOrigin(0.5).setInteractive();
 
         playButton.on('pointerdown', () => {
-            se_confirmSound.play(); // Play confirm sound
+            se_confirmSound.play();
             this.scene.start('VNScene');
         });
-
         playButton.on('pointerover', () => {
-            playButton.setStyle({ color: '#ffffff' }); // Hover color: white
+            playButton.setStyle({ color: '#ffffff' });
             if (!se_hoverSound.isPlaying) se_hoverSound.play();
         });
         playButton.on('pointerout', () => {
-            playButton.setStyle({ color: '#ffff00' }); // Revert color
+            playButton.setStyle({ color: '#ffff00' });
         });
 
-        // Continue Button
+        // --- Continue Button ---
         const continueButton = this.add.text(width / 2, height / 2 + 120, 'Continue', {
             ...DEFAULT_TEXT_STYLE,
             color: '#ffff00'
         }).setOrigin(0.5).setInteractive();
 
         continueButton.on('pointerdown', () => {
-            se_confirmSound.play(); // Play confirm sound
-            // Add your continue logic here
+            se_confirmSound.play();
+            // TODO: Add continue logic here
         });
-
         continueButton.on('pointerover', () => {
-            continueButton.setStyle({ color: '#ffffff' }); // Hover color: white
+            continueButton.setStyle({ color: '#ffffff' });
             if (!se_hoverSound.isPlaying) se_hoverSound.play();
         });
         continueButton.on('pointerout', () => {
             continueButton.setStyle({ color: '#ffff00' });
         });
 
-        // Options Button
+        // --- Options Button ---
         const optionsButton = this.add.text(width / 2, height / 2 + 180, 'Options', {
             ...DEFAULT_TEXT_STYLE,
             color: '#ffff00'
         }).setOrigin(0.5).setInteractive();
 
         optionsButton.on('pointerdown', () => {
-            se_confirmSound.play(); // Play confirm sound
-            this.scene.start('OptionsScene'); // Switch to Options scene
+            se_confirmSound.play();
+            this.scene.start('OptionsScene');
         });
-
         optionsButton.on('pointerover', () => {
-            optionsButton.setStyle({ color: '#ffffff' }); // Hover color: white
+            optionsButton.setStyle({ color: '#ffffff' });
             if (!se_hoverSound.isPlaying) se_hoverSound.play();
         });
         optionsButton.on('pointerout', () => {
             optionsButton.setStyle({ color: '#ffff00' });
+        });
+
+        // --- Quit Button ---
+        const quitButton = this.add.text(width / 2, height / 2 + 240, 'Quit', {
+            ...DEFAULT_TEXT_STYLE,
+            color: '#ffff00'
+        }).setOrigin(0.5).setInteractive();
+
+        quitButton.on('pointerdown', () => {
+            se_confirmSound.play();
+            window.location.href = 'index.html';
+        });
+        quitButton.on('pointerover', () => {
+            quitButton.setStyle({ color: '#ffffff' });
+            if (!se_hoverSound.isPlaying) se_hoverSound.play();
+        });
+        quitButton.on('pointerout', () => {
+            quitButton.setStyle({ color: '#ffff00' });
         });
     }
 }

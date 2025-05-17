@@ -7,45 +7,42 @@ export default class MainHub extends Phaser.Scene {
     }
 
     preload() {
-        // Background
+        // Load background and icon images
         this.load.image('MainHubBG', 'assets/img/mainhub/MainHubBG.png');
-
-        // Icons
         this.load.image('icon1', 'assets/img/mainhub/classroomIcon.png');
         this.load.image('icon2', 'assets/img/mainhub/libraryIcon.png');
         this.load.image('icon3', 'assets/img/mainhub/officeIcon.png');
         this.load.image('icon4', 'assets/img/mainhub/computerLabIcon.png');
         this.load.image('icon5', 'assets/img/mainhub/canteenIcon.png');
 
-        // Sound effects
+        // Load sound effects
         this.load.audio('se_select', 'assets/sounds/se_select.wav');
         this.load.audio('se_confirm', 'assets/sounds/se_confirm.wav');
     }
 
     create() {
-        // --- Add scrolling background ---
+        // Add scrolling background
         this.bg = this.add.tileSprite(
             0, 0,
             this.cameras.main.width,
             this.cameras.main.height,
             'MainHubBG'
         ).setOrigin(0, 0);
-        this.bg.setAlpha(0.5); // Set background opacity to 50%
+        this.bg.setAlpha(0.5);
 
-        // Move background setup before anything else
+        // Set background color
         this.cameras.main.setBackgroundColor('#87ceeb');
 
-        // VN Dialogue
+        // Show visual novel dialogue, then show carousel
         this.vnBox = new VNDialogueBox(this, [
+            "Hmm",
             "Where should I go next?",
-            "I should go to the classroom. And ask my professor some things."
+            "I should go to the classroom and ask my professor on what I should do."
         ], () => {
-            // After dialogue, show carousel
             this.createCarousel();
         });
 
-        // Back button
-        // Draw rounded rectangle
+        // Create "Back" button in the top right
         const buttonWidth = 100;
         const buttonHeight = 44;
         const buttonRadius = 22;
@@ -62,7 +59,6 @@ export default class MainHub extends Phaser.Scene {
             buttonRadius
         );
 
-        // Add text on top
         const backButton = this.add.text(
             buttonX,
             buttonY,
@@ -70,17 +66,16 @@ export default class MainHub extends Phaser.Scene {
             {
                 font: '24px Jersey15-Regular',
                 fill: '#ffffff',
-                // Remove backgroundColor and borderRadius
                 padding: { left: 0, right: 0, top: 0, bottom: 0 }
             }
         ).setOrigin(0.5)
          .setInteractive({ useHandCursor: true })
          .on('pointerdown', () => {
-            this.se_confirmSound.play(); // Play confirm sound
+            this.se_confirmSound.play();
             this.scene.start('MainMenu');
          });
 
-        // Optional: make both respond to pointer events
+        // Make button background respond to pointer events
         buttonBg.setInteractive(
             new Phaser.Geom.Rectangle(
                 buttonX - buttonWidth / 2,
@@ -90,7 +85,7 @@ export default class MainHub extends Phaser.Scene {
             ),
             Phaser.Geom.Rectangle.Contains
         ).on('pointerdown', () => {
-            this.se_confirmSound.play(); // Play confirm sound
+            this.se_confirmSound.play();
             this.scene.start('MainMenu');
         });
 
@@ -100,7 +95,7 @@ export default class MainHub extends Phaser.Scene {
     }
 
     createCarousel() {
-        // Icon keys and info
+        // Carousel icon keys and info
         const iconKeys = ['icon1', 'icon2', 'icon3', 'icon4', 'icon5'];
         const iconInfo = [
             { heading: "Classroom", desc: "Learn new concepts!" },
@@ -119,12 +114,11 @@ export default class MainHub extends Phaser.Scene {
         this.carouselIndex = Math.floor(iconCount / 2);
         this.carouselIcons = [];
 
-        // Add icons
+        // Add carousel icons
         for (let i = 0; i < iconCount; i++) {
             const x = centerX + (i - this.carouselIndex) * spacing;
             const scale = (i === this.carouselIndex) ? largeScale : smallScale;
             const icon = this.add.image(x, centerY, iconKeys[i]).setScale(scale).setInteractive();
-            // Selected icon: normal tint, fully opaque; Unselected: dimmed and 80% transparent
             if (i === this.carouselIndex) {
                 icon.setTint(0xffffff);
                 icon.setAlpha(1);
@@ -135,7 +129,7 @@ export default class MainHub extends Phaser.Scene {
             this.carouselIcons.push(icon);
         }
 
-        // Heading and description text objects
+        // Heading and description for the selected icon
         this.carouselHeading = this.add.text(centerX, centerY + 180, '', {
             fontFamily: 'Jersey15-Regular',
             fontSize: '48px',
@@ -149,47 +143,46 @@ export default class MainHub extends Phaser.Scene {
             color: '#444466'
         }).setOrigin(0.5);
 
-        // Update text for the initial center icon
+        // Show info for the initial icon
         this.updateCarouselText(iconInfo);
 
-        // --- Add breathing effect ---
+        // Add breathing effect to the selected icon
         this.breathingTween = null;
         this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
 
+        // Keyboard navigation for carousel
         this.input.keyboard.on('keydown-LEFT', () => {
-        this.se_hoverSound.play();
-        this.moveCarousel(-1, iconInfo);
+            this.se_hoverSound.play();
+            this.moveCarousel(-1, iconInfo);
         });
         this.input.keyboard.on('keydown-RIGHT', () => {
-        this.se_hoverSound.play();
-        this.moveCarousel(1, iconInfo);
+            this.se_hoverSound.play();
+            this.moveCarousel(1, iconInfo);
         });
 
-        // Add scroll wheel support
+        // Mouse wheel navigation for carousel
         this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
             if (deltaY > 0) {
                 this.se_hoverSound.play();
-                this.moveCarousel(1, iconInfo); // Scroll down/right
+                this.moveCarousel(1, iconInfo);
             } else if (deltaY < 0) {
                 this.se_hoverSound.play();
-                this.moveCarousel(-1, iconInfo); // Scroll up/left
+                this.moveCarousel(-1, iconInfo);
             }
         });
 
-        // Optional: click to select
+        // Click to select or move carousel
         this.carouselIcons.forEach((icon, i) => {
             icon.on('pointerdown', () => {
                 if (i === this.carouselIndex) {
                     this.se_confirmSound.play();
-                    // Selected the center icon
+                    // Transition to scene if center icon is selected
                     if (iconInfo[i].heading === "Computer Lab") {
                         this.scene.start('ComputerLab');
                     }
                     // Add more scene transitions here if needed
-                    // else if (iconInfo[i].heading === "Classroom") { ... }
                 } else {
                     this.se_hoverSound.play();
-                    // Move carousel toward clicked icon
                     this.moveCarousel(i - this.carouselIndex, iconInfo);
                 }
             });
@@ -197,6 +190,7 @@ export default class MainHub extends Phaser.Scene {
     }
 
     moveCarousel(direction, iconInfo) {
+        // Move carousel left or right
         const iconCount = this.carouselIcons.length;
         let newIndex = Phaser.Math.Clamp(this.carouselIndex + direction, 0, iconCount - 1);
         if (newIndex === this.carouselIndex) return;
@@ -221,28 +215,26 @@ export default class MainHub extends Phaser.Scene {
             }
         });
 
-        // Update text for the new center icon
+        // Update heading and description
         this.updateCarouselText(iconInfo);
 
-        // --- Update breathing effect ---
+        // Update breathing effect
         this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
     }
 
     updateCarouselText(iconInfo) {
+        // Update heading and description text for the selected icon
         const info = iconInfo[this.carouselIndex];
         this.carouselHeading.setText(info.heading);
         this.carouselDesc.setText(info.desc);
     }
 
-    // --- Add this method to your class ---
     startBreathingEffect(icon) {
-        // Stop previous tween if exists
+        // Animate the selected icon with a breathing effect
         if (this.breathingTween) {
             this.breathingTween.stop();
-            // Reset scale to normal
             icon.setScale(1.2);
         }
-        // Start new breathing tween on the selected icon
         this.breathingTween = this.tweens.add({
             targets: icon,
             scale: { from: 1.2, to: 1.35 },
@@ -254,10 +246,9 @@ export default class MainHub extends Phaser.Scene {
     }
 
     update() {
-        // --- Scroll the background downwards only ---
+        // Scroll the background downwards
         if (this.bg) {
-            // this.bg.tilePositionX += 0.5; // Remove or comment out horizontal scroll
-            this.bg.tilePositionY -= 1; // Increase for faster downward scroll if desired
+            this.bg.tilePositionY -= 1;
         }
     }
 }
