@@ -1,0 +1,102 @@
+[
+  {
+    "question": "What does CPU stand for?",
+    "choices": [
+      "Central Processing Unit",
+      "Computer Personal Unit",
+      "Central Peripheral Utility",
+      "Control Program Unit"
+    ],
+    "correctIndex": 0
+  },
+  {
+    "question": "Which device is used to store data permanently?",
+    "choices": [
+      "RAM",
+      "Hard Drive",
+      "Cache",
+      "Register"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "question": "What does RAM stand for?",
+    "choices": [
+      "Random Access Memory",
+      "Readily Available Memory",
+      "Rapid Action Module",
+      "Read Access Mode"
+    ],
+    "correctIndex": 0
+  },
+  {
+    "question": "Which is an input device?",
+    "choices": [
+      "Monitor",
+      "Printer",
+      "Keyboard",
+      "Speaker"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "question": "What is the brain of the computer?",
+    "choices": [
+      "RAM",
+      "CPU",
+      "Motherboard",
+      "Hard Disk"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "question": "Which port is used to connect a monitor?",
+    "choices": [
+      "USB",
+      "VGA/HDMI",
+      "Ethernet",
+      "Audio Jack"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "question": "What does GPU stand for?",
+    "choices": [
+      "General Processing Unit",
+      "Graphics Processing Unit",
+      "Graphical Peripheral Unit",
+      "Global Processing Utility"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "question": "Which of these is NOT an operating system?",
+    "choices": [
+      "Windows",
+      "Linux",
+      "Python",
+      "macOS"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "question": "Which is used to connect to the internet?",
+    "choices": [
+      "Ethernet Cable",
+      "HDMI Cable",
+      "VGA Cable",
+      "Audio Cable"
+    ],
+    "correctIndex": 0
+  },
+  {
+    "question": "What does BIOS stand for?",
+    "choices": [
+      "Basic Input Output System",
+      "Binary Integrated Operating System",
+      "Basic Internal Output System",
+      "Binary Input Output Setup"
+    ],
+    "correctIndex": 0
+  }
+]
