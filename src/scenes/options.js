@@ -32,23 +32,23 @@ export default class OptionsScene extends Phaser.Scene {
 
         // Title
         this.add.text(width / 2, 80, 'Options', {
-            font: '32px Arial',
+            font: '42px Jersey15-Regular',
             color: '#ffff00'
         }).setOrigin(0.5);
 
         // SE Volume
-        this.add.text(width / 2 - 100, 180, 'SE Volume', { font: '24px Arial', color: '#fff' }).setOrigin(1, 0.5);
+        this.add.text(width / 2 - 100, 180, 'SE Volume', { font: '32px Jersey15-Regular', color: '#fff' }).setOrigin(1, 0.5);
         this.seSlider = this.add.rectangle(width / 2 + 50, 180, 200, 10, 0x888888).setOrigin(0, 0.5).setInteractive();
         this.seHandle = this.add.circle(width / 2 + 50 + seVolume * 200, 180, 12, 0xffff00).setInteractive();
 
         // BGM Volume
-        this.add.text(width / 2 - 100, 240, 'BGM Volume', { font: '24px Arial', color: '#fff' }).setOrigin(1, 0.5);
+        this.add.text(width / 2 - 100, 240, 'BGM Volume', { font: '32px Jersey15-Regular', color: '#fff' }).setOrigin(1, 0.5);
         this.bgmSlider = this.add.rectangle(width / 2 + 50, 240, 200, 10, 0x888888).setOrigin(0, 0.5).setInteractive();
         this.bgmHandle = this.add.circle(width / 2 + 50 + bgmVolume * 200, 240, 12, 0xffff00).setInteractive();
 
         // Back Button
         const backButton = this.add.text(width / 2, height - 80, 'Back', {
-            font: '28px Arial',
+            font: '32px Jersey15-Regular',
             color: '#ffff00'
         }).setOrigin(0.5).setInteractive();
 

@@ -14,8 +14,8 @@ const config = {
 };
 
 export const DEFAULT_TEXT_STYLE = {
-    fontSize: '32px',
-    fontFamily: 'Jersey15-Regular, Arial, sans-serif', // Must match CSS
+    fontSize: '52px',
+    fontFamily: 'Jersey15-Regular', // Must match CSS
     color: '#ffffff',
     stroke: '#000000',        // Solid black outline
     strokeThickness: 10

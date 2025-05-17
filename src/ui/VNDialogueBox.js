@@ -28,8 +28,8 @@ export default class VNDialogueBox {
 
     // Create the text object for displaying dialogue inside the box
     this.textObject = scene.add.text(boxX + 20, boxY + 15, '', {
-      fontFamily: 'Arial',
-      fontSize: '24px',
+      fontFamily: 'Jersey15-Regular',
+      fontSize: '28px',
       color: '#ffffff',
       wordWrap: { width: boxWidth - 40 }
     });

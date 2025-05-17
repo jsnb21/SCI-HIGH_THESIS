@@ -10,7 +10,10 @@ export default class MainMenu extends Phaser.Scene {
 
     preload() {
         // Load your background image
-        this.load.image('menuBg', 'assets/img/mainmenu/SCI-HIGH_Title.png');
+        this.load.image('menuBg', 'assets/img/mainmenu/SCI-HIGH_Title.png', 'truetype');
+
+          // Font
+        this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf')
 
         // Audio
         // SE

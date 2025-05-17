@@ -50,7 +50,7 @@ export default class MainHub extends Phaser.Scene {
             buttonY,
             'Back',
             {
-                font: '24px Arial',
+                font: '24px Jersey15-Regular',
                 fill: '#ffffff',
                 // Remove backgroundColor and borderRadius
                 padding: { left: 0, right: 0, top: 0, bottom: 0 }
@@ -87,7 +87,7 @@ export default class MainHub extends Phaser.Scene {
         ];
         const iconCount = iconKeys.length;
         const centerX = this.cameras.main.centerX;
-        const centerY = 350;
+        const centerY = 280;
         const spacing = 280;
         const smallScale = 0.7;
         const largeScale = 1.2;
@@ -105,23 +105,36 @@ export default class MainHub extends Phaser.Scene {
 
         // Heading and description text objects
         this.carouselHeading = this.add.text(centerX, centerY + 180, '', {
-            fontFamily: 'Arial',
-            fontSize: '36px',
+            fontFamily: 'Jersey15-Regular',
+            fontSize: '48px',
             color: '#222244',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
         this.carouselDesc = this.add.text(centerX, centerY + 225, '', {
-            fontFamily: 'Arial',
-            fontSize: '22px',
+            fontFamily: 'Jersey15-Regular',
+            fontSize: '32px',
             color: '#444466'
         }).setOrigin(0.5);
 
         // Update text for the initial center icon
         this.updateCarouselText(iconInfo);
 
+        // --- Add breathing effect ---
+        this.breathingTween = null;
+        this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
+
         this.input.keyboard.on('keydown-LEFT', () => this.moveCarousel(-1, iconInfo));
         this.input.keyboard.on('keydown-RIGHT', () => this.moveCarousel(1, iconInfo));
+
+        // Add scroll wheel support
+        this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
+            if (deltaY > 0) {
+                this.moveCarousel(1, iconInfo); // Scroll down/right
+            } else if (deltaY < 0) {
+                this.moveCarousel(-1, iconInfo); // Scroll up/left
+            }
+        });
 
         // Optional: click to select
         this.carouselIcons.forEach((icon, i) => {
@@ -155,22 +168,41 @@ export default class MainHub extends Phaser.Scene {
         this.carouselIcons.forEach((icon, i) => {
             const x = centerX + (i - this.carouselIndex) * spacing;
             const scale = (i === this.carouselIndex) ? largeScale : smallScale;
-            this.tweens.add({
-                targets: icon,
-                x: x,
-                scale: scale,
-                duration: 200,
-                ease: 'Cubic.easeOut'
-            });
+            icon.setScale(scale);
+            icon.setX(x);
+            // Set opacity: 1 for selected, 0.5 for others
+            icon.setAlpha(i === this.carouselIndex ? 1 : 0.5);
         });
 
         // Update text for the new center icon
         this.updateCarouselText(iconInfo);
+
+        // --- Update breathing effect ---
+        this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
     }
 
     updateCarouselText(iconInfo) {
         const info = iconInfo[this.carouselIndex];
         this.carouselHeading.setText(info.heading);
         this.carouselDesc.setText(info.desc);
+    }
+
+    // --- Add this method to your class ---
+    startBreathingEffect(icon) {
+        // Stop previous tween if exists
+        if (this.breathingTween) {
+            this.breathingTween.stop();
+            // Reset scale to normal
+            icon.setScale(1.2);
+        }
+        // Start new breathing tween on the selected icon
+        this.breathingTween = this.tweens.add({
+            targets: icon,
+            scale: { from: 1.2, to: 1.35 },
+            duration: 700,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
     }
 }
