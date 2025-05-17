@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import VNScene from '/src/scenes/vnScenes.js';
+import Intro from '/src/scenes/intro.js';
 import MainMenu from './scenes/mainmenu';
 import OptionsScene from './scenes/options.js';
 import MainHub from './scenes/mainhub.js';
@@ -9,7 +9,7 @@ const config = {
   width: 816,
   height: 624,
   parent: 'game',
-  scene: [MainMenu, VNScene, OptionsScene, MainHub]
+  scene: [MainMenu, Intro, OptionsScene, MainHub]
 };
 
 export const DEFAULT_TEXT_STYLE = {
