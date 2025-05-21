@@ -1,0 +1,3 @@
+npm install - installs packages
+
+npm run dev - start server
