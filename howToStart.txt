@@ -1,3 +1,7 @@
-npm install - installs packages
+installs packages
+npm install
 
-npm run dev - start server
+-----------------------
+
+start server
+npm run dev

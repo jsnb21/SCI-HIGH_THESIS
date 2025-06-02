@@ -35,7 +35,7 @@ export default class MainHub extends Phaser.Scene {
 
         // Show visual novel dialogue, then show carousel
         this.vnBox = new VNDialogueBox(this, [
-            "Hmm",
+            "Hmm...",
             "Where should I go next?",
             "I should go to the classroom and ask my professor on what I should do."
         ], () => {
@@ -106,7 +106,7 @@ export default class MainHub extends Phaser.Scene {
         ];
         const iconCount = iconKeys.length;
         const centerX = this.cameras.main.centerX;
-        const centerY = 280;
+        const centerY = 468;
         const spacing = 280;
         const smallScale = 0.7;
         const largeScale = 1.2;
@@ -160,6 +160,13 @@ export default class MainHub extends Phaser.Scene {
             this.moveCarousel(1, iconInfo);
         });
 
+        // Mobile Support
+        this.input.on('pointerup', (pointer) => {
+            if (this.dragDistance > 50) {
+                this.moveCarousel(this.dragDirection, iconInfo);
+            }
+        });
+
         // Mouse wheel navigation for carousel
         this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
             if (deltaY > 0) {
@@ -189,35 +196,63 @@ export default class MainHub extends Phaser.Scene {
         });
     }
 
-    moveCarousel(direction, iconInfo) {
-        // Move carousel left or right
-        const iconCount = this.carouselIcons.length;
-        let newIndex = Phaser.Math.Clamp(this.carouselIndex + direction, 0, iconCount - 1);
-        if (newIndex === this.carouselIndex) return;
 
+    moveCarousel(direction, iconInfo) {
+        const iconCount = this.carouselIcons.length;
+        
+        // Calculate new index with wrap-around
+        let newIndex = (this.carouselIndex + direction + iconCount) % iconCount;
+        
         this.carouselIndex = newIndex;
         const centerX = this.cameras.main.centerX;
         const spacing = 280;
         const smallScale = 0.7;
         const largeScale = 1.2;
-
+    
+        // Update positions for all icons
         this.carouselIcons.forEach((icon, i) => {
-            const x = centerX + (i - this.carouselIndex) * spacing;
+            // Calculate position with wrap-around logic
+            let relativePos = i - this.carouselIndex;
+            
+            // Handle wrap-around for smooth transitions
+            if (relativePos > Math.floor(iconCount/2)) {
+                relativePos -= iconCount;
+            } else if (relativePos < -Math.floor(iconCount/2)) {
+                relativePos += iconCount;
+            }
+            
+            const x = centerX + relativePos * spacing;
             const scale = (i === this.carouselIndex) ? largeScale : smallScale;
-            icon.setScale(scale);
-            icon.setX(x);
+            
+            // Animate the movement for smoother transition
+            this.tweens.add({
+                targets: icon,
+                x: x,
+                scale: scale,
+                duration: 300,
+                ease: 'Power2'
+            });
+    
             if (i === this.carouselIndex) {
                 icon.setTint(0xffffff);
-                icon.setAlpha(1);
+                this.tweens.add({
+                    targets: icon,
+                    alpha: 1,
+                    duration: 200
+                });
             } else {
                 icon.setTint(0x888888);
-                icon.setAlpha(0.8);
+                this.tweens.add({
+                    targets: icon,
+                    alpha: 0.8,
+                    duration: 200
+                });
             }
         });
-
+    
         // Update heading and description
         this.updateCarouselText(iconInfo);
-
+    
         // Update breathing effect
         this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
     }

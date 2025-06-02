@@ -11,9 +11,9 @@ export default class VNDialogueBox {
     this.typingEvent = null;
 
     // --- VNScene visual style START ---
-    const boxX = 50;
-    const boxY = 440;
-    const boxWidth = 700;
+    const boxX = 100;
+    const boxY = 700;
+    const boxWidth = 1030;
     const boxHeight = 150;
     const borderRadius = 20;
     const borderThickness = 4;
@@ -29,7 +29,7 @@ export default class VNDialogueBox {
     // Create the text object for displaying dialogue inside the box
     this.textObject = scene.add.text(boxX + 20, boxY + 15, '', {
       fontFamily: 'Jersey15-Regular',
-      fontSize: '28px',
+      fontSize: '40px',
       color: '#ffffff',
       wordWrap: { width: boxWidth - 40 }
     });

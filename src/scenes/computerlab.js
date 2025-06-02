@@ -6,11 +6,42 @@ export default class ComputerLab extends Phaser.Scene {
     }
 
     preload() {
+        // Font
+        this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
+    
+        // Load background and icon images
+        this.load.image('MainHubBG', 'assets/img/mainhub/MainHubBG.png');
+        this.load.image('icon1', 'assets/img/mainhub/classroomIcon.png');
+        this.load.image('icon2', 'assets/img/mainhub/libraryIcon.png');
+        this.load.image('icon3', 'assets/img/mainhub/officeIcon.png');
+        this.load.image('icon4', 'assets/img/mainhub/computerLabIcon.png');
+        this.load.image('icon5', 'assets/img/mainhub/canteenIcon.png');
+
+        // Load sound effects
+        this.load.audio('se_select', 'assets/audio/se/se_select.wav');
+        this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
+
         // Load questions JSON
         this.load.json('questions', 'data/questions.json');
     }
 
     async create() {
+
+        this.cameras.main.setBackgroundColor('#808080');
+
+        this.createCarousel();
+
+        this.createBack();
+
+        // Add sound effects
+        this.se_hoverSound = this.sound.add('se_select');
+        this.se_confirmSound = this.sound.add('se_confirm');
+
+
+
+
+
+        /*
         this.cameras.main.setBackgroundColor('#222244');
 
         // Enemy setup
@@ -52,238 +83,251 @@ export default class ComputerLab extends Phaser.Scene {
         // Register the shutdown event
         this.events.on('shutdown', this.shutdown, this);
         this.events.on('destroy', this.destroy, this);
+
+        */
     }
 
-    showQuestion() {
-        // Remove previous question/choices if any
-        if (this.questionText) this.questionText.destroy();
-        if (this.choiceTexts) this.choiceTexts.forEach(t => t.destroy());
-        if (this.timerText) this.timerText.destroy();
-        if (this.timerEvent) this.timerEvent.remove();
+    createBack(){
+        // Create "Back" button in the top right
+        const buttonWidth = 100;
+        const buttonHeight = 44;
+        const buttonRadius = 22;
+        const buttonX = this.cameras.main.width - 30 - buttonWidth / 2;
+        const buttonY = 20 + buttonHeight / 2;
 
-        const q = this.questions[this.currentQuestionIndex];
-        this.question = q.question;
-        this.choices = q.choices;
-        this.correctIndex = q.correctIndex;
+        const buttonBg = this.add.graphics();
+        buttonBg.fillStyle(0x1e90ff, 1);
+        buttonBg.fillRoundedRect(
+            buttonX - buttonWidth / 2,
+            buttonY - buttonHeight / 2,
+            buttonWidth,
+            buttonHeight,
+            buttonRadius
+        );
 
-        // Display question below enemy, with more space above to avoid overlap
-        this.questionText = this.add.text(
-            this.cameras.main.centerX,
-            310, // Increased from 280 to 310 for more space below the enemy
-            this.question,
+        const backButton = this.add.text(
+            buttonX,
+            buttonY,
+            'Back',
             {
-                font: '28px Arial',
-                color: '#ffffff',
-                wordWrap: { width: 700 }
+                font: '24px Jersey15-Regular',
+                fill: '#ffffff',
+                padding: { left: 0, right: 0, top: 0, bottom: 0 }
             }
-        ).setOrigin(0.5);
+        ).setOrigin(0.5)
+         .setInteractive({ useHandCursor: true })
+         .on('pointerdown', () => {
+            this.se_confirmSound.play();
+            this.scene.start('MainHub');
+         });
 
-        // Display choices below question
-        this.choiceTexts = [];
-        const startY = 370; // Move choices a bit lower for bigger enemy
-        const spacingY = 70;
-        const spacingX = 320; // Horizontal space between columns
-        for (let i = 0; i < this.choices.length; i++) {
-            // Calculate row and column for 2 per row
-            const row = Math.floor(i / 2);
-            const col = i % 2;
-            const x = this.cameras.main.centerX + (col === 0 ? -spacingX / 2 : spacingX / 2);
-            const y = startY + row * spacingY;
+        // Make button background respond to pointer events
+        buttonBg.setInteractive(
+            new Phaser.Geom.Rectangle(
+                buttonX - buttonWidth / 2,
+                buttonY - buttonHeight / 2,
+                buttonWidth,
+                buttonHeight
+            ),
+            Phaser.Geom.Rectangle.Contains
+        ).on('pointerdown', () => {
+            this.se_confirmSound.play();
+            this.scene.start('MainHub');
+        });
+    }
 
-            const choiceText = this.add.text(
-                x, y,
-                `${String.fromCharCode(65 + i)}. ${this.choices[i]}`,
-                {
-                    font: '24px Arial',
-                    color: '#ffffff',
-                    backgroundColor: '#444466',
-                    padding: { left: 16, right: 16, top: 8, bottom: 8 }
-                }
-            ).setOrigin(0.5)
-             .setInteractive({ useHandCursor: true })
-             .on('pointerdown', () => this.handleChoice(i));
-            this.choiceTexts.push(choiceText);
+    createCarousel() {
+        // Carousel icon keys and info
+        const iconKeys = ['icon1', 'icon2', 'icon3', 'icon4', 'icon5'];
+        const iconInfo = [
+            { heading: "Web Design", desc: "Learn HTML, CSS &JavaScript" },
+            { heading: "Python", desc: "Learn Python" },
+            { heading: "Java", desc: "Learn Java" },
+            { heading: "C", desc: "Learn about C" },
+            { heading: "C++", desc: "Learn about C++" },
+            { heading: "C#", desc: "Learn about C#." }
+        ];
+        const iconCount = iconKeys.length;
+        const centerX = this.cameras.main.centerX;
+        const centerY = 468;
+        const spacing = 280;
+        const smallScale = 0.7;
+        const largeScale = 1.2;
+
+        this.carouselIndex = Math.floor(iconCount / 2);
+        this.carouselIcons = [];
+
+        // Add carousel icons
+        for (let i = 0; i < iconCount; i++) {
+            const x = centerX + (i - this.carouselIndex) * spacing;
+            const scale = (i === this.carouselIndex) ? largeScale : smallScale;
+            const icon = this.add.image(x, centerY, iconKeys[i]).setScale(scale).setInteractive();
+            if (i === this.carouselIndex) {
+                icon.setTint(0xffffff);
+                icon.setAlpha(1);
+            } else {
+                icon.setTint(0x888888);
+                icon.setAlpha(0.8);
+            }
+            this.carouselIcons.push(icon);
         }
 
-        this.answered = false;
-        this.timeLeft = 30;
-        this.questionStartTime = this.time.now;
-
-        // Create smooth timer text
-        this.timerText = this.add.text(this.cameras.main.centerX, 60, `Time: ${this.timeLeft}`, {
-            font: '24px Arial',
-            color: '#ffcc00'
+        // Heading and description for the selected icon
+        this.carouselHeading = this.add.text(centerX, centerY + 180, '', {
+            fontFamily: 'Jersey15-Regular',
+            fontSize: '48px',
+            color: '#222244',
+            fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Smooth timer event (updates every frame)
-        this.timerEvent = this.time.addEvent({
-            delay: 20,
-            loop: true,
-            callback: () => {
-                if (this.answered) return;
-                const elapsed = (this.time.now - this.questionStartTime) / 1000;
-                const remaining = Math.max(0, Math.ceil(this.timeLeft - elapsed));
-                this.timerText.setText(`Time: ${remaining}`);
-                if (remaining <= 0) {
-                    this.answered = true;
-                    this.showResult(false, "Time's up!");
-                }
+        this.carouselDesc = this.add.text(centerX, centerY + 225, '', {
+            fontFamily: 'Jersey15-Regular',
+            fontSize: '32px',
+            color: '#444466'
+        }).setOrigin(0.5);
+
+        // Show info for the initial icon
+        this.updateCarouselText(iconInfo);
+
+        // Add breathing effect to the selected icon
+        this.breathingTween = null;
+        this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
+
+        // Keyboard navigation for carousel
+        this.input.keyboard.on('keydown-LEFT', () => {
+            this.se_hoverSound.play();
+            this.moveCarousel(-1, iconInfo);
+        });
+        this.input.keyboard.on('keydown-RIGHT', () => {
+            this.se_hoverSound.play();
+            this.moveCarousel(1, iconInfo);
+        });
+        
+        // Mobile Support
+        this.input.on('pointerup', (pointer) => {
+            if (this.dragDistance > 50) {
+                this.moveCarousel(this.dragDirection, iconInfo);
             }
         });
-    }
 
-    handleChoice(index) {
-        if (this.answered) return;
-        this.answered = true;
-        const isCorrect = index === this.correctIndex;
-        this.showResult(isCorrect, isCorrect ? "Correct!" : "Wrong!");
-        if (isCorrect) {
-            this.damageEnemy(1);
-        } else {
-            this.damagePlayer(1);
-        }
-    }
-
-    damageEnemy(amount) {
-        this.enemyHP = Math.max(0, this.enemyHP - amount);
-        this.enemyHPText.setText(`Enemy HP: ${this.enemyHP}`);
-
-        // Flash enemy red
-        this.enemy.setFillStyle(0xff2222);
-        this.time.delayedCall(200, () => {
-            this.enemy.setFillStyle(0x8888ff);
+        // Mouse wheel navigation for carousel
+        this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
+            if (deltaY > 0) {
+                this.se_hoverSound.play();
+                this.moveCarousel(1, iconInfo);
+            } else if (deltaY < 0) {
+                this.se_hoverSound.play();
+                this.moveCarousel(-1, iconInfo);
+            }
         });
 
-        // Optionally, check for enemy defeat
-        if (this.enemyHP <= 0) {
-            this.time.delayedCall(1000, () => {
-                this.scene.start('MainHub');
-            });
-        } else {
-            // Next question after short delay
-            this.time.delayedCall(1200, () => {
-                this.currentQuestionIndex++;
-                if (this.currentQuestionIndex < this.questions.length) {
-                    this.showQuestion();
-                } else {
-                    this.scene.start('MainHub');
-                }
-            });
-        }
-    }
-
-    damagePlayer(amount) {
-        this.playerHP = Math.max(0, this.playerHP - amount);
-        this.playerHPText.setText(`Player HP: ${this.playerHP}`);
-
-        // Flash player HP text red
-        this.playerHPText.setColor('#ff2222');
-        this.time.delayedCall(200, () => {
-            this.playerHPText.setColor('#44ff44');
-        });
-
-        // Check for player defeat
-        if (this.playerHP <= 0) {
-            // Prevent further input and stop timer
-            this.answered = true;
-            if (this.timerEvent) this.timerEvent.remove();
-
-            // Destroy question and choices
-            if (this.questionText) this.questionText.destroy();
-            if (this.choiceTexts) this.choiceTexts.forEach(t => t.destroy());
-            if (this.resultText) this.resultText.destroy();
-
-            // Dim the whole screen except "YOU FAILED"
-            this.add.rectangle(
-                this.cameras.main.centerX, this.cameras.main.centerY,
-                this.cameras.main.width, this.cameras.main.height,
-                0x000000, 0.7
-            ).setOrigin(0.5).setDepth(1000);
-
-            // Draw a less dim rectangle behind the text for focus
-            this.add.rectangle(
-                this.cameras.main.centerX, this.cameras.main.centerY, 500, 200, 0x000000, 0.85
-            ).setOrigin(0.5).setDepth(1001);
-
-            // "YOU FAILED" text on top (centered)
-            this.add.text(
-                this.cameras.main.centerX, this.cameras.main.centerY - 30, "YOU FAILED",
-                { font: '64px Arial', color: '#ff2222', fontStyle: 'bold' }
-            ).setOrigin(0.5).setDepth(1002);
-
-            // Smooth countdown
-            const countdownSeconds = 3;
-            let countdownStart = this.time.now;
-            const countdownText = this.add.text(
-                this.cameras.main.centerX, this.cameras.main.centerY + 50,
-                `Returning to MainHub in ${countdownSeconds}...`,
-                { font: '28px Arial', color: '#ffffff' }
-            ).setOrigin(0.5).setDepth(1002);
-
-            const countdownTimer = this.time.addEvent({
-                delay: 100,
-                loop: true,
-                callback: () => {
-                    const elapsed = (this.time.now - countdownStart) / 1000;
-                    const remaining = Math.max(0, Math.ceil(countdownSeconds - elapsed));
-                    countdownText.setText(`Returning to MainHub in ${remaining}...`);
-                    if (remaining <= 0) {
-                        countdownTimer.remove();
-                        this.scene.start('MainHub');
+        // Click to select or move carousel
+        this.carouselIcons.forEach((icon, i) => {
+            icon.on('pointerdown', () => {
+                if (i === this.carouselIndex) {
+                    this.se_confirmSound.play();
+                    // Transition to the new scene based on the selected icon
+                    if (iconInfo[i].heading === "Web Design") {
+                        this.scene.start('WebDesignScene'); // Transition to WebDesignScene
+                    } else if (iconInfo[i].heading === "Python") {
+                        this.scene.start('PythonScene'); 
+                    } else if (iconInfo[i].heading === "Java"){
+                        this.scene.start('JavaScene')
+                    } else if (iconInfo[i].heading === "C"){
+                        this.scene.start('CprogScene')
+                    } else if (iconInfo[i].heading === "C++"){
+                        this.scene.start('C++Scene')
+                    } else if (iconInfo[i].heading === "C#"){
+                        this.scene.start('C#Scene')
                     }
-                }
-            });
-        } else {
-            // Next question after short delay
-            this.time.delayedCall(1200, () => {
-                this.currentQuestionIndex++;
-                if (this.currentQuestionIndex < this.questions.length) {
-                    this.showQuestion();
                 } else {
-                    this.scene.start('MainHub');
+                    this.se_hoverSound.play();
+                    this.moveCarousel(i - this.carouselIndex, iconInfo);
                 }
             });
-        }
+        });
     }
 
-    showResult(isCorrect, message) {
-        this.timerEvent.remove();
-        // Highlight correct answer
-        this.choiceTexts[this.correctIndex].setStyle({ backgroundColor: '#228B22' }); // Green
-        if (!isCorrect) {
-            // Highlight wrong answer if chosen
-            this.choiceTexts.forEach((text, i) => {
-                if (text.input && text.input.enabled && i !== this.correctIndex) {
-                    text.setStyle({ backgroundColor: '#8B2222' }); // Red for wrong
-                }
+    moveCarousel(direction, iconInfo) {
+        const iconCount = this.carouselIcons.length;
+        
+        // Calculate new index with wrap-around
+        let newIndex = (this.carouselIndex + direction + iconCount) % iconCount;
+        
+        this.carouselIndex = newIndex;
+        const centerX = this.cameras.main.centerX;
+        const spacing = 280;
+        const smallScale = 0.7;
+        const largeScale = 1.2;
+    
+        // Update positions for all icons
+        this.carouselIcons.forEach((icon, i) => {
+            // Calculate position with wrap-around logic
+            let relativePos = i - this.carouselIndex;
+            
+            // Handle wrap-around for smooth transitions
+            if (relativePos > Math.floor(iconCount/2)) {
+                relativePos -= iconCount;
+            } else if (relativePos < -Math.floor(iconCount/2)) {
+                relativePos += iconCount;
+            }
+            
+            const x = centerX + relativePos * spacing;
+            const scale = (i === this.carouselIndex) ? largeScale : smallScale;
+            
+            // Animate the movement for smoother transition
+            this.tweens.add({
+                targets: icon,
+                x: x,
+                scale: scale,
+                duration: 300,
+                ease: 'Power2'
             });
-        }
-        // Show result message
-        if (this.resultText) this.resultText.destroy();
-        this.resultText = this.add.text(this.cameras.main.centerX, 600, message, {
-            font: '32px Arial',
-            color: isCorrect ? '#00ff00' : '#ff3333'
-        }).setOrigin(0.5);
-
-        // Proceed after a short delay if enemy is not defeated
-        if (this.enemyHP > 0) {
-            this.time.delayedCall(1000, () => {
-                if (this.resultText) this.resultText.destroy();
-            });
-        }
+    
+            if (i === this.carouselIndex) {
+                icon.setTint(0xffffff);
+                this.tweens.add({
+                    targets: icon,
+                    alpha: 1,
+                    duration: 200
+                });
+            } else {
+                icon.setTint(0x888888);
+                this.tweens.add({
+                    targets: icon,
+                    alpha: 0.8,
+                    duration: 200
+                });
+            }
+        });
+    
+        // Update heading and description
+        this.updateCarouselText(iconInfo);
+    
+        // Update breathing effect
+        this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
     }
 
-    shutdown() {
-        if (this.timerEvent) {
-            this.timerEvent.remove();
-            this.timerEvent = null;
-        }
+    updateCarouselText(iconInfo) {
+        // Update heading and description text for the selected icon
+        const info = iconInfo[this.carouselIndex];
+        this.carouselHeading.setText(info.heading);
+        this.carouselDesc.setText(info.desc);
     }
 
-    destroy() {
-        if (this.timerEvent) {
-            this.timerEvent.remove();
-            this.timerEvent = null;
+    startBreathingEffect(icon) {
+        // Animate the selected icon with a breathing effect
+        if (this.breathingTween) {
+            this.breathingTween.stop();
+            icon.setScale(1.2);
         }
+        this.breathingTween = this.tweens.add({
+            targets: icon,
+            scale: { from: 1.2, to: 1.35 },
+            duration: 700,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
     }
 }
