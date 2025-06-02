@@ -2,9 +2,9 @@ import Phaser from 'phaser';
 import CourseSelectionUI from './CourseSelectionUI.js';
 
 
-export default class CprogScene extends Phaser.Scene {
+export default class CSProgrammingScene extends Phaser.Scene {
     constructor() {
-        super({ key: 'CprogScene' });
+        super({ key: 'CSProgrammingScene' });
     }
 
     preload() {

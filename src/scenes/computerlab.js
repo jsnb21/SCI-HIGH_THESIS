@@ -16,6 +16,7 @@ export default class ComputerLab extends Phaser.Scene {
         this.load.image('icon3', 'assets/img/mainhub/officeIcon.png');
         this.load.image('icon4', 'assets/img/mainhub/computerLabIcon.png');
         this.load.image('icon5', 'assets/img/mainhub/canteenIcon.png');
+        this.load.image('icon6', 'assets/img/mainhub/canteenIcon.png');
 
         // Load sound effects
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
@@ -138,7 +139,7 @@ export default class ComputerLab extends Phaser.Scene {
 
     createCarousel() {
         // Carousel icon keys and info
-        const iconKeys = ['icon1', 'icon2', 'icon3', 'icon4', 'icon5'];
+        const iconKeys = ['icon1', 'icon2', 'icon3', 'icon4', 'icon5', 'icon6'];
         const iconInfo = [
             { heading: "Web Design", desc: "Learn HTML, CSS &JavaScript" },
             { heading: "Python", desc: "Learn Python" },
@@ -234,11 +235,11 @@ export default class ComputerLab extends Phaser.Scene {
                     } else if (iconInfo[i].heading === "Java"){
                         this.scene.start('JavaScene')
                     } else if (iconInfo[i].heading === "C"){
-                        this.scene.start('CprogScene')
+                        this.scene.start('CSProgrammingScene')
                     } else if (iconInfo[i].heading === "C++"){
-                        this.scene.start('C++Scene')
+                        this.scene.start('CPlusplusScene')
                     } else if (iconInfo[i].heading === "C#"){
-                        this.scene.start('C#Scene')
+                        this.scene.start('CSharpScene')
                     }
                 } else {
                     this.se_hoverSound.play();
