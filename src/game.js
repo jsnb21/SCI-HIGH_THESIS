@@ -14,7 +14,9 @@ import CPlusplusScene from '/src/scenes/comlabscenes/C++.js';
 import CSharpScene from '/src/scenes/comlabscenes/CSharp.js';
 
 // Quiz Scenes
+import BaseQuizScene from '/src/scenes/quizscenes/BaseQuizScene.js';
 import WebDesignQuizScene from '/src/scenes/quizscenes/WebDesignQuizScene.js';
+import JavaScriptQuizScene from '/src/scenes/quizscenes/JSQuizScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -24,10 +26,10 @@ const config = {
   scene: [
     /*MainMenu, Intro, OptionsScene, MainHub, */
     /* Computer Lab */
-    /*ComputerLab, WebDesignScene, PythonScene, JavaScene, CSProgrammingScene, CPlusplusScene, CSharpScene,*/
+    ComputerLab, WebDesignScene, PythonScene, JavaScene, CSProgrammingScene, CPlusplusScene, CSharpScene,
   
     /* Quiz Scenes */
-    WebDesignQuizScene],
+    BaseQuizScene, WebDesignQuizScene, JavaScriptQuizScene],
   dom: {
     createContainer: true // Enable DOM container
   }
