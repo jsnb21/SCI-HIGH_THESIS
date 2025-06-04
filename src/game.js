@@ -28,7 +28,7 @@ const config = {
   height: 936,
   parent: 'game',
   scene: [
-    MainMenu, Intro, OptionsScene, MainHub,
+    /*MainMenu, Intro, OptionsScene, MainHub,
     /* Computer Lab */
     ComputerLab, WebDesignScene, PythonScene, JavaScene, CSProgrammingScene, CPlusplusScene, CSharpScene,
   

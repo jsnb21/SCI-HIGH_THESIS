@@ -6,17 +6,15 @@ export default class ComputerLab extends Phaser.Scene {
     }
 
     preload() {
-        // Font
-        this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
     
         // Load background and icon images
         this.load.image('MainHubBG', 'assets/img/mainhub/MainHubBG.png');
-        this.load.image('icon1', 'assets/img/mainhub/classroomIcon.png');
-        this.load.image('icon2', 'assets/img/mainhub/libraryIcon.png');
-        this.load.image('icon3', 'assets/img/mainhub/officeIcon.png');
-        this.load.image('icon4', 'assets/img/mainhub/computerLabIcon.png');
-        this.load.image('icon5', 'assets/img/mainhub/canteenIcon.png');
-        this.load.image('icon6', 'assets/img/mainhub/canteenIcon.png');
+        this.load.image('icon1', 'assets/img/comlab/icons/webDesignIcons.png');
+        this.load.image('icon2', 'assets/img/comlab/icons/PythonIcon.png');
+        this.load.image('icon3', 'assets/img/comlab/icons/JavaIcon.png');
+        this.load.image('icon4', 'assets/img/comlab/icons/webDesignIcons.png');
+        this.load.image('icon5', 'assets/img/comlab/icons/CplusplusIcon.png');
+        this.load.image('icon6', 'assets/img/comlab/icons/CSharpIcon.png');
 
         // Load sound effects
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
@@ -98,7 +96,7 @@ export default class ComputerLab extends Phaser.Scene {
 
         const buttonBg = this.add.graphics();
         buttonBg.fillStyle(0x1e90ff, 1);
-        buttonBg.fillRoundedRect(
+        buttonBg.fillRoundedRect?.(
             buttonX - buttonWidth / 2,
             buttonY - buttonHeight / 2,
             buttonWidth,
@@ -111,8 +109,7 @@ export default class ComputerLab extends Phaser.Scene {
             buttonY,
             'Back',
             {
-                font: '24px Jersey15-Regular',
-                fill: '#ffffff',
+                fontFamily: 'Jersey15-Regular', fontSize: '24px', // ✅ Correct
                 padding: { left: 0, right: 0, top: 0, bottom: 0 }
             }
         ).setOrigin(0.5)
@@ -204,12 +201,13 @@ export default class ComputerLab extends Phaser.Scene {
             this.moveCarousel(1, iconInfo);
         });
         
-        // Mobile Support
+        /*// Mobile Support
         this.input.on('pointerup', (pointer) => {
             if (this.dragDistance > 50) {
                 this.moveCarousel(this.dragDirection, iconInfo);
             }
         });
+        */
 
         // Mouse wheel navigation for carousel
         this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {

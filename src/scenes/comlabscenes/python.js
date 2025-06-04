@@ -9,7 +9,7 @@ export default class PythonScene extends Phaser.Scene {
     preload() {
         // Load assets for this scene
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
-        this.load.image('webDesignIcons', 'assets/img/comlab/icons/webDesignIcons.png');
+        this.load.image('pythonIcon', 'assets/img/comlab/icons/PythonIcon.png');
     }
 
     create() {
@@ -26,7 +26,7 @@ export default class PythonScene extends Phaser.Scene {
         // Create the UI with your specific content
         this.courseUI.createUI({
             courseTitle: 'Selected Course: Python',
-            iconPath: 'assets/img/comlab/icons/webDesignIcons.png',
+            iconPath: 'assets/img/comlab/icons/PythonIcon.png',
             description: 'This course covers the fundamentals of python programming...',
             buttonText: 'Start Course',
             buttonCallback: () => {

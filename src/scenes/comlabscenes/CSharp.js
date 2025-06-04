@@ -9,7 +9,7 @@ export default class CSharpScene extends Phaser.Scene {
     preload() {
         // Load assets for this scene
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
-        this.load.image('webDesignIcons', 'assets/img/comlab/icons/webDesignIcons.png');
+        this.load.image('CSharpIcons', 'assets/img/comlab/icons/CSharpIcon.png');
     }
 
     create() {
@@ -26,7 +26,7 @@ export default class CSharpScene extends Phaser.Scene {
         // Create the UI with your specific content
         this.courseUI.createUI({
             courseTitle: 'Selected Course: C#',
-            iconPath: 'assets/img/comlab/icons/webDesignIcons.png',
+            iconPath: 'assets/img/comlab/icons/CSharpIcon.png',
             description: 'This course covers the fundamentals of C# Programming...',
             buttonText: 'Start Course',
             buttonCallback: () => {

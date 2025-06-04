@@ -4,12 +4,15 @@ import CourseSelectionUI from './CourseSelectionUI.js';
 export default class WebDesignScene extends Phaser.Scene {
     constructor() {
         super({ key: 'WebDesignScene' });
+        this.enemyHpBarHeight = 200;
     }
 
     preload() {
         // Load assets for this scene
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.image('webDesignIcons', 'assets/img/comlab/icons/webDesignIcons.png');
+
+        this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
     }
 
     create() {
@@ -31,9 +34,15 @@ export default class WebDesignScene extends Phaser.Scene {
             buttonText: 'Start Course',
             buttonCallback: () => {
                 this.se_confirmSound.play();
-                this.scene.stop('WebDesignQuizScene');  // destroy previous
-                this.scene.start('WebDesignQuizScene', { topic: 'webdesign' }); // load new
-
+                this.scene.stop('WebDesignQuizScene'); 
+                this.scene.start('WebDesignQuizScene', {
+                    topic: 'webdesign',
+                    enemyConfig: {
+                        spriteKey: 'boxenemy',
+                        maxHP: 150,
+                        label: 'Box',
+                    }
+                });
             },
             backButtonCallback: () => {
                 this.se_confirmSound.play();

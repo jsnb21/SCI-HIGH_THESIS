@@ -1,9 +1,104 @@
 {
   "questions": [
     {
-      "question": "What does 'len()' do in Python?",
-      "options": ["Calculate length", "Sort list", "Print output", "None"],
+      "question": "What does HTML stand for?",
+      "options": ["Hyper Text Markup Language", "High Tech Modern Language", "Home Tool Markup Language", "Hyperlink and Text Markup Language"],
       "correctIndex": 0
+    },
+    {
+      "question": "Which CSS property is used to change the text color of an element?",
+      "options": ["font-color", "text-color", "color", "foreground-color"],
+      "correctIndex": 2
+    },
+    {
+      "question": "What is the correct HTML element for the largest heading?",
+      "options": ["<heading>", "<h6>", "<h1>", "<header>"],
+      "correctIndex": 2
+    },
+    {
+      "question": "Which JavaScript method is used to select an element by its ID?",
+      "options": ["getElementById()", "selectById()", "findElementById()", "getElement()"],
+      "correctIndex": 0
+    },
+    {
+      "question": "What does CSS stand for?",
+      "options": ["Computer Style Sheets", "Creative Style Sheets", "Cascading Style Sheets", "Colorful Style Sheets"],
+      "correctIndex": 2
+    },
+    {
+      "question": "Which HTML attribute specifies an alternate text for an image?",
+      "options": ["title", "alt", "src", "longdesc"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is the correct way to write a JavaScript array?",
+      "options": ["var colors = 'red', 'green', 'blue'", "var colors = ['red', 'green', 'blue']", "var colors = 1 = ('red'), 2 = ('green'), 3 = ('blue')", "var colors = (1:'red', 2:'green', 3:'blue')"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which CSS property controls the text size?",
+      "options": ["text-style", "font-size", "text-size", "font-style"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is the correct HTML for creating a hyperlink?",
+      "options": ["<a url='http://example.com'>Example</a>", "<a href='http://example.com'>Example</a>", "<a>http://example.com</a>", "<a name='http://example.com'>Example</a>"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which event occurs when the user clicks on an HTML element?",
+      "options": ["onchange", "onclick", "onmouseclick", "onmouseover"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is the default display value for most HTML elements?",
+      "options": ["inline", "block", "inline-block", "flex"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which CSS property is used to make text bold?",
+      "options": ["font-weight", "text-weight", "font-style", "text-style"],
+      "correctIndex": 0
+    },
+    {
+      "question": "What is the correct way to write a CSS comment?",
+      "options": ["// this is a comment", "<!-- this is a comment -->", "/* this is a comment */", "# this is a comment"],
+      "correctIndex": 2
+    },
+    {
+      "question": "Which HTML element is used to define internal CSS?",
+      "options": ["<css>", "<script>", "<style>", "<link>"],
+      "correctIndex": 2
+    },
+    {
+      "question": "What does the 'typeof' operator in JavaScript return?",
+      "options": ["The value of a variable", "The data type of a variable", "The memory address", "The variable name"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which CSS property is used to change the background color?",
+      "options": ["color", "bgcolor", "background-color", "bg-color"],
+      "correctIndex": 2
+    },
+    {
+      "question": "What is the correct HTML for inserting a line break?",
+      "options": ["<break>", "<br>", "<lb>", "<newline>"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which JavaScript function is used to print content to the browser console?",
+      "options": ["print()", "console.log()", "alert()", "document.write()"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is the CSS Box Model composed of?",
+      "options": ["Content, Padding, Border, Margin", "Header, Body, Footer", "HTML, CSS, JavaScript", "Width, Height, Position"],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which HTML element is used to create an unordered list?",
+      "options": ["<ol>", "<ul>", "<list>", "<li>"],
+      "correctIndex": 1
     }
   ]
 }

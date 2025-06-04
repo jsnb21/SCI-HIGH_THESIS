@@ -38,14 +38,14 @@ export default class CourseSelectionUI {
     }
 
     createIcon(iconPath) {
-        this.elements.iconsContainer = this.scene.add.dom(306, 100, 'div', {
+        this.elements.iconsContainer = this.scene.add.dom(406, 180, 'div', {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
         });
 
         this.elements.iconsContainer.node.innerHTML = `
-            <img src="${iconPath}" style="width: 600px; height: 600px;">
+            <img src="${iconPath}" style="width: 400px; height: 400px;">
         `;
     }
 
