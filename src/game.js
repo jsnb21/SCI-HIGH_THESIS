@@ -10,13 +10,17 @@ import WebDesignScene from '/src/scenes/comlabscenes/webDesign.js';
 import PythonScene from '/src/scenes/comlabscenes/python.js';
 import JavaScene from '/src/scenes/comlabscenes/java.js';
 import CSProgrammingScene from '/src/scenes/comlabscenes/CProg.js';
-import CPlusplusScene from '/src/scenes/comlabscenes/C++.js';
+import CPlusplusScene from '/src/scenes/comlabscenes/Cplusplus.js';
 import CSharpScene from '/src/scenes/comlabscenes/CSharp.js';
 
 // Quiz Scenes
 import BaseQuizScene from '/src/scenes/quizscenes/BaseQuizScene.js';
 import WebDesignQuizScene from '/src/scenes/quizscenes/WebDesignQuizScene.js';
-import JavaScriptQuizScene from '/src/scenes/quizscenes/JSQuizScene.js';
+import JavaQuizScene from '/src/scenes/quizscenes/JavaQuizScene.js';
+import PythonQuizScene from './scenes/quizscenes/PythonQuizScene.js';
+import CQuizScene from './scenes/quizscenes/CQuizScene.js';
+import CSharpQuizScene from './scenes/quizscenes/CSharpQuizScene.js';
+import CplusplusQuizScene from './scenes/quizscenes/CplusplusQuizScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -24,12 +28,12 @@ const config = {
   height: 936,
   parent: 'game',
   scene: [
-    /*MainMenu, Intro, OptionsScene, MainHub, */
+    MainMenu, Intro, OptionsScene, MainHub,
     /* Computer Lab */
     ComputerLab, WebDesignScene, PythonScene, JavaScene, CSProgrammingScene, CPlusplusScene, CSharpScene,
   
     /* Quiz Scenes */
-    BaseQuizScene, WebDesignQuizScene, JavaScriptQuizScene],
+    BaseQuizScene, WebDesignQuizScene, JavaQuizScene, PythonQuizScene, CplusplusQuizScene, CQuizScene, CSharpQuizScene],
   dom: {
     createContainer: true // Enable DOM container
   }

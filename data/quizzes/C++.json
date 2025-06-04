@@ -1,0 +1,9 @@
+{
+  "questions": [
+    {
+      "question": "What is the primary purpose of a constructor in C++?",
+      "options": [ "To initialize objects", "To destroy objects", "To create classes", "To manage memory" ],
+      "correctIndex": 0
+    }
+  ]
+}

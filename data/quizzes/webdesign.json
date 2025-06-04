@@ -1,0 +1,9 @@
+{
+  "questions": [
+    {
+      "question": "What does 'len()' do in Python?",
+      "options": ["Calculate length", "Sort list", "Print output", "None"],
+      "correctIndex": 0
+    }
+  ]
+}

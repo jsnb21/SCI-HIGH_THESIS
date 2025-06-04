@@ -6,6 +6,13 @@ export default class BaseQuizScene extends Phaser.Scene {
         this.quizElements = []; 
     }
 
+    init() {
+    this.currentQuestionIndex = 0;
+    this.score = 0;
+    this.questions = [];
+}
+
+
     preload() {
         // Common assets can be loaded here
 
@@ -19,8 +26,6 @@ export default class BaseQuizScene extends Phaser.Scene {
         // Add sound effects
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
-
-            // 👇 Call createBack *after* sounds are added
         this.createBack();
 
     }

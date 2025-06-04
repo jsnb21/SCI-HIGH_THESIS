@@ -31,14 +31,9 @@ export default class WebDesignScene extends Phaser.Scene {
             buttonText: 'Start Course',
             buttonCallback: () => {
                 this.se_confirmSound.play();
+                this.scene.stop('WebDesignQuizScene');  // destroy previous
+                this.scene.start('WebDesignQuizScene', { topic: 'webdesign' }); // load new
 
-                this.scene.transition({
-                    target: 'WebDesignQuizScene',
-                    duration: 500,
-                    moveBelow: true,
-                    onUpdate: this.transitionOut,
-                    data: { from: 'CurrentScene' }
-                });
             },
             backButtonCallback: () => {
                 this.se_confirmSound.play();

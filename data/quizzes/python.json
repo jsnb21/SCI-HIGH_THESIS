@@ -1,0 +1,14 @@
+{
+  "questions": [
+    {
+      "question": "What is Python primarily used for?",
+      "options": [
+        "Web development",
+        "Data analysis",
+        "Machine learning",
+        "All of the above"
+      ],
+      "correctIndex": 3
+    }
+  ]
+}

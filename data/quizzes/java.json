@@ -1,0 +1,14 @@
+{
+  "questions": [
+    {
+      "question": "What is Java primarily used for?",
+      "options": [
+        "Web development",
+        "Mobile applications",
+        "Enterprise applications",
+        "All of the above"
+      ],
+      "correctIndex": 3
+    }
+  ]
+}

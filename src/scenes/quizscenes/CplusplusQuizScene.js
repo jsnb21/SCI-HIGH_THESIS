@@ -1,13 +1,13 @@
 import BaseQuizScene from '/src/scenes/quizscenes/BaseQuizScene.js';
 
-export default class WebDesignQuizScene extends BaseQuizScene {
+export default class CplusplusQuizScene extends BaseQuizScene {
     constructor() {
-        super({ key: 'WebDesignQuizScene' });
+        super({ key: 'CplusplusQuizScene' });
         this.questions = [];
     }
 
     init(data) {
-        this.topic = data.topic || 'webdesign';
+        this.topic = data.topic || 'C++';
     }
 
     preload() {
@@ -28,6 +28,6 @@ export default class WebDesignQuizScene extends BaseQuizScene {
     }
 
     addEnemy(x, y) {
-        return this.add.sprite(x, y, 'webDesignEnemy').setScale(0.5).setOrigin(0.5);
+        return this.add.sprite(x, y, 'javaEnemy').setScale(0.5).setOrigin(0.5);
     }
 }

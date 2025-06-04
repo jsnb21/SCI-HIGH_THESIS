@@ -1,13 +1,13 @@
 import BaseQuizScene from '/src/scenes/quizscenes/BaseQuizScene.js';
 
-export default class WebDesignQuizScene extends BaseQuizScene {
+export default class CSharpQuizScene extends BaseQuizScene {
     constructor() {
-        super({ key: 'WebDesignQuizScene' });
+        super({ key: 'CSharpQuizScene' });
         this.questions = [];
     }
 
     init(data) {
-        this.topic = data.topic || 'webdesign';
+        this.topic = data.topic || 'C#';
     }
 
     preload() {
@@ -27,7 +27,8 @@ export default class WebDesignQuizScene extends BaseQuizScene {
         this.showQuestion();
     }
 
+
     addEnemy(x, y) {
-        return this.add.sprite(x, y, 'webDesignEnemy').setScale(0.5).setOrigin(0.5);
+        return this.add.sprite(x, y, 'javaEnemy').setScale(0.5).setOrigin(0.5);
     }
 }

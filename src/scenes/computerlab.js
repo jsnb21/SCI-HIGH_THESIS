@@ -229,17 +229,17 @@ export default class ComputerLab extends Phaser.Scene {
                     this.se_confirmSound.play();
                     // Transition to the new scene based on the selected icon
                     if (iconInfo[i].heading === "Web Design") {
-                        this.scene.start('WebDesignScene'); // Transition to WebDesignScene
+                        this.scene.start('WebDesignScene',{topic: 'webdesign'});
                     } else if (iconInfo[i].heading === "Python") {
-                        this.scene.start('PythonScene'); 
+                        this.scene.start('PythonScene', { topic: 'python' }); 
                     } else if (iconInfo[i].heading === "Java"){
-                        this.scene.start('JavaScene')
+                        this.scene.start('JavaScene', { topic: 'java' }); 
                     } else if (iconInfo[i].heading === "C"){
-                        this.scene.start('CSProgrammingScene')
+                        this.scene.start('CSProgrammingScene', { topic: 'C' });
                     } else if (iconInfo[i].heading === "C++"){
-                        this.scene.start('CPlusplusScene')
+                        this.scene.start('CPlusplusScene', { topic: 'C++' });
                     } else if (iconInfo[i].heading === "C#"){
-                        this.scene.start('CSharpScene')
+                        this.scene.start('CSharpScene', { topic: 'C#' });
                     }
                 } else {
                     this.se_hoverSound.play();

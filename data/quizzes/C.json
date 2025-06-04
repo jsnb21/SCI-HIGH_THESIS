@@ -1,0 +1,9 @@
+{
+  "questions": [
+    {
+      "question": "What is C primarily used for?",
+      "options": ["System programming", "Web development", "Data analysis", "Machine learning"],
+      "correctIndex": 0
+    }
+  ]
+}

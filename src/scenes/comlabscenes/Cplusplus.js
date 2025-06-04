@@ -31,7 +31,7 @@ export default class CPlusplusScene extends Phaser.Scene {
             buttonText: 'Start Course',
             buttonCallback: () => {
                 this.se_confirmSound.play();
-                // Add your scene transition or other logic here
+                this.scene.start('CplusplusQuizScene', { topic: 'C++' });
             },
             backButtonCallback: () => {
                 this.se_confirmSound.play();
