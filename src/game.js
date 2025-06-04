@@ -4,6 +4,9 @@ import MainMenu from './scenes/mainmenu';
 import OptionsScene from './scenes/options.js';
 import MainHub from './scenes/mainhub.js';
 
+// Add Classroom import
+import Classroom from './scenes/classroom.js';
+
 // Computer Lab
 import ComputerLab from './scenes/computerlab.js';
 import WebDesignScene from '/src/scenes/comlabscenes/webDesign.js';
@@ -27,23 +30,26 @@ const config = {
   width: 1224,
   height: 936,
   parent: 'game',
+  // Add Classroom to the scene list
   scene: [
-    /*MainMenu, Intro, OptionsScene, MainHub,
+    MainMenu,
+    Intro, OptionsScene, MainHub,
+    Classroom, // <-- Add Classroom here
     /* Computer Lab */
     ComputerLab, WebDesignScene, PythonScene, JavaScene, CSProgrammingScene, CPlusplusScene, CSharpScene,
-  
     /* Quiz Scenes */
-    BaseQuizScene, WebDesignQuizScene, JavaQuizScene, PythonQuizScene, CplusplusQuizScene, CQuizScene, CSharpQuizScene],
+    BaseQuizScene, WebDesignQuizScene, JavaQuizScene, PythonQuizScene, CplusplusQuizScene, CQuizScene, CSharpQuizScene
+  ],
   dom: {
-    createContainer: true // Enable DOM container
+    createContainer: true
   }
 };
 
 export const DEFAULT_TEXT_STYLE = {
     fontSize: '52px',
-    fontFamily: 'Jersey15-Regular', // Must match CSS
+    fontFamily: 'Jersey15-Regular',
     color: '#ffffff',
-    stroke: '#000000',        // Solid black outline
+    stroke: '#000000',
     strokeThickness: 10
 };
 
