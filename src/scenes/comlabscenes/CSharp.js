@@ -31,7 +31,7 @@ export default class CSharpScene extends Phaser.Scene {
             buttonText: 'Start Course',
             buttonCallback: () => {
                 this.se_confirmSound.play();
-                this.scene.start('CSharpQuizScene', { topic: 'C#' });
+                this.scene.start('CSharpQuizScene', { topic: 'csharp' });
             },
             backButtonCallback: () => {
                 this.se_confirmSound.play();

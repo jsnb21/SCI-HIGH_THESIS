@@ -1,9 +1,54 @@
 {
   "questions": [
     {
-      "question": "What is the primary purpose of a constructor in C++?",
-      "options": [ "To initialize objects", "To destroy objects", "To create classes", "To manage memory" ],
+      "question": "Which operator is used for input in C++?",
+      "options": ["<<", ">>", "cin", "->"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is the extension of C++ source file?",
+      "options": [".c", ".java", ".cpp", ".py"],
+      "correctIndex": 2
+    },
+    {
+      "question": "Which of the following is a correct class declaration?",
+      "options": ["class MyClass {}", "MyClass class {}", "declare class MyClass {}", "class: MyClass {}"],
       "correctIndex": 0
+    },
+    {
+      "question": "Which of the following is used to define a namespace in C++?",
+      "options": ["module", "package", "namespace", "using"],
+      "correctIndex": 2
+    },
+    {
+      "question": "What does OOP stand for in C++?",
+      "options": ["Object-Oriented Programming", "Optional Output Processing", "Only One Process", "Operating On Pointers"],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which keyword is used to inherit a class in C++?",
+      "options": ["inherits", "extends", "public", "using"],
+      "correctIndex": 2
+    },
+    {
+      "question": "What will `cout << 5 + 10;` output?",
+      "options": ["5 + 10", "15", "cout", "Error"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which access specifier makes members accessible only within the class?",
+      "options": ["public", "private", "protected", "default"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is function overloading in C++?",
+      "options": ["Functions with different names", "Functions with same name but different parameters", "Functions inside other functions", "Private functions"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is the use of the `new` operator?",
+      "options": ["To free memory", "To define a pointer", "To allocate memory", "To create namespaces"],
+      "correctIndex": 2
     }
   ]
 }

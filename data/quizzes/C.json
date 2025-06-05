@@ -1,8 +1,53 @@
 {
   "questions": [
     {
-      "question": "What is C primarily used for?",
-      "options": ["System programming", "Web development", "Data analysis", "Machine learning"],
+      "question": "Which function is used to print output in C?",
+      "options": ["echo()", "printf()", "print()", "cout"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is the correct syntax to declare a variable in C?",
+      "options": ["int = x;", "int x;", "x int;", "declare int x;"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which header file is needed for standard input/output functions?",
+      "options": ["<conio.h>", "<stdlib.h>", "<stdio.h>", "<math.h>"],
+      "correctIndex": 2
+    },
+    {
+      "question": "What is the result of 5 / 2 in C?",
+      "options": ["2", "2.5", "3", "Error"],
+      "correctIndex": 0
+    },
+    {
+      "question": "What is used to end a statement in C?",
+      "options": [";", ":", ".", ","],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which loop is guaranteed to run at least once?",
+      "options": ["for", "while", "do-while", "foreach"],
+      "correctIndex": 2
+    },
+    {
+      "question": "Which operator is used for logical AND in C?",
+      "options": ["&", "&&", "and", "AND"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What does `sizeof(int)` typically return on a 32-bit system?",
+      "options": ["2", "4", "8", "1"],
+      "correctIndex": 1
+    },
+    {
+      "question": "How are strings stored in C?",
+      "options": ["As int arrays", "As char arrays", "As float arrays", "As string objects"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What will `printf(\"%d\", 10 == 10);` print?",
+      "options": ["1", "0", "true", "10 == 10"],
       "correctIndex": 0
     }
   ]

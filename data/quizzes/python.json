@@ -9,6 +9,96 @@
         "All of the above"
       ],
       "correctIndex": 3
+    },
+    {
+      "question": "Which of the following is a valid Python variable name?",
+      "options": [
+        "1variable",
+        "variable_1",
+        "variable-1",
+        "variable 1"
+      ],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is the output of `print(type([]))`?",
+      "options": [
+        "<class 'list'>",
+        "<type 'list'>",
+        "list",
+        "list()"
+      ],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which keyword is used to define a function in Python?",
+      "options": [
+        "func",
+        "define",
+        "def",
+        "function"
+      ],
+      "correctIndex": 2
+    },
+    {
+      "question": "How do you insert comments in Python code?",
+      "options": [
+        "// This is a comment",
+        "/* This is a comment */",
+        "# This is a comment",
+        "<!-- This is a comment -->"
+      ],
+      "correctIndex": 2
+    },
+    {
+      "question": "What is the result of `3 * 1 ** 3` in Python?",
+      "options": [
+        "3",
+        "1",
+        "9",
+        "0"
+      ],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which data type is immutable in Python?",
+      "options": [
+        "List",
+        "Dictionary",
+        "Set",
+        "Tuple"
+      ],
+      "correctIndex": 3
+    },
+    {
+      "question": "What does the `len()` function do?",
+      "options": [
+        "Returns the length of an object",
+        "Returns the type of an object",
+        "Deletes an object",
+        "Returns the memory size of an object"
+      ],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which of the following is used to handle exceptions in Python?",
+      "options": [
+        "catch",
+        "try/except",
+        "error handling",
+        "exception block"
+      ],
+      "correctIndex": 1
+    },
+    {
+      "question": "What will `print('Hello' + str(5))` output?",
+      "options": [
+        "Hello5",
+        "Hello 5",
+        "Hello + 5",
+        "Error"
+      ],
+      "correctIndex": 0
     }
   ]
 }

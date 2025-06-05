@@ -4,32 +4,37 @@ export default class PythonQuizScene extends BaseQuizScene {
     constructor() {
         super({ key: 'PythonQuizScene' });
         this.questions = [];
+        this.enemyHpBarHeight = 20;
     }
 
     init(data) {
+        super.init(data);
         this.topic = data.topic || 'python';
     }
 
     preload() {
-
+        // Call parent preload to load base assets
         super.preload();
-        this.load.image('pythonEnemy', 'assets/web-design-enemy.png');
-        this.load.json('quizData', `data/quizzes/python.json`);
+        
+        this.quizKey = `quizData-${this.topic}`;
+        this.load.json(this.quizKey, `data/quizzes/${this.topic}.json`);
+        this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
     }
 
     create() {
+        // Load quiz data
+        const quizData = this.cache.json.get(this.quizKey);
+        this.questions = quizData?.questions || [];
+
+        // Add sound effects (from base class)
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
+        
+        // Create the back button (from base class)
+        this.createBack();
 
-        const quizData = this.cache.json.get('quizData');
-        this.questions = quizData.questions || [];
-
-        super.create();
+        // DON'T call super.create() - it creates duplicate enemy UI
+        // Instead, just start the quiz directly
         this.showQuestion();
-    }
-
-
-    addEnemy(x, y) {
-        return this.add.sprite(x, y, 'pythonEnemy').setScale(0.5).setOrigin(0.5);
     }
 }

@@ -31,7 +31,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         console.log('INIT:', data);
         console.log('init called with data:', data);
         this.enemyConfig = data.enemyConfig || {
-            spriteKey: 'enemy',
+            spriteKey: 'boxenemy',
             maxHP: 100,
             label: 'Enemy',
         };
