@@ -1,11 +1,22 @@
 export default class BaseQuizScene extends Phaser.Scene {
-    // Modified constructor - add HP state tracking
+    // Modified constructor - add separate arrays for better element management
     constructor(config) {
         super(config);
         this.currentQuestionIndex = 0;
         this.score = 0;
-        this.quizElements = []; 
+        
+        // OPTION 3: Separate arrays for different types of elements
+        this.quizElements = [];      // Only for question-specific elements
+        this.timerElements = [];     // Only for timer elements
+        this.persistentElements = []; // For elements that should persist across questions
+        
         this.enemyHpBarHeight = 10;
+
+        this.timeLeft = 30;
+        this.timerEvent = null;
+        this.timerText = null;
+        this.timerBackground = null;
+        this.timerStarted = false;
         
         // Player HP configuration - this will persist between questions
         this.playerConfig = {
@@ -20,7 +31,6 @@ export default class BaseQuizScene extends Phaser.Scene {
             maxHP: 100
         };
     }
-
 
     // Modified init method to preserve HP state
     init(data) {
@@ -43,11 +53,15 @@ export default class BaseQuizScene extends Phaser.Scene {
                 maxHP: this.enemyConfig.maxHP
             };
         }
+
+        // Reset timer only when starting a new quiz (not between questions)
+        if (data.resetTimer !== false) {
+            this.timeLeft = data.timerDuration || 30;
+            this.timerStarted = false;
+        }
         
         console.log('enemyConfig set to:', this.enemyConfig);
     }
-
-
 
     preload() {
         this.load.image('player', 'assets/player.png');
@@ -63,12 +77,13 @@ export default class BaseQuizScene extends Phaser.Scene {
     }
 
     create() {
+        // DON'T create timer here - it will be created in showQuestion()
+        // this.timerText = this.add.text(400, 50, `Time: ${this.timeLeft}`, {...}); // REMOVED
 
         // Add sound effects
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
         this.createBack();
-
 
         console.log('CREATE: enemyConfig is', this.enemyConfig);
         
@@ -76,15 +91,127 @@ export default class BaseQuizScene extends Phaser.Scene {
             console.error('enemyConfig is undefined!');
             return;
         }
-        // Create Enemy UI
-        console.log('create called, enemyConfig is:', this.enemyConfig);
-        this.createEnemyInQuizBoxUI(400, 200); // Adjust position as needed
+        
+        // Don't create enemy UI here - it will be created in showQuestion()
+    }
 
+    // Modified method to create timer and add to timerElements array
+    createTimerInQuizBox(x, y, duration) {
+        this.timeLeft = duration;
 
+        // Create timer with background for better visibility
+        this.timerBackground = this.add.graphics();
+        this.timerBackground.fillStyle(0x000000, 0.7);
+        this.timerBackground.fillRoundedRect(x - 60, y - 20, 120, 40, 10);
+
+        this.timerText = this.add.text(x, y, `Time: ${this.timeLeft}`, {
+            fontSize: '18px',
+            fill: '#ffffff',
+            fontFamily: 'Arial',
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5);
+
+        // OPTION 3: Add timer elements to separate timerElements array
+        this.timerElements.push(this.timerBackground, this.timerText);
+
+        // Store the position for updates
+        this.timerX = x;
+        this.timerY = y;
+
+        // Start the timer event only if it doesn't exist
+        if (!this.timerEvent) {
+            this.timerEvent = this.time.addEvent({
+                delay: 1000,
+                callback: this.updateTimerInQuizBox,
+                callbackScope: this,
+                loop: true,
+            });
+        }
+    }
+
+    // Updated method to update timer position
+    updateTimerPosition(x, y) {
+        // Store new position
+        this.timerX = x;
+        this.timerY = y;
+        
+        // Check if timer elements still exist and are active before updating
+        if (this.timerBackground && this.timerBackground.active) {
+            this.timerBackground.clear();
+            this.timerBackground.fillStyle(0x000000, 0.7);
+            this.timerBackground.fillRoundedRect(x - 60, y - 20, 120, 40, 10);
+        } else if (this.timerStarted) {
+            // Timer was destroyed but should still exist - recreate it
+            this.recreateTimerElements(x, y);
+        }
+        
+        if (this.timerText && this.timerText.active) {
+            this.timerText.setPosition(x, y);
+            this.timerText.setText(`Time: ${this.timeLeft}`);
+        }
+    }
+
+    // Add this new method to recreate timer elements if they were accidentally destroyed
+    recreateTimerElements(x, y) {
+        // Clean up any destroyed references
+        this.timerBackground = null;
+        this.timerText = null;
+        
+        // Recreate timer elements
+        this.timerBackground = this.add.graphics();
+        this.timerBackground.fillStyle(0x000000, 0.7);
+        this.timerBackground.fillRoundedRect(x - 60, y - 20, 120, 40, 10);
+
+        this.timerText = this.add.text(x, y, `Time: ${this.timeLeft}`, {
+            fontSize: '18px',
+            fill: '#ffffff',
+            fontFamily: 'Arial',
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5);
+
+        // Apply color based on current time
+        if (this.timeLeft <= 10) {
+            this.timerText.setFill('#ff0000');
+        } else if (this.timeLeft <= 20) {
+            this.timerText.setFill('#ffff00');
+        }
+
+        // Add to timerElements array
+        this.timerElements.push(this.timerBackground, this.timerText);
+    }
+
+    // Modified timer update method
+    updateTimerInQuizBox() {
+        this.timeLeft--;
+        if (this.timerText && this.timerText.active) {
+            this.timerText.setText(`Time: ${this.timeLeft}`);
+            
+            // Change color when time is running low
+            if (this.timeLeft <= 10) {
+                this.timerText.setFill('#ff0000'); // Red when 10 seconds or less
+            } else if (this.timeLeft <= 20) {
+                this.timerText.setFill('#ffff00'); // Yellow when 20 seconds or less
+            }
+        }
+
+        if (this.timeLeft <= 0) {
+            if (this.timerEvent) {
+                this.timerEvent.remove();
+                this.timerEvent = null;
+            }
+            this.handleTimeUp();
+        }
+    }
+
+    handleTimeUp() {
+        // Clean up timer references
+        this.timerEvent = null;
+        this.showResults();
     }
 
     createEnemyInQuizBoxUI(x, y) {
-
         if (!this.enemyConfig) {
             console.error('enemyConfig not set in createEnemyInQuizBoxUI');
             return;
@@ -109,7 +236,6 @@ export default class BaseQuizScene extends Phaser.Scene {
             fontSize: '12px',
             color: '#ffffff',
         }).setOrigin(0.5);
-
 
         quizBox.setData({
             maxHP,
@@ -173,11 +299,11 @@ export default class BaseQuizScene extends Phaser.Scene {
             label: this.playerConfig.label
         });
         
-        // Add to quiz elements for cleanup
+        // Add to quiz elements for cleanup (but not timer elements)
         this.quizElements.push(this.playerContainer);
     }
 
-    // Modified showQuestion method
+    // OPTION 3: Simplified showQuestion method with separate array management
     showQuestion() {
         console.log('[DEBUG] Questions:', this.questions);
         console.log('[DEBUG] Current Index:', this.currentQuestionIndex);
@@ -194,17 +320,8 @@ export default class BaseQuizScene extends Phaser.Scene {
         }
         const { question, options } = this.questions[this.currentQuestionIndex];
 
-        // Clean up old quiz elements (but preserve HP states)
-        this.quizElements.forEach(el => {
-            if (el && el.active) {
-                el.destroy();
-            }
-        });
-        this.quizElements = [];
-
-        // Clear container references (they'll be recreated)
-        this.enemyContainer = null;
-        this.playerContainer = null;
+        // OPTION 3: Clean up only question-specific elements
+        this.cleanupQuestionElements();
 
         const centerX = 612;
         const boxY = 350;
@@ -215,6 +332,23 @@ export default class BaseQuizScene extends Phaser.Scene {
         const box = this.drawQuizBox(centerX, boxY, boxWidth, boxHeight);
         this.quizElements.push(box);
 
+        // CREATE OR UPDATE TIMER INSIDE THE QUIZ BOX
+        const timerX = centerX + (boxWidth / 2) - 100; // 100px from right edge
+        const timerY = boxY - (boxHeight / 2) + 40; // 40px from top edge
+        
+        // Create timer if not started, or update position if it exists
+        if (!this.timerStarted) {
+            this.createTimerInQuizBox(timerX, timerY, this.timeLeft);
+            this.timerStarted = true;
+        } else {
+            // Check if timer elements still exist, recreate if necessary
+            if (!this.timerText || !this.timerText.active || !this.timerBackground || !this.timerBackground.active) {
+                console.log('Timer elements were destroyed, recreating...');
+                this.recreateTimerElements(timerX, timerY);
+            } else {
+                this.updateTimerPosition(timerX, timerY);
+            }
+    }
         // Create enemy sprite
         const enemySprite = this.add.sprite(centerX, boxY, this.enemyConfig.spriteKey);
         const maxSpriteWidth = 400;
@@ -285,6 +419,55 @@ export default class BaseQuizScene extends Phaser.Scene {
         });
     }
 
+    // OPTION 3: New method to clean up only question-specific elements
+    cleanupQuestionElements() {
+        // Clean up only question-specific elements (NOT timer elements)
+        this.quizElements.forEach(el => {
+            if (el && el.active) {
+                el.destroy();
+            }
+        });
+        this.quizElements = [];
+        
+        // Clear container references (they'll be recreated)
+        this.enemyContainer = null;
+        this.playerContainer = null;
+        
+        // Timer elements remain untouched in this.timerElements array
+    }
+
+    // OPTION 3: New method to clean up timer elements specifically
+    cleanupTimerElements() {
+        // Clean up timer elements
+        this.timerElements.forEach(el => {
+            if (el && el.active) {
+                el.destroy();
+            }
+        });
+        this.timerElements = [];
+        
+        // Clean up timer event
+        if (this.timerEvent) {
+            this.timerEvent.remove();
+            this.timerEvent = null;
+        }
+        
+        // Clear timer references
+        this.timerText = null;
+        this.timerBackground = null;
+        this.timerStarted = false;
+    }
+
+    // OPTION 3: New method to clean up persistent elements
+    cleanupPersistentElements() {
+        this.persistentElements.forEach(el => {
+            if (el && el.active) {
+                el.destroy();
+            }
+        });
+        this.persistentElements = [];
+    }
+
     // Modified damageCharacter method to update persistent state
     damageCharacter(container, amount) {
         let hp = container.getData('currentHP');
@@ -323,7 +506,6 @@ export default class BaseQuizScene extends Phaser.Scene {
         hpText.setText(`${label} HP: ${hpDisplay}`);
     }
 
-
     // Enhanced checkAnswer for roguelike mechanics
     checkAnswer(selectedIndex) {
         const correctIndex = this.questions[this.currentQuestionIndex].correctIndex;
@@ -331,6 +513,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         if (selectedIndex === correctIndex) {
             this.score++;
             this.showFeedback("Correct! You attack the enemy!", 0x00ff00);
+            this.timeLeft += 5; // Add 5 seconds for correct answer
             // Player deals damage to enemy for correct answer
             if (this.enemyContainer) {
                 this.damageCharacter(this.enemyContainer, 20);
@@ -338,6 +521,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         } else {
             this.showFeedback("Wrong! The enemy attacks you!", 0xff0000);
             // Enemy deals damage to player for wrong answer
+            this.timeLeft -= 5; // Subtract 5 seconds for wrong answer
             if (this.playerContainer) {
                 this.damageCharacter(this.playerContainer, 15);
             }
@@ -372,15 +556,8 @@ export default class BaseQuizScene extends Phaser.Scene {
 
     // Add game over method
     showGameOver() {
-        // Clean up all elements
-        this.quizElements.forEach(el => {
-            if (el && el.active) {
-                el.destroy();
-            }
-        });
-        this.quizElements = [];
-        this.enemyContainer = null;
-        this.playerContainer = null;
+        // Clean up all elements including timer
+        this.cleanupAllElements();
 
         const gameOverText = this.add.text(612, 300, 'GAME OVER!', { 
             fontSize: '32px', 
@@ -404,20 +581,14 @@ export default class BaseQuizScene extends Phaser.Scene {
                 this.restartQuiz();
             });
 
-        this.quizElements.push(gameOverText, defeatText, restartButton);
+        // Add to persistent elements since these should stay until explicitly removed
+        this.persistentElements.push(gameOverText, defeatText, restartButton);
     }
 
     // Add victory method
     showVictory() {
-        // Clean up all elements
-        this.quizElements.forEach(el => {
-            if (el && el.active) {
-                el.destroy();
-            }
-        });
-        this.quizElements = [];
-        this.enemyContainer = null;
-        this.playerContainer = null;
+        // Clean up all elements including timer
+        this.cleanupAllElements();
 
         const victoryText = this.add.text(612, 300, 'VICTORY!', { 
             fontSize: '32px', 
@@ -441,7 +612,15 @@ export default class BaseQuizScene extends Phaser.Scene {
                 this.showResults();
             });
 
-        this.quizElements.push(victoryText, winText, continueButton);
+        // Add to persistent elements
+        this.persistentElements.push(victoryText, winText, continueButton);
+    }
+
+    // OPTION 3: Updated method to clean up all elements using separate arrays
+    cleanupAllElements() {
+        this.cleanupQuestionElements();
+        this.cleanupTimerElements(); 
+        this.cleanupPersistentElements();
     }
 
     // Modified restartQuiz method
@@ -452,9 +631,17 @@ export default class BaseQuizScene extends Phaser.Scene {
         // Reset HP states
         this.playerConfig.currentHP = this.playerConfig.maxHP;
         this.enemyHPState.currentHP = this.enemyHPState.maxHP;
+
+        // Reset timer
+        this.timeLeft = 30; // or whatever initial duration you want
+        this.timerStarted = false;
+        
+        // Clean up existing timer
+        this.cleanupTimerElements();
         
         this.showQuestion();
     }
+
     showFeedback(message, color) {
         const feedback = this.add.text(
             612, 400, 
@@ -474,22 +661,8 @@ export default class BaseQuizScene extends Phaser.Scene {
     }
 
     showResults() {
-        // Clean up all quiz elements (including enemy container)
-        this.quizElements.forEach(el => {
-            if (el && el.active) { // Check if element still exists and is active
-                el.destroy();
-            }
-        });
-        this.quizElements = [];
-        
-        // Clear the reference since it's already destroyed
-        this.enemyContainer = null;
-
-        // Clean up player UI (optional)
-        if (this.playerContainer) {
-            this.playerContainer.destroy(true);
-            this.playerContainer = null;
-        }
+        // Clean up all elements including timer
+        this.cleanupAllElements();
 
         const finishedText = this.add.text(612, 100, `Quiz Finished!`, { fontSize: '26px', fill: '#fff' }).setOrigin(0.5);
         const scoreText = this.add.text(612, 150, `Your Score: ${this.score} / ${this.questions.length}`, { fontSize: '22px', fill: '#fff' }).setOrigin(0.5);
@@ -502,7 +675,8 @@ export default class BaseQuizScene extends Phaser.Scene {
                 this.showQuestion();
             });
 
-        this.quizElements.push(finishedText, scoreText, restart);
+        // Add to persistent elements
+        this.persistentElements.push(finishedText, scoreText, restart);
     }
     
     createBack(){
@@ -556,5 +730,8 @@ export default class BaseQuizScene extends Phaser.Scene {
             this.restartQuiz();
             this.scene.stop()
         });
+
+        // Add back button elements to persistent elements since they should stay throughout
+        this.persistentElements.push(buttonBg, backButton);
     }
 }

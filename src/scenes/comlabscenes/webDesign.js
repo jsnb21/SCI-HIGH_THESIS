@@ -41,7 +41,9 @@ export default class WebDesignScene extends Phaser.Scene {
                         spriteKey: 'boxenemy',
                         maxHP: 150,
                         label: 'Box',
-                    }
+                    },
+                    timerDuration: 20, // 60 seconds for the entire quiz
+                    resetTimer: true   // Set to false to continue from previous time
                 });
             },
             backButtonCallback: () => {
