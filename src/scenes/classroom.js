@@ -7,11 +7,13 @@ export default class Classroom extends Phaser.Scene {
 
     preload() {
         // Load assets for carousel icons and sounds
-        this.load.image('puzzle_beginner', 'assets/img/classroom/beginner.png');
-        this.load.image('puzzle_intermediate', 'assets/img/classroom/intermediate.png');
-        this.load.image('puzzle_hard', 'assets/img/classroom/hard.png');
+        this.load.image('puzzle_beginner', 'assets/img/classroom/beginnerPuzzle.png');
+        this.load.image('puzzle_intermediate', 'assets/img/classroom/intermediatePuzzle.png');
+        this.load.image('puzzle_hard', 'assets/img/classroom/hardPuzzle.png');
         this.load.audio('se_select', 'assets/sounds/se_select.wav');
         this.load.audio('se_confirm', 'assets/sounds/se_confirm.wav');
+        // Load exit icon for back button
+        this.load.image('exitIcon', 'assets/img/icons/exitIcon.png');
     }
 
     create() {
@@ -111,15 +113,21 @@ export default class Classroom extends Phaser.Scene {
             });
         });
 
-        // Back button
-        const backButton = this.add.text(80, 40, 'Back', {
-            font: '28px Jersey15-Regular',
-            fill: '#1e90ff'
-        }).setOrigin(0.5).setInteractive();
+        // Exit icon as back button (top-left)
+        const exitIcon = this.add.image(50, 50, 'exitIcon')
+            .setOrigin(0.5)
+            .setScale(0.7)
+            .setInteractive({ useHandCursor: true });
 
-        backButton.on('pointerdown', () => {
+        exitIcon.on('pointerdown', () => {
             this.se_confirmSound.play();
             this.scene.start('MainHub');
+        });
+        exitIcon.on('pointerover', () => {
+            exitIcon.setTint(0x1e90ff);
+        });
+        exitIcon.on('pointerout', () => {
+            exitIcon.clearTint();
         });
     }
 
