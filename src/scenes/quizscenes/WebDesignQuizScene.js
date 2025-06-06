@@ -1,4 +1,5 @@
 import BaseQuizScene from '/src/scenes/quizscenes/BaseQuizScene.js';
+import { createBackButton } from '/src/components/buttons/backbutton.js';
 
 export default class WebDesignQuizScene extends BaseQuizScene {
     constructor() {
@@ -29,12 +30,11 @@ export default class WebDesignQuizScene extends BaseQuizScene {
         // Add sound effects (from base class)
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
-        
-        // Create the back button (from base class)
-        this.createBack();
 
         // DON'T call super.create() - it creates duplicate enemy UI
         // Instead, just start the quiz directly
         this.showQuestion();
+
+        createBackButton(this, 'ComputerLab');
     }
 }

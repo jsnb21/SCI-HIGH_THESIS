@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import CourseSelectionUI from './CourseSelectionUI.js';
+import { createBackButton } from '/src/components/buttons/backbutton.js';
 
 export default class JavaScene extends Phaser.Scene {
     constructor() {
@@ -38,6 +39,8 @@ export default class JavaScene extends Phaser.Scene {
                 this.scene.start('ComputerLab');
             }
         });
+
+        createBackButton(this, 'ComputerLab');
     }
 
     destroy() {

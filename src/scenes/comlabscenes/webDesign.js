@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import CourseSelectionUI from './CourseSelectionUI.js';
+import { createBackButton } from '/src/components/buttons/backbutton.js';
 
 export default class WebDesignScene extends Phaser.Scene {
     constructor() {
@@ -46,11 +47,9 @@ export default class WebDesignScene extends Phaser.Scene {
                     resetTimer: true   // Set to false to continue from previous time
                 });
             },
-            backButtonCallback: () => {
-                this.se_confirmSound.play();
-                this.scene.start('ComputerLab');
-            }
         });
+
+        createBackButton(this, 'ComputerLab');
     }
 
     destroy() {
