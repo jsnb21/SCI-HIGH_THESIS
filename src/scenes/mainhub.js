@@ -186,6 +186,8 @@ export default class MainHub extends Phaser.Scene {
                     // Transition to scene if center icon is selected
                     if (iconInfo[i].heading === "Computer Lab") {
                         this.scene.start('ComputerLab');
+                    } else if (iconInfo[i].heading === "Classroom") {
+                        this.scene.start('Classroom');
                     }
                     // Add more scene transitions here if needed
                 } else {
