@@ -98,7 +98,7 @@ export default class MainHub extends Phaser.Scene {
         // Carousel icon keys and info
         const iconKeys = ['icon1', 'icon2', 'icon3', 'icon4', 'icon5'];
         const iconInfo = [
-            { heading: "Classroom", desc: "Learn new concepts!" },
+            { heading: "Classroom", desc: "Meet your classmates!" },
             { heading: "Library", desc: "Read and research." },
             { heading: "Office", desc: "Meet your professor." },
             { heading: "Computer Lab", desc: "Take on different courses!" },
