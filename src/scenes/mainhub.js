@@ -72,7 +72,7 @@ export default class MainHub extends Phaser.Scene {
          .setInteractive({ useHandCursor: true })
          .on('pointerdown', () => {
             this.se_confirmSound.play();
-            this.scene.start('MainMenu');
+            this.scene.switch('MainMenu');
          });
 
         // Make button background respond to pointer events
@@ -86,7 +86,7 @@ export default class MainHub extends Phaser.Scene {
             Phaser.Geom.Rectangle.Contains
         ).on('pointerdown', () => {
             this.se_confirmSound.play();
-            this.scene.start('MainMenu');
+            this.scene.switch('MainMenu');
         });
 
         // Add sound effects
@@ -185,9 +185,9 @@ export default class MainHub extends Phaser.Scene {
                     this.se_confirmSound.play();
                     // Transition to scene if center icon is selected
                     if (iconInfo[i].heading === "Computer Lab") {
-                        this.scene.start('ComputerLab');
+                        this.scene.switch('ComputerLab');
                     } else if (iconInfo[i].heading === "Classroom") {
-                        this.scene.start('Classroom');
+                        this.scene.switch('Classroom');
                     }
                     // Add more scene transitions here if needed
                 } else {

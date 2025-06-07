@@ -34,7 +34,6 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
             if (scene.restartQuiz) scene.restartQuiz();
             scene.scene.start(targetScene);
             scene.scene.stop();
-            scene.destroy(); // Destroy current scene to prevent lag
         });
     
     // Make button background respond to pointer events
@@ -49,9 +48,7 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
     ).on('pointerdown', () => {
         scene.se_confirmSound.play();
         if (scene.restartQuiz) scene.restartQuiz();
-        scene.scene.start(targetScene);
-        scene.scene.stop();
-        scene.destroy(); // Destroy current scene to prevent lag
+        scene.scene.switch(targetScene);
     });
     
     // Add to persistent elements if the array exists

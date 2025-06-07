@@ -9,12 +9,12 @@ export default class ComputerLab extends Phaser.Scene {
     
         // Load background and icon images
         this.load.image('MainHubBG', 'assets/img/mainhub/MainHubBG.png');
-        this.load.image('icon1', 'assets/img/comlab/icons/webDesignIcons.png');
-        this.load.image('icon2', 'assets/img/comlab/icons/PythonIcon.png');
-        this.load.image('icon3', 'assets/img/comlab/icons/JavaIcon.png');
-        this.load.image('icon4', 'assets/img/comlab/icons/webDesignIcons.png');
-        this.load.image('icon5', 'assets/img/comlab/icons/CplusplusIcon.png');
-        this.load.image('icon6', 'assets/img/comlab/icons/CSharpIcon.png');
+        this.load.image('Web_Design', 'assets/img/comlab/icons/webDesignIcons.png');
+        this.load.image('Python', 'assets/img/comlab/icons/PythonIcon.png');
+        this.load.image('Java', 'assets/img/comlab/icons/JavaIcon.png');
+        this.load.image('C', 'assets/img/comlab/icons/webDesignIcons.png');
+        this.load.image('C++', 'assets/img/comlab/icons/CplusplusIcon.png');
+        this.load.image('C#', 'assets/img/comlab/icons/CSharpIcon.png');
 
         // Load sound effects
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
@@ -35,55 +35,6 @@ export default class ComputerLab extends Phaser.Scene {
         // Add sound effects
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
-
-
-
-
-
-        /*
-        this.cameras.main.setBackgroundColor('#222244');
-
-        // Enemy setup
-        this.enemyMaxHP = 10;
-        this.enemyHP = this.enemyMaxHP;
-
-        // Player setup
-        this.playerMaxHP = 3;
-        this.playerHP = this.playerMaxHP;
-
-        // Draw enemy (simple rectangle as placeholder)
-        this.enemy = this.add.rectangle(
-            this.cameras.main.centerX, 180, 200, 200, 0x8888ff // Increased size
-        ).setStrokeStyle(6, 0xffffff);
-
-        // Enemy HP text
-        this.enemyHPText = this.add.text(
-            this.cameras.main.centerX, 120, `Enemy HP: ${this.enemyHP}`,
-            { font: '28px Arial', color: '#ff4444' }
-        ).setOrigin(0.5);
-
-        // Player HP text
-        this.playerHPText = this.add.text(
-            this.cameras.main.centerX, 40, `Player HP: ${this.playerHP}`,
-            { font: '24px Arial', color: '#44ff44' }
-        ).setOrigin(0.5);
-
-        // Load questions from JSON
-        this.questions = this.cache.json.get('questions');
-        this.currentQuestionIndex = 0; // <-- Make sure this is here!
-        this.answered = false;
-
-        // Always reset timer variables
-        this.timeLeft = 30;
-        this.questionStartTime = this.time.now;
-
-        this.showQuestion();
-
-        // Register the shutdown event
-        this.events.on('shutdown', this.shutdown, this);
-        this.events.on('destroy', this.destroy, this);
-
-        */
     }
 
     createBack(){
@@ -116,7 +67,7 @@ export default class ComputerLab extends Phaser.Scene {
          .setInteractive({ useHandCursor: true })
          .on('pointerdown', () => {
             this.se_confirmSound.play();
-            this.scene.start('MainHub');
+            this.scene.switch('MainHub');
          });
 
         // Make button background respond to pointer events
@@ -130,13 +81,13 @@ export default class ComputerLab extends Phaser.Scene {
             Phaser.Geom.Rectangle.Contains
         ).on('pointerdown', () => {
             this.se_confirmSound.play();
-            this.scene.start('MainHub');
+            this.scene.switch('MainHub');
         });
     }
 
     createCarousel() {
         // Carousel icon keys and info
-        const iconKeys = ['icon1', 'icon2', 'icon3', 'icon4', 'icon5', 'icon6'];
+        const iconKeys = ['Web_Design', 'Python', 'Java', 'C', 'C++', 'C#'];
         const iconInfo = [
             { heading: "Web Design", desc: "Learn HTML, CSS &JavaScript" },
             { heading: "Python", desc: "Learn Python" },
@@ -227,17 +178,17 @@ export default class ComputerLab extends Phaser.Scene {
                     this.se_confirmSound.play();
                     // Transition to the new scene based on the selected icon
                     if (iconInfo[i].heading === "Web Design") {
-                        this.scene.start('WebDesignScene',{topic: 'webdesign'});
+                        this.scene.switch('WebDesignScene',{topic: 'webdesign'});
                     } else if (iconInfo[i].heading === "Python") {
-                        this.scene.start('PythonScene', { topic: 'python' }); 
+                        this.scene.switch('PythonScene', { topic: 'python' }); 
                     } else if (iconInfo[i].heading === "Java"){
-                        this.scene.start('JavaScene', { topic: 'java' }); 
+                        this.scene.switch('JavaScene', { topic: 'java' }); 
                     } else if (iconInfo[i].heading === "C"){
-                        this.scene.start('CSProgrammingScene', { topic: 'C' });
+                        this.scene.switch('CSProgrammingScene', { topic: 'C' });
                     } else if (iconInfo[i].heading === "C++"){
-                        this.scene.start('CPlusplusScene', { topic: 'C++' });
+                        this.scene.switch('CPlusplusScene', { topic: 'C++' });
                     } else if (iconInfo[i].heading === "C#"){
-                        this.scene.start('CSharpScene', { topic: 'C#' });
+                        this.scene.switch('CSharpScene', { topic: 'C#' });
                     }
                 } else {
                     this.se_hoverSound.play();

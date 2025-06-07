@@ -121,7 +121,7 @@ export default class Classroom extends Phaser.Scene {
 
         exitIcon.on('pointerdown', () => {
             this.se_confirmSound.play();
-            this.scene.start('MainHub');
+            this.scene.switch('MainHub');
         });
         exitIcon.on('pointerover', () => {
             exitIcon.setTint(0x1e90ff);

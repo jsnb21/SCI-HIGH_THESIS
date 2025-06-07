@@ -44,7 +44,7 @@ export default class MainMenu extends Phaser.Scene {
 
         playButton.on('pointerdown', () => {
             se_confirmSound.play();
-            this.scene.start('VNScene');
+            this.scene.switch('VNScene');
         });
         playButton.on('pointerover', () => {
             playButton.setStyle({ color: '#ffffff' });
@@ -80,7 +80,7 @@ export default class MainMenu extends Phaser.Scene {
 
         optionsButton.on('pointerdown', () => {
             se_confirmSound.play();
-            this.scene.start('OptionsScene');
+            this.scene.switch('OptionsScene');
         });
         optionsButton.on('pointerover', () => {
             optionsButton.setStyle({ color: '#ffffff' });

@@ -53,7 +53,7 @@ export default class OptionsScene extends Phaser.Scene {
         }).setOrigin(0.5).setInteractive();
 
         backButton.on('pointerdown', () => {
-            this.scene.start('MainMenu');
+            this.scene.switch('MainMenu');
         });
 
         // Drag logic for SE slider

@@ -1,4 +1,5 @@
 import BaseQuizScene from '/src/scenes/quizscenes/BaseQuizScene.js';
+import { createBackButton } from '/src/components/buttons/backbutton.js';
 
 export default class PythonQuizScene extends BaseQuizScene {
     constructor() {
@@ -31,7 +32,7 @@ export default class PythonQuizScene extends BaseQuizScene {
         this.se_confirmSound = this.sound.add('se_confirm');
         
         // Create the back button (from base class)
-        this.createBack();
+        createBackButton(this, 'ComputerLab');
 
         // DON'T call super.create() - it creates duplicate enemy UI
         // Instead, just start the quiz directly

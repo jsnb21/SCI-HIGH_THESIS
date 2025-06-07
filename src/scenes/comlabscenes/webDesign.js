@@ -35,15 +35,14 @@ export default class WebDesignScene extends Phaser.Scene {
             buttonText: 'Start Course',
             buttonCallback: () => {
                 this.se_confirmSound.play();
-                this.scene.stop('WebDesignQuizScene'); 
-                this.scene.start('WebDesignQuizScene', {
+                this.scene.switch('WebDesignQuizScene', {
                     topic: 'webdesign',
                     enemyConfig: {
                         spriteKey: 'boxenemy',
                         maxHP: 150,
                         label: 'Box',
                     },
-                    timerDuration: 20, // 60 seconds for the entire quiz
+                    timerDuration: 30, // Seconds for Timer Quiz
                     resetTimer: true   // Set to false to continue from previous time
                 });
             },
