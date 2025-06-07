@@ -8,7 +8,7 @@ export default class Classroom extends Phaser.Scene {
     preload() {
         // Load character images and sounds
         this.load.image('char1', 'assets/img/chars/noah.png');
-        this.load.image('char2', 'assets/img/classroom/char2.png');
+        this.load.image('char2', 'assets/img/chars/lily.png');
         this.load.image('char3', 'assets/img/classroom/char3.png');
         this.load.audio('se_select', 'assets/sounds/se_select.wav');
         this.load.audio('se_confirm', 'assets/sounds/se_confirm.wav');
