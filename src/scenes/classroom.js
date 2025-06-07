@@ -25,11 +25,13 @@ export default class Classroom extends Phaser.Scene {
         this.se_confirmSound = this.sound.add('se_confirm');
 
         // Carousel data
-        const charKeys = ['char1', 'char2', 'char3'];
+        const charKeys = ['char1', 'char2', 'char3', 'char4', 'char5'];
         const charInfo = [
             { name: "Noah", desc: "A diligent student who loves coding a bit too much.", progress: 0.7 },
-            { name: "Lily", desc: "Enjoys science experiments and robotics.", progress: 0.4 },
-            { name: "Damian", desc: "A creative thinker and artist.", progress: 0.9 }
+            { name: "Lily", desc: "A popular idol, she's talented at singing, dancing, and even web design.", progress: 0.4 },
+            { name: "Damian", desc: "A creative thinker and artist.", progress: 0.9 },
+            { name: "Bella", desc: "She's shy and timid, yet she's one of the top performers.", progress: 0.5 },
+            { name: "Finley", desc: "He can appear cold, but he's a kind man.", progress: 0.9 }
         ];
         const iconCount = charKeys.length;
         const centerX = width / 2;
@@ -64,10 +66,13 @@ export default class Classroom extends Phaser.Scene {
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        this.carouselDesc = this.add.text(centerX, centerY + 225, '', {
+        // Increased Y from centerY + 225 to centerY + 255 for more space
+        this.carouselDesc = this.add.text(centerX, centerY + 255, '', {
             fontFamily: 'Jersey15-Regular',
             fontSize: '32px',
-            color: '#444466'
+            color: '#444466',
+            wordWrap: { width: 400 },
+            align: 'center' // Center the text horizontally
         }).setOrigin(0.5);
 
         this.updateCarouselText(charInfo);
@@ -233,7 +238,8 @@ export default class Classroom extends Phaser.Scene {
             fontFamily: 'Jersey15-Regular',
             fontSize: '24px',
             color: '#444466',
-            wordWrap: { width: 500 }
+            wordWrap: { width: 540 },
+            align: 'center'
         }).setOrigin(0.5).setDepth(12);
 
         y += 48; // Space below description
