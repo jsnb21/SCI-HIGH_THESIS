@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { char1, char2, char3, char4, char5 } from '../gameManager';
 
 export default class Classroom extends Phaser.Scene {
     constructor() {
@@ -26,12 +27,68 @@ export default class Classroom extends Phaser.Scene {
 
         // Carousel data
         const charKeys = ['char1', 'char2', 'char3', 'char4', 'char5'];
+        const charObjs = [char1, char2, char3, char4, char5];
         const charInfo = [
-            { name: "Noah", desc: "A diligent student who loves coding a bit too much.", progress: 0.7 },
-            { name: "Lily", desc: "A popular idol, she's talented at singing, dancing, and even web design.", progress: 0.4 },
-            { name: "Damian", desc: "A creative thinker and artist.", progress: 0.9 },
-            { name: "Bella", desc: "She's shy and timid, yet she's one of the top performers.", progress: 0.5 },
-            { name: "Finley", desc: "He can appear cold, but he's a kind man.", progress: 0.9 }
+            { 
+                name: "Noah", 
+                desc: "A diligent student who loves coding a bit too much.",
+                progress: char1.quest1 / 100,
+                side: char1.quest2 / 100,
+                bonus: char1.quest3 / 100,
+                questDescs: [
+                    char1.quest1Desc,
+                    char1.quest2Desc,
+                    char1.quest3Desc
+                ]
+            },
+            { 
+                name: "Lily", 
+                desc: "A popular idol, she's talented at singing, dancing, and even web design.",
+                progress: char2.quest1 / 100,
+                side: char2.quest2 / 100,
+                bonus: char2.quest3 / 100,
+                questDescs: [
+                    char2.quest1Desc,
+                    char2.quest2Desc,
+                    char2.quest3Desc
+                ]
+            },
+            { 
+                name: "Damian", 
+                desc: "A creative thinker and artist.",
+                progress: char3.quest1 / 100,
+                side: char3.quest2 / 100,
+                bonus: char3.quest3 / 100,
+                questDescs: [
+                    char3.quest1Desc,
+                    char3.quest2Desc,
+                    char3.quest3Desc
+                ]
+            },
+            { 
+                name: "Bella", 
+                desc: "She's shy and timid, yet she's one of the top performers.",
+                progress: char4.quest1 / 100,
+                side: char4.quest2 / 100,
+                bonus: char4.quest3 / 100,
+                questDescs: [
+                    char4.quest1Desc,
+                    char4.quest2Desc,
+                    char4.quest3Desc
+                ]
+            },
+            { 
+                name: "Finley", 
+                desc: "He can appear cold, but he's a kind man.",
+                progress: char5.quest1 / 100,
+                side: char5.quest2 / 100,
+                bonus: char5.quest3 / 100,
+                questDescs: [
+                    char5.quest1Desc,
+                    char5.quest2Desc,
+                    char5.quest3Desc
+                ]
+            }
         ];
         const iconCount = charKeys.length;
         const centerX = width / 2;
@@ -203,118 +260,120 @@ export default class Classroom extends Phaser.Scene {
         // Disable carousel controls
         this.characterBoxOpen = true;
 
+        // --- Layout constants ---
+        const boxWidth = 600;
+        const boxHeight = 540;
+        const BOX_PADDING_TOP = 70; // Increased from 36 to 70
+        const SPACING = 32;
+        const BAR_WIDTH = 400;
+        const BAR_HEIGHT = 28;
+
+        // Group for easy cleanup
+        const boxObjects = [];
+
         // Dim background
         const dim = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6)
             .setDepth(10);
+        boxObjects.push(dim);
 
-        // Adjusted box size for all content (taller and wider)
-        const boxWidth = 600;
-        const boxHeight = 540;
+        // Main box
         const box = this.add.rectangle(width / 2, height / 2, boxWidth, boxHeight, 0xffffff, 1)
             .setStrokeStyle(4, 0x1e90ff)
             .setDepth(11);
+        boxObjects.push(box);
 
-        // --- Layout Y positions ---
-        let y = height / 2 - boxHeight / 2 + 100; // Move starting Y further down to keep icon inside the box
+        // Start Y at top of box, add padding
+        let y = height / 2 - boxHeight / 2 + BOX_PADDING_TOP;
 
-        // Character image in box (slightly smaller for better fit)
+        // Character image
         const charImg = this.add.image(width / 2, y, charKey)
-            .setScale(0.9)
+            .setScale(0.8) // Slightly smaller for better fit
             .setDepth(12);
+        boxObjects.push(charImg);
 
-        y += 70; // Space below image
+        y += 76; // Adjusted for new scale and margin
 
         // Name
-        this.add.text(width / 2, y, charData.name, {
-            fontFamily: 'Jersey15-Regular',
-            fontSize: '42px',
-            color: '#1e90ff'
-        }).setOrigin(0.5).setDepth(12);
+        boxObjects.push(
+            this.add.text(width / 2, y, charData.name, {
+                fontFamily: 'Jersey15-Regular',
+                fontSize: '42px',
+                color: '#1e90ff'
+            }).setOrigin(0.5).setDepth(12)
+        );
 
-        y += 42; // Space below name
+        y += 44;
 
         // Description
-        this.add.text(width / 2, y, charData.desc, {
-            fontFamily: 'Jersey15-Regular',
-            fontSize: '24px',
-            color: '#444466',
-            wordWrap: { width: 540 },
-            align: 'center'
-        }).setOrigin(0.5).setDepth(12);
+        boxObjects.push(
+            this.add.text(width / 2, y, charData.desc, {
+                fontFamily: 'Jersey15-Regular',
+                fontSize: '24px',
+                color: '#444466',
+                wordWrap: { width: boxWidth - 60 },
+                align: 'center'
+            }).setOrigin(0.5).setDepth(12)
+        );
 
-        y += 48; // Space below description
+        y += 54;
 
-        // "Quests" label above the progress bars
-        this.add.text(width / 2, y, "Quests", {
-            fontFamily: 'Jersey15-Regular',
-            fontSize: '32px',
-            color: '#1e90ff'
-        }).setOrigin(0.5).setDepth(12);
+        // "Quests" label
+        boxObjects.push(
+            this.add.text(width / 2, y, "Quests", {
+                fontFamily: 'Jersey15-Regular',
+                fontSize: '32px',
+                color: '#1e90ff'
+            }).setOrigin(0.5).setDepth(12)
+        );
 
-        y += 42; // Space below "Quests"
+        y += SPACING + 4;
 
-        // --- Progress Bar 1 ---
-        this.add.text(width / 2, y, `Main: ${(charData.progress * 100).toFixed(0)}%`, {
-            fontFamily: 'Jersey15-Regular',
-            fontSize: '20px',
-            color: '#222244'
-        }).setOrigin(0.5).setDepth(12);
+        // --- Progress Bars and Descriptions ---
+        const questColors = [0x1e90ff, 0x4caf50, 0xff9800];
+        const questLabels = ['Quest 1', 'Quest 2', 'Quest 3'];
+        const questPercents = [charData.progress, charData.side, charData.bonus];
 
-        y += 28; // Space below label
+        for (let i = 0; i < 3; i++) {
+            // Label
+            boxObjects.push(
+                this.add.text(width / 2, y, `${questLabels[i]}: ${(questPercents[i] * 100).toFixed(0)}%`, {
+                    fontFamily: 'Jersey15-Regular',
+                    fontSize: '20px',
+                    color: '#222244'
+                }).setOrigin(0.5).setDepth(12)
+            );
+            y += 28;
 
-        const barBg1 = this.add.rectangle(width / 2, y, 400, 28, 0xcccccc)
-            .setDepth(12);
-        const barFill1 = this.add.rectangle(
-            width / 2 - 200 + (charData.progress * 400) / 2,
-            y,
-            charData.progress * 400,
-            28,
-            0x1e90ff
-        ).setDepth(12);
+            // Progress bar background
+            boxObjects.push(
+                this.add.rectangle(width / 2, y, BAR_WIDTH, BAR_HEIGHT, 0xcccccc)
+                    .setDepth(12)
+            );
+            // Progress bar fill
+            boxObjects.push(
+                this.add.rectangle(
+                    width / 2 - BAR_WIDTH / 2 + (questPercents[i] * BAR_WIDTH) / 2,
+                    y,
+                    questPercents[i] * BAR_WIDTH,
+                    BAR_HEIGHT,
+                    questColors[i]
+                ).setDepth(12)
+            );
 
-        y += 48; // Space below bar
+            // Description
+            y += BAR_HEIGHT;
+            boxObjects.push(
+                this.add.text(width / 2, y, charData.questDescs[i], {
+                    fontFamily: 'Jersey15-Regular',
+                    fontSize: '18px',
+                    color: '#444466',
+                    wordWrap: { width: boxWidth - 60 }
+                }).setOrigin(0.5).setDepth(12)
+            );
+            y += SPACING;
+        }
 
-        // --- Progress Bar 2 ---
-        this.add.text(width / 2, y, `Side: 50%`, {
-            fontFamily: 'Jersey15-Regular',
-            fontSize: '20px',
-            color: '#222244'
-        }).setOrigin(0.5).setDepth(12);
-
-        y += 28;
-
-        const barBg2 = this.add.rectangle(width / 2, y, 400, 28, 0xcccccc)
-            .setDepth(12);
-        const barFill2 = this.add.rectangle(
-            width / 2 - 200 + (0.5 * 400) / 2,
-            y,
-            0.5 * 400,
-            28,
-            0x4caf50
-        ).setDepth(12);
-
-        y += 48;
-
-        // --- Progress Bar 3 ---
-        this.add.text(width / 2, y, `Bonus: 20%`, {
-            fontFamily: 'Jersey15-Regular',
-            fontSize: '20px',
-            color: '#222244'
-        }).setOrigin(0.5).setDepth(12);
-
-        y += 28;
-
-        const barBg3 = this.add.rectangle(width / 2, y, 400, 28, 0xcccccc)
-            .setDepth(12);
-        const barFill3 = this.add.rectangle(
-            width / 2 - 200 + (0.2 * 400) / 2,
-            y,
-            0.2 * 400,
-            28,
-            0xff9800
-        ).setDepth(12);
-
-        // Close button
+        // Close button (top right of box)
         const closeBtn = this.add.text(
             width / 2 + boxWidth / 2 - 30,
             height / 2 - boxHeight / 2 + 30,
@@ -326,21 +385,11 @@ export default class Classroom extends Phaser.Scene {
                 backgroundColor: '#fff'
             }
         ).setOrigin(0.5).setDepth(13).setInteractive({ useHandCursor: true });
+        boxObjects.push(closeBtn);
 
         closeBtn.on('pointerdown', () => {
             this.se_confirmSound.play();
-            dim.destroy();
-            box.destroy();
-            charImg.destroy();
-            barBg1.destroy();
-            barFill1.destroy();
-            barBg2.destroy();
-            barFill2.destroy();
-            barBg3.destroy();
-            barFill3.destroy();
-            closeBtn.destroy();
-            // Remove all texts created for the box
-            this.children.list.filter(obj => obj.depth === 12 && obj.type === 'Text').forEach(obj => obj.destroy());
+            boxObjects.forEach(obj => obj.destroy());
             // Re-enable carousel controls
             this.characterBoxOpen = false;
         });
