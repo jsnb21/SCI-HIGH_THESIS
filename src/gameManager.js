@@ -60,6 +60,13 @@ const char3 = new Character();
 const char4 = new Character();
 const char5 = new Character();
 
+// Browser Console Testing Purposes. Remove once done.
+window.char1 = char1;
+window.char2 = char2;
+window.char3 = char3;
+window.char4 = char4;
+window.char5 = char5;
+
 // Export a singleton instance
 const gameManager = new GameManager();
 export default gameManager;
