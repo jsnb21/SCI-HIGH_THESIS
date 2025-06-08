@@ -1,9 +1,0 @@
-{
-  "questions": [
-    {
-      "question": "What is the C# primary use case?",
-      "options": ["Web development", "Game development", "Desktop applications", "All of the above"],
-      "correctIndex": 3
-    }
-  ]
-}

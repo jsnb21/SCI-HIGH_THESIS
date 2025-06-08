@@ -1,14 +1,54 @@
 {
   "questions": [
     {
-      "question": "What is Java primarily used for?",
-      "options": [
-        "Web development",
-        "Mobile applications",
-        "Enterprise applications",
-        "All of the above"
-      ],
+      "question": "Which keyword is used to create a class in Java?",
+      "options": ["function", "class", "new", "public"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is the size of an int in Java?",
+      "options": ["2 bytes", "4 bytes", "8 bytes", "Depends on system"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which of the following is not a Java keyword?",
+      "options": ["interface", "unsigned", "extends", "import"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which method is the entry point of a Java program?",
+      "options": ["start()", "main()", "run()", "init()"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which package contains the Scanner class?",
+      "options": ["java.io", "java.util", "java.lang", "java.text"],
+      "correctIndex": 1
+    },
+    {
+      "question": "How do you declare an array in Java?",
+      "options": ["int arr[];", "array int arr;", "arr[] int;", "int[] arr = new int();"],
+      "correctIndex": 0
+    },
+    {
+      "question": "What is the parent class of all classes in Java?",
+      "options": ["Object", "Class", "Super", "Base"],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which of the following is not an access modifier in Java?",
+      "options": ["private", "protected", "internal", "public"],
+      "correctIndex": 2
+    },
+    {
+      "question": "Which keyword is used to inherit a class?",
+      "options": ["this", "super", "implements", "extends"],
       "correctIndex": 3
+    },
+    {
+      "question": "Which exception is thrown when a required file is missing?",
+      "options": ["FileNotFoundException", "IOException", "NullPointerException", "MissingFileException"],
+      "correctIndex": 0
     }
   ]
 }

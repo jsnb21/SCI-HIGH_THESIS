@@ -1,0 +1,54 @@
+{
+  "questions": [
+    {
+      "question": "Which keyword is used to define a class in C#?",
+      "options": ["class", "define", "type", "struct"],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which symbol is used to access members of a class in C#?",
+      "options": [".", "->", "::", "#"],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which keyword is used to handle exceptions in C#?",
+      "options": ["catch", "except", "handle", "error"],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which method is the entry point in a C# application?",
+      "options": ["start()", "main()", "Main()", "run()"],
+      "correctIndex": 2
+    },
+    {
+      "question": "Which access modifier makes a member accessible from any class?",
+      "options": ["private", "protected", "internal", "public"],
+      "correctIndex": 3
+    },
+    {
+      "question": "Which of these is a value type in C#?",
+      "options": ["int", "string", "object", "class"],
+      "correctIndex": 0
+    },
+    {
+      "question": "What is the base class of all types in C#?",
+      "options": ["System", "Object", "Base", "Type"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which keyword is used to create an object in C#?",
+      "options": ["new", "create", "object", "init"],
+      "correctIndex": 0
+    },
+    {
+      "question": "What will `Console.WriteLine(3 + \"3\");` output?",
+      "options": ["6", "33", "Error", "\"3 + 3\""],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which namespace is commonly used for basic input and output?",
+      "options": ["System.IO", "System.Input", "System.Core", "System.Console"],
+      "correctIndex": 0
+    }
+  ]
+}
