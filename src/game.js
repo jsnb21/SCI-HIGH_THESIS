@@ -7,6 +7,9 @@ import MainHub from './scenes/mainhub.js';
 // Add Classroom import
 import Classroom from './scenes/classroom.js';
 
+// Office 
+import Office from './scenes/office.js';
+
 // Computer Lab
 import ComputerLab from './scenes/computerlab.js';
 import WebDesignScene from '/src/scenes/comlabscenes/webDesign.js';
@@ -35,6 +38,8 @@ const config = {
     MainMenu,
     Intro, OptionsScene, MainHub,
     Classroom, // <-- Add Classroom here
+    // Offices
+    Office,
     /* Computer Lab */
     ComputerLab, WebDesignScene, PythonScene, JavaScene, CSProgrammingScene, CPlusplusScene, CSharpScene,
     /* Quiz Scenes */
