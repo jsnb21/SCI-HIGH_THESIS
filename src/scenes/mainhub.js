@@ -188,6 +188,8 @@ export default class MainHub extends Phaser.Scene {
                         this.scene.start('ComputerLab');
                     } else if (iconInfo[i].heading === "Classroom") {
                         this.scene.start('Classroom');
+                    } else if (iconInfo[i].heading === "Office") {
+                        this.scene.start('Office');
                     }
                     // Add more scene transitions here if needed
                 } else {
