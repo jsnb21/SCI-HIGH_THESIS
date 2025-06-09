@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import CourseSelectionUI from './CourseSelectionUI.js';
+import CourseSelectionUI from '/src/ui/CourseSelectionUI.js';
 import { createBackButton } from '/src/components/buttons/backbutton.js';
 
 export default class PythonScene extends Phaser.Scene {
@@ -36,7 +36,7 @@ export default class PythonScene extends Phaser.Scene {
             buttonCallback: () => {
                 this.se_confirmSound.play();
                 // Stop PythonQuizScene if it is already running
-                this.scene.switch('PythonQuizScene', { topic: 'python',
+                this.scene.start('PythonQuizScene', { topic: 'python',
                 enemyConfig: {
                     spriteKey: 'boxenemy',
                     maxHP: 150,

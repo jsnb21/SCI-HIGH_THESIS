@@ -36,7 +36,7 @@ export default class VNScene extends Phaser.Scene {
 
     // Use VNDialogueBox for dialogue
     this.vnBox = new VNDialogueBox(this, dialogueLines, () => {
-        this.scene.switch('MainHub');
+        this.scene.start('MainHub');
       });
   }
 }

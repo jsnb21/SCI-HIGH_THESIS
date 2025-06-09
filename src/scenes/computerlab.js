@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import Carousel from '../ui/carouselUI.js';
 
 export default class ComputerLab extends Phaser.Scene {
     constructor() {
@@ -26,15 +27,29 @@ export default class ComputerLab extends Phaser.Scene {
 
     async create() {
 
+        // Set up background
         this.cameras.main.setBackgroundColor('#808080');
 
-        this.createCarousel();
-
+        // Set up background
         this.createBack();
 
         // Add sound effects
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
+
+        // Define carousel data
+        const iconKeys = ['Web_Design', 'Python', 'Java', 'C', 'C++', 'C#'];
+        const iconInfo = [
+            { heading: "Web Design", desc: "Learn HTML, CSS &JavaScript" },
+            { heading: "Python", desc: "Learn Python" },
+            { heading: "Java", desc: "Learn Java" },
+            { heading: "C", desc: "Learn about C" },
+            { heading: "C++", desc: "Learn about C++" },
+            { heading: "C#", desc: "Learn about C#." }
+        ];
+
+        // Create the carousel with the icon keys and info
+        this.createCarousel(iconKeys, iconInfo);
     }
 
     createBack(){
@@ -67,7 +82,7 @@ export default class ComputerLab extends Phaser.Scene {
          .setInteractive({ useHandCursor: true })
          .on('pointerdown', () => {
             this.se_confirmSound.play();
-            this.scene.switch('MainHub');
+            this.scene.start('MainHub');
          });
 
         // Make button background respond to pointer events
@@ -81,203 +96,39 @@ export default class ComputerLab extends Phaser.Scene {
             Phaser.Geom.Rectangle.Contains
         ).on('pointerdown', () => {
             this.se_confirmSound.play();
-            this.scene.switch('MainHub');
+            this.scene.start('MainHub');
         });
     }
 
-    createCarousel() {
-        // Carousel icon keys and info
-        const iconKeys = ['Web_Design', 'Python', 'Java', 'C', 'C++', 'C#'];
-        const iconInfo = [
-            { heading: "Web Design", desc: "Learn HTML, CSS &JavaScript" },
-            { heading: "Python", desc: "Learn Python" },
-            { heading: "Java", desc: "Learn Java" },
-            { heading: "C", desc: "Learn about C" },
-            { heading: "C++", desc: "Learn about C++" },
-            { heading: "C#", desc: "Learn about C#." }
-        ];
-        const iconCount = iconKeys.length;
-        const centerX = this.cameras.main.centerX;
-        const centerY = 468;
-        const spacing = 280;
-        const smallScale = 0.7;
-        const largeScale = 1.2;
-
-        this.carouselIndex = Math.floor(iconCount / 2);
-        this.carouselIcons = [];
-
-        // Add carousel icons
-        for (let i = 0; i < iconCount; i++) {
-            const x = centerX + (i - this.carouselIndex) * spacing;
-            const scale = (i === this.carouselIndex) ? largeScale : smallScale;
-            const icon = this.add.image(x, centerY, iconKeys[i]).setScale(scale).setInteractive();
-            if (i === this.carouselIndex) {
-                icon.setTint(0xffffff);
-                icon.setAlpha(1);
-            } else {
-                icon.setTint(0x888888);
-                icon.setAlpha(0.8);
+    createCarousel(iconKeys, iconInfo) {
+        // Initialize the carousel
+        this.carousel = new Carousel(this, {
+            centerY: 400,
+            spacing: 300,
+            largeScale: 1.3,
+            sounds: {
+                hover: 'se_hoverSound',
+                confirm: 'se_confirmSound'
             }
-            this.carouselIcons.push(icon);
-        }
-
-        // Heading and description for the selected icon
-        this.carouselHeading = this.add.text(centerX, centerY + 180, '', {
-            fontFamily: 'Jersey15-Regular',
-            fontSize: '48px',
-            color: '#222244',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-
-        this.carouselDesc = this.add.text(centerX, centerY + 225, '', {
-            fontFamily: 'Jersey15-Regular',
-            fontSize: '32px',
-            color: '#444466'
-        }).setOrigin(0.5);
-
-        // Show info for the initial icon
-        this.updateCarouselText(iconInfo);
-
-        // Add breathing effect to the selected icon
-        this.breathingTween = null;
-        this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
-
-        // Keyboard navigation for carousel
-        this.input.keyboard.on('keydown-LEFT', () => {
-            this.se_hoverSound.play();
-            this.moveCarousel(-1, iconInfo);
-        });
-        this.input.keyboard.on('keydown-RIGHT', () => {
-            this.se_hoverSound.play();
-            this.moveCarousel(1, iconInfo);
         });
         
-        /*// Mobile Support
-        this.input.on('pointerup', (pointer) => {
-            if (this.dragDistance > 50) {
-                this.moveCarousel(this.dragDirection, iconInfo);
+        // Create the carousel with selection callback
+        this.carousel.create(iconKeys, iconInfo, (selectedItem, index) => {
+            console.log('Selected:', selectedItem.heading);
+            // Transition to the new scene based on the selected icon
+            if (selectedItem.heading === "Web Design") {
+                this.scene.start('WebDesignScene',{topic: 'webdesign'});
+            } else if (selectedItem.heading === "Python") {
+                this.scene.start('PythonScene', { topic: 'python' }); 
+            } else if (selectedItem.heading === "Java"){
+                this.scene.start('JavaScene', { topic: 'java' }); 
+            } else if (selectedItem.heading === "C"){
+                this.scene.start('CSProgrammingScene', { topic: 'C' });
+            } else if (selectedItem.heading === "C++"){
+                this.scene.start('CPlusplusScene', { topic: 'C++' });
+            } else if (selectedItem.heading === "C#"){
+                this.scene.start('CSharpScene', { topic: 'C#' });
             }
-        });
-        */
-
-        // Mouse wheel navigation for carousel
-        this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
-            if (deltaY > 0) {
-                this.se_hoverSound.play();
-                this.moveCarousel(1, iconInfo);
-            } else if (deltaY < 0) {
-                this.se_hoverSound.play();
-                this.moveCarousel(-1, iconInfo);
-            }
-        });
-
-        // Click to select or move carousel
-        this.carouselIcons.forEach((icon, i) => {
-            icon.on('pointerdown', () => {
-                if (i === this.carouselIndex) {
-                    this.se_confirmSound.play();
-                    // Transition to the new scene based on the selected icon
-                    if (iconInfo[i].heading === "Web Design") {
-                        this.scene.switch('WebDesignScene',{topic: 'webdesign'});
-                    } else if (iconInfo[i].heading === "Python") {
-                        this.scene.switch('PythonScene', { topic: 'python' }); 
-                    } else if (iconInfo[i].heading === "Java"){
-                        this.scene.switch('JavaScene', { topic: 'java' }); 
-                    } else if (iconInfo[i].heading === "C"){
-                        this.scene.switch('CSProgrammingScene', { topic: 'C' });
-                    } else if (iconInfo[i].heading === "C++"){
-                        this.scene.switch('CPlusplusScene', { topic: 'C++' });
-                    } else if (iconInfo[i].heading === "C#"){
-                        this.scene.switch('CSharpScene', { topic: 'C#' });
-                    }
-                } else {
-                    this.se_hoverSound.play();
-                    this.moveCarousel(i - this.carouselIndex, iconInfo);
-                }
-            });
-        });
-    }
-
-    moveCarousel(direction, iconInfo) {
-        const iconCount = this.carouselIcons.length;
-        
-        // Calculate new index with wrap-around
-        let newIndex = (this.carouselIndex + direction + iconCount) % iconCount;
-        
-        this.carouselIndex = newIndex;
-        const centerX = this.cameras.main.centerX;
-        const spacing = 280;
-        const smallScale = 0.7;
-        const largeScale = 1.2;
-    
-        // Update positions for all icons
-        this.carouselIcons.forEach((icon, i) => {
-            // Calculate position with wrap-around logic
-            let relativePos = i - this.carouselIndex;
-            
-            // Handle wrap-around for smooth transitions
-            if (relativePos > Math.floor(iconCount/2)) {
-                relativePos -= iconCount;
-            } else if (relativePos < -Math.floor(iconCount/2)) {
-                relativePos += iconCount;
-            }
-            
-            const x = centerX + relativePos * spacing;
-            const scale = (i === this.carouselIndex) ? largeScale : smallScale;
-            
-            // Animate the movement for smoother transition
-            this.tweens.add({
-                targets: icon,
-                x: x,
-                scale: scale,
-                duration: 300,
-                ease: 'Power2'
-            });
-    
-            if (i === this.carouselIndex) {
-                icon.setTint(0xffffff);
-                this.tweens.add({
-                    targets: icon,
-                    alpha: 1,
-                    duration: 200
-                });
-            } else {
-                icon.setTint(0x888888);
-                this.tweens.add({
-                    targets: icon,
-                    alpha: 0.8,
-                    duration: 200
-                });
-            }
-        });
-    
-        // Update heading and description
-        this.updateCarouselText(iconInfo);
-    
-        // Update breathing effect
-        this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
-    }
-
-    updateCarouselText(iconInfo) {
-        // Update heading and description text for the selected icon
-        const info = iconInfo[this.carouselIndex];
-        this.carouselHeading.setText(info.heading);
-        this.carouselDesc.setText(info.desc);
-    }
-
-    startBreathingEffect(icon) {
-        // Animate the selected icon with a breathing effect
-        if (this.breathingTween) {
-            this.breathingTween.stop();
-            icon.setScale(1.2);
-        }
-        this.breathingTween = this.tweens.add({
-            targets: icon,
-            scale: { from: 1.2, to: 1.35 },
-            duration: 700,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
         });
     }
 }
