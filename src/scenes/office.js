@@ -11,11 +11,10 @@ export default class Office extends Phaser.Scene {
 
     preload() {
         // Load icons for each section
-        this.load.image('profile', 'assets/img/office/profile.png');
-        this.load.image('stats', 'assets/img/office/stats.png');
-        this.load.image('achievements', 'assets/img/office/achievements.png');
-        this.load.image('feedback', 'assets/img/office/feedback.png');
-        this.load.image('history', 'assets/img/office/history.png');
+        this.load.image('profile', 'assets/img/icons/office/studentProfile.png');
+        this.load.image('stats', 'assets/img/icons/office/performanceStats.png');
+        this.load.image('achievements', 'assets/img/icons/office/achievements.png');
+        this.load.image('feedback', 'assets/img/icons/office/feedback.png');
         this.load.audio('se_select', 'assets/sounds/se_select.wav');
         this.load.audio('se_confirm', 'assets/sounds/se_confirm.wav');
     }
