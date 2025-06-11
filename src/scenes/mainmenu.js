@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { DEFAULT_TEXT_STYLE } from '../game';
 import { updateSoundVolumes } from './options';
 import { playExclusiveBGM } from '../audioUtils';
+import { getAllSaveKeys, loadGame } from '../save';
 
 export default class MainMenu extends Phaser.Scene {
     constructor() {
@@ -62,7 +63,7 @@ export default class MainMenu extends Phaser.Scene {
 
         continueButton.on('pointerdown', () => {
             se_confirmSound.play();
-            // TODO: Add continue logic here
+            showSaveSelectAndContinue(this);
         });
         continueButton.on('pointerover', () => {
             continueButton.setStyle({ color: '#ffffff' });
@@ -108,4 +109,34 @@ export default class MainMenu extends Phaser.Scene {
             quitButton.setStyle({ color: '#ffff00' });
         });
     }
+}
+
+function showSaveSelectAndContinue(scene) {
+    const saveKeys = getAllSaveKeys();
+    if (saveKeys.length === 0) {
+        window.alert('No save files found!');
+        return;
+    }
+    // Show a simple prompt to select a save slot
+    const slotNames = saveKeys.map(k => k.replace('sciHighSave_', ''));
+    const selection = window.prompt(
+        'Select a save slot:\n' + slotNames.map((s, i) => `${i + 1}: ${s}`).join('\n'),
+        '1'
+    );
+    const idx = parseInt(selection, 10) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= slotNames.length) {
+        window.alert('Invalid selection.');
+        return;
+    }
+    const slot = slotNames[idx];
+    const saveData = loadGame(slot);
+    if (!saveData) {
+        window.alert('Failed to load save.');
+        return;
+    }
+    // Optionally: set gameManager state here using saveData
+    // e.g. gameManager.setPlayerHP(saveData.playerHP), etc.
+    // For now, just store in global for MainHub to use
+    window.__SCI_HIGH_SAVE_DATA__ = saveData;
+    scene.scene.start('MainHub');
 }
