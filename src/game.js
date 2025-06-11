@@ -35,7 +35,7 @@ const config = {
   parent: 'game',
   // Add Classroom to the scene list
   scene: [
-    MainMenu,
+    /*MainMenu,
     Intro, OptionsScene, MainHub,
     Classroom, // <-- Add Classroom here
     // Offices

@@ -35,6 +35,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         this.currentQuestionIndex = 0;
         this.score = 0;
         this.questions = [];
+        this.isQuizStarted = false; // Reset quiz started flag
 
         console.log('INIT:', data);
         this.enemyConfig = data.enemyConfig || {
@@ -43,15 +44,21 @@ export default class BaseQuizScene extends Phaser.Scene {
             label: 'Enemy',
         };
         
-        // Initialize enemy HP state only once
-        if (this.enemyHPState.maxHP !== this.enemyConfig.maxHP) {
-            this.enemyHPState = {
-                currentHP: this.enemyConfig.maxHP,
-                maxHP: this.enemyConfig.maxHP
-            };
-        }
+        // Always reset HP states when scene initializes (fresh start)
+        this.playerConfig = {
+            maxHP: 100,
+            currentHP: 100, // Reset to full HP
+            label: 'Player'
+        };
+        
+        this.enemyHPState = {
+            currentHP: this.enemyConfig.maxHP, // Reset to full HP
+            maxHP: this.enemyConfig.maxHP
+        };
 
-        // Initialize GameTimer
+        console.log('HP states reset - Player:', this.playerConfig.currentHP, 'Enemy:', this.enemyHPState.currentHP);
+
+        // Initialize GameTimer ONCE for the entire quiz session
         this.gameTimer = new GameTimer(this);
     }
 
@@ -79,15 +86,9 @@ export default class BaseQuizScene extends Phaser.Scene {
 
     // Method to handle when timer runs out (called by GameTimer)
     handleTimeUp() {
-        this.showResults();
+        this.showGameOver();
     }
 
-    drawQuizBox(centerX, boxY, boxWidth, boxHeight, radius = 20) {
-        const graphics = this.add.graphics();
-        graphics.fillStyle(0x222222, 1);
-        graphics.fillRoundedRect(centerX - boxWidth / 2, boxY - boxHeight / 2, boxWidth, boxHeight, radius);
-        return graphics;
-    }
 
         // Modified createPlayerUI to use persistent HP
     createPlayerUI(x, y) {
@@ -137,7 +138,38 @@ export default class BaseQuizScene extends Phaser.Scene {
         this.quizElements.push(this.playerContainer);
     }
 
-    // ... (keep all other methods like createPlayerUI, damageCharacter, etc. unchanged)
+    // Start the quiz and initialize the timer
+    startQuiz(initialTime = 30) { // Default 2 minutes for entire quiz
+        if (!this.isQuizStarted) {
+            this.isQuizStarted = true;
+            
+            // Create timer UI elements ONCE at the start
+            const timerX = 1050; // Fixed position for entire quiz
+            const timerY = 100;
+            
+            // Start the continuous timer
+            const timerElements = this.gameTimer.create(timerX, timerY, initialTime);
+            
+            // Set depth for timer elements to ensure they appear on top
+            if (timerElements.timerBackground && timerElements.timerBackground.setDepth) {
+                timerElements.timerBackground.setDepth(100); // Higher than quiz box depth (0)
+            }
+            if (timerElements.timerText && timerElements.timerText.setDepth) {
+                timerElements.timerText.setDepth(100); // Higher than quiz box depth (0)
+            }
+            
+            // Add both timer elements to persistent elements
+            this.persistentElements.push(timerElements.timerBackground, timerElements.timerText);
+            
+            console.log(`Quiz started with ${initialTime} seconds total time`);
+            
+            // Debug: Check timer depth after setting
+            console.log('Timer depth after setting:', timerElements?.depth || 'still no depth');
+        }
+        
+        // Show the first question
+        this.showQuestion();
+    }
 
     showQuestion() {
         console.log('[DEBUG] Questions:', this.questions);
@@ -150,7 +182,7 @@ export default class BaseQuizScene extends Phaser.Scene {
 
         const { question, options } = this.questions[this.currentQuestionIndex];
 
-        // Clean up only question-specific elements
+        // Clean up only question-specific elements (NOT timer elements)
         this.cleanupQuestionElements();
 
         const centerX = 612;
@@ -158,8 +190,9 @@ export default class BaseQuizScene extends Phaser.Scene {
         const boxWidth = 1050; 
         const boxHeight = 600;
 
-        // Draw quiz box and create game elements (same as before)
+        // Draw quiz box and create game elements
         const box = this.drawQuizBox(centerX, boxY, boxWidth, boxHeight);
+        console.log('Quiz box depth:', box.depth);
         this.quizElements.push(box);
 
         // Create enemy sprite
@@ -172,7 +205,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         enemySprite.setScale(finalScale);
         this.quizElements.push(enemySprite);
 
-        // Create enemy HP bar and container (same as before)
+        // Create enemy HP bar and container
         const hpBar = this.add.graphics();
         hpBar.fillStyle(0xff0000, 1);
         const enemyHpPercentage = this.enemyHPState.currentHP / this.enemyHPState.maxHP;
@@ -195,11 +228,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         
         this.quizElements.push(this.enemyContainer);
 
-        // Create player UI
-        const playerY = boxY + boxHeight / 2 + 200;
-        this.createPlayerUI(centerX, playerY);
-
-        // Show question
+        // Show question text
         const questionText = this.add.text(centerX, boxY + boxHeight / 2 + 30, `Q${this.currentQuestionIndex + 1}: ${question}`, {
             fontSize: '20px',
             fill: '#fff',
@@ -208,11 +237,19 @@ export default class BaseQuizScene extends Phaser.Scene {
         }).setOrigin(0.5);
         this.quizElements.push(questionText);
 
-        // Show options
-        const startY = boxY + boxHeight / 2 + 100;
+        // Calculate positions for the bottom area (player + options)
+        const bottomAreaY = boxY + boxHeight / 2 + 100; // Start position for the bottom area
+        const playerX = centerX - 450; // Position player on the left side
+        const optionsStartX = centerX - 200; // Center the options more to the right
+
+        // Create player UI on the left side of the options
+        this.createPlayerUI(playerX, bottomAreaY + 30);
+
+        // Show options in a more compact layout on the right side
         options.forEach((option, index) => {
-            const x = index % 2 === 0 ? centerX - 200 : centerX + 200;
-            const y = startY + Math.floor(index / 2) * 70;
+            // Arrange options in a 2x2 grid, but shifted to the right
+            const x = optionsStartX + (index % 2) * 400;
+            const y = bottomAreaY + Math.floor(index / 2) * 70;
 
             const optionText = this.add.text(x, y, option, {
                 fontSize: '18px',
@@ -220,25 +257,30 @@ export default class BaseQuizScene extends Phaser.Scene {
                 padding: 10,
                 align: 'center'
             })
-                .setInteractive()
+                .setInteractive({ useHandCursor: true })
                 .setOrigin(0.5)
-                .on('pointerdown', () => this.checkAnswer(index));
+                .on('pointerover', () => {
+                    optionText.setStyle({ backgroundColor: '#666666' });
+                    this.se_hoverSound?.play();
+                })
+                .on('pointerout', () => {
+                    optionText.setStyle({ backgroundColor: '#444444' });
+                })
+                .on('pointerdown', () => {
+                    this.se_confirmSound?.play();
+                    this.checkAnswer(index);
+                });
 
             this.quizElements.push(optionText);
         });
 
-        // SIMPLIFIED TIMER HANDLING using GameTimer
-        const timerX = centerX + (boxWidth / 2) - 100;
-        const timerY = boxY - (boxHeight / 2) + 40;
-        
-        // Create timer using GameTimer class
-        const timerElements = this.gameTimer.create(timerX, timerY, 30);
-        
-        console.log('Timer created using GameTimer class');
+        // NO TIMER CREATION HERE - timer is continuous and already running
+        console.log('Question displayed, timer continues running');
     }
 
+    // Modified cleanup to preserve timer elements
     cleanupQuestionElements() {
-        console.log('=== CLEANING UP QUESTION ELEMENTS ===');
+        console.log('=== CLEANING UP QUESTION ELEMENTS (preserving timer) ===');
         
         this.quizElements.forEach((el, index) => {
             if (el && el.active) {
@@ -251,7 +293,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         this.enemyContainer = null;
         this.playerContainer = null;
         
-        console.log('Question cleanup complete');
+        console.log('Question cleanup complete, timer preserved');
     }
 
     // Modified damageCharacter method to update persistent state
@@ -294,6 +336,10 @@ export default class BaseQuizScene extends Phaser.Scene {
 
 
     checkAnswer(selectedIndex) {
+        // Prevent multiple clicks
+        if (this.isAnswering) return;
+        this.isAnswering = true;
+
         const correctIndex = this.questions[this.currentQuestionIndex].correctIndex;
 
         if (selectedIndex === correctIndex) {
@@ -301,7 +347,7 @@ export default class BaseQuizScene extends Phaser.Scene {
             this.showFeedback("Correct! You attack the enemy!", 0x00ff00);
             
             // Add time for correct answer using GameTimer
-            this.gameTimer.addTime(5, 30);
+            this.gameTimer.addTime(5);
             
             if (this.enemyContainer) {
                 this.damageCharacter(this.enemyContainer, 20);
@@ -310,7 +356,7 @@ export default class BaseQuizScene extends Phaser.Scene {
             this.showFeedback("Wrong! The enemy attacks you!", 0xff0000);
             
             // Subtract time for wrong answer using GameTimer
-            this.gameTimer.subtractTime(5);
+            this.gameTimer.subtractTime(3);
             
             if (this.playerContainer) {
                 this.damageCharacter(this.playerContainer, 15);
@@ -335,10 +381,11 @@ export default class BaseQuizScene extends Phaser.Scene {
         // Go to next question after a delay
         this.time.delayedCall(1500, () => {
             this.currentQuestionIndex++;
+            this.isAnswering = false; // Reset flag before next question
             if (this.currentQuestionIndex < this.questions.length) {
                 this.showQuestion();
             } else {
-                this.showResults();
+                this.showGameOver();
             }
         });
     }
@@ -346,15 +393,18 @@ export default class BaseQuizScene extends Phaser.Scene {
     restartQuiz() {
         this.score = 0;
         this.currentQuestionIndex = 0;
+        this.isQuizStarted = false; // Reset quiz started flag
         
         // Reset HP states
         this.playerConfig.currentHP = this.playerConfig.maxHP;
         this.enemyHPState.currentHP = this.enemyHPState.maxHP;
 
-        // Reset timer using GameTimer
+        // Clean up everything including timer
+        this.cleanupAllElements();
+
+        // Create new GameTimer and restart
         this.gameTimer = new GameTimer(this);
-        
-        this.showQuestion();
+        this.startQuiz(30); // Restart with fresh timer
 
         createBackButton(this, 'ComputerLab');
     }
@@ -377,74 +427,17 @@ export default class BaseQuizScene extends Phaser.Scene {
         });
     }
 
-    // Add game over method
-    showGameOver() {
-        // Clean up all elements including timer
-        this.cleanupAllElements();
-
-        createBackButton(this, 'ComputerLab');
-
-        const gameOverText = this.add.text(612, 300, 'GAME OVER!', { 
-            fontSize: '32px', 
-            fill: '#ff0000',
-            fontFamily: 'Arial'
-        }).setOrigin(0.5);
-        
-        const defeatText = this.add.text(612, 350, 'You have been defeated...', { 
-            fontSize: '20px', 
-            fill: '#fff' 
-        }).setOrigin(0.5);
-        
-        const restartButton = this.add.text(612, 420, "Try Again", { 
-            fontSize: '20px', 
-            backgroundColor: '#444', 
-            padding: 10 
-        })
-            .setInteractive()
-            .setOrigin(0.5)
-            .on('pointerdown', () => {
-                this.restartQuiz();
-            });
-
-        // Add to persistent elements since these should stay until explicitly removed
-        this.persistentElements.push(gameOverText, defeatText, restartButton);
+    drawQuizBox(centerX, boxY, boxWidth, boxHeight, radius = 20) {
+        const graphics = this.add.graphics();
+        graphics.fillStyle(0x222222, 1);
+        graphics.fillRoundedRect(centerX - boxWidth / 2, boxY - boxHeight / 2, boxWidth, boxHeight, radius);
+        return graphics;
     }
-
-    showResults() {
-        console.log('=== SHOWING RESULTS ===');
-        
-        // Clean up quiz elements
-        this.cleanupQuestionElements();
-        
-        // Destroy timer using GameTimer
-        this.gameTimer.destroy();
-        
-        // Create results screen (same as before)
-        const finishedText = this.add.text(612, 200, `Quiz Finished!`, { 
-            fontSize: '32px', 
-            fill: '#fff',
-            fontFamily: 'Arial',
-            stroke: '#000000',
-            strokeThickness: 2
-        }).setOrigin(0.5);
-        
-        const scoreText = this.add.text(612, 260, `Your Score: ${this.score} / ${this.questions.length}`, { 
-            fontSize: '24px', 
-            fill: '#fff',
-            fontFamily: 'Arial',
-            stroke: '#000000',
-            strokeThickness: 1
-        }).setOrigin(0.5);
-        
-        // Rest of showResults method remains the same...
-        
-        console.log('Results screen created');
-    }
-
-    // Add victory method
+    
     showVictory() {
         // Clean up all elements including timer
         this.cleanupAllElements();
+        this.gameTimer.destroy();
 
         const victoryText = this.add.text(612, 300, 'VICTORY!', { 
             fontSize: '32px', 
@@ -468,7 +461,6 @@ export default class BaseQuizScene extends Phaser.Scene {
                 this.showResults();
             });
 
-        // Add to persistent elements
         this.persistentElements.push(victoryText, winText, continueButton);
     }
 
@@ -485,5 +477,171 @@ export default class BaseQuizScene extends Phaser.Scene {
             }
         });
         this.persistentElements = [];
+    }
+    // Enhanced game over method
+    showGameOver() {
+        this.isAnswering = false;
+        // Clean up all elements including timer
+        this.cleanupAllElements();
+        
+        // Stop and destroy the timer
+        if (this.gameTimer) {
+            this.gameTimer.destroy();
+        }
+        
+        // Create dark overlay for dramatic effect
+        const overlay = this.add.graphics();
+        overlay.fillStyle(0x000000, 0.8);
+        overlay.fillRect(0, 0, this.cameras.main.width, this.cameras.main.height);
+        overlay.setDepth(50);
+        
+        // Game Over title with glow effect
+        const gameOverText = this.add.text(612, 250, 'GAME OVER!', {
+            fontSize: '48px',
+            fill: '#ff0000',
+            fontFamily: 'Arial',
+            stroke: '#ffffff',
+            strokeThickness: 3,
+            shadow: {
+                offsetX: 2,
+                offsetY: 2,
+                color: '#000000',
+                blur: 5,
+                fill: true
+            }
+        }).setOrigin(0.5).setDepth(60);
+        
+        // Add pulsing animation to game over text
+        this.tweens.add({
+            targets: gameOverText,
+            scaleX: 1.1,
+            scaleY: 1.1,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+        
+        // Defeat message
+        const defeatText = this.add.text(612, 320, 'You have been defeated...', {
+            fontSize: '22px',
+            fill: '#ffffff',
+            fontFamily: 'Arial',
+            stroke: '#000000',
+            strokeThickness: 1
+        }).setOrigin(0.5).setDepth(60);
+        
+        // Show current score
+        const scoreText = this.add.text(612, 360, `Questions Answered: ${this.score} / ${this.questions.length}`, {
+            fontSize: '18px',
+            fill: '#ffff00',
+            fontFamily: 'Arial'
+        }).setOrigin(0.5).setDepth(60);
+        
+        // Try Again button with hover effects
+        const restartButton = this.add.text(612, 430, "Try Again", {
+            fontSize: '20px',
+            backgroundColor: '#444444',
+            padding: { x: 20, y: 10 },
+            fill: '#ffffff'
+        })
+            .setInteractive({ useHandCursor: true })
+            .setOrigin(0.5)
+            .setDepth(60)
+            .on('pointerover', () => {
+                restartButton.setStyle({ backgroundColor: '#666666' });
+                this.se_hoverSound?.play();
+            })
+            .on('pointerout', () => {
+                restartButton.setStyle({ backgroundColor: '#444444' });
+            })
+            .on('pointerdown', () => {
+                this.se_confirmSound?.play();
+                this.restartQuiz();
+            });
+        
+        // Back to Menu button
+        const menuButton = this.add.text(612, 480, "Back to Menu", {
+            fontSize: '18px',
+            backgroundColor: '#333333',
+            padding: { x: 15, y: 8 },
+            fill: '#ffffff'
+        })
+            .setInteractive({ useHandCursor: true })
+            .setOrigin(0.5)
+            .setDepth(60)
+            .on('pointerover', () => {
+                menuButton.setStyle({ backgroundColor: '#555555' });
+                this.se_hoverSound?.play();
+            })
+            .on('pointerout', () => {
+                menuButton.setStyle({ backgroundColor: '#333333' });
+            })
+            .on('pointerdown', () => {
+                this.se_confirmSound?.play();
+                // Clean up everything before going back
+                this.cleanupAllElements();
+                this.scene.start('ComputerLab');
+            });
+        
+        // Add fade-in animation for all elements
+        const elementsToAnimate = [overlay, gameOverText, defeatText, scoreText, restartButton, menuButton];
+        elementsToAnimate.forEach((element, index) => {
+            element.setAlpha(0);
+            this.tweens.add({
+                targets: element,
+                alpha: element === overlay ? 0.8 : 1, // Overlay stays semi-transparent
+                duration: 500,
+                delay: index * 200, // Stagger the animations
+                ease: 'Power2'
+            });
+        });
+        
+        // Add to persistent elements since these should stay until explicitly removed
+        this.persistentElements.push(overlay, gameOverText, defeatText, scoreText, restartButton, menuButton);
+    }
+
+    showResults() {
+        console.log('=== SHOWING RESULTS ===');
+        
+        // Clean up quiz elements
+        this.cleanupQuestionElements();
+        
+        // Stop and destroy timer - quiz is over
+        this.gameTimer.destroy();
+        
+        // Create results screen
+        const finishedText = this.add.text(612, 200, `Quiz Finished!`, { 
+            fontSize: '32px', 
+            fill: '#fff',
+            fontFamily: 'Arial',
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5);
+        
+        const scoreText = this.add.text(612, 260, `Your Score: ${this.score} / ${this.questions.length}`, { 
+            fontSize: '24px', 
+            fill: '#fff',
+            fontFamily: 'Arial',
+            stroke: '#000000',
+            strokeThickness: 1
+        }).setOrigin(0.5);
+        
+        // Add restart button
+        const restartButton = this.add.text(612, 320, "Try Again", { 
+            fontSize: '20px', 
+            backgroundColor: '#444', 
+            padding: 10 
+        })
+            .setInteractive()
+            .setOrigin(0.5)
+            .on('pointerdown', () => {
+                this.showGameOver();
+            });
+
+        // Add back button
+        createBackButton(this, 'ComputerLab');
+        
+        console.log('Results screen created');
     }
 }

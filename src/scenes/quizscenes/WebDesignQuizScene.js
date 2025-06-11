@@ -33,7 +33,7 @@ export default class WebDesignQuizScene extends BaseQuizScene {
 
         // DON'T call super.create() - it creates duplicate enemy UI
         // Instead, just start the quiz directly
-        this.showQuestion();
+        this.startQuiz()
 
         createBackButton(this, 'ComputerLab');
     }

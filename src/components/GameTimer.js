@@ -101,6 +101,7 @@ export default class GameTimer {
         this.timerBackground = this.scene.add.graphics();
         this.timerBackground.fillStyle(0x000000, 0.7);
         this.timerBackground.fillRoundedRect(x - 60, y - 20, 120, 40, 10);
+        this.timerBackground.setDepth(100); // Set high depth to stay on top
 
         console.log('Creating new timer text...');
         this.timerText = this.scene.add.text(x, y, `Time: ${this.timeLeft}`, {
@@ -110,11 +111,12 @@ export default class GameTimer {
             stroke: '#000000',
             strokeThickness: 2
         }).setOrigin(0.5);
+        this.timerText.setDepth(100); // Set high depth to stay on top
 
         // Apply color based on current time
         this.updateTimerColor();
 
-        console.log('Timer elements recreated');
+        console.log('Timer elements recreated with depth 100');
         console.log('New timer text active:', this.timerText?.active);
         console.log('New timer background active:', this.timerBackground?.active);
         console.log('=== END RECREATION ===');

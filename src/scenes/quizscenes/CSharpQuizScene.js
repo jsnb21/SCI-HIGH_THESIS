@@ -35,6 +35,6 @@ export default class CSharpQuizScene extends BaseQuizScene {
         createBackButton(this, 'ComputerLab');
         // DON'T call super.create() - it creates duplicate enemy UI
         // Instead, just start the quiz directly
-        this.showQuestion();
+        this.startQuiz()
     }
 }
