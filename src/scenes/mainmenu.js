@@ -114,29 +114,81 @@ export default class MainMenu extends Phaser.Scene {
 function showSaveSelectAndContinue(scene) {
     const saveKeys = getAllSaveKeys();
     if (saveKeys.length === 0) {
-        window.alert('No save files found!');
+        scene.add.text(scene.scale.width / 2, scene.scale.height / 2 + 300, 'No save files found!', {
+            ...DEFAULT_TEXT_STYLE,
+            color: '#ff4444'
+        }).setOrigin(0.5);
         return;
     }
-    // Show a simple prompt to select a save slot
+
+    // Remove any previous save menu
+    if (scene.saveMenuGroup) scene.saveMenuGroup.clear(true, true);
+
+    // Create a group to hold menu items
+    scene.saveMenuGroup = scene.add.group();
+
     const slotNames = saveKeys.map(k => k.replace('sciHighSave_', ''));
-    const selection = window.prompt(
-        'Select a save slot:\n' + slotNames.map((s, i) => `${i + 1}: ${s}`).join('\n'),
-        '1'
-    );
-    const idx = parseInt(selection, 10) - 1;
-    if (isNaN(idx) || idx < 0 || idx >= slotNames.length) {
-        window.alert('Invalid selection.');
-        return;
-    }
-    const slot = slotNames[idx];
-    const saveData = loadGame(slot);
-    if (!saveData) {
-        window.alert('Failed to load save.');
-        return;
-    }
-    // Optionally: set gameManager state here using saveData
-    // e.g. gameManager.setPlayerHP(saveData.playerHP), etc.
-    // For now, just store in global for MainHub to use
-    window.__SCI_HIGH_SAVE_DATA__ = saveData;
-    scene.scene.start('MainHub');
+    const spacing = 50;
+    const boxWidth = 420;
+    const boxHeight = Math.max(120, 80 + spacing * (slotNames.length + 2));
+
+    // Center the box
+    const baseX = scene.scale.width / 2;
+    const baseY = scene.scale.height / 2 - boxHeight / 2 + 40;
+
+    // Draw message box background
+    const graphics = scene.add.graphics();
+    graphics.fillStyle(0x222244, 0.92);
+    graphics.lineStyle(4, 0xffffcc, 1);
+    graphics.strokeRoundedRect(baseX - boxWidth / 2, baseY - 40, boxWidth, boxHeight, 24);
+    graphics.fillRoundedRect(baseX - boxWidth / 2, baseY - 40, boxWidth, boxHeight, 24);
+    scene.saveMenuGroup.add(graphics);
+
+    // Add a title
+    const title = scene.add.text(baseX, baseY - 20, 'Select Save Slot:', {
+        ...DEFAULT_TEXT_STYLE,
+        fontSize: '36px',
+        color: '#ffff00'
+    }).setOrigin(0.5);
+    scene.saveMenuGroup.add(title);
+
+    // Add a button for each save slot
+    slotNames.forEach((slot, i) => {
+        const btn = scene.add.text(baseX, baseY + spacing * i + 20, slot, {
+            ...DEFAULT_TEXT_STYLE,
+            fontSize: '32px',
+            color: '#ffffff',
+            backgroundColor: ''
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        btn.on('pointerover', () => btn.setStyle({ color: '#ffff00' }));
+        btn.on('pointerout', () => btn.setStyle({ color: '#ffffff' }));
+        btn.on('pointerdown', () => {
+            const saveData = loadGame(slot);
+            if (!saveData) {
+                btn.setStyle({ color: '#ff4444' });
+                return;
+            }
+            window.__SCI_HIGH_SAVE_DATA__ = saveData;
+            scene.saveMenuGroup.clear(true, true); // Remove menu
+            scene.scene.start('MainHub');
+        });
+
+        scene.saveMenuGroup.add(btn);
+    });
+
+    // Add a cancel button
+    const cancelBtn = scene.add.text(baseX, baseY + spacing * (slotNames.length) + 40, 'Cancel', {
+        ...DEFAULT_TEXT_STYLE,
+        fontSize: '32px',
+        color: '#ff4444'
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    cancelBtn.on('pointerover', () => cancelBtn.setStyle({ color: '#ffffff' }));
+    cancelBtn.on('pointerout', () => cancelBtn.setStyle({ color: '#ff4444' }));
+    cancelBtn.on('pointerdown', () => {
+        scene.saveMenuGroup.clear(true, true);
+    });
+
+    scene.saveMenuGroup.add(cancelBtn);
 }
