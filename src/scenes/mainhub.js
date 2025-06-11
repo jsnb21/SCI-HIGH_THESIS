@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import VNDialogueBox from '../ui/VNDialogueBox';
 import Carousel from '../ui/carouselUI.js';
+import { playExclusiveBGM } from '../audioUtils'; // Add this import
 
 export default class MainHub extends Phaser.Scene {
     constructor() {
@@ -17,9 +18,15 @@ export default class MainHub extends Phaser.Scene {
 
         this.load.audio('se_select', 'assets/sounds/se_select.wav');
         this.load.audio('se_confirm', 'assets/sounds/se_confirm.wav');
+        this.load.audio('bgm_mainhub', 'assets/audio/bgm/bgm_mainhub.mp3');
     }
 
     create() {
+        // Delay BGM start to ensure audio context is unlocked
+        this.time.delayedCall(100, () => {
+            playExclusiveBGM(this, 'bgm_mainhub', { loop: true });
+        });
+
         // Set up background
         this.bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'MainHubBG').setOrigin(0, 0);
         this.bg.setAlpha(0.5);
