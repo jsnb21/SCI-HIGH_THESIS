@@ -109,6 +109,10 @@ export default class MainHub extends Phaser.Scene {
                 this.scene.start('Classroom');
             } else if (selectedItem.heading === "Office") {
                 this.scene.start('Office');
+            } else if (selectedItem.heading === "Library") {
+                this.scene.start('BaseLibraryScene');
+            } else if (selectedItem.heading === "Cafeteria") {
+                this.scene.start('Cafeteria');
             }
         });
     }

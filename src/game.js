@@ -28,23 +28,32 @@ import CQuizScene from './scenes/quizscenes/CQuizScene.js';
 import CSharpQuizScene from './scenes/quizscenes/CSharpQuizScene.js';
 import CplusplusQuizScene from './scenes/quizscenes/CplusplusQuizScene.js';
 
+//Library Scenes
+import BaseLibraryScene from './scenes/libraryScenes/baseLibraryScene.js';
+
 const config = {
   type: Phaser.AUTO,
   width: 1224,
   height: 936,
   parent: 'game',
-  // Add Classroom to the scene list
   scene: [
+    /*Main Scenes */
     MainMenu,
     Intro, OptionsScene, MainHub,
+    /* Classroom */
     Classroom,
+    /* Office */
     Office,
+    /* Computer Lab Scenes */
     ComputerLab, WebDesignScene, PythonScene, JavaScene, CSProgrammingScene, CPlusplusScene, CSharpScene,
-    BaseQuizScene, WebDesignQuizScene, JavaQuizScene, PythonQuizScene, CplusplusQuizScene, CQuizScene, CSharpQuizScene
+    /* Quiz Scenes */
+    BaseQuizScene, WebDesignQuizScene, JavaQuizScene, PythonQuizScene, CplusplusQuizScene, CQuizScene, CSharpQuizScene,
+    /* Library Scenes */
+    BaseLibraryScene,
   ],
-  dom: {
+    dom: {
     createContainer: true
-  }
+    }
 };
 
 export const DEFAULT_TEXT_STYLE = {
