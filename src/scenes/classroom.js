@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { char1, char2, char3, char4, char5 } from '../gameManager';
+import { createBackButton } from '../components/buttons/backbutton';
 
 export default class Classroom extends Phaser.Scene {
     constructor() {
@@ -182,26 +183,8 @@ export default class Classroom extends Phaser.Scene {
             });
         });
 
-        // Exit icon as back button (top-left)
-        const exitIcon = this.add.rectangle(50, 50, 48, 48, 0x222222, 0.2)
-            .setOrigin(0.5)
-            .setInteractive({ useHandCursor: true });
-        this.add.text(50, 50, '←', {
-            fontFamily: 'Jersey15-Regular',
-            fontSize: '32px',
-            color: '#1e90ff'
-        }).setOrigin(0.5);
-
-        exitIcon.on('pointerdown', () => {
-            this.se_confirmSound.play();
-            this.scene.start('MainHub');
-        });
-        exitIcon.on('pointerover', () => {
-            exitIcon.setFillStyle(0x1e90ff, 0.2);
-        });
-        exitIcon.on('pointerout', () => {
-            exitIcon.setFillStyle(0x222222, 0.2);
-        });
+        // Back button
+        createBackButton(this, 'MainHub');
     }
 
     moveCarousel(direction, charInfo) {

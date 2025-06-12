@@ -18,7 +18,7 @@ export default class VNScene extends Phaser.Scene {
     
     // Audio
     this.load.audio('se_select', 'assets/audio/se/se_select.wav');
-    this.load.audio('bgm_main', 'assets/audio/bgm/bgm_main-theme.mp3');
+    this.load.audio('bgm_main', 'assets/audio/bgm/bgm_mainhub.mp3');
   }
 
   create() {
@@ -32,11 +32,22 @@ export default class VNScene extends Phaser.Scene {
     // --- MUSIC LOGIC END ---
 
     // Retrieve dialogue lines from loaded JSON
-    const dialogueLines = this.cache.json.get('dialogue').intro;
+    const dialogueData = this.cache.json.get('dialogue');
+    const dialogueLines = dialogueData && dialogueData.intro ? dialogueData.intro : [];
+
+    if (!dialogueLines.length) {
+      // Show error if dialogue missing
+      this.add.text(width / 2, height / 2, 'Dialogue not found.', {
+        font: '24px Arial',
+        color: '#ff0000'
+      }).setOrigin(0.5);
+      return;
+    }
 
     // Use VNDialogueBox for dialogue
     this.vnBox = new VNDialogueBox(this, dialogueLines, () => {
-        this.scene.start('MainHub');
-      });
+      this.scene.start('MainHub');
+    });
+    this.add.existing(this.vnBox); // <-- Add this line
   }
 }

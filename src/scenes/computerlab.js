@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import Carousel from '../ui/carouselUI.js';
+import { createBackButton } from '../components/buttons/backbutton'; // <-- Add this import
 
 export default class ComputerLab extends Phaser.Scene {
     constructor() {
@@ -30,8 +31,8 @@ export default class ComputerLab extends Phaser.Scene {
         // Set up background
         this.cameras.main.setBackgroundColor('#808080');
 
-        // Set up background
-        this.createBack();
+        // Use the shared back button (top-left, consistent style)
+        createBackButton(this, 'MainHub');
 
         // Add sound effects
         this.se_hoverSound = this.sound.add('se_select');
@@ -50,54 +51,6 @@ export default class ComputerLab extends Phaser.Scene {
 
         // Create the carousel with the icon keys and info
         this.createCarousel(iconKeys, iconInfo);
-    }
-
-    createBack(){
-        // Create "Back" button in the top right
-        const buttonWidth = 100;
-        const buttonHeight = 44;
-        const buttonRadius = 22;
-        const buttonX = this.cameras.main.width - 30 - buttonWidth / 2;
-        const buttonY = 20 + buttonHeight / 2;
-
-        const buttonBg = this.add.graphics();
-        buttonBg.fillStyle(0x1e90ff, 1);
-        buttonBg.fillRoundedRect?.(
-            buttonX - buttonWidth / 2,
-            buttonY - buttonHeight / 2,
-            buttonWidth,
-            buttonHeight,
-            buttonRadius
-        );
-
-        const backButton = this.add.text(
-            buttonX,
-            buttonY,
-            'Back',
-            {
-                fontFamily: 'Jersey15-Regular', fontSize: '24px', // ✅ Correct
-                padding: { left: 0, right: 0, top: 0, bottom: 0 }
-            }
-        ).setOrigin(0.5)
-         .setInteractive({ useHandCursor: true })
-         .on('pointerdown', () => {
-            this.se_confirmSound.play();
-            this.scene.start('MainHub');
-         });
-
-        // Make button background respond to pointer events
-        buttonBg.setInteractive(
-            new Phaser.Geom.Rectangle(
-                buttonX - buttonWidth / 2,
-                buttonY - buttonHeight / 2,
-                buttonWidth,
-                buttonHeight
-            ),
-            Phaser.Geom.Rectangle.Contains
-        ).on('pointerdown', () => {
-            this.se_confirmSound.play();
-            this.scene.start('MainHub');
-        });
     }
 
     createCarousel(iconKeys, iconInfo) {

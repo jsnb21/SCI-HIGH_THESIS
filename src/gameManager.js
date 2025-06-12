@@ -54,11 +54,30 @@ class Character {
     }
 }
 
+class OnceOnlyFlags {
+    constructor() {
+        this.flags = {};
+    }
+
+    hasSeen(key) {
+        return !!this.flags[key];
+    }
+
+    setSeen(key) {
+        this.flags[key] = true;
+    }
+
+    reset() {
+        this.flags = {};
+    }
+}
+
 const char1 = new Character();
 const char2 = new Character();
 const char3 = new Character();
 const char4 = new Character();
 const char5 = new Character();
+const onceOnlyFlags = new OnceOnlyFlags();
 
 // Browser Console Testing Purposes. Remove once done.
 window.char1 = char1;
@@ -70,4 +89,4 @@ window.char5 = char5;
 // Export a singleton instance
 const gameManager = new GameManager();
 export default gameManager;
-export { char1, char2, char3, char4, char5 };
+export { char1, char2, char3, char4, char5, onceOnlyFlags };

@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import VNDialogueBox from '../ui/VNDialogueBox';
 import Carousel from '../ui/carouselUI.js';
+import { playExclusiveBGM } from '../audioUtils';
+import { onceOnlyFlags } from '../gameManager'; // <-- Import the flags
 
 export default class MainHub extends Phaser.Scene {
     constructor() {
@@ -17,6 +19,7 @@ export default class MainHub extends Phaser.Scene {
 
         this.load.audio('se_select', 'assets/sounds/se_select.wav');
         this.load.audio('se_confirm', 'assets/sounds/se_confirm.wav');
+        this.load.audio('bgm_mainhub', 'assets/audio/bgm/bgm_mainhub.mp3');
     }
 
     create() {
@@ -39,15 +42,19 @@ export default class MainHub extends Phaser.Scene {
             { heading: "Cafeteria", desc: "Take a break and eat." }
         ];
 
-        // Create dialogue box with callback that creates the carousel
-        this.vnBox = new VNDialogueBox(this, [
-            "Hmm...",
-            "Where should I go next?",
-            "I should go to the classroom and ask my professor on what I should do."
-        ], () => {
-            // This callback runs AFTER the dialogue finishes
+        // Only show the intro dialogue once per session
+        if (!onceOnlyFlags.hasSeen('mainhub_intro')) {
+            this.vnBox = new VNDialogueBox(this, [
+                "Hmm...",
+                "Where should I go next?",
+                "I should go to the classroom and ask my professor on what I should do."
+            ], () => {
+                onceOnlyFlags.setSeen('mainhub_intro'); // Mark as seen
+                this.createCarousel(iconKeys, iconInfo);
+            });
+        } else {
             this.createCarousel(iconKeys, iconInfo);
-        });
+        }
 
         // Create back button
         const buttonX = 100;
