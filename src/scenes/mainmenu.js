@@ -3,6 +3,7 @@ import { DEFAULT_TEXT_STYLE } from '../game';
 import { updateSoundVolumes } from './options';
 import { playExclusiveBGM } from '../audioUtils';
 import { getAllSaveKeys, loadGame } from '../save';
+import gameManager, { onceOnlyFlags } from '../gameManager'; // <-- Add this import
 
 export default class MainMenu extends Phaser.Scene {
     constructor() {
@@ -38,13 +39,15 @@ export default class MainMenu extends Phaser.Scene {
         bg.setDisplaySize(width, height);
 
         // --- Play Game Button ---
-        const playButton = this.add.text(width / 2, (height / 2) + 60, 'Play Game', {
+        const playButton = this.add.text(width / 2, (height / 2) + 60, 'New Game', {
             ...DEFAULT_TEXT_STYLE,
             color: '#ffff00'
         }).setOrigin(0.5).setInteractive();
 
         playButton.on('pointerdown', () => {
             se_confirmSound.play();
+            gameManager.reset();        // <-- Reset all core game state
+            onceOnlyFlags.reset();      // <-- Reset all once-only flags
             this.scene.start('VNScene');
         });
         playButton.on('pointerover', () => {
