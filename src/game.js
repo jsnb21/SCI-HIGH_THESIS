@@ -40,9 +40,9 @@ const config = {
   height: 936,
   parent: 'game',
   scene: [
-    DungeonScene, // Start with DungeonScene for testing
+    MainMenu, // Start with DungeonScene for testing
     /*Main Scenes */
-    MainMenu,
+    DungeonScene,
     Intro, OptionsScene, MainHub,
     /* Classroom */
     Classroom,

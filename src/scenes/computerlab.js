@@ -70,7 +70,7 @@ export default class ComputerLab extends Phaser.Scene {
             console.log('Selected:', selectedItem.heading);
             // Transition to the new scene based on the selected icon
             if (selectedItem.heading === "Web Design") {
-                this.scene.start('WebDesignScene',{topic: 'webdesign'});
+                this.scene.start('DungeonScene', { topic: 'webdesign' }); // Changed to DungeonScene
             } else if (selectedItem.heading === "Python") {
                 this.scene.start('PythonScene', { topic: 'python' }); 
             } else if (selectedItem.heading === "Java"){

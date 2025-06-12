@@ -139,8 +139,8 @@ export default class DungeonScene extends Phaser.Scene {
         // Button options
         const options = [
             { label: 'Back to Dungeon', action: () => this.closeMenuBox() },
-            { label: 'Options', action: () => { this.closeMenuBox(); this.scene.start('OptionsScene'); } },
-            { label: 'Quit to Hub', action: () => { this.closeMenuBox(); this.scene.start('MainHub'); } }
+            { label: 'Options', action: () => { this.scene.switch('OptionsScene', { prevScene: this.scene.key }); } },
+            { label: 'Back to Main Hub', action: () => { this.closeMenuBox(); this.scene.start('MainHub'); } }
         ];
 
         const optionHeight = 54 * 1.2;

@@ -23,6 +23,9 @@ export default class MainHub extends Phaser.Scene {
     }
 
     create() {
+        // Play MainHub BGM and ensure exclusivity
+        playExclusiveBGM(this, 'bgm_mainhub', { loop: true });
+
         // Set up background
         this.bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'MainHubBG').setOrigin(0, 0);
         this.bg.setAlpha(0.5);
