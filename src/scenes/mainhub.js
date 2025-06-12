@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import VNDialogueBox from '../ui/VNDialogueBox';
 import Carousel from '../ui/carouselUI.js';
-import { playExclusiveBGM } from '../audioUtils'; // Add this import
+import { playExclusiveBGM } from '../audioUtils';
+import { onceOnlyFlags } from '../gameManager'; // <-- Import the flags
 
 export default class MainHub extends Phaser.Scene {
     constructor() {
@@ -22,11 +23,6 @@ export default class MainHub extends Phaser.Scene {
     }
 
     create() {
-        // Delay BGM start to ensure audio context is unlocked
-        this.time.delayedCall(100, () => {
-            playExclusiveBGM(this, 'bgm_mainhub', { loop: true });
-        });
-
         // Set up background
         this.bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'MainHubBG').setOrigin(0, 0);
         this.bg.setAlpha(0.5);
@@ -46,15 +42,19 @@ export default class MainHub extends Phaser.Scene {
             { heading: "Cafeteria", desc: "Take a break and eat." }
         ];
 
-        // Create dialogue box with callback that creates the carousel
-        this.vnBox = new VNDialogueBox(this, [
-            "Hmm...",
-            "Where should I go next?",
-            "I should go to the classroom and ask my professor on what I should do."
-        ], () => {
-            // This callback runs AFTER the dialogue finishes
+        // Only show the intro dialogue once per session
+        if (!onceOnlyFlags.hasSeen('mainhub_intro')) {
+            this.vnBox = new VNDialogueBox(this, [
+                "Hmm...",
+                "Where should I go next?",
+                "I should go to the classroom and ask my professor on what I should do."
+            ], () => {
+                onceOnlyFlags.setSeen('mainhub_intro'); // Mark as seen
+                this.createCarousel(iconKeys, iconInfo);
+            });
+        } else {
             this.createCarousel(iconKeys, iconInfo);
-        });
+        }
 
         // Create back button
         const buttonX = 100;

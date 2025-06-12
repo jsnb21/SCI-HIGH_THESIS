@@ -1,23 +1,23 @@
-// This file is for the back button component in the game, seperated to reduce lines of code in the main file
+// This file is for the back button component in the game, separated to reduce lines of code in the main file
 
 export function createBackButton(scene, targetScene = 'ComputerLab') {
-    // Create "Back" button in the top right
-    const buttonWidth = 100;
-    const buttonHeight = 44;
-    const buttonRadius = 22;
-    const buttonX = scene.cameras.main.width - 30 - buttonWidth / 2;
-    const buttonY = 20 + buttonHeight / 2;
-    
-    const buttonBg = scene.add.graphics();
-    buttonBg.fillStyle(0x1e90ff, 1);
-    buttonBg.fillRoundedRect(
-        buttonX - buttonWidth / 2,
-        buttonY - buttonHeight / 2,
+    // Visual style parameters
+    const buttonX = 100;
+    const buttonY = 50;
+    const buttonWidth = 120;
+    const buttonHeight = 40;
+
+    // Create button background (rectangle with stroke)
+    const buttonBg = scene.add.rectangle(
+        buttonX,
+        buttonY,
         buttonWidth,
         buttonHeight,
-        buttonRadius
-    );
-    
+        0x000000,
+        0.7 // alpha for semi-transparency
+    ).setStrokeStyle(2, 0xffffff);
+
+    // Create button text
     const backButton = scene.add.text(
         buttonX,
         buttonY,
@@ -28,14 +28,13 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
             padding: { left: 0, right: 0, top: 0, bottom: 0 }
         }
     ).setOrigin(0.5)
-        .setInteractive({ useHandCursor: true })
-        .on('pointerdown', () => {
-            scene.se_confirmSound.play();
-            if (scene.restartQuiz) scene.restartQuiz();
-            scene.scene.start(targetScene);
-            scene.scene.stop();
-        });
-    
+     .setInteractive({ useHandCursor: true })
+     .on('pointerdown', () => {
+         if (scene.se_confirmSound) scene.se_confirmSound.play();
+         if (scene.restartQuiz) scene.restartQuiz();
+         scene.scene.start(targetScene);
+     });
+
     // Make button background respond to pointer events
     buttonBg.setInteractive(
         new Phaser.Geom.Rectangle(
@@ -46,15 +45,15 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
         ),
         Phaser.Geom.Rectangle.Contains
     ).on('pointerdown', () => {
-        scene.se_confirmSound.play();
+        if (scene.se_confirmSound) scene.se_confirmSound.play();
         if (scene.restartQuiz) scene.restartQuiz();
-        scene.scene.switch(targetScene);
+        scene.scene.start(targetScene);
     });
-    
+
     // Add to persistent elements if the array exists
     if (scene.persistentElements) {
         scene.persistentElements.push(buttonBg, backButton);
     }
-    
+
     return { buttonBg, backButton };
 }
