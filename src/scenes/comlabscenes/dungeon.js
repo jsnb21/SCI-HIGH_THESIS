@@ -19,6 +19,8 @@ export default class DungeonScene extends Phaser.Scene {
 
     preload() {
         this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
+        this.load.image('heart', 'assets/sprites/dungeon/heart.png')
+
         this.load.audio('bgm_dungeon', 'assets/audio/bgm/bgm_dungeon.mp3');
     }
 
@@ -94,6 +96,17 @@ export default class DungeonScene extends Phaser.Scene {
         }
         this.menuBoxGroup = this.add.group();
 
+        // --- Dim background ---
+        this.menuDimBg = this.add.rectangle(
+            this.sys.game.config.width / 2,
+            this.sys.game.config.height / 2,
+            this.sys.game.config.width,
+            this.sys.game.config.height,
+            0x000000,
+            0.5
+        ).setDepth(1000);
+        this.menuBoxGroup.add(this.menuDimBg);
+
         // Increase size by 20%
         const boxWidth = 340 * 1.2;
         const boxHeight = 260 * 1.2;
@@ -108,7 +121,7 @@ export default class DungeonScene extends Phaser.Scene {
             boxHeight,
             0x222244,
             0.92
-        ).setStrokeStyle(4, 0xffffcc, 1);
+        ).setStrokeStyle(4, 0xffffcc, 1).setDepth(1001);
         this.menuBoxGroup.add(menuBoxBg);
 
         // Title
@@ -120,7 +133,7 @@ export default class DungeonScene extends Phaser.Scene {
                 font: '38px Jersey15-Regular', // 32px * 1.2
                 fill: '#fff'
             }
-        ).setOrigin(0.5);
+        ).setOrigin(0.5).setDepth(1002);
         this.menuBoxGroup.add(title);
 
         // Button options
@@ -140,7 +153,7 @@ export default class DungeonScene extends Phaser.Scene {
                 44 * 1.2,
                 0x000000,
                 0.7
-            ).setStrokeStyle(2, 0xffffff);
+            ).setStrokeStyle(2, 0xffffff).setDepth(1001);
             this.menuBoxGroup.add(optBg);
 
             const optText = this.add.text(
@@ -153,13 +166,17 @@ export default class DungeonScene extends Phaser.Scene {
                 }
             ).setOrigin(0.5)
              .setInteractive({ useHandCursor: true })
-             .on('pointerdown', opt.action);
+             .on('pointerdown', opt.action)
+             .setDepth(1002);
 
             this.menuBoxGroup.add(optText);
 
             // Also make background clickable
             optBg.setInteractive().on('pointerdown', opt.action);
         });
+
+        // Disable player movement while menu is open
+        this.menuOpen = true;
     }
 
     closeMenuBox() {
@@ -167,6 +184,7 @@ export default class DungeonScene extends Phaser.Scene {
             this.menuBoxGroup.clear(true, true);
             this.menuBoxGroup = null;
         }
+        this.menuOpen = false;
     }
 
     drawHUD() {
@@ -179,19 +197,24 @@ export default class DungeonScene extends Phaser.Scene {
         // Intensity
         const intensityText = this.add.text(16, 16, `Intensity ${this.intensity}`, {
             fontFamily: 'Jersey15-Regular',
-            fontSize: '38px', // Increased font size
+            fontSize: '38px',
             color: '#222',
             fontStyle: 'bold'
         }).setDepth(10);
         this.hudElements.push(intensityText);
 
-        // Player HP
-        const hpText = this.add.text(16, 64, `HP: ${this.player.hp}`, {
-            fontFamily: 'Jersey15-Regular',
-            fontSize: '32px', // Increased font size
-            color: '#b00'
-        }).setDepth(10);
-        this.hudElements.push(hpText);
+        // Player HP as heart sprites
+        const heartSpacing = 30;
+        const heartY = 64;
+        const heartXStart = 16;
+        for (let i = 0; i < this.player.hp; i++) {
+            // Make sure you have a heart sprite loaded as 'heart' in your preload method
+            const heart = this.add.image(heartXStart + i * heartSpacing, heartY, 'heart')
+                .setOrigin(0, 0.5)
+                .setScale(0.8)
+                .setDepth(10);
+            this.hudElements.push(heart);
+        }
 
         // Buff icons (max 5 per row)
         const buffSize = 32;
@@ -253,6 +276,7 @@ export default class DungeonScene extends Phaser.Scene {
     }
 
     handleInput(event) {
+        if (this.menuOpen) return; // Disable movement when menu is open
         let { x, y } = this.player;
         if (event.key === 'ArrowUp') y -= 1;
         if (event.key === 'ArrowDown') y += 1;
@@ -262,6 +286,7 @@ export default class DungeonScene extends Phaser.Scene {
     }
 
     handlePointer(pointer) {
+        if (this.menuOpen) return; // Disable movement when menu is open
         const cellSize = 64;
         const gap = 12;
         const gridPixelWidth = GRID_WIDTH * cellSize;
