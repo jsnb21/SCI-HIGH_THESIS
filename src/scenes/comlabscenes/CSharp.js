@@ -30,7 +30,7 @@ export default class CSharpScene extends Phaser.Scene {
         // Create the UI with your specific content
         this.courseUI.createUI({
             courseTitle: 'Selected Course: C#',
-            iconPath: 'assets/img/comlab/icons/CSharpIcon.png',
+            iconPath: 'CSharpIcons',
             description: 'This course covers the fundamentals of C# Programming...',
             buttonText: 'Start Course',
             buttonCallback: () => {

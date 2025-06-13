@@ -13,7 +13,6 @@ export default class CourseSelectionUI {
         buttonText = 'Start Course',
         buttonCallback = () => {},
         backCallback = null, // Optional: callback for back button
-        backIconKey = 'backIcon', // The cache key for your back icon image
     }) {
         this.destroy();
 
@@ -21,7 +20,7 @@ export default class CourseSelectionUI {
 
         // Overlay background
         const overlay = this.scene.add.rectangle(
-            width / 2, height / 2, width, height, 0x0a0a1e, 0.92
+            width / 2, height / 2, width, height, 0xD6C8F2, 0.92
         ).setDepth(100);
         this.elements.overlay = overlay;
 

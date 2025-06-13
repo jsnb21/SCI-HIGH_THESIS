@@ -22,7 +22,7 @@ export default class Office extends Phaser.Scene {
 
     create() {
         const { width, height } = this.scale;
-        this.cameras.main.setBackgroundColor('#e8f0fe');
+        this.cameras.main.setBackgroundColor('#F6C1D0');
 
         // Sound effects
         this.se_hoverSound = this.sound.add('se_select');

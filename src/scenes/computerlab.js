@@ -29,7 +29,7 @@ export default class ComputerLab extends Phaser.Scene {
     async create() {
 
         // Set up background
-        this.cameras.main.setBackgroundColor('#808080');
+        this.cameras.main.setBackgroundColor('#D6C8F2');
 
         // Use the shared back button (top-left, consistent style)
         createBackButton(this, 'MainHub');
