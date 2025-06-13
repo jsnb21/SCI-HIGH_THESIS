@@ -25,6 +25,17 @@ export default class DungeonScene extends Phaser.Scene {
     }
 
     create() {
+        // Reset all persistent state
+        this.grid = [];
+        this.player = { x: Math.floor(GRID_WIDTH / 2), y: GRID_HEIGHT - 1, hp: 5, buffs: [] };
+        this.adjacentCells = [];
+        this.breathAlpha = 0.5;
+        this.breathDir = 1;
+        this.intensity = 1;
+        this.hudElements = [];
+        this.menuOpen = false;
+        this.menuBoxGroup = null;
+
         this.cameras.main.setBackgroundColor('#BFAF6A'); // Darker background color
 
         playExclusiveBGM(this, 'bgm_dungeon', { loop: true, volume: 0.5 });
@@ -40,6 +51,23 @@ export default class DungeonScene extends Phaser.Scene {
 
         // Add Menu Button at top right
         this.createMenuButton();
+
+        this.events.once('shutdown', this.shutdown, this);
+    }
+
+    shutdown() {
+        if (this.gridGraphics) {
+            this.gridGraphics.destroy();
+            this.gridGraphics = null;
+        }
+        if (this.hudElements && this.hudElements.length) {
+            this.hudElements.forEach(el => el.destroy());
+            this.hudElements = [];
+        }
+        if (this.menuBoxGroup) {
+            this.menuBoxGroup.clear(true, true);
+            this.menuBoxGroup = null;
+        }
     }
 
     createMenuButton() {
@@ -354,7 +382,7 @@ export default class DungeonScene extends Phaser.Scene {
             this.breathAlpha = 0.3;
             this.breathDir = 1;
         }
+        // Only redraw grid if breathAlpha changed enough (optional optimization)
         this.drawGrid();
-        this.drawHUD();
     }
 }
