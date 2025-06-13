@@ -31,13 +31,18 @@ import CplusplusQuizScene from './scenes/quizscenes/CplusplusQuizScene.js';
 //Library Scenes
 import BaseLibraryScene from './scenes/libraryScenes/baseLibraryScene.js';
 
+// Dungeon Scene
+import DungeonScene from './scenes/comlabscenes/dungeon.js';
+
 const config = {
   type: Phaser.AUTO,
   width: 1224,
   height: 936,
   parent: 'game',
   scene: [
+    MainMenu, // Start with DungeonScene for testing
     /*Main Scenes */
+    DungeonScene,
     /*MainMenu,
     Intro, OptionsScene, MainHub,
     /* Classroom */
@@ -51,9 +56,9 @@ const config = {
     /* Library Scenes */
     BaseLibraryScene,
   ],
-    dom: {
+  dom: {
     createContainer: true
-    }
+  }
 };
 
 export const DEFAULT_TEXT_STYLE = {

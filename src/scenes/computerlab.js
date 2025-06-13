@@ -29,7 +29,7 @@ export default class ComputerLab extends Phaser.Scene {
     async create() {
 
         // Set up background
-        this.cameras.main.setBackgroundColor('#808080');
+        this.cameras.main.setBackgroundColor('#D6C8F2');
 
         // Use the shared back button (top-left, consistent style)
         createBackButton(this, 'MainHub');
@@ -57,7 +57,7 @@ export default class ComputerLab extends Phaser.Scene {
         // Initialize the carousel
         this.carousel = new Carousel(this, {
             centerY: 400,
-            spacing: 300,
+            spacing: 400,
             largeScale: 1.3,
             sounds: {
                 hover: 'se_hoverSound',
@@ -70,7 +70,7 @@ export default class ComputerLab extends Phaser.Scene {
             console.log('Selected:', selectedItem.heading);
             // Transition to the new scene based on the selected icon
             if (selectedItem.heading === "Web Design") {
-                this.scene.start('WebDesignScene',{topic: 'webdesign'});
+                this.scene.start('DungeonScene', { topic: 'webdesign' }); // Changed to DungeonScene
             } else if (selectedItem.heading === "Python") {
                 this.scene.start('PythonScene', { topic: 'python' }); 
             } else if (selectedItem.heading === "Java"){

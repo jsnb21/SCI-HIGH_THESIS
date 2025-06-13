@@ -52,8 +52,14 @@ export default class OptionsScene extends Phaser.Scene {
             color: '#ffff00'
         }).setOrigin(0.5).setInteractive();
 
+        // Smarter back: go to previous scene if provided, else fallback to MainMenu
         backButton.on('pointerdown', () => {
-            this.scene.start('MainMenu');
+            const prevScene = this.sys.settings.data && this.sys.settings.data.prevScene;
+            if (prevScene) {
+                this.scene.switch(prevScene);
+            } else {
+                this.scene.start('MainMenu');
+            }
         });
 
         // Drag logic for SE slider

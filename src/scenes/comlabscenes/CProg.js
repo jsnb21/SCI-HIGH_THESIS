@@ -31,7 +31,7 @@ export default class CSProgrammingScene extends Phaser.Scene {
         // Create the UI with your specific content
         this.courseUI.createUI({
             courseTitle: 'Selected Course: C',
-            iconPath: 'assets/img/comlab/icons/webDesignIcons.png',
+            iconPath: 'webDesignIcons', // Use the cache key, not the file path
             description: 'This course covers the fundamentals of C Programming...',
             buttonText: 'Start Course',
             buttonCallback: () => {

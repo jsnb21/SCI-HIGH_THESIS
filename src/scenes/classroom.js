@@ -20,7 +20,7 @@ export default class Classroom extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // Add background color
-        this.cameras.main.setBackgroundColor('#f0e6d2');
+        this.cameras.main.setBackgroundColor('#B2E2B1');
 
         // Sound effects
         this.se_hoverSound = this.sound.add('se_select');
