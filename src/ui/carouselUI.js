@@ -52,8 +52,8 @@ class Carousel {
             spacing: config.spacing || 280,
             smallScale: config.smallScale || 0.7,
             largeScale: config.largeScale || 1.2,
-            textOffsetY: config.textOffsetY || 240,      // Increased from 180
-            descOffsetY: config.descOffsetY || 300,      // Increased from 225
+            textOffsetY: config.textOffsetY || 240,      
+            descOffsetY: config.descOffsetY || 300,      
             headingStyle: config.headingStyle || {
                 fontFamily: 'Jersey15-Regular',
                 fontSize: '48px',
