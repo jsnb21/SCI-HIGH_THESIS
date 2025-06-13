@@ -57,7 +57,7 @@ export default class ComputerLab extends Phaser.Scene {
         // Initialize the carousel
         this.carousel = new Carousel(this, {
             centerY: 400,
-            spacing: 300,
+            spacing: 400,
             largeScale: 1.3,
             sounds: {
                 hover: 'se_hoverSound',
