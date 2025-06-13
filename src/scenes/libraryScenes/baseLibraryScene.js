@@ -1,4 +1,4 @@
-// Base Library Scene
+// Enhanced Library Scene with JSON Data Support
 
 class BaseLibraryScene extends Phaser.Scene {
     constructor() {
@@ -7,6 +7,7 @@ class BaseLibraryScene extends Phaser.Scene {
             active: false // Scene won't start automatically
         });
         this.isPopupOpen = false;
+        this.libraryData = null; // Store loaded JSON data
     }
 
     init(data) {
@@ -19,34 +20,113 @@ class BaseLibraryScene extends Phaser.Scene {
     preload() {
         // Load library-specific assets
         this.load.image('libraryBg', 'assets/img/bg/libraryBG.jpg');
-        // this.load.image('bookshelf', 'assets/library/bookshelf.png');
-        // this.load.image('book', 'assets/library/book.png');
+        
+        // Load JSON data files
+        this.load.json('libraryData', `/library/library.json`);
+        this.load.json('booksData', `/library/books.json`);
+        this.load.json('progressData', `/library/progress.json`);
+        this.load.json('notesData', `/library/notes.json`);
+        
+        // Optional: Load audio and other assets
         // this.load.audio('pageFlip', 'assets/library/page-flip.wav');
-    
     }
 
     create() {
+        // Load and process JSON data
+        this.loadJsonData();
+        
+        // Validate and set defaults for JSON data
+        this.validateJsonData();
+        
         // Setup scene
         this.setupBackground();
         this.createMainMenu();
         this.createPopupContainer();
     }
 
+    loadJsonData() {
+        // Load all JSON data
+        this.libraryData = {
+            main: this.cache.json.get('libraryData'),
+            books: this.cache.json.get('booksData'),
+            progress: this.cache.json.get('progressData'),
+            notes: this.cache.json.get('notesData')
+        };
+    }
+
+    validateJsonData() {
+        // Set default structure if data is missing
+        if (!this.libraryData.main) {
+            this.libraryData.main = {
+                title: "LIBRARY MENU",
+                menuItems: [
+                    { name: 'Books', hasPopup: true, icon: '📚' },
+                    { name: 'Progress', hasPopup: true, icon: '📊' },
+                    { name: 'Notes', hasPopup: true, icon: '📝' },
+                    { name: 'Settings', hasPopup: false, icon: '⚙️' }
+                ]
+            };
+        }
+
+        if (!this.libraryData.books) {
+            this.libraryData.books = {
+                categories: [
+                    {
+                        name: "Programming",
+                        books: [
+                            {
+                                id: 1,
+                                title: "Web Design Basics",
+                                author: "Jane Smith",
+                                status: "available",
+                                description: "Learn the fundamentals of web design",
+                                pages: 250,
+                                difficulty: "beginner"
+                            }
+                        ]
+                    }
+                ]
+            };
+        }
+
+        if (!this.libraryData.progress) {
+            this.libraryData.progress = {
+                stats: [
+                    { label: 'Books Read', value: 0, max: 20, color: '#3498DB' },
+                    { label: 'Quests Completed', value: 0, max: 15, color: '#27AE60' },
+                    { label: 'Notes Written', value: 0, max: 50, color: '#E74C3C' }
+                ],
+                achievements: []
+            };
+        }
+
+        if (!this.libraryData.notes) {
+            this.libraryData.notes = {
+                categories: [
+                    {
+                        name: "Study Notes",
+                        notes: []
+                    }
+                ]
+            };
+        }
+    }
+
     setupBackground() {
-    this.background = this.add.image(0, 0, 'libraryBg');
-    this.background.setOrigin(0, 0);
-    
-    // Calculate scale to cover entire screen
-    const scaleX = this.cameras.main.width / this.background.width;
-    const scaleY = this.cameras.main.height / this.background.height;
-    const scale = Math.max(scaleX, scaleY);
-    
-    this.background.setScale(scale);
-    
-    // Center the image
-    this.background.setPosition(
-        (this.cameras.main.width - this.background.displayWidth) / 2,
-        (this.cameras.main.height - this.background.displayHeight) / 2
+        this.background = this.add.image(0, 0, 'libraryBg');
+        this.background.setOrigin(0, 0);
+        
+        // Calculate scale to cover entire screen
+        const scaleX = this.cameras.main.width / this.background.width;
+        const scaleY = this.cameras.main.height / this.background.height;
+        const scale = Math.max(scaleX, scaleY);
+        
+        this.background.setScale(scale);
+        
+        // Center the image
+        this.background.setPosition(
+            (this.cameras.main.width - this.background.displayWidth) / 2,
+            (this.cameras.main.height - this.background.displayHeight) / 2
         );
     }
     
@@ -59,8 +139,8 @@ class BaseLibraryScene extends Phaser.Scene {
         menuBg.setStrokeStyle(2, 0x5D6D7E);
         this.mainMenuContainer.add(menuBg);
         
-        // Menu title
-        const title = this.add.text(0, -150, 'LIBRARY MENU', {
+        // Menu title - FIX: Access through this.libraryData.main.title
+        const title = this.add.text(0, -150, this.libraryData.main.title, {
             fontSize: '20px',
             color: '#ECF0F1',
             fontFamily: 'Jersey15-Regular',
@@ -68,23 +148,17 @@ class BaseLibraryScene extends Phaser.Scene {
         }).setOrigin(0.5);
         this.mainMenuContainer.add(title);
         
-        // Menu items with popup triggers
-        const menuItems = [
-            { name: 'Books', hasPopup: true },
-            { name: 'Progress', hasPopup: true },
-            { name: 'Notes', hasPopup: true },
-            { name: 'Settings', hasPopup: false }
-        ];
-        
-        menuItems.forEach((item, index) => {
+        // Create menu items from JSON data - FIX: Access through this.libraryData.main.menuItems
+        this.libraryData.main.menuItems.forEach((item, index) => {
             const y = -50 + (index * 60);
             
             // Button background
             const btnBg = this.add.rectangle(0, y, 200, 45, 0x3498DB, 0.8);
             btnBg.setStrokeStyle(1, 0x2980B9);
             
-            // Button text
-            const btnText = this.add.text(0, y, item.name, {
+            // Button text with icon
+            const displayText = item.icon ? `${item.icon} ${item.name}` : item.name;
+            const btnText = this.add.text(0, y, displayText, {
                 fontSize: '16px',
                 color: '#FFFFFF',
                 fontFamily: 'Jersey15-Regular',
@@ -107,7 +181,6 @@ class BaseLibraryScene extends Phaser.Scene {
                 if (item.hasPopup) {
                     if (this.isPopupOpen) {
                         if (this.currentPopupType === item.name) {
-                            // Same popup, do nothing
                             return;
                         }
                         this.hidePopup(() => {
@@ -127,18 +200,18 @@ class BaseLibraryScene extends Phaser.Scene {
     
     createPopupContainer() {
         // Popup container - positioned off-screen initially
-        const popupWidth = this.cameras.main.width / 2; // Half screen width
-        const popupHeight = this.cameras.main.height;   // Full height
-        const popupX = this.cameras.main.width + (popupWidth / 2); // Off-screen right
+        const popupWidth = this.cameras.main.width / 2;
+        const popupHeight = this.cameras.main.height;
+        const popupX = this.cameras.main.width + (popupWidth / 2);
         const popupY = this.cameras.main.height / 2;
         
         this.popupContainer = this.add.container(popupX, popupY);
         
-        // Semi-transparent overlay (covers left half of screen)
+        // Semi-transparent overlay
         this.overlay = this.add.rectangle(-popupWidth, 0, popupWidth, popupHeight, 0x000000, 0.5);
         this.overlay.setInteractive();
         this.overlay.on('pointerdown', () => {
-            this.hidePopup(); // Click overlay to close
+            this.hidePopup();
         });
         this.overlay.setVisible(false);
         
@@ -178,8 +251,15 @@ class BaseLibraryScene extends Phaser.Scene {
             fontStyle: 'bold'
         }).setOrigin(0.5);
         
-        // Content area
+        // Content area with scrolling capability
         this.popupContent = this.add.container(0, 0);
+        this.popupScrollY = 0;
+        
+        // Add scroll functionality
+        this.popupBg.setInteractive();
+        this.popupBg.on('wheel', (pointer, gameObjects, deltaX, deltaY) => {
+            this.scrollPopupContent(deltaY);
+        });
         
         // Add all elements to popup container
         this.popupContainer.add([
@@ -191,27 +271,31 @@ class BaseLibraryScene extends Phaser.Scene {
             this.popupContent
         ]);
         
-        // Initially hidden
         this.popupContainer.setVisible(false);
+    }
+
+    scrollPopupContent(deltaY) {
+        const scrollSpeed = 30;
+        this.popupScrollY += deltaY > 0 ? scrollSpeed : -scrollSpeed;
+        
+        // Limit scroll bounds
+        this.popupScrollY = Math.max(-200, Math.min(200, this.popupScrollY));
+        
+        this.popupContent.y = this.popupScrollY;
     }
     
     showPopup(contentType) {
         if (this.isPopupOpen) return;
         
         this.isPopupOpen = true;
-        this.currentPopupType = contentType; // Track which popup is open
+        this.currentPopupType = contentType;
+        this.popupScrollY = 0; // Reset scroll position
         
-        // Show overlay
         this.overlay.setVisible(true);
-        
-        // Update popup content based on type
         this.updatePopupContent(contentType);
-        
-        // Show popup container
         this.popupContainer.setVisible(true);
         
-        // Animate popup sliding in from right
-        const targetX = this.cameras.main.width - (this.cameras.main.width / 4); // Right half position
+        const targetX = this.cameras.main.width - (this.cameras.main.width / 4);
         
         this.tweens.add({
             targets: this.popupContainer,
@@ -220,7 +304,6 @@ class BaseLibraryScene extends Phaser.Scene {
             ease: 'Power3.easeOut'
         });
         
-        // Fade in overlay
         this.overlay.setAlpha(0);
         this.tweens.add({
             targets: this.overlay,
@@ -236,7 +319,6 @@ class BaseLibraryScene extends Phaser.Scene {
             return;
         }
         
-        // Animate popup sliding out to right
         const offScreenX = this.cameras.main.width + (this.cameras.main.width / 4);
         
         this.tweens.add({
@@ -247,33 +329,24 @@ class BaseLibraryScene extends Phaser.Scene {
             onComplete: () => {
                 this.popupContainer.setVisible(false);
                 this.isPopupOpen = false;
+                this.currentPopupType = null;
                 if (onComplete) onComplete();
             }
         });
         
-        // Fade out overlay
         this.tweens.add({
             targets: this.overlay,
             alpha: 0,
             duration: 300,
-            ease: 'Power2.easeIn',
-            onComplete: () => {
-                this.popupContainer.setVisible(false);
-                this.isPopupOpen = false;
-                this.currentPopupType = null; // Clear popup type
-                if (onComplete) onComplete();
-            }
+            ease: 'Power2.easeIn'
         });
     }
     
     updatePopupContent(contentType) {
-        // Clear existing content
         this.popupContent.removeAll(true);
-        
-        // Update title
+        this.popupContent.y = 0; // Reset position
         this.popupTitle.setText(contentType.toUpperCase());
         
-        // Create content based on type
         switch(contentType) {
             case 'Books':
                 this.createBooksContent();
@@ -288,114 +361,298 @@ class BaseLibraryScene extends Phaser.Scene {
     }
     
     createBooksContent() {
-        const books = [
-            'Web Design Basics',
-            'Java Programming Essentials',
-            'Python for Beginners',
-            'C++ Advanced Techniques',
-        ];
+        let yOffset = -350;
         
-        books.forEach((book, index) => {
-            const y = -150 + (index * 60);
-            
-            // Book item background
-            const bookBg = this.add.rectangle(0, y, 400, 50, 0xECF0F1);
-            bookBg.setStrokeStyle(1, 0xBDC3C7);
-            
-            // Book title
-            const bookTitle = this.add.text(-150, y, book, {
-                fontSize: '16px',
-                color: '#2C3E50',
-                fontFamily: 'Arial'
-            }).setOrigin(0, 0.5);
-            
-            // Read button
-            const readBtn = this.add.rectangle(150, y, 80, 30, 0x27AE60);
-            readBtn.setInteractive();
-            readBtn.on('pointerdown', () => {
-                console.log(`Reading: ${book}`);
-                // Add your read book logic here
-            });
-            
-            const readText = this.add.text(150, y, 'READ', {
-                fontSize: '12px',
-                color: '#FFFFFF',
-                fontFamily: 'Arial'
+        this.libraryData.books.categories.forEach((category, categoryIndex) => {
+            // Category header
+            const categoryHeader = this.add.text(0, yOffset, category.name, {
+                fontSize: '18px',
+                color: '#34495E',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
             }).setOrigin(0.5);
             
-            this.popupContent.add([bookBg, bookTitle, readBtn, readText]);
+            this.popupContent.add(categoryHeader);
+            yOffset += 55;
+            
+            // Books in category
+            category.books.forEach((book, bookIndex) => {
+                // Book container
+                const bookBg = this.add.rectangle(0, yOffset, 450, 80, 0xECF0F1);
+                bookBg.setStrokeStyle(1, 0xBDC3C7);
+                
+                // Book info
+                const bookTitle = this.add.text(-200, yOffset - 15, book.title, {
+                    fontSize: '16px',
+                    color: '#2C3E50',
+                    fontFamily: 'Arial',
+                    fontStyle: 'bold'
+                }).setOrigin(0, 0.5);
+                
+                const bookAuthor = this.add.text(-200, yOffset + 5, `by ${book.author}`, {
+                    fontSize: '12px',
+                    color: '#7F8C8D',
+                    fontFamily: 'Arial'
+                }).setOrigin(0, 0.5);
+                
+                const bookPages = this.add.text(-200, yOffset + 20, `${book.pages} pages • ${book.difficulty}`, {
+                    fontSize: '10px',
+                    color: '#95A5A6',
+                    fontFamily: 'Arial'
+                }).setOrigin(0, 0.5);
+                
+                // Status indicator
+                const statusColor = book.status === 'available' ? 0x27AE60 : 
+                                  book.status === 'reading' ? 0xF39C12 : 0xE74C3C;
+                const statusBg = this.add.rectangle(150, yOffset - 10, 80, 20, statusColor);
+                const statusText = this.add.text(150, yOffset - 10, book.status.toUpperCase(), {
+                    fontSize: '10px',
+                    color: '#FFFFFF',
+                    fontFamily: 'Arial'
+                }).setOrigin(0.5);
+                
+                // Action button
+                const actionBtn = this.add.rectangle(150, yOffset + 15, 80, 25, 0x3498DB);
+                actionBtn.setInteractive();
+                actionBtn.on('pointerdown', () => {
+                    this.handleBookAction(book);
+                });
+                actionBtn.on('pointerover', () => {
+                    actionBtn.setFillStyle(0x2980B9);
+                });
+                actionBtn.on('pointerout', () => {
+                    actionBtn.setFillStyle(0x3498DB);
+                });
+                
+                const actionText = this.add.text(150, yOffset + 15, 'READ', {
+                    fontSize: '10px',
+                    color: '#FFFFFF',
+                    fontFamily: 'Arial'
+                }).setOrigin(0.5);
+                
+                this.popupContent.add([
+                    bookBg, bookTitle, bookAuthor, bookPages,
+                    statusBg, statusText, actionBtn, actionText
+                ]);
+                
+                yOffset += 100;
+            });
+            
+            yOffset += 20; // Space between categories
         });
     }
     
     createProgressContent() {
-        // Progress bars and stats
-        const stats = [
-            { label: 'Books Read', value: 12, max: 20 },
-            { label: 'Quests Completed', value: 8, max: 15 },
-            { label: 'Notes Written', value: 25, max: 50 }
-        ];
+        let yOffset = -150;
         
-        stats.forEach((stat, index) => {
-            const y = -100 + (index * 80);
-            
+        this.libraryData.progress.stats.forEach((stat, index) => {
             // Label
-            const label = this.add.text(0, y - 20, stat.label, {
+            const label = this.add.text(0, yOffset, stat.label, {
                 fontSize: '16px',
                 color: '#2C3E50',
-                fontFamily: 'Arial'
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
             }).setOrigin(0.5);
             
             // Progress bar background
-            const progressBg = this.add.rectangle(0, y + 10, 300, 20, 0xBDC3C7);
+            const progressBg = this.add.rectangle(0, yOffset + 25, 350, 20, 0xBDC3C7);
             
             // Progress bar fill
-            const fillWidth = (stat.value / stat.max) * 300;
-            const progressFill = this.add.rectangle(-150 + (fillWidth/2), y + 10, fillWidth, 20, 0x3498DB);
+            const fillWidth = (stat.value / stat.max) * 350;
+            const progressFill = this.add.rectangle(-175 + (fillWidth/2), yOffset + 25, fillWidth, 20, 
+                parseInt(stat.color.replace('#', '0x')));
             
             // Progress text
-            const progressText = this.add.text(0, y + 35, `${stat.value}/${stat.max}`, {
+            const progressText = this.add.text(0, yOffset + 50, `${stat.value}/${stat.max} (${Math.round((stat.value/stat.max)*100)}%)`, {
                 fontSize: '12px',
                 color: '#7F8C8D',
                 fontFamily: 'Arial'
             }).setOrigin(0.5);
             
             this.popupContent.add([label, progressBg, progressFill, progressText]);
+            
+            yOffset += 100;
         });
+        
+        // Achievements section
+        if (this.libraryData.progress.achievements.length > 0) {
+            yOffset += 20;
+            const achievementHeader = this.add.text(0, yOffset, 'ACHIEVEMENTS', {
+                fontSize: '18px',
+                color: '#34495E',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            
+            this.popupContent.add(achievementHeader);
+            yOffset += 40;
+            
+            this.libraryData.progress.achievements.forEach((achievement, index) => {
+                const achievementBg = this.add.rectangle(0, yOffset, 400, 50, 0xF8F9FA);
+                achievementBg.setStrokeStyle(1, 0xDEE2E6);
+                
+                const achievementText = this.add.text(0, yOffset, achievement.name, {
+                    fontSize: '14px',
+                    color: '#495057',
+                    fontFamily: 'Arial'
+                }).setOrigin(0.5);
+                
+                this.popupContent.add([achievementBg, achievementText]);
+                yOffset += 70;
+            });
+        }
     }
     
     createNotesContent() {
-        const notes = [
-            'Remember to review Web Design concepts.',
-            'Java loops and conditionals are crucial for programming.',
-            'Python syntax is beginner-friendly, practice daily.',
-            'C++ memory management requires careful handling.',
-            'Keep track of your progress in the library.'
-        ];
+        let yOffset = -150;
         
-        notes.forEach((note, index) => {
-            const y = -150 + (index * 70);
-            
-            // Note background
-            const noteBg = this.add.rectangle(0, y, 450, 60, 0xFFF3CD);
-            noteBg.setStrokeStyle(1, 0xFFC107);
-            
-            // Note text
-            const noteText = this.add.text(0, y, note, {
-                fontSize: '14px',
-                color: '#856404',
+        this.libraryData.notes.categories.forEach((category, categoryIndex) => {
+            // Category header
+            const categoryHeader = this.add.text(0, yOffset, category.name, {
+                fontSize: '18px',
+                color: '#34495E',
                 fontFamily: 'Arial',
-                wordWrap: { width: 400 }
+                fontStyle: 'bold'
             }).setOrigin(0.5);
             
-            this.popupContent.add([noteBg, noteText]);
+            this.popupContent.add(categoryHeader);
+            yOffset += 40;
+            
+            // Notes in category
+            if (category.notes.length === 0) {
+                const emptyText = this.add.text(0, yOffset, 'No notes yet...', {
+                    fontSize: '14px',
+                    color: '#7F8C8D',
+                    fontFamily: 'Arial',
+                    fontStyle: 'italic'
+                }).setOrigin(0.5);
+                
+                this.popupContent.add(emptyText);
+                yOffset += 40;
+            } else {
+                category.notes.forEach((note, noteIndex) => {
+                    // Note background
+                    const noteBg = this.add.rectangle(0, yOffset, 450, 80, 0xFFF3CD);
+                    noteBg.setStrokeStyle(1, 0xFFC107);
+                    
+                    // Note text
+                    const noteText = this.add.text(0, yOffset - 10, note.content || note, {
+                        fontSize: '14px',
+                        color: '#856404',
+                        fontFamily: 'Arial',
+                        wordWrap: { width: 400 }
+                    }).setOrigin(0.5);
+                    
+                    // Note date if available
+                    if (note.date) {
+                        const noteDate = this.add.text(0, yOffset + 25, note.date, {
+                            fontSize: '10px',
+                            color: '#6C757D',
+                            fontFamily: 'Arial'
+                        }).setOrigin(0.5);
+                        
+                        this.popupContent.add([noteBg, noteText, noteDate]);
+                    } else {
+                        this.popupContent.add([noteBg, noteText]);
+                    }
+                    
+                    yOffset += 100;
+                });
+            }
+            
+            yOffset += 20; // Space between categories
         });
+    }
+    
+    handleBookAction(book) {
+        console.log(`Reading book: ${book.title}`);
+        // Update book status
+        book.status = 'reading';
+        // You can add logic here to:
+        // - Open book reading scene
+        // - Update progress data
+        // - Save progress to local storage or server
+        // - Trigger events
     }
     
     handleMenuClick(menuItem) {
         console.log(`Clicked: ${menuItem}`);
-        // Handle non-popup menu items
+        // Handle non-popup menu items like Settings
+        switch(menuItem) {
+            case 'Settings':
+                // Open settings popup or scene
+                break;
+        }
     }
 
+    // Utility methods for data management
+    addBook(categoryName, bookData) {
+        const category = this.libraryData.books.categories.find(cat => cat.name === categoryName);
+        if (category) {
+            bookData.id = Date.now(); // Simple ID generation
+            category.books.push(bookData);
+            this.saveData();
+        }
+    }
+
+    removeBook(bookId) {
+        this.libraryData.books.categories.forEach(category => {
+            category.books = category.books.filter(book => book.id !== bookId);
+        });
+        this.saveData();
+    }
+
+    addNote(categoryName, noteData) {
+        const category = this.libraryData.notes.categories.find(cat => cat.name === categoryName);
+        if (category) {
+            if (typeof noteData === 'string') {
+                noteData = {
+                    content: noteData,
+                    date: new Date().toLocaleDateString(),
+                    id: Date.now()
+                };
+            }
+            category.notes.push(noteData);
+            this.saveData();
+        }
+    }
+
+    removeNote(noteId) {
+        this.libraryData.notes.categories.forEach(category => {
+            category.notes = category.notes.filter(note => note.id !== noteId);
+        });
+        this.saveData();
+    }
+
+    updateProgress(statLabel, newValue) {
+        const stat = this.libraryData.progress.stats.find(s => s.label === statLabel);
+        if (stat) {
+            stat.value = Math.min(newValue, stat.max);
+            this.saveData();
+        }
+    }
+
+    saveData() {
+        // Save to localStorage (for client-side persistence)
+        // In a real game, you'd save to a server or file system
+        try {
+            localStorage.setItem('libraryData', JSON.stringify(this.libraryData));
+        } catch (e) {
+            console.warn('Could not save library data to localStorage');
+        }
+    }
+
+    loadSavedData() {
+        // Load from localStorage if available
+        try {
+            const savedData = localStorage.getItem('libraryData');
+            if (savedData) {
+                this.libraryData = JSON.parse(savedData);
+            }
+        } catch (e) {
+            console.warn('Could not load library data from localStorage');
+        }
+    }
 }
 
 // Export the scene
