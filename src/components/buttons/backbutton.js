@@ -15,7 +15,8 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
         buttonHeight,
         0x000000,
         0.7 // alpha for semi-transparency
-    ).setStrokeStyle(2, 0xffffff);
+    ).setStrokeStyle(2, 0xffffff)
+     .setDepth(9999); // Ensure it's on top
 
     // Create button text
     const backButton = scene.add.text(
@@ -29,6 +30,7 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
         }
     ).setOrigin(0.5)
      .setInteractive({ useHandCursor: true })
+     .setDepth(10000) // Ensure it's above the background
      .on('pointerdown', () => {
          if (scene.se_confirmSound) scene.se_confirmSound.play();
          if (scene.restartQuiz) scene.restartQuiz();

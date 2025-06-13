@@ -30,7 +30,7 @@ export default class WebDesignScene extends Phaser.Scene {
         // Create the UI with your specific content
         this.courseUI.createUI({
             courseTitle: 'Selected Course: Web Design',
-            iconPath: 'assets/img/comlab/icons/webDesignIcons.png',
+            iconPath: 'webDesignIcons',
             description: 'This course covers the fundamentals of web design...',
             buttonText: 'Start Course',
             buttonCallback: () => {

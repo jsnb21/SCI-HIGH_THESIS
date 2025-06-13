@@ -29,7 +29,7 @@ export default class JavaScene extends Phaser.Scene {
         // Create the UI with your specific content
         this.courseUI.createUI({
             courseTitle: 'Selected Course: Java',
-            iconPath: 'assets/img/comlab/icons/JavaIcon.png',
+            iconPath: 'JavaIcon',
             description: 'This course covers the fundamentals of Java Programming...',
             buttonText: 'Start Course',
             buttonCallback: () => {
