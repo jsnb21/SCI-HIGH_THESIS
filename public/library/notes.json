@@ -1,0 +1,142 @@
+{
+  "categories": [
+    {
+      "name": "Study Notes",
+      "notes": [
+        {
+          "id": 1,
+          "content": "HTML elements form the building blocks of web pages. Remember to use semantic tags for better accessibility and SEO.",
+          "date": "2024-01-15",
+          "category": "Web Design",
+          "tags": ["HTML", "accessibility", "SEO"]
+        },
+        {
+          "id": 2,
+          "content": "Java loops: for, while, and do-while. Each has its specific use case. For loops are best for known iterations, while loops for unknown iterations.",
+          "date": "2024-01-18",
+          "category": "Programming",
+          "tags": ["Java", "loops", "control-structures"]
+        },
+        {
+          "id": 3,
+          "content": "Python syntax is beginner-friendly with its indentation-based structure. Practice daily to build muscle memory for common patterns.",
+          "date": "2024-01-20",
+          "category": "Programming",
+          "tags": ["Python", "syntax", "practice"]
+        },
+        {
+          "id": 4,
+          "content": "C++ memory management: Always pair new with delete, use smart pointers when possible. RAII principle is crucial for resource management.",
+          "date": "2024-01-22",
+          "category": "Programming",
+          "tags": ["C++", "memory", "RAII", "pointers"]
+        },
+        {
+          "id": 5,
+          "content": "React hooks revolutionized functional components. useState for state, useEffect for side effects, useMemo for optimization.",
+          "date": "2024-01-25",
+          "category": "Web Development",
+          "tags": ["React", "hooks", "functional-components"]
+        }
+      ]
+    },
+    {
+      "name": "Personal Reflections",
+      "notes": [
+        {
+          "id": 6,
+          "content": "Learning programming is like learning a new language. Start with basics, practice regularly, and don't be afraid to make mistakes.",
+          "date": "2024-01-16",
+          "category": "Learning",
+          "tags": ["motivation", "learning-tips"]
+        },
+        {
+          "id": 7,
+          "content": "Today I struggled with understanding pointers in C++, but after drawing diagrams and practicing examples, it finally clicked!",
+          "date": "2024-01-23",
+          "category": "Progress",
+          "tags": ["C++", "breakthrough", "learning-moment"]
+        },
+        {
+          "id": 8,
+          "content": "Setting small daily goals helps maintain consistency. 30 minutes of reading + 15 minutes of note-taking works well for me.",
+          "date": "2024-01-24",
+          "category": "Study Strategy",
+          "tags": ["goals", "consistency", "time-management"]
+        }
+      ]
+    },
+    {
+      "name": "Quick References",
+      "notes": [
+        {
+          "id": 9,
+          "content": "CSS Flexbox: display: flex, justify-content (main axis), align-items (cross axis), flex-direction for layout direction.",
+          "date": "2024-01-17",
+          "category": "Reference",
+          "tags": ["CSS", "flexbox", "layout", "cheatsheet"]
+        },
+        {
+          "id": 10,
+          "content": "Git commands: git add . (stage all), git commit -m 'message' (commit), git push origin main (push to remote).",
+          "date": "2024-01-19",
+          "category": "Reference",
+          "tags": ["Git", "version-control", "commands"]
+        },
+        {
+          "id": 11,
+          "content": "Python list comprehensions: [expression for item in iterable if condition]. More Pythonic than traditional loops.",
+          "date": "2024-01-21",
+          "category": "Reference",
+          "tags": ["Python", "list-comprehension", "syntax"]
+        }
+      ]
+    },
+    {
+      "name": "Project Ideas",
+      "notes": [
+        {
+          "id": 12,
+          "content": "Build a personal portfolio website using HTML, CSS, and JavaScript. Include projects section, about me, and contact form.",
+          "date": "2024-01-26",
+          "category": "Project",
+          "tags": ["portfolio", "web-development", "project-idea"]
+        },
+        {
+          "id": 13,
+          "content": "Create a simple todo app with React to practice CRUD operations and state management. Add local storage for persistence.",
+          "date": "2024-01-27",
+          "category": "Project",
+          "tags": ["React", "todo-app", "CRUD", "project-idea"]
+        },
+        {
+          "id": 14,
+          "content": "Python data analysis project: Analyze weather data from a CSV file, create visualizations with matplotlib or seaborn.",
+          "date": "2024-01-28",
+          "category": "Project",
+          "tags": ["Python", "data-analysis", "visualization", "project-idea"]
+        }
+      ]
+    }
+  ],
+  "templates": [
+    {
+      "name": "Study Note",
+      "fields": ["content", "date", "category", "tags", "source"]
+    },
+    {
+      "name": "Quick Reference",
+      "fields": ["content", "date", "category", "tags", "code_example"]
+    },
+    {
+      "name": "Project Idea",
+      "fields": ["content", "date", "category", "tags", "difficulty", "estimated_time"]
+    }
+  ],
+  "settings": {
+    "defaultCategory": "Study Notes",
+    "autoDate": true,
+    "suggestTags": true,
+    "maxNotesPerCategory": 50
+  }
+}

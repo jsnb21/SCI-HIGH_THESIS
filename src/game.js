@@ -43,15 +43,16 @@ const config = {
     MainMenu, // Start with DungeonScene for testing
     /*Main Scenes */
     DungeonScene,
+    /*MainMenu,
     Intro, OptionsScene, MainHub,
     /* Classroom */
-    Classroom,
+    /*Classroom,
     /* Office */
-    Office,
+    /*Office,
     /* Computer Lab Scenes */
-    ComputerLab, WebDesignScene, PythonScene, JavaScene, CSProgrammingScene, CPlusplusScene, CSharpScene,
+    /*ComputerLab, WebDesignScene, PythonScene, JavaScene, CSProgrammingScene, CPlusplusScene, CSharpScene,
     /* Quiz Scenes */
-    BaseQuizScene, WebDesignQuizScene, JavaQuizScene, PythonQuizScene, CplusplusQuizScene, CQuizScene, CSharpQuizScene,
+    /*BaseQuizScene, WebDesignQuizScene, JavaQuizScene, PythonQuizScene, CplusplusQuizScene, CQuizScene, CSharpQuizScene,
     /* Library Scenes */
     BaseLibraryScene,
   ],

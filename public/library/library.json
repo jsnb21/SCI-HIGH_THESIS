@@ -1,0 +1,25 @@
+{
+  "title": "LIBRARY MENU",
+  "menuItems": [
+    {
+      "name": "Books",
+      "hasPopup": true,
+      "icon": "📚"
+    },
+    {
+      "name": "Progress",
+      "hasPopup": true,
+      "icon": "📊"
+    },
+    {
+      "name": "Notes",
+      "hasPopup": true,
+      "icon": "📝"
+    },
+    {
+      "name": "Settings",
+      "hasPopup": false,
+      "icon": "⚙️"
+    }
+  ]
+}
