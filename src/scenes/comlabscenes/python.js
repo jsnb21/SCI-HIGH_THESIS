@@ -29,10 +29,10 @@ export default class PythonScene extends Phaser.Scene {
         
         // Create the UI with your specific content
         this.courseUI.createUI({
-            courseTitle: 'Selected Course: Python',
+            courseTitle: 'Python',
             iconPath: 'pythonIcon',
             description: 'This course covers the fundamentals of python programming...',
-            buttonText: 'Start Course',
+            buttonText: 'Start',
             buttonCallback: () => {
                 this.se_confirmSound.play();
                 // Stop PythonQuizScene if it is already running

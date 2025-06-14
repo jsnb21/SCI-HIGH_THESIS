@@ -28,10 +28,10 @@ export default class JavaScene extends Phaser.Scene {
         
         // Create the UI with your specific content
         this.courseUI.createUI({
-            courseTitle: 'Selected Course: Java',
+            courseTitle: 'Java',
             iconPath: 'JavaIcon',
             description: 'This course covers the fundamentals of Java Programming...',
-            buttonText: 'Start Course',
+            buttonText: 'Start',
             buttonCallback: () => {
                 this.se_confirmSound.play();
                 this.scene.start('JavaQuizScene', { topic: 'Java',
