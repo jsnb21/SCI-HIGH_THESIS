@@ -4,9 +4,13 @@ import Carousel from '../ui/carouselUI.js';
 import { playExclusiveBGM } from '../audioUtils';
 import { onceOnlyFlags } from '../gameManager'; // <-- Import the flags
 
+const BASE_WIDTH = 816;
+const BASE_HEIGHT = 624;
+
 export default class MainHub extends Phaser.Scene {
     constructor() {
         super({ key: 'MainHub' });
+        this.uiElements = [];
     }
 
     preload() {
@@ -23,13 +27,38 @@ export default class MainHub extends Phaser.Scene {
     }
 
     create() {
+        this.createUI();
+        // Listen for resize events
+        this.scale.on('resize', this.onResize, this);
+    }
+
+    createUI() {
+        // Remove previous UI
+        if (this.uiElements.length) {
+            this.uiElements.forEach(el => el.destroy());
+            this.uiElements = [];
+        }
+        if (this.carousel) {
+            this.carousel.destroy();
+            this.carousel = null;
+        }
+        if (this.vnBox) {
+            this.vnBox.destroy();
+            this.vnBox = null;
+        }
+
+        const { width, height } = this.scale;
+        this.scaleFactor = Math.min(width / BASE_WIDTH, height / BASE_HEIGHT);
+        const scaleFont = (size) => Math.round(size * this.scaleFactor);
+
         // Play MainHub BGM and ensure exclusivity
         playExclusiveBGM(this, 'bgm_mainhub', { loop: true });
 
         // Set up background
-        this.bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'MainHubBG').setOrigin(0, 0);
+        this.bg = this.add.tileSprite(0, 0, width, height, 'MainHubBG').setOrigin(0, 0);
         this.bg.setAlpha(0.5);
         this.cameras.main.setBackgroundColor('#87ceeb');
+        this.uiElements.push(this.bg);
 
         // Set up sounds
         this.se_hoverSound = this.sound.add('se_select');
@@ -55,22 +84,24 @@ export default class MainHub extends Phaser.Scene {
                 onceOnlyFlags.setSeen('mainhub_intro'); // Mark as seen
                 this.createCarousel(iconKeys, iconInfo);
             });
+            this.uiElements.push(this.vnBox);
         } else {
             this.createCarousel(iconKeys, iconInfo);
         }
 
         // Create back button
-        const buttonX = 100;
-        const buttonY = 50;
-        const buttonWidth = 120;
-        const buttonHeight = 40;
+        const buttonX = 100 * this.scaleFactor;
+        const buttonY = 50 * this.scaleFactor;
+        const buttonWidth = 120 * this.scaleFactor;
+        const buttonHeight = 40 * this.scaleFactor;
 
         // Create button background
         const buttonBg = this.add.rectangle(buttonX, buttonY, buttonWidth, buttonHeight, 0x000000, 0.7)
             .setStrokeStyle(2, 0xffffff);
+        this.uiElements.push(buttonBg);
 
         const backButton = this.add.text(buttonX, buttonY, 'Back', {
-            font: '24px Jersey15-Regular',
+            font: `${scaleFont(24)}px Jersey15-Regular`,
             fill: '#ffffff',
             padding: { left: 0, right: 0, top: 0, bottom: 0 }
         }).setOrigin(0.5)
@@ -79,6 +110,7 @@ export default class MainHub extends Phaser.Scene {
               this.se_confirmSound.play();
               this.scene.start('MainMenu');
           });
+        this.uiElements.push(backButton);
 
         buttonBg.setInteractive(
             new Phaser.Geom.Rectangle(buttonX - buttonWidth / 2, buttonY - buttonHeight / 2, buttonWidth, buttonHeight),
@@ -90,11 +122,10 @@ export default class MainHub extends Phaser.Scene {
     }
 
     createCarousel(iconKeys, iconInfo) {
-        // Initialize the carousel
+        // Center carousel using current viewport size
+        const { width } = this.scale;
         this.carousel = new Carousel(this, {
-            centerY: 400,
-            spacing: 300,
-            largeScale: 1.3,
+            iconCenterY: 220, // <-- Raised from default (e.g., 300) to 220 for a slight upward shift
             sounds: {
                 hover: 'se_hoverSound',
                 confirm: 'se_confirmSound'
@@ -118,6 +149,10 @@ export default class MainHub extends Phaser.Scene {
                 this.scene.start('Cafeteria');
             }
         });
+    }
+
+    onResize(gameSize) {
+        this.createUI();
     }
 
     update() {
