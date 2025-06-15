@@ -30,6 +30,7 @@ import CplusplusQuizScene from './scenes/quizscenes/CplusplusQuizScene.js';
 
 //Library Scenes
 import BaseLibraryScene from './scenes/libraryScenes/baseLibraryScene.js';
+import ReadingScene from './scenes/libraryScenes/readingScene.js';
 
 // Dungeon Scene
 import DungeonScene from './scenes/comlabscenes/dungeon.js';
@@ -40,18 +41,18 @@ const config = {
   height: 624,
   parent: 'game',
   scene: [
-    MainMenu,
+    /*MainMenu,
     /* Main Scenes */
-    DungeonScene,
+    /*DungeonScene,
     Intro,
     OptionsScene,
     MainHub,
     /* Classroom */
-    Classroom,
+    /*Classroom,
     /* Office */
-    Office,
+    /*Office,
     /* Computer Lab Scenes */
-    ComputerLab,
+    /*ComputerLab,
     WebDesignScene,
     PythonScene,
     JavaScene,
@@ -59,7 +60,7 @@ const config = {
     CPlusplusScene,
     CSharpScene,
     /* Quiz Scenes */
-    BaseQuizScene,
+    /*BaseQuizScene,
     WebDesignQuizScene,
     JavaQuizScene,
     PythonQuizScene,
@@ -68,6 +69,7 @@ const config = {
     CSharpQuizScene,
     /* Library Scenes */
     BaseLibraryScene,
+    ReadingScene,
   ],
   dom: {
     createContainer: true

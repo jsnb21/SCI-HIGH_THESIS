@@ -204,7 +204,7 @@ class BaseLibraryScene extends Phaser.Scene {
         const popupHeight = this.cameras.main.height;
         const popupX = this.cameras.main.width + (popupWidth / 2);
         const popupY = this.cameras.main.height / 2;
-        
+    
         this.popupContainer = this.add.container(popupX, popupY);
         
         // Semi-transparent overlay
@@ -218,6 +218,8 @@ class BaseLibraryScene extends Phaser.Scene {
         // Main popup background
         this.popupBg = this.add.rectangle(0, 0, popupWidth - 20, popupHeight - 40, 0xFFFFFF, 0.95);
         this.popupBg.setStrokeStyle(3, 0x34495E);
+
+        
         
         // Popup header
         this.popupHeader = this.add.rectangle(0, -popupHeight/2 + 40, popupWidth - 20, 80, 0x3498DB);
@@ -257,7 +259,9 @@ class BaseLibraryScene extends Phaser.Scene {
         
         // Add scroll functionality
         this.popupBg.setInteractive();
-        this.popupBg.on('wheel', (pointer, gameObjects, deltaX, deltaY) => {
+        this.input.mouse.enabled = true;
+        
+        this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
             this.scrollPopupContent(deltaY);
         });
         
@@ -274,16 +278,16 @@ class BaseLibraryScene extends Phaser.Scene {
         this.popupContainer.setVisible(false);
     }
 
-    scrollPopupContent(deltaY) {
-        const scrollSpeed = 30;
-        this.popupScrollY += deltaY > 0 ? scrollSpeed : -scrollSpeed;
-        
-        // Limit scroll bounds
-        this.popupScrollY = Math.max(-200, Math.min(200, this.popupScrollY));
-        
-        this.popupContent.y = this.popupScrollY;
-    }
-    
+scrollPopupContent(deltaY) {
+    const scrollSpeed = 30;
+    this.popupScrollY -= Math.sign(deltaY) * scrollSpeed;
+
+    // Limit scroll bounds
+    this.popupScrollY = Phaser.Math.Clamp(this.popupScrollY, -200, 200);
+
+    this.popupContent.y = this.popupScrollY;
+}
+
     showPopup(contentType) {
         if (this.isPopupOpen) return;
         
@@ -361,7 +365,11 @@ class BaseLibraryScene extends Phaser.Scene {
     }
     
     createBooksContent() {
-        let yOffset = -350;
+        // FIXED: Calculate proper starting position
+        const popupHeight = this.cameras.main.height;
+        const headerHeight = 80;
+        const startY = (-popupHeight/2) + headerHeight + 40; // Start below header with some padding
+        let yOffset = startY;
         
         this.libraryData.books.categories.forEach((category, categoryIndex) => {
             // Category header
@@ -373,7 +381,7 @@ class BaseLibraryScene extends Phaser.Scene {
             }).setOrigin(0.5);
             
             this.popupContent.add(categoryHeader);
-            yOffset += 55;
+            yOffset += 50; // Proper spacing after category header
             
             // Books in category
             category.books.forEach((book, bookIndex) => {
@@ -435,15 +443,19 @@ class BaseLibraryScene extends Phaser.Scene {
                     statusBg, statusText, actionBtn, actionText
                 ]);
                 
-                yOffset += 100;
+                yOffset += 100; // Proper spacing between books
             });
             
-            yOffset += 20; // Space between categories
+            yOffset += 30; // Space between categories
         });
     }
     
     createProgressContent() {
-        let yOffset = -150;
+        // FIXED: Calculate proper starting position
+        const popupHeight = this.cameras.main.height;
+        const headerHeight = 80;
+        const startY = (-popupHeight/2) + headerHeight + 40; // Start below header with some padding
+        let yOffset = startY;
         
         this.libraryData.progress.stats.forEach((stat, index) => {
             // Label
@@ -471,12 +483,12 @@ class BaseLibraryScene extends Phaser.Scene {
             
             this.popupContent.add([label, progressBg, progressFill, progressText]);
             
-            yOffset += 100;
+            yOffset += 90; // Proper spacing between progress bars
         });
         
         // Achievements section
         if (this.libraryData.progress.achievements.length > 0) {
-            yOffset += 20;
+            yOffset += 30; // Space before achievements section
             const achievementHeader = this.add.text(0, yOffset, 'ACHIEVEMENTS', {
                 fontSize: '18px',
                 color: '#34495E',
@@ -485,7 +497,7 @@ class BaseLibraryScene extends Phaser.Scene {
             }).setOrigin(0.5);
             
             this.popupContent.add(achievementHeader);
-            yOffset += 40;
+            yOffset += 50; // Proper spacing after achievements header
             
             this.libraryData.progress.achievements.forEach((achievement, index) => {
                 const achievementBg = this.add.rectangle(0, yOffset, 400, 50, 0xF8F9FA);
@@ -498,13 +510,17 @@ class BaseLibraryScene extends Phaser.Scene {
                 }).setOrigin(0.5);
                 
                 this.popupContent.add([achievementBg, achievementText]);
-                yOffset += 70;
+                yOffset += 70; // Proper spacing between achievements
             });
         }
     }
     
     createNotesContent() {
-        let yOffset = -150;
+        // FIXED: Calculate proper starting position
+        const popupHeight = this.cameras.main.height;
+        const headerHeight = 80;
+        const startY = (-popupHeight/2) + headerHeight + 40; // Start below header with some padding
+        let yOffset = startY;
         
         this.libraryData.notes.categories.forEach((category, categoryIndex) => {
             // Category header
@@ -516,7 +532,7 @@ class BaseLibraryScene extends Phaser.Scene {
             }).setOrigin(0.5);
             
             this.popupContent.add(categoryHeader);
-            yOffset += 40;
+            yOffset += 50; // Proper spacing after category header
             
             // Notes in category
             if (category.notes.length === 0) {
@@ -528,7 +544,7 @@ class BaseLibraryScene extends Phaser.Scene {
                 }).setOrigin(0.5);
                 
                 this.popupContent.add(emptyText);
-                yOffset += 40;
+                yOffset += 50; // Proper spacing for empty text
             } else {
                 category.notes.forEach((note, noteIndex) => {
                     // Note background
@@ -556,24 +572,22 @@ class BaseLibraryScene extends Phaser.Scene {
                         this.popupContent.add([noteBg, noteText]);
                     }
                     
-                    yOffset += 100;
+                    yOffset += 100; // Proper spacing between notes
                 });
             }
             
-            yOffset += 20; // Space between categories
+            yOffset += 30; // Space between categories
         });
     }
     
-    handleBookAction(book) {
-        console.log(`Reading book: ${book.title}`);
-        // Update book status
-        book.status = 'reading';
-        // You can add logic here to:
-        // - Open book reading scene
-        // - Update progress data
-        // - Save progress to local storage or server
-        // - Trigger events
-    }
+handleBookAction(book) {
+    console.log(`Reading book: ${book.title}`);
+    book.status = 'reading';
+
+    // Transition to reading scene
+    this.scene.switch('ReadingScene', { book: book });
+    // or this.scene.launch('ReadingScene', { book: book }); // keeps current scene active
+}
     
     handleMenuClick(menuItem) {
         console.log(`Clicked: ${menuItem}`);
