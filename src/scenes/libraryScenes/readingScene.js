@@ -14,6 +14,7 @@ class ReadingScene extends Phaser.Scene {
         this.rightPage = null;
         this.leftText = null;
         this.rightText = null;
+        this.bookTitle = null; // Store reference to book title
         this.pageIndicator = null;
         this.prevBtn = null;
         this.nextBtn = null;
@@ -25,13 +26,15 @@ class ReadingScene extends Phaser.Scene {
     }
     
     init(data) {
+        console.log('ReadingScene init called with data:', data);
+        
         // Receive data from the calling scene
         this.currentBook = data.book || null;
         this.currentPage = data.book?.currentPage || 0;
         
         if (!this.currentBook) {
             console.error('No book data provided to ReadingScene');
-            this.scene.start('MainScene'); // Return to main scene if no book
+            this.scene.start('BaseLibraryScene'); // Fixed: Use correct scene name
             return;
         }
         
@@ -46,6 +49,8 @@ class ReadingScene extends Phaser.Scene {
     }
     
     create() {
+        console.log('ReadingScene create called, current book:', this.currentBook?.title);
+        
         // Create background
         this.createBackground();
         
@@ -60,6 +65,9 @@ class ReadingScene extends Phaser.Scene {
         
         // Setup input handlers
         this.setupInputHandlers();
+        
+        // Update book title and content for current book
+        this.updateBookContent();
         
         // Display initial pages
         this.updatePages();
@@ -77,70 +85,69 @@ class ReadingScene extends Phaser.Scene {
         // You could add a texture here: this.add.image(0, 0, 'reading-bg').setOrigin(0, 0);
     }
     
-    createBookInterface() {
-        // Main book container
-        this.bookContainer = this.add.container(this.cameras.main.centerX, this.cameras.main.centerY);
+createBookInterface() {
+    // Main book container
+    this.bookContainer = this.add.container(this.cameras.main.centerX, this.cameras.main.centerY);
+   
+    // Book shadow for depth
+    const shadow = this.add.rectangle(5, 5, 1000, 800, 0x000000, 0.3);
+   
+    // Book base
+    const bookBase = this.add.rectangle(0, 0, 1000, 800, 0x8B4513);
+   
+    // Book border (using separate rectangles for border effect)
+    const bookBorder = this.add.rectangle(0, 0, 1006, 806, 0x654321);
+    bookBorder.setDepth(-1); // Put border behind the main book
+   
+    // Combined pages - single large page area
+    this.combinedPages = this.add.rectangle(0, 0, 680, 700, 0xFFFFF0);
+   
+    // Left page text area
+    this.leftText = this.add.text(-175, -200, '', {
+        fontSize: '14px',
+        fill: '#2C1810',
+        fontFamily: 'serif',
+        wordWrap: { width: 300, useAdvancedWrap: true },
+        align: 'left',
+        lineSpacing: 4
+    }).setOrigin(0.5, 0);
+   
+    // Right page text area
+    this.rightText = this.add.text(175, -200, '', {
+        fontSize: '14px',
+        fill: '#2C1810',
+        fontFamily: 'serif',
+        wordWrap: { width: 300, useAdvancedWrap: true },
+        align: 'left',
+        lineSpacing: 4
+    }).setOrigin(0.5, 0);
+   
+    // Book title on the book cover/header - Initialize with placeholder
+    this.bookTitle = this.add.text(0, -220, 'Loading...', {
+        fontSize: '18px',
+        fill: '#8B4513',
+        fontFamily: 'serif',
+        fontStyle: 'bold'
+    }).setOrigin(0.5);
+   
+    // Add all elements to container (removed spine and separate pages)
+    this.bookContainer.add([
+        shadow, bookBorder, bookBase, this.combinedPages,
+        this.leftText, this.rightText, this.bookTitle
+    ]);
+}
+    
+    // FIXED METHOD: Update book content when switching books
+    updateBookContent() {
+        console.log('Updating book content for:', this.currentBook?.title);
         
-        // Book shadow for depth
-        const shadow = this.add.rectangle(5, 5, 700, 500, 0x000000, 0.3);
-        
-        // Book base
-        const bookBase = this.add.rectangle(0, 0, 700, 500, 0x8B4513);
-        
-        // Book border (using separate rectangles for border effect)
-        const bookBorder = this.add.rectangle(0, 0, 706, 506, 0x654321);
-        bookBorder.setDepth(-1); // Put border behind the main book
-        
-        // Left page
-        this.leftPage = this.add.rectangle(-175, 0, 340, 460, 0xFFFFF0);
-        
-        // Left page border
-        const leftPageBorder = this.add.rectangle(-175, 0, 342, 462, 0xE0E0E0);
-        leftPageBorder.setDepth(-1);
-        
-        // Right page
-        this.rightPage = this.add.rectangle(175, 0, 340, 460, 0xFFFFF0);
-        
-        // Right page border
-        const rightPageBorder = this.add.rectangle(175, 0, 342, 462, 0xE0E0E0);
-        rightPageBorder.setDepth(-1);
-        
-        // Book spine/center line
-        const spine = this.add.rectangle(0, 0, 4, 460, 0x654321);
-        
-        // Left page text area
-        this.leftText = this.add.text(-175, -200, '', {
-            fontSize: '14px',
-            fill: '#2C1810',
-            fontFamily: 'serif',
-            wordWrap: { width: 300, useAdvancedWrap: true },
-            align: 'left',
-            lineSpacing: 4
-        }).setOrigin(0.5, 0);
-        
-        // Right page text area
-        this.rightText = this.add.text(175, -200, '', {
-            fontSize: '14px',
-            fill: '#2C1810',
-            fontFamily: 'serif',
-            wordWrap: { width: 300, useAdvancedWrap: true },
-            align: 'left',
-            lineSpacing: 4
-        }).setOrigin(0.5, 0);
-        
-        // Book title on the book cover/header
-        const bookTitle = this.add.text(0, -220, this.currentBook.title || 'Untitled Book', {
-            fontSize: '18px',
-            fill: '#8B4513',
-            fontFamily: 'serif',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        
-        // Add all elements to container
-        this.bookContainer.add([
-            shadow, bookBorder, bookBase, leftPageBorder, this.leftPage, 
-            rightPageBorder, this.rightPage, spine, this.leftText, this.rightText, bookTitle
-        ]);
+        if (this.currentBook && this.bookTitle) {
+            const newTitle = this.currentBook.title || 'Untitled Book';
+            console.log('Setting book title to:', newTitle);
+            this.bookTitle.setText(newTitle);
+        } else {
+            console.warn('Cannot update book content - missing book or title element');
+        }
     }
     
     createNavigation() {
@@ -185,7 +192,7 @@ class ReadingScene extends Phaser.Scene {
         this.closeBtn.add([closeBg, closeX]);
         this.closeBtn.setInteractive(new Phaser.Geom.Circle(0, 0, 25), Phaser.Geom.Circle.Contains);
         this.closeBtn.on('pointerdown', () => {
-            this.scene.switch('BaseLibraryScene');
+            this.closeBook(); // Use the closeBook method for proper cleanup
         });
         this.closeBtn.on('pointerover', () => closeBg.setAlpha(1));
         this.closeBtn.on('pointerout', () => closeBg.setAlpha(0.8));
@@ -304,9 +311,9 @@ class ReadingScene extends Phaser.Scene {
         // Add fade out effect
         this.cameras.main.fadeOut(300, 0, 0, 0);
         
-        // Return to previous scene after fade
+        // Return to library scene after fade - FIXED
         this.time.delayedCall(300, () => {
-            this.scene.start('MainScene'); // Replace with your main scene key
+            this.scene.start('BaseLibraryScene'); // Fixed: Use correct scene name
         });
     }
     
@@ -388,6 +395,33 @@ class ReadingScene extends Phaser.Scene {
             readingTime: this.totalReadingTime,
             wordsRead: (this.currentPage + 1) * this.wordsPerPage
         };
+    }
+    
+    // ADD THIS METHOD: Force refresh of the scene
+    refresh() {
+        console.log('Refreshing ReadingScene with current book:', this.currentBook?.title);
+        this.updateBookContent();
+        this.updatePages();
+    }
+    
+    // ADD THIS METHOD: Clean shutdown
+    shutdown() {
+        console.log('ReadingScene shutting down');
+        
+        // Clean up timers
+        if (this.readingStartTime) {
+            this.totalReadingTime += Date.now() - this.readingStartTime;
+            this.readingStartTime = null;
+        }
+        
+        // Remove input listeners
+        this.input.keyboard.off('keydown-LEFT');
+        this.input.keyboard.off('keydown-RIGHT'); 
+        this.input.keyboard.off('keydown-ESC');
+        this.input.keyboard.off('keydown-SPACE');
+        
+        // Call parent shutdown
+        super.shutdown();
     }
 }
 

@@ -32,6 +32,11 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     create() {
+        // IMPORTANT: Reset all state variables at the start of create
+        this.isPopupOpen = false;
+        this.currentPopupType = null;
+        this.popupScrollY = 0;
+        
         // Load and process JSON data
         this.loadJsonData();
         
@@ -42,6 +47,18 @@ class BaseLibraryScene extends Phaser.Scene {
         this.setupBackground();
         this.createMainMenu();
         this.createPopupContainer();
+        
+        // Ensure popup is properly hidden initially
+        if (this.popupContainer) {
+            this.popupContainer.setVisible(false);
+            const offScreenX = this.cameras.main.width + (this.cameras.main.width / 4);
+            this.popupContainer.setPosition(offScreenX, this.cameras.main.height / 2);
+        }
+        
+        if (this.overlay) {
+            this.overlay.setVisible(false);
+            this.overlay.setAlpha(0);
+        }
     }
 
     loadJsonData() {
