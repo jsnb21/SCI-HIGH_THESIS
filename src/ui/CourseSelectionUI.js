@@ -1,29 +1,14 @@
 import { createBackButton } from '/src/components/buttons/backbutton.js';
 
-/**
- * UI class for displaying the course selection overlay.
- * Handles rendering of overlay, top bar, course title, icon, description, and start/back buttons.
- */
+const BASE_WIDTH = 816;
+const BASE_HEIGHT = 624;
+
 export default class CourseSelectionUI {
-    /**
-     * @param {Phaser.Scene} scene - The Phaser scene to attach UI elements to.
-     */
     constructor(scene) {
         this.scene = scene;
         this.elements = {};
     }
 
-    /**
-     * Creates the course selection UI overlay.
-     * @param {Object} options - UI configuration options.
-     * @param {string} options.courseTitle - The course title to display (yellow, below label).
-     * @param {string} options.iconPath - Path to the course icon image.
-     * @param {string} options.description - Description text for the course.
-     * @param {string} options.buttonText - Text for the start button.
-     * @param {Function} options.buttonCallback - Callback for the start button.
-     * @param {Function|null} options.backCallback - Optional callback for the back button.
-     * @returns {Object} - References to created UI elements.
-     */
     createUI({
         courseTitle = 'Selected Course',
         iconPath = '',
@@ -35,72 +20,77 @@ export default class CourseSelectionUI {
         this.destroy();
 
         const { width, height } = this.scene.scale;
+        const scaleFactor = Math.min(width / BASE_WIDTH, height / BASE_HEIGHT);
+        const scaleFont = (size) => Math.round(size * scaleFactor);
 
-        // --- Overlay background ---
+        // Overlay background
         const overlay = this.scene.add.rectangle(
             width / 2, height / 2, width, height, 0xD6C8F2, 0.92
         ).setDepth(100);
         this.elements.overlay = overlay;
 
-        // --- Back button (optional) ---
+        // Back button
         if (typeof backCallback === 'function') {
             const { buttonBg, backButton } = createBackButton(this.scene);
+            buttonBg.setScale(scaleFactor);
+            backButton.setScale(scaleFactor);
             buttonBg.on('pointerdown', backCallback);
             backButton.on('pointerdown', backCallback);
             this.elements.backButtonBg = buttonBg;
             this.elements.backButton = backButton;
         }
 
-        // --- Top bar ---
-        const topBarHeight = 150;
+        // Top bar
+        const topBarHeight = 150 * scaleFactor;
         const topBar = this.scene.add.rectangle(
             width / 2, topBarHeight / 2, width, topBarHeight, 0x191970
-        ).setOrigin(0.5, 0.5).setDepth(101);
+        ).setDepth(101);
         this.elements.topBar = topBar;
 
-        // --- Title label ("Selected Course:") ---
+        // Title label
         const titleText = this.scene.add.text(
-            width / 2, topBarHeight / 2 - 18,
+            width / 2, topBarHeight / 2 - 18 * scaleFactor,
             'Selected Course:', {
                 fontFamily: 'Jersey15-Regular',
-                fontSize: '32px',
+                fontSize: `${scaleFont(32)}px`,
                 color: '#ffffff',
                 align: 'center'
             }
-        ).setOrigin(0.5, 0.5).setDepth(102);
+        ).setOrigin(0.5).setDepth(102);
         this.elements.titleText = titleText;
 
-        // --- Course title (yellow, below label) ---
+        // Course title
         const courseTitleText = this.scene.add.text(
-            width / 2, topBarHeight / 2 + 28,
+            width / 2, topBarHeight / 2 + 28 * scaleFactor,
             courseTitle, {
                 fontFamily: 'Jersey15-Regular',
-                fontSize: '48px',
+                fontSize: `${scaleFont(48)}px`,
                 color: '#FFD600',
                 align: 'center'
             }
-        ).setOrigin(0.5, 0.5).setDepth(102);
+        ).setOrigin(0.5).setDepth(102);
         this.elements.courseTitleText = courseTitleText;
 
-        // --- Icon (centered, above button) ---
-        const centerY = height / 2;
-        const iconY = centerY - 150; // Move icon higher for more space
+        // Icon - 40% down the screen
+        const iconY = height * 0.4;
         const icon = this.scene.add.image(
             width / 2, iconY, iconPath
-        ).setDisplaySize(180, 180).setOrigin(0.5, 0.5).setDepth(102);
+        ).setDisplaySize(180 * scaleFactor, 180 * scaleFactor)
+         .setOrigin(0.5).setDepth(102);
         this.elements.icon = icon;
 
-        // --- Start Button (rectangle with thick outline) ---
-        const buttonWidth = 320;
-        const buttonHeight = 100;
-        const buttonY = iconY + 180 + 50; // 180 (icon height) + 50px gap
+        // Start Button below icon
+        const buttonY = iconY + 130 * scaleFactor;
+        const baseButtonWidth = 240;
+        const baseButtonHeight = 72;
+        const buttonWidth = baseButtonWidth * scaleFactor;
+        const buttonHeight = baseButtonHeight * scaleFactor;
 
-        // Draw button background and border
         const graphics = this.scene.add.graphics({ x: 0, y: 0 }).setDepth(101);
         const drawButton = (fillColor) => {
             graphics.clear();
             graphics.fillStyle(fillColor, 1);
-            graphics.lineStyle(14, 0x000000, 1);
+            graphics.lineStyle(14 * scaleFactor, 0x000000, 1);
             graphics.strokeRect(
                 width / 2 - buttonWidth / 2,
                 buttonY - buttonHeight / 2,
@@ -116,7 +106,6 @@ export default class CourseSelectionUI {
         };
         drawButton(0xBDBDBD);
 
-        // Make button interactive (hover/click)
         graphics.setInteractive(
             new Phaser.Geom.Rectangle(
                 width / 2 - buttonWidth / 2,
@@ -131,38 +120,34 @@ export default class CourseSelectionUI {
         .on('pointerout', () => drawButton(0xBDBDBD));
         this.elements.buttonBg = graphics;
 
-        // --- Start Button Label ---
+        // Button label
         const buttonLabel = this.scene.add.text(
             width / 2, buttonY, buttonText, {
                 fontFamily: 'Jersey15-Regular',
-                fontSize: '52px',
+                fontSize: `${scaleFont(42)}px`,
                 color: '#000000',
                 align: 'center'
             }
-        ).setOrigin(0.5, 0.5).setDepth(102);
+        ).setOrigin(0.5).setDepth(102);
         this.elements.buttonLabel = buttonLabel;
 
-        // --- Description text (centered, below button) ---
-        // Increase the gap below the button from 70px to 120px for more space
-        const descTextY = buttonY + buttonHeight / 2 + 120; // 120px gap below button
+        // Description - 8% below button
+        const descTextY = buttonY + height * 0.20;
         const descText = this.scene.add.text(
             width / 2, descTextY, description, {
                 fontFamily: 'Jersey15-Regular',
-                fontSize: '42px',
+                fontSize: `${scaleFont(42)}px`,
                 color: '#ffffff',
                 align: 'center',
-                wordWrap: { width: 800 }
+                wordWrap: { width: 800 * scaleFactor }
             }
-        ).setOrigin(0.5, 0.5).setDepth(102);
-        descText.setStroke('#000000', 6);
+        ).setOrigin(0.5).setDepth(102);
+        descText.setStroke('#000000', 6 * scaleFactor);
         this.elements.descText = descText;
 
         return this.elements;
     }
 
-    /**
-     * Destroys all UI elements created by this instance.
-     */
     destroy() {
         Object.values(this.elements).forEach(element => {
             if (element && element.destroy) element.destroy();
