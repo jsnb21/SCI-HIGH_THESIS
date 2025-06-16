@@ -44,8 +44,17 @@ class Carousel {
         const iconToTitleGap = (this.config.iconToTitleGap ?? 100) * scale;
         const iconToDescGap = (this.config.iconToDescGap ?? 50) * scale;
 
-        const iconCenterX = this.scene.cameras.main.centerX;
-        const iconCenterY = this.scene.cameras.main.centerY + iconYOffset;
+        // FIX: Use fallback values when cameras.main is not available
+        let iconCenterX, iconCenterY;
+        
+        if (this.scene.cameras && this.scene.cameras.main) {
+            iconCenterX = this.scene.cameras.main.centerX;
+            iconCenterY = this.scene.cameras.main.centerY + iconYOffset;
+        } else {
+            // Fallback to scale dimensions
+            iconCenterX = this.scene.scale.width / 2;
+            iconCenterY = this.scene.scale.height / 2 + iconYOffset;
+        }
 
         const headingX = iconCenterX;
         const headingY = iconCenterY + iconToTitleGap + (60 * scale);
@@ -227,8 +236,14 @@ class Carousel {
         }
     }
 
+    // Also fix the onResize method to be safer
     onResize() {
-        this._createUI();
+        // Use a delayed call to ensure scene is ready
+        if (this.scene && this.scene.time) {
+            this.scene.time.delayedCall(10, () => {
+                this._createUI();
+            });
+        }
     }
 
     destroy() {

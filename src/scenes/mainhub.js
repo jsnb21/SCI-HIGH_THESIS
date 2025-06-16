@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import VNDialogueBox from '../ui/VNDialogueBox';
 import Carousel from '../ui/carouselUI.js';
 import { playExclusiveBGM } from '../audioUtils';
-import { onceOnlyFlags } from '../gameManager'; // <-- Import the flags
+import { onceOnlyFlags } from '../gameManager';
 
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
@@ -27,13 +27,15 @@ export default class MainHub extends Phaser.Scene {
     }
 
     create() {
-        this.createUI();
-        // Listen for resize events
+        // Set up cameras first
+        this.cameras.main.setBackgroundColor('#87ceeb');
+        
+        // Then initialize UI with delay to ensure everything is ready
+        this.time.delayedCall(10, () => this.createUI());
         this.scale.on('resize', this.onResize, this);
     }
 
     createUI() {
-        // Remove previous UI
         if (this.uiElements.length) {
             this.uiElements.forEach(el => el.destroy());
             this.uiElements = [];
@@ -51,20 +53,18 @@ export default class MainHub extends Phaser.Scene {
         this.scaleFactor = Math.min(width / BASE_WIDTH, height / BASE_HEIGHT);
         const scaleFont = (size) => Math.round(size * this.scaleFactor);
 
-        // Play MainHub BGM and ensure exclusivity
         playExclusiveBGM(this, 'bgm_mainhub', { loop: true });
 
-        // Set up background
         this.bg = this.add.tileSprite(0, 0, width, height, 'MainHubBG').setOrigin(0, 0);
         this.bg.setAlpha(0.5);
-        this.cameras.main.setBackgroundColor('#87ceeb');
+        if (this.cameras && this.cameras.main) {
+            this.cameras.main.setBackgroundColor('#87ceeb');
+        }
         this.uiElements.push(this.bg);
 
-        // Set up sounds
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
 
-        // Define carousel data
         const iconKeys = ['icon1', 'icon2', 'icon3', 'icon4', 'icon5'];
         const iconInfo = [
             { heading: "Classroom", desc: "Meet your classmates!" },
@@ -74,14 +74,13 @@ export default class MainHub extends Phaser.Scene {
             { heading: "Cafeteria", desc: "Take a break and eat." }
         ];
 
-        // Only show the intro dialogue once per session
         if (!onceOnlyFlags.hasSeen('mainhub_intro')) {
             this.vnBox = new VNDialogueBox(this, [
                 "Hmm...",
                 "Where should I go next?",
                 "I should go to the classroom and ask my professor on what I should do."
             ], () => {
-                onceOnlyFlags.setSeen('mainhub_intro'); // Mark as seen
+                onceOnlyFlags.setSeen('mainhub_intro');
                 this.createCarousel(iconKeys, iconInfo);
             });
             this.uiElements.push(this.vnBox);
@@ -89,27 +88,23 @@ export default class MainHub extends Phaser.Scene {
             this.createCarousel(iconKeys, iconInfo);
         }
 
-        // Create back button
         const buttonX = 100 * this.scaleFactor;
         const buttonY = 50 * this.scaleFactor;
         const buttonWidth = 120 * this.scaleFactor;
         const buttonHeight = 40 * this.scaleFactor;
 
-        // Create button background
         const buttonBg = this.add.rectangle(buttonX, buttonY, buttonWidth, buttonHeight, 0x000000, 0.7)
             .setStrokeStyle(2, 0xffffff);
         this.uiElements.push(buttonBg);
 
         const backButton = this.add.text(buttonX, buttonY, 'Back', {
             font: `${scaleFont(24)}px Jersey15-Regular`,
-            fill: '#ffffff',
-            padding: { left: 0, right: 0, top: 0, bottom: 0 }
-        }).setOrigin(0.5)
-          .setInteractive({ useHandCursor: true })
-          .on('pointerdown', () => {
-              this.se_confirmSound.play();
-              this.scene.start('MainMenu');
-          });
+            fill: '#ffffff'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true })
+            .on('pointerdown', () => {
+                this.se_confirmSound.play();
+                this.scene.start('MainMenu');
+            });
         this.uiElements.push(backButton);
 
         buttonBg.setInteractive(
@@ -122,37 +117,40 @@ export default class MainHub extends Phaser.Scene {
     }
 
     createCarousel(iconKeys, iconInfo) {
-        // Center carousel using current viewport size
         const { width } = this.scale;
         this.carousel = new Carousel(this, {
-            iconCenterY: 220, // <-- Raised from default (e.g., 300) to 220 for a slight upward shift
+            iconCenterY: 220,
             sounds: {
                 hover: 'se_hoverSound',
                 confirm: 'se_confirmSound'
             }
         });
-        
-        // Create the carousel with selection callback
+
         this.carousel.create(iconKeys, iconInfo, (selectedItem, index) => {
             console.log('Selected:', selectedItem.heading);
-            
-            // Handle scene transitions
-            if (selectedItem.heading === "Computer Lab") {
-                this.scene.start('ComputerLab');
-            } else if (selectedItem.heading === "Classroom") {
-                this.scene.start('Classroom');
-            } else if (selectedItem.heading === "Office") {
-                this.scene.start('Office');
-            } else if (selectedItem.heading === "Library") {
-                this.scene.start('BaseLibraryScene');
-            } else if (selectedItem.heading === "Cafeteria") {
-                this.scene.start('Cafeteria');
+
+            switch (selectedItem.heading) {
+                case "Computer Lab":
+                    this.scene.start('ComputerLab');
+                    break;
+                case "Classroom":
+                    this.scene.start('Classroom');
+                    break;
+                case "Office":
+                    this.scene.start('Office');
+                    break;
+                case "Library":
+                    this.scene.start('BaseLibraryScene');
+                    break;
+                case "Cafeteria":
+                    this.scene.start('Cafeteria');
+                    break;
             }
         });
     }
 
-    onResize(gameSize) {
-        this.createUI();
+    onResize() {
+        this.time.delayedCall(0, () => this.createUI());
     }
 
     update() {
