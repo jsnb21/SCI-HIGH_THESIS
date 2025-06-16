@@ -10,7 +10,41 @@
           "status": "available",
           "description": "Learn the fundamentals of web design including HTML, CSS, and responsive layouts.",
           "pages": 250,
-          "difficulty": "beginner"
+          "difficulty": "beginner",
+          "content": {
+          "pages": [
+              {
+                "pageNumber": 1,
+                "type": "cover",
+                "title": "Web Design Basics",
+                "subtitle": "A Complete Guide",
+                "author": "Jane Smith"
+              },
+              {
+                "pageNumber": 2,
+                "type": "table-of-contents",
+                "title": "Table of Contents",
+                "items": [
+                  "Chapter 1: Introduction - Page 3",
+                  "Chapter 2: HTML Basics - Page 15",
+                  "Chapter 3: CSS Fundamentals - Page 30"
+                ]
+              },
+              {
+                "pageNumber": 3,
+                "type": "chapter-start",
+                "chapterNumber": 1,
+                "title": "Introduction to Web Design",
+                "content": "Welcome to the world of web design..."
+              },
+              {
+                "pageNumber": 4,
+                "type": "content",
+                "title": "CSS Grid Layout",
+                "content": "CSS Grid Layout is a two-dimensional layout system for the web. It lets you lay content out in rows and columns, and has many features that make building complex layouts straightforward. Here's how to get started with CSS Grid..."
+              }
+            ]
+          }
         },
         {
           "id": 2,
@@ -34,7 +68,7 @@
           "id": 4,
           "title": "C++ Advanced Techniques",
           "author": "Michael Davis",
-          "status": "completed",
+          "status": "available",
           "description": "Master advanced C++ programming techniques and best practices.",
           "pages": 580,
           "difficulty": "advanced"

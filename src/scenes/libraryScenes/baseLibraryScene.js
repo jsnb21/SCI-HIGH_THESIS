@@ -1,13 +1,15 @@
-// Enhanced Library Scene with JSON Data Support
+// Enhanced Library Scene with JSON Data Support and Auto Progress Update
 
 class BaseLibraryScene extends Phaser.Scene {
     constructor() {
         super({ 
             key: 'BaseLibraryScene',
-            active: false // Scene won't start automatically
+            active: false
         });
         this.isPopupOpen = false;
-        this.libraryData = null; // Store loaded JSON data
+        this.libraryData = null;
+        this.editingNote = null; // Track which note is being edited
+        this.noteOptionsVisible = false; // Track if note options menu is visible
     }
 
     init(data) {
@@ -42,6 +44,9 @@ class BaseLibraryScene extends Phaser.Scene {
         
         // Validate and set defaults for JSON data
         this.validateJsonData();
+        
+        // Update books read progress based on completed books
+        this.updateBooksReadProgress();
         
         // Setup scene
         this.setupBackground();
@@ -110,7 +115,6 @@ class BaseLibraryScene extends Phaser.Scene {
             this.libraryData.progress = {
                 stats: [
                     { label: 'Books Read', value: 0, max: 20, color: '#3498DB' },
-                    { label: 'Quests Completed', value: 0, max: 15, color: '#27AE60' },
                     { label: 'Notes Written', value: 0, max: 50, color: '#E74C3C' }
                 ],
                 achievements: []
@@ -127,6 +131,83 @@ class BaseLibraryScene extends Phaser.Scene {
                 ]
             };
         }
+    }
+
+    /**
+     * Updates the Books Read progress based on books with completed/read status
+     * Books with color 0xE74C3C (red) are considered completed
+     */
+    updateBooksReadProgress() {
+        let completedBooksCount = 0;
+        let totalBooksCount = 0;
+        
+        // Count both completed and total books
+        this.libraryData.books.categories.forEach(category => {
+            category.books.forEach(book => {
+                totalBooksCount++; // Count every book
+                
+                // Check if book status corresponds to the red color (0xE74C3C)
+                // This assumes books with 'completed', 'read', or 'finished' status use this color
+                if (this.getBookStatusColor(book.status) === 0xE74C3C) {
+                    completedBooksCount++;
+                }
+            });
+        });
+        
+        // Update the Books Read progress
+        const booksReadStat = this.libraryData.progress.stats.find(stat => stat.label === 'Books Read');
+        if (booksReadStat) {
+            booksReadStat.value = completedBooksCount;
+            booksReadStat.max = totalBooksCount; // Set max to total number of books
+            console.log(`Updated Books Read progress: ${completedBooksCount}/${totalBooksCount}`);
+        }
+        
+        // Save the updated data
+        this.saveData();
+    }
+
+    /**
+     * Helper method to get the color associated with a book status
+     * @param {string} status - The book status
+     * @returns {number} - The color hex value
+     */
+    getBookStatusColor(status) {
+        switch(status.toLowerCase()) {
+            case 'available':
+                return 0x27AE60; // Green
+            case 'reading':
+                return 0xF39C12; // Orange
+            case 'completed':
+            case 'read':
+            case 'finished':
+                return 0xE74C3C; // Red - This triggers the progress update
+            case 'unavailable':
+            case 'locked':
+                return 0x95A5A6; // Gray
+            default:
+                return 0x27AE60; // Default to available (green)
+        }
+    }
+
+    /**
+     * Method to mark a book as completed and update progress
+     * @param {Object} book - The book object to mark as completed
+     */
+    markBookAsCompleted(book) {
+        const previousStatus = book.status;
+        book.status = 'completed'; // or 'read' or 'finished'
+        
+        // If the book wasn't previously completed, update the progress
+        if (this.getBookStatusColor(previousStatus) !== 0xE74C3C) {
+            this.updateBooksReadProgress();
+            
+            // Refresh the popup content if it's currently showing Progress
+            if (this.isPopupOpen && this.currentPopupType === 'Progress') {
+                this.updatePopupContent('Progress');
+            }
+        }
+        
+        console.log(`Book "${book.title}" marked as completed!`);
     }
 
     setupBackground() {
@@ -295,15 +376,15 @@ class BaseLibraryScene extends Phaser.Scene {
         this.popupContainer.setVisible(false);
     }
 
-scrollPopupContent(deltaY) {
-    const scrollSpeed = 30;
-    this.popupScrollY -= Math.sign(deltaY) * scrollSpeed;
+    scrollPopupContent(deltaY) {
+        const scrollSpeed = 30;
+        this.popupScrollY -= Math.sign(deltaY) * scrollSpeed;
 
-    // Limit scroll bounds
-    this.popupScrollY = Phaser.Math.Clamp(this.popupScrollY, -200, 200);
+        // Limit scroll bounds
+        this.popupScrollY = Phaser.Math.Clamp(this.popupScrollY, -200, 200);
 
-    this.popupContent.y = this.popupScrollY;
-}
+        this.popupContent.y = this.popupScrollY;
+    }
 
     showPopup(contentType) {
         if (this.isPopupOpen) return;
@@ -426,9 +507,8 @@ scrollPopupContent(deltaY) {
                     fontFamily: 'Arial'
                 }).setOrigin(0, 0.5);
                 
-                // Status indicator
-                const statusColor = book.status === 'available' ? 0x27AE60 : 
-                                  book.status === 'reading' ? 0xF39C12 : 0xE74C3C;
+                // Status indicator - using the helper method
+                const statusColor = this.getBookStatusColor(book.status);
                 const statusBg = this.add.rectangle(150, yOffset - 10, 80, 20, statusColor);
                 const statusText = this.add.text(150, yOffset - 10, book.status.toUpperCase(), {
                     fontSize: '10px',
@@ -532,79 +612,392 @@ scrollPopupContent(deltaY) {
         }
     }
     
-    createNotesContent() {
-        // FIXED: Calculate proper starting position
-        const popupHeight = this.cameras.main.height;
-        const headerHeight = 80;
-        const startY = (-popupHeight/2) + headerHeight + 40; // Start below header with some padding
-        let yOffset = startY;
+createNotesContent() {
+    const popupHeight = this.cameras.main.height;
+    const headerHeight = 80;
+    const startY = (-popupHeight/2) + headerHeight + 40;
+    let yOffset = startY;
+    
+    // Add "Add New Note" button at the top
+    const addNoteBtn = this.add.rectangle(0, yOffset, 200, 40, 0x27AE60);
+    addNoteBtn.setStrokeStyle(2, 0x229954);
+    addNoteBtn.setInteractive();
+    
+    const addNoteText = this.add.text(0, yOffset, '+ Add New Note', {
+        fontSize: '14px',
+        color: '#FFFFFF',
+        fontFamily: 'Arial',
+        fontStyle: 'bold'
+    }).setOrigin(0.5);
+    
+    addNoteBtn.on('pointerover', () => {
+        addNoteBtn.setFillStyle(0x229954);
+    });
+    
+    addNoteBtn.on('pointerout', () => {
+        addNoteBtn.setFillStyle(0x27AE60);
+    });
+    
+    addNoteBtn.on('pointerdown', () => {
+        this.showAddNoteDialog();
+    });
+    
+    this.popupContent.add([addNoteBtn, addNoteText]);
+    yOffset += 70;
+    
+    this.libraryData.notes.categories.forEach((category, categoryIndex) => {
+        // Category header
+        const categoryHeader = this.add.text(0, yOffset, category.name, {
+            fontSize: '18px',
+            color: '#34495E',
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
         
-        this.libraryData.notes.categories.forEach((category, categoryIndex) => {
-            // Category header
-            const categoryHeader = this.add.text(0, yOffset, category.name, {
-                fontSize: '18px',
-                color: '#34495E',
+        this.popupContent.add(categoryHeader);
+        yOffset += 50;
+        
+        // Notes in category
+        if (category.notes.length === 0) {
+            const emptyText = this.add.text(0, yOffset, 'No notes yet...', {
+                fontSize: '14px',
+                color: '#7F8C8D',
                 fontFamily: 'Arial',
-                fontStyle: 'bold'
+                fontStyle: 'italic'
             }).setOrigin(0.5);
             
-            this.popupContent.add(categoryHeader);
-            yOffset += 50; // Proper spacing after category header
-            
-            // Notes in category
-            if (category.notes.length === 0) {
-                const emptyText = this.add.text(0, yOffset, 'No notes yet...', {
+            this.popupContent.add(emptyText);
+            yOffset += 50;
+        } else {
+            category.notes.forEach((note, noteIndex) => {
+                // Note container
+                const noteContainer = this.add.container(0, yOffset);
+                
+                // Note background
+                const noteBg = this.add.rectangle(0, 0, 450, 80, 0xFFF3CD);
+                noteBg.setStrokeStyle(1, 0xFFC107);
+                
+                // Note text
+                const noteText = this.add.text(-200, -10, note.content || note, {
                     fontSize: '14px',
-                    color: '#7F8C8D',
+                    color: '#856404',
                     fontFamily: 'Arial',
-                    fontStyle: 'italic'
+                    wordWrap: { width: 350 }
+                }).setOrigin(0, 0.5);
+                
+                // Note date if available
+                let noteDate = null;
+                if (note.date) {
+                    noteDate = this.add.text(-200, 25, note.date, {
+                        fontSize: '10px',
+                        color: '#6C757D',
+                        fontFamily: 'Arial'
+                    }).setOrigin(0, 0.5);
+                }
+                
+                // Options button (3 dots)
+                const optionsBtn = this.add.circle(180, -20, 15, 0x6C757D);
+                optionsBtn.setInteractive();
+                optionsBtn.setStrokeStyle(1, 0x495057);
+                
+                const optionsText = this.add.text(180, -20, '⋮', {
+                    fontSize: '16px',
+                    color: '#FFFFFF',
+                    fontFamily: 'Arial'
                 }).setOrigin(0.5);
                 
-                this.popupContent.add(emptyText);
-                yOffset += 50; // Proper spacing for empty text
-            } else {
-                category.notes.forEach((note, noteIndex) => {
-                    // Note background
-                    const noteBg = this.add.rectangle(0, yOffset, 450, 80, 0xFFF3CD);
-                    noteBg.setStrokeStyle(1, 0xFFC107);
-                    
-                    // Note text
-                    const noteText = this.add.text(0, yOffset - 10, note.content || note, {
-                        fontSize: '14px',
-                        color: '#856404',
-                        fontFamily: 'Arial',
-                        wordWrap: { width: 400 }
-                    }).setOrigin(0.5);
-                    
-                    // Note date if available
-                    if (note.date) {
-                        const noteDate = this.add.text(0, yOffset + 25, note.date, {
-                            fontSize: '10px',
-                            color: '#6C757D',
-                            fontFamily: 'Arial'
-                        }).setOrigin(0.5);
-                        
-                        this.popupContent.add([noteBg, noteText, noteDate]);
-                    } else {
-                        this.popupContent.add([noteBg, noteText]);
-                    }
-                    
-                    yOffset += 100; // Proper spacing between notes
+                // Options menu (initially hidden)
+                const optionsMenu = this.add.container(180, 10);
+                const optionsMenuBg = this.add.rectangle(0, 0, 100, 80, 0xFFFFFF);
+                optionsMenuBg.setStrokeStyle(2, 0x6C757D);
+                
+                // Edit button
+                const editBtn = this.add.rectangle(0, -20, 90, 30, 0x17A2B8);
+                const editText = this.add.text(0, -20, 'Edit', {
+                    fontSize: '12px',
+                    color: '#FFFFFF',
+                    fontFamily: 'Arial'
+                }).setOrigin(0.5);
+                
+                // Remove button
+                const removeBtn = this.add.rectangle(0, 20, 90, 30, 0xDC3545);
+                const removeText = this.add.text(0, 20, 'Remove', {
+                    fontSize: '12px',
+                    color: '#FFFFFF',
+                    fontFamily: 'Arial'
+                }).setOrigin(0.5);
+                
+                optionsMenu.add([optionsMenuBg, editBtn, editText, removeBtn, removeText]);
+                optionsMenu.setVisible(false);
+                
+                // Button interactions
+                optionsBtn.on('pointerover', () => {
+                    optionsBtn.setFillStyle(0x495057);
                 });
-            }
-            
-            yOffset += 30; // Space between categories
-        });
-    }
-    
-handleBookAction(book) {
-    console.log(`Reading book: ${book.title}`);
-    book.status = 'reading';
-
-    // Transition to reading scene
-    this.scene.switch('ReadingScene', { book: book });
-    // or this.scene.launch('ReadingScene', { book: book }); // keeps current scene active
+                
+                optionsBtn.on('pointerout', () => {
+                    optionsBtn.setFillStyle(0x6C757D);
+                });
+                
+                optionsBtn.on('pointerdown', () => {
+                    optionsMenu.setVisible(!optionsMenu.visible);
+                });
+                
+                editBtn.setInteractive();
+                editBtn.on('pointerdown', () => {
+                    this.showEditNoteDialog(note, category.name);
+                    optionsMenu.setVisible(false);
+                });
+                
+                removeBtn.setInteractive();
+                removeBtn.on('pointerdown', () => {
+                    this.showRemoveNoteConfirmation(note, category.name);
+                    optionsMenu.setVisible(false);
+                });
+                
+                // Add all elements to note container
+                const noteElements = [noteBg, noteText, optionsBtn, optionsText, optionsMenu];
+                if (noteDate) noteElements.push(noteDate);
+                
+                noteContainer.add(noteElements);
+                this.popupContent.add(noteContainer);
+                
+                yOffset += 100;
+            });
+        }
+        
+        yOffset += 30;
+    });
 }
+
+showAddNoteDialog() {
+    // Create a simple input dialog
+    const dialogBg = this.add.rectangle(this.cameras.main.width/2, this.cameras.main.height/2, 400, 200, 0xFFFFFF);
+    dialogBg.setStrokeStyle(3, 0x34495E);
+    dialogBg.setDepth(1000);
+    
+    const dialogTitle = this.add.text(this.cameras.main.width/2, this.cameras.main.height/2 - 60, 'Add New Note', {
+        fontSize: '18px',
+        color: '#2C3E50',
+        fontFamily: 'Arial',
+        fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1001);
+    
+    // Create HTML input element
+    const inputElement = document.createElement('textarea');
+    inputElement.style.position = 'absolute';
+    inputElement.style.left = (this.cameras.main.width/2 + 150) + 'px';
+    inputElement.style.top = (this.cameras.main.height/2 - 20) + 'px';
+    inputElement.style.width = '300px';
+    inputElement.style.height = '60px';
+    inputElement.style.zIndex = '1002';
+    inputElement.placeholder = 'Enter your note here...';
+    document.body.appendChild(inputElement);
+    
+    // Save button
+    const saveBtn = this.add.rectangle(this.cameras.main.width/2 - 50, this.cameras.main.height/2 + 60, 80, 30, 0x27AE60);
+    saveBtn.setStrokeStyle(1, 0x229954);
+    saveBtn.setInteractive();
+    saveBtn.setDepth(1001);
+    
+    const saveText = this.add.text(this.cameras.main.width/2 - 50, this.cameras.main.height/2 + 60, 'Save', {
+        fontSize: '14px',
+        color: '#FFFFFF',
+        fontFamily: 'Arial'
+    }).setOrigin(0.5).setDepth(1001);
+    
+    // Cancel button
+    const cancelBtn = this.add.rectangle(this.cameras.main.width/2 + 50, this.cameras.main.height/2 + 60, 80, 30, 0x6C757D);
+    cancelBtn.setStrokeStyle(1, 0x495057);
+    cancelBtn.setInteractive();
+    cancelBtn.setDepth(1001);
+    
+    const cancelText = this.add.text(this.cameras.main.width/2 + 50, this.cameras.main.height/2 + 60, 'Cancel', {
+        fontSize: '14px',
+        color: '#FFFFFF',
+        fontFamily: 'Arial'
+    }).setOrigin(0.5).setDepth(1001);
+    
+    const dialogElements = [dialogBg, dialogTitle, saveBtn, saveText, cancelBtn, cancelText];
+    
+    const closeDialog = () => {
+        dialogElements.forEach(element => element.destroy());
+        document.body.removeChild(inputElement);
+    };
+    
+    saveBtn.on('pointerdown', () => {
+        const noteContent = inputElement.value.trim();
+        if (noteContent) {
+            this.addNote('Study Notes', {
+                content: noteContent,
+                date: new Date().toLocaleDateString(),
+                id: Date.now()
+            });
+            this.updatePopupContent('Notes');
+        }
+        closeDialog();
+    });
+    
+    cancelBtn.on('pointerdown', () => {
+        closeDialog();
+    });
+    
+    inputElement.focus();
+}
+
+showEditNoteDialog(note, categoryName) {
+    // Similar to add dialog but pre-filled with existing note content
+    const dialogBg = this.add.rectangle(this.cameras.main.width/2, this.cameras.main.height/2, 400, 200, 0xFFFFFF);
+    dialogBg.setStrokeStyle(3, 0x34495E);
+    dialogBg.setDepth(1000);
+    
+    const dialogTitle = this.add.text(this.cameras.main.width/2, this.cameras.main.height/2 - 60, 'Edit Note', {
+        fontSize: '18px',
+        color: '#2C3E50',
+        fontFamily: 'Arial',
+        fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1001);
+    
+    const inputElement = document.createElement('textarea');
+    inputElement.style.position = 'absolute';
+    inputElement.style.left = (this.cameras.main.width/2 - 150) + 'px';
+    inputElement.style.top = (this.cameras.main.height/2 - 20) + 'px';
+    inputElement.style.width = '300px';
+    inputElement.style.height = '60px';
+    inputElement.style.zIndex = '1002';
+    inputElement.value = note.content || note;
+    document.body.appendChild(inputElement);
+    
+    const saveBtn = this.add.rectangle(this.cameras.main.width/2 - 50, this.cameras.main.height/2 + 60, 80, 30, 0x17A2B8);
+    saveBtn.setStrokeStyle(1, 0x138496);
+    saveBtn.setInteractive();
+    saveBtn.setDepth(1001);
+    
+    const saveText = this.add.text(this.cameras.main.width/2 - 50, this.cameras.main.height/2 + 60, 'Update', {
+        fontSize: '14px',
+        color: '#FFFFFF',
+        fontFamily: 'Arial'
+    }).setOrigin(0.5).setDepth(1001);
+    
+    const cancelBtn = this.add.rectangle(this.cameras.main.width/2 + 50, this.cameras.main.height/2 + 60, 80, 30, 0x6C757D);
+    cancelBtn.setStrokeStyle(1, 0x495057);
+    cancelBtn.setInteractive();
+    cancelBtn.setDepth(1001);
+    
+    const cancelText = this.add.text(this.cameras.main.width/2 + 50, this.cameras.main.height/2 + 60, 'Cancel', {
+        fontSize: '14px',
+        color: '#FFFFFF',
+        fontFamily: 'Arial'
+    }).setOrigin(0.5).setDepth(1001);
+    
+    const dialogElements = [dialogBg, dialogTitle, saveBtn, saveText, cancelBtn, cancelText];
+    
+    const closeDialog = () => {
+        dialogElements.forEach(element => element.destroy());
+        document.body.removeChild(inputElement);
+    };
+    
+    saveBtn.on('pointerdown', () => {
+        const noteContent = inputElement.value.trim();
+        if (noteContent) {
+            this.editNote(note.id || note, categoryName, {
+                content: noteContent,
+                date: note.date || new Date().toLocaleDateString(),
+                id: note.id || Date.now()
+            });
+            this.updatePopupContent('Notes');
+        }
+        closeDialog();
+    });
+    
+    cancelBtn.on('pointerdown', () => {
+        closeDialog();
+    });
+    
+    inputElement.focus();
+    inputElement.select();
+}
+
+
+showRemoveNoteConfirmation(note, categoryName) {
+    const dialogBg = this.add.rectangle(this.cameras.main.width/2, this.cameras.main.height/2, 350, 150, 0xFFFFFF);
+    dialogBg.setStrokeStyle(3, 0xDC3545);
+    dialogBg.setDepth(1000);
+    
+    const dialogTitle = this.add.text(this.cameras.main.width/2, this.cameras.main.height/2 - 30, 'Remove Note', {
+        fontSize: '18px',
+        color: '#DC3545',
+        fontFamily: 'Arial',
+        fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1001);
+    
+    const confirmText = this.add.text(this.cameras.main.width/2, this.cameras.main.height/2, 'Are you sure you want to remove this note?', {
+        fontSize: '14px',
+        color: '#2C3E50',
+        fontFamily: 'Arial'
+    }).setOrigin(0.5).setDepth(1001);
+    
+    const removeBtn = this.add.rectangle(this.cameras.main.width/2 - 60, this.cameras.main.height/2 + 40, 80, 30, 0xDC3545);
+    removeBtn.setStrokeStyle(1, 0xC82333);
+    removeBtn.setInteractive();
+    removeBtn.setDepth(1001);
+    
+    const removeText = this.add.text(this.cameras.main.width/2 - 60, this.cameras.main.height/2 + 40, 'Remove', {
+        fontSize: '14px',
+        color: '#FFFFFF',
+        fontFamily: 'Arial'
+    }).setOrigin(0.5).setDepth(1001);
+    
+    const cancelBtn = this.add.rectangle(this.cameras.main.width/2 + 60, this.cameras.main.height/2 + 40, 80, 30, 0x6C757D);
+    cancelBtn.setStrokeStyle(1, 0x495057);
+    cancelBtn.setInteractive();
+    cancelBtn.setDepth(1001);
+    
+    const cancelText = this.add.text(this.cameras.main.width/2 + 60, this.cameras.main.height/2 + 40, 'Cancel', {
+        fontSize: '14px',
+        color: '#FFFFFF',
+        fontFamily: 'Arial'
+    }).setOrigin(0.5).setDepth(1001);
+    
+    const dialogElements = [dialogBg, dialogTitle, confirmText, removeBtn, removeText, cancelBtn, cancelText];
+    
+    const closeDialog = () => {
+        dialogElements.forEach(element => element.destroy());
+    };
+    
+    removeBtn.on('pointerdown', () => {
+        this.removeNote(note.id || note);
+        this.updatePopupContent('Notes');
+        closeDialog();
+    });
+    
+    cancelBtn.on('pointerdown', () => {
+        closeDialog();
+    });
+}
+
+editNote(noteId, categoryName, updatedNoteData) {
+    const category = this.libraryData.notes.categories.find(cat => cat.name === categoryName);
+    if (category) {
+        const noteIndex = category.notes.findIndex(note => 
+            (note.id && note.id === noteId) || note === noteId
+        );
+        if (noteIndex !== -1) {
+            category.notes[noteIndex] = updatedNoteData;
+            this.saveData();
+            this.syncWithNotesJson();
+        }
+    }
+}
+    
+    handleBookAction(book) {
+        console.log(`Reading book: ${book.title}`);
+        book.status = 'reading';
+
+        // Transition to reading scene
+        this.scene.switch('ReadingScene', { book: book });
+        // or this.scene.launch('ReadingScene', { book: book }); // keeps current scene active
+    }
     
     handleMenuClick(menuItem) {
         console.log(`Clicked: ${menuItem}`);
@@ -616,13 +1009,15 @@ handleBookAction(book) {
         }
     }
 
-    // Utility methods for data management
     addBook(categoryName, bookData) {
         const category = this.libraryData.books.categories.find(cat => cat.name === categoryName);
         if (category) {
             bookData.id = Date.now(); // Simple ID generation
             category.books.push(bookData);
             this.saveData();
+            
+            // Update progress after adding a book (this will update the max value)
+            this.updateBooksReadProgress();
         }
     }
 
@@ -631,28 +1026,35 @@ handleBookAction(book) {
             category.books = category.books.filter(book => book.id !== bookId);
         });
         this.saveData();
+        
+        // Update progress after removing a book
+        this.updateBooksReadProgress();
     }
 
-    addNote(categoryName, noteData) {
-        const category = this.libraryData.notes.categories.find(cat => cat.name === categoryName);
-        if (category) {
-            if (typeof noteData === 'string') {
-                noteData = {
-                    content: noteData,
-                    date: new Date().toLocaleDateString(),
-                    id: Date.now()
-                };
-            }
-            category.notes.push(noteData);
-            this.saveData();
+addNote(categoryName, noteData) {
+    const category = this.libraryData.notes.categories.find(cat => cat.name === categoryName);
+    if (category) {
+        if (typeof noteData === 'string') {
+            noteData = {
+                content: noteData,
+                date: new Date().toLocaleDateString(),
+                id: Date.now()
+            };
         }
+        category.notes.push(noteData);
+        this.saveData();
+        this.syncWithNotesJson();
     }
+}
 
     removeNote(noteId) {
         this.libraryData.notes.categories.forEach(category => {
-            category.notes = category.notes.filter(note => note.id !== noteId);
+            category.notes = category.notes.filter(note => 
+                (note.id && note.id !== noteId) && note !== noteId
+            );
         });
         this.saveData();
+        this.syncWithNotesJson();
     }
 
     updateProgress(statLabel, newValue) {
@@ -684,7 +1086,29 @@ handleBookAction(book) {
             console.warn('Could not load library data from localStorage');
         }
     }
+
+async syncWithNotesJson() {
+    try {
+        // In a real implementation, you would make an API call to update the server-side notes.json
+        // For now, we'll simulate this with a console log
+        console.log('Syncing notes with /library/notes.json:', this.libraryData.notes);
+        
+        // Example of what the server sync would look like:
+        /*
+        await fetch('/api/library/notes', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(this.libraryData.notes)
+        });
+        */
+    } catch (error) {
+        console.error('Failed to sync notes with server:', error);
+    }
 }
+}
+
 
 // Export the scene
 export default BaseLibraryScene;

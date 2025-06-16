@@ -41,18 +41,18 @@ const config = {
   height: 936,
   parent: 'game',
   scene: [
-    /*MainMenu,
+    MainMenu,
     /* Main Scenes */
-    /*DungeonScene,
+    DungeonScene,
     Intro,
     OptionsScene,
     MainHub,
     /* Classroom */
-    /*Classroom,
+    Classroom,
     /* Office */
-    /*Office,
+    Office,
     /* Computer Lab Scenes */
-    /*ComputerLab,
+    ComputerLab,
     WebDesignScene,
     PythonScene,
     JavaScene,
@@ -60,7 +60,7 @@ const config = {
     CPlusplusScene,
     CSharpScene,
     /* Quiz Scenes */
-    /*BaseQuizScene,
+    BaseQuizScene,
     WebDesignQuizScene,
     JavaQuizScene,
     PythonQuizScene,

@@ -34,12 +34,11 @@ class ReadingScene extends Phaser.Scene {
         
         if (!this.currentBook) {
             console.error('No book data provided to ReadingScene');
-            this.scene.start('BaseLibraryScene'); // Fixed: Use correct scene name
+            this.scene.start('BaseLibraryScene');
             return;
         }
         
-        // Split book content into pages
-        this.pages = this.splitContentIntoPages(this.currentBook.content || 'No content available.');
+        this.pages = this.processBookContent(this.currentBook.content);
         
         // Start reading timer
         this.readingStartTime = Date.now();
@@ -100,7 +99,7 @@ createBookInterface() {
     bookBorder.setDepth(-1); // Put border behind the main book
    
     // Combined pages - single large page area
-    this.combinedPages = this.add.rectangle(0, 0, 680, 700, 0xFFFFF0);
+    this.combinedPages = this.add.rectangle(0, 0, 900, 700, 0xFFFFF0);
    
     // Left page text area
     this.leftText = this.add.text(-175, -200, '', {
@@ -123,7 +122,7 @@ createBookInterface() {
     }).setOrigin(0.5, 0);
    
     // Book title on the book cover/header - Initialize with placeholder
-    this.bookTitle = this.add.text(0, -220, 'Loading...', {
+    this.bookTitle = this.add.text(0, -300, 'Loading...', {
         fontSize: '18px',
         fill: '#8B4513',
         fontFamily: 'serif',
@@ -137,7 +136,7 @@ createBookInterface() {
     ]);
 }
     
-    // FIXED METHOD: Update book content when switching books
+    // Update book content when switching books
     updateBookContent() {
         console.log('Updating book content for:', this.currentBook?.title);
         
@@ -192,7 +191,7 @@ createBookInterface() {
         this.closeBtn.add([closeBg, closeX]);
         this.closeBtn.setInteractive(new Phaser.Geom.Circle(0, 0, 25), Phaser.Geom.Circle.Contains);
         this.closeBtn.on('pointerdown', () => {
-            this.closeBook(); // Use the closeBook method for proper cleanup
+            this.closeBook();
         });
         this.closeBtn.on('pointerover', () => closeBg.setAlpha(1));
         this.closeBtn.on('pointerout', () => closeBg.setAlpha(0.8));
@@ -230,13 +229,13 @@ createBookInterface() {
     }
     
     updatePages() {
-        // Update left page (even pages)
+        // Get current pages
         const leftPageContent = this.pages[this.currentPage] || '';
-        this.leftText.setText(leftPageContent);
-        
-        // Update right page (odd pages)
         const rightPageContent = this.pages[this.currentPage + 1] || '';
-        this.rightText.setText(rightPageContent);
+        
+        // Apply special formatting if needed
+        this.leftText.setText(this.formatPageContent(leftPageContent, this.currentPage));
+        this.rightText.setText(this.formatPageContent(rightPageContent, this.currentPage + 1));
         
         // Update page indicator
         const totalPages = this.pages.length;
@@ -257,10 +256,7 @@ createBookInterface() {
         const progress = Math.min((this.currentPage + 1) / this.pages.length, 1);
         this.progressBar.setSize(300 * progress, 6);
         
-        // Save reading progress
         this.saveReadingProgress();
-        
-        // Add page turn effect
         this.addPageTurnEffect();
     }
     
@@ -311,9 +307,9 @@ createBookInterface() {
         // Add fade out effect
         this.cameras.main.fadeOut(300, 0, 0, 0);
         
-        // Return to library scene after fade - FIXED
+        // Return to library scene after fade
         this.time.delayedCall(300, () => {
-            this.scene.start('BaseLibraryScene'); // Fixed: Use correct scene name
+            this.scene.start('BaseLibraryScene');
         });
     }
     
@@ -340,8 +336,6 @@ createBookInterface() {
             this.readingStartTime = Date.now(); // Reset for next session
         }
         
-        // Here you would typically save to your game's save system
-        // localStorage, server, or your game's data management system
         console.log('Reading progress saved:', {
             book: this.currentBook.title,
             currentPage: this.currentPage,
@@ -373,7 +367,7 @@ createBookInterface() {
     setWordsPerPage(count) {
         this.wordsPerPage = count;
         if (this.currentBook && this.currentBook.content) {
-            this.pages = this.splitContentIntoPages(this.currentBook.content);
+            this.pages = this.processBookContent(this.currentBook.content);
             this.updatePages();
         }
     }
@@ -397,14 +391,14 @@ createBookInterface() {
         };
     }
     
-    // ADD THIS METHOD: Force refresh of the scene
+    // Force refresh of the scene
     refresh() {
         console.log('Refreshing ReadingScene with current book:', this.currentBook?.title);
         this.updateBookContent();
         this.updatePages();
     }
     
-    // ADD THIS METHOD: Clean shutdown
+    // Clean shutdown
     shutdown() {
         console.log('ReadingScene shutting down');
         
@@ -422,6 +416,240 @@ createBookInterface() {
         
         // Call parent shutdown
         super.shutdown();
+    }
+
+    // Process book content - Custom Pages Only
+    processBookContent(content) {
+        if (!content) {
+            return ['No content available.'];
+        }
+        
+        // Handle custom pages
+        if (content.pages && Array.isArray(content.pages)) {
+            return this.processCustomPages(content.pages);
+        }
+        
+        // Handle plain text content - split into pages
+        if (typeof content === 'string') {
+            return this.splitContentIntoPages(content);
+        }
+        
+        // Handle object with direct text content
+        if (content.text) {
+            return this.splitContentIntoPages(content.text);
+        }
+        
+        return ['No content available.'];
+    }
+
+    // Process custom pages array
+    processCustomPages(pages) {
+        const processedPages = [];
+        
+        pages.forEach(page => {
+            if (typeof page === 'string') {
+                // Simple string page
+                processedPages.push(page);
+            } else if (page.type) {
+                // Typed page object
+                switch (page.type) {
+                    case 'cover':
+                        processedPages.push(this.createCoverPage(page));
+                        break;
+                        
+                    case 'table-of-contents':
+                        processedPages.push(this.createTOCPage(page));
+                        break;
+                        
+                    case 'chapter-start':
+                        processedPages.push(this.createChapterStartPage(page));
+                        break;
+                        
+                    case 'content':
+                        const contentResult = this.createContentPage(page);
+                        if (Array.isArray(contentResult)) {
+                            processedPages.push(...contentResult);
+                        } else {
+                            processedPages.push(contentResult);
+                        }
+                        break;
+                        
+                    default:
+                        processedPages.push(page.content || 'Page content not available');
+                }
+            } else {
+                // Simple page object with content property
+                processedPages.push(page.content || 'Page content not available');
+            }
+        });
+        
+        return processedPages.length > 0 ? processedPages : ['No content available.'];
+    }
+
+    // Create specialized page types
+    createCoverPage(data) {
+        return `
+
+
+
+                    ${data.title || 'Untitled'}
+
+                    ${data.subtitle || ''}
+
+                    by ${data.author || 'Unknown Author'}
+
+
+
+
+                    ${data.publisher || ''}
+                    ${data.year || new Date().getFullYear()}`;
+    }
+
+    createTOCPage(data) {
+        let toc = `${data.title || 'Table of Contents'}\n\n`;
+        
+        if (data.items) {
+            toc += data.items.join('\n');
+        } else if (data.chapters) {
+            toc += data.chapters.map(ch => `${ch.title} ..................... ${ch.page}`).join('\n');
+        }
+        
+        return toc;
+    }
+
+    createChapterStartPage(data) {
+        return `
+
+
+
+                Chapter ${data.chapterNumber || ''}
+
+                ${data.title || 'Untitled Chapter'}
+
+
+
+
+                ${data.content || ''}`;
+    }
+
+    createContentPage(data) {
+        // Handle regular content pages
+        let content = '';
+        
+        // Add title if provided
+        if (data.title) {
+            content += `${data.title}\n\n`;
+        }
+        
+        // Add main content
+        const mainContent = data.content || 'No content available';
+        
+        // Check if content is too long for one page
+        const words = mainContent.split(/\s+/);
+        if (words.length > this.wordsPerPage) {
+            // Split into multiple pages but return as array
+            const contentPages = this.splitContentIntoPages(mainContent);
+            
+            // Add title only to first page
+            if (data.title) {
+                contentPages[0] = `${data.title}\n\n${contentPages[0]}`;
+            }
+            
+            return contentPages; // Return array for multi-page content
+        } else {
+            // Single page content
+            content += mainContent;
+            return content;
+        }
+    }
+
+    // Format page content based on page type
+    formatPageContent(content, pageIndex) {
+        // You can add special formatting here based on content type
+        // For example, center alignment for cover pages, etc.
+        return content;
+    }
+
+    // Method to add a new page dynamically
+    addNewPage(pageData, insertIndex = null) {
+        let newPageContent = '';
+        
+        if (typeof pageData === 'string') {
+            newPageContent = pageData;
+        } else if (pageData.type) {
+            switch (pageData.type) {
+                case 'cover':
+                    newPageContent = this.createCoverPage(pageData.data || pageData);
+                    break;
+                case 'table-of-contents':
+                    newPageContent = this.createTOCPage(pageData.data || pageData);
+                    break;
+                case 'chapter-start':
+                    newPageContent = this.createChapterStartPage(pageData.data || pageData);
+                    break;
+                case 'content':
+                    const contentResult = this.createContentPage(pageData.data || pageData);
+                    if (Array.isArray(contentResult)) {
+                        // Handle multi-page content
+                        if (insertIndex !== null && insertIndex >= 0 && insertIndex <= this.pages.length) {
+                            this.pages.splice(insertIndex, 0, ...contentResult);
+                        } else {
+                            this.pages.push(...contentResult);
+                        }
+                        this.updatePages();
+                        return this.pages.length - contentResult.length; // Return index of first new page
+                    } else {
+                        newPageContent = contentResult;
+                    }
+                    break;
+                default:
+                    newPageContent = pageData.content || 'New page content';
+            }
+        } else {
+            newPageContent = pageData.content || 'New page content';
+        }
+        
+        // Insert at specific index or append to end
+        if (insertIndex !== null && insertIndex >= 0 && insertIndex <= this.pages.length) {
+            this.pages.splice(insertIndex, 0, newPageContent);
+        } else {
+            this.pages.push(newPageContent);
+        }
+        
+        // Update display if we're viewing the affected area
+        this.updatePages();
+        
+        console.log(`Added new page. Total pages: ${this.pages.length}`);
+        return this.pages.length - 1; // Return index of new page
+    }
+
+    // Method to remove a page
+    removePage(pageIndex) {
+        if (pageIndex >= 0 && pageIndex < this.pages.length) {
+            this.pages.splice(pageIndex, 1);
+            
+            // Adjust current page if necessary
+            if (this.currentPage >= this.pages.length) {
+                this.currentPage = Math.max(0, this.pages.length - 2);
+            }
+            
+            this.updatePages();
+            console.log(`Removed page ${pageIndex}. Total pages: ${this.pages.length}`);
+        }
+    }
+
+    // Method to update specific page content
+    updatePageContent(pageIndex, newContent) {
+        if (pageIndex >= 0 && pageIndex < this.pages.length) {
+            this.pages[pageIndex] = newContent;
+            
+            // Update display if we're currently viewing this page
+            if (pageIndex === this.currentPage || pageIndex === this.currentPage + 1) {
+                this.updatePages();
+            }
+            
+            console.log(`Updated page ${pageIndex} content`);
+        }
     }
 }
 
