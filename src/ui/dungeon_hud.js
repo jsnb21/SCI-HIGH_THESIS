@@ -2,42 +2,52 @@ export class DungeonHUD {
     constructor(scene) {
         this.scene = scene;
         this.hudElements = [];
+        this.resizeHandler = () => this.drawHUD();
+        this.scene.scale.on('resize', this.resizeHandler);
     }
 
     drawHUD() {
-        // Remove previous HUD elements
         if (this.hudElements.length) {
             this.hudElements.forEach(el => el.destroy());
             this.hudElements = [];
         }
 
-        // Intensity
-        const intensityText = this.scene.add.text(16, 16, `Intensity ${this.scene.intensity}`, {
-            fontFamily: 'Jersey15-Regular',
-            fontSize: '38px',
-            color: '#222',
-            fontStyle: 'bold'
-        }).setDepth(10);
+        const { width, height } = this.scene.scale;
+        const scaleFactor = Math.min(width / 816, height / 624);
+
+        const intensityText = this.scene.add.text(
+            16 * scaleFactor,
+            16 * scaleFactor,
+            `Intensity ${this.scene.intensity}`,
+            {
+                fontFamily: 'Jersey15-Regular',
+                fontSize: `${Math.round(38 * scaleFactor)}px`,
+                color: '#222',
+                fontStyle: 'bold'
+            }
+        ).setDepth(10);
         this.hudElements.push(intensityText);
 
-        // Player HP as heart sprites
-        const heartSpacing = 30;
-        const heartY = 64;
-        const heartXStart = 16;
+        const heartSpacing = 30 * scaleFactor;
+        const heartY = 64 * scaleFactor;
+        const heartXStart = 16 * scaleFactor;
         for (let i = 0; i < this.scene.player.hp; i++) {
-            const heart = this.scene.add.image(heartXStart + i * heartSpacing, heartY, 'heart')
+            const heart = this.scene.add.image(
+                heartXStart + i * heartSpacing,
+                heartY,
+                'heart'
+            )
                 .setOrigin(0, 0.5)
-                .setScale(0.8)
+                .setScale(0.8 * scaleFactor)
                 .setDepth(10);
             this.hudElements.push(heart);
         }
 
-        // Buff icons (max 5 per row)
-        const buffSize = 32;
-        const buffGap = 8;
+        const buffSize = 32 * scaleFactor;
+        const buffGap = 8 * scaleFactor;
         const buffsPerRow = 5;
-        let startY = 104;
-        let startX = 16;
+        let startY = 104 * scaleFactor;
+        let startX = 16 * scaleFactor;
         for (let i = 0; i < this.scene.player.buffs.length; i++) {
             const row = Math.floor(i / buffsPerRow);
             const col = i % buffsPerRow;
@@ -57,6 +67,7 @@ export class DungeonHUD {
             this.hudElements.forEach(el => el.destroy());
             this.hudElements = [];
         }
+        this.scene.scale.off('resize', this.resizeHandler);
     }
 }
 
@@ -66,13 +77,25 @@ export class DungeonMenu {
         this.menuBoxGroup = null;
         this.menuButtonBg = null;
         this.menuButtonText = null;
+        this.resizeHandler = () => this.redrawMenuButton();
+        this.scene.scale.on('resize', this.resizeHandler);
     }
 
     createMenuButton() {
-        const buttonWidth = 120;
-        const buttonHeight = 40;
-        const margin = 24;
-        const buttonX = this.scene.sys.game.config.width - buttonWidth / 2 - margin;
+        this.redrawMenuButton();
+    }
+
+    redrawMenuButton() {
+        if (this.menuButtonBg) this.menuButtonBg.destroy();
+        if (this.menuButtonText) this.menuButtonText.destroy();
+
+        const { width, height } = this.scene.scale;
+        const scaleFactor = Math.min(width / 816, height / 624);
+
+        const buttonWidth = 120 * scaleFactor;
+        const buttonHeight = 40 * scaleFactor;
+        const margin = 24 * scaleFactor;
+        const buttonX = width - buttonWidth / 2 - margin;
         const buttonY = buttonHeight / 2 + margin;
 
         this.menuButtonBg = this.scene.add.rectangle(
@@ -89,9 +112,8 @@ export class DungeonMenu {
             buttonY,
             'Menu',
             {
-                font: '24px Jersey15-Regular',
-                fill: '#ffffff',
-                padding: { left: 0, right: 0, top: 0, bottom: 0 }
+                font: `${Math.round(24 * scaleFactor)}px Jersey15-Regular`,
+                fill: '#ffffff'
             }
         ).setOrigin(0.5)
          .setInteractive({ useHandCursor: true })
@@ -112,25 +134,28 @@ export class DungeonMenu {
     }
 
     showMenuBox() {
-        if (this.menuBoxGroup) {
+        if (this.menuBoxGroup && this.menuBoxGroup.children) {
             this.menuBoxGroup.clear(true, true);
         }
         this.menuBoxGroup = this.scene.add.group();
 
+        const { width, height } = this.scene.scale;
+        const scaleFactor = Math.min(width / 816, height / 624);
+
         this.menuDimBg = this.scene.add.rectangle(
-            this.scene.sys.game.config.width / 2,
-            this.scene.sys.game.config.height / 2,
-            this.scene.sys.game.config.width,
-            this.scene.sys.game.config.height,
+            width / 2,
+            height / 2,
+            width,
+            height,
             0x000000,
             0.5
         ).setDepth(1000);
         this.menuBoxGroup.add(this.menuDimBg);
 
-        const boxWidth = 340 * 1.2;
-        const boxHeight = 260 * 1.2;
-        const baseX = this.scene.sys.game.config.width / 2;
-        const baseY = this.scene.sys.game.config.height / 2;
+        const boxWidth = 340 * 1.2 * scaleFactor;
+        const boxHeight = 260 * 1.2 * scaleFactor;
+        const baseX = width / 2;
+        const baseY = height / 2;
 
         const menuBoxBg = this.scene.add.rectangle(
             baseX,
@@ -144,10 +169,10 @@ export class DungeonMenu {
 
         const title = this.scene.add.text(
             baseX,
-            baseY - boxHeight / 2 + 36 * 1.2,
+            baseY - boxHeight / 2 + 36 * 1.2 * scaleFactor,
             'Menu',
             {
-                font: '38px Jersey15-Regular',
+                font: `${Math.round(38 * scaleFactor)}px Jersey15-Regular`,
                 fill: '#fff'
             }
         ).setOrigin(0.5).setDepth(1002);
@@ -155,18 +180,18 @@ export class DungeonMenu {
 
         const options = [
             { label: 'Back to Dungeon', action: () => this.closeMenuBox() },
-            { label: 'Options', action: () => { this.scene.scene.switch('OptionsScene', { prevScene: this.scene.scene.key }); } },
+            { label: 'Options', action: () => { this.scene.scene.switch('OptionsScene', { prevScene: this.scene.key }); } },
             { label: 'Back to Main Hub', action: () => { this.closeMenuBox(); this.scene.scene.start('MainHub'); } }
         ];
 
-        const optionHeight = 54 * 1.2;
+        const optionHeight = 54 * 1.2 * scaleFactor;
         options.forEach((opt, idx) => {
-            const optY = baseY - 30 * 1.2 + idx * optionHeight;
+            const optY = baseY - 30 * 1.2 * scaleFactor + idx * optionHeight;
             const optBg = this.scene.add.rectangle(
                 baseX,
                 optY,
-                (boxWidth - 48 * 1.2),
-                44 * 1.2,
+                (boxWidth - 48 * 1.2 * scaleFactor),
+                44 * 1.2 * scaleFactor,
                 0x000000,
                 0.7
             ).setStrokeStyle(2, 0xffffff).setDepth(1001);
@@ -177,7 +202,7 @@ export class DungeonMenu {
                 optY,
                 opt.label,
                 {
-                    font: '29px Jersey15-Regular',
+                    font: `${Math.round(29 * scaleFactor)}px Jersey15-Regular`,
                     fill: '#fff'
                 }
             ).setOrigin(0.5)
@@ -194,7 +219,7 @@ export class DungeonMenu {
     }
 
     closeMenuBox() {
-        if (this.menuBoxGroup) {
+        if (this.menuBoxGroup && this.menuBoxGroup.children) {
             this.menuBoxGroup.clear(true, true);
             this.menuBoxGroup = null;
         }
@@ -202,7 +227,7 @@ export class DungeonMenu {
     }
 
     shutdown() {
-        if (this.menuBoxGroup) {
+        if (this.menuBoxGroup && this.menuBoxGroup.children) {
             this.menuBoxGroup.clear(true, true);
             this.menuBoxGroup = null;
         }
@@ -214,5 +239,6 @@ export class DungeonMenu {
             this.menuButtonText.destroy();
             this.menuButtonText = null;
         }
+        this.scene.scale.off('resize', this.resizeHandler);
     }
 }

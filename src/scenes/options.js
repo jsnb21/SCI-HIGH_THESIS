@@ -18,15 +18,12 @@ export default class OptionsScene extends Phaser.Scene {
     }
 
     create() {
-        // Allow camera to initialize first
         this.time.delayedCall(10, () => this.createUI());
         this.scale.on('resize', this.onResize, this);
-        
-        // Fix fullscreen event listener
+
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement && this.scene.isActive()) {
                 this.scale.resize(BASE_WIDTH, BASE_HEIGHT);
-                // Don't directly modify canvas styles, let Phaser handle it
                 this.time.delayedCall(100, () => this.createUI());
             }
         });
@@ -136,8 +133,10 @@ export default class OptionsScene extends Phaser.Scene {
         backButton.on('pointerdown', () => {
             const prevScene = this.sys.settings.data && this.sys.settings.data.prevScene;
             if (prevScene) {
-                this.scene.switch(prevScene);
+                this.scene.stop('OptionsScene');
+                this.scene.start(prevScene);
             } else {
+                this.scene.stop('OptionsScene');
                 this.scene.start('MainMenu');
             }
         });

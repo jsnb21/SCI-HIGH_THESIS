@@ -126,6 +126,14 @@ export default class MainHub extends Phaser.Scene {
             }
         });
 
+        // Add shutdown and destroy event listeners to clean up the carousel
+        this.events.on('shutdown', () => {
+            if (this.carousel) this.carousel.destroy();
+        });
+        this.events.on('destroy', () => {
+            if (this.carousel) this.carousel.destroy();
+        });
+
         this.carousel.create(iconKeys, iconInfo, (selectedItem, index) => {
             console.log('Selected:', selectedItem.heading);
 
