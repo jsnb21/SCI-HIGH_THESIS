@@ -4,6 +4,8 @@ import { DungeonHUD, DungeonMenu } from '../../ui/dungeon_hud.js';
 
 const GRID_WIDTH = 7;
 const GRID_HEIGHT = 8;
+const BASE_WIDTH = 816;
+const BASE_HEIGHT = 624;
 
 export default class DungeonScene extends Phaser.Scene {
     constructor() {
@@ -15,6 +17,9 @@ export default class DungeonScene extends Phaser.Scene {
         this.breathDir = 1;
         this.intensity = 1;
         this.hudElements = [];
+        this.scaleFactor = 1;
+        this.offsetX = 0;
+        this.offsetY = 0;
     }
 
     preload() {
@@ -52,6 +57,10 @@ export default class DungeonScene extends Phaser.Scene {
 
         this.dungeonMenu = new DungeonMenu(this);
         this.dungeonMenu.createMenuButton();
+
+        // Add resize listener
+        this.scale.on('resize', this.onResize, this);
+        this.updateScale();
 
         this.events.once('shutdown', this.shutdown, this);
     }
@@ -117,31 +126,38 @@ export default class DungeonScene extends Phaser.Scene {
 
     handlePointer(pointer) {
         if (this.menuOpen) return;
-        const cellSize = 64;
-        const gap = 12;
+        const cellSize = 64 * this.scaleFactor;
+        const x = Math.floor((pointer.x - this.offsetX) / cellSize);
+        const y = Math.floor((pointer.y - this.offsetY) / cellSize);
+        this.movePlayer(x, y);
+    }
+
+    updateScale() {
+        const width = this.scale.width;
+        const height = this.scale.height;
+        this.scaleFactor = Math.min(width / BASE_WIDTH, height / BASE_HEIGHT);
+
+        // Calculate grid size and offsets for centering
+        const cellSize = 64 * this.scaleFactor;
         const gridPixelWidth = GRID_WIDTH * cellSize;
         const gridPixelHeight = GRID_HEIGHT * cellSize;
-        const offsetX = (this.sys.game.config.width - gridPixelWidth) / 2;
-        const offsetY = (this.sys.game.config.height - gridPixelHeight) / 2;
+        this.offsetX = (width - gridPixelWidth) / 2;
+        this.offsetY = (height - gridPixelHeight) / 2;
+    }
 
-        const x = Math.floor((pointer.x - offsetX) / cellSize);
-        const y = Math.floor((pointer.y - offsetY) / cellSize);
-
-        this.movePlayer(x, y);
+    onResize(gameSize) {
+        this.updateScale();
+        this.drawGrid();
+        if (this.dungeonHUD && this.dungeonHUD.drawHUD) this.dungeonHUD.drawHUD();
+        if (this.dungeonMenu && this.dungeonMenu.createMenuButton) this.dungeonMenu.createMenuButton();
     }
 
     drawGrid() {
         if (this.gridGraphics) this.gridGraphics.clear();
         else this.gridGraphics = this.add.graphics();
 
-        const cellSize = 64;
-        const gap = 12;
-        const gridPixelWidth = GRID_WIDTH * cellSize;
-        const gridPixelHeight = GRID_HEIGHT * cellSize;
-        const offsetX = (this.sys.game.config.width - gridPixelWidth) / 2;
-        const offsetY = (this.sys.game.config.height - gridPixelHeight) / 2;
-
-        this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
+        const cellSize = 64 * this.scaleFactor;
+        const gap = 12 * this.scaleFactor;
 
         for (let y = 0; y < GRID_HEIGHT; y++) {
             for (let x = 0; x < GRID_WIDTH; x++) {
@@ -159,8 +175,8 @@ export default class DungeonScene extends Phaser.Scene {
 
                 this.gridGraphics.fillStyle(color, alpha);
                 this.gridGraphics.fillRect(
-                    offsetX + x * cellSize + gap / 2,
-                    offsetY + y * cellSize + gap / 2,
+                    this.offsetX + x * cellSize + gap / 2,
+                    this.offsetY + y * cellSize + gap / 2,
                     cellSize - gap,
                     cellSize - gap
                 );
