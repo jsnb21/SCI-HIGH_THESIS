@@ -20,12 +20,14 @@ export default class DungeonScene extends Phaser.Scene {
         this.scaleFactor = 1;
         this.offsetX = 0;
         this.offsetY = 0;
+        this.quizBoxes = []; // <-- Add this line
     }
 
     preload() {
         this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
         this.load.image('heart', 'assets/sprites/dungeon/heart.png');
         this.load.audio('bgm_dungeon', 'assets/audio/bgm/bgm_dungeon.mp3');
+        this.load.image('quizbox', 'assets/sprites/dungeon/quizbox.png'); // <-- Add a quiz box sprite
     }
 
     create() {
@@ -63,6 +65,8 @@ export default class DungeonScene extends Phaser.Scene {
         this.updateScale();
 
         this.events.once('shutdown', this.shutdown, this);
+
+        this.quizBoxes = this.placeQuizBoxes(2); // <-- Place 2 quiz boxes
     }
 
     shutdown() {
@@ -109,6 +113,18 @@ export default class DungeonScene extends Phaser.Scene {
             this.player.x = targetX;
             this.player.y = targetY;
             this.grid[this.player.y][this.player.x].visited = true;
+
+            // Check for quiz box trigger
+            const quizBoxIndex = this.quizBoxes.findIndex(
+                pos => pos.x === targetX && pos.y === targetY
+            );
+            if (quizBoxIndex !== -1) {
+                // Remove the triggered quiz box so it can't be triggered again
+                this.quizBoxes.splice(quizBoxIndex, 1);
+                this.scene.start('WebDesignQuizScene');
+                return;
+            }
+
             this.drawGrid();
             if (this.dungeonHUD) this.dungeonHUD.drawHUD();
         }
@@ -173,15 +189,42 @@ export default class DungeonScene extends Phaser.Scene {
                     alpha = this.breathAlpha;
                 }
 
-                this.gridGraphics.fillStyle(color, alpha);
-                this.gridGraphics.fillRect(
-                    this.offsetX + x * cellSize + gap / 2,
-                    this.offsetY + y * cellSize + gap / 2,
-                    cellSize - gap,
-                    cellSize - gap
-                );
+                // Draw quiz box if present
+                if (this.quizBoxes.some(pos => pos.x === x && pos.y === y)) {
+                    // Draw the quiz box sprite
+                    this.add.image(
+                        this.offsetX + x * cellSize + cellSize / 2,
+                        this.offsetY + y * cellSize + cellSize / 2,
+                        'quizbox'
+                    ).setDisplaySize(cellSize - gap, cellSize - gap);
+                } else {
+                    this.gridGraphics.fillStyle(color, alpha);
+                    this.gridGraphics.fillRect(
+                        this.offsetX + x * cellSize + gap / 2,
+                        this.offsetY + y * cellSize + gap / 2,
+                        cellSize - gap,
+                        cellSize - gap
+                    );
+                }
             }
         }
+    }
+
+    // Add this method to randomly place quiz boxes
+    placeQuizBoxes(count) {
+        const positions = [];
+        while (positions.length < count) {
+            const x = Phaser.Math.Between(0, GRID_WIDTH - 1);
+            const y = Phaser.Math.Between(0, GRID_HEIGHT - 2); // avoid starting row
+            // Avoid player start and duplicates
+            if (
+                (x !== this.player.x || y !== this.player.y) &&
+                !positions.some(pos => pos.x === x && pos.y === y)
+            ) {
+                positions.push({ x, y });
+            }
+        }
+        return positions;
     }
 
     update(time, delta) {
