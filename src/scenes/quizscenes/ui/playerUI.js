@@ -31,5 +31,9 @@ export function createPlayerUI(scene, x, y, playerConfig, sf) {
         hpText,
         label: playerConfig.label
     });
+
+    // Ensure player UI is above the quiz overlay but below the quiz box and options
+    container.setDepth(101); // Overlay is 99, quiz box is 100, so 101 is above overlay
+
     return container;
 }
