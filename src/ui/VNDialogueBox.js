@@ -19,7 +19,6 @@ export default class VNDialogueBox {
     const scaleY = height / BASE_HEIGHT;
     const scale = Math.min(scaleX, scaleY);
 
-    // Use actual width for the box, with proportional margins
     const marginX = 40 * scale;
     const marginY = 32 * scale;
     const boxWidth = width - marginX * 2;
@@ -30,14 +29,14 @@ export default class VNDialogueBox {
     const borderThickness = 4 * scale;
     // --- Scaling logic END ---
 
-    // Draw the text box border and background with rounded corners
+    // Draw border and background
     this.border = scene.add.graphics();
-    this.border.lineStyle(borderThickness, 0xffffff, 1); // White border
-    this.border.fillStyle(0x222244, 0.8); // Semi-transparent fill
+    this.border.lineStyle(borderThickness, 0xffffff, 1);
+    this.border.fillStyle(0x222244, 0.8);
     this.border.strokeRoundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius);
     this.border.fillRoundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius);
 
-    // Create the text object for displaying dialogue inside the box
+    // Create text object
     this.textObject = scene.add.text(boxX + 20 * scale, boxY + 15 * scale, '', {
       fontFamily: 'Jersey15-Regular',
       fontSize: `${Math.round(32 * scale)}px`,
@@ -48,7 +47,7 @@ export default class VNDialogueBox {
     // Sound
     this.selectSound = scene.sound.get('se_select') || scene.sound.add('se_select');
 
-    // Input
+    // Input handler
     this.pointerHandler = () => {
       if (this.typingEvent) {
         this.finishTyping();
@@ -58,24 +57,28 @@ export default class VNDialogueBox {
     };
     scene.input.on('pointerdown', this.pointerHandler);
 
-    // Start typing first line
+    // Begin typing
     this.typeText(this.text);
 
-    // Store for possible future scaling/redraw
+    // Store scale values
     this._scale = scale;
     this._boxParams = { boxX, boxY, boxWidth, boxHeight, borderRadius, borderThickness };
   }
 
   typeText(text) {
     this.displayedText = '';
-    this.textObject.setText('');
+    if (this.textObject && this.textObject.setText) {
+      this.textObject.setText('');
+    }
     let i = 0;
     this.typingEvent = this.scene.time.addEvent({
       delay: 30,
       repeat: text.length - 1,
       callback: () => {
         this.displayedText += text[i];
-        this.textObject.setText(this.displayedText);
+        if (this.textObject && this.textObject.setText) {
+          this.textObject.setText(this.displayedText);
+        }
         i++;
         if (i === text.length) {
           this.typingEvent = null;
@@ -89,7 +92,9 @@ export default class VNDialogueBox {
       this.typingEvent.remove();
       this.typingEvent = null;
       this.displayedText = this.text;
-      this.textObject.setText(this.displayedText);
+      if (this.textObject && this.textObject.setText) {
+        this.textObject.setText(this.displayedText);
+      }
     }
   }
 
@@ -100,8 +105,7 @@ export default class VNDialogueBox {
       if (this.selectSound) this.selectSound.play();
       this.typeText(this.text);
     } else {
-      // Wait for next user input, then call onComplete
-      this.scene.input.off('pointerdown', this.pointerHandler); // Remove current handler
+      this.scene.input.off('pointerdown', this.pointerHandler);
       this.scene.input.once('pointerdown', () => {
         this.destroy();
         if (this.onComplete) this.onComplete();
@@ -110,8 +114,14 @@ export default class VNDialogueBox {
   }
 
   destroy() {
-    this.textObject.destroy();
-    this.border.destroy();
+    if (this.textObject && this.textObject.destroy) {
+      this.textObject.destroy();
+      this.textObject = null;
+    }
+    if (this.border && this.border.destroy) {
+      this.border.destroy();
+      this.border = null;
+    }
     this.scene.input.off('pointerdown', this.pointerHandler);
   }
 }

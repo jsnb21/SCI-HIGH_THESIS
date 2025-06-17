@@ -133,6 +133,13 @@ export default class OptionsScene extends Phaser.Scene {
         backButton.on('pointerdown', () => {
             const prevScene = this.sys.settings.data && this.sys.settings.data.prevScene;
             if (prevScene) {
+                // Always reset to base size when leaving options (unless going to MainMenu, which may have its own logic)
+                if (prevScene !== 'MainMenu') {
+                    this.scale.resize(BASE_WIDTH, BASE_HEIGHT);
+                    const canvas = this.game.canvas;
+                    canvas.style.width = `${BASE_WIDTH}px`;
+                    canvas.style.height = `${BASE_HEIGHT}px`;
+                }
                 this.scene.stop('OptionsScene');
                 this.scene.start(prevScene);
             } else {
