@@ -1,3 +1,5 @@
+import gameManager from '../../gameManager.js'; // Add this import
+
 // This file is for the back button component in the game, separated to reduce lines of code in the main file
 
 export function createBackButton(scene, targetScene = 'ComputerLab') {
@@ -34,6 +36,8 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
      .on('pointerdown', () => {
          if (scene.se_confirmSound) scene.se_confirmSound.play();
          if (scene.restartQuiz) scene.restartQuiz();
+         // Use GameManager to set and get previous scene
+         gameManager.setPreviousScene(scene.scene.key);
          scene.scene.start(targetScene);
      });
 
@@ -49,6 +53,8 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
     ).on('pointerdown', () => {
         if (scene.se_confirmSound) scene.se_confirmSound.play();
         if (scene.restartQuiz) scene.restartQuiz();
+        // Use GameManager to set and get previous scene
+        gameManager.setPreviousScene(scene.scene.key);
         scene.scene.start(targetScene);
     });
 

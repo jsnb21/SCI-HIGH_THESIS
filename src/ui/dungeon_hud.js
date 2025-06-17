@@ -181,7 +181,18 @@ export class DungeonMenu {
         const options = [
             { label: 'Back to Dungeon', action: () => this.closeMenuBox() },
             { label: 'Options', action: () => { this.scene.scene.switch('OptionsScene', { prevScene: this.scene.key }); } },
-            { label: 'Back to Main Hub', action: () => { this.closeMenuBox(); this.scene.scene.start('MainHub'); } }
+            { 
+                label: 'Back to Main Hub', 
+                action: () => {
+                    this.closeMenuBox();
+                    this.scene.scene.stop(this.scene.key);
+                    this.scene.scale.resize(816, 624);
+                    const canvas = this.scene.game.canvas;
+                    canvas.style.width = `816px`;
+                    canvas.style.height = `624px`;
+                    this.scene.scene.start('MainHub');
+                } 
+            }
         ];
 
         const optionHeight = 54 * 1.2 * scaleFactor;

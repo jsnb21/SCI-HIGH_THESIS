@@ -7,6 +7,7 @@ import {
     updateSoundVolumes,
     createVolumeSlider
 } from '../audioUtils.js';
+import gameManager from '../gameManager.js';
 
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
@@ -17,7 +18,12 @@ export default class OptionsScene extends Phaser.Scene {
         this.uiElements = [];
     }
 
-    create() {
+    create(data) {
+        // 👇 Fix: set previousScene if provided
+        if (data && data.prevScene) {
+            gameManager.setPreviousScene(data.prevScene);
+        }
+
         this.time.delayedCall(10, () => this.createUI());
         this.scale.on('resize', this.onResize, this);
 
@@ -89,7 +95,9 @@ export default class OptionsScene extends Phaser.Scene {
         }).setOrigin(1, 0.5);
         this.uiElements.push(fsLabel);
 
-        const fsButton = this.add.text(width / 2 + 50 * this.scaleFactor, 320 * this.scaleFactor,
+        const fsButton = this.add.text(
+            width / 2 + 50 * this.scaleFactor,
+            320 * this.scaleFactor,
             this.scale.isFullscreen ? 'On' : 'Off',
             {
                 font: `${scaleFont(32)}px Jersey15-Regular`,
@@ -131,26 +139,23 @@ export default class OptionsScene extends Phaser.Scene {
         }).setOrigin(0.5).setInteractive();
 
         backButton.on('pointerdown', () => {
-            const prevScene = this.sys.settings.data && this.sys.settings.data.prevScene;
-            if (prevScene) {
-                // Always reset to base size when leaving options (unless going to MainMenu, which may have its own logic)
-                if (prevScene !== 'MainMenu') {
-                    this.scale.resize(BASE_WIDTH, BASE_HEIGHT);
-                    const canvas = this.game.canvas;
-                    canvas.style.width = `${BASE_WIDTH}px`;
-                    canvas.style.height = `${BASE_HEIGHT}px`;
-                }
-                this.scene.stop('OptionsScene');
-                this.scene.start(prevScene);
-            } else {
-                this.scene.stop('OptionsScene');
-                this.scene.start('MainMenu');
+            const prevScene = gameManager.getPreviousScene() || 'MainMenu';
+
+            if (prevScene !== 'MainMenu') {
+                this.scale.resize(BASE_WIDTH, BASE_HEIGHT);
+                const canvas = this.game.canvas;
+                canvas.style.width = `${BASE_WIDTH}px`;
+                canvas.style.height = `${BASE_HEIGHT}px`;
             }
+
+            this.scene.stop('OptionsScene');
+            this.scene.start(prevScene);
         });
+
         this.uiElements.push(backButton);
     }
 
-    onResize(gameSize) {
+    onResize() {
         if (this.resizeTimer) this.time.removeEvent(this.resizeTimer);
         this.resizeTimer = this.time.delayedCall(100, () => {
             this.createUI();
