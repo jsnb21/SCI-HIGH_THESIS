@@ -136,6 +136,34 @@ export default class Office extends Phaser.Scene {
 
         // Use the shared back button (top-left, consistent style)
         createBackButton(this, 'MainHub');
+
+        // Add shutdown and destroy event listeners to clean up the carousel
+        this.events.on('shutdown', () => {
+            this.destroyCarousel();
+        });
+        this.events.on('destroy', () => {
+            this.destroyCarousel();
+        });
+    }
+
+    destroyCarousel() {
+        // Clean up carousel icons and tweens to prevent ghosting
+        if (this.breathingTween) {
+            this.breathingTween.stop();
+            this.breathingTween = null;
+        }
+        if (this.carouselIcons) {
+            this.carouselIcons.forEach(icon => icon.destroy());
+            this.carouselIcons = [];
+        }
+        if (this.carouselTitle) {
+            this.carouselTitle.destroy();
+            this.carouselTitle = null;
+        }
+        if (this.carouselDesc) {
+            this.carouselDesc.destroy();
+            this.carouselDesc = null;
+        }
     }
 
     moveCarousel(direction, sectionTitles, sectionDescs) {

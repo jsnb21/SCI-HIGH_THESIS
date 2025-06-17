@@ -2,10 +2,11 @@
 
 class GameManager {
     constructor() {
-        // Default values
         this.playerHP = 3;
-        this.playTime = 0; // in seconds
-        this.gameProgress = 0; // e.g., 0 = new game, 1 = after tutorial, etc.
+        this.playTime = 0;
+        this.gameProgress = 0;
+
+        this.previousScene = 'MainMenu'; // default scene
     }
 
     // Player HP
@@ -35,11 +36,21 @@ class GameManager {
         return this.gameProgress;
     }
 
-    // Reset all values (optional utility)
+    // Previous Scene
+    setPreviousScene(sceneKey) {
+        this.previousScene = sceneKey;
+    }
+
+    getPreviousScene() {
+        return this.previousScene;
+    }
+
+    // Reset all values
     reset() {
         this.playerHP = 3;
         this.playTime = 0;
         this.gameProgress = 0;
+        this.previousScene = 'MainMenu';
     }
 }
 
@@ -79,14 +90,14 @@ const char4 = new Character();
 const char5 = new Character();
 const onceOnlyFlags = new OnceOnlyFlags();
 
-// Browser Console Testing Purposes. Remove once done.
+// Browser Console Testing
 window.char1 = char1;
 window.char2 = char2;
 window.char3 = char3;
 window.char4 = char4;
 window.char5 = char5;
 
-// Export a singleton instance
+// Export singleton instance
 const gameManager = new GameManager();
 export default gameManager;
 export { char1, char2, char3, char4, char5, onceOnlyFlags };

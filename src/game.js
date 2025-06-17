@@ -37,8 +37,8 @@ import DungeonScene from './scenes/comlabscenes/dungeon.js';
 
 const config = {
   type: Phaser.AUTO,
-  width: 1224,
-  height: 936,
+  width: 816,
+  height: 624,
   parent: 'game',
   scene: [
     MainMenu,
@@ -69,7 +69,6 @@ const config = {
     CSharpQuizScene,
     /* Library Scenes */
     BaseLibraryScene,
-    ReadingScene,
   ],
   dom: {
     createContainer: true
@@ -83,5 +82,17 @@ export const DEFAULT_TEXT_STYLE = {
     stroke: '#000000',
     strokeThickness: 10
 };
+
+window.addEventListener('resize', () => {
+    if (game && game.scale) {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        game.scale.resize(width, height);
+
+        const canvas = game.canvas;
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+    }
+});
 
 new Phaser.Game(config);

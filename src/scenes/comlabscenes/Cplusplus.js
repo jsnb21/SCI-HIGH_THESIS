@@ -29,10 +29,10 @@ export default class CPlusplusScene extends Phaser.Scene {
         
         // Create the UI with your specific content
         this.courseUI.createUI({
-            courseTitle: 'Selected Course: C++',
+            courseTitle: 'C++',
             iconPath: 'CPlusPlusIcons',
             description: 'This course covers the fundamentals of C++ Programming...',
-            buttonText: 'Start Course',
+            buttonText: 'Start',
             buttonCallback: () => {
                 this.se_confirmSound.play();
                 this.scene.start('CplusplusQuizScene', { topic: 'C++',

@@ -4,6 +4,8 @@ import { DungeonHUD, DungeonMenu } from '../../ui/dungeon_hud.js';
 
 const GRID_WIDTH = 7;
 const GRID_HEIGHT = 8;
+const BASE_WIDTH = 816;
+const BASE_HEIGHT = 624;
 
 export default class DungeonScene extends Phaser.Scene {
     constructor() {
@@ -15,12 +17,18 @@ export default class DungeonScene extends Phaser.Scene {
         this.breathDir = 1;
         this.intensity = 1;
         this.hudElements = [];
+        this.scaleFactor = 1;
+        this.offsetX = 0;
+        this.offsetY = 0;
+        this.quizBoxes = [];
+        this.quizBoxSprites = []; // Track quiz box sprites
     }
 
     preload() {
         this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
         this.load.image('heart', 'assets/sprites/dungeon/heart.png');
         this.load.audio('bgm_dungeon', 'assets/audio/bgm/bgm_dungeon.mp3');
+        this.load.image('quizbox', 'assets/sprites/dungeon/quizbox.png');
     }
 
     create() {
@@ -41,6 +49,9 @@ export default class DungeonScene extends Phaser.Scene {
         this.grid = this.createGrid(GRID_WIDTH, GRID_HEIGHT);
         this.grid[this.player.y][this.player.x].visited = true;
 
+        // Calculate adjacent cells initially
+        this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
+
         this.input.keyboard.on('keydown', this.handleInput, this);
         this.input.on('pointerdown', this.handlePointer, this);
 
@@ -53,7 +64,26 @@ export default class DungeonScene extends Phaser.Scene {
         this.dungeonMenu = new DungeonMenu(this);
         this.dungeonMenu.createMenuButton();
 
+        // Add resize listener
+        this.scale.on('resize', this.onResize, this);
+        this.updateScale();
+
         this.events.once('shutdown', this.shutdown, this);
+
+        this.quizBoxes = this.placeQuizBoxes(2);
+
+        // Add resume event handler
+        this.events.on('resume', this.onResume, this);
+    }
+
+    onResume() {
+        // Update adjacent cells on resume
+        this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
+
+        // Redraw grid and HUD when scene is resumed
+        this.drawGrid();
+        if (this.dungeonHUD && this.dungeonHUD.drawHUD) this.dungeonHUD.drawHUD();
+        if (this.dungeonMenu && this.dungeonMenu.createMenuButton) this.dungeonMenu.createMenuButton();
     }
 
     shutdown() {
@@ -63,9 +93,11 @@ export default class DungeonScene extends Phaser.Scene {
         }
         if (this.dungeonHUD) this.dungeonHUD.shutdown();
         if (this.dungeonMenu) this.dungeonMenu.shutdown();
+        if (this.quizBoxSprites && this.quizBoxSprites.length) {
+            this.quizBoxSprites.forEach(sprite => sprite.destroy());
+            this.quizBoxSprites = [];
+        }
     }
-
-    // --- Remove drawHUD, createMenuButton, showMenuBox ---
 
     createGrid(width, height) {
         const grid = [];
@@ -100,6 +132,22 @@ export default class DungeonScene extends Phaser.Scene {
             this.player.x = targetX;
             this.player.y = targetY;
             this.grid[this.player.y][this.player.x].visited = true;
+
+            // Update adjacent cells after moving
+            this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
+
+            // Check for quiz box trigger
+            const quizBoxIndex = this.quizBoxes.findIndex(
+                pos => pos.x === targetX && pos.y === targetY
+            );
+            if (quizBoxIndex !== -1) {
+                // Remove the triggered quiz box so it can't be triggered again
+                this.quizBoxes.splice(quizBoxIndex, 1);
+                this.scene.pause(); // Pause DungeonScene
+                this.scene.launch('WebDesignQuizScene', { returnScene: 'DungeonScene' });
+                return;
+            }
+
             this.drawGrid();
             if (this.dungeonHUD) this.dungeonHUD.drawHUD();
         }
@@ -117,31 +165,44 @@ export default class DungeonScene extends Phaser.Scene {
 
     handlePointer(pointer) {
         if (this.menuOpen) return;
-        const cellSize = 64;
-        const gap = 12;
-        const gridPixelWidth = GRID_WIDTH * cellSize;
-        const gridPixelHeight = GRID_HEIGHT * cellSize;
-        const offsetX = (this.sys.game.config.width - gridPixelWidth) / 2;
-        const offsetY = (this.sys.game.config.height - gridPixelHeight) / 2;
-
-        const x = Math.floor((pointer.x - offsetX) / cellSize);
-        const y = Math.floor((pointer.y - offsetY) / cellSize);
-
+        const cellSize = 64 * this.scaleFactor;
+        const x = Math.floor((pointer.x - this.offsetX) / cellSize);
+        const y = Math.floor((pointer.y - this.offsetY) / cellSize);
         this.movePlayer(x, y);
     }
 
+    updateScale() {
+        const width = this.scale.width;
+        const height = this.scale.height;
+        this.scaleFactor = Math.min(width / BASE_WIDTH, height / BASE_HEIGHT);
+
+        // Calculate grid size and offsets for centering
+        const cellSize = 64 * this.scaleFactor;
+        const gridPixelWidth = GRID_WIDTH * cellSize;
+        const gridPixelHeight = GRID_HEIGHT * cellSize;
+        this.offsetX = (width - gridPixelWidth) / 2;
+        this.offsetY = (height - gridPixelHeight) / 2;
+    }
+
+    onResize(gameSize) {
+        this.updateScale();
+        this.drawGrid();
+        if (this.dungeonHUD && this.dungeonHUD.drawHUD) this.dungeonHUD.drawHUD();
+        if (this.dungeonMenu && this.dungeonMenu.createMenuButton) this.dungeonMenu.createMenuButton();
+    }
+
     drawGrid() {
+        // Clear previous quiz box sprites
+        if (this.quizBoxSprites && this.quizBoxSprites.length) {
+            this.quizBoxSprites.forEach(sprite => sprite.destroy());
+            this.quizBoxSprites = [];
+        }
+
         if (this.gridGraphics) this.gridGraphics.clear();
         else this.gridGraphics = this.add.graphics();
 
-        const cellSize = 64;
-        const gap = 12;
-        const gridPixelWidth = GRID_WIDTH * cellSize;
-        const gridPixelHeight = GRID_HEIGHT * cellSize;
-        const offsetX = (this.sys.game.config.width - gridPixelWidth) / 2;
-        const offsetY = (this.sys.game.config.height - gridPixelHeight) / 2;
-
-        this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
+        const cellSize = 64 * this.scaleFactor;
+        const gap = 12 * this.scaleFactor;
 
         for (let y = 0; y < GRID_HEIGHT; y++) {
             for (let x = 0; x < GRID_WIDTH; x++) {
@@ -157,15 +218,42 @@ export default class DungeonScene extends Phaser.Scene {
                     alpha = this.breathAlpha;
                 }
 
-                this.gridGraphics.fillStyle(color, alpha);
-                this.gridGraphics.fillRect(
-                    offsetX + x * cellSize + gap / 2,
-                    offsetY + y * cellSize + gap / 2,
-                    cellSize - gap,
-                    cellSize - gap
-                );
+                // Draw quiz box if present
+                if (this.quizBoxes.some(pos => pos.x === x && pos.y === y)) {
+                    // Draw the quiz box sprite
+                    const sprite = this.add.image(
+                        this.offsetX + x * cellSize + cellSize / 2,
+                        this.offsetY + y * cellSize + cellSize / 2,
+                        'quizbox'
+                    ).setDisplaySize(cellSize - gap, cellSize - gap);
+                    this.quizBoxSprites.push(sprite);
+                } else {
+                    this.gridGraphics.fillStyle(color, alpha);
+                    this.gridGraphics.fillRect(
+                        this.offsetX + x * cellSize + gap / 2,
+                        this.offsetY + y * cellSize + gap / 2,
+                        cellSize - gap,
+                        cellSize - gap
+                    );
+                }
             }
         }
+    }
+
+    placeQuizBoxes(count) {
+        const positions = [];
+        while (positions.length < count) {
+            const x = Phaser.Math.Between(0, GRID_WIDTH - 1);
+            const y = Phaser.Math.Between(0, GRID_HEIGHT - 2); // avoid starting row
+            // Avoid player start and duplicates
+            if (
+                (x !== this.player.x || y !== this.player.y) &&
+                !positions.some(pos => pos.x === x && pos.y === y)
+            ) {
+                positions.push({ x, y });
+            }
+        }
+        return positions;
     }
 
     update(time, delta) {

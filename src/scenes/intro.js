@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
-import { updateSoundVolumes } from './options';
-import { playExclusiveBGM } from '../audioUtils';
+import { updateSoundVolumes, playExclusiveBGM } from '../audioUtils'; // <-- updated import
 import VNDialogueBox from '../ui/VNDialogueBox';
 
 // Visual Novel Scene class extending Phaser.Scene
@@ -48,6 +47,6 @@ export default class VNScene extends Phaser.Scene {
     this.vnBox = new VNDialogueBox(this, dialogueLines, () => {
       this.scene.start('MainHub');
     });
-    this.add.existing(this.vnBox); // <-- Add this line
+    this.add.existing(this.vnBox);
   }
 }

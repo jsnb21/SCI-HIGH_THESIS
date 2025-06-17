@@ -64,13 +64,21 @@ export default class ComputerLab extends Phaser.Scene {
                 confirm: 'se_confirmSound'
             }
         });
-        
+
+        // Add shutdown and destroy event listeners to clean up the carousel
+        this.events.on('shutdown', () => {
+            if (this.carousel) this.carousel.destroy();
+        });
+        this.events.on('destroy', () => {
+            if (this.carousel) this.carousel.destroy();
+        });
+
         // Create the carousel with selection callback
         this.carousel.create(iconKeys, iconInfo, (selectedItem, index) => {
             console.log('Selected:', selectedItem.heading);
             // Transition to the new scene based on the selected icon
             if (selectedItem.heading === "Web Design") {
-                this.scene.start('DungeonScene', { topic: 'webdesign' }); // Changed to DungeonScene
+                this.scene.start('WebDesignScene', { topic: 'webdesign' }); // Changed to DungeonScene
             } else if (selectedItem.heading === "Python") {
                 this.scene.start('PythonScene', { topic: 'python' }); 
             } else if (selectedItem.heading === "Java"){

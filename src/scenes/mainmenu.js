@@ -1,9 +1,8 @@
 import Phaser from 'phaser';
 import { DEFAULT_TEXT_STYLE } from '../game';
-import { updateSoundVolumes } from './options';
-import { playExclusiveBGM } from '../audioUtils';
+import { updateSoundVolumes, playExclusiveBGM } from '../audioUtils'; // <-- Correct import
 import { getAllSaveKeys, loadGame } from '../save';
-import gameManager, { onceOnlyFlags } from '../gameManager'; // <-- Add this import
+import gameManager, { onceOnlyFlags } from '../gameManager';
 
 export default class MainMenu extends Phaser.Scene {
     constructor() {
@@ -26,7 +25,7 @@ export default class MainMenu extends Phaser.Scene {
 
         // Play main menu BGM and update sound volumes
         playExclusiveBGM(this, 'bgm_title', { loop: true });
-        updateSoundVolumes(this);
+        updateSoundVolumes(this); // <-- Ensure volumes are set
 
         // Unlock audio context on first user interaction
         this.input.once('pointerdown', () => {
