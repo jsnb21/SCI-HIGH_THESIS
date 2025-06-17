@@ -116,6 +116,7 @@ export default class BaseQuizScene extends Phaser.Scene {
     }
 
     showQuestion() {
+        this.isAnswering = false; // <-- Reset answering state at the start of every question
         this.scaleFactor = this.getScaleFactor();
         const sf = this.scaleFactor;
         if (!this.questions || this.currentQuestionIndex >= this.questions.length) {
@@ -167,6 +168,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         this.quizElements = [];
         this.enemyContainer = null;
         this.playerContainer = null;
+        this._quizOptionBgs = []; // <-- Clear option backgrounds to avoid stale references
     }
 
     damageCharacter(container, amount) {
@@ -215,6 +217,9 @@ export default class BaseQuizScene extends Phaser.Scene {
         // Move feedbackY 20% lower than the previous offset
         const feedbackY = centerY + boxHeight / 2 + (20 * sf * 1.2);
 
+        // --- Pause the timer ---
+        this.gameTimer.pause();
+
         if (selectedIndex === correctIndex) {
             this.score++;
             showFeedback(this, "Correct! You attack the enemy!", 0x00ff00, centerX, feedbackY);
@@ -230,6 +235,8 @@ export default class BaseQuizScene extends Phaser.Scene {
             }
             const playerHP = this.playerContainer.getData('currentHP');
             if (playerHP <= 0) {
+                // --- Resume timer before ending ---
+                this.gameTimer.resume();
                 showGameOver(this);
                 return;
             }
@@ -237,18 +244,25 @@ export default class BaseQuizScene extends Phaser.Scene {
         if (this.enemyContainer) {
             const enemyHP = this.enemyContainer.getData('currentHP');
             if (enemyHP <= 0) {
+                // --- Resume timer before ending ---
+                this.gameTimer.resume();
                 showVictory(this);
                 return;
             }
         }
-        this.time.delayedCall(1500, () => {
+        // --- Wait 1 second before next question or ending ---
+        this.time.delayedCall(1000, () => {
+            // If this is the last question, show victory after the delay
+            if (this.currentQuestionIndex >= this.questions.length - 1) {
+                this.gameTimer.resume();
+                showVictory(this);
+                return;
+            }
             this.currentQuestionIndex++;
             this.isAnswering = false;
-            if (this.currentQuestionIndex < this.questions.length) {
-                this.showQuestion();
-            } else {
-                showGameOver(this);
-            }
+            this.showQuestion();
+            // --- Resume timer after showing next question ---
+            this.gameTimer.resume();
         });
     }
 
@@ -256,6 +270,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         this.score = 0;
         this.currentQuestionIndex = 0;
         this.isQuizStarted = false;
+        this.isAnswering = false; // <-- Reset answering state
         this.playerConfig.currentHP = this.playerConfig.maxHP;
         this.enemyHPState.currentHP = this.enemyHPState.maxHP;
         this.cleanupAllElements();

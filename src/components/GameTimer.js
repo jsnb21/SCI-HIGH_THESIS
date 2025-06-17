@@ -10,6 +10,7 @@ export default class GameTimer {
         this.timerStarted = false;
         this.timerX = 0;
         this.timerY = 0;
+        this.isPaused = false; // Add isPaused property
     }
 
     // Create timer at specified position with duration
@@ -124,6 +125,8 @@ export default class GameTimer {
 
     // Update timer display and handle countdown
     updateTimer() {
+        if (this.isPaused) return; // Skip update if paused
+
         this.timeLeft--;
         
         // Stop timer immediately when it hits 0 to prevent negative numbers
@@ -263,5 +266,13 @@ export default class GameTimer {
     isActive() {
         return this.timerText && this.timerText.active && 
                this.timerBackground && this.timerBackground.active;
+    }
+
+    // Add pause and resume methods to GameTimer if not present
+    pause() {
+        this.isPaused = true;
+    }
+    resume() {
+        this.isPaused = false;
     }
 }

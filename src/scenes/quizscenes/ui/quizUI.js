@@ -95,6 +95,9 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
     const optionSpacing = 18 * sf;
     const optionsStartY = questionTextY + 50 * sf;
 
+    // Store option backgrounds for later coloring
+    scene._quizOptionBgs = [];
+
     options.forEach((option, i) => {
         const y = optionsStartY + i * (optionHeight + optionSpacing);
 
@@ -122,12 +125,35 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
             }
         ).setOrigin(0.5).setDepth(121);
 
-        optionBg.on('pointerdown', () => onSelect(i));
+        optionBg.on('pointerdown', () => {
+            // Disable all options after selection
+            scene._quizOptionBgs.forEach(bg => bg.disableInteractive());
+            // Determine correct index if available
+            const correctIndex = scene.questions?.[scene.currentQuestionIndex]?.correctIndex;
+            if (typeof correctIndex === 'number') {
+                if (i === correctIndex) {
+                    optionBg.setFillStyle(0x2ecc40, 1); // Green for correct
+                } else {
+                    optionBg.setFillStyle(0xff4136, 1); // Red for wrong
+                    // Also highlight the correct one
+                    if (scene._quizOptionBgs[correctIndex]) {
+                        scene._quizOptionBgs[correctIndex].setFillStyle(0x2ecc40, 1);
+                    }
+                }
+            }
+            onSelect(i);
+        });
         optionBg.on('pointerover', () => optionBg.setFillStyle(0x666666, 1));
-        optionBg.on('pointerout', () => optionBg.setFillStyle(0x444444, 1));
+        optionBg.on('pointerout', () => {
+            // Only reset color if not already marked as correct/wrong
+            if (optionBg.fillColor !== 0x2ecc40 && optionBg.fillColor !== 0xff4136) {
+                optionBg.setFillStyle(0x444444, 1);
+            }
+        });
 
         container.add(optionBg);
         container.add(optionText);
+        scene._quizOptionBgs.push(optionBg);
     });
 
     scene.quizElements.push(container);

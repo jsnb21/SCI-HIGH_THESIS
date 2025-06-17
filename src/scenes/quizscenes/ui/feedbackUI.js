@@ -26,22 +26,31 @@ export function showVictory(scene) {
     scene.gameTimer.destroy();
     const sf = scene.scaleFactor;
     const centerX = scene.scale.width / 2;
+
+    // --- Add dimmed background overlay ---
+    const overlay = scene.add.graphics();
+    overlay.fillStyle(0x000000, 0.8);
+    overlay.fillRect(0, 0, scene.cameras.main.width, scene.cameras.main.height);
+    overlay.setDepth(50);
+
     const victoryText = scene.add.text(centerX, 200 * sf, 'VICTORY!', {
         fontSize: `${32 * sf}px`,
         fill: '#00ff00',
         fontFamily: 'Arial'
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(60);
+
     const winText = scene.add.text(centerX, 250 * sf, 'You have defeated the enemy!', {
         fontSize: `${20 * sf}px`,
         fill: '#fff'
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(60);
+
     const scoreText = scene.add.text(centerX, 290 * sf, `Your Score: ${scene.score} / ${scene.questions.length}`, {
         fontSize: `${22 * sf}px`,
         fill: '#fff',
         fontFamily: 'Arial',
         stroke: '#000000',
         strokeThickness: 1
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(60);
 
     const continueButton = scene.add.text(
         centerX,
@@ -56,12 +65,26 @@ export function showVictory(scene) {
     )
         .setInteractive()
         .setOrigin(0.5)
+        .setDepth(60)
         .on('pointerdown', () => {
             scene.scene.stop(); // Stop the quiz scene
             scene.scene.resume('DungeonScene'); // Resume the dungeon scene
         });
 
-    scene.persistentElements.push(victoryText, winText, scoreText, continueButton);
+    // Animate overlay and elements in
+    const elementsToAnimate = [overlay, victoryText, winText, scoreText, continueButton];
+    elementsToAnimate.forEach((element, index) => {
+        element.setAlpha(0);
+        scene.tweens.add({
+            targets: element,
+            alpha: element === overlay ? 0.8 : 1,
+            duration: 500,
+            delay: index * 200,
+            ease: 'Power2'
+        });
+    });
+
+    scene.persistentElements.push(overlay, victoryText, winText, scoreText, continueButton);
 }
 
 export function showGameOver(scene) {
@@ -70,6 +93,8 @@ export function showGameOver(scene) {
     if (scene.gameTimer) scene.gameTimer.destroy();
     const sf = scene.scaleFactor;
     const centerX = scene.scale.width / 2;
+
+    // --- Add dimmed background overlay ---
     const overlay = scene.add.graphics();
     overlay.fillStyle(0x000000, 0.8);
     overlay.fillRect(0, 0, scene.cameras.main.width, scene.cameras.main.height);
