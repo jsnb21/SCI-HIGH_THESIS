@@ -2,8 +2,8 @@
 import GameTimer from '/src/components/GameTimer.js';
 import { createBackButton } from '/src/components/buttons/backbutton.js';
 import { createPlayerUI } from './ui/playerUI.js';
-import { createQuizBox, createEnemyUI, createQuestionText, createOptions } from './ui/quizUI.js';
-import { showFeedback, showVictory, showGameOver, showResults } from './ui/feedbackUI.js';
+import { createQuizBox, createEnemyUI, createTimerText, createQuestionAndOptions } from './ui/quizUI.js';
+import { showFeedback, showVictory, showGameOver } from './ui/feedbackUI.js';
 
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
@@ -100,14 +100,15 @@ export default class BaseQuizScene extends Phaser.Scene {
             const centerY = this.scale.height / 2;
             const boxWidth = 600 * sf;
             const boxHeight = 340 * sf;
-            const timerX = centerX + boxWidth / 2 - 60 * sf;
-            const timerY = centerY - boxHeight / 2 + 40 * sf;
-            const timerElements = this.gameTimer.create(timerX, timerY, initialTime);
+            const boxTopY = centerY - boxHeight / 2;
+            const boxRightX = centerX + boxWidth / 2;
+            // Timer above the box, right-aligned
+            const timerElements = this.gameTimer.create(boxRightX - 16 * sf, boxTopY - 38 * sf, initialTime);
             if (timerElements.timerBackground && timerElements.timerBackground.setDepth) {
-                timerElements.timerBackground.setDepth(100);
+                timerElements.timerBackground.setDepth(130);
             }
             if (timerElements.timerText && timerElements.timerText.setDepth) {
-                timerElements.timerText.setDepth(100);
+                timerElements.timerText.setDepth(130);
             }
             this.persistentElements.push(timerElements.timerBackground, timerElements.timerText);
         }
@@ -118,7 +119,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         this.scaleFactor = this.getScaleFactor();
         const sf = this.scaleFactor;
         if (!this.questions || this.currentQuestionIndex >= this.questions.length) {
-            showResults(this);
+            showVictory(this);
             return;
         }
         const { question, options } = this.questions[this.currentQuestionIndex];
@@ -129,30 +130,34 @@ export default class BaseQuizScene extends Phaser.Scene {
         const centerY = this.scale.height / 2;
         const boxWidth = 600 * sf;
         const boxHeight = 340 * sf;
+        const boxTopY = centerY - boxHeight / 2;
 
         // Quiz box
-        const box = createQuizBox(this, centerX, centerY, boxWidth, boxHeight, 20 * sf);
-        this.quizElements.push(box);
+        createQuizBox(this, centerX, centerY, boxWidth, boxHeight, 20 * sf);
 
-        // Enemy UI
-        const { enemySprite, enemyContainer, enemyBottomY } = createEnemyUI(this, centerX, centerY, boxHeight, sf);
-        this.quizElements.push(enemySprite, enemyContainer);
+        // Enemy UI (above the box)
+        const enemyUI = createEnemyUI(this, centerX, boxTopY, sf);
+        this.enemyContainer = enemyUI.enemyContainer;
 
-        // Question text
-        const questionTextY = enemyBottomY + 20 * sf;
-        const questionText = createQuestionText(this, centerX, questionTextY, this.currentQuestionIndex, question, sf);
-        this.quizElements.push(questionText);
+        // Question and options (inside the box)
+        createQuestionAndOptions(
+            this,
+            centerX,
+            centerY,
+            boxWidth,
+            boxHeight,
+            this.currentQuestionIndex,
+            question,
+            options,
+            sf,
+            (index) => this.checkAnswer(index)
+        );
 
-        // Player UI
-        const playerX = centerX - boxWidth / 2 + 70 * sf;
-        const playerY = centerY + boxHeight / 2 - 60 * sf;
+        // Player UI (below the box)
+        const playerX = centerX;
+        const playerY = centerY + boxHeight / 2 + 70 * sf;
         this.playerContainer = createPlayerUI(this, playerX, playerY, this.playerConfig, sf);
         this.quizElements.push(this.playerContainer);
-
-        // Options
-        const optionsStartY = questionTextY + 40 * sf;
-        const optionElements = createOptions(this, centerX, optionsStartY, options, sf, (index) => this.checkAnswer(index));
-        this.quizElements.push(...optionElements);
     }
 
     cleanupQuestionElements() {
@@ -187,12 +192,8 @@ export default class BaseQuizScene extends Phaser.Scene {
             hpBar.fillRect(-60 * sf, 50 * sf, (hp / maxHP) * 120 * sf, 12 * sf);
         } else {
             // Enemy HP bar is always at the same position relative to the enemy sprite
-            const centerX = this.scale.width / 2;
-            const centerY = this.scale.height / 2;
-            const boxHeight = 340 * sf;
-            const enemySpriteY = centerY - boxHeight / 2 + 90 * sf;
             const hpBarWidth = 100 * sf;
-            hpBar.fillRect(centerX - hpBarWidth / 2, enemySpriteY - 50 * sf, (hp / maxHP) * hpBarWidth, 10 * sf);
+            hpBar.fillRect(-hpBarWidth / 2, -58 * sf, (hp / maxHP) * hpBarWidth, 10 * sf);
         }
 
         const hpText = container.getData('hpText');
@@ -205,15 +206,24 @@ export default class BaseQuizScene extends Phaser.Scene {
         if (this.isAnswering) return;
         this.isAnswering = true;
         const correctIndex = this.questions[this.currentQuestionIndex].correctIndex;
+
+        // Calculate feedback position below the quiz box, 20% lower
+        const sf = this.scaleFactor;
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
+        const boxHeight = 340 * sf;
+        // Move feedbackY 20% lower than the previous offset
+        const feedbackY = centerY + boxHeight / 2 + (20 * sf * 1.2);
+
         if (selectedIndex === correctIndex) {
             this.score++;
-            showFeedback(this, "Correct! You attack the enemy!", 0x00ff00);
+            showFeedback(this, "Correct! You attack the enemy!", 0x00ff00, centerX, feedbackY);
             this.gameTimer.addTime(5);
             if (this.enemyContainer) {
                 this.damageCharacter(this.enemyContainer, 20);
             }
         } else {
-            showFeedback(this, "Wrong! The enemy attacks you!", 0xff0000);
+            showFeedback(this, "Wrong! The enemy attacks you!", 0xff0000, centerX, feedbackY);
             this.gameTimer.subtractTime(3);
             if (this.playerContainer) {
                 this.damageCharacter(this.playerContainer, 15);

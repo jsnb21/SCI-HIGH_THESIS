@@ -35,17 +35,33 @@ export function showVictory(scene) {
         fontSize: `${20 * sf}px`,
         fill: '#fff'
     }).setOrigin(0.5);
-    const continueButton = scene.add.text(centerX, 320 * sf, "Continue", {
-        fontSize: `${20 * sf}px`,
-        backgroundColor: '#444',
-        padding: { left: 16 * sf, right: 16 * sf, top: 8 * sf, bottom: 8 * sf }
-    })
+    const scoreText = scene.add.text(centerX, 290 * sf, `Your Score: ${scene.score} / ${scene.questions.length}`, {
+        fontSize: `${22 * sf}px`,
+        fill: '#fff',
+        fontFamily: 'Arial',
+        stroke: '#000000',
+        strokeThickness: 1
+    }).setOrigin(0.5);
+
+    const continueButton = scene.add.text(
+        centerX,
+        340 * sf,
+        "Continue",
+        {
+            fontSize: `${20 * sf}px`,
+            backgroundColor: '#444',
+            padding: { left: 16 * sf, right: 16 * sf, top: 8 * sf, bottom: 8 * sf },
+            color: '#ffffff'
+        }
+    )
         .setInteractive()
         .setOrigin(0.5)
         .on('pointerdown', () => {
-            showResults(scene);
+            scene.scene.stop(); // Stop the quiz scene
+            scene.scene.resume('DungeonScene'); // Resume the dungeon scene
         });
-    scene.persistentElements.push(victoryText, winText, continueButton);
+
+    scene.persistentElements.push(victoryText, winText, scoreText, continueButton);
 }
 
 export function showGameOver(scene) {
@@ -153,40 +169,4 @@ export function showGameOver(scene) {
         });
     });
     scene.persistentElements.push(overlay, gameOverText, defeatText, scoreText, restartButton, menuButton);
-}
-
-export function showResults(scene) {
-    scene.cleanupQuestionElements();
-    scene.gameTimer.destroy();
-    const sf = scene.scaleFactor;
-    const centerX = scene.scale.width / 2;
-    const finishedText = scene.add.text(centerX, 180 * sf, `Quiz Finished!`, {
-        fontSize: `${32 * sf}px`,
-        fill: '#fff',
-        fontFamily: 'Arial',
-        stroke: '#000000',
-        strokeThickness: 2
-    }).setOrigin(0.5);
-
-    const scoreText = scene.add.text(centerX, 240 * sf, `Your Score: ${scene.score} / ${scene.questions.length}`, {
-        fontSize: `${24 * sf}px`,
-        fill: '#fff',
-        fontFamily: 'Arial',
-        stroke: '#000000',
-        strokeThickness: 1
-    }).setOrigin(0.5);
-
-    const restartButton = scene.add.text(centerX, 300 * sf, "Try Again", {
-        fontSize: `${20 * sf}px`,
-        backgroundColor: '#444',
-        padding: { left: 16 * sf, right: 16 * sf, top: 8 * sf, bottom: 8 * sf }
-    })
-        .setInteractive()
-        .setOrigin(0.5)
-        .on('pointerdown', () => {
-            showGameOver(scene);
-        });
-
-    createBackButton(scene, 'ComputerLab');
-    scene.persistentElements.push(finishedText, scoreText, restartButton);
 }

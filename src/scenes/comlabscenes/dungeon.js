@@ -20,14 +20,15 @@ export default class DungeonScene extends Phaser.Scene {
         this.scaleFactor = 1;
         this.offsetX = 0;
         this.offsetY = 0;
-        this.quizBoxes = []; // <-- Add this line
+        this.quizBoxes = [];
+        this.quizBoxSprites = []; // Track quiz box sprites
     }
 
     preload() {
         this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
         this.load.image('heart', 'assets/sprites/dungeon/heart.png');
         this.load.audio('bgm_dungeon', 'assets/audio/bgm/bgm_dungeon.mp3');
-        this.load.image('quizbox', 'assets/sprites/dungeon/quizbox.png'); // <-- Add a quiz box sprite
+        this.load.image('quizbox', 'assets/sprites/dungeon/quizbox.png');
     }
 
     create() {
@@ -48,6 +49,9 @@ export default class DungeonScene extends Phaser.Scene {
         this.grid = this.createGrid(GRID_WIDTH, GRID_HEIGHT);
         this.grid[this.player.y][this.player.x].visited = true;
 
+        // Calculate adjacent cells initially
+        this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
+
         this.input.keyboard.on('keydown', this.handleInput, this);
         this.input.on('pointerdown', this.handlePointer, this);
 
@@ -66,7 +70,20 @@ export default class DungeonScene extends Phaser.Scene {
 
         this.events.once('shutdown', this.shutdown, this);
 
-        this.quizBoxes = this.placeQuizBoxes(2); // <-- Place 2 quiz boxes
+        this.quizBoxes = this.placeQuizBoxes(2);
+
+        // Add resume event handler
+        this.events.on('resume', this.onResume, this);
+    }
+
+    onResume() {
+        // Update adjacent cells on resume
+        this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
+
+        // Redraw grid and HUD when scene is resumed
+        this.drawGrid();
+        if (this.dungeonHUD && this.dungeonHUD.drawHUD) this.dungeonHUD.drawHUD();
+        if (this.dungeonMenu && this.dungeonMenu.createMenuButton) this.dungeonMenu.createMenuButton();
     }
 
     shutdown() {
@@ -76,9 +93,11 @@ export default class DungeonScene extends Phaser.Scene {
         }
         if (this.dungeonHUD) this.dungeonHUD.shutdown();
         if (this.dungeonMenu) this.dungeonMenu.shutdown();
+        if (this.quizBoxSprites && this.quizBoxSprites.length) {
+            this.quizBoxSprites.forEach(sprite => sprite.destroy());
+            this.quizBoxSprites = [];
+        }
     }
-
-    // --- Remove drawHUD, createMenuButton, showMenuBox ---
 
     createGrid(width, height) {
         const grid = [];
@@ -114,6 +133,9 @@ export default class DungeonScene extends Phaser.Scene {
             this.player.y = targetY;
             this.grid[this.player.y][this.player.x].visited = true;
 
+            // Update adjacent cells after moving
+            this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
+
             // Check for quiz box trigger
             const quizBoxIndex = this.quizBoxes.findIndex(
                 pos => pos.x === targetX && pos.y === targetY
@@ -121,7 +143,8 @@ export default class DungeonScene extends Phaser.Scene {
             if (quizBoxIndex !== -1) {
                 // Remove the triggered quiz box so it can't be triggered again
                 this.quizBoxes.splice(quizBoxIndex, 1);
-                this.scene.start('WebDesignQuizScene');
+                this.scene.pause(); // Pause DungeonScene
+                this.scene.launch('WebDesignQuizScene', { returnScene: 'DungeonScene' });
                 return;
             }
 
@@ -169,6 +192,12 @@ export default class DungeonScene extends Phaser.Scene {
     }
 
     drawGrid() {
+        // Clear previous quiz box sprites
+        if (this.quizBoxSprites && this.quizBoxSprites.length) {
+            this.quizBoxSprites.forEach(sprite => sprite.destroy());
+            this.quizBoxSprites = [];
+        }
+
         if (this.gridGraphics) this.gridGraphics.clear();
         else this.gridGraphics = this.add.graphics();
 
@@ -192,11 +221,12 @@ export default class DungeonScene extends Phaser.Scene {
                 // Draw quiz box if present
                 if (this.quizBoxes.some(pos => pos.x === x && pos.y === y)) {
                     // Draw the quiz box sprite
-                    this.add.image(
+                    const sprite = this.add.image(
                         this.offsetX + x * cellSize + cellSize / 2,
                         this.offsetY + y * cellSize + cellSize / 2,
                         'quizbox'
                     ).setDisplaySize(cellSize - gap, cellSize - gap);
+                    this.quizBoxSprites.push(sprite);
                 } else {
                     this.gridGraphics.fillStyle(color, alpha);
                     this.gridGraphics.fillRect(
@@ -210,7 +240,6 @@ export default class DungeonScene extends Phaser.Scene {
         }
     }
 
-    // Add this method to randomly place quiz boxes
     placeQuizBoxes(count) {
         const positions = [];
         while (positions.length < count) {
