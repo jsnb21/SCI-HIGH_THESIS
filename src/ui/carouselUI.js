@@ -31,7 +31,6 @@ class Carousel {
     }
 
     _createUI() {
-        // Clean up previous UI
         if (this.bgPanel) this.bgPanel.destroy();
         if (this.carouselIcons.length) {
             this.carouselIcons.forEach(icon => icon.destroy());
@@ -51,7 +50,6 @@ class Carousel {
         const iconToTitleGap = (this.config.iconToTitleGap ?? 100) * scale;
         const iconToDescGap = (this.config.iconToDescGap ?? 50) * scale;
 
-        // Center positions
         let iconCenterX, iconCenterY;
         if (this.scene.cameras && this.scene.cameras.main) {
             iconCenterX = this.scene.cameras.main.centerX;
@@ -61,9 +59,10 @@ class Carousel {
             iconCenterY = this.scene.scale.height / 2 + iconYOffset;
         }
 
-        // Modern background panel with blur and shadow
         const panelWidth = iconSpacing * (iconCount + 0.5);
         const panelHeight = 340 * scale;
+
+        // Removed black dimmed shadow rectangle beneath the background panel
         this.bgPanel = this.scene.add.graphics();
         this.bgPanel.fillStyle(0x23233a, 0.92);
         this.bgPanel.fillRoundedRect(
@@ -83,18 +82,6 @@ class Carousel {
         );
         this.bgPanel.setDepth(-1);
 
-        // Add a subtle shadow effect (using a blurred rectangle behind)
-        const shadow = this.scene.add.graphics();
-        shadow.fillStyle(0x000000, 0.25);
-        shadow.fillRoundedRect(
-            iconCenterX - panelWidth / 2 + 8 * scale,
-            iconCenterY - panelHeight / 2 + 8 * scale,
-            panelWidth,
-            panelHeight,
-            36 * scale
-        );
-        shadow.setDepth(-2);
-
         const headingX = iconCenterX;
         const headingY = iconCenterY + iconToTitleGap + (60 * scale);
         const descX = iconCenterX;
@@ -103,17 +90,16 @@ class Carousel {
         const smallScale = (this.config.smallScale ?? 0.5) * scale;
         const largeScale = (this.config.largeScale ?? 1.0) * scale;
 
-        // Modern heading style
         const headingStyle = {
             fontFamily: 'Jersey15-Regular',
             fontSize: `${Math.round((this.config.headingStyle?.fontSize ?? 56) * scale)}px`,
-            color: '#ffe066', // <-- yellow color
+            color: '#ffe066',
             fontStyle: this.config.headingStyle?.fontStyle || 'bold',
             stroke: '#111122',
             strokeThickness: 8,
             shadow: { offsetX: 0, offsetY: 4, color: '#000', blur: 12, fill: true }
         };
-        // Modern desc style
+
         const descStyle = {
             fontFamily: 'Jersey15-Regular',
             fontSize: `${Math.round((this.config.descStyle?.fontSize ?? 36) * scale)}px`,
@@ -123,7 +109,6 @@ class Carousel {
             shadow: { offsetX: 0, offsetY: 2, color: '#000', blur: 8, fill: true }
         };
 
-        // Carousel icons with drop shadow and hover effect
         for (let i = 0; i < iconCount; i++) {
             const x = iconCenterX + (i - this.carouselIndex) * iconSpacing;
             const scaleVal = (i === this.carouselIndex) ? largeScale : smallScale;
@@ -135,23 +120,12 @@ class Carousel {
             icon.setTint(i === this.carouselIndex ? 0xffffff : 0x00e0ff);
             icon.setAlpha(i === this.carouselIndex ? 1 : 0.7);
 
-            // Add a drop shadow effect using a graphics ellipse behind the icon
-            const shadowEllipse = this.scene.add.ellipse(
-                x, iconCenterY + icon.displayHeight * scaleVal / 2.5,
-                icon.displayWidth * scaleVal * 0.9,
-                icon.displayHeight * scaleVal * 0.35,
-                0x000000, 0.25
-            );
-            shadowEllipse.setDepth(icon.depth - 1);
             this.carouselIcons.push(icon);
-            icon.shadowEllipse = shadowEllipse;
         }
 
-        // Heading and description
         this.carouselHeading = this.scene.add.text(headingX, headingY, '', headingStyle).setOrigin(0.5);
         this.carouselDesc = this.scene.add.text(descX, descY, '', descStyle).setOrigin(0.5);
 
-        // Modern arrow buttons
         const arrowSize = 54 * scale;
         this.leftArrow = this.scene.add.text(
             iconCenterX - panelWidth / 2 + arrowSize * 0.7,
@@ -278,17 +252,8 @@ class Carousel {
 
             icon.setTint(i === this.carouselIndex ? 0xffffff : 0x00e0ff);
             this.scene.tweens.add({ targets: icon, alpha: i === this.carouselIndex ? 1 : 0.7, duration: 200 });
-
-            // Move the shadow ellipse if present
-            if (icon.shadowEllipse) {
-                icon.shadowEllipse.x = x;
-                icon.shadowEllipse.y = y + icon.displayHeight * scaleVal / 2.5;
-                icon.shadowEllipse.width = icon.displayWidth * scaleVal * 0.9;
-                icon.shadowEllipse.height = icon.displayHeight * scaleVal * 0.35;
-            }
         });
 
-        // Animate heading/desc text
         this.scene.tweens.add({
             targets: [this.carouselHeading, this.carouselDesc],
             alpha: 0,
@@ -378,10 +343,7 @@ class Carousel {
     destroy() {
         if (this.breathingTween) this.breathingTween.stop();
         if (this.bgPanel) this.bgPanel.destroy();
-        this.carouselIcons.forEach(icon => {
-            if (icon.shadowEllipse) icon.shadowEllipse.destroy();
-            icon.destroy();
-        });
+        this.carouselIcons.forEach(icon => icon.destroy());
         if (this.carouselHeading) this.carouselHeading.destroy();
         if (this.carouselDesc) this.carouselDesc.destroy();
         if (this.leftArrow) this.leftArrow.destroy();
@@ -392,5 +354,3 @@ class Carousel {
 }
 
 export default Carousel;
-
-
