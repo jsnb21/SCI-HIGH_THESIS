@@ -15,54 +15,111 @@ export default class StartupScene extends Phaser.Scene {
     create() {
         const { width, height } = this.scale;
 
-        this.cameras.main.setBackgroundColor('#000000');
+        this.cameras.main.setBackgroundColor('#181A1B');
 
-        // Add "Go Fullscreen" prompt
-        const fullscreenPrompt = this.add.text(
+        // Dialog dimensions
+        const dialogWidth = 380;
+        const dialogHeight = 200;
+        const dialogX = width / 2 - dialogWidth / 2;
+        const dialogY = height / 2 - dialogHeight / 2;
+
+        // Dialog background with rounded corners and drop shadow
+        const dialogBg = this.add.graphics();
+        dialogBg.fillStyle(0x23272f, 1);
+        dialogBg.fillRoundedRect(dialogX, dialogY, dialogWidth, dialogHeight, 24);
+        dialogBg.setAlpha(0);
+        dialogBg.setDepth(1);
+
+        // Drop shadow (simple offset rectangle)
+        const shadow = this.add.graphics();
+        shadow.fillStyle(0x000000, 0.25);
+        shadow.fillRoundedRect(dialogX + 8, dialogY + 8, dialogWidth, dialogHeight, 24);
+        shadow.setAlpha(0);
+        shadow.setDepth(0);
+
+        // Prompt text
+        const promptText = this.add.text(
             width / 2,
             height / 2 - 40,
             'Go fullscreen?',
             {
-                fontFamily: 'Arial',
-                fontSize: '32px',
-                color: '#ffffff',
-                backgroundColor: '#222222',
-                padding: { left: 20, right: 20, top: 10, bottom: 10 }
+                fontFamily: "'Segoe UI', Arial, sans-serif",
+                fontSize: '30px',
+                color: '#fff',
+                fontStyle: 'bold',
+                align: 'center'
             }
-        ).setOrigin(0.5);
+        ).setOrigin(0.5).setAlpha(0).setDepth(2);
+
+        // Button style
+        const buttonStyle = {
+            fontFamily: "'Segoe UI', Arial, sans-serif",
+            fontSize: '24px',
+            color: '#fff',
+            padding: { left: 32, right: 32, top: 12, bottom: 12 },
+            align: 'center'
+        };
 
         // Yes button
         const yesBtn = this.add.text(
-            width / 2 - 60,
-            height / 2 + 30,
+            width / 2 - 70,
+            height / 2 + 40,
             'Yes',
-            {
-                fontFamily: 'Arial',
-                fontSize: '28px',
-                color: '#ffff00',
-                backgroundColor: '#333',
-                padding: { left: 16, right: 16, top: 8, bottom: 8 }
-            }
-        ).setOrigin(0.5).setInteractive({ useHandCursor: true });
+            buttonStyle
+        ).setOrigin(0.5).setAlpha(0).setDepth(2).setInteractive({ useHandCursor: true });
 
         // No button
         const noBtn = this.add.text(
-            width / 2 + 60,
-            height / 2 + 30,
+            width / 2 + 70,
+            height / 2 + 40,
             'No',
-            {
-                fontFamily: 'Arial',
-                fontSize: '28px',
-                color: '#ffffff',
-                backgroundColor: '#333',
-                padding: { left: 16, right: 16, top: 8, bottom: 8 }
-            }
-        ).setOrigin(0.5).setInteractive({ useHandCursor: true });
+            { ...buttonStyle }
+        ).setOrigin(0.5).setAlpha(0).setDepth(2).setInteractive({ useHandCursor: true });
+
+        // Rounded corners for buttons (using graphics behind text)
+        const makeButtonBg = (x, y, color = 0x3B82F6) => {
+            const g = this.add.graphics();
+            g.fillStyle(color, 1);
+            g.fillRoundedRect(x - 60, y - 24, 120, 48, 16);
+            g.setAlpha(0).setDepth(1);
+            return g;
+        };
+        const yesBtnBg = makeButtonBg(width / 2 - 70, height / 2 + 40, 0x3B82F6);
+        const noBtnBg = makeButtonBg(width / 2 + 70, height / 2 + 40, 0x64748B);
+
+        // Fade in dialog
+        this.tweens.add({
+            targets: [shadow, dialogBg, promptText, yesBtn, noBtn, yesBtnBg, noBtnBg],
+            alpha: 1,
+            duration: 400,
+            ease: 'Power2'
+        });
+
+        // Button hover effects
+        yesBtn.on('pointerover', () => {
+            yesBtn.setStyle({ backgroundColor: '#2563EB' });
+            yesBtnBg.clear().fillStyle(0x2563EB, 1).fillRoundedRect(width / 2 - 130, height / 2 + 16, 120, 48, 16);
+        });
+        yesBtn.on('pointerout', () => {
+            yesBtn.setStyle({ backgroundColor: '#3B82F6' });
+            yesBtnBg.clear().fillStyle(0x3B82F6, 1).fillRoundedRect(width / 2 - 130, height / 2 + 16, 120, 48, 16);
+        });
+        noBtn.on('pointerover', () => {
+            noBtn.setStyle({ backgroundColor: '#334155' });
+            noBtnBg.clear().fillStyle(0x334155, 1).fillRoundedRect(width / 2 + 10, height / 2 + 16, 120, 48, 16);
+        });
+        noBtn.on('pointerout', () => {
+            noBtn.setStyle({ backgroundColor: '#64748B' });
+            noBtnBg.clear().fillStyle(0x64748B, 1).fillRoundedRect(width / 2 + 10, height / 2 + 16, 120, 48, 16);
+        });
+
+        // Helper to hide dialog
+        const hideDialog = () => {
+            [shadow, dialogBg, promptText, yesBtn, noBtn, yesBtnBg, noBtnBg].forEach(obj => obj.setVisible(false));
+        };
 
         const startLogoSequence = () => {
-            fullscreenPrompt.setVisible(false);
-            yesBtn.setVisible(false);
-            noBtn.setVisible(false);
+            hideDialog();
 
             // --- Logo sequence starts here ---
 
@@ -120,7 +177,19 @@ export default class StartupScene extends Phaser.Scene {
                                                 alpha: 0,
                                                 duration: 600,
                                                 onComplete: () => {
-                                                    this.scene.start('MainMenu');
+                                                    // Fade out "Presents..." and transition to MainMenu with a fade
+                                                    this.tweens.add({
+                                                        targets: presentsText,
+                                                        alpha: 0,
+                                                        duration: 600,
+                                                        onComplete: () => {
+                                                            // Fade out the whole scene before starting MainMenu
+                                                            this.cameras.main.fadeOut(600, 24, 26, 27); // Optional: dark fade color
+                                                            this.cameras.main.once('camerafadeoutcomplete', () => {
+                                                                this.scene.start('MainMenu');
+                                                            });
+                                                        }
+                                                    });
                                                 }
                                             });
                                         });
@@ -134,7 +203,6 @@ export default class StartupScene extends Phaser.Scene {
         };
 
         yesBtn.on('pointerdown', () => {
-            // Go fullscreen, then start logo sequence
             if (!this.scale.isFullscreen) {
                 this.scale.startFullscreen();
                 this.time.delayedCall(100, () => {
@@ -152,11 +220,9 @@ export default class StartupScene extends Phaser.Scene {
         });
 
         noBtn.on('pointerdown', () => {
-            // Stay windowed, start logo sequence
             startLogoSequence();
         });
 
-        // Handle exiting fullscreen (resize back to base)
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement && this.scene.isActive()) {
                 this.scale.resize(BASE_WIDTH, BASE_HEIGHT);
