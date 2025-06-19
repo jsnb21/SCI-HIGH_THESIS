@@ -14,34 +14,31 @@ export default class StartupScene extends Phaser.Scene {
 
     create() {
         const { width, height } = this.scale;
-
         this.cameras.main.setBackgroundColor('#181A1B');
 
-        // Dialog dimensions
-        const dialogWidth = 380;
-        const dialogHeight = 200;
-        const dialogX = width / 2 - dialogWidth / 2;
-        const dialogY = height / 2 - dialogHeight / 2;
+        // Dialog config
+        const dialogConfig = {
+            width: 380,
+            height: 200,
+            x: width / 2 - 190,
+            y: height / 2 - 100,
+            radius: 24
+        };
 
-        // Dialog background with rounded corners and drop shadow
-        const dialogBg = this.add.graphics();
-        dialogBg.fillStyle(0x23272f, 1);
-        dialogBg.fillRoundedRect(dialogX, dialogY, dialogWidth, dialogHeight, 24);
-        dialogBg.setAlpha(0);
-        dialogBg.setDepth(1);
+        // Draw drop shadow and dialog background
+        const shadow = this.add.graphics()
+            .fillStyle(0x000000, 0.25)
+            .fillRoundedRect(dialogConfig.x + 8, dialogConfig.y + 8, dialogConfig.width, dialogConfig.height, dialogConfig.radius)
+            .setAlpha(0).setDepth(0);
 
-        // Drop shadow (simple offset rectangle)
-        const shadow = this.add.graphics();
-        shadow.fillStyle(0x000000, 0.25);
-        shadow.fillRoundedRect(dialogX + 8, dialogY + 8, dialogWidth, dialogHeight, 24);
-        shadow.setAlpha(0);
-        shadow.setDepth(0);
+        const dialogBg = this.add.graphics()
+            .fillStyle(0x23272f, 1)
+            .fillRoundedRect(dialogConfig.x, dialogConfig.y, dialogConfig.width, dialogConfig.height, dialogConfig.radius)
+            .setAlpha(0).setDepth(1);
 
         // Prompt text
         const promptText = this.add.text(
-            width / 2,
-            height / 2 - 40,
-            'Go fullscreen?',
+            width / 2, height / 2 - 40, 'Go fullscreen?',
             {
                 fontFamily: "'Segoe UI', Arial, sans-serif",
                 fontSize: '30px',
@@ -60,32 +57,23 @@ export default class StartupScene extends Phaser.Scene {
             align: 'center'
         };
 
-        // Yes button
-        const yesBtn = this.add.text(
-            width / 2 - 70,
-            height / 2 + 40,
-            'Yes',
-            buttonStyle
-        ).setOrigin(0.5).setAlpha(0).setDepth(2).setInteractive({ useHandCursor: true });
-
-        // No button
-        const noBtn = this.add.text(
-            width / 2 + 70,
-            height / 2 + 40,
-            'No',
-            { ...buttonStyle }
-        ).setOrigin(0.5).setAlpha(0).setDepth(2).setInteractive({ useHandCursor: true });
-
-        // Rounded corners for buttons (using graphics behind text)
-        const makeButtonBg = (x, y, color = 0x3B82F6) => {
-            const g = this.add.graphics();
-            g.fillStyle(color, 1);
-            g.fillRoundedRect(x - 60, y - 24, 120, 48, 16);
-            g.setAlpha(0).setDepth(1);
-            return g;
+        // Helper for button backgrounds
+        const makeButtonBg = (x, y, color) => {
+            return this.add.graphics()
+                .fillStyle(color, 1)
+                .fillRoundedRect(x - 60, y - 24, 120, 48, 16)
+                .setAlpha(0).setDepth(1);
         };
-        const yesBtnBg = makeButtonBg(width / 2 - 70, height / 2 + 40, 0x3B82F6);
-        const noBtnBg = makeButtonBg(width / 2 + 70, height / 2 + 40, 0x64748B);
+
+        // Yes/No buttons and backgrounds
+        const yesBtnX = width / 2 - 70, noBtnX = width / 2 + 70, btnY = height / 2 + 40;
+        const yesBtnBg = makeButtonBg(yesBtnX, btnY, 0x3B82F6);
+        const noBtnBg = makeButtonBg(noBtnX, btnY, 0x64748B);
+
+        const yesBtn = this.add.text(yesBtnX, btnY, 'Yes', buttonStyle)
+            .setOrigin(0.5).setAlpha(0).setDepth(2).setInteractive({ useHandCursor: true });
+        const noBtn = this.add.text(noBtnX, btnY, 'No', buttonStyle)
+            .setOrigin(0.5).setAlpha(0).setDepth(2).setInteractive({ useHandCursor: true });
 
         // Fade in dialog
         this.tweens.add({
@@ -96,55 +84,44 @@ export default class StartupScene extends Phaser.Scene {
         });
 
         // Button hover effects
+        const setBtnBg = (bg, x, y, color) => {
+            bg.clear().fillStyle(color, 1).fillRoundedRect(x - 60, y - 24, 120, 48, 16);
+        };
         yesBtn.on('pointerover', () => {
             yesBtn.setStyle({ backgroundColor: '#2563EB' });
-            yesBtnBg.clear().fillStyle(0x2563EB, 1).fillRoundedRect(width / 2 - 130, height / 2 + 16, 120, 48, 16);
+            setBtnBg(yesBtnBg, yesBtnX, btnY, 0x2563EB);
         });
         yesBtn.on('pointerout', () => {
             yesBtn.setStyle({ backgroundColor: '#3B82F6' });
-            yesBtnBg.clear().fillStyle(0x3B82F6, 1).fillRoundedRect(width / 2 - 130, height / 2 + 16, 120, 48, 16);
+            setBtnBg(yesBtnBg, yesBtnX, btnY, 0x3B82F6);
         });
         noBtn.on('pointerover', () => {
             noBtn.setStyle({ backgroundColor: '#334155' });
-            noBtnBg.clear().fillStyle(0x334155, 1).fillRoundedRect(width / 2 + 10, height / 2 + 16, 120, 48, 16);
+            setBtnBg(noBtnBg, noBtnX, btnY, 0x334155);
         });
         noBtn.on('pointerout', () => {
             noBtn.setStyle({ backgroundColor: '#64748B' });
-            noBtnBg.clear().fillStyle(0x64748B, 1).fillRoundedRect(width / 2 + 10, height / 2 + 16, 120, 48, 16);
+            setBtnBg(noBtnBg, noBtnX, btnY, 0x64748B);
         });
 
-        // Helper to hide dialog
+        // Hide dialog helper
         const hideDialog = () => {
             [shadow, dialogBg, promptText, yesBtn, noBtn, yesBtnBg, noBtnBg].forEach(obj => obj.setVisible(false));
         };
 
+        // Logo sequence
         const startLogoSequence = () => {
             hideDialog();
 
-            // --- Logo sequence starts here ---
-
-            // Add logo image, initially invisible
-            const logo = this.add.image(0, 0, 'logo').setAlpha(0);
-
-            // Scale logo to fit within a max width (optional)
+            // Logo
+            const logo = this.add.image(width / 2, height / 2, 'logo').setAlpha(0);
             const maxLogoWidth = 400;
-            if (logo.width > maxLogoWidth) {
-                logo.setScale(maxLogoWidth / logo.width);
-            }
+            if (logo.width > maxLogoWidth) logo.setScale(maxLogoWidth / logo.width);
 
-            // Center the logo after scaling
-            logo.setPosition(this.scale.width / 2, this.scale.height / 2);
-
-            // "Presents..." text, centered and hidden initially
+            // Presents text
             const presentsText = this.add.text(
-                this.scale.width / 2,
-                this.scale.height / 2,
-                'Presents...',
-                {
-                    fontFamily: 'Arial',
-                    fontSize: '48px',
-                    color: '#ffffff'
-                }
+                width / 2, height / 2, 'Presents...',
+                { fontFamily: 'Arial', fontSize: '48px', color: '#ffffff' }
             ).setOrigin(0.5).setAlpha(0);
 
             // Fade in logo
@@ -154,7 +131,6 @@ export default class StartupScene extends Phaser.Scene {
                 duration: 1000,
                 ease: 'Power2',
                 onComplete: () => {
-                    // Hold logo
                     this.time.delayedCall(2000, () => {
                         // Fade out logo
                         this.tweens.add({
@@ -170,25 +146,16 @@ export default class StartupScene extends Phaser.Scene {
                                     duration: 800,
                                     ease: 'Power2',
                                     onComplete: () => {
-                                        // Hold then fade out and switch scene
                                         this.time.delayedCall(1200, () => {
+                                            // Fade out "Presents..." and transition to MainMenu with a fade
                                             this.tweens.add({
                                                 targets: presentsText,
                                                 alpha: 0,
                                                 duration: 600,
                                                 onComplete: () => {
-                                                    // Fade out "Presents..." and transition to MainMenu with a fade
-                                                    this.tweens.add({
-                                                        targets: presentsText,
-                                                        alpha: 0,
-                                                        duration: 600,
-                                                        onComplete: () => {
-                                                            // Fade out the whole scene before starting MainMenu
-                                                            this.cameras.main.fadeOut(600, 24, 26, 27); // Optional: dark fade color
-                                                            this.cameras.main.once('camerafadeoutcomplete', () => {
-                                                                this.scene.start('MainMenu');
-                                                            });
-                                                        }
+                                                    this.cameras.main.fadeOut(600, 24, 26, 27);
+                                                    this.cameras.main.once('camerafadeoutcomplete', () => {
+                                                        this.scene.start('MainMenu');
                                                     });
                                                 }
                                             });
@@ -202,7 +169,8 @@ export default class StartupScene extends Phaser.Scene {
             });
         };
 
-        yesBtn.on('pointerdown', () => {
+        // Button click handlers
+        const handleFullscreen = () => {
             if (!this.scale.isFullscreen) {
                 this.scale.startFullscreen();
                 this.time.delayedCall(100, () => {
@@ -217,18 +185,21 @@ export default class StartupScene extends Phaser.Scene {
             } else {
                 startLogoSequence();
             }
-        });
+        };
+        yesBtn.on('pointerdown', handleFullscreen);
+        noBtn.on('pointerdown', startLogoSequence);
 
-        noBtn.on('pointerdown', () => {
-            startLogoSequence();
-        });
-
+        // Fullscreen change handler
         document.addEventListener('fullscreenchange', () => {
+            const canvas = this.game.canvas;
             if (!document.fullscreenElement && this.scene.isActive()) {
                 this.scale.resize(BASE_WIDTH, BASE_HEIGHT);
-                const canvas = this.game.canvas;
                 canvas.style.width = `${BASE_WIDTH}px`;
                 canvas.style.height = `${BASE_HEIGHT}px`;
+            } else if (document.fullscreenElement && this.scene.isActive()) {
+                this.scale.resize(window.innerWidth, window.innerHeight);
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
             }
         });
     }
