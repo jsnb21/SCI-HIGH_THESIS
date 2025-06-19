@@ -4,6 +4,9 @@ import MainMenu from './scenes/mainmenu';
 import OptionsScene from './scenes/options.js';
 import MainHub from './scenes/mainhub.js';
 
+// Import StartUp
+import StartUp from './scenes/startup.js'
+
 // Add Classroom import
 import Classroom from './scenes/classroom.js';
 
@@ -41,6 +44,7 @@ const config = {
   height: 624,
   parent: 'game',
   scene: [
+    StartUp, // Added StartUp as the first scene
     MainMenu,
     /* Main Scenes */
     DungeonScene,
