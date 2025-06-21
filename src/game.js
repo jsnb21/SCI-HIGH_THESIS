@@ -40,9 +40,13 @@ import DungeonScene from './scenes/comlabscenes/dungeon.js';
 
 const config = {
   type: Phaser.AUTO,
-  width: 816,
-  height: 624,
+  width: window.innerWidth,
+  height: window.innerHeight,
   parent: 'game',
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH
+  },
   scene: [
     StartUp, // Added StartUp as the first scene
     MainMenu,
