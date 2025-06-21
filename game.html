@@ -5,61 +5,57 @@
     <title>SCI-HIGH: Playing!</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <style>
+      /* Reset everything */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
       html, body {
         height: 100%;
         margin: 0;
         padding: 0;
+        overflow: hidden; /* Prevent scrollbars */
+        background-color: #000; /* Match black to avoid visible gaps */
       }
+      
       body {
         min-height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
         background: linear-gradient(135deg, #181818 0%, #333 100%);
-        overflow: hidden;
         position: relative;
       }
+      
       #game {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-width: 340px;
-        min-height: 440px;
-        background: rgba(30, 30, 10, 0.97);
-        border-radius: 32px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         overflow: hidden;
-        border: 2.5px solid #fffbc2;
-        box-shadow: 0 0 32px 4px #fffbc2, 0 0 0 8px #222 inset;
-        transition: box-shadow 0.3s;
-        pointer-events: auto;
       }
-      #game::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: 32px;
-        pointer-events: none;
-        background: linear-gradient(120deg, transparent 60%, #ffe600 100%);
-        opacity: 0.08;
-        z-index: 0;
+      
+      /* Target the canvas element directly */
+      canvas {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
       }
+      
+      /* Removed the glowing border effect */
       #game::after {
-        content: '';
-        position: absolute;
-        inset: -4px;
-        border-radius: 36px;
-        border: 2px solid #ffe600;
-        filter: blur(8px);
-        opacity: 0.5;
-        z-index: 0;
-        animation: glow 2.5s linear infinite alternate;
-        pointer-events: none;
+        display: none; /* Hiding the entire ::after element */
       }
+      /* Removing the glow animation as it's no longer needed */
       @keyframes glow {
-        0% { opacity: 0.4; }
-        100% { opacity: 0.8; }
+        0% { opacity: 0; }
+        100% { opacity: 0; }
       }
       /* Parallax clouds */
       body .cloud, body .cloud2, body .cloud3 {
@@ -112,7 +108,7 @@
         #game {
           min-width: 90vw;
           min-height: 60vw;
-          border-radius: 18px;
+          border-radius: 0; /* Removed border radius */
         }
       }
     </style>

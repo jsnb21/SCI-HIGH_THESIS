@@ -187,13 +187,15 @@ export default class StartupScene extends Phaser.Scene {
     }
     
     handleFullscreenChange() {
-        const canvas = this.game.canvas;
-        
         if (!document.fullscreenElement && this.scene.isActive()) {
-            // Exit fullscreen - revert to base size
-            this.scale.resize(SCREEN_CONFIG.BASE_WIDTH, SCREEN_CONFIG.BASE_HEIGHT);
-            canvas.style.width = `${SCREEN_CONFIG.BASE_WIDTH}px`;
-            canvas.style.height = `${SCREEN_CONFIG.BASE_HEIGHT}px`;
+            // Exit fullscreen - use window dimensions instead of fixed base size
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            this.scale.resize(width, height);
+            
+            const canvas = this.game.canvas;
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
         } else if (document.fullscreenElement && this.scene.isActive()) {
             this.resizeToFullscreen();
         }

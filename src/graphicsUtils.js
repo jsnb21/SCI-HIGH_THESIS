@@ -41,10 +41,11 @@ class FullscreenToggleUI {
                 this.scene.scale.stopFullscreen();
                 fsButton.setText('Off');
                 this.scene.time.delayedCall(100, () => {
-                    this.scene.scale.resize(this.BASE_WIDTH, this.BASE_HEIGHT);
+                    // Use window dimensions even when exiting fullscreen
+                    this.scene.scale.resize(window.innerWidth, window.innerHeight);
                     const canvas = this.scene.game.canvas;
-                    canvas.style.width = `${this.BASE_WIDTH}px`;
-                    canvas.style.height = `${this.BASE_HEIGHT}px`;
+                    canvas.style.width = '100%';
+                    canvas.style.height = '100%';
                     this.scene.time.delayedCall(0, () => this.createUI());
                 });
             } else {

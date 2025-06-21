@@ -8,6 +8,7 @@ import {
     createVolumeSlider
 } from '../audioUtils.js';
 import gameManager from '../gameManager.js';
+import FullscreenToggleUI from '../graphicsUtils.js';
 
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
@@ -16,6 +17,7 @@ export default class OptionsScene extends Phaser.Scene {
     constructor() {
         super('OptionsScene');
         this.uiElements = [];
+        this.fullscreenUI = null;
     }
 
     create(data) {
@@ -29,7 +31,8 @@ export default class OptionsScene extends Phaser.Scene {
 
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement && this.scene.isActive()) {
-                this.scale.resize(BASE_WIDTH, BASE_HEIGHT);
+                // Use window dimensions instead of BASE_WIDTH/HEIGHT
+                this.scale.resize(window.innerWidth, window.innerHeight);
                 this.time.delayedCall(100, () => this.createUI());
             }
         });
@@ -43,6 +46,11 @@ export default class OptionsScene extends Phaser.Scene {
         if (this.uiElements.length) {
             this.uiElements.forEach(el => el.destroy());
             this.uiElements = [];
+        }
+
+        // Destroy existing fullscreenUI if it exists
+        if (this.fullscreenUI) {
+            this.fullscreenUI.destroy();
         }
 
         const title = this.add.text(width / 2, 130 * this.scaleFactor, 'Options', {
@@ -89,49 +97,8 @@ export default class OptionsScene extends Phaser.Scene {
         );
         this.uiElements.push(bgmSlider.slider, bgmSlider.handle);
 
-        const fsLabel = this.add.text(width / 2 - 100 * this.scaleFactor, 320 * this.scaleFactor, 'Fullscreen', {
-            font: `${scaleFont(32)}px Jersey15-Regular`,
-            color: '#fff'
-        }).setOrigin(1, 0.5);
-        this.uiElements.push(fsLabel);
-
-        const fsButton = this.add.text(
-            width / 2 + 50 * this.scaleFactor,
-            320 * this.scaleFactor,
-            this.scale.isFullscreen ? 'On' : 'Off',
-            {
-                font: `${scaleFont(32)}px Jersey15-Regular`,
-                color: '#ffff00',
-                backgroundColor: '#222'
-            }
-        ).setOrigin(0, 0.5).setPadding(8, 4, 8, 4).setInteractive();
-
-        fsButton.on('pointerdown', () => {
-            if (this.scale.isFullscreen) {
-                this.scale.stopFullscreen();
-                fsButton.setText('Off');
-                this.time.delayedCall(100, () => {
-                    this.scale.resize(BASE_WIDTH, BASE_HEIGHT);
-                    const canvas = this.game.canvas;
-                    canvas.style.width = `${BASE_WIDTH}px`;
-                    canvas.style.height = `${BASE_HEIGHT}px`;
-                    this.time.delayedCall(0, () => this.createUI());
-                });
-            } else {
-                this.scale.startFullscreen();
-                fsButton.setText('On');
-                this.time.delayedCall(100, () => {
-                    const w = window.innerWidth;
-                    const h = window.innerHeight;
-                    this.scale.resize(w, h);
-                    const canvas = this.game.canvas;
-                    canvas.style.width = '100%';
-                    canvas.style.height = '100%';
-                    this.time.delayedCall(0, () => this.createUI());
-                });
-            }
-        });
-        this.uiElements.push(fsButton);
+        // Use FullscreenToggleUI instead of custom implementation
+        this.fullscreenUI = new FullscreenToggleUI(this, width, this.scaleFactor, BASE_WIDTH, BASE_HEIGHT, scaleFont);
 
         const backButton = this.add.text(width / 2, height - 80 * this.scaleFactor, 'Back', {
             font: `${scaleFont(32)}px Jersey15-Regular`,
@@ -140,14 +107,13 @@ export default class OptionsScene extends Phaser.Scene {
 
         backButton.on('pointerdown', () => {
             const prevScene = gameManager.getPreviousScene() || 'MainMenu';
-
-            if (prevScene !== 'MainMenu') {
-                this.scale.resize(BASE_WIDTH, BASE_HEIGHT);
-                const canvas = this.game.canvas;
-                canvas.style.width = `${BASE_WIDTH}px`;
-                canvas.style.height = `${BASE_HEIGHT}px`;
-            }
-
+            
+            // Use window dimensions for consistent sizing
+            this.scale.resize(window.innerWidth, window.innerHeight);
+            const canvas = this.game.canvas;
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            
             this.scene.stop('OptionsScene');
             this.scene.start(prevScene);
         });
@@ -160,5 +126,11 @@ export default class OptionsScene extends Phaser.Scene {
         this.resizeTimer = this.time.delayedCall(100, () => {
             this.createUI();
         });
+    }
+
+    shutdown() {
+        if (this.fullscreenUI) {
+            this.fullscreenUI.destroy();
+        }
     }
 }
