@@ -1,13 +1,16 @@
 import Phaser from 'phaser';
 
-const BASE_WIDTH = 816;
-const BASE_HEIGHT = 624;
+const SCREEN_CONFIG = {
+    BASE_WIDTH: 816,
+    BASE_HEIGHT: 624,
+    LOGO_MAX_WIDTH: 400
+};
 
 export default class StartupScene extends Phaser.Scene {
     constructor() {
         super({ key: 'StartupScene' });
-        this._uiElements = [];
-        this._logoElements = [];
+        this.uiElements = [];
+        this.logoElements = [];
     }
 
     preload() {
@@ -15,173 +18,206 @@ export default class StartupScene extends Phaser.Scene {
     }
 
     create() {
-        const drawUI = () => {
-            this._uiElements.forEach(el => el?.destroy());
-            this._uiElements = [];
-
-            const { width, height } = this.scale;
-
-            const bg = this.add.rectangle(width / 2, height / 2, width, height, 0x181A1B).setOrigin(0.5);
-            const dialog = this.add.rectangle(width / 2, height / 2, 400, 220, 0x23272f, 1)
-                .setOrigin(0.5).setStrokeStyle(2, 0x000000, 0.2);
-
-            const prompt = this.add.text(width / 2, height / 2 - 40, 'Go fullscreen?', {
-                fontFamily: 'Arial',
-                fontSize: '32px',
-                color: '#fff',
-                fontStyle: 'bold'
-            }).setOrigin(0.5);
-
-            const btnStyle = {
-                fontFamily: 'Arial',
-                fontSize: '24px',
-                color: '#fff',
-                backgroundColor: '#3B82F6',
-                padding: { left: 24, right: 24, top: 10, bottom: 10 }
-            };
-
-            const yesBtn = this.add.text(width / 2 - 70, height / 2 + 40, 'Yes', btnStyle)
-                .setOrigin(0.5).setInteractive({ useHandCursor: true });
-            const noBtn = this.add.text(width / 2 + 70, height / 2 + 40, 'No', btnStyle)
-                .setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-            yesBtn.once('pointerdown', () => this.handleFullscreen(drawUI, startLogoSequence));
-            noBtn.once('pointerdown', () => startLogoSequence());
-
-            this._uiElements.push(bg, dialog, prompt, yesBtn, noBtn);
-        };
-
-        const startLogoSequence = () => {
-            this._uiElements.forEach(el => el?.destroy());
-            this._uiElements = [];
-            this._logoElements.forEach(el => el?.destroy());
-            this._logoElements = [];
-
-            // Get dimensions immediately
-            const { width, height } = this.scale;
-
-            const logoKey = 'logo';
-            const maxLogoWidth = 400;
-            const logoTexture = this.textures.get(logoKey);
-            let logoScale = 1;
-
-            if (logoTexture && logoTexture.getSourceImage()) {
-                const imgWidth = logoTexture.getSourceImage().width;
-                if (imgWidth > maxLogoWidth) {
-                    logoScale = maxLogoWidth / imgWidth;
-                }
-            }
-
-            // Create logo with correct position immediately
-            const logo = this.add.image(width / 2, height / 2, logoKey)
-                .setOrigin(0.5)
-                .setScale(logoScale)
-                .setAlpha(0);
-
-            // Calculate text position based on logo size
-            // Use frame height for more accurate sizing
-            const logoHeight = logo.displayHeight || 
-                              (logoTexture.getSourceImage()?.height * logoScale) || 
-                              100;
-
-            // Store logo position for accurate text placement later
-            const logoPosition = {x: width / 2, y: height / 2};
-
-            const presentsText = this.add.text(
-                logoPosition.x,
-                logoPosition.y + 20, // Position just below where logo was
-                'Presents...', 
-                {
-                    fontFamily: 'Arial',
-                    fontSize: '48px',
-                    color: '#ffffff'
-                }
-            ).setOrigin(0.5).setAlpha(0);
-
-            this._logoElements.push(logo, presentsText);
-
-            // Animation sequence with improved timing and positioning
-            this.tweens.add({
-                targets: logo,
-                alpha: 1,
-                duration: 1000,
-                ease: 'Power2',
-                onComplete: () => {
-                    this.time.delayedCall(2000, () => {
-                        this.tweens.add({
-                            targets: logo,
-                            alpha: 0,
-                            duration: 1000,
-                            ease: 'Power2',
-                            onComplete: () => {
-                                // Ensure text is at correct position before showing
-                                presentsText.setPosition(logoPosition.x, logoPosition.y + 20);
-                                
-                                this.tweens.add({
-                                    targets: presentsText,
-                                    alpha: 1,
-                                    duration: 800,
-                                    ease: 'Power2',
-                                    onComplete: () => {
-                                        this.time.delayedCall(1200, () => {
-                                            this.tweens.add({
-                                                targets: presentsText,
-                                                alpha: 0,
-                                                duration: 600,
-                                                onComplete: () => {
-                                                    this.cameras.main.fadeOut(600, 24, 26, 27);
-                                                    this.cameras.main.once('camerafadeoutcomplete', () => {
-                                                        this.scene.start('MainMenu');
-                                                    });
-                                                }
-                                            });
-                                        });
-                                    }
-                                });
-                            }
-                        });
-                    });
-                }
-            });
-        };
-
-        drawUI();
-
-        const redrawIfPrompt = () => {
-            if (this._uiElements.length > 0) drawUI();
-        };
-
-        window.addEventListener('resize', redrawIfPrompt);
-        document.addEventListener('fullscreenchange', () => {
-            const canvas = this.game.canvas;
-            if (!document.fullscreenElement && this.scene.isActive()) {
-                this.scale.resize(BASE_WIDTH, BASE_HEIGHT);
-                canvas.style.width = `${BASE_WIDTH}px`;
-                canvas.style.height = `${BASE_HEIGHT}px`;
-            } else if (document.fullscreenElement && this.scene.isActive()) {
-                this.scale.resize(window.innerWidth, window.innerHeight);
-                canvas.style.width = '100%';
-                canvas.style.height = '100%';
-            }
-            redrawIfPrompt();
-        });
+        // Set up event listeners
+        window.addEventListener('resize', () => this.handleResize());
+        document.addEventListener('fullscreenchange', () => this.handleFullscreenChange());
+        
+        // Start with fullscreen prompt
+        this.showFullscreenPrompt();
     }
 
-    handleFullscreen(drawUI, startLogoSequence) {
+    showFullscreenPrompt() {
+        // Clear any existing elements
+        this.clearUI();
+        
+        const { width, height } = this.scale;
+
+        // Create UI elements
+        const background = this.add.rectangle(width / 2, height / 2, width, height, 0x181A1B).setOrigin(0.5);
+        
+        const dialog = this.add.rectangle(width / 2, height / 2, 400, 220, 0x23272f, 1)
+            .setOrigin(0.5)
+            .setStrokeStyle(2, 0x000000, 0.2);
+            
+        const promptText = this.add.text(width / 2, height / 2 - 40, 'Go fullscreen?', {
+            fontFamily: 'Arial',
+            fontSize: '32px',
+            color: '#fff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        const buttonStyle = {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            color: '#fff',
+            backgroundColor: '#3B82F6',
+            padding: { left: 24, right: 24, top: 10, bottom: 10 }
+        };
+
+        const yesButton = this.add.text(width / 2 - 70, height / 2 + 40, 'Yes', buttonStyle)
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true });
+            
+        const noButton = this.add.text(width / 2 + 70, height / 2 + 40, 'No', buttonStyle)
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true });
+
+        // Add event listeners
+        yesButton.once('pointerdown', () => this.enterFullscreen());
+        noButton.once('pointerdown', () => this.playLogoSequence());
+
+        // Store elements for cleanup
+        this.uiElements = [background, dialog, promptText, yesButton, noButton];
+    }
+
+    playLogoSequence() {
+        // Clear existing UI
+        this.clearUI();
+        
+        const { width, height } = this.scale;
+        
+        // Calculate logo scaling
+        const logoTexture = this.textures.get('logo');
+        let logoScale = 1;
+        
+        if (logoTexture && logoTexture.getSourceImage()) {
+            const imgWidth = logoTexture.getSourceImage().width;
+            if (imgWidth > SCREEN_CONFIG.LOGO_MAX_WIDTH) {
+                logoScale = SCREEN_CONFIG.LOGO_MAX_WIDTH / imgWidth;
+            }
+        }
+        
+        // Create logo
+        const logo = this.add.image(width / 2, height / 2, 'logo')
+            .setOrigin(0.5)
+            .setScale(logoScale)
+            .setAlpha(0);
+            
+        // Create "Presents..." text
+        const presentsText = this.add.text(
+            width / 2,
+            height / 2, 
+            'Presents...', 
+            {
+                fontFamily: 'Arial',
+                fontSize: '48px',
+                color: '#ffffff'
+            }
+        ).setOrigin(0.5).setAlpha(0);
+        
+        // Store for cleanup
+        this.logoElements = [logo, presentsText];
+        
+        // Run animation sequence
+        this.animateLogoSequence(logo, presentsText);
+    }
+    
+    animateLogoSequence(logo, presentsText) {
+        // Fade in logo
+        this.tweens.add({
+            targets: logo,
+            alpha: 1,
+            duration: 1000,
+            ease: 'Power2',
+            onComplete: () => {
+                // Hold logo on screen
+                this.time.delayedCall(2000, () => {
+                    // Fade out logo
+                    this.tweens.add({
+                        targets: logo,
+                        alpha: 0,
+                        duration: 1000,
+                        ease: 'Power2',
+                        onComplete: () => {
+                            // Fade in "Presents..." text
+                            this.tweens.add({
+                                targets: presentsText,
+                                alpha: 1,
+                                duration: 800,
+                                ease: 'Power2',
+                                onComplete: () => {
+                                    // Hold text on screen
+                                    this.time.delayedCall(1200, () => {
+                                        // Fade out text
+                                        this.tweens.add({
+                                            targets: presentsText,
+                                            alpha: 0,
+                                            duration: 600,
+                                            onComplete: () => {
+                                                // Transition to main menu
+                                                this.cameras.main.fadeOut(600, 24, 26, 27);
+                                                this.cameras.main.once('camerafadeoutcomplete', () => {
+                                                    this.scene.start('MainMenu');
+                                                });
+                                            }
+                                        });
+                                    });
+                                }
+                            });
+                        }
+                    });
+                });
+            }
+        });
+    }
+    
+    enterFullscreen() {
         if (!this.scale.isFullscreen) {
             this.scale.startFullscreen();
+            
+            // Need a small delay to ensure fullscreen is applied
             this.time.delayedCall(100, () => {
-                const w = window.innerWidth;
-                const h = window.innerHeight;
-                this.scale.resize(w, h);
-                const canvas = this.game.canvas;
-                canvas.style.width = '100%';
-                canvas.style.height = '100%';
-                drawUI();
-                startLogoSequence();
+                this.resizeToFullscreen();
+                this.playLogoSequence();
             });
         } else {
-            startLogoSequence();
+            this.playLogoSequence();
         }
+    }
+    
+    resizeToFullscreen() {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        
+        this.scale.resize(w, h);
+        
+        const canvas = this.game.canvas;
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+    }
+    
+    handleFullscreenChange() {
+        const canvas = this.game.canvas;
+        
+        if (!document.fullscreenElement && this.scene.isActive()) {
+            // Exit fullscreen - revert to base size
+            this.scale.resize(SCREEN_CONFIG.BASE_WIDTH, SCREEN_CONFIG.BASE_HEIGHT);
+            canvas.style.width = `${SCREEN_CONFIG.BASE_WIDTH}px`;
+            canvas.style.height = `${SCREEN_CONFIG.BASE_HEIGHT}px`;
+        } else if (document.fullscreenElement && this.scene.isActive()) {
+            this.resizeToFullscreen();
+        }
+        
+        // Redraw UI if we're still showing the fullscreen prompt
+        if (this.uiElements.length > 0) {
+            this.showFullscreenPrompt();
+        }
+    }
+    
+    handleResize() {
+        // Only redraw if we're showing the fullscreen prompt
+        if (this.uiElements.length > 0) {
+            this.showFullscreenPrompt();
+        }
+    }
+    
+    clearUI() {
+        // Clear UI elements
+        this.uiElements.forEach(el => el?.destroy());
+        this.uiElements = [];
+        
+        // Clear logo elements
+        this.logoElements.forEach(el => el?.destroy());
+        this.logoElements = [];
     }
 }
