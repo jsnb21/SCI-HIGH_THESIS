@@ -10,11 +10,16 @@ export default class MainMenu extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('menuBg', 'assets/img/mainmenu/SCI-HIGH_Title.png');
         this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.audio('bgm_title', 'assets/audio/bgm/bgm_title.mp3');
+        
+        // Load the logo image
+        this.load.image('game_logo', 'assets/img/mainmenu/SCI-HIGH_LOGO.png');
+        
+        // Load cloud images - replace with your actual cloud image paths
+        this.load.image('clouds', 'assets/img/mainmenu/clouds.png');
     }
 
     create() {
@@ -30,9 +35,38 @@ export default class MainMenu extends Phaser.Scene {
             se_hoverSound.stop();
         });
 
-        // Background image
-        const bg = this.add.image(width / 2, height / 2, 'menuBg');
-        bg.setDisplaySize(width, height);
+        // Set a solid color background
+        this.cameras.main.setBackgroundColor('#87ceeb');
+
+        // Create scrolling clouds behind everything
+        this.createScrollingClouds();
+
+        // Add the logo image above the New Game button
+        const logo = this.add.image(width / 2, height / 2 - 180, 'game_logo');
+        
+        // Scale the logo to appropriate size (adjust as needed)
+        logo.setScale(0.8);
+        
+        // Add fade-in animation for the logo
+        logo.setAlpha(0);
+        this.tweens.add({
+            targets: logo,
+            alpha: 1,
+            duration: 600,
+            delay: 200,
+            ease: 'Quad.easeOut'
+        });
+        
+        // Optional: Add a subtle floating animation to the logo
+        this.tweens.add({
+            targets: logo,
+            y: logo.y - 10,
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: 800
+        });
 
         // Menu button data
         const menuButtons = [
@@ -59,6 +93,124 @@ export default class MainMenu extends Phaser.Scene {
         // Create menu buttons with backgrounds and effects
         menuButtons.forEach((btn, i) => {
             createMenuButton(this, width / 2, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400);
+        });
+    }
+
+    createScrollingClouds() {
+        const { width, height } = this.scale;
+        
+        // Create multiple cloud layers for parallax depth
+        this.cloudLayers = [];
+        
+        // Far background layer (slowest, smallest, most transparent)
+        const farBgLayer = this.add.group();
+        for (let i = 0; i < 6; i++) {
+            const cloud = this.add.image(
+                (width / 4) * i - width, 
+                height / 2 - 150 + Math.random() * 80, 
+                'clouds'
+            );
+            cloud.setScale(0.3 + Math.random() * 0.2);
+            cloud.setAlpha(0.15);
+            cloud.setTint(0xe6f2ff);
+            farBgLayer.add(cloud);
+        }
+        this.cloudLayers.push({ group: farBgLayer, speed: 0.2, depth: 1 });
+        
+        // Mid background layer
+        const midBgLayer = this.add.group();
+        for (let i = 0; i < 5; i++) {
+            const cloud = this.add.image(
+                (width / 3) * i - width / 2, 
+                height / 2 - 80 + Math.random() * 120, 
+                'clouds'
+            );
+            cloud.setScale(0.5 + Math.random() * 0.3);
+            cloud.setAlpha(0.25);
+            cloud.setTint(0xf0f8ff);
+            midBgLayer.add(cloud);
+        }
+        this.cloudLayers.push({ group: midBgLayer, speed: 0.4, depth: 2 });
+        
+        // Middle layer
+        const midLayer = this.add.group();
+        for (let i = 0; i < 4; i++) {
+            const cloud = this.add.image(
+                (width / 2.5) * i - width / 3, 
+                height / 2 + Math.random() * 160 - 80, 
+                'clouds'
+            );
+            cloud.setScale(0.6 + Math.random() * 0.3);
+            cloud.setAlpha(0.35);
+            cloud.setTint(0xffffff);
+            midLayer.add(cloud);
+        }
+        this.cloudLayers.push({ group: midLayer, speed: 0.7, depth: 3 });
+        
+        // Near layer
+        const nearLayer = this.add.group();
+        for (let i = 0; i < 3; i++) {
+            const cloud = this.add.image(
+                (width / 2) * i - width / 4, 
+                height / 2 + 80 + Math.random() * 140, 
+                'clouds'
+            );
+            cloud.setScale(0.8 + Math.random() * 0.4);
+            cloud.setAlpha(0.45);
+            cloud.setTint(0xf8fcff);
+            nearLayer.add(cloud);
+        }
+        this.cloudLayers.push({ group: nearLayer, speed: 1.0, depth: 4 });
+        
+        // Foreground layer (fastest, largest, most visible)
+        const fgLayer = this.add.group();
+        for (let i = 0; i < 2; i++) {
+            const cloud = this.add.image(
+                width * i - width / 6, 
+                height / 2 + 180 + Math.random() * 100, 
+                'clouds'
+            );
+            cloud.setScale(1.0 + Math.random() * 0.5);
+            cloud.setAlpha(0.6);
+            cloud.setTint(0xffffff);
+            fgLayer.add(cloud);
+        }
+        this.cloudLayers.push({ group: fgLayer, speed: 1.5, depth: 5 });
+        
+        // Start the parallax scrolling
+        this.startParallaxScrolling();
+    }
+    
+    startParallaxScrolling() {
+        const { width } = this.scale;
+        const baseSpeed = 30; // Base scrolling speed in pixels per second
+        
+        this.cloudLayers.forEach(layer => {
+            const layerSpeed = baseSpeed * layer.speed;
+            
+            layer.group.children.entries.forEach((cloud, index) => {
+                // Add slight variation to each cloud's speed within the layer
+                const cloudSpeed = layerSpeed + (Math.random() - 0.5) * 5;
+                
+                // Create continuous parallax movement
+                const moveCloud = () => {
+                    this.tweens.add({
+                        targets: cloud,
+                        x: '+=' + (width + cloud.displayWidth * 2),
+                        duration: ((width + cloud.displayWidth * 2) / cloudSpeed) * 1000,
+                        ease: 'Linear',
+                        onComplete: () => {
+                            // Reset cloud position with some randomization
+                            cloud.x = -cloud.displayWidth - Math.random() * 200;
+                            cloud.y = cloud.y + (Math.random() - 0.5) * 20; // Slight vertical drift
+                            moveCloud(); // Restart the movement
+                        }
+                    });
+                };
+                
+                // Start movement with staggered timing
+                this.time.delayedCall(index * 1000, moveCloud);
+            });
         });
     }
 }
