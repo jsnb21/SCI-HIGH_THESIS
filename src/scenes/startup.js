@@ -14,6 +14,12 @@ export default class StartupScene extends Phaser.Scene {
 
     create() {
         const { width, height } = this.scale;
+
+        // Add black background covering the whole scene
+        this.add.rectangle(width / 2, height / 2, width, height, 0x000000)
+            .setOrigin(0.5)
+            .setDepth(-10);
+
         this.cameras.main.setBackgroundColor('#181A1B');
 
         // Dialog config
@@ -51,9 +57,9 @@ export default class StartupScene extends Phaser.Scene {
         // Button style
         const buttonStyle = {
             fontFamily: "'Segoe UI', Arial, sans-serif",
-            fontSize: '24px',
+            fontSize: '22px',
             color: '#fff',
-            padding: { left: 32, right: 32, top: 12, bottom: 12 },
+            padding: { left: 16, right: 16, top: 8, bottom: 8 }, // Reduced padding
             align: 'center'
         };
 
@@ -61,12 +67,15 @@ export default class StartupScene extends Phaser.Scene {
         const makeButtonBg = (x, y, color) => {
             return this.add.graphics()
                 .fillStyle(color, 1)
-                .fillRoundedRect(x - 60, y - 24, 120, 48, 16)
+                .fillRoundedRect(x - 48, y - 20, 96, 40, 12) // Reduced width and height
                 .setAlpha(0).setDepth(1);
         };
 
         // Yes/No buttons and backgrounds
-        const yesBtnX = width / 2 - 70, noBtnX = width / 2 + 70, btnY = height / 2 + 40;
+        const buttonGap = 24; // Add a gap between buttons
+        const yesBtnX = width / 2 - 48 - buttonGap / 2;
+        const noBtnX = width / 2 + 48 + buttonGap / 2;
+        const btnY = height / 2 + 40;
         const yesBtnBg = makeButtonBg(yesBtnX, btnY, 0x3B82F6);
         const noBtnBg = makeButtonBg(noBtnX, btnY, 0x64748B);
 
@@ -85,7 +94,7 @@ export default class StartupScene extends Phaser.Scene {
 
         // Button hover effects
         const setBtnBg = (bg, x, y, color) => {
-            bg.clear().fillStyle(color, 1).fillRoundedRect(x - 60, y - 24, 120, 48, 16);
+            bg.clear().fillStyle(color, 1).fillRoundedRect(x - 48, y - 20, 96, 40, 12);
         };
         yesBtn.on('pointerover', () => {
             yesBtn.setStyle({ backgroundColor: '#2563EB' });

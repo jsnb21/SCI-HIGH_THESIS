@@ -11,20 +11,134 @@
         padding: 0;
       }
       body {
+        min-height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
-        background: #111; /* Optional: dark background */
+        background: linear-gradient(135deg, #181818 0%, #333 100%);
+        overflow: hidden;
+        position: relative;
+      }
+      /* Animated background stars */
+      body::before, body::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none;
+        z-index: 0;
+      }
+      body::before {
+        background: radial-gradient(circle, rgba(255,255,0,0.10) 1px, transparent 1px), 
+                    radial-gradient(circle, rgba(255,255,0,0.06) 1px, transparent 1px);
+        background-size: 80px 80px, 40px 40px;
+        animation: moveStars 30s linear infinite;
+      }
+      body::after {
+        background: radial-gradient(circle, #ffe600 0.5px, transparent 1px), 
+                    radial-gradient(circle, #fff200 0.5px, transparent 1px);
+        background-size: 160px 160px, 120px 120px;
+        opacity: 0.5;
+        animation: moveStars 60s linear infinite reverse;
+      }
+      @keyframes moveStars {
+        0% { background-position: 0 0, 0 0; }
+        100% { background-position: 200px 400px, 400px 200px; }
       }
       #game {
+        position: relative;
+        z-index: 1;
         display: flex;
         justify-content: center;
         align-items: center;
-        border-radius: 24px; /* Added for rounded corners */
-        overflow: hidden;    /* Ensures content stays within rounded corners */
-        border: 2px solid #444; /* Optional: visible border */
-        box-shadow: 0 0 12px 2px rgba(255,255,255,0.4); /* Smaller white glow */
+        min-width: 340px;
+        min-height: 440px;
+        background: rgba(30, 30, 10, 0.97);
+        border-radius: 32px;
+        overflow: hidden;
+        border: 2.5px solid #fffbc2;
+        box-shadow: 0 0 32px 4px #fffbc2, 0 0 0 8px #222 inset;
+        transition: box-shadow 0.3s;
+        pointer-events: auto;
+      }
+      #game::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 32px;
+        pointer-events: none;
+        background: linear-gradient(120deg, transparent 60%, #ffe600 100%);
+        opacity: 0.08;
+        z-index: 0;
+      }
+      #game::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border-radius: 36px;
+        border: 2px solid #ffe600;
+        filter: blur(8px);
+        opacity: 0.5;
+        z-index: 0;
+        animation: glow 2.5s linear infinite alternate;
+        pointer-events: none;
+      }
+      @keyframes glow {
+        0% { opacity: 0.4; }
+        100% { opacity: 0.8; }
+      }
+      /* Parallax clouds */
+      body .cloud, body .cloud2, body .cloud3 {
+        position: absolute;
+        top: 10%;
+        left: -30vw;
+        width: 60vw;
+        height: 18vw;
+        background: radial-gradient(ellipse at 30% 40%, #fffde4 60%, transparent 100%),
+                    radial-gradient(ellipse at 70% 60%, #ffe600 40%, transparent 100%);
+        opacity: 0.18;
+        border-radius: 50%;
+        filter: blur(2px);
+        z-index: 1;
+        pointer-events: none;
+        animation: cloudmove 80s linear infinite;
+      }
+      body .cloud2 {
+        top: 30%;
+        left: -40vw;
+        width: 80vw;
+        height: 22vw;
+        opacity: 0.13;
+        filter: blur(3px);
+        animation: cloudmove2 120s linear infinite;
+      }
+      body .cloud3 {
+        top: 60%;
+        left: -50vw;
+        width: 70vw;
+        height: 20vw;
+        opacity: 0.10;
+        filter: blur(4px);
+        animation: cloudmove3 160s linear infinite;
+      }
+      @keyframes cloudmove {
+        0% { left: -30vw; }
+        100% { left: 110vw; }
+      }
+      @keyframes cloudmove2 {
+        0% { left: -40vw; }
+        100% { left: 120vw; }
+      }
+      @keyframes cloudmove3 {
+        0% { left: -50vw; }
+        100% { left: 130vw; }
+      }
+      /* Responsive tweaks */
+      @media (max-width: 500px) {
+        #game {
+          min-width: 90vw;
+          min-height: 60vw;
+          border-radius: 18px;
+        }
       }
     </style>
   </head>
