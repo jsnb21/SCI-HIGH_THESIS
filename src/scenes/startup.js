@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 
 const SCREEN_CONFIG = {
-    BASE_WIDTH: 816,
-    BASE_HEIGHT: 624,
-    LOGO_MAX_WIDTH: 400
+    BASE_WIDTH: window.innerWidth,   // Using dynamic window width instead of fixed 816
+    BASE_HEIGHT: window.innerHeight, // Using dynamic window height instead of fixed 624
+    LOGO_MAX_WIDTH: 600              // Keeping the increased logo size
 };
 
 export default class StartupScene extends Phaser.Scene {
@@ -76,6 +76,11 @@ export default class StartupScene extends Phaser.Scene {
         
         const { width, height } = this.scale;
         
+        // Add white background that will fade in with the logo
+        const whiteBackground = this.add.rectangle(width / 2, height / 2, width, height, 0xFFFFFF)
+            .setOrigin(0.5)
+            .setAlpha(0);
+    
         // Calculate logo scaling
         const logoTexture = this.textures.get('logo');
         let logoScale = 1;
@@ -92,7 +97,7 @@ export default class StartupScene extends Phaser.Scene {
             .setOrigin(0.5)
             .setScale(logoScale)
             .setAlpha(0);
-            
+        
         // Create "Presents..." text
         const presentsText = this.add.text(
             width / 2,
@@ -101,21 +106,21 @@ export default class StartupScene extends Phaser.Scene {
             {
                 fontFamily: 'Arial',
                 fontSize: '48px',
-                color: '#ffffff'
+                color: '#000000' // Changed to black for better visibility on white
             }
         ).setOrigin(0.5).setAlpha(0);
-        
-        // Store for cleanup
-        this.logoElements = [logo, presentsText];
+    
+        // Store for cleanup - include the white background
+        this.logoElements = [whiteBackground, logo, presentsText];
         
         // Run animation sequence
-        this.animateLogoSequence(logo, presentsText);
+        this.animateLogoSequence(whiteBackground, logo, presentsText);
     }
     
-    animateLogoSequence(logo, presentsText) {
-        // Fade in logo
+    animateLogoSequence(whiteBackground, logo, presentsText) {
+        // Fade in white background and logo together
         this.tweens.add({
-            targets: logo,
+            targets: [whiteBackground, logo],
             alpha: 1,
             duration: 1000,
             ease: 'Power2',
@@ -138,9 +143,9 @@ export default class StartupScene extends Phaser.Scene {
                                 onComplete: () => {
                                     // Hold text on screen
                                     this.time.delayedCall(1200, () => {
-                                        // Fade out text
+                                        // Fade out text and background
                                         this.tweens.add({
-                                            targets: presentsText,
+                                            targets: [presentsText, whiteBackground],
                                             alpha: 0,
                                             duration: 600,
                                             onComplete: () => {
