@@ -6,6 +6,8 @@ const BASE_HEIGHT = 624;
 export default class StartupScene extends Phaser.Scene {
     constructor() {
         super({ key: 'StartupScene' });
+        this._uiElements = [];
+        this._logoElements = [];
     }
 
     preload() {
@@ -13,127 +15,92 @@ export default class StartupScene extends Phaser.Scene {
     }
 
     create() {
-        const { width, height } = this.scale;
+        const drawUI = () => {
+            this._uiElements.forEach(el => el?.destroy());
+            this._uiElements = [];
 
-        // Add black background covering the whole scene
-        this.add.rectangle(width / 2, height / 2, width, height, 0x000000)
-            .setOrigin(0.5)
-            .setDepth(-10);
+            const { width, height } = this.scale;
 
-        this.cameras.main.setBackgroundColor('#181A1B');
+            const bg = this.add.rectangle(width / 2, height / 2, width, height, 0x181A1B).setOrigin(0.5);
+            const dialog = this.add.rectangle(width / 2, height / 2, 400, 220, 0x23272f, 1)
+                .setOrigin(0.5).setStrokeStyle(2, 0x000000, 0.2);
 
-        // Dialog config
-        const dialogConfig = {
-            width: 380,
-            height: 200,
-            x: width / 2 - 190,
-            y: height / 2 - 100,
-            radius: 24
-        };
-
-        // Draw drop shadow and dialog background
-        const shadow = this.add.graphics()
-            .fillStyle(0x000000, 0.25)
-            .fillRoundedRect(dialogConfig.x + 8, dialogConfig.y + 8, dialogConfig.width, dialogConfig.height, dialogConfig.radius)
-            .setAlpha(0).setDepth(0);
-
-        const dialogBg = this.add.graphics()
-            .fillStyle(0x23272f, 1)
-            .fillRoundedRect(dialogConfig.x, dialogConfig.y, dialogConfig.width, dialogConfig.height, dialogConfig.radius)
-            .setAlpha(0).setDepth(1);
-
-        // Prompt text
-        const promptText = this.add.text(
-            width / 2, height / 2 - 40, 'Go fullscreen?',
-            {
-                fontFamily: "'Segoe UI', Arial, sans-serif",
-                fontSize: '30px',
+            const prompt = this.add.text(width / 2, height / 2 - 40, 'Go fullscreen?', {
+                fontFamily: 'Arial',
+                fontSize: '32px',
                 color: '#fff',
-                fontStyle: 'bold',
-                align: 'center'
-            }
-        ).setOrigin(0.5).setAlpha(0).setDepth(2);
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
 
-        // Button style
-        const buttonStyle = {
-            fontFamily: "'Segoe UI', Arial, sans-serif",
-            fontSize: '22px',
-            color: '#fff',
-            padding: { left: 16, right: 16, top: 8, bottom: 8 }, // Reduced padding
-            align: 'center'
+            const btnStyle = {
+                fontFamily: 'Arial',
+                fontSize: '24px',
+                color: '#fff',
+                backgroundColor: '#3B82F6',
+                padding: { left: 24, right: 24, top: 10, bottom: 10 }
+            };
+
+            const yesBtn = this.add.text(width / 2 - 70, height / 2 + 40, 'Yes', btnStyle)
+                .setOrigin(0.5).setInteractive({ useHandCursor: true });
+            const noBtn = this.add.text(width / 2 + 70, height / 2 + 40, 'No', btnStyle)
+                .setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+            yesBtn.once('pointerdown', () => this.handleFullscreen(drawUI, startLogoSequence));
+            noBtn.once('pointerdown', () => startLogoSequence());
+
+            this._uiElements.push(bg, dialog, prompt, yesBtn, noBtn);
         };
 
-        // Helper for button backgrounds
-        const makeButtonBg = (x, y, color) => {
-            return this.add.graphics()
-                .fillStyle(color, 1)
-                .fillRoundedRect(x - 48, y - 20, 96, 40, 12) // Reduced width and height
-                .setAlpha(0).setDepth(1);
-        };
-
-        // Yes/No buttons and backgrounds
-        const buttonGap = 24; // Add a gap between buttons
-        const yesBtnX = width / 2 - 48 - buttonGap / 2;
-        const noBtnX = width / 2 + 48 + buttonGap / 2;
-        const btnY = height / 2 + 40;
-        const yesBtnBg = makeButtonBg(yesBtnX, btnY, 0x3B82F6);
-        const noBtnBg = makeButtonBg(noBtnX, btnY, 0x64748B);
-
-        const yesBtn = this.add.text(yesBtnX, btnY, 'Yes', buttonStyle)
-            .setOrigin(0.5).setAlpha(0).setDepth(2).setInteractive({ useHandCursor: true });
-        const noBtn = this.add.text(noBtnX, btnY, 'No', buttonStyle)
-            .setOrigin(0.5).setAlpha(0).setDepth(2).setInteractive({ useHandCursor: true });
-
-        // Fade in dialog
-        this.tweens.add({
-            targets: [shadow, dialogBg, promptText, yesBtn, noBtn, yesBtnBg, noBtnBg],
-            alpha: 1,
-            duration: 400,
-            ease: 'Power2'
-        });
-
-        // Button hover effects
-        const setBtnBg = (bg, x, y, color) => {
-            bg.clear().fillStyle(color, 1).fillRoundedRect(x - 48, y - 20, 96, 40, 12);
-        };
-        yesBtn.on('pointerover', () => {
-            yesBtn.setStyle({ backgroundColor: '#2563EB' });
-            setBtnBg(yesBtnBg, yesBtnX, btnY, 0x2563EB);
-        });
-        yesBtn.on('pointerout', () => {
-            yesBtn.setStyle({ backgroundColor: '#3B82F6' });
-            setBtnBg(yesBtnBg, yesBtnX, btnY, 0x3B82F6);
-        });
-        noBtn.on('pointerover', () => {
-            noBtn.setStyle({ backgroundColor: '#334155' });
-            setBtnBg(noBtnBg, noBtnX, btnY, 0x334155);
-        });
-        noBtn.on('pointerout', () => {
-            noBtn.setStyle({ backgroundColor: '#64748B' });
-            setBtnBg(noBtnBg, noBtnX, btnY, 0x64748B);
-        });
-
-        // Hide dialog helper
-        const hideDialog = () => {
-            [shadow, dialogBg, promptText, yesBtn, noBtn, yesBtnBg, noBtnBg].forEach(obj => obj.setVisible(false));
-        };
-
-        // Logo sequence
         const startLogoSequence = () => {
-            hideDialog();
+            this._uiElements.forEach(el => el?.destroy());
+            this._uiElements = [];
+            this._logoElements.forEach(el => el?.destroy());
+            this._logoElements = [];
 
-            // Logo
-            const logo = this.add.image(width / 2, height / 2, 'logo').setAlpha(0);
+            // Get dimensions immediately
+            const { width, height } = this.scale;
+
+            const logoKey = 'logo';
             const maxLogoWidth = 400;
-            if (logo.width > maxLogoWidth) logo.setScale(maxLogoWidth / logo.width);
+            const logoTexture = this.textures.get(logoKey);
+            let logoScale = 1;
 
-            // Presents text
+            if (logoTexture && logoTexture.getSourceImage()) {
+                const imgWidth = logoTexture.getSourceImage().width;
+                if (imgWidth > maxLogoWidth) {
+                    logoScale = maxLogoWidth / imgWidth;
+                }
+            }
+
+            // Create logo with correct position immediately
+            const logo = this.add.image(width / 2, height / 2, logoKey)
+                .setOrigin(0.5)
+                .setScale(logoScale)
+                .setAlpha(0);
+
+            // Calculate text position based on logo size
+            // Use frame height for more accurate sizing
+            const logoHeight = logo.displayHeight || 
+                              (logoTexture.getSourceImage()?.height * logoScale) || 
+                              100;
+
+            // Store logo position for accurate text placement later
+            const logoPosition = {x: width / 2, y: height / 2};
+
             const presentsText = this.add.text(
-                width / 2, height / 2, 'Presents...',
-                { fontFamily: 'Arial', fontSize: '48px', color: '#ffffff' }
+                logoPosition.x,
+                logoPosition.y + 20, // Position just below where logo was
+                'Presents...', 
+                {
+                    fontFamily: 'Arial',
+                    fontSize: '48px',
+                    color: '#ffffff'
+                }
             ).setOrigin(0.5).setAlpha(0);
 
-            // Fade in logo
+            this._logoElements.push(logo, presentsText);
+
+            // Animation sequence with improved timing and positioning
             this.tweens.add({
                 targets: logo,
                 alpha: 1,
@@ -141,14 +108,15 @@ export default class StartupScene extends Phaser.Scene {
                 ease: 'Power2',
                 onComplete: () => {
                     this.time.delayedCall(2000, () => {
-                        // Fade out logo
                         this.tweens.add({
                             targets: logo,
                             alpha: 0,
                             duration: 1000,
                             ease: 'Power2',
                             onComplete: () => {
-                                // Fade in "Presents..."
+                                // Ensure text is at correct position before showing
+                                presentsText.setPosition(logoPosition.x, logoPosition.y + 20);
+                                
                                 this.tweens.add({
                                     targets: presentsText,
                                     alpha: 1,
@@ -156,7 +124,6 @@ export default class StartupScene extends Phaser.Scene {
                                     ease: 'Power2',
                                     onComplete: () => {
                                         this.time.delayedCall(1200, () => {
-                                            // Fade out "Presents..." and transition to MainMenu with a fade
                                             this.tweens.add({
                                                 targets: presentsText,
                                                 alpha: 0,
@@ -178,27 +145,13 @@ export default class StartupScene extends Phaser.Scene {
             });
         };
 
-        // Button click handlers
-        const handleFullscreen = () => {
-            if (!this.scale.isFullscreen) {
-                this.scale.startFullscreen();
-                this.time.delayedCall(100, () => {
-                    const w = window.innerWidth;
-                    const h = window.innerHeight;
-                    this.scale.resize(w, h);
-                    const canvas = this.game.canvas;
-                    canvas.style.width = '100%';
-                    canvas.style.height = '100%';
-                    startLogoSequence();
-                });
-            } else {
-                startLogoSequence();
-            }
-        };
-        yesBtn.on('pointerdown', handleFullscreen);
-        noBtn.on('pointerdown', startLogoSequence);
+        drawUI();
 
-        // Fullscreen change handler
+        const redrawIfPrompt = () => {
+            if (this._uiElements.length > 0) drawUI();
+        };
+
+        window.addEventListener('resize', redrawIfPrompt);
         document.addEventListener('fullscreenchange', () => {
             const canvas = this.game.canvas;
             if (!document.fullscreenElement && this.scene.isActive()) {
@@ -210,6 +163,25 @@ export default class StartupScene extends Phaser.Scene {
                 canvas.style.width = '100%';
                 canvas.style.height = '100%';
             }
+            redrawIfPrompt();
         });
+    }
+
+    handleFullscreen(drawUI, startLogoSequence) {
+        if (!this.scale.isFullscreen) {
+            this.scale.startFullscreen();
+            this.time.delayedCall(100, () => {
+                const w = window.innerWidth;
+                const h = window.innerHeight;
+                this.scale.resize(w, h);
+                const canvas = this.game.canvas;
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                drawUI();
+                startLogoSequence();
+            });
+        } else {
+            startLogoSequence();
+        }
     }
 }

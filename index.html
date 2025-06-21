@@ -66,6 +66,65 @@
         background: #fff700;
         color: #111;
       }
+      .carousel-container {
+        position: relative;
+        max-width: 800px;
+        margin: 2em auto;
+        overflow: hidden;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px #0008;
+      }
+      .carousel {
+        display: flex;
+        transition: transform 0.5s ease-in-out;
+      }
+      .carousel-slide {
+        min-width: 100%;
+        transition: opacity 0.5s ease;
+      }
+      .carousel-slide:not(.active) {
+        opacity: 0;
+      }
+      .carousel-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 215, 0, 0.8);
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        font-size: 1.5em;
+        color: #111;
+        transition: background 0.2s;
+      }
+      .carousel-btn:hover {
+        background: #ffd700;
+      }
+      .carousel-btn.prev {
+        left: 10px;
+      }
+      .carousel-btn.next {
+        right: 10px;
+      }
+      .carousel-dots {
+        text-align: center;
+        margin-top: 1em;
+      }
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin: 0 5px;
+        background: #ffd700;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .dot.active {
+        background: #fff700;
+      }
     </style>
   </head>
   <body>
@@ -94,5 +153,67 @@
         </p>
       </section>
     </div>
+    <div class="carousel-container">
+      <div class="carousel">
+        <img src="assets/images/slide1.jpg" alt="Slide 1" class="carousel-slide active">
+        <img src="assets/images/slide2.jpg" alt="Slide 2" class="carousel-slide">
+        <img src="assets/images/slide3.jpg" alt="Slide 3" class="carousel-slide">
+        <!-- Add more images as needed -->
+        <button class="carousel-btn prev">&#10094;</button>
+        <button class="carousel-btn next">&#10095;</button>
+      </div>
+      <div class="carousel-dots">
+        <span class="dot active"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <!-- Add more dots if you add more images -->
+      </div>
+    </div>
+    <script>
+      const slides = document.querySelectorAll('.carousel-slide');
+      const dots = document.querySelectorAll('.carousel-dots .dot');
+      const prevBtn = document.querySelector('.carousel-btn.prev');
+      const nextBtn = document.querySelector('.carousel-btn.next');
+      let currentSlide = 0;
+      let carouselInterval = setInterval(nextSlide, 4000);
+
+      function showSlide(index) {
+        slides.forEach((slide, i) => {
+          slide.classList.toggle('active', i === index);
+          dots[i].classList.toggle('active', i === index);
+        });
+        currentSlide = index;
+      }
+
+      function nextSlide() {
+        let next = (currentSlide + 1) % slides.length;
+        showSlide(next);
+      }
+
+      function prevSlide() {
+        let prev = (currentSlide - 1 + slides.length) % slides.length;
+        showSlide(prev);
+      }
+
+      nextBtn.addEventListener('click', () => {
+        nextSlide();
+        resetInterval();
+      });
+      prevBtn.addEventListener('click', () => {
+        prevSlide();
+        resetInterval();
+      });
+      dots.forEach((dot, i) => {
+        dot.addEventListener('click', () => {
+          showSlide(i);
+          resetInterval();
+        });
+      });
+
+      function resetInterval() {
+        clearInterval(carouselInterval);
+        carouselInterval = setInterval(nextSlide, 4000);
+      }
+    </script>
   </body>
 </html>
