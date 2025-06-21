@@ -21,17 +21,19 @@ export default class OptionsScene extends Phaser.Scene {
     }
 
     create(data) {
-        // 👇 Fix: set previousScene if provided
-        if (data && data.prevScene) {
-            gameManager.setPreviousScene(data.prevScene);
-        }
+        // More reliable scene tracking
+        this.prevScene = data && data.prevScene 
+            ? data.prevScene 
+            : 'MainMenu';
+        
+        // Don't update gameManager here, as it might override needed history
+        console.log('Options opened from:', this.prevScene);
 
         this.time.delayedCall(10, () => this.createUI());
         this.scale.on('resize', this.onResize, this);
 
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement && this.scene.isActive()) {
-                // Use window dimensions instead of BASE_WIDTH/HEIGHT
                 this.scale.resize(window.innerWidth, window.innerHeight);
                 this.time.delayedCall(100, () => this.createUI());
             }
@@ -106,7 +108,8 @@ export default class OptionsScene extends Phaser.Scene {
         }).setOrigin(0.5).setInteractive();
 
         backButton.on('pointerdown', () => {
-            const prevScene = gameManager.getPreviousScene() || 'MainMenu';
+            const prevScene = this.prevScene || 'MainMenu';
+            console.log('Returning to scene:', prevScene);
             
             // Use window dimensions for consistent sizing
             this.scale.resize(window.innerWidth, window.innerHeight);
