@@ -12,7 +12,7 @@ export default class CSProgrammingScene extends Phaser.Scene {
     preload() {
         // Load assets for this scene
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
-        this.load.image('webDesignIcons', 'assets/img/comlab/icons/webDesignIcons.png');
+        this.load.image('webDesignIcons', 'assets/img/comlab/icons/c_logo.png');
 
         this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
     }

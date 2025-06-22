@@ -11,7 +11,7 @@ export default class PythonScene extends Phaser.Scene {
     preload() {
         // Load assets for this scene
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
-        this.load.image('pythonIcon', 'assets/img/comlab/icons/PythonIcon.png');
+        this.load.image('pythonIcon', 'assets/img/comlab/icons/python_logo.png');
 
         this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
     }

@@ -11,7 +11,7 @@ export default class CSharpScene extends Phaser.Scene {
     preload() {
         // Load assets for this scene
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
-        this.load.image('CSharpIcons', 'assets/img/comlab/icons/CSharpIcon.png');
+        this.load.image('CSharpIcons', 'assets/img/comlab/icons/csharp_logo.png');
 
         this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
     }

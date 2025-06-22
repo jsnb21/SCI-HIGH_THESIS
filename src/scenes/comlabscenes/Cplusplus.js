@@ -11,7 +11,7 @@ export default class CPlusplusScene extends Phaser.Scene {
     preload() {
         // Load assets for this scene
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
-        this.load.image('CPlusPlusIcons', 'assets/img/comlab/icons/CplusplusIcon.png');
+        this.load.image('CPlusPlusIcons', 'assets/img/comlab/icons/cplus_logo.png');
 
         this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
     }
