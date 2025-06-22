@@ -28,9 +28,12 @@ class Carousel {
         this.onSelectCallback = onSelectCallback;
         this._createUI();
         return this;
-    }
-
-    _createUI() {
+    }    _createUI() {
+        // Clean up existing elements and listeners
+        if (this._inputListeners) {
+            this._inputListeners.forEach(off => off());
+            this._inputListeners = [];
+        }
         if (this.bgPanel) this.bgPanel.destroy();
         if (this.carouselIcons.length) {
             this.carouselIcons.forEach(icon => icon.destroy());
@@ -40,6 +43,10 @@ class Carousel {
         if (this.carouselDesc) this.carouselDesc.destroy();
         if (this.leftArrow) this.leftArrow.destroy();
         if (this.rightArrow) this.rightArrow.destroy();
+        if (this.breathingTween) {
+            this.breathingTween.stop();
+            this.breathingTween = null;
+        }
 
         const scale = this.getScale();
         const iconCount = this.iconKeys.length;
@@ -56,30 +63,21 @@ class Carousel {
             iconCenterY = this.scene.cameras.main.centerY + iconYOffset;
         } else {
             iconCenterX = this.scene.scale.width / 2;
-            iconCenterY = this.scene.scale.height / 2 + iconYOffset;
-        }
+            iconCenterY = this.scene.scale.height / 2 + iconYOffset;        }
 
-        const panelWidth = iconSpacing * (iconCount + 0.5);
-        const panelHeight = 340 * scale;
-
-        // Removed black dimmed shadow rectangle beneath the background panel
+        const { width } = this.scene.scale;
+        const panelWidth = width; // Full width of the screen
+        const panelHeight = 340 * scale;        // Removed black dimmed shadow rectangle beneath the background panel
         this.bgPanel = this.scene.add.graphics();
         this.bgPanel.fillStyle(0x23233a, 0.92);
         this.bgPanel.fillRoundedRect(
-            iconCenterX - panelWidth / 2,
+            0, // Start from left edge
             iconCenterY - panelHeight / 2,
             panelWidth,
             panelHeight,
-            36 * scale
+            0 // No rounded corners for full width
         );
-        this.bgPanel.lineStyle(4, 0x00e0ff, 0.7);
-        this.bgPanel.strokeRoundedRect(
-            iconCenterX - panelWidth / 2,
-            iconCenterY - panelHeight / 2,
-            panelWidth,
-            panelHeight,
-            36 * scale
-        );
+        // Removed cyan border
         this.bgPanel.setDepth(-1);
 
         const headingX = iconCenterX;
@@ -330,14 +328,10 @@ class Carousel {
             const direction = index - this.carouselIndex;
             this.move(direction);
         }
-    }
-
-    onResize() {
-        if (this.scene && this.scene.time) {
-            this.scene.time.delayedCall(10, () => {
-                this._createUI();
-            });
-        }
+    }    onResize() {
+        // Disable automatic resize to prevent conflicts with scene resize
+        // The scene will handle recreating the carousel when needed
+        return;
     }
 
     destroy() {
