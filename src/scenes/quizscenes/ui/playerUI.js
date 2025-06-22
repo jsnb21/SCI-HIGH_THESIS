@@ -1,39 +1,55 @@
 export function createPlayerUI(scene, x, y, playerConfig, sf) {
-    const container = scene.add.container(x, y);
-    const playerSprite = scene.add.sprite(0, 0, 'player');
-    const maxSpriteWidth = 80 * sf;
-    const maxSpriteHeight = 80 * sf;
-    const scaleX = maxSpriteWidth / playerSprite.width;
-    const scaleY = maxSpriteHeight / playerSprite.height;
-    const finalScale = Math.min(scaleX, scaleY);
-    playerSprite.setScale(finalScale);
+    const container = scene.add.container(x, y);    // Create hearts display only (no player sprite or background panel)
+    const maxHearts = 5; // Convert 100 HP to 5 hearts (20 HP per heart)
+    const currentHearts = Math.ceil(playerConfig.currentHP / 20);
+    const heartSpacing = 55 * sf; // Increased spacing for better separation
+    const heartsStartX = -(maxHearts - 1) * heartSpacing / 2;
+    const heartY = 0; // Center hearts vertically in the container
+    const hearts = [];
 
-    const hpBarBg = scene.add.graphics();
-    hpBarBg.fillStyle(0x444444, 1);
-    hpBarBg.fillRect(-60 * sf, 50 * sf, 120 * sf, 12 * sf);
+    for (let i = 0; i < maxHearts; i++) {
+        const heartX = heartsStartX + i * heartSpacing;
+        
+        if (i < currentHearts) {
+            // Active heart
+            const heart = scene.add.image(heartX, heartY, 'heart')
+                .setOrigin(0.5, 0.5)
+                .setScale(0.08 * sf)
+                .setTint(0xff4757);
+                
+            // Gentle pulsing animation
+            scene.tweens.add({
+                targets: heart,
+                scaleX: 0.1 * sf,
+                scaleY: 0.1 * sf,
+                duration: 800 + i * 100,
+                ease: 'Sine.easeInOut',
+                yoyo: true,
+                repeat: -1
+            });
+            
+            hearts.push(heart);
+        } else {
+            // Empty heart
+            const emptyHeart = scene.add.image(heartX, heartY, 'heart')
+                .setOrigin(0.5, 0.5)
+                .setScale(0.08 * sf)
+                .setTint(0x4a5568)
+                .setAlpha(0.5);
+            hearts.push(emptyHeart);
+        }
+    }
 
-    const hpBar = scene.add.graphics();
-    hpBar.fillStyle(0x00ff00, 1);
-    const hpPercentage = playerConfig.currentHP / playerConfig.maxHP;
-    hpBar.fillRect(-60 * sf, 50 * sf, 120 * hpPercentage * sf, 12 * sf);
-
-    const hpText = scene.add.text(0, 70 * sf, `${playerConfig.label} HP: ${playerConfig.currentHP}/${playerConfig.maxHP}`, {
-        fontSize: `${14 * sf}px`,
-        color: '#ffffff',
-        fontFamily: 'Arial'
-    }).setOrigin(0.5);
-
-    container.add([playerSprite, hpBarBg, hpBar, hpText]);
+    container.add([...hearts]);
     container.setData({
         maxHP: playerConfig.maxHP,
         currentHP: playerConfig.currentHP,
-        hpBar,
-        hpText,
+        hearts,
         label: playerConfig.label
     });
 
-    // Ensure player UI is above the quiz overlay but below the quiz box and options
-    container.setDepth(101); // Overlay is 99, quiz box is 100, so 101 is above overlay
+    // Ensure hearts are above other UI elements
+    container.setDepth(101);
 
     return container;
 }

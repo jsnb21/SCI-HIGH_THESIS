@@ -1,6 +1,5 @@
 // Import the GameTimer class
 import GameTimer from '/src/components/GameTimer.js';
-import { createBackButton } from '/src/components/buttons/backbutton.js';
 import { createPlayerUI } from './ui/playerUI.js';
 import { createQuizBox, createEnemyUI, createTimerText, createQuestionAndOptions } from './ui/quizUI.js';
 import { showFeedback, showVictory, showGameOver } from './ui/feedbackUI.js';
@@ -54,14 +53,14 @@ export default class BaseQuizScene extends Phaser.Scene {
             maxHP: this.enemyConfig.maxHP
         };
         this.gameTimer = new GameTimer(this);
-    }
-
-    preload() {
+    }    preload() {
+        this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
         this.load.image('player', 'assets/player.png');
         this.load.image('enemy', 'assets/enemy.png');
         this.load.image('goblin', 'assets/enemies/goblin.png');
         this.load.image('dragon', 'assets/enemies/dragon.png');
         this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
+        this.load.image('heart', 'assets/sprites/dungeon/heart.png');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
     }
@@ -90,20 +89,13 @@ export default class BaseQuizScene extends Phaser.Scene {
 
     handleTimeUp() {
         showGameOver(this);
-    }
-
-    startQuiz(initialTime = 30) {
+    }    startQuiz(initialTime = 30) {
         if (!this.isQuizStarted) {
             this.isQuizStarted = true;
             const sf = this.scaleFactor;
-            const centerX = this.scale.width / 2;
-            const centerY = this.scale.height / 2;
-            const boxWidth = 600 * sf;
-            const boxHeight = 340 * sf;
-            const boxTopY = centerY - boxHeight / 2;
-            const boxRightX = centerX + boxWidth / 2;
-            // Timer above the box, right-aligned
-            const timerElements = this.gameTimer.create(boxRightX - 16 * sf, boxTopY - 38 * sf, initialTime);
+            
+            // Timer at top right
+            const timerElements = this.gameTimer.create(this.scale.width - 150 * sf, 30 * sf, initialTime);
             if (timerElements.timerBackground && timerElements.timerBackground.setDepth) {
                 timerElements.timerBackground.setDepth(130);
             }
@@ -138,9 +130,7 @@ export default class BaseQuizScene extends Phaser.Scene {
 
         // Enemy UI (above the box)
         const enemyUI = createEnemyUI(this, centerX, boxTopY, sf);
-        this.enemyContainer = enemyUI.enemyContainer;
-
-        // Question and options (inside the box)
+        this.enemyContainer = enemyUI.enemyContainer;        // Question and options (inside the box)
         createQuestionAndOptions(
             this,
             centerX,
@@ -152,12 +142,10 @@ export default class BaseQuizScene extends Phaser.Scene {
             options,
             sf,
             (index) => this.checkAnswer(index)
-        );
-
-        // Player UI (below the box)
-        const playerX = centerX;
-        const playerY = centerY + boxHeight / 2 + 70 * sf;
-        this.playerContainer = createPlayerUI(this, playerX, playerY, this.playerConfig, sf);
+        );        // Player hearts at top left
+        const heartsX = 140 * sf; // Move to top left
+        const heartsY = 30 * sf;
+        this.playerContainer = createPlayerUI(this, heartsX, heartsY, this.playerConfig, sf);
         this.quizElements.push(this.playerContainer);
     }
 
@@ -169,9 +157,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         this.enemyContainer = null;
         this.playerContainer = null;
         this._quizOptionBgs = []; // <-- Clear option backgrounds to avoid stale references
-    }
-
-    damageCharacter(container, amount) {
+    }    damageCharacter(container, amount) {
         const sf = this.scaleFactor;
         let hp = container.getData('currentHP');
         const maxHP = container.getData('maxHP');
@@ -181,27 +167,73 @@ export default class BaseQuizScene extends Phaser.Scene {
         const isPlayer = container.getData('label') === 'Player';
         if (isPlayer) {
             this.playerConfig.currentHP = hp;
+            
+            // Update hearts for player
+            const hearts = container.getData('hearts');
+            const maxHearts = 5;
+            const currentHearts = Math.ceil(hp / 20); // 20 HP per heart
+            
+            if (hearts) {
+                hearts.forEach((heart, i) => {
+                    if (i < currentHearts) {
+                        // Active heart
+                        heart.setTint(0xff4757).setAlpha(1);
+                        // Re-enable pulsing animation if not already running
+                        if (!heart.getData('pulsing')) {
+                            this.tweens.add({
+                                targets: heart,
+                                scaleX: 0.1 * sf,
+                                scaleY: 0.1 * sf,
+                                duration: 800 + i * 100,
+                                ease: 'Sine.easeInOut',
+                                yoyo: true,
+                                repeat: -1
+                            });
+                            heart.setData('pulsing', true);
+                        }
+                    } else {
+                        // Empty heart
+                        heart.setTint(0x4a5568).setAlpha(0.5);
+                        // Stop pulsing animation
+                        this.tweens.killTweensOf(heart);
+                        heart.setScale(0.08 * sf);
+                        heart.setData('pulsing', false);
+                    }
+                });
+            }
         } else {
             this.enemyHPState.currentHP = hp;
-        }
-
-        const hpBar = container.getData('hpBar');
-        hpBar.clear();
-        const barColor = isPlayer ? 0x00ff00 : 0xff0000;
-        hpBar.fillStyle(barColor, 1);
-
-        if (isPlayer) {
-            hpBar.fillRect(-60 * sf, 50 * sf, (hp / maxHP) * 120 * sf, 12 * sf);
-        } else {
-            // Enemy HP bar is always at the same position relative to the enemy sprite
-            const hpBarWidth = 100 * sf;
-            hpBar.fillRect(-hpBarWidth / 2, -58 * sf, (hp / maxHP) * hpBarWidth, 10 * sf);
-        }
-
-        const hpText = container.getData('hpText');
+            
+            // Update enemy HP bar
+            const hpBar = container.getData('hpBar');
+            const hpBarBg = container.getData('hpBarBg');
+            
+            if (hpBar && hpBarBg) {
+                hpBar.clear();
+                const hpBarWidth = 120 * sf;
+                const hpBarHeight = 12 * sf;
+                const hpBarY = -45 * sf; // Adjust based on enemy sprite positioning
+                
+                // Redraw HP bar with gradient
+                const hpPercentage = hp / maxHP;
+                hpBar.fillGradientStyle(0xff4757, 0xff4757, 0xff6b7d, 0xff6b7d, 1);
+                hpBar.fillRoundedRect(
+                    -hpBarWidth / 2 + 2 * sf, 
+                    hpBarY + 2 * sf, 
+                    (hpBarWidth - 4 * sf) * hpPercentage, 
+                    hpBarHeight - 4 * sf, 
+                    4 * sf
+                );
+            }
+        }        // Update label text (only for enemy now)
         const label = container.getData('label');
-        const hpDisplay = isPlayer ? `${hp}/${maxHP}` : hp;
-        hpText.setText(`${label} HP: ${hpDisplay}`);
+        if (!isPlayer) {
+            // For enemy, update HP text if it exists
+            const hpText = container.getData('hpText');
+            if (hpText) {
+                hpText.setText(`${label}`);
+            }
+        }
     }
 
     checkAnswer(selectedIndex) {
@@ -264,9 +296,7 @@ export default class BaseQuizScene extends Phaser.Scene {
             // --- Resume timer after showing next question ---
             this.gameTimer.resume();
         });
-    }
-
-    restartQuiz() {
+    }    restartQuiz() {
         this.score = 0;
         this.currentQuestionIndex = 0;
         this.isQuizStarted = false;
@@ -276,7 +306,6 @@ export default class BaseQuizScene extends Phaser.Scene {
         this.cleanupAllElements();
         this.gameTimer = new GameTimer(this);
         this.startQuiz(30);
-        createBackButton(this, 'ComputerLab');
     }
 
     cleanupAllElements() {

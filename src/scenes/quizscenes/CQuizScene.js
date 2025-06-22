@@ -1,5 +1,4 @@
 import BaseQuizScene from '/src/scenes/quizscenes/BaseQuizScene.js';
-import { createBackButton } from '/src/components/buttons/backbutton.js';
 
 export default class CQuizScene extends BaseQuizScene {
     constructor() {
@@ -25,13 +24,9 @@ export default class CQuizScene extends BaseQuizScene {
     create() {
         // Load quiz data
         const quizData = this.cache.json.get(this.quizKey);
-        this.questions = quizData?.questions || [];
-
-        // Add sound effects (from base class)
+        this.questions = quizData?.questions || [];        // Add sound effects (from base class)
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
-
-        createBackButton(this, 'ComputerLab');
 
         // DON'T call super.create() - it creates duplicate enemy UI
         // Instead, just start the quiz directly
