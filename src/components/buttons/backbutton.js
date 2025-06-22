@@ -26,7 +26,7 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
         buttonY,
         'Back',
         {
-            font: '24px Jersey15-Regular',
+            font: '24px Caprasimo-Regular',
             fill: '#ffffff',
             padding: { left: 0, right: 0, top: 0, bottom: 0 }
         }

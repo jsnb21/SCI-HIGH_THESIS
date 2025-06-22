@@ -21,7 +21,7 @@ class BaseLibraryScene extends Phaser.Scene {
 
     preload() {
         // Load library-specific assets
-        this.load.image('libraryBg', 'assets/img/bg/libraryBG.jpg');
+        this.load.image('libraryBg', 'assets/img/bg/libraryBG.png');
         
         // Load JSON data files
         this.load.json('libraryData', `/library/library.json`);

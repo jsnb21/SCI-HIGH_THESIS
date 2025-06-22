@@ -1,77 +1,74 @@
-export class ResolutionSelector {
-    constructor(scene, x, y, resolutions, onChange) {
+class FullscreenToggleUI {
+    constructor(scene, width, scaleFactor, BASE_WIDTH, BASE_HEIGHT, scaleFont) {
         this.scene = scene;
-        this.x = x;
-        this.y = y;
-        this.resolutions = resolutions;
-        this.onChange = onChange;
-        this.currentIndex = 0;
-
-        // Display current resolution
-        this.label = scene.add.text(x, y, 'Resolution:', {
-            font: '32px Jersey15-Regular',
-            color: '#fff'
-        }).setOrigin(1, 0.5);
-
-        this.valueText = scene.add.text(x + 20, y, this.getCurrentResString(), {
-            font: '32px Jersey15-Regular',
-            color: '#ffff00',
-            backgroundColor: '#222'
-        }).setOrigin(0, 0.5).setPadding(8, 4, 8, 4).setInteractive();
-
-        // Dropdown arrow
-        this.arrow = scene.add.text(x + 200, y, '▼', {
-            font: '28px Jersey15-Regular',
-            color: '#ffff00'
-        }).setOrigin(0, 0.5).setInteractive();
-
-        this.valueText.on('pointerdown', () => this.showDropdown());
-        this.arrow.on('pointerdown', () => this.showDropdown());
-
-        this.dropdownGroup = null;
+        this.width = width;
+        this.scaleFactor = scaleFactor;
+        this.BASE_WIDTH = BASE_WIDTH;
+        this.BASE_HEIGHT = BASE_HEIGHT;
+        this.scaleFont = scaleFont;
+        this.uiElements = [];
+        this.createUI();
     }
 
-    getCurrentResString() {
-        const res = this.resolutions[this.currentIndex];
-        return `${res.width} x ${res.height}`;
-    }
+    createUI() {
+        this.uiElements.forEach(el => el.destroy());
+        this.uiElements = [];
 
-    showDropdown() {
-        if (this.dropdownGroup) {
-            this.dropdownGroup.clear(true, true);
-            this.dropdownGroup = null;
-            return;
-        }
-        this.dropdownGroup = this.scene.add.group();
-        const baseY = this.y + 30;
-        this.resolutions.forEach((res, i) => {
-            const option = this.scene.add.text(this.x + 20, baseY + i * 36, `${res.width} x ${res.height}`, {
-                font: '28px Jersey15-Regular',
-                color: i === this.currentIndex ? '#ffff00' : '#fff',
-                backgroundColor: i === this.currentIndex ? '#444' : '#222'
-            }).setOrigin(0, 0.5).setPadding(8, 4, 8, 4).setInteractive();
+        const fsLabel = this.scene.add.text(
+            this.width / 2 - 100 * this.scaleFactor,
+            320 * this.scaleFactor,
+            'Fullscreen',
+            {
+                font: `${this.scaleFont(32)}px Jersey15-Regular`,
+                color: '#fff'
+            }
+        ).setOrigin(1, 0.5);
+        this.uiElements.push(fsLabel);
 
-            option.on('pointerdown', () => {
-                this.currentIndex = i;
-                this.valueText.setText(this.getCurrentResString());
-                if (this.onChange) this.onChange(res);
-                this.dropdownGroup.clear(true, true);
-                this.dropdownGroup = null;
-            });
-            option.on('pointerover', () => option.setStyle({ color: '#ffff00', backgroundColor: '#444' }));
-            option.on('pointerout', () => option.setStyle({ color: i === this.currentIndex ? '#ffff00' : '#fff', backgroundColor: i === this.currentIndex ? '#444' : '#222' }));
+        const fsButton = this.scene.add.text(
+            this.width / 2 + 50 * this.scaleFactor,
+            320 * this.scaleFactor,
+            this.scene.scale.isFullscreen ? 'On' : 'Off',
+            {
+                font: `${this.scaleFont(32)}px Jersey15-Regular`,
+                color: '#ffff00',
+                backgroundColor: '#222'
+            }
+        ).setOrigin(0, 0.5).setPadding(8, 4, 8, 4).setInteractive();
 
-            this.dropdownGroup.add(option);
-        });
-
-        // Clicking outside closes dropdown
-        this.scene.input.once('pointerdown', (pointer, currentlyOver) => {
-            if (!currentlyOver.includes(this.valueText) && !currentlyOver.includes(this.arrow)) {
-                if (this.dropdownGroup) {
-                    this.dropdownGroup.clear(true, true);
-                    this.dropdownGroup = null;
-                }
+        fsButton.on('pointerdown', () => {
+            if (this.scene.scale.isFullscreen) {
+                this.scene.scale.stopFullscreen();
+                fsButton.setText('Off');
+                this.scene.time.delayedCall(100, () => {
+                    // Use window dimensions even when exiting fullscreen
+                    this.scene.scale.resize(window.innerWidth, window.innerHeight);
+                    const canvas = this.scene.game.canvas;
+                    canvas.style.width = '100%';
+                    canvas.style.height = '100%';
+                    this.scene.time.delayedCall(0, () => this.createUI());
+                });
+            } else {
+                this.scene.scale.startFullscreen();
+                fsButton.setText('On');
+                this.scene.time.delayedCall(100, () => {
+                    const w = window.innerWidth;
+                    const h = window.innerHeight;
+                    this.scene.scale.resize(w, h);
+                    const canvas = this.scene.game.canvas;
+                    canvas.style.width = '100%';
+                    canvas.style.height = '100%';
+                    this.scene.time.delayedCall(0, () => this.createUI());
+                });
             }
         });
+        this.uiElements.push(fsButton);
+    }
+
+    destroy() {
+        this.uiElements.forEach(el => el.destroy());
+        this.uiElements = [];
     }
 }
+
+export default FullscreenToggleUI;

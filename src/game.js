@@ -4,6 +4,9 @@ import MainMenu from './scenes/mainmenu';
 import OptionsScene from './scenes/options.js';
 import MainHub from './scenes/mainhub.js';
 
+// Import StartUp
+import StartUp from './scenes/startup.js'
+
 // Add Classroom import
 import Classroom from './scenes/classroom.js';
 
@@ -37,10 +40,15 @@ import DungeonScene from './scenes/comlabscenes/dungeon.js';
 
 const config = {
   type: Phaser.AUTO,
-  width: 816,
-  height: 624,
+  width: window.innerWidth,
+  height: window.innerHeight,
   parent: 'game',
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH
+  },
   scene: [
+    StartUp, // Added StartUp as the first scene
     MainMenu,
     /* Main Scenes */
     DungeonScene,
@@ -76,8 +84,8 @@ const config = {
 };
 
 export const DEFAULT_TEXT_STYLE = {
-    fontSize: '52px',
-    fontFamily: 'Jersey15-Regular',
+    fontSize: '42px',
+    fontFamily: 'Caprasimo-Regular',
     color: '#ffffff',
     stroke: '#000000',
     strokeThickness: 10

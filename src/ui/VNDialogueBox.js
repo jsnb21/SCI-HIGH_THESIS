@@ -38,8 +38,8 @@ export default class VNDialogueBox {
 
     // Create text object
     this.textObject = scene.add.text(boxX + 20 * scale, boxY + 15 * scale, '', {
-      fontFamily: 'Jersey15-Regular',
-      fontSize: `${Math.round(32 * scale)}px`,
+      fontFamily: 'Caprasimo-Regular',
+      fontSize: `${Math.round(24 * scale)}px`,
       color: '#ffffff',
       wordWrap: { width: boxWidth - 40 * scale }
     });

@@ -10,6 +10,9 @@ class Carousel {
         this.breathingTween = null;
         this.iconInfo = [];
         this.onSelectCallback = null;
+        this.bgPanel = null;
+        this.leftArrow = null;
+        this.rightArrow = null;
 
         this.scene.scale.on('resize', this.onResize, this);
     }
@@ -28,12 +31,15 @@ class Carousel {
     }
 
     _createUI() {
+        if (this.bgPanel) this.bgPanel.destroy();
         if (this.carouselIcons.length) {
             this.carouselIcons.forEach(icon => icon.destroy());
             this.carouselIcons = [];
         }
         if (this.carouselHeading) this.carouselHeading.destroy();
         if (this.carouselDesc) this.carouselDesc.destroy();
+        if (this.leftArrow) this.leftArrow.destroy();
+        if (this.rightArrow) this.rightArrow.destroy();
 
         const scale = this.getScale();
         const iconCount = this.iconKeys.length;
@@ -44,17 +50,37 @@ class Carousel {
         const iconToTitleGap = (this.config.iconToTitleGap ?? 100) * scale;
         const iconToDescGap = (this.config.iconToDescGap ?? 50) * scale;
 
-        // FIX: Use fallback values when cameras.main is not available
         let iconCenterX, iconCenterY;
-        
         if (this.scene.cameras && this.scene.cameras.main) {
             iconCenterX = this.scene.cameras.main.centerX;
             iconCenterY = this.scene.cameras.main.centerY + iconYOffset;
         } else {
-            // Fallback to scale dimensions
             iconCenterX = this.scene.scale.width / 2;
             iconCenterY = this.scene.scale.height / 2 + iconYOffset;
         }
+
+        const panelWidth = iconSpacing * (iconCount + 0.5);
+        const panelHeight = 340 * scale;
+
+        // Removed black dimmed shadow rectangle beneath the background panel
+        this.bgPanel = this.scene.add.graphics();
+        this.bgPanel.fillStyle(0x23233a, 0.92);
+        this.bgPanel.fillRoundedRect(
+            iconCenterX - panelWidth / 2,
+            iconCenterY - panelHeight / 2,
+            panelWidth,
+            panelHeight,
+            36 * scale
+        );
+        this.bgPanel.lineStyle(4, 0x00e0ff, 0.7);
+        this.bgPanel.strokeRoundedRect(
+            iconCenterX - panelWidth / 2,
+            iconCenterY - panelHeight / 2,
+            panelWidth,
+            panelHeight,
+            36 * scale
+        );
+        this.bgPanel.setDepth(-1);
 
         const headingX = iconCenterX;
         const headingY = iconCenterY + iconToTitleGap + (60 * scale);
@@ -65,15 +91,22 @@ class Carousel {
         const largeScale = (this.config.largeScale ?? 1.0) * scale;
 
         const headingStyle = {
-            fontFamily: 'Jersey15-Regular',
+            fontFamily: 'Caprasimo-Regular',
             fontSize: `${Math.round((this.config.headingStyle?.fontSize ?? 56) * scale)}px`,
-            color: this.config.headingStyle?.color || '#222244',
-            fontStyle: this.config.headingStyle?.fontStyle || 'bold'
+            color: '#ffe066',
+            fontStyle: this.config.headingStyle?.fontStyle || 'bold',
+            stroke: '#111122',
+            strokeThickness: 8,
+            shadow: { offsetX: 0, offsetY: 4, color: '#000', blur: 12, fill: true }
         };
+
         const descStyle = {
-            fontFamily: 'Jersey15-Regular',
+            fontFamily: 'Caprasimo-Regular',
             fontSize: `${Math.round((this.config.descStyle?.fontSize ?? 36) * scale)}px`,
-            color: this.config.descStyle?.color || '#444466'
+            color: this.config.descStyle?.color || '#e0e0ff',
+            stroke: '#111122',
+            strokeThickness: 4,
+            shadow: { offsetX: 0, offsetY: 2, color: '#000', blur: 8, fill: true }
         };
 
         for (let i = 0; i < iconCount; i++) {
@@ -82,16 +115,57 @@ class Carousel {
 
             const icon = this.scene.add.image(x, iconCenterY, this.iconKeys[i])
                 .setScale(scaleVal)
-                .setInteractive();
+                .setInteractive({ useHandCursor: true });
 
-            icon.setTint(i === this.carouselIndex ? 0xffffff : 0x888888);
-            icon.setAlpha(i === this.carouselIndex ? 1 : 0.8);
+            icon.setTint(i === this.carouselIndex ? 0xffffff : 0x00e0ff);
+            icon.setAlpha(i === this.carouselIndex ? 1 : 0.7);
 
             this.carouselIcons.push(icon);
         }
 
         this.carouselHeading = this.scene.add.text(headingX, headingY, '', headingStyle).setOrigin(0.5);
         this.carouselDesc = this.scene.add.text(descX, descY, '', descStyle).setOrigin(0.5);
+
+        const arrowSize = 54 * scale;
+        this.leftArrow = this.scene.add.text(
+            iconCenterX - panelWidth / 2 + arrowSize * 0.7,
+            iconCenterY,
+            '◀',
+            {
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: `${arrowSize}px`,
+                color: '#00e0ff',
+                stroke: '#111122',
+                strokeThickness: 6,
+                shadow: { offsetX: 0, offsetY: 2, color: '#000', blur: 8, fill: true }
+            }
+        ).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(10);
+        this.leftArrow.on('pointerdown', () => {
+            this.playHoverSound();
+            this.move(-1);
+        });
+
+        this.rightArrow = this.scene.add.text(
+            iconCenterX + panelWidth / 2 - arrowSize * 0.7,
+            iconCenterY,
+            '▶',
+            {
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: `${arrowSize}px`,
+                color: '#00e0ff',
+                stroke: '#111122',
+                strokeThickness: 6,
+                shadow: { offsetX: 0, offsetY: 2, color: '#000', blur: 8, fill: true }
+            }
+        ).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(10);
+        this.rightArrow.on('pointerdown', () => {
+            this.playHoverSound();
+            this.move(1);
+        });
+
+        this.carouselHeading.setAlpha(0);
+        this.carouselDesc.setAlpha(0);
+        this.scene.tweens.add({ targets: [this.carouselHeading, this.carouselDesc], alpha: 1, duration: 400, ease: 'Quad.easeOut' });
 
         this.updateText();
         this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
@@ -129,6 +203,15 @@ class Carousel {
 
         this.carouselIcons.forEach((icon, i) => {
             icon.removeAllListeners();
+            icon.on('pointerover', () => {
+                icon.setTint(0xffffff);
+                icon.setAlpha(1);
+                this.scene.tweens.add({ targets: icon, scale: this._uiConfig.largeScale * 1.08, duration: 120, yoyo: true });
+            });
+            icon.on('pointerout', () => {
+                icon.setTint(i === this.carouselIndex ? 0xffffff : 0x00e0ff);
+                icon.setAlpha(i === this.carouselIndex ? 1 : 0.7);
+            });
             icon.on('pointerdown', () => {
                 if (i === this.carouselIndex) {
                     this.playConfirmSound();
@@ -167,11 +250,24 @@ class Carousel {
 
             this.scene.tweens.add({ targets: icon, x, y, scale: scaleVal, duration: 300, ease: 'Power2' });
 
-            icon.setTint(i === this.carouselIndex ? 0xffffff : 0x888888);
-            this.scene.tweens.add({ targets: icon, alpha: i === this.carouselIndex ? 1 : 0.8, duration: 200 });
+            icon.setTint(i === this.carouselIndex ? 0xffffff : 0x00e0ff);
+            this.scene.tweens.add({ targets: icon, alpha: i === this.carouselIndex ? 1 : 0.7, duration: 200 });
         });
 
-        this.updateText();
+        this.scene.tweens.add({
+            targets: [this.carouselHeading, this.carouselDesc],
+            alpha: 0,
+            duration: 100,
+            onComplete: () => {
+                this.updateText();
+                this.scene.tweens.add({
+                    targets: [this.carouselHeading, this.carouselDesc],
+                    alpha: 1,
+                    duration: 180
+                });
+            }
+        });
+
         this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
     }
 
@@ -193,7 +289,7 @@ class Carousel {
             targets: icon,
             scale: {
                 from: this._uiConfig.largeScale,
-                to: this._uiConfig.largeScale + 0.15 * this.getScale()
+                to: this._uiConfig.largeScale + 0.13 * this.getScale()
             },
             duration: 700,
             yoyo: true,
@@ -236,9 +332,7 @@ class Carousel {
         }
     }
 
-    // Also fix the onResize method to be safer
     onResize() {
-        // Use a delayed call to ensure scene is ready
         if (this.scene && this.scene.time) {
             this.scene.time.delayedCall(10, () => {
                 this._createUI();
@@ -248,14 +342,15 @@ class Carousel {
 
     destroy() {
         if (this.breathingTween) this.breathingTween.stop();
+        if (this.bgPanel) this.bgPanel.destroy();
         this.carouselIcons.forEach(icon => icon.destroy());
         if (this.carouselHeading) this.carouselHeading.destroy();
         if (this.carouselDesc) this.carouselDesc.destroy();
+        if (this.leftArrow) this.leftArrow.destroy();
+        if (this.rightArrow) this.rightArrow.destroy();
         if (this._inputListeners) this._inputListeners.forEach(off => off());
         this.scene.scale.off('resize', this.onResize, this);
     }
 }
 
 export default Carousel;
-
-
