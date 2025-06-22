@@ -1,5 +1,6 @@
 // Import the GameTimer class
 import GameTimer from '/src/components/GameTimer.js';
+import ComboMeter from '/src/components/ComboMeter.js';
 import { createPlayerUI } from './ui/playerUI.js';
 import { createQuizBox, createEnemyUI, createTimerText, createQuestionAndOptions } from './ui/quizUI.js';
 import { showFeedback, showVictory, showGameOver } from './ui/feedbackUI.js';
@@ -13,9 +14,9 @@ export default class BaseQuizScene extends Phaser.Scene {
         this.currentQuestionIndex = 0;
         this.score = 0;
         this.quizElements = [];
-        this.persistentElements = [];
-        this.enemyHpBarHeight = 10;
+        this.persistentElements = [];        this.enemyHpBarHeight = 10;
         this.gameTimer = null;
+        this.comboMeter = null;
         this.playerConfig = {
             maxHP: 100,
             currentHP: 100,
@@ -50,9 +51,9 @@ export default class BaseQuizScene extends Phaser.Scene {
         };
         this.enemyHPState = {
             currentHP: this.enemyConfig.maxHP,
-            maxHP: this.enemyConfig.maxHP
-        };
+            maxHP: this.enemyConfig.maxHP        };
         this.gameTimer = new GameTimer(this);
+        this.comboMeter = new ComboMeter(this);
     }    preload() {
         this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
         this.load.image('player', 'assets/player.png');
@@ -137,11 +138,14 @@ export default class BaseQuizScene extends Phaser.Scene {
         const boxTopY = centerY - boxHeight / 2;
 
         // Quiz box
-        createQuizBox(this, centerX, centerY, boxWidth, boxHeight, 20 * sf);
-
-        // Enemy UI (above the box)
+        createQuizBox(this, centerX, centerY, boxWidth, boxHeight, 20 * sf);        // Enemy UI (above the box)
         const enemyUI = createEnemyUI(this, centerX, boxTopY, sf);
-        this.enemyContainer = enemyUI.enemyContainer;        // Question and options (inside the box)
+        this.enemyContainer = enemyUI.enemyContainer;
+
+        // Combo meter (above the enemy)
+        const comboMeterY = boxTopY - 140 * sf; // Position above the enemy
+        const comboElements = this.comboMeter.create(centerX, comboMeterY, sf);
+        this.quizElements.push(comboElements.comboContainer);// Question and options (inside the box)
         createQuestionAndOptions(
             this,
             centerX,
@@ -218,12 +222,14 @@ export default class BaseQuizScene extends Phaser.Scene {
             // Update enemy HP bar
             const hpBar = container.getData('hpBar');
             const hpBarBg = container.getData('hpBarBg');
-            
-            if (hpBar && hpBarBg) {
+              if (hpBar && hpBarBg) {
                 hpBar.clear();
                 const hpBarWidth = 120 * sf;
                 const hpBarHeight = 12 * sf;
-                const hpBarY = -45 * sf; // Adjust based on enemy sprite positioning
+                
+                // Use the same Y calculation as in createEnemyUI
+                const enemySprite = container.list.find(child => child.texture && child.texture.key === this.enemyConfig.spriteKey);
+                const hpBarY = enemySprite ? -(enemySprite.displayHeight / 2) - 25 * sf : -45 * sf;
                 
                 // Redraw HP bar with gradient
                 const hpPercentage = hp / maxHP;
@@ -259,16 +265,30 @@ export default class BaseQuizScene extends Phaser.Scene {
         const feedbackY = centerY + boxHeight / 2 + (20 * sf * 1.2);
 
         // --- Pause the timer ---
-        this.gameTimer.pause();
-
-        if (selectedIndex === correctIndex) {
-            this.score++;
-            showFeedback(this, "Correct! You attack the enemy!", 0x00ff00, centerX, feedbackY);
+        this.gameTimer.pause();        if (selectedIndex === correctIndex) {
+            // Update combo meter first
+            this.comboMeter.updateCombo(true, sf);
+            
+            // Apply score multiplier
+            const multiplier = this.comboMeter.getScoreMultiplier();
+            const scoreIncrease = Math.round(1 * multiplier);
+            this.score += scoreIncrease;
+            
+            // Show feedback with combo info
+            let feedbackText = "Correct! You attack the enemy!";
+            if (multiplier > 1) {
+                feedbackText += ` (${multiplier}x Combo!)`;
+            }
+            
+            showFeedback(this, feedbackText, 0x00ff00, centerX, feedbackY);
             this.gameTimer.addTime(5);
             if (this.enemyContainer) {
                 this.damageCharacter(this.enemyContainer, 20);
             }
         } else {
+            // Update combo meter (resets combo)
+            this.comboMeter.updateCombo(false, sf);
+            
             showFeedback(this, "Wrong! The enemy attacks you!", 0xff0000, centerX, feedbackY);
             this.gameTimer.subtractTime(3);
             if (this.playerContainer) {
@@ -314,6 +334,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         this.enemyHPState.currentHP = this.enemyHPState.maxHP;
         this.cleanupAllElements();
         this.gameTimer = new GameTimer(this);
+        this.comboMeter = new ComboMeter(this);
         this.startQuiz(30);
     }
 
