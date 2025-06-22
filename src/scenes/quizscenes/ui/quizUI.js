@@ -57,7 +57,7 @@ export function createQuizBox(scene, centerX, centerY, boxWidth, boxHeight, bord
 
 export function createEnemyUI(scene, centerX, boxTopY, sf) {
     // Enemy sprite above the box
-    const enemySpriteY = boxTopY - 80 * sf;
+    const enemySpriteY = boxTopY - 100 * sf; // Moved 20 pixels higher (was 50, now 70)
     const enemySprite = scene.add.sprite(0, 0, scene.enemyConfig.spriteKey);
     const maxSpriteWidth = 120 * sf;
     const maxSpriteHeight = 90 * sf;
@@ -140,10 +140,8 @@ export function createTimerText(scene, boxRightX, boxTopY, time, sf) {
 
 export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxHeight, questionIndex, question, options, sf, onSelect) {
     // Container for question and options
-    const container = scene.add.container(0, 0).setDepth(121);
-
-    // Enhanced question text with background
-    const questionTextY = centerY - boxHeight / 2 + 50 * sf;
+    const container = scene.add.container(0, 0).setDepth(121);    // Enhanced question text with background
+    const questionTextY = centerY - boxHeight / 2 + 40 * sf; // Reduced from 50 to 40
     
     // Question background panel
     const questionBg = scene.add.graphics();
@@ -175,19 +173,25 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
     }).setOrigin(0.5).setDepth(121);
 
     container.add(questionBg);
-    container.add(questionText);
-
-    // Enhanced options styling
-    const optionWidth = boxWidth - 80 * sf;
+    container.add(questionText);    // Enhanced options styling - 2x2 grid layout
+    const optionWidth = (boxWidth - 120 * sf) / 2; // Divide available width for 2 columns
     const optionHeight = 48 * sf;
-    const optionSpacing = 12 * sf;
-    const optionsStartY = questionTextY + 60 * sf;
+    const optionSpacingX = 20 * sf; // Horizontal spacing between columns
+    const optionSpacingY = 16 * sf; // Vertical spacing between rows
+    const optionsStartY = questionTextY + 70 * sf; // Increased from 50 to 70 for more gap below question
+    const optionsStartX = centerX - optionWidth / 2 - optionSpacingX / 2; // Left column center
+    const optionsEndX = centerX + optionWidth / 2 + optionSpacingX / 2; // Right column center
 
     // Store option backgrounds for later coloring
     scene._quizOptionBgs = [];
 
     options.forEach((option, i) => {
-        const y = optionsStartY + i * (optionHeight + optionSpacing);
+        // Calculate position in 2x2 grid
+        const row = Math.floor(i / 2); // 0 for first row, 1 for second row
+        const col = i % 2; // 0 for left column, 1 for right column
+        
+        const x = col === 0 ? optionsStartX : optionsEndX;
+        const y = optionsStartY + row * (optionHeight + optionSpacingY);
 
         // Enhanced option background with gradient
         const optionBg = scene.add.graphics().setDepth(121);
@@ -195,7 +199,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
         // Base gradient
         optionBg.fillGradientStyle(0x4a5568, 0x4a5568, 0x2d3748, 0x2d3748, 0.9);
         optionBg.fillRoundedRect(
-            centerX - optionWidth / 2,
+            x - optionWidth / 2,
             y - optionHeight / 2,
             optionWidth,
             optionHeight,
@@ -205,7 +209,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
         // Border
         optionBg.lineStyle(2 * sf, 0x718096, 0.8);
         optionBg.strokeRoundedRect(
-            centerX - optionWidth / 2,
+            x - optionWidth / 2,
             y - optionHeight / 2,
             optionWidth,
             optionHeight,
@@ -214,7 +218,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
 
         // Interactive area
         const optionInteractive = scene.add.rectangle(
-            centerX,
+            x,
             y,
             optionWidth,
             optionHeight,
@@ -224,13 +228,13 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
 
         // Enhanced option text
         const optionText = scene.add.text(
-            centerX,
+            x,
             y,
             option,
             {
-                fontSize: `${16 * sf}px`,
+                fontSize: `${15 * sf}px`, // Slightly smaller for better fit in grid
                 color: '#ffffff',
-                wordWrap: { width: optionWidth - 32 * sf },
+                wordWrap: { width: optionWidth - 24 * sf },
                 align: 'center',
                 fontFamily: 'Caprasimo-Regular',
                 stroke: '#1a1a2e',
@@ -249,7 +253,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
                     optionBg.clear();
                     optionBg.fillGradientStyle(0x2ecc40, 0x2ecc40, 0x27ae60, 0x27ae60, 1);
                     optionBg.fillRoundedRect(
-                        centerX - optionWidth / 2,
+                        x - optionWidth / 2,
                         y - optionHeight / 2,
                         optionWidth,
                         optionHeight,
@@ -257,7 +261,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
                     );
                     optionBg.lineStyle(2 * sf, 0x00ff00, 0.8);
                     optionBg.strokeRoundedRect(
-                        centerX - optionWidth / 2,
+                        x - optionWidth / 2,
                         y - optionHeight / 2,
                         optionWidth,
                         optionHeight,
@@ -268,7 +272,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
                     optionBg.clear();
                     optionBg.fillGradientStyle(0xff4136, 0xff4136, 0xe74c3c, 0xe74c3c, 1);
                     optionBg.fillRoundedRect(
-                        centerX - optionWidth / 2,
+                        x - optionWidth / 2,
                         y - optionHeight / 2,
                         optionWidth,
                         optionHeight,
@@ -276,7 +280,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
                     );
                     optionBg.lineStyle(2 * sf, 0xff0000, 0.8);
                     optionBg.strokeRoundedRect(
-                        centerX - optionWidth / 2,
+                        x - optionWidth / 2,
                         y - optionHeight / 2,
                         optionWidth,
                         optionHeight,
@@ -286,19 +290,24 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
                     // Also highlight the correct one
                     if (scene._quizOptionBgs[correctIndex]) {
                         const correctBg = scene._quizOptionBgs[correctIndex];
+                        const correctRow = Math.floor(correctIndex / 2);
+                        const correctCol = correctIndex % 2;
+                        const correctX = correctCol === 0 ? optionsStartX : optionsEndX;
+                        const correctY = optionsStartY + correctRow * (optionHeight + optionSpacingY);
+                        
                         correctBg.clear();
                         correctBg.fillGradientStyle(0x2ecc40, 0x2ecc40, 0x27ae60, 0x27ae60, 1);
                         correctBg.fillRoundedRect(
-                            centerX - optionWidth / 2,
-                            optionsStartY + correctIndex * (optionHeight + optionSpacing) - optionHeight / 2,
+                            correctX - optionWidth / 2,
+                            correctY - optionHeight / 2,
                             optionWidth,
                             optionHeight,
                             8 * sf
                         );
                         correctBg.lineStyle(2 * sf, 0x00ff00, 0.8);
                         correctBg.strokeRoundedRect(
-                            centerX - optionWidth / 2,
-                            optionsStartY + correctIndex * (optionHeight + optionSpacing) - optionHeight / 2,
+                            correctX - optionWidth / 2,
+                            correctY - optionHeight / 2,
                             optionWidth,
                             optionHeight,
                             8 * sf
@@ -315,7 +324,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
             optionBg.clear();
             optionBg.fillGradientStyle(0x63b3ed, 0x63b3ed, 0x4299e1, 0x4299e1, 0.9);
             optionBg.fillRoundedRect(
-                centerX - optionWidth / 2,
+                x - optionWidth / 2,
                 y - optionHeight / 2,
                 optionWidth,
                 optionHeight,
@@ -323,7 +332,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
             );
             optionBg.lineStyle(2 * sf, 0x90cdf4, 1);
             optionBg.strokeRoundedRect(
-                centerX - optionWidth / 2,
+                x - optionWidth / 2,
                 y - optionHeight / 2,
                 optionWidth,
                 optionHeight,
@@ -338,7 +347,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
                 optionBg.clear();
                 optionBg.fillGradientStyle(0x4a5568, 0x4a5568, 0x2d3748, 0x2d3748, 0.9);
                 optionBg.fillRoundedRect(
-                    centerX - optionWidth / 2,
+                    x - optionWidth / 2,
                     y - optionHeight / 2,
                     optionWidth,
                     optionHeight,
@@ -346,7 +355,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
                 );
                 optionBg.lineStyle(2 * sf, 0x718096, 0.8);
                 optionBg.strokeRoundedRect(
-                    centerX - optionWidth / 2,
+                    x - optionWidth / 2,
                     y - optionHeight / 2,
                     optionWidth,
                     optionHeight,

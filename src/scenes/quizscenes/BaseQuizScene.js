@@ -89,20 +89,33 @@ export default class BaseQuizScene extends Phaser.Scene {
 
     handleTimeUp() {
         showGameOver(this);
-    }    startQuiz(initialTime = 30) {
-        if (!this.isQuizStarted) {
+    }    startQuiz(initialTime = 30) {        if (!this.isQuizStarted) {
             this.isQuizStarted = true;
             const sf = this.scaleFactor;
-            
-            // Timer at top right
-            const timerElements = this.gameTimer.create(this.scale.width - 150 * sf, 30 * sf, initialTime);
+              // Timer at top right
+            const timerElements = this.gameTimer.create(this.scale.width - 70 * sf, 30 * sf, initialTime);
             if (timerElements.timerBackground && timerElements.timerBackground.setDepth) {
                 timerElements.timerBackground.setDepth(130);
             }
             if (timerElements.timerText && timerElements.timerText.setDepth) {
                 timerElements.timerText.setDepth(130);
             }
-            this.persistentElements.push(timerElements.timerBackground, timerElements.timerText);
+            if (timerElements.progressBar && timerElements.progressBar.setDepth) {
+                timerElements.progressBar.setDepth(130);
+            }
+            if (timerElements.progressBarBg && timerElements.progressBarBg.setDepth) {
+                timerElements.progressBarBg.setDepth(130);
+            }
+            if (timerElements.secondsLabel && timerElements.secondsLabel.setDepth) {
+                timerElements.secondsLabel.setDepth(130);
+            }
+            this.persistentElements.push(
+                timerElements.timerBackground, 
+                timerElements.timerText,
+                timerElements.progressBar,
+                timerElements.progressBarBg,
+                timerElements.secondsLabel
+            );
         }
         this.showQuestion();
     }
@@ -116,13 +129,11 @@ export default class BaseQuizScene extends Phaser.Scene {
             return;
         }
         const { question, options } = this.questions[this.currentQuestionIndex];
-        this.cleanupQuestionElements();
-
-        // Layout
+        this.cleanupQuestionElements();        // Layout
         const centerX = this.scale.width / 2;
-        const centerY = this.scale.height / 2;
+        const centerY = this.scale.height / 2 + 100 * sf; // Move box further down (80 + 20)
         const boxWidth = 600 * sf;
-        const boxHeight = 340 * sf;
+        const boxHeight = 230 * sf; // Reduced from 250 to 230 to remove space below choices
         const boxTopY = centerY - boxHeight / 2;
 
         // Quiz box
@@ -239,13 +250,11 @@ export default class BaseQuizScene extends Phaser.Scene {
     checkAnswer(selectedIndex) {
         if (this.isAnswering) return;
         this.isAnswering = true;
-        const correctIndex = this.questions[this.currentQuestionIndex].correctIndex;
-
-        // Calculate feedback position below the quiz box, 20% lower
+        const correctIndex = this.questions[this.currentQuestionIndex].correctIndex;        // Calculate feedback position below the quiz box, 20% lower
         const sf = this.scaleFactor;
         const centerX = this.scale.width / 2;
-        const centerY = this.scale.height / 2;
-        const boxHeight = 340 * sf;
+        const centerY = this.scale.height / 2 + 100 * sf; // Match the box position (80 + 20)
+        const boxHeight = 230 * sf; // Match the reduced box height
         // Move feedbackY 20% lower than the previous offset
         const feedbackY = centerY + boxHeight / 2 + (20 * sf * 1.2);
 
