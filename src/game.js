@@ -84,8 +84,8 @@ const config = {
 };
 
 export const DEFAULT_TEXT_STYLE = {
-    fontSize: '52px',
-    fontFamily: 'Jersey15-Regular',
+    fontSize: '42px',
+    fontFamily: 'Caprasimo-Regular',
     color: '#ffffff',
     stroke: '#000000',
     strokeThickness: 10

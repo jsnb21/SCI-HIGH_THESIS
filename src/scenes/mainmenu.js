@@ -10,7 +10,7 @@ export default class MainMenu extends Phaser.Scene {
     }
 
     preload() {
-        this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
+        this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.audio('bgm_title', 'assets/audio/bgm/bgm_title.mp3');

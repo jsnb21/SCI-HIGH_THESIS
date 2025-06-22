@@ -11,12 +11,12 @@ export default class ComputerLab extends Phaser.Scene {
     
         // Load background and icon images
         this.load.image('MainHubBG', 'assets/img/mainhub/MainHubBG.png');
-        this.load.image('Web_Design', 'assets/img/comlab/icons/webDesignIcons.png');
-        this.load.image('Python', 'assets/img/comlab/icons/PythonIcon.png');
-        this.load.image('Java', 'assets/img/comlab/icons/JavaIcon.png');
-        this.load.image('C', 'assets/img/comlab/icons/webDesignIcons.png');
-        this.load.image('C++', 'assets/img/comlab/icons/CplusplusIcon.png');
-        this.load.image('C#', 'assets/img/comlab/icons/CSharpIcon.png');
+        this.load.image('Web_Design', 'assets/img/comlab/icons/web-design_logo.png');
+        this.load.image('Python', 'assets/img/comlab/icons/python_logo.png');
+        this.load.image('Java', 'assets/img/comlab/icons/java_logo.png');
+        this.load.image('C', 'assets/img/comlab/icons/c_logo.png');
+        this.load.image('C++', 'assets/img/comlab/icons/cplus_logo.png');
+        this.load.image('C#', 'assets/img/comlab/icons/csharp_logo.png');
 
         // Load sound effects
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
@@ -24,6 +24,9 @@ export default class ComputerLab extends Phaser.Scene {
 
         // Load questions JSON
         this.load.json('questions', 'data/questions.json');
+
+        // Add font loading
+        this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
     }
 
     async create() {
@@ -41,12 +44,12 @@ export default class ComputerLab extends Phaser.Scene {
         // Define carousel data
         const iconKeys = ['Web_Design', 'Python', 'Java', 'C', 'C++', 'C#'];
         const iconInfo = [
-            { heading: "Web Design", desc: "Learn HTML, CSS &JavaScript" },
+            { heading: "Web Design", desc: "Learn HTML, CSS & JavaScript" },
             { heading: "Python", desc: "Learn Python" },
             { heading: "Java", desc: "Learn Java" },
             { heading: "C", desc: "Learn about C" },
             { heading: "C++", desc: "Learn about C++" },
-            { heading: "C#", desc: "Learn about C#." }
+            { heading: "C#", desc: "Learn about C#" }
         ];
 
         // Create the carousel with the icon keys and info
@@ -58,7 +61,8 @@ export default class ComputerLab extends Phaser.Scene {
         this.carousel = new Carousel(this, {
             centerY: 400,
             spacing: 400,
-            largeScale: 1.3,
+            largeScale: 0.25,  // 70% smaller than 0.2
+            smallScale: 0.1,  // Also specify smallScale to be proportionally smaller
             sounds: {
                 hover: 'se_hoverSound',
                 confirm: 'se_confirmSound'

@@ -91,7 +91,7 @@ class Carousel {
         const largeScale = (this.config.largeScale ?? 1.0) * scale;
 
         const headingStyle = {
-            fontFamily: 'Jersey15-Regular',
+            fontFamily: 'Caprasimo-Regular',
             fontSize: `${Math.round((this.config.headingStyle?.fontSize ?? 56) * scale)}px`,
             color: '#ffe066',
             fontStyle: this.config.headingStyle?.fontStyle || 'bold',
@@ -101,7 +101,7 @@ class Carousel {
         };
 
         const descStyle = {
-            fontFamily: 'Jersey15-Regular',
+            fontFamily: 'Caprasimo-Regular',
             fontSize: `${Math.round((this.config.descStyle?.fontSize ?? 36) * scale)}px`,
             color: this.config.descStyle?.color || '#e0e0ff',
             stroke: '#111122',
@@ -132,14 +132,14 @@ class Carousel {
             iconCenterY,
             '◀',
             {
-                fontFamily: 'Jersey15-Regular',
+                fontFamily: 'Caprasimo-Regular',
                 fontSize: `${arrowSize}px`,
                 color: '#00e0ff',
                 stroke: '#111122',
                 strokeThickness: 6,
                 shadow: { offsetX: 0, offsetY: 2, color: '#000', blur: 8, fill: true }
             }
-        ).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        ).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(10);
         this.leftArrow.on('pointerdown', () => {
             this.playHoverSound();
             this.move(-1);
@@ -150,14 +150,14 @@ class Carousel {
             iconCenterY,
             '▶',
             {
-                fontFamily: 'Jersey15-Regular',
+                fontFamily: 'Caprasimo-Regular',
                 fontSize: `${arrowSize}px`,
                 color: '#00e0ff',
                 stroke: '#111122',
                 strokeThickness: 6,
                 shadow: { offsetX: 0, offsetY: 2, color: '#000', blur: 8, fill: true }
             }
-        ).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        ).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(10);
         this.rightArrow.on('pointerdown', () => {
             this.playHoverSound();
             this.move(1);

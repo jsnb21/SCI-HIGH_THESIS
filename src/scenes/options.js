@@ -19,6 +19,11 @@ export default class OptionsScene extends Phaser.Scene {
         this.uiElements = [];
         this.fullscreenUI = null;
     }
+    
+    preload() {
+        // Load the Caprasimo-Regular font
+        this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
+    }
 
     create(data) {
         // More reliable scene tracking
@@ -56,13 +61,13 @@ export default class OptionsScene extends Phaser.Scene {
         }
 
         const title = this.add.text(width / 2, 130 * this.scaleFactor, 'Options', {
-            font: `${scaleFont(42)}px Jersey15-Regular`,
+            font: `${scaleFont(42)}px Caprasimo-Regular`,
             color: '#ffff00'
         }).setOrigin(0.5);
         this.uiElements.push(title);
 
         const seLabel = this.add.text(width / 2 - 100 * this.scaleFactor, 180 * this.scaleFactor, 'SE Volume', {
-            font: `${scaleFont(32)}px Jersey15-Regular`,
+            font: `${scaleFont(32)}px Caprasimo-Regular`,
             color: '#fff'
         }).setOrigin(1, 0.5);
         this.uiElements.push(seLabel);
@@ -81,7 +86,7 @@ export default class OptionsScene extends Phaser.Scene {
         this.uiElements.push(seSlider.slider, seSlider.handle);
 
         const bgmLabel = this.add.text(width / 2 - 100 * this.scaleFactor, 240 * this.scaleFactor, 'BGM Volume', {
-            font: `${scaleFont(32)}px Jersey15-Regular`,
+            font: `${scaleFont(32)}px Caprasimo-Regular`,
             color: '#fff'
         }).setOrigin(1, 0.5);
         this.uiElements.push(bgmLabel);
@@ -103,7 +108,7 @@ export default class OptionsScene extends Phaser.Scene {
         this.fullscreenUI = new FullscreenToggleUI(this, width, this.scaleFactor, BASE_WIDTH, BASE_HEIGHT, scaleFont);
 
         const backButton = this.add.text(width / 2, height - 80 * this.scaleFactor, 'Back', {
-            font: `${scaleFont(32)}px Jersey15-Regular`,
+            font: `${scaleFont(32)}px Caprasimo-Regular`,
             color: '#ffff00'
         }).setOrigin(0.5).setInteractive();
 

@@ -24,6 +24,9 @@ export default class MainHub extends Phaser.Scene {
         this.load.audio('se_select', 'assets/sounds/se_select.wav');
         this.load.audio('se_confirm', 'assets/sounds/se_confirm.wav');
         this.load.audio('bgm_mainhub', 'assets/audio/bgm/bgm_mainhub.mp3');
+        
+        // Add font loading
+        this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
     }
 
     create() {
@@ -98,7 +101,7 @@ export default class MainHub extends Phaser.Scene {
         this.uiElements.push(buttonBg);
 
         const backButton = this.add.text(buttonX, buttonY, 'Back', {
-            font: `${scaleFont(24)}px Jersey15-Regular`,
+            font: `${scaleFont(24)}px Caprasimo-Regular`,
             fill: '#ffffff'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true })
             .on('pointerdown', () => {
