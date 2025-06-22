@@ -55,23 +55,26 @@ class Carousel {
         const iconSpacing = (this.config.iconSpacing ?? 220) * scale;
         const iconYOffset = (this.config.iconYOffset ?? 0) * scale;
         const iconToTitleGap = (this.config.iconToTitleGap ?? 100) * scale;
-        const iconToDescGap = (this.config.iconToDescGap ?? 50) * scale;
-
-        let iconCenterX, iconCenterY;
+        const iconToDescGap = (this.config.iconToDescGap ?? 50) * scale;        let iconCenterX, iconCenterY;
         if (this.scene.cameras && this.scene.cameras.main) {
             iconCenterX = this.scene.cameras.main.centerX;
             iconCenterY = this.scene.cameras.main.centerY + iconYOffset;
         } else {
             iconCenterX = this.scene.scale.width / 2;
-            iconCenterY = this.scene.scale.height / 2 + iconYOffset;        }
+            iconCenterY = this.scene.scale.height / 2 + iconYOffset;
+        }
 
-        const { width } = this.scene.scale;
-        const panelWidth = width; // Full width of the screen
-        const panelHeight = 340 * scale;        // Removed black dimmed shadow rectangle beneath the background panel
+        // Use camera width for true full-screen coverage
+        const { width, height } = this.scene.scale;
+        const actualWidth = this.scene.cameras ? this.scene.cameras.main.width : width;
+        const panelWidth = actualWidth + 10; // Add extra pixels to ensure full coverage
+        const panelHeight = 340 * scale;
+
+        // Removed black dimmed shadow rectangle beneath the background panel
         this.bgPanel = this.scene.add.graphics();
         this.bgPanel.fillStyle(0x23233a, 0.92);
         this.bgPanel.fillRoundedRect(
-            0, // Start from left edge
+            -5, // Start slightly before left edge to ensure full coverage
             iconCenterY - panelHeight / 2,
             panelWidth,
             panelHeight,
