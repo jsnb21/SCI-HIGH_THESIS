@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { FullscreenUtils } from '../utils/fullscreenUtils.js';
 
 const SCREEN_CONFIG = {
     BASE_WIDTH: window.innerWidth,   // Using dynamic window width instead of fixed 816
@@ -15,18 +16,13 @@ export default class StartupScene extends Phaser.Scene {
 
     preload() {
         this.load.image('logo', 'assets/img/buko_productions-logo.png');
-    }
-
-    create() {
-        // Set up event listeners
-        window.addEventListener('resize', () => this.handleResize());
-        document.addEventListener('fullscreenchange', () => this.handleFullscreenChange());
+    }    create() {
+        // Set up event listeners using fullscreen utility
+        this.fullscreenManager = FullscreenUtils.setupScene(this);
         
         // Start with fullscreen prompt
         this.showFullscreenPrompt();
-    }
-
-    showFullscreenPrompt() {
+    }    showFullscreenPrompt() {
         // Clear any existing elements
         this.clearUI();
         
@@ -62,8 +58,13 @@ export default class StartupScene extends Phaser.Scene {
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true });
 
-        // Add event listeners
-        yesButton.once('pointerdown', () => this.enterFullscreen());
+        // Add event listeners with proper error handling
+        yesButton.once('pointerdown', () => {
+            this.fullscreenManager.enterFullscreen(() => {
+                // Small delay to ensure fullscreen is properly applied
+                this.time.delayedCall(200, () => this.playLogoSequence());
+            });
+        });
         noButton.once('pointerdown', () => this.playLogoSequence());
 
         // Store elements for cleanup
@@ -165,60 +166,7 @@ export default class StartupScene extends Phaser.Scene {
             }
         });
     }
-    
-    enterFullscreen() {
-        if (!this.scale.isFullscreen) {
-            this.scale.startFullscreen();
-            
-            // Need a small delay to ensure fullscreen is applied
-            this.time.delayedCall(100, () => {
-                this.resizeToFullscreen();
-                this.playLogoSequence();
-            });
-        } else {
-            this.playLogoSequence();
-        }
-    }
-    
-    resizeToFullscreen() {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        
-        this.scale.resize(w, h);
-        
-        const canvas = this.game.canvas;
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-    }
-    
-    handleFullscreenChange() {
-        if (!document.fullscreenElement && this.scene.isActive()) {
-            // Exit fullscreen - use window dimensions instead of fixed base size
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            this.scale.resize(width, height);
-            
-            const canvas = this.game.canvas;
-            canvas.style.width = '100%';
-            canvas.style.height = '100%';
-        } else if (document.fullscreenElement && this.scene.isActive()) {
-            this.resizeToFullscreen();
-        }
-        
-        // Redraw UI if we're still showing the fullscreen prompt
-        if (this.uiElements.length > 0) {
-            this.showFullscreenPrompt();
-        }
-    }
-    
-    handleResize() {
-        // Only redraw if we're showing the fullscreen prompt
-        if (this.uiElements.length > 0) {
-            this.showFullscreenPrompt();
-        }
-    }
-    
-    clearUI() {
+      clearUI() {
         // Clear UI elements
         this.uiElements.forEach(el => el?.destroy());
         this.uiElements = [];
@@ -226,5 +174,25 @@ export default class StartupScene extends Phaser.Scene {
         // Clear logo elements
         this.logoElements.forEach(el => el?.destroy());
         this.logoElements = [];
+    }
+
+    createUI() {
+        // Custom UI redraw method for fullscreen utility
+        // Only redraw if we're showing the fullscreen prompt
+        if (this.uiElements.length > 0) {
+            this.showFullscreenPrompt();
+        }
+        // Don't redraw during logo sequence to avoid interrupting animations
+    }
+
+    shouldRedrawUIOnFullscreenChange() {
+        // Only redraw UI if we're showing the fullscreen prompt
+        // Don't redraw during logo animations to avoid interrupting them
+        return this.uiElements.length > 0;
+    }
+
+    shutdown() {
+        // Cleanup using fullscreen utility
+        FullscreenUtils.cleanupScene(this);
     }
 }

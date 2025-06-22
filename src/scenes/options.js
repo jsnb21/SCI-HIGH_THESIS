@@ -9,14 +9,21 @@ import {
 } from '../audioUtils.js';
 import gameManager from '../gameManager.js';
 import { createBackButton } from '../components/buttons/backbutton.js';
+import { FullscreenUtils } from '../utils/fullscreenUtils.js';
 
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
 
-export default class OptionsScene extends Phaser.Scene {
-    constructor() {
+export default class OptionsScene extends Phaser.Scene {    constructor() {
         super('OptionsScene');
         this.uiElements = [];
+        this.currentUIRefs = {
+            bgmVolumeText: null,
+            sfxVolumeText: null,
+            toggleText: null,
+            toggleBg: null,
+            toggleHandle: null
+        };
     }
     
     preload() {
@@ -31,25 +38,34 @@ export default class OptionsScene extends Phaser.Scene {
             : 'MainMenu';
         
         // Don't update gameManager here, as it might override needed history
-        console.log('Options opened from:', this.prevScene);
-
+        console.log('Options opened from:', this.prevScene);        // Set up event listeners using fullscreen utility
+        this.fullscreenManager = FullscreenUtils.setupScene(this);
         this.time.delayedCall(10, () => this.createUI());
         this.scale.on('resize', this.onResize, this);
-
-        document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement && this.scene.isActive()) {
-                this.scale.resize(window.innerWidth, window.innerHeight);
-                this.time.delayedCall(100, () => this.createUI());
-            }
-        });
     }    createUI() {
         const { width, height } = this.scale;
         this.scaleFactor = Math.min(width / BASE_WIDTH, height / BASE_HEIGHT);
         const scaleFont = (size) => Math.round(size * this.scaleFactor);        // Destroy existing UI elements
         if (this.uiElements.length) {
-            this.uiElements.forEach(el => el.destroy());
+            this.uiElements.forEach(el => {
+                if (el && !el.scene) return; // Skip already destroyed objects
+                try {
+                    el.destroy();
+                } catch (e) {
+                    // Silently catch destruction errors
+                }
+            });
             this.uiElements = [];
         }
+
+        // Clear any existing UI references to prevent stale object access
+        this.currentUIRefs = {
+            bgmVolumeText: null,
+            sfxVolumeText: null,
+            toggleText: null,
+            toggleBg: null,
+            toggleHandle: null
+        };
 
         // Get actual camera dimensions for full coverage
         const actualWidth = this.cameras ? this.cameras.main.width : width;
@@ -177,9 +193,7 @@ export default class OptionsScene extends Phaser.Scene {
                 fontStyle: 'bold'
             }
         ).setOrigin(0, 0.5);
-        this.uiElements.push(bgmLabel);
-
-        const bgmVolumeText = this.add.text(
+        this.uiElements.push(bgmLabel);        const bgmVolumeText = this.add.text(
             cardX + cardWidth * 0.35, bgmY, `${Math.round(bgmVolume * 100)}%`, {
                 fontFamily: 'Arial',
                 fontSize: `${scaleFont(16)}px`,
@@ -187,18 +201,20 @@ export default class OptionsScene extends Phaser.Scene {
             }
         ).setOrigin(1, 0.5);
         this.uiElements.push(bgmVolumeText);
-
-        // Modern BGM slider
+        this.currentUIRefs.bgmVolumeText = bgmVolumeText;        // Modern BGM slider
         const bgmSliderY = bgmY + 30 * this.scaleFactor;
         const bgmSlider = this.createModernSlider(
             cardX, bgmSliderY, cardWidth * 0.7, bgmVolume,
             (value) => {
                 setBgmVolume(value);
                 updateSoundVolumes(this);
-                bgmVolumeText.setText(`${Math.round(value * 100)}%`);
+                // Safe reference update
+                if (this.currentUIRefs.bgmVolumeText && this.currentUIRefs.bgmVolumeText.scene) {
+                    this.currentUIRefs.bgmVolumeText.setText(`${Math.round(value * 100)}%`);
+                }
             }
         );
-        this.uiElements.push(...bgmSlider);        // Fullscreen toggle section (modern style to match other UI)
+        this.uiElements.push(...bgmSlider);// Fullscreen toggle section (modern style to match other UI)
         const fullscreenY = bgmSliderY + 80 * this.scaleFactor;
         
         // Section divider
@@ -234,9 +250,7 @@ export default class OptionsScene extends Phaser.Scene {
             fullscreenY + 20 * this.scaleFactor,
             12 * this.scaleFactor, 0xffffff
         );
-        toggleHandle.setStrokeStyle(2 * this.scaleFactor, 0x4299e1);
-
-        const toggleText = this.add.text(
+        toggleHandle.setStrokeStyle(2 * this.scaleFactor, 0x4299e1);        const toggleText = this.add.text(
             cardX + cardWidth * 0.35, fullscreenY + 20 * this.scaleFactor,
             this.scale.isFullscreen ? 'On' : 'Off', {
                 fontFamily: 'Arial',
@@ -245,56 +259,62 @@ export default class OptionsScene extends Phaser.Scene {
             }
         ).setOrigin(1, 0.5);
 
+        // Store references for safe access in callbacks
+        this.currentUIRefs.toggleText = toggleText;
+        this.currentUIRefs.toggleBg = toggleBg;
+        this.currentUIRefs.toggleHandle = toggleHandle;
+
         // Make toggle interactive
         const toggleInteractive = this.add.rectangle(
             cardX + cardWidth * 0.25, fullscreenY + 20 * this.scaleFactor,
             60 * this.scaleFactor, 30 * this.scaleFactor, 0x000000, 0
-        ).setInteractive({ useHandCursor: true });
-
-        toggleInteractive.on('pointerdown', () => {
-            if (this.scale.isFullscreen) {
-                this.scale.stopFullscreen();
-                toggleBg.setFillStyle(0x2d3748);
-                toggleText.setText('Off');
-                this.tweens.add({
-                    targets: toggleHandle,
-                    x: cardX + cardWidth * 0.25 - 15 * this.scaleFactor,
-                    duration: 200,
-                    ease: 'Power2'
-                });
-                this.time.delayedCall(100, () => {
-                    this.scale.resize(window.innerWidth, window.innerHeight);
-                    const canvas = this.game.canvas;
-                    canvas.style.width = '100%';
-                    canvas.style.height = '100%';
-                });
-            } else {
-                this.scale.startFullscreen();
-                toggleBg.setFillStyle(0x4299e1);
-                toggleText.setText('On');
-                this.tweens.add({
-                    targets: toggleHandle,
-                    x: cardX + cardWidth * 0.25 + 15 * this.scaleFactor,
-                    duration: 200,
-                    ease: 'Power2'
-                });
-                this.time.delayedCall(100, () => {
-                    const w = window.innerWidth;
-                    const h = window.innerHeight;
-                    this.scale.resize(w, h);
-                    const canvas = this.game.canvas;
-                    canvas.style.width = '100%';
-                    canvas.style.height = '100%';
-                });
+        ).setInteractive({ useHandCursor: true });        toggleInteractive.on('pointerdown', () => {
+            this.fullscreenManager.toggleFullscreen(
+                // On enter fullscreen
+                () => {
+                    if (this.currentUIRefs.toggleBg && this.currentUIRefs.toggleBg.scene) {
+                        this.currentUIRefs.toggleBg.setFillStyle(0x4299e1);
+                    }
+                    if (this.currentUIRefs.toggleText && this.currentUIRefs.toggleText.scene) {
+                        this.currentUIRefs.toggleText.setText('On');
+                    }
+                    if (this.currentUIRefs.toggleHandle && this.currentUIRefs.toggleHandle.scene) {
+                        this.tweens.add({
+                            targets: this.currentUIRefs.toggleHandle,
+                            x: cardX + cardWidth * 0.25 + 15 * this.scaleFactor,
+                            duration: 200,
+                            ease: 'Power2'
+                        });
+                    }
+                },
+                // On exit fullscreen
+                () => {
+                    if (this.currentUIRefs.toggleBg && this.currentUIRefs.toggleBg.scene) {
+                        this.currentUIRefs.toggleBg.setFillStyle(0x2d3748);
+                    }
+                    if (this.currentUIRefs.toggleText && this.currentUIRefs.toggleText.scene) {
+                        this.currentUIRefs.toggleText.setText('Off');
+                    }
+                    if (this.currentUIRefs.toggleHandle && this.currentUIRefs.toggleHandle.scene) {
+                        this.tweens.add({
+                            targets: this.currentUIRefs.toggleHandle,
+                            x: cardX + cardWidth * 0.25 - 15 * this.scaleFactor,
+                            duration: 200,
+                            ease: 'Power2'
+                        });
+                    }
+                }
+            );
+        });        toggleInteractive.on('pointerover', () => {
+            if (this.currentUIRefs.toggleHandle && this.currentUIRefs.toggleHandle.scene) {
+                this.currentUIRefs.toggleHandle.setScale(1.1);
             }
         });
 
-        toggleInteractive.on('pointerover', () => {
-            toggleHandle.setScale(1.1);
-        });
-
         toggleInteractive.on('pointerout', () => {
-            toggleHandle.setScale(1);
+            if (this.currentUIRefs.toggleHandle && this.currentUIRefs.toggleHandle.scene) {
+                this.currentUIRefs.toggleHandle.setScale(1);
+            }
         });
 
         this.uiElements.push(toggleBg, toggleHandle, toggleText, toggleInteractive);
@@ -385,15 +405,30 @@ export default class OptionsScene extends Phaser.Scene {
         });
 
         return elements;
-    }
-
-    onResize() {
+    }    onResize() {
+        // Prevent too rapid UI rebuilds during fullscreen transitions
         if (this.resizeTimer) this.time.removeEvent(this.resizeTimer);
-        this.resizeTimer = this.time.delayedCall(100, () => {
+        
+        // Clear any existing UI references immediately to prevent stale access
+        if (this.currentUIRefs) {
+            Object.keys(this.currentUIRefs).forEach(key => {
+                this.currentUIRefs[key] = null;
+            });
+        }
+        
+        this.resizeTimer = this.time.delayedCall(150, () => {
             this.createUI();
         });
     }    shutdown() {
-        // Cleanup - no longer using fullscreenUI
+        // Clear UI references
+        if (this.currentUIRefs) {
+            Object.keys(this.currentUIRefs).forEach(key => {
+                this.currentUIRefs[key] = null;
+            });
+        }
+        
+        // Cleanup using fullscreen utility
+        FullscreenUtils.cleanupScene(this);
         this.scale.off('resize', this.onResize, this);
         if (this.resizeTimer) {
             this.time.removeEvent(this.resizeTimer);
