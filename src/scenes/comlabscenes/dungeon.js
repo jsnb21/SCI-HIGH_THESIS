@@ -18,17 +18,19 @@ export default class DungeonScene extends Phaser.Scene {
         this.intensity = 1;
         this.hudElements = [];
         this.scaleFactor = 1;
-        this.offsetX = 0;
-        this.offsetY = 0;
+        this.offsetX = 0;        this.offsetY = 0;
         this.quizBoxes = [];
         this.quizBoxSprites = []; // Track quiz box sprites
-    }
-
-    preload() {
+        this.particles = null;
+        this.lightingOverlay = null;
+        this.playerSprite = null;
+    }    preload() {
         this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
+        this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
         this.load.image('heart', 'assets/sprites/dungeon/heart.png');
         this.load.audio('bgm_dungeon', 'assets/audio/bgm/bgm_dungeon.mp3');
-        this.load.image('quizbox', 'assets/sprites/dungeon/quizbox.png');
+        this.load.image('quizbox', 'assets/sprites/enemies/box.png');
+        this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
     }
 
     create() {
@@ -38,12 +40,16 @@ export default class DungeonScene extends Phaser.Scene {
         this.adjacentCells = [];
         this.breathAlpha = 0.5;
         this.breathDir = 1;
-        this.intensity = 1;
-        this.hudElements = [];
+        this.intensity = 1;        this.hudElements = [];
         this.menuOpen = false;
         this.menuBoxGroup = null;
+        this.particles = null;
+        this.lightingOverlay = null;
+        this.playerSprite = null;
 
-        this.cameras.main.setBackgroundColor('#BFAF6A');
+        // Enhanced background with gradient
+        this.cameras.main.setBackgroundColor('#1a1a2e');
+        this.createBackgroundEffects();
         playExclusiveBGM(this, 'bgm_dungeon', { loop: true, volume: 0.5 });
 
         this.grid = this.createGrid(GRID_WIDTH, GRID_HEIGHT);
@@ -53,9 +59,13 @@ export default class DungeonScene extends Phaser.Scene {
         this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
 
         this.input.keyboard.on('keydown', this.handleInput, this);
-        this.input.on('pointerdown', this.handlePointer, this);
+        this.input.on('pointerdown', this.handlePointer, this);        this.drawGrid();
 
-        this.drawGrid();
+        // Create atmospheric particles
+        this.createParticleEffects();
+
+        // Create lighting overlay
+        this.createLightingEffects();
 
         // Use HUD/Menu classes
         this.dungeonHUD = new DungeonHUD(this);
@@ -76,20 +86,30 @@ export default class DungeonScene extends Phaser.Scene {
         this.events.on('resume', this.onResume, this);
     }
 
-    onResume() {
-        // Update adjacent cells on resume
+    onResume() {        // Update adjacent cells on resume
         this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
 
         // Redraw grid and HUD when scene is resumed
         this.drawGrid();
+        this.updateLightingEffects();
         if (this.dungeonHUD && this.dungeonHUD.drawHUD) this.dungeonHUD.drawHUD();
         if (this.dungeonMenu && this.dungeonMenu.createMenuButton) this.dungeonMenu.createMenuButton();
-    }
-
-    shutdown() {
+    }    shutdown() {
         if (this.gridGraphics) {
             this.gridGraphics.destroy();
             this.gridGraphics = null;
+        }
+        if (this.particles) {
+            this.particles.destroy();
+            this.particles = null;
+        }
+        if (this.lightingOverlay) {
+            this.lightingOverlay.destroy();
+            this.lightingOverlay = null;
+        }
+        if (this.playerSprite) {
+            this.playerSprite.destroy();
+            this.playerSprite = null;
         }
         if (this.dungeonHUD) this.dungeonHUD.shutdown();
         if (this.dungeonMenu) this.dungeonMenu.shutdown();
@@ -146,9 +166,8 @@ export default class DungeonScene extends Phaser.Scene {
                 this.scene.pause(); // Pause DungeonScene
                 this.scene.launch('WebDesignQuizScene', { returnScene: 'DungeonScene' });
                 return;
-            }
-
-            this.drawGrid();
+            }            this.drawGrid();
+            this.updateLightingEffects();
             if (this.dungeonHUD) this.dungeonHUD.drawHUD();
         }
     }
@@ -182,62 +201,137 @@ export default class DungeonScene extends Phaser.Scene {
         const gridPixelHeight = GRID_HEIGHT * cellSize;
         this.offsetX = (width - gridPixelWidth) / 2;
         this.offsetY = (height - gridPixelHeight) / 2;
-    }
-
-    onResize(gameSize) {
+    }    onResize(gameSize) {
         this.updateScale();
         this.drawGrid();
+        this.updateLightingEffects();
         if (this.dungeonHUD && this.dungeonHUD.drawHUD) this.dungeonHUD.drawHUD();
         if (this.dungeonMenu && this.dungeonMenu.createMenuButton) this.dungeonMenu.createMenuButton();
-    }
-
-    drawGrid() {
-        // Clear previous quiz box sprites
+    }drawGrid() {
+        // Clear previous quiz box sprites and player sprite
         if (this.quizBoxSprites && this.quizBoxSprites.length) {
             this.quizBoxSprites.forEach(sprite => sprite.destroy());
             this.quizBoxSprites = [];
+        }
+        if (this.playerSprite) {
+            this.playerSprite.destroy();
+            this.playerSprite = null;
         }
 
         if (this.gridGraphics) this.gridGraphics.clear();
         else this.gridGraphics = this.add.graphics();
 
         const cellSize = 64 * this.scaleFactor;
-        const gap = 12 * this.scaleFactor;
+        const gap = 4 * this.scaleFactor;
+        const borderWidth = 2 * this.scaleFactor;
 
         for (let y = 0; y < GRID_HEIGHT; y++) {
             for (let x = 0; x < GRID_WIDTH; x++) {
-                let color = 0x444444;
-                let alpha = 1;
+                const cellX = this.offsetX + x * cellSize + gap / 2;
+                const cellY = this.offsetY + y * cellSize + gap / 2;
+                const cellWidth = cellSize - gap;
+                const cellHeight = cellSize - gap;
 
-                if (this.grid[y][x].visited) color = 0x888888;
-                if (this.player.x === x && this.player.y === y) color = 0x00ff00;
+                let fillColor = 0x2d3748; // Dark gray for unvisited
+                let borderColor = 0x4a5568;
+                let fillAlpha = 1;
+                let borderAlpha = 0.8;
 
+                // Determine cell appearance
+                if (this.grid[y][x].visited) {
+                    fillColor = 0x4a5568; // Lighter for visited
+                    borderColor = 0x718096;
+                }
+
+                // Adjacent cells that can be moved to
                 if (this.adjacentCells.some(cell => cell.x === x && cell.y === y) &&
                     !(this.player.x === x && this.player.y === y)) {
-                    color = 0x222222;
-                    alpha = this.breathAlpha;
+                    fillColor = 0x3182ce; // Blue for moveable
+                    borderColor = 0x63b3ed;
+                    fillAlpha = this.breathAlpha;
+                    borderAlpha = this.breathAlpha;
                 }
 
                 // Draw quiz box if present
                 if (this.quizBoxes.some(pos => pos.x === x && pos.y === y)) {
-                    // Draw the quiz box sprite
+                    // Draw enhanced cell background for quiz box
+                    this.gridGraphics.fillStyle(0x9f7aea, 1); // Purple background
+                    this.gridGraphics.fillRoundedRect(cellX, cellY, cellWidth, cellHeight, 8 * this.scaleFactor);
+                    
+                    this.gridGraphics.lineStyle(borderWidth, 0xd69e2e, 1); // Gold border
+                    this.gridGraphics.strokeRoundedRect(cellX, cellY, cellWidth, cellHeight, 8 * this.scaleFactor);
+
+                    // Draw the quiz box sprite with enhanced effects
                     const sprite = this.add.image(
-                        this.offsetX + x * cellSize + cellSize / 2,
-                        this.offsetY + y * cellSize + cellSize / 2,
+                        cellX + cellWidth / 2,
+                        cellY + cellHeight / 2,
                         'quizbox'
-                    ).setDisplaySize(cellSize - gap, cellSize - gap);
+                    ).setDisplaySize(cellWidth * 0.7, cellHeight * 0.7);
+                    
+                    // Add glow effect to quiz box
+                    sprite.setTint(0xffd700);
                     this.quizBoxSprites.push(sprite);
+                    
+                    // Add floating animation
+                    this.tweens.add({
+                        targets: sprite,
+                        y: sprite.y - 5 * this.scaleFactor,
+                        duration: 1000,
+                        ease: 'Sine.easeInOut',
+                        yoyo: true,
+                        repeat: -1
+                    });
                 } else {
-                    this.gridGraphics.fillStyle(color, alpha);
-                    this.gridGraphics.fillRect(
-                        this.offsetX + x * cellSize + gap / 2,
-                        this.offsetY + y * cellSize + gap / 2,
-                        cellSize - gap,
-                        cellSize - gap
-                    );
+                    // Regular cell
+                    this.gridGraphics.fillStyle(fillColor, fillAlpha);
+                    this.gridGraphics.fillRoundedRect(cellX, cellY, cellWidth, cellHeight, 6 * this.scaleFactor);
+                    
+                    this.gridGraphics.lineStyle(borderWidth, borderColor, borderAlpha);
+                    this.gridGraphics.strokeRoundedRect(cellX, cellY, cellWidth, cellHeight, 6 * this.scaleFactor);
+
+                    // Add inner highlight for visited cells
+                    if (this.grid[y][x].visited) {
+                        this.gridGraphics.lineStyle(1 * this.scaleFactor, 0xa0aec0, 0.5);
+                        this.gridGraphics.strokeRoundedRect(
+                            cellX + borderWidth,
+                            cellY + borderWidth,
+                            cellWidth - borderWidth * 2,
+                            cellHeight - borderWidth * 2,
+                            4 * this.scaleFactor
+                        );
+                    }
                 }
             }
         }
+
+        // Draw enhanced player representation
+        const playerCellX = this.offsetX + this.player.x * cellSize + cellSize / 2;
+        const playerCellY = this.offsetY + this.player.y * cellSize + cellSize / 2;
+        
+        // Player glow effect
+        const playerGlow = this.add.circle(playerCellX, playerCellY, (cellSize * 0.4), 0x00ff00, 0.3);
+        playerGlow.setDepth(2);
+        this.quizBoxSprites.push(playerGlow); // Track for cleanup
+        
+        // Player sprite (using goblin as player representation)
+        this.playerSprite = this.add.image(playerCellX, playerCellY, 'goblinNerd');
+        this.playerSprite.setDisplaySize(cellSize * 0.6, cellSize * 0.6);
+        this.playerSprite.setDepth(3);
+        this.playerSprite.setTint(0x00ff88); // Green tint for player
+        
+        // Player idle animation
+        this.tweens.add({
+            targets: this.playerSprite,
+            scaleX: 1.1,
+            scaleY: 1.1,
+            duration: 800,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+
+        // Update lighting effects
+        this.updateLightingEffects();
     }
 
     placeQuizBoxes(count) {
@@ -256,16 +350,110 @@ export default class DungeonScene extends Phaser.Scene {
         return positions;
     }
 
-    update(time, delta) {
-        this.breathAlpha += this.breathDir * delta * 0.001;
-        if (this.breathAlpha > 1) {
-            this.breathAlpha = 1;
+    createBackgroundEffects() {
+        // Create a gradient background
+        const graphics = this.add.graphics();
+        graphics.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x16213e, 0x16213e, 1);
+        graphics.fillRect(0, 0, this.scale.width, this.scale.height);
+        graphics.setDepth(-10);
+
+        // Add some atmospheric dots for texture
+        for (let i = 0; i < 30; i++) {
+            const x = Phaser.Math.Between(0, this.scale.width);
+            const y = Phaser.Math.Between(0, this.scale.height);
+            const dot = this.add.circle(x, y, 1, 0x4a5568, 0.3);
+            dot.setDepth(-5);
+        }
+    }
+
+    createParticleEffects() {
+        // Create floating dust particles for atmosphere
+        const particleConfig = {
+            x: { min: 0, max: this.scale.width },
+            y: { min: -50, max: this.scale.height + 50 },
+            scale: { min: 0.1, max: 0.3 },
+            alpha: { min: 0.1, max: 0.4 },
+            speed: { min: 10, max: 30 },
+            lifespan: { min: 3000, max: 8000 },
+            quantity: 2,
+            frequency: 500
+        };
+
+        // Create simple particle emitter using graphics
+        this.time.addEvent({
+            delay: 500,
+            callback: () => {
+                if (this.scene.isActive()) {
+                    const x = Phaser.Math.Between(0, this.scale.width);
+                    const y = Phaser.Math.Between(-50, this.scale.height + 50);
+                    const particle = this.add.circle(x, y, 1, 0xffffff, 0.2);
+                    particle.setDepth(-1);
+                    
+                    this.tweens.add({
+                        targets: particle,
+                        y: y + Phaser.Math.Between(-100, 100),
+                        x: x + Phaser.Math.Between(-50, 50),
+                        alpha: 0,
+                        duration: Phaser.Math.Between(3000, 8000),
+                        ease: 'Linear',
+                        onComplete: () => particle.destroy()
+                    });
+                }
+            },
+            loop: true
+        });
+    }
+
+    createLightingEffects() {
+        // Create a lighting overlay that follows the player
+        this.lightingOverlay = this.add.graphics();
+        this.lightingOverlay.setDepth(5);
+        this.updateLightingEffects();
+    }
+
+    updateLightingEffects() {
+        if (!this.lightingOverlay) return;
+
+        this.lightingOverlay.clear();
+        
+        const cellSize = 64 * this.scaleFactor;
+        const playerX = this.offsetX + this.player.x * cellSize + cellSize / 2;
+        const playerY = this.offsetY + this.player.y * cellSize + cellSize / 2;
+        
+        // Create a radial gradient effect around the player
+        const radius = cellSize * 2;
+        
+        // Dark overlay
+        this.lightingOverlay.fillStyle(0x000000, 0.3);
+        this.lightingOverlay.fillRect(0, 0, this.scale.width, this.scale.height);
+        
+        // Light circle around player
+        this.lightingOverlay.fillStyle(0x000000, 0);
+        this.lightingOverlay.beginPath();
+        this.lightingOverlay.arc(playerX, playerY, radius, 0, Math.PI * 2);
+        this.lightingOverlay.closePath();
+        this.lightingOverlay.fillPath();
+        
+        // Subtle glow effect
+        for (let i = 0; i < 3; i++) {
+            this.lightingOverlay.lineStyle(2 + i, 0xffd700, 0.1 - i * 0.03);
+            this.lightingOverlay.strokeCircle(playerX, playerY, radius - i * 10);
+        }
+    }    update(time, delta) {
+        // Enhanced breathing animation for adjacent cells
+        this.breathAlpha += this.breathDir * delta * 0.002;
+        if (this.breathAlpha > 0.9) {
+            this.breathAlpha = 0.9;
             this.breathDir = -1;
         }
-        if (this.breathAlpha < 0.3) {
-            this.breathAlpha = 0.3;
+        if (this.breathAlpha < 0.5) {
+            this.breathAlpha = 0.5;
             this.breathDir = 1;
         }
-        this.drawGrid();
+        
+        // Only redraw grid occasionally to improve performance
+        if (Math.floor(time / 100) % 2 === 0) {
+            this.drawGrid();
+        }
     }
 }
