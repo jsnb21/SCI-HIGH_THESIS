@@ -5,173 +5,93 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SCI-HIGH Thesis Home</title>
-    <style>
-      @font-face {
-        font-family: 'Jersey15-Regular';
-        src: url('assets/font/Jersey15-Regular.ttf') format('truetype');
-        font-weight: normal;
-        font-style: normal;
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#3498db',
+              accent: '#2ecc71',
+              dark: '#333',
+              light: '#f8f9fa',
+              textColor: '#2d3436',
+            },
+            fontFamily: {
+              sans: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+            }
+          }
+        }
       }
-      body {
-        font-family: 'Jersey15-Regular', Arial, sans-serif;
-        background: #111;
-        color: #fff;
-        margin: 0;
-        padding: 0;
-      }
-      nav {
-        background: #222;
-        padding: 1em 0;
-        text-align: center;
-      }
-      nav a {
-        color: #ffd700;
-        text-decoration: none;
-        margin: 0 1.5em;
-        font-size: 1.2em;
-        transition: color 0.2s;
-      }
-      nav a:hover {
-        color: #fff;
-      }
-      .container {
-        max-width: 800px;
-        margin: 2em auto;
-        padding: 2em;
-        background: rgba(30,30,30,0.95);
-        border-radius: 12px;
-        box-shadow: 0 4px 24px #0008;
-        text-align: center;
-      }
-      h1 {
-        font-size: 2.5em;
-        margin-bottom: 0.5em;
-      }
-      .btn {
-        display: inline-block;
-        margin: 2em 0 0 0;
-        padding: 1em 2.5em;
-        font-size: 1.3em;
-        color: #222;
-        background: #ffd700;
-        border: none;
-        border-radius: 8px;
-        text-decoration: none;
-        font-family: inherit;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background 0.2s, color 0.2s;
-      }
-      .btn:hover {
-        background: #fff700;
-        color: #111;
-      }
-      .carousel-container {
-        position: relative;
-        max-width: 800px;
-        margin: 2em auto;
-        overflow: hidden;
-        border-radius: 12px;
-        box-shadow: 0 4px 24px #0008;
-      }
-      .carousel {
-        display: flex;
-        transition: transform 0.5s ease-in-out;
-      }
-      .carousel-slide {
-        min-width: 100%;
-        transition: opacity 0.5s ease;
-      }
-      .carousel-slide:not(.active) {
-        opacity: 0;
-      }
-      .carousel-btn {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        background: rgba(255, 215, 0, 0.8);
-        border: none;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        cursor: pointer;
-        font-size: 1.5em;
-        color: #111;
-        transition: background 0.2s;
-      }
-      .carousel-btn:hover {
-        background: #ffd700;
-      }
-      .carousel-btn.prev {
-        left: 10px;
-      }
-      .carousel-btn.next {
-        right: 10px;
-      }
-      .carousel-dots {
-        text-align: center;
-        margin-top: 1em;
-      }
-      .dot {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        margin: 0 5px;
-        background: #ffd700;
-        border-radius: 50%;
-        cursor: pointer;
-        transition: background 0.2s;
-      }
-      .dot.active {
-        background: #fff700;
-      }
-    </style>
+    </script>
   </head>
-  <body>
+  <body class="font-sans bg-light text-textColor m-0 p-0 leading-relaxed">
     <div id="game-container"></div>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="#about">About Us</a>
-      <a href="#contact">Contact</a>
+    
+    <!-- Navigation -->
+    <nav class="bg-white py-5 text-center sticky top-0 shadow-md z-50">
+      <a href="index.html" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">Home</a>
+      <a href="#about" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">About Us</a>
+      <a href="#contact" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">Contact</a>
     </nav>
-    <div class="container">
-      <h1>Welcome to SCI-HIGH Thesis</h1>
-      <p>
-        SCI-HIGH Thesis is an interactive game experience. Explore, learn, and have fun!
+    
+    <!-- Carousel -->
+    <div class="relative max-w-4xl mx-auto my-12 overflow-hidden rounded-xl shadow-lg">
+      <div class="flex relative" id="carousel">
+        <img src="assets/images/slide1.jpg" alt="Slide 1" class="min-w-full object-cover h-[400px] transition-opacity duration-500 carousel-slide active">
+        <img src="assets/images/slide2.jpg" alt="Slide 2" class="min-w-full object-cover h-[400px] transition-opacity duration-500 carousel-slide opacity-0 absolute">
+        <img src="assets/images/slide3.jpg" alt="Slide 3" class="min-w-full object-cover h-[400px] transition-opacity duration-500 carousel-slide opacity-0 absolute">
+        
+        <!-- Carousel Controls -->
+        <button class="carousel-btn prev absolute top-1/2 left-5 -translate-y-1/2 bg-white/70 border-none rounded-full w-12 h-12 cursor-pointer text-2xl text-dark transition-all duration-300 flex items-center justify-center z-10 hover:bg-white hover:shadow-md">&#10094;</button>
+        <button class="carousel-btn next absolute top-1/2 right-5 -translate-y-1/2 bg-white/70 border-none rounded-full w-12 h-12 cursor-pointer text-2xl text-dark transition-all duration-300 flex items-center justify-center z-10 hover:bg-white hover:shadow-md">&#10095;</button>
+      </div>
+      
+      <!-- Carousel Dots -->
+      <div class="text-center mt-6">
+        <span class="dot active inline-block w-3 h-3 mx-1 bg-gray-300 rounded-full cursor-pointer transition-all duration-300 scale-110 bg-primary"></span>
+        <span class="dot inline-block w-3 h-3 mx-1 bg-gray-300 rounded-full cursor-pointer transition-all duration-300"></span>
+        <span class="dot inline-block w-3 h-3 mx-1 bg-gray-300 rounded-full cursor-pointer transition-all duration-300"></span>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto my-12 p-12 bg-white rounded-xl shadow-lg text-center">
+      <h1 class="text-4xl mb-8 text-dark font-bold">Welcome to SCI-HIGH!</h1>
+      <p class="text-lg">
+        SCI-HIGH is an interactive game experience. Explore, learn, and have fun!
       </p>
-      <a class="btn" href="game.html">Start Game</a>
-      <section id="about" style="margin-top:3em;">
-        <h2>About Us</h2>
-        <p>
+      <a href="game.html" class="inline-block mt-8 px-8 py-3 text-lg text-white bg-primary border-none rounded-full font-medium cursor-pointer transition-all duration-300 shadow-md hover:bg-blue-600 hover:-translate-y-0.5 hover:shadow-lg">Start Game</a>
+
+      <a href="leaderboards.html" class="inline-block mt-8 px-8 py-3 text-lg text-white bg-primary border-none rounded-full font-medium cursor-pointer transition-all duration-300 shadow-md hover:bg-blue-600 hover:-translate-y-0.5 hover:shadow-lg">View Leaderboards</a>
+      
+      <!-- About Section -->
+      <section id="about" class="mt-16 pt-4 border-t border-gray-100">
+        <h2 class="text-2xl text-dark font-semibold">About Us</h2>
+        <p class="mt-4">
           We are a team of passionate developers and educators dedicated to making learning engaging through interactive storytelling and games.
         </p>
       </section>
-      <section id="contact" style="margin-top:3em;">
-        <h2>Contact</h2>
-        <p>
-          For inquiries, please email us at <a href="mailto:info@sci-high-thesis.com" style="color:#ffd700;">info@sci-high-thesis.com</a>
+      
+      <!-- Contact Section -->
+      <section id="contact" class="mt-16 pt-4 border-t border-gray-100">
+        <h2 class="text-2xl text-dark font-semibold">Contact</h2>
+        <p class="mt-4">
+          For inquiries, please email us at <a href="mailto:info@sci-high-thesis.com" class="text-primary no-underline hover:text-blue-600 transition-colors">info@sci-high-thesis.com</a>
         </p>
       </section>
     </div>
-    <div class="carousel-container">
-      <div class="carousel">
-        <img src="assets/images/slide1.jpg" alt="Slide 1" class="carousel-slide active">
-        <img src="assets/images/slide2.jpg" alt="Slide 2" class="carousel-slide">
-        <img src="assets/images/slide3.jpg" alt="Slide 3" class="carousel-slide">
-        <!-- Add more images as needed -->
-        <button class="carousel-btn prev">&#10094;</button>
-        <button class="carousel-btn next">&#10095;</button>
-      </div>
-      <div class="carousel-dots">
-        <span class="dot active"></span>
-        <span class="dot"></span>
-        <span class="dot"></span>
-        <!-- Add more dots if you add more images -->
-      </div>
-    </div>
+    
+    <!-- Footer -->
+    <footer class="text-center py-8 bg-dark text-white mt-12">
+      <p>&copy; 2025 SCI-HIGH Thesis. All rights reserved.</p>
+    </footer>
+    
     <script>
+      // Keep the existing JS carousel functionality
       const slides = document.querySelectorAll('.carousel-slide');
-      const dots = document.querySelectorAll('.carousel-dots .dot');
+      const dots = document.querySelectorAll('.dot');
       const prevBtn = document.querySelector('.carousel-btn.prev');
       const nextBtn = document.querySelector('.carousel-btn.next');
       let currentSlide = 0;
@@ -179,8 +99,17 @@
 
       function showSlide(index) {
         slides.forEach((slide, i) => {
-          slide.classList.toggle('active', i === index);
-          dots[i].classList.toggle('active', i === index);
+          if (i === index) {
+            slide.classList.add('active');
+            slide.classList.remove('opacity-0', 'absolute');
+            dots[i].classList.add('scale-110', 'bg-primary');
+            dots[i].classList.remove('bg-gray-300');
+          } else {
+            slide.classList.remove('active');
+            slide.classList.add('opacity-0', 'absolute');
+            dots[i].classList.remove('scale-110', 'bg-primary');
+            dots[i].classList.add('bg-gray-300');
+          }
         });
         currentSlide = index;
       }
@@ -199,10 +128,12 @@
         nextSlide();
         resetInterval();
       });
+      
       prevBtn.addEventListener('click', () => {
         prevSlide();
         resetInterval();
       });
+      
       dots.forEach((dot, i) => {
         dot.addEventListener('click', () => {
           showSlide(i);
