@@ -20,55 +20,262 @@ export default class StartupScene extends Phaser.Scene {
         // Set up event listeners using fullscreen utility
         this.fullscreenManager = FullscreenUtils.setupScene(this);
         
+        // Set up keyboard controls
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+        this.escapeKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+        
         // Start with fullscreen prompt
         this.showFullscreenPrompt();
-    }    showFullscreenPrompt() {
+    }showFullscreenPrompt() {
         // Clear any existing elements
         this.clearUI();
         
         const { width, height } = this.scale;
 
-        // Create UI elements
-        const background = this.add.rectangle(width / 2, height / 2, width, height, 0x181A1B).setOrigin(0.5);
-        
-        const dialog = this.add.rectangle(width / 2, height / 2, 400, 220, 0x23272f, 1)
+        // Create animated background with gradient effect
+        const background = this.add.rectangle(width / 2, height / 2, width, height, 0x0f0f0f)
             .setOrigin(0.5)
-            .setStrokeStyle(2, 0x000000, 0.2);
-            
-        const promptText = this.add.text(width / 2, height / 2 - 40, 'Go fullscreen?', {
-            fontFamily: 'Arial',
-            fontSize: '32px',
-            color: '#fff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
+            .setAlpha(0);        // Create dialog with modern design
+        const dialogWidth = Math.min(500, width * 0.8);
+        const dialogHeight = 300;
+        
+        const dialog = this.add.rectangle(width / 2, height / 2, dialogWidth, dialogHeight, 0x1a1a1a, 1)
+            .setOrigin(0.5)
+            .setStrokeStyle(3, 0x4a4a4a, 0.8)
+            .setScale(0.8)
+            .setAlpha(0);
 
-        const buttonStyle = {
+        // Add glow effect to dialog
+        const dialogGlow = this.add.rectangle(width / 2, height / 2, dialogWidth + 10, dialogHeight + 10, 0x2a2a2a, 0.3)
+            .setOrigin(0.5)
+            .setScale(0.8)
+            .setAlpha(0);// Main title with simplified text
+        const titleText = this.add.text(width / 2, height / 2 - 50, 'Go Fullscreen?', {
+            fontFamily: 'Arial Black, Arial',
+            fontSize: '32px',
+            color: '#ffffff',
+            fontStyle: 'bold',
+            align: 'center'
+        }).setOrigin(0.5).setAlpha(0);
+        
+        // Subtitle with helpful note
+        const subtitleText = this.add.text(width / 2, height / 2 - 10, 'This can be toggled in the options later.', {
             fontFamily: 'Arial',
-            fontSize: '24px',
-            color: '#fff',
-            backgroundColor: '#3B82F6',
-            padding: { left: 24, right: 24, top: 10, bottom: 10 }
+            fontSize: '16px',
+            color: '#cccccc',
+            align: 'center'
+        }).setOrigin(0.5).setAlpha(0);
+
+        // Remove benefits text - no longer needed
+        const benefitsText = null;        // Enhanced button styles
+        const createStyledButton = (x, y, text, isPrimary = false) => {
+            const buttonColor = isPrimary ? 0x3B82F6 : 0x374151;
+            const textColor = isPrimary ? '#ffffff' : '#e5e7eb';
+            const buttonWidth = 120;
+            const buttonHeight = 50;
+            
+            // Button background
+            const buttonBg = this.add.rectangle(x, y, buttonWidth, buttonHeight, buttonColor, 1)
+                .setOrigin(0.5)
+                .setInteractive({ useHandCursor: true })
+                .setStrokeStyle(2, isPrimary ? 0x60A5FA : 0x555555, 0.8)
+                .setAlpha(0);
+            
+            // Button text
+            const buttonText = this.add.text(x, y, text, {
+                fontFamily: 'Arial',
+                fontSize: '18px',
+                color: textColor,
+                fontStyle: 'bold'
+            }).setOrigin(0.5).setAlpha(0);
+
+            // Hover effects
+            buttonBg.on('pointerover', () => {
+                this.tweens.add({
+                    targets: buttonBg,
+                    scaleX: 1.05,
+                    scaleY: 1.05,
+                    duration: 150,
+                    ease: 'Power2'
+                });
+                buttonBg.setFillStyle(isPrimary ? 0x2563EB : 0x4B5563);
+            });
+
+            buttonBg.on('pointerout', () => {
+                this.tweens.add({
+                    targets: buttonBg,
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 150,
+                    ease: 'Power2'
+                });
+                buttonBg.setFillStyle(buttonColor);
+            });
+
+            return { bg: buttonBg, text: buttonText };
         };
 
-        const yesButton = this.add.text(width / 2 - 70, height / 2 + 40, 'Yes', buttonStyle)
-            .setOrigin(0.5)
-            .setInteractive({ useHandCursor: true });
-            
-        const noButton = this.add.text(width / 2 + 70, height / 2 + 40, 'No', buttonStyle)
-            .setOrigin(0.5)
-            .setInteractive({ useHandCursor: true });
+        // Create buttons
+        const yesButton = createStyledButton(width / 2 - 80, height / 2 + 60, 'YES', true);
+        const noButton = createStyledButton(width / 2 + 80, height / 2 + 60, 'SKIP', false);
 
-        // Add event listeners with proper error handling
-        yesButton.once('pointerdown', () => {
+        // Add click animations and functionality
+        const addButtonClick = (button, callback) => {
+            button.bg.on('pointerdown', () => {
+                // Click animation
+                this.tweens.add({
+                    targets: [button.bg, button.text],
+                    scaleX: 0.95,
+                    scaleY: 0.95,
+                    duration: 100,
+                    yoyo: true,
+                    onComplete: callback
+                });
+            });
+        };
+
+        addButtonClick(yesButton, () => {
             this.fullscreenManager.enterFullscreen(() => {
-                // Small delay to ensure fullscreen is properly applied
                 this.time.delayedCall(200, () => this.playLogoSequence());
             });
         });
-        noButton.once('pointerdown', () => this.playLogoSequence());
 
-        // Store elements for cleanup
-        this.uiElements = [background, dialog, promptText, yesButton, noButton];
+        addButtonClick(noButton, () => {
+            this.playLogoSequence();
+        });        // Store all elements for cleanup
+        this.uiElements = [
+            background, dialogGlow, dialog, titleText, subtitleText,
+            yesButton.bg, yesButton.text, noButton.bg, noButton.text
+        ];
+
+        // Add keyboard controls
+        this.setupKeyboardControls(yesButton, noButton);
+
+        // Add subtle floating particles
+        this.createFloatingParticles();        // Animate entrance
+        this.animatePromptEntrance(background, dialogGlow, dialog, titleText, subtitleText, yesButton, noButton);
+    }
+
+    setupKeyboardControls(yesButton, noButton) {
+        // Add keyboard hint text
+        const { width, height } = this.scale;
+        const keyboardHint = this.add.text(width / 2, height / 2 + 120, 'Press ENTER for fullscreen, ESC to skip', {
+            fontFamily: 'Arial',
+            fontSize: '12px',
+            color: '#666666',
+            align: 'center'
+        }).setOrigin(0.5).setAlpha(0);
+
+        this.uiElements.push(keyboardHint);
+
+        // Show hint after other animations
+        this.time.delayedCall(1500, () => {
+            this.tweens.add({
+                targets: keyboardHint,
+                alpha: 0.8,
+                duration: 400,
+                ease: 'Power2'
+            });
+        });
+
+        // Keyboard event listeners
+        this.enterKey.on('down', () => {
+            yesButton.bg.emit('pointerdown');
+        });
+
+        this.escapeKey.on('down', () => {
+            noButton.bg.emit('pointerdown');
+        });
+    }
+
+    createFloatingParticles() {
+        const { width, height } = this.scale;
+        const particles = [];
+
+        for (let i = 0; i < 15; i++) {            const particle = this.add.circle(
+                Phaser.Math.Between(0, width),
+                Phaser.Math.Between(0, height),
+                Phaser.Math.Between(1, 3),
+                0x666666,
+                0.1
+            );
+
+            particles.push(particle);
+            this.uiElements.push(particle);
+
+            // Floating animation
+            this.tweens.add({
+                targets: particle,
+                y: particle.y - Phaser.Math.Between(50, 150),
+                alpha: 0.3,
+                duration: Phaser.Math.Between(3000, 6000),
+                ease: 'Power1',
+                repeat: -1,
+                yoyo: true,
+                delay: Phaser.Math.Between(0, 2000)
+            });
+
+            this.tweens.add({
+                targets: particle,
+                x: particle.x + Phaser.Math.Between(-30, 30),
+                duration: Phaser.Math.Between(4000, 8000),
+                ease: 'Sine.easeInOut',
+                repeat: -1,
+                yoyo: true,
+                delay: Phaser.Math.Between(0, 1000)
+            });
+        }
+    }    animatePromptEntrance(background, dialogGlow, dialog, titleText, subtitleText, yesButton, noButton) {
+        // Sequence of animations for smooth entrance
+        this.tweens.add({
+            targets: background,
+            alpha: 0.9,
+            duration: 400,
+            ease: 'Power2'
+        });
+
+        this.time.delayedCall(200, () => {
+            // Dialog appears with scale and glow
+            this.tweens.add({
+                targets: [dialogGlow, dialog],
+                alpha: 1,
+                scale: 1,
+                duration: 600,
+                ease: 'Back.easeOut'
+            });
+
+            // Text appears sequentially
+            this.time.delayedCall(300, () => {
+                this.tweens.add({
+                    targets: titleText,
+                    alpha: 1,
+                    y: titleText.y - 10,
+                    duration: 400,
+                    ease: 'Power2'
+                });
+
+                this.time.delayedCall(150, () => {
+                    this.tweens.add({
+                        targets: subtitleText,
+                        alpha: 1,
+                        duration: 400,
+                        ease: 'Power2'
+                    });
+
+                    this.time.delayedCall(200, () => {
+                        // Buttons appear with bounce
+                        this.tweens.add({
+                            targets: [yesButton.bg, yesButton.text, noButton.bg, noButton.text],
+                            alpha: 1,
+                            y: `-=20`,
+                            duration: 500,
+                            ease: 'Back.easeOut'
+                        });
+                    });
+                });
+            });
+        });
     }
 
     playLogoSequence() {
@@ -189,9 +396,15 @@ export default class StartupScene extends Phaser.Scene {
         // Only redraw UI if we're showing the fullscreen prompt
         // Don't redraw during logo animations to avoid interrupting them
         return this.uiElements.length > 0;
-    }
-
-    shutdown() {
+    }    shutdown() {
+        // Clean up keyboard listeners
+        if (this.enterKey) {
+            this.enterKey.removeAllListeners();
+        }
+        if (this.escapeKey) {
+            this.escapeKey.removeAllListeners();
+        }
+        
         // Cleanup using fullscreen utility
         FullscreenUtils.cleanupScene(this);
     }

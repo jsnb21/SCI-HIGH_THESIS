@@ -83,10 +83,9 @@ export default class MainMenu extends Phaser.Scene {
             { label: 'Options', y: height / 2 + 180, onClick: () => {
                 se_confirmSound.play();
                 this.scene.start('OptionsScene');
-            }},
-            { label: 'Quit', y: height / 2 + 250, onClick: () => {
+            }},            { label: 'Quit', y: height / 2 + 250, onClick: () => {
                 se_confirmSound.play();
-                window.location.href = 'index.html';
+                this.showQuitConfirmation(se_hoverSound, se_confirmSound);
             }},
         ];
 
@@ -213,6 +212,158 @@ export default class MainMenu extends Phaser.Scene {
             });
         });
     }
+
+    showQuitConfirmation(hoverSound, confirmSound) {
+        const { width, height } = this.scale;
+        
+        // Clear any existing quit confirmation
+        if (this.quitConfirmGroup) {
+            this.quitConfirmGroup.clear(true, true);
+        }
+        
+        this.quitConfirmGroup = this.add.group();
+        
+        // Semi-transparent overlay
+        const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7);
+        this.quitConfirmGroup.add(overlay);
+        
+        // Confirmation dialog dimensions
+        const dialogWidth = 480;
+        const dialogHeight = 200;
+        const baseX = width / 2;
+        const baseY = height / 2;
+        
+        // Dialog background
+        const dialogBg = this.add.graphics();
+        dialogBg.fillStyle(0x222244, 0.96);
+        dialogBg.lineStyle(4, 0xffffcc, 1);
+        dialogBg.strokeRoundedRect(baseX - dialogWidth / 2, baseY - dialogHeight / 2, dialogWidth, dialogHeight, 24);
+        dialogBg.fillRoundedRect(baseX - dialogWidth / 2, baseY - dialogHeight / 2, dialogWidth, dialogHeight, 24);
+        this.quitConfirmGroup.add(dialogBg);
+          // Confirmation text
+        const confirmText = this.add.text(baseX, baseY - 40, 'Are you sure you want to quit?', {
+            ...DEFAULT_TEXT_STYLE,
+            fontSize: '24px',
+            color: '#ffffff',
+            stroke: '#000',
+            strokeThickness: 3,
+            align: 'center'
+        }).setOrigin(0.5);
+        this.quitConfirmGroup.add(confirmText);
+        
+        // Button dimensions
+        const btnWidth = 140;
+        const btnHeight = 50;
+        const btnSpacing = 80;
+        
+        // Yes button
+        const yesBg = this.add.graphics();
+        yesBg.fillStyle(0x662222, 0.9);
+        yesBg.fillRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+        yesBg.lineStyle(2, 0xff4444, 1);
+        yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+        this.quitConfirmGroup.add(yesBg);
+        
+        const yesBtn = this.add.text(baseX - btnSpacing, baseY + 30, 'Yes', {
+            ...DEFAULT_TEXT_STYLE,
+            fontSize: '28px',
+            color: '#ff4444',
+            stroke: '#000',
+            strokeThickness: 2
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        this.quitConfirmGroup.add(yesBtn);
+        
+        // No button
+        const noBg = this.add.graphics();
+        noBg.fillStyle(0x224422, 0.9);
+        noBg.fillRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+        noBg.lineStyle(2, 0x44ff44, 1);
+        noBg.strokeRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+        this.quitConfirmGroup.add(noBg);
+        
+        const noBtn = this.add.text(baseX + btnSpacing, baseY + 30, 'No', {
+            ...DEFAULT_TEXT_STYLE,
+            fontSize: '28px',
+            color: '#44ff44',
+            stroke: '#000',
+            strokeThickness: 2
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        this.quitConfirmGroup.add(noBtn);
+        
+        // Yes button events
+        yesBtn.on('pointerover', () => {
+            yesBtn.setStyle({ color: '#ffffff' });
+            yesBg.clear();
+            yesBg.fillStyle(0x883333, 1);
+            yesBg.fillRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            yesBg.lineStyle(2, 0xff4444, 1);
+            yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            if (!hoverSound.isPlaying) hoverSound.play();
+        });
+        
+        yesBtn.on('pointerout', () => {
+            yesBtn.setStyle({ color: '#ff4444' });
+            yesBg.clear();
+            yesBg.fillStyle(0x662222, 0.9);
+            yesBg.fillRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            yesBg.lineStyle(2, 0xff4444, 1);
+            yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+        });
+        
+        yesBtn.on('pointerdown', () => {
+            yesBtn.setScale(0.95);
+        });
+        
+        yesBtn.on('pointerup', () => {
+            yesBtn.setScale(1);
+            confirmSound.play();
+            window.location.href = 'index.html';
+        });
+        
+        // No button events
+        noBtn.on('pointerover', () => {
+            noBtn.setStyle({ color: '#ffffff' });
+            noBg.clear();
+            noBg.fillStyle(0x338833, 1);
+            noBg.fillRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            noBg.lineStyle(2, 0x44ff44, 1);
+            noBg.strokeRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            if (!hoverSound.isPlaying) hoverSound.play();
+        });
+        
+        noBtn.on('pointerout', () => {
+            noBtn.setStyle({ color: '#44ff44' });
+            noBg.clear();
+            noBg.fillStyle(0x224422, 0.9);
+            noBg.fillRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            noBg.lineStyle(2, 0x44ff44, 1);
+            noBg.strokeRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+        });
+        
+        noBtn.on('pointerdown', () => {
+            noBtn.setScale(0.95);
+        });
+        
+        noBtn.on('pointerup', () => {
+            noBtn.setScale(1);
+            confirmSound.play();
+            this.quitConfirmGroup.clear(true, true);
+        });
+        
+        // Add fade-in animation for the dialog
+        this.quitConfirmGroup.children.entries.forEach((element, index) => {
+            element.setAlpha(0);
+            this.tweens.add({
+                targets: element,
+                alpha: element === overlay ? 0.7 : 1,
+                duration: 300,
+                delay: index * 50,
+                ease: 'Quad.easeOut'
+            });
+        });
+    }
+
+    // ...existing code...
 }
 
 // Helper to create a menu button with background and effects
@@ -273,13 +424,8 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
 function showSaveSelectAndContinue(scene, hoverSound, confirmSound) {
     const saveKeys = getAllSaveKeys();
     if (saveKeys.length === 0) {
-        scene.add.text(scene.scale.width / 2, scene.scale.height / 2 + 320, 'No save files found!', {
-            ...DEFAULT_TEXT_STYLE,
-            color: '#ff4444',
-            fontSize: '32px',
-            stroke: '#000',
-            strokeThickness: 4
-        }).setOrigin(0.5);
+        // Show modal-style "No save files found" message
+        showNoSaveFilesModal(scene);
         return;
     }
 
@@ -406,4 +552,77 @@ function showSaveSelectAndContinue(scene, hoverSound, confirmSound) {
 
     scene.saveMenuGroup.add(cancelBg);
     scene.saveMenuGroup.add(cancelBtn);
+}
+
+function showNoSaveFilesModal(scene) {
+    const { width, height } = scene.scale;
+    
+    // Clear any existing modal
+    if (scene.noSaveModal) {
+        scene.noSaveModal.clear(true, true);
+    }
+    
+    scene.noSaveModal = scene.add.group();
+    
+    // Full-screen dimmed overlay
+    const overlay = scene.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6);
+    scene.noSaveModal.add(overlay);
+    
+    // Modal dialog dimensions
+    const dialogWidth = 480;
+    const dialogHeight = 160;
+    const baseX = width / 2;
+    const baseY = height / 2;
+    
+    // Dialog background
+    const dialogBg = scene.add.graphics();
+    dialogBg.fillStyle(0x222244, 0.96);
+    dialogBg.lineStyle(4, 0xffffcc, 1);
+    dialogBg.strokeRoundedRect(baseX - dialogWidth / 2, baseY - dialogHeight / 2, dialogWidth, dialogHeight, 24);
+    dialogBg.fillRoundedRect(baseX - dialogWidth / 2, baseY - dialogHeight / 2, dialogWidth, dialogHeight, 24);
+    scene.noSaveModal.add(dialogBg);
+    
+    // Message text
+    const messageText = scene.add.text(baseX, baseY, 'No save files found!', {
+        ...DEFAULT_TEXT_STYLE,
+        fontSize: '32px',
+        color: '#ff4444',
+        stroke: '#000',
+        strokeThickness: 4,
+        align: 'center'
+    }).setOrigin(0.5);
+    scene.noSaveModal.add(messageText);
+    
+    // Set initial alpha to 0 for fade-in effect
+    scene.noSaveModal.children.entries.forEach(element => {
+        element.setAlpha(0);
+    });
+    
+    // Fade in animation
+    scene.tweens.add({
+        targets: overlay,
+        alpha: 0.6,
+        duration: 300,
+        ease: 'Quad.easeOut'
+    });
+    
+    scene.tweens.add({
+        targets: [dialogBg, messageText],
+        alpha: 1,
+        duration: 400,
+        delay: 150,
+        ease: 'Quad.easeOut'
+    });
+      // Auto fade out after 1 second
+    scene.time.delayedCall(1000, () => {
+        scene.tweens.add({
+            targets: scene.noSaveModal.children.entries,
+            alpha: 0,
+            duration: 500,
+            ease: 'Quad.easeIn',
+            onComplete: () => {
+                scene.noSaveModal.clear(true, true);
+            }
+        });
+    });
 }

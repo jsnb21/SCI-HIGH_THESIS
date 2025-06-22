@@ -7,9 +7,7 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
     const buttonX = 100;
     const buttonY = 50;
     const buttonWidth = 120;
-    const buttonHeight = 40;
-
-    // Create button background (rectangle with stroke)
+    const buttonHeight = 40;    // Create button background (rectangle with stroke)
     const buttonBg = scene.add.rectangle(
         buttonX,
         buttonY,
@@ -18,7 +16,8 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
         0x000000,
         0.7 // alpha for semi-transparency
     ).setStrokeStyle(2, 0xffffff)
-     .setDepth(9999); // Ensure it's on top
+     .setDepth(9999) // Ensure it's on top
+     .setInteractive({ useHandCursor: true }); // Make it interactive
 
     // Create button text
     const backButton = scene.add.text(
@@ -31,32 +30,33 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
             padding: { left: 0, right: 0, top: 0, bottom: 0 }
         }
     ).setOrigin(0.5)
-     .setInteractive({ useHandCursor: true })
-     .setDepth(10000) // Ensure it's above the background
-     .on('pointerdown', () => {
-         if (scene.se_confirmSound) scene.se_confirmSound.play();
-         if (scene.restartQuiz) scene.restartQuiz();
-         // Use GameManager to set and get previous scene
-         gameManager.setPreviousScene(scene.scene.key);
-         scene.scene.start(targetScene);
-     });
+     .setDepth(10000); // Ensure it's above the background
 
-    // Make button background respond to pointer events
-    buttonBg.setInteractive(
-        new Phaser.Geom.Rectangle(
-            buttonX - buttonWidth / 2,
-            buttonY - buttonHeight / 2,
-            buttonWidth,
-            buttonHeight
-        ),
-        Phaser.Geom.Rectangle.Contains
-    ).on('pointerdown', () => {
+    // Define click handler function
+    const handleClick = () => {
         if (scene.se_confirmSound) scene.se_confirmSound.play();
         if (scene.restartQuiz) scene.restartQuiz();
         // Use GameManager to set and get previous scene
         gameManager.setPreviousScene(scene.scene.key);
         scene.scene.start(targetScene);
+    };
+
+    // Add hover effects to background
+    buttonBg.on('pointerover', () => {
+        buttonBg.setFillStyle(0x333333, 0.8); // Lighter on hover
+        buttonBg.setStrokeStyle(2, 0xffff00); // Yellow border on hover
+        backButton.setStyle({ fill: '#ffff00' }); // Yellow text on hover
     });
+
+    buttonBg.on('pointerout', () => {
+        buttonBg.setFillStyle(0x000000, 0.7); // Back to original
+        buttonBg.setStrokeStyle(2, 0xffffff); // White border
+        backButton.setStyle({ fill: '#ffffff' }); // White text
+    });
+
+    // Add click event to background
+    buttonBg.on('pointerdown', handleClick);    // Add click event to background
+    buttonBg.on('pointerdown', handleClick);
 
     // Add to persistent elements if the array exists
     if (scene.persistentElements) {
