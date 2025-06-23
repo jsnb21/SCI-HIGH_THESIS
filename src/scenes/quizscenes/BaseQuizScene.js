@@ -8,6 +8,39 @@ import { showFeedback, showVictory, showGameOver } from './ui/feedbackUI.js';
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
 
+// Utility function to shuffle an array (Fisher-Yates algorithm)
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+// Function to randomize multiple choice options and update correct index
+function randomizeOptions(question) {
+    if (question.type === 'fill-in-the-blank' || !question.options) {
+        return question; // No randomization needed for fill-in-the-blank
+    }
+
+    const originalOptions = [...question.options];
+    const originalCorrectIndex = question.correctIndex;
+    const correctAnswer = originalOptions[originalCorrectIndex];
+
+    // Create shuffled options
+    const shuffledOptions = shuffleArray(originalOptions);
+    
+    // Find new correct index
+    const newCorrectIndex = shuffledOptions.findIndex(option => option === correctAnswer);
+
+    return {
+        ...question,
+        options: shuffledOptions,
+        correctIndex: newCorrectIndex
+    };
+}
+
 export default class BaseQuizScene extends Phaser.Scene {
     constructor(config) {
         super(config);
@@ -32,9 +65,7 @@ export default class BaseQuizScene extends Phaser.Scene {
     getScaleFactor() {
         const { width, height } = this.scale.gameSize;
         return Math.min(width / BASE_WIDTH, height / BASE_HEIGHT);
-    }
-
-    init(data) {
+    }    init(data) {
         this.currentQuestionIndex = 0;
         this.score = 0;
         this.questions = [];
@@ -54,7 +85,16 @@ export default class BaseQuizScene extends Phaser.Scene {
             maxHP: this.enemyConfig.maxHP        };
         this.gameTimer = new GameTimer(this);
         this.comboMeter = new ComboMeter(this);
-    }    preload() {
+    }
+
+    // Method to set and randomize questions
+    setQuestions(questions) {
+        // First randomize the order of questions
+        this.questions = shuffleArray(questions);
+        
+        // Then randomize the options for each multiple choice question
+        this.questions = this.questions.map(question => randomizeOptions(question));
+    }preload() {
         this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
         this.load.image('player', 'assets/player.png');
         this.load.image('enemy', 'assets/enemy.png');
