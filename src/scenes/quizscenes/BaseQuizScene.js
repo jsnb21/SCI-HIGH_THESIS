@@ -41,13 +41,13 @@ function randomizeOptions(question) {
     };
 }
 
-export default class BaseQuizScene extends Phaser.Scene {
-    constructor(config) {
+export default class BaseQuizScene extends Phaser.Scene {    constructor(config) {
         super(config);
         this.currentQuestionIndex = 0;
         this.score = 0;
+        this.correctAnswers = 0; // Track correct answers separately
         this.quizElements = [];
-        this.persistentElements = [];        this.enemyHpBarHeight = 10;
+        this.persistentElements = [];this.enemyHpBarHeight = 10;
         this.gameTimer = null;
         this.comboMeter = null;
         this.playerConfig = {
@@ -68,6 +68,7 @@ export default class BaseQuizScene extends Phaser.Scene {
     }    init(data) {
         this.currentQuestionIndex = 0;
         this.score = 0;
+        this.correctAnswers = 0; // Initialize correct answers counter
         this.questions = [];
         this.isQuizStarted = false;
         this.enemyConfig = data.enemyConfig || {
@@ -320,9 +321,10 @@ export default class BaseQuizScene extends Phaser.Scene {
         const boxHeight = 230 * sf; // Match the reduced box height
         // Move feedbackY 20% lower than the previous offset
         const feedbackY = centerY + boxHeight / 2 + (20 * sf * 1.2);        // --- Pause the timer ---
-        this.gameTimer.pause();
-
-        if (isCorrect) {
+        this.gameTimer.pause();        if (isCorrect) {
+            // Track correct answer
+            this.correctAnswers++;
+            
             // Update combo meter first
             this.comboMeter.updateCombo(true, sf);
             
@@ -384,6 +386,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         });
     }    restartQuiz() {
         this.score = 0;
+        this.correctAnswers = 0; // Reset correct answers counter
         this.currentQuestionIndex = 0;
         this.isQuizStarted = false;
         this.isAnswering = false; // <-- Reset answering state

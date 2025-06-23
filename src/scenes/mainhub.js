@@ -27,9 +27,23 @@ export default class MainHub extends Phaser.Scene {
         
         // Add font loading
         this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
-    }
-
-    create() {
+    }    create() {
+        // Stop or cleanup any other scenes that might be running
+        const sceneManager = this.scene.manager;
+        
+        // Stop DungeonScene if it exists and is active/paused
+        if (sceneManager.isActive('DungeonScene') || sceneManager.isPaused('DungeonScene')) {
+            sceneManager.stop('DungeonScene');
+        }
+        
+        // Stop any quiz scenes that might still be running
+        const quizScenes = ['PythonQuizScene', 'JavaQuizScene', 'CQuizScene', 'CSharpQuizScene', 'CplusplusQuizScene', 'WebDesignQuizScene'];
+        quizScenes.forEach(sceneName => {
+            if (sceneManager.isActive(sceneName) || sceneManager.isPaused(sceneName)) {
+                sceneManager.stop(sceneName);
+            }
+        });
+        
         // Set up cameras first
         this.cameras.main.setBackgroundColor('#87ceeb');
         

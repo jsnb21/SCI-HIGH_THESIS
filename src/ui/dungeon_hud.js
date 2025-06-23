@@ -479,16 +479,11 @@ export class DungeonMenu {
 
         const options = [
             { label: 'Continue Adventure', action: () => this.closeMenuBox() },
-            { label: 'Game Options', action: () => { this.scene.scene.switch('OptionsScene', { prevScene: this.scene.key }); } },
-            { 
+            { label: 'Game Options', action: () => { this.scene.scene.switch('OptionsScene', { prevScene: this.scene.key }); } },            { 
                 label: 'Return to Hub', 
                 action: () => {
                     this.closeMenuBox();
                     this.scene.scene.stop(this.scene.key);
-                    this.scene.scale.resize(816, 624);
-                    const canvas = this.scene.game.canvas;
-                    canvas.style.width = `816px`;
-                    canvas.style.height = `624px`;
                     this.scene.scene.start('MainHub');
                 } 
             }

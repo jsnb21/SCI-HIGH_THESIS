@@ -118,9 +118,7 @@ export function showVictory(scene) {
         fontFamily: 'Caprasimo-Regular',
         stroke: '#1a1a2e',
         strokeThickness: 2 * sf
-    }).setOrigin(0.5).setDepth(60);
-
-    const scoreText = scene.add.text(centerX, scene.scale.height/2 + 10 * sf, `Your Score: ${scene.score} / ${scene.questions.length}`, {
+    }).setOrigin(0.5).setDepth(60);    const scoreText = scene.add.text(centerX, scene.scale.height/2 + 10 * sf, `Correct Answers: ${scene.correctAnswers} / ${scene.questions.length}`, {
         fontSize: `${22 * sf}px`,
         fill: '#ffffff',
         fontFamily: 'Caprasimo-Regular',
@@ -167,10 +165,23 @@ export function showVictory(scene) {
     )
         .setInteractive({ useHandCursor: true })
         .setOrigin(0.5)
-        .setDepth(61)
-        .on('pointerdown', () => {
+        .setDepth(61)        .on('pointerdown', () => {
             scene.scene.stop();
-            scene.scene.resume('DungeonScene');
+            // Try to resume DungeonScene, but with better error handling
+            try {
+                if (scene.scene.manager.isPaused('DungeonScene')) {
+                    scene.scene.resume('DungeonScene');
+                } else if (scene.scene.manager.isActive('DungeonScene')) {
+                    // DungeonScene is already active, just switch to it
+                    scene.scene.switch('DungeonScene');
+                } else {
+                    // DungeonScene doesn't exist, go back to main hub
+                    scene.scene.start('MainHub');
+                }
+            } catch (error) {
+                console.warn('Error resuming DungeonScene, going to MainHub:', error);
+                scene.scene.start('MainHub');
+            }
         })
         .on('pointerover', () => {
             continueButton.setScale(1.1);
@@ -269,9 +280,7 @@ export function showGameOver(scene) {
         fontFamily: 'Caprasimo-Regular',
         stroke: '#1a1a2e',
         strokeThickness: 2 * sf
-    }).setOrigin(0.5).setDepth(60);
-
-    const scoreText = scene.add.text(centerX, scene.scale.height/2 - 10 * sf, `Questions Answered: ${scene.score} / ${scene.questions.length}`, {
+    }).setOrigin(0.5).setDepth(60);    const scoreText = scene.add.text(centerX, scene.scale.height/2 - 10 * sf, `Correct Answers: ${scene.correctAnswers} / ${scene.questions.length}`, {
         fontSize: `${18 * sf}px`,
         fill: '#ffffff',
         fontFamily: 'Caprasimo-Regular',
@@ -367,11 +376,21 @@ export function showGameOver(scene) {
         })
         .on('pointerout', () => {
             menuButton.setScale(1);
-        })
-        .on('pointerdown', () => {
+        })        .on('pointerdown', () => {
             scene.se_confirmSound?.play();
+            
+            // Clean up current scene first
             scene.cleanupAllElements();
-            scene.scene.start('ComputerLab');
+            scene.scene.stop();
+            
+            // Ensure DungeonScene is stopped before going to MainHub
+            const sceneManager = scene.scene.manager;
+            if (sceneManager.isActive('DungeonScene') || sceneManager.isPaused('DungeonScene')) {
+                sceneManager.stop('DungeonScene');
+            }
+            
+            // Start MainHub
+            scene.scene.start('MainHub');
         });
 
     // Animate elements in
