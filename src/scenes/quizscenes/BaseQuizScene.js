@@ -71,16 +71,13 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.correctAnswers = 0; // Initialize correct answers counter
         this.questions = [];
         this.isQuizStarted = false;
-        
-        // Define available enemy sprites
+          // Define available enemy sprites (only include existing files)
         const availableEnemies = [
             'boxenemy',
             'goblinNerd', 
             'bigSlime',
             'cyberFighter',
-            'starfishMonster',
-            'goblin',
-            'dragon'
+            'starfishMonster'
         ];
         
         // Randomly select an enemy sprite
@@ -110,25 +107,35 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         
         // Then randomize the options for each multiple choice question
         this.questions = this.questions.map(question => randomizeOptions(question));
-    }preload() {
+    }    preload() {
+        // Load custom font properly
         this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
-        this.load.image('player', 'assets/player.png');
-        this.load.image('enemy', 'assets/enemy.png');        this.load.image('goblin', 'assets/enemies/goblin.png');
-        this.load.image('dragon', 'assets/enemies/dragon.png');
+        
+        // Only load existing enemy sprites
         this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
         this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
         this.load.image('bigSlime', 'assets/sprites/enemies/big slime.png');
         this.load.image('cyberFighter', 'assets/sprites/enemies/cyber fighter.png');
-        this.load.image('starfishMonster', 'assets/sprites/enemies/starfish monster.png');this.load.image('heart', 'assets/sprites/dungeon/heart.png');
+        this.load.image('starfishMonster', 'assets/sprites/enemies/starfish monster.png');
+        this.load.image('heart', 'assets/sprites/dungeon/heart.png');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.audio('se_combo', 'assets/audio/se/se_combo.wav');
         this.load.audio('se_wrong', 'assets/audio/se/se_wrong.wav');
-    }    create() {
+        this.load.audio('se_hurt', 'assets/audio/se/se_hurt.wav');
+        this.load.audio('se_explosion', 'assets/audio/se/se_explosion.wav');
+        
+        // Handle font loading errors gracefully
+        this.load.on('loaderror', (file) => {
+            console.warn('Failed to load file:', file.src);
+        });
+    }create() {
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
         this.se_comboSound = this.sound.add('se_combo');
         this.se_wrongSound = this.sound.add('se_wrong');
+        this.se_hurtSound = this.sound.add('se_hurt');
+        this.se_explosionSound = this.sound.add('se_explosion');
         if (!this.enemyConfig) {
             console.error('enemyConfig is undefined!');
             return;
@@ -279,9 +286,32 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                         heart.setData('pulsing', false);
                     }
                 });
-            }
-        } else {
+            }        } else {
             this.enemyHPState.currentHP = hp;
+            
+            // Play hurt sound effect for enemy
+            if (this.se_hurtSound) {
+                this.se_hurtSound.play();
+            }
+            
+            // Add flashing red effect to enemy sprite
+            const enemySprite = container.list.find(child => child.texture && child.texture.key === this.enemyConfig.spriteKey);
+            if (enemySprite) {
+                // Flash red effect
+                enemySprite.setTint(0xff0000); // Set to red
+                this.tweens.add({
+                    targets: enemySprite,
+                    alpha: 0.3,
+                    duration: 100,
+                    ease: 'Power2.easeInOut',
+                    yoyo: true,
+                    repeat: 2, // Flash 3 times total
+                    onComplete: () => {
+                        enemySprite.clearTint(); // Remove red tint
+                        enemySprite.setAlpha(1); // Restore full alpha
+                    }
+                });
+            }
             
             // Update enemy HP bar
             const hpBar = container.getData('hpBar');
@@ -357,12 +387,24 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             if (multiplier > 1) {
                 feedbackText += ` (${multiplier}x Combo!)`;
             }
-            
-            showFeedback(this, feedbackText, 0x00ff00, centerX, feedbackY);
+              showFeedback(this, feedbackText, 0x00ff00, centerX, feedbackY);
             this.gameTimer.addTime(5);
             if (this.enemyContainer) {
                 this.damageCharacter(this.enemyContainer, 20);
-            }        } else {
+                
+                // Check if enemy died immediately after damage
+                const enemyHP = this.enemyContainer.getData('currentHP');
+                if (enemyHP <= 0) {
+                    // Enemy died, play death animation and then show victory
+                    this.time.delayedCall(1000, () => {
+                        this.gameTimer.resume();
+                        this.playEnemyDeathAnimation(() => {
+                            showVictory(this);
+                        });
+                    });
+                    return;
+                }
+            }} else {
             // Update combo meter (resets combo)
             this.comboMeter.updateCombo(false, sf);
             
@@ -383,13 +425,16 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 showGameOver(this);
                 return;
             }
-        }
-        if (this.enemyContainer) {
+        }        if (this.enemyContainer) {
             const enemyHP = this.enemyContainer.getData('currentHP');
             if (enemyHP <= 0) {
                 // --- Resume timer before ending ---
                 this.gameTimer.resume();
-                showVictory(this);
+                
+                // Play enemy death animation before showing victory
+                this.playEnemyDeathAnimation(() => {
+                    showVictory(this);
+                });
                 return;
             }
         }
@@ -419,6 +464,186 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.gameTimer = new GameTimer(this);
         this.comboMeter = new ComboMeter(this);
         this.startQuiz(30);
+    }
+
+    playEnemyDeathAnimation(onComplete) {
+        if (!this.enemyContainer) {
+            onComplete();
+            return;
+        }
+
+        const sf = this.scaleFactor;
+        
+        // Find the enemy sprite
+        const enemySprite = this.enemyContainer.list.find(child => 
+            child.texture && child.texture.key === this.enemyConfig.spriteKey
+        );
+        
+        if (!enemySprite) {
+            onComplete();
+            return;
+        }
+
+        // Death animation sequence
+        this.tweens.add({
+            targets: enemySprite,
+            scaleX: 1.3,
+            scaleY: 1.3,
+            duration: 200,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+                // Flash white briefly
+                enemySprite.setTint(0xffffff);
+                
+                this.tweens.add({
+                    targets: enemySprite,
+                    alpha: 0,
+                    scaleX: 0.5,
+                    scaleY: 0.5,
+                    rotation: Math.PI * 2,
+                    duration: 800,
+                    ease: 'Power2.easeIn',
+                    onUpdate: (tween) => {
+                        // Flicker effect during fade
+                        const progress = tween.progress;
+                        if (progress > 0.3) {
+                            const flicker = Math.sin(progress * 20) > 0 ? 1 : 0.3;
+                            enemySprite.setAlpha(flicker * (1 - progress));
+                        }
+                    },                    onComplete: () => {
+                        // Hide the entire enemy container
+                        this.enemyContainer.setVisible(false);
+                          // Play explosion sound effect at much higher volume
+                        if (this.se_explosionSound) {
+                            this.se_explosionSound.play({ volume: 2.0 });
+                        }
+                        
+                        // Create explosion particles effect
+                        this.createDeathParticles(this.enemyContainer.x, this.enemyContainer.y, sf);
+                        
+                        // Wait a bit more before calling completion
+                        this.time.delayedCall(500, onComplete);
+                    }
+                });
+            }
+        });
+    }    createDeathParticles(x, y, sf) {
+        // Create epic multi-layered particle explosion effect
+        
+        // Layer 1: Main explosion burst (larger particles)
+        const mainParticleCount = 16;
+        const mainColors = [0xff4757, 0xffa726, 0xffd700, 0xff6b7d, 0xff3838, 0xff9500];
+        
+        for (let i = 0; i < mainParticleCount; i++) {
+            const angle = (i / mainParticleCount) * Math.PI * 2;
+            const distance = Phaser.Math.Between(80, 120) * sf;
+            const targetX = x + Math.cos(angle) * distance;
+            const targetY = y + Math.sin(angle) * distance;
+            
+            const particleSize = Phaser.Math.Between(4, 8) * sf;
+            const particle = this.add.circle(x, y, particleSize, mainColors[i % mainColors.length]).setDepth(125);
+            
+            this.tweens.add({
+                targets: particle,
+                x: targetX,
+                y: targetY,
+                alpha: 0,
+                scale: 0.1,
+                duration: Phaser.Math.Between(800, 1200),
+                ease: 'Power3.easeOut',
+                onComplete: () => {
+                    particle.destroy();
+                }
+            });
+        }
+        
+        // Layer 2: Secondary scatter particles (medium particles)
+        const scatterCount = 24;
+        const scatterColors = [0xffdd59, 0xff6348, 0xff4757, 0xffc048];
+        
+        for (let i = 0; i < scatterCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Phaser.Math.Between(40, 160) * sf;
+            const targetX = x + Math.cos(angle) * distance;
+            const targetY = y + Math.sin(angle) * distance;
+            
+            const particleSize = Phaser.Math.Between(2, 5) * sf;
+            const particle = this.add.circle(x, y, particleSize, scatterColors[Math.floor(Math.random() * scatterColors.length)]).setDepth(124);
+            
+            this.tweens.add({
+                targets: particle,
+                x: targetX,
+                y: targetY,
+                alpha: 0,
+                scale: 0.2,
+                duration: Phaser.Math.Between(600, 1000),
+                ease: 'Power2.easeOut',
+                delay: Phaser.Math.Between(0, 200),
+                onComplete: () => {
+                    particle.destroy();
+                }
+            });
+        }
+        
+        // Layer 3: Sparks and small debris (tiny particles)
+        const sparkCount = 32;
+        const sparkColors = [0xffffff, 0xffdd59, 0xffa726, 0xff4757];
+        
+        for (let i = 0; i < sparkCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Phaser.Math.Between(20, 200) * sf;
+            const targetX = x + Math.cos(angle) * distance;
+            const targetY = y + Math.sin(angle) * distance;
+            
+            const particleSize = Phaser.Math.Between(1, 3) * sf;
+            const particle = this.add.circle(x, y, particleSize, sparkColors[Math.floor(Math.random() * sparkColors.length)]).setDepth(126);
+            
+            this.tweens.add({
+                targets: particle,
+                x: targetX,
+                y: targetY,
+                alpha: 0,
+                scale: 0.05,
+                duration: Phaser.Math.Between(400, 800),
+                ease: 'Power1.easeOut',
+                delay: Phaser.Math.Between(0, 300),
+                onComplete: () => {
+                    particle.destroy();
+                }
+            });
+        }
+        
+        // Layer 4: Shockwave ring effect
+        const shockwave = this.add.circle(x, y, 10 * sf, 0xffffff, 0.8).setDepth(123);
+        shockwave.setStrokeStyle(3 * sf, 0xffd700);
+        
+        this.tweens.add({
+            targets: shockwave,
+            scale: 8,
+            alpha: 0,
+            duration: 600,
+            ease: 'Power2.easeOut',
+            onComplete: () => {
+                shockwave.destroy();
+            }
+        });
+        
+        // Layer 5: Screen flash effect
+        const flashOverlay = this.add.rectangle(this.cameras.main.centerX, this.cameras.main.centerY, 
+            this.cameras.main.width, this.cameras.main.height, 0xffffff, 0.6).setDepth(130);
+            
+        this.tweens.add({
+            targets: flashOverlay,
+            alpha: 0,
+            duration: 300,
+            ease: 'Power2.easeOut',
+            onComplete: () => {
+                flashOverlay.destroy();
+            }
+        });
+        
+        // Layer 6: Camera shake for impact
+        this.cameras.main.shake(400, 0.02);
     }
 
     cleanupAllElements() {

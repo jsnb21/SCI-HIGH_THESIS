@@ -26,6 +26,8 @@ export default class CplusplusQuizScene extends BaseQuizScene {
         this.se_confirmSound = this.sound.add('se_confirm');
         this.se_comboSound = this.sound.add('se_combo');
         this.se_wrongSound = this.sound.add('se_wrong');
+        this.se_hurtSound = this.sound.add('se_hurt');
+        this.se_explosionSound = this.sound.add('se_explosion');
         
         // DON'T call super.create() - it creates duplicate enemy UI
         // Instead, just start the quiz directly
