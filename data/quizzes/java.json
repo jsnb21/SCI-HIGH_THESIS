@@ -46,9 +46,23 @@
       "correctIndex": 3
     },
     {
-      "question": "Which exception is thrown when a required file is missing?",
-      "options": ["FileNotFoundException", "IOException", "NullPointerException", "MissingFileException"],
+      "question": "Which exception is thrown when a required file is missing?",      "options": ["FileNotFoundException", "IOException", "NullPointerException", "MissingFileException"],
       "correctIndex": 0
+    },
+    {
+      "question": "Complete the code: To declare a public static method in Java, you write _____ static void methodName()",
+      "type": "fill-in-the-blank",
+      "correctAnswers": ["public", "PUBLIC"]
+    },
+    {
+      "question": "Fill in the blank: The main method in Java has the signature: public static void _____(String[] args)",
+      "type": "fill-in-the-blank",
+      "correctAnswers": ["main", "MAIN"]
+    },
+    {
+      "question": "Complete this statement: To create a new object in Java, you use the _____ keyword.",
+      "type": "fill-in-the-blank",
+      "correctAnswers": ["new", "NEW"]
     }
   ]
 }

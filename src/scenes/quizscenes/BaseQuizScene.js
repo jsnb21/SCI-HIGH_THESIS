@@ -119,9 +119,7 @@ export default class BaseQuizScene extends Phaser.Scene {
             );
         }
         this.showQuestion();
-    }
-
-    showQuestion() {
+    }    showQuestion() {
         this.isAnswering = false; // <-- Reset answering state at the start of every question
         this.scaleFactor = this.getScaleFactor();
         const sf = this.scaleFactor;
@@ -129,8 +127,9 @@ export default class BaseQuizScene extends Phaser.Scene {
             showVictory(this);
             return;
         }
-        const { question, options } = this.questions[this.currentQuestionIndex];
-        this.cleanupQuestionElements();        // Layout
+        const currentQuestion = this.questions[this.currentQuestionIndex];
+        const { question, options, type = 'multiple-choice' } = currentQuestion;
+        this.cleanupQuestionElements();// Layout
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2 + 100 * sf; // Move box further down (80 + 20)
         const boxWidth = 600 * sf;
@@ -145,7 +144,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         // Combo meter (above the enemy)
         const comboMeterY = boxTopY - 140 * sf; // Position above the enemy
         const comboElements = this.comboMeter.create(centerX, comboMeterY, sf);
-        this.quizElements.push(comboElements.comboContainer);// Question and options (inside the box)
+        this.quizElements.push(comboElements.comboContainer);        // Question and options (inside the box)
         createQuestionAndOptions(
             this,
             centerX,
@@ -156,15 +155,20 @@ export default class BaseQuizScene extends Phaser.Scene {
             question,
             options,
             sf,
-            (index) => this.checkAnswer(index)
-        );        // Player hearts at top left
+            type,
+            (index, answer) => this.checkAnswer(index, answer)
+        );// Player hearts at top left
         const heartsX = 140 * sf; // Move to top left
         const heartsY = 30 * sf;
         this.playerContainer = createPlayerUI(this, heartsX, heartsY, this.playerConfig, sf);
         this.quizElements.push(this.playerContainer);
-    }
-
-    cleanupQuestionElements() {
+    }    cleanupQuestionElements() {
+        // Clean up fill-in-the-blank keyboard listeners if they exist
+        if (this._fillInBlankCleanup) {
+            this._fillInBlankCleanup();
+            this._fillInBlankCleanup = null;
+        }
+        
         this.quizElements.forEach(el => {
             if (el && el.active) el.destroy();
         });
@@ -172,7 +176,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         this.enemyContainer = null;
         this.playerContainer = null;
         this._quizOptionBgs = []; // <-- Clear option backgrounds to avoid stale references
-    }    damageCharacter(container, amount) {
+    }damageCharacter(container, amount) {
         const sf = this.scaleFactor;
         let hp = container.getData('currentHP');
         const maxHP = container.getData('maxHP');
@@ -251,21 +255,34 @@ export default class BaseQuizScene extends Phaser.Scene {
                 hpText.setText(`${label}`);
             }
         }
-    }
-
-    checkAnswer(selectedIndex) {
+    }    checkAnswer(selectedIndex, userAnswer = null) {
         if (this.isAnswering) return;
         this.isAnswering = true;
-        const correctIndex = this.questions[this.currentQuestionIndex].correctIndex;        // Calculate feedback position below the quiz box, 20% lower
+        
+        const currentQuestion = this.questions[this.currentQuestionIndex];
+        let isCorrect = false;
+        
+        // Handle different question types
+        if (currentQuestion.type === 'fill-in-the-blank') {
+            // For fill-in-the-blank, check if the user's answer matches any correct answer
+            const correctAnswers = currentQuestion.correctAnswers || [];
+            isCorrect = correctAnswers.some(answer => 
+                userAnswer && userAnswer.toLowerCase().trim() === answer.toLowerCase().trim()
+            );
+        } else {
+            // Default multiple choice
+            const correctIndex = currentQuestion.correctIndex;
+            isCorrect = selectedIndex === correctIndex;
+        }// Calculate feedback position below the quiz box, 20% lower
         const sf = this.scaleFactor;
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2 + 100 * sf; // Match the box position (80 + 20)
         const boxHeight = 230 * sf; // Match the reduced box height
         // Move feedbackY 20% lower than the previous offset
-        const feedbackY = centerY + boxHeight / 2 + (20 * sf * 1.2);
+        const feedbackY = centerY + boxHeight / 2 + (20 * sf * 1.2);        // --- Pause the timer ---
+        this.gameTimer.pause();
 
-        // --- Pause the timer ---
-        this.gameTimer.pause();        if (selectedIndex === correctIndex) {
+        if (isCorrect) {
             // Update combo meter first
             this.comboMeter.updateCombo(true, sf);
             

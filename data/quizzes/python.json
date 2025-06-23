@@ -1,6 +1,11 @@
 {
   "questions": [
     {
+      "question": "Complete the code: To define a function in Python, you use the _____ keyword.",
+      "type": "fill-in-the-blank",
+      "correctAnswers": ["def", "DEF"]
+    },
+    {
       "question": "What is Python primarily used for?",
       "options": [
         "Web development",
@@ -81,8 +86,7 @@
       "correctIndex": 0
     },
     {
-      "question": "Which of the following is used to handle exceptions in Python?",
-      "options": [
+      "question": "Which of the following is used to handle exceptions in Python?",      "options": [
         "catch",
         "try/except",
         "error handling",
@@ -98,7 +102,21 @@
         "Hello + 5",
         "Error"
       ],
-      "correctIndex": 0
+      "correctIndex": 0    },
+    {
+      "question": "Fill in the blank: The _____ function is used to get the length of a list in Python.",
+      "type": "fill-in-the-blank",
+      "correctAnswers": ["len", "LEN", "len()"]
+    },
+    {
+      "question": "Complete this line: To create a comment in Python, you start with _____",
+      "type": "fill-in-the-blank",
+      "correctAnswers": ["#", "# ", "hash", "hashtag"]
+    },
+    {
+      "question": "Fill in the missing operator: To check if two values are equal in Python, you use _____",
+      "type": "fill-in-the-blank",
+      "correctAnswers": ["==", "equal", "equals"]
     }
   ]
 }
