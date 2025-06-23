@@ -41,7 +41,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         console.log('INIT:', data);
         console.log('init called with data:', data);
         this.enemyConfig = data.enemyConfig || {
-            spriteKey: 'boxenemy',
+            spriteKey: 'goblinNerd',
             maxHP: 100,
             label: 'Enemy',
         };
@@ -70,7 +70,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         // You can preload other enemies too:
         this.load.image('goblin', 'assets/enemies/goblin.png');
         this.load.image('dragon', 'assets/enemies/dragon.png');
-        this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
+        this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
 
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');

@@ -13,7 +13,7 @@ export default class CSharpScene extends Phaser.Scene {
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.image('CSharpIcons', 'assets/img/comlab/icons/csharp_logo.png');
 
-        this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
+        this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
     }
 
     create() {
@@ -37,7 +37,7 @@ export default class CSharpScene extends Phaser.Scene {
                 this.se_confirmSound.play();
                 this.scene.start('CSharpQuizScene', { topic: 'csharp',
                 enemyConfig: {
-                    spriteKey: 'boxenemy',
+                    spriteKey: 'goblinNerd',
                     maxHP: 150,
                     label: 'Box',
                 },

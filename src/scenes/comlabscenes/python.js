@@ -13,7 +13,7 @@ export default class PythonScene extends Phaser.Scene {
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.image('pythonIcon', 'assets/img/comlab/icons/python_logo.png');
 
-        this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
+        this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
     }
 
     create() {
@@ -38,7 +38,7 @@ export default class PythonScene extends Phaser.Scene {
                 // Stop PythonQuizScene if it is already running
                 this.scene.start('PythonQuizScene', { topic: 'python',
                 enemyConfig: {
-                    spriteKey: 'boxenemy',
+                    spriteKey: 'goblinNerd',
                     maxHP: 150,
                     label: 'Box',
                 },

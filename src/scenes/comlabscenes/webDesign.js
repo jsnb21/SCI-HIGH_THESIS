@@ -13,7 +13,7 @@ export default class WebDesignScene extends Phaser.Scene {
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.image('webDesignIcons', 'assets/img/comlab/icons/web-design_logo.png');
 
-        this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
+        this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
     }
 
     create() {

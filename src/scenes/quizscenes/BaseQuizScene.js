@@ -70,10 +70,8 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.score = 0;
         this.correctAnswers = 0; // Initialize correct answers counter
         this.questions = [];
-        this.isQuizStarted = false;
-          // Define available enemy sprites (only include existing files)
+        this.isQuizStarted = false;        // Define available enemy sprites (only include existing files)
         const availableEnemies = [
-            'boxenemy',
             'goblinNerd', 
             'bigSlime',
             'cyberFighter',
@@ -109,14 +107,11 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.questions = this.questions.map(question => randomizeOptions(question));
     }    preload() {
         // Load custom font properly
-        this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
-        
-        // Only load existing enemy sprites
-        this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
+        this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');        // Only load existing enemy sprites
         this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
-        this.load.image('bigSlime', 'assets/sprites/enemies/big slime.png');
-        this.load.image('cyberFighter', 'assets/sprites/enemies/cyber fighter.png');
-        this.load.image('starfishMonster', 'assets/sprites/enemies/starfish monster.png');
+        this.load.image('bigSlime', 'assets/sprites/enemies/big_slime.png');
+        this.load.image('cyberFighter', 'assets/sprites/enemies/cyber_fighter.png');
+        this.load.image('starfishMonster', 'assets/sprites/enemies/starfish_monster.png');
         this.load.image('heart', 'assets/sprites/dungeon/heart.png');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');

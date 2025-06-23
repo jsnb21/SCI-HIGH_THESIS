@@ -12,7 +12,7 @@ export default class JavaScene extends Phaser.Scene {
         // Load assets for this scene
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.image('JavaIcon', 'assets/img/comlab/icons/java_logo.png');
-        this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
+        this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
     }
 
     create() {
@@ -36,7 +36,7 @@ export default class JavaScene extends Phaser.Scene {
                 this.se_confirmSound.play();
                 this.scene.start('JavaQuizScene', { topic: 'Java',
                 enemyConfig: {
-                    spriteKey: 'boxenemy',
+                    spriteKey: 'goblinNerd',
                     maxHP: 150,
                     label: 'Box',
                 },
