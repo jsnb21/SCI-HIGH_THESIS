@@ -46,11 +46,9 @@ class Carousel {
         if (this.breathingTween) {
             this.breathingTween.stop();
             this.breathingTween = null;
-        }
-
-        const scale = this.getScale();
+        }        const scale = this.getScale();
         const iconCount = this.iconKeys.length;
-        this.carouselIndex = Math.floor(iconCount / 2);
+        this.carouselIndex = 0; // Always start with the first icon (Web Design)
 
         const iconSpacing = (this.config.iconSpacing ?? 220) * scale;
         const iconYOffset = (this.config.iconYOffset ?? 0) * scale;
@@ -108,10 +106,13 @@ class Carousel {
             stroke: '#111122',
             strokeThickness: 4,
             shadow: { offsetX: 0, offsetY: 2, color: '#000', blur: 8, fill: true }
-        };
-
-        for (let i = 0; i < iconCount; i++) {
-            const x = iconCenterX + (i - this.carouselIndex) * iconSpacing;
+        };        for (let i = 0; i < iconCount; i++) {
+            // Calculate relative position to center the carousel properly
+            let relativePos = i - this.carouselIndex;
+            if (relativePos > Math.floor(iconCount / 2)) relativePos -= iconCount;
+            else if (relativePos < -Math.floor(iconCount / 2)) relativePos += iconCount;
+            
+            const x = iconCenterX + relativePos * iconSpacing;
             const scaleVal = (i === this.carouselIndex) ? largeScale : smallScale;
 
             const icon = this.scene.add.image(x, iconCenterY, this.iconKeys[i])
