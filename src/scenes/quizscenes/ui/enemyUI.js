@@ -1,19 +1,16 @@
 export function createEnemyUI(scene, centerX, boxTopY, sf) {
-    // Enemy sprite above the box
-    const enemySpriteY = boxTopY - 100 * sf; // Moved 20 pixels higher (was 50, now 70)
-    const enemySprite = scene.add.sprite(0, 0, scene.enemyConfig.spriteKey);
-    const maxSpriteWidth = 120 * sf;
-    const maxSpriteHeight = 90 * sf;
+    // Enemy sprite above the box - raised higher on y-axis
+    const enemySpriteY = boxTopY - 150 * sf; // Raised from -100 to -120 (20 pixels higher)
+    const enemySprite = scene.add.sprite(0, 0, scene.enemyConfig.spriteKey);const maxSpriteWidth = 180 * sf;  // Increased from 120 to 180
+    const maxSpriteHeight = 135 * sf; // Increased from 90 to 135
     const scaleX = maxSpriteWidth / enemySprite.width;
     const scaleY = maxSpriteHeight / enemySprite.height;
-    const finalScale = Math.min(scaleX, scaleY);
+    const finalScale = Math.min(scaleX, scaleY) * 1.8; // Reduced from 2.0x to 1.8x (10% smaller)
     enemySprite.setScale(finalScale).setDepth(120);
 
     // Enhanced enemy glow effect
-    const enemyGlow = scene.add.circle(0, 0, maxSpriteWidth * 0.6, 0xff4757, 0.2).setDepth(119);
-
-    // Enhanced HP bar background
-    const hpBarY = - (enemySprite.displayHeight / 2) - 25 * sf;
+    const enemyGlow = scene.add.circle(0, 0, maxSpriteWidth * 0.6, 0xff4757, 0.2).setDepth(119);    // Enhanced HP bar background
+    const hpBarY = - (enemySprite.displayHeight / 2) - 5 * sf; // Reduced from -25 to -15 (10 pixels lower)
     const hpBarWidth = 120 * sf;
     const hpBarHeight = 12 * sf;
     

@@ -320,10 +320,9 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 hpBar.clear();
                 const hpBarWidth = 120 * sf;
                 const hpBarHeight = 12 * sf;
-                
-                // Use the same Y calculation as in createEnemyUI
+                  // Use the same Y calculation as in createEnemyUI
                 const enemySprite = container.list.find(child => child.texture && child.texture.key === this.enemyConfig.spriteKey);
-                const hpBarY = enemySprite ? -(enemySprite.displayHeight / 2) - 25 * sf : -45 * sf;
+                const hpBarY = enemySprite ? -(enemySprite.displayHeight / 2) - 5 * sf : -45 * sf;
                 
                 // Redraw HP bar with gradient
                 const hpPercentage = hp / maxHP;
@@ -482,24 +481,29 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         if (!enemySprite) {
             onComplete();
             return;
-        }
-
+        }        // Get current scale and calculate consistent enlargement
+        const currentScaleX = enemySprite.scaleX;
+        const currentScaleY = enemySprite.scaleY;
+        const enlargementFactor = 1.4; // 40% larger than current size
+        
         // Death animation sequence
         this.tweens.add({
             targets: enemySprite,
-            scaleX: 1.3,
-            scaleY: 1.3,
+            scaleX: currentScaleX * enlargementFactor,
+            scaleY: currentScaleY * enlargementFactor,
             duration: 200,
             ease: 'Back.easeOut',
-            onComplete: () => {
-                // Flash white briefly
+            onComplete: () => {                // Flash white briefly
                 enemySprite.setTint(0xffffff);
+                
+                // Calculate shrink scale relative to current size
+                const shrinkFactor = 0.3; // Shrink to 30% of current size
                 
                 this.tweens.add({
                     targets: enemySprite,
                     alpha: 0,
-                    scaleX: 0.5,
-                    scaleY: 0.5,
+                    scaleX: currentScaleX * shrinkFactor,
+                    scaleY: currentScaleY * shrinkFactor,
                     rotation: Math.PI * 2,
                     duration: 800,
                     ease: 'Power2.easeIn',
