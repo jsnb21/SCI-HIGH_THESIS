@@ -71,8 +71,23 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.correctAnswers = 0; // Initialize correct answers counter
         this.questions = [];
         this.isQuizStarted = false;
+        
+        // Define available enemy sprites
+        const availableEnemies = [
+            'boxenemy',
+            'goblinNerd', 
+            'bigSlime',
+            'cyberFighter',
+            'starfishMonster',
+            'goblin',
+            'dragon'
+        ];
+        
+        // Randomly select an enemy sprite
+        const randomEnemyKey = availableEnemies[Math.floor(Math.random() * availableEnemies.length)];
+        
         this.enemyConfig = data.enemyConfig || {
-            spriteKey: 'boxenemy',
+            spriteKey: randomEnemyKey,
             maxHP: 100,
             label: 'Enemy',
         };
@@ -98,18 +113,22 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
     }preload() {
         this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
         this.load.image('player', 'assets/player.png');
-        this.load.image('enemy', 'assets/enemy.png');
-        this.load.image('goblin', 'assets/enemies/goblin.png');
+        this.load.image('enemy', 'assets/enemy.png');        this.load.image('goblin', 'assets/enemies/goblin.png');
         this.load.image('dragon', 'assets/enemies/dragon.png');
         this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
-        this.load.image('heart', 'assets/sprites/dungeon/heart.png');
+        this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
+        this.load.image('bigSlime', 'assets/sprites/enemies/big slime.png');
+        this.load.image('cyberFighter', 'assets/sprites/enemies/cyber fighter.png');
+        this.load.image('starfishMonster', 'assets/sprites/enemies/starfish monster.png');this.load.image('heart', 'assets/sprites/dungeon/heart.png');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
-    }
-
-    create() {
+        this.load.audio('se_combo', 'assets/audio/se/se_combo.wav');
+        this.load.audio('se_wrong', 'assets/audio/se/se_wrong.wav');
+    }    create() {
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
+        this.se_comboSound = this.sound.add('se_combo');
+        this.se_wrongSound = this.sound.add('se_wrong');
         if (!this.enemyConfig) {
             console.error('enemyConfig is undefined!');
             return;
@@ -343,10 +362,14 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             this.gameTimer.addTime(5);
             if (this.enemyContainer) {
                 this.damageCharacter(this.enemyContainer, 20);
-            }
-        } else {
+            }        } else {
             // Update combo meter (resets combo)
             this.comboMeter.updateCombo(false, sf);
+            
+            // Play wrong answer sound
+            if (this.se_wrongSound) {
+                this.se_wrongSound.play();
+            }
             
             showFeedback(this, "Wrong! The enemy attacks you!", 0xff0000, centerX, feedbackY);
             this.gameTimer.subtractTime(3);
