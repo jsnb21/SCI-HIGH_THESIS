@@ -192,9 +192,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
 function createFillInBlankInput(scene, container, centerX, centerY, boxWidth, boxHeight, questionTextY, sf, onSelect) {
     const inputY = questionTextY + 80 * sf;
     const inputWidth = 400 * sf;
-    const inputHeight = 50 * sf;
-
-    // Input background
+    const inputHeight = 50 * sf;    // Input background with focus styling
     const inputBg = scene.add.graphics().setDepth(121);
     inputBg.fillStyle(0x1a1a2e, 0.9);
     inputBg.fillRoundedRect(
@@ -204,24 +202,27 @@ function createFillInBlankInput(scene, container, centerX, centerY, boxWidth, bo
         inputHeight,
         8 * sf
     );
-    inputBg.lineStyle(2 * sf, 0x63b3ed, 0.8);
+    // Active blue border to indicate it's ready for input
+    inputBg.lineStyle(3 * sf, 0x63b3ed, 1);
     inputBg.strokeRoundedRect(
         centerX - inputWidth / 2,
         inputY - inputHeight / 2,
         inputWidth,
         inputHeight,
         8 * sf
-    );
-
-    // Placeholder text
-    const placeholderText = scene.add.text(centerX, inputY, 'Type your answer here...', {
+    );    // Instruction text above input
+    const instructionText = scene.add.text(centerX, inputY - 40 * sf, 'Type your answer and press Enter or click Submit', {
+        fontSize: `${12 * sf}px`,
+        fill: '#a0aec0',
+        align: 'center',
+        fontFamily: 'Caprasimo-Regular'
+    }).setOrigin(0.5).setDepth(122);// Placeholder text
+    const placeholderText = scene.add.text(centerX, inputY, 'Click here and start typing...', {
         fontSize: `${16 * sf}px`,
         fill: '#888888',
         align: 'center',
         fontFamily: 'Caprasimo-Regular'
-    }).setOrigin(0.5).setDepth(122);
-
-    // User input text
+    }).setOrigin(0.5).setDepth(122);// User input text
     const inputText = scene.add.text(centerX, inputY, '', {
         fontSize: `${16 * sf}px`,
         fill: '#ffffff',
@@ -229,6 +230,24 @@ function createFillInBlankInput(scene, container, centerX, centerY, boxWidth, bo
         fontFamily: 'Caprasimo-Regular',
         wordWrap: { width: inputWidth - 20 * sf }
     }).setOrigin(0.5).setDepth(122);
+
+    // Blinking cursor
+    const cursor = scene.add.text(centerX, inputY, '|', {
+        fontSize: `${18 * sf}px`,
+        fill: '#63b3ed',
+        align: 'center',
+        fontFamily: 'Caprasimo-Regular'
+    }).setOrigin(0.5).setDepth(123);
+
+    // Create blinking animation for cursor
+    const cursorTween = scene.tweens.add({
+        targets: cursor,
+        alpha: 0,
+        duration: 600,
+        ease: 'Power2',
+        yoyo: true,
+        repeat: -1
+    });
 
     // Submit button
     const submitButtonY = inputY + 70 * sf;
@@ -286,22 +305,31 @@ function createFillInBlankInput(scene, container, centerX, centerY, boxWidth, bo
         }
         
         updateInputDisplay();
-    };
-
-    const updateInputDisplay = () => {
+    };    const updateInputDisplay = () => {
         if (userInput.length > 0) {
             inputText.setText(userInput);
             placeholderText.setVisible(false);
+            
+            // Position cursor at the end of the text
+            const textBounds = inputText.getBounds();
+            cursor.setX(textBounds.right + 5 * sf);
+            cursor.setVisible(true);
         } else {
             inputText.setText('');
             placeholderText.setVisible(true);
+            
+            // Center cursor when no text
+            cursor.setX(centerX);
+            cursor.setVisible(true);
         }
-    };
-
-    const submitAnswer = () => {
+    };    const submitAnswer = () => {
         if (isSubmitted || userInput.trim().length === 0) return;
         
         isSubmitted = true;
+        
+        // Hide cursor and stop blinking
+        cursor.setVisible(false);
+        cursorTween.stop();
         
         // Visual feedback
         submitBg.clear();
@@ -371,18 +399,24 @@ function createFillInBlankInput(scene, container, centerX, centerY, boxWidth, bo
                 8 * sf
             );
         }
-    });
-
+    });    container.add(instructionText);
     container.add(inputBg);
     container.add(placeholderText);
     container.add(inputText);
+    container.add(cursor);
     container.add(submitBg);
     container.add(submitText);
     container.add(submitButton);
 
+    // Initialize display
+    updateInputDisplay();
+
     // Store reference for cleanup
     scene._fillInBlankCleanup = () => {
         scene.input.keyboard.off('keydown', handleKeyInput);
+        if (cursorTween) {
+            cursorTween.stop();
+        }
     };
 }
 
