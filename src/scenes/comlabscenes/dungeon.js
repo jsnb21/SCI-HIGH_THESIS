@@ -23,12 +23,19 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.particles = null;
         this.lightingOverlay = null;
         this.playerSprite = null;
-        
-        // Progression system variables
+          // Progression system variables
         this.enemiesDefeated = 0;
         this.maxIntensity = 3;
         this.playerDamage = 10;
         this.isBossLevel = false;
+        
+        // Course statistics tracking
+        this.courseStats = {
+            totalScore: 0,
+            correctAnswers: 0,
+            wrongAnswers: 0,
+            comboScore: 0
+        };
     }    preload() {
         this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
         this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
@@ -52,12 +59,19 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.particles = null;
         this.lightingOverlay = null;
         this.playerSprite = null;
-        
-        // Initialize progression variables
+          // Initialize progression variables
         this.enemiesDefeated = 0;
         this.maxIntensity = 3;
         this.playerDamage = 10;
         this.isBossLevel = false;
+        
+        // Reset course statistics
+        this.courseStats = {
+            totalScore: 0,
+            correctAnswers: 0,
+            wrongAnswers: 0,
+            comboScore: 0
+        };
 
         // Enhanced background with gradient
         this.cameras.main.setBackgroundColor('#1a1a2e');
@@ -88,11 +102,17 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
 
         // Add resize listener
         this.scale.on('resize', this.onResize, this);
-        this.updateScale();
+        this.updateScale();        this.events.once('shutdown', this.shutdown, this);
 
-        this.events.once('shutdown', this.shutdown, this);
+        // Check if this should be a boss level based on current intensity
+        this.isBossLevel = this.intensity > this.maxIntensity;
+        console.log(`Initial boss level check: intensity=${this.intensity}, maxIntensity=${this.maxIntensity}, isBossLevel=${this.isBossLevel}`);
 
-        this.quizBoxes = this.placeQuizBoxes(2);        // Add resume event handler
+        // Place quiz boxes based on current level type
+        const boxCount = this.isBossLevel ? 1 : 2;
+        this.quizBoxes = this.placeQuizBoxes(boxCount);
+        
+        // Add resume event handler
         this.events.on('resume', this.onResume, this);
     }    init(data) {
         this.courseTopic = data?.courseTopic || 'webdesign'; // Default to webdesign
@@ -124,6 +144,29 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             
             if (quizScene && quizScene.enemyDefeated) {
                 enemyWasDefeated = true;
+                
+                // Collect quiz statistics
+                if (quizScene.score !== undefined) {
+                    this.courseStats.totalScore += quizScene.score;
+                }
+                if (quizScene.correctAnswers !== undefined) {
+                    this.courseStats.correctAnswers += quizScene.correctAnswers;
+                }
+                if (quizScene.questions && quizScene.correctAnswers !== undefined) {
+                    const questionsAnswered = quizScene.questions.length;
+                    const wrongAnswers = questionsAnswered - quizScene.correctAnswers;
+                    this.courseStats.wrongAnswers += wrongAnswers;
+                }
+                if (quizScene.comboMeter && quizScene.comboMeter.getTotalComboScore) {
+                    this.courseStats.comboScore += quizScene.comboMeter.getTotalComboScore();
+                }
+                
+                console.log('Quiz stats collected:', {
+                    score: quizScene.score,
+                    correct: quizScene.correctAnswers,
+                    courseStats: this.courseStats
+                });
+                
                 quizScene.enemyDefeated = false; // Reset flag
                 console.log('Enemy defeat detected via scene flag');
             }
@@ -400,10 +443,19 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
 
         // Update lighting effects
         this.updateLightingEffects();
-    }
-
-    placeQuizBoxes(count) {
+    }    placeQuizBoxes(count) {
         const positions = [];
+        
+        // Special placement for boss level - boss goes in the center
+        if (this.isBossLevel && count === 1) {
+            const centerX = Math.floor(GRID_WIDTH / 2);
+            const centerY = Math.floor(GRID_HEIGHT / 2);
+            positions.push({ x: centerX, y: centerY });
+            console.log(`Boss placed at center: (${centerX}, ${centerY})`);
+            return positions;
+        }
+        
+        // Regular enemy placement for non-boss levels
         while (positions.length < count) {
             const x = Phaser.Math.Between(0, GRID_WIDTH - 1);
             const y = Phaser.Math.Between(0, GRID_HEIGHT - 2); // avoid starting row
@@ -543,41 +595,57 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             maxHP: enemyHP,
             label: enemyLabel
         };
-    }
-      onEnemyDefeated() {
+    }    onEnemyDefeated() {
         this.enemiesDefeated++;
         console.log(`Enemy defeated! Total defeated: ${this.enemiesDefeated}`);
         console.log(`Current intensity: ${this.intensity}, isBossLevel: ${this.isBossLevel}`);
-        
-        // Check if intensity should increase (every 2 enemies defeated)
+          // Check if this was a boss defeat - show results screen
+        if (this.isBossLevel && this.courseTopic) {
+            console.log(`Boss defeated! Course ${this.courseTopic} completed!`);
+            this.completeCourse();
+            
+            // Launch DungeonCleared scene with course stats
+            console.log('Launching DungeonCleared scene with stats:', this.courseStats);
+            this.scene.start('DungeonCleared', {
+                courseStats: this.courseStats,
+                courseTopic: this.courseTopic
+            });
+            return;
+        }
+          // Check if intensity should increase (every 2 enemies defeated)
         if (this.enemiesDefeated % 2 === 0 && this.intensity <= this.maxIntensity) {
             this.intensity++;
             console.log(`Intensity increased to ${this.intensity}!`);
+            
+            // Update boss level status
+            this.isBossLevel = this.intensity > this.maxIntensity;
+            console.log(`Boss level status: ${this.isBossLevel}`);
+            
+            // Reset player position to starting position when intensity increases
+            this.player.x = Math.floor(GRID_WIDTH / 2);
+            this.player.y = GRID_HEIGHT - 1;
+            this.grid[this.player.y][this.player.x].visited = true;
+            
+            // Update adjacent cells after position reset
+            this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
             
             // Show intensity increase notification
             this.showIntensityNotification();
         }
         
-        // Check if course should be completed (after boss defeat)
-        if (this.isBossLevel && this.courseTopic) {
-            console.log(`Course ${this.courseTopic} completed!`);
-            this.completeCourse();
-        }
-        
-        // Spawn new quiz boxes if needed
+        // Spawn new quiz boxes if needed (only if no enemies remain)
         this.spawnNewQuizBoxes();
     }
-    
-    showIntensityNotification() {
+      showIntensityNotification() {
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2;
         
         // Create notification background
         const notificationBg = this.add.graphics();
         notificationBg.fillStyle(0x1a1a2e, 0.9);
-        notificationBg.fillRoundedRect(centerX - 150, centerY - 40, 300, 80, 10);
+        notificationBg.fillRoundedRect(centerX - 150, centerY - 60, 300, 120, 10);
         notificationBg.lineStyle(3, 0xff6b6b, 1);
-        notificationBg.strokeRoundedRect(centerX - 150, centerY - 40, 300, 80, 10);
+        notificationBg.strokeRoundedRect(centerX - 150, centerY - 60, 300, 120, 10);
         notificationBg.setDepth(100);
         
         // Create notification text
@@ -585,7 +653,7 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             "BOSS LEVEL UNLOCKED!" : 
             `INTENSITY LEVEL ${this.intensity}!`;
             
-        const notificationText = this.add.text(centerX, centerY, message, {
+        const notificationText = this.add.text(centerX, centerY - 20, message, {
             fontSize: '20px',
             fill: this.intensity > this.maxIntensity ? '#ff6b6b' : '#ffd700',
             fontFamily: 'Caprasimo-Regular',
@@ -593,26 +661,37 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             strokeThickness: 2
         }).setOrigin(0.5).setDepth(101);
         
+        // Add position reset notification
+        const resetText = this.add.text(centerX, centerY + 10, 'Player position reset!', {
+            fontSize: '14px',
+            fill: '#ffffff',
+            fontFamily: 'Caprasimo-Regular',
+            stroke: '#1a1a2e',
+            strokeThickness: 1
+        }).setOrigin(0.5).setDepth(101);
+        
         // Animate notification
         notificationBg.setAlpha(0);
         notificationText.setAlpha(0);
+        resetText.setAlpha(0);
         
         this.tweens.add({
-            targets: [notificationBg, notificationText],
+            targets: [notificationBg, notificationText, resetText],
             alpha: 1,
             duration: 300,
             ease: 'Power2'
         });
         
         this.tweens.add({
-            targets: [notificationBg, notificationText],
+            targets: [notificationBg, notificationText, resetText],
             alpha: 0,
             duration: 500,
-            delay: 2000,
+            delay: 2500,
             ease: 'Power2',
             onComplete: () => {
                 notificationBg.destroy();
                 notificationText.destroy();
+                resetText.destroy();
             }
         });
     }
@@ -633,17 +712,22 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             gameManager.setCourseCompleted(courseKey, true);
             console.log(`Course ${courseKey} marked as completed!`);
         }
-    }
-      spawnNewQuizBoxes() {
-        // Only spawn new quiz boxes if there are less than 2 on the field
+    }    spawnNewQuizBoxes() {
+        // Only spawn new quiz boxes if there are NO enemies currently on the field
         const currentBoxCount = this.quizBoxes.length;
+        
+        // Don't spawn new enemies until all current enemies are defeated
+        if (currentBoxCount > 0) {
+            console.log(`Not spawning new enemies - ${currentBoxCount} enemies still remain`);
+            return;
+        }
+        
         const targetBoxCount = this.isBossLevel ? 1 : 2; // Boss level has only 1 enemy
         
-        if (currentBoxCount < targetBoxCount) {
-            const newBoxes = this.placeQuizBoxes(targetBoxCount - currentBoxCount);
-            this.quizBoxes.push(...newBoxes);
-            this.drawGrid(); // Redraw to show new boxes
-        }
+        console.log(`Spawning ${targetBoxCount} new enemies for ${this.isBossLevel ? 'boss' : 'regular'} level`);
+        const newBoxes = this.placeQuizBoxes(targetBoxCount);
+        this.quizBoxes.push(...newBoxes);
+        this.drawGrid(); // Redraw to show new boxes
     }
 
     update(time, delta) {
@@ -662,5 +746,39 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         if (Math.floor(time / 100) % 2 === 0) {
             this.drawGrid();
         }
+    }    
+    // Debug method to manually trigger boss level (for testing)
+    debugTriggerBossLevel() {
+        console.log('Debug: Triggering boss level manually');
+        this.intensity = this.maxIntensity + 1;
+        this.isBossLevel = true;
+        this.enemiesDefeated = 6; // Simulate having defeated enough enemies
+        
+        // Clear existing boxes
+        this.quizBoxes = [];
+        
+        // Place boss in center
+        this.quizBoxes = this.placeQuizBoxes(1);
+        this.drawGrid();
+        
+        console.log(`Boss level active: ${this.isBossLevel}, intensity: ${this.intensity}`);
+    }
+
+    // Debug method to simulate course completion (for testing)
+    debugCompleteWithStats() {
+        console.log('Debug: Completing course with sample stats');
+        this.courseStats = {
+            totalScore: 850,
+            correctAnswers: 8,
+            wrongAnswers: 2,
+            comboScore: 35
+        };
+        this.completeCourse();
+        
+        // Use the new DungeonCleared scene
+        this.scene.start('DungeonCleared', {
+            courseStats: this.courseStats,
+            courseTopic: this.courseTopic
+        });
     }
 }

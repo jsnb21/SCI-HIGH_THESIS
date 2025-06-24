@@ -287,6 +287,16 @@ export default class ComboMeter {
         return this.maxCombo;
     }
 
+    getTotalComboScore() {
+        // Calculate total combo score based on max combo achieved
+        // Higher combos give exponentially more points
+        if (this.maxCombo >= 10) return this.maxCombo * 10;
+        if (this.maxCombo >= 7) return this.maxCombo * 7;
+        if (this.maxCombo >= 5) return this.maxCombo * 5;
+        if (this.maxCombo >= 3) return this.maxCombo * 3;
+        return this.maxCombo * 1;
+    }
+
     reset() {
         this.combo = 0;
         this.maxCombo = 0;

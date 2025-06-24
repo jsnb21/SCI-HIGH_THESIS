@@ -185,8 +185,7 @@ export function showVictory(scene) {
                         console.log(`Course ${courseKey} marked as completed!`);
                     });
                 }
-            }
-              // Pass enemy defeat status to the dungeon scene
+            }            // Pass enemy defeat status and quiz stats to the dungeon scene
             const wasEnemyDefeated = scene.enemyDefeated || false;
             console.log('Victory screen: Enemy was defeated?', wasEnemyDefeated);
             
@@ -197,8 +196,26 @@ export function showVictory(scene) {
                     // Pass enemy defeat status when resuming - note: Phaser resume doesn't take data parameter
                     // So we'll set a flag on the scene manager instead
                     const dungeonScene = scene.scene.get('DungeonScene');
-                    if (dungeonScene) {
+                    if (dungeonScene && wasEnemyDefeated) {
                         dungeonScene.enemyWasDefeatedFlag = wasEnemyDefeated;
+                        
+                        // Also pass quiz stats directly
+                        if (scene.score !== undefined) {
+                            dungeonScene.courseStats.totalScore += scene.score;
+                        }
+                        if (scene.correctAnswers !== undefined) {
+                            dungeonScene.courseStats.correctAnswers += scene.correctAnswers;
+                        }
+                        if (scene.questions && scene.correctAnswers !== undefined) {
+                            const questionsAnswered = scene.questions.length;
+                            const wrongAnswers = questionsAnswered - scene.correctAnswers;
+                            dungeonScene.courseStats.wrongAnswers += wrongAnswers;
+                        }
+                        if (scene.comboMeter && scene.comboMeter.getTotalComboScore) {
+                            dungeonScene.courseStats.comboScore += scene.comboMeter.getTotalComboScore();
+                        }
+                        
+                        console.log('Stats passed to dungeon:', dungeonScene.courseStats);
                     }
                     scene.scene.resume('DungeonScene');
                 } else if (scene.scene.manager.isActive('DungeonScene')) {
