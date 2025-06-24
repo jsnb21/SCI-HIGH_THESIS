@@ -166,6 +166,27 @@ export function showVictory(scene) {
         .setInteractive({ useHandCursor: true })
         .setOrigin(0.5)
         .setDepth(61)        .on('pointerdown', () => {
+            // Mark course as completed based on the scene
+            if (scene.courseTopic) {
+                const courseMap = {
+                    'webdesign': 'Web_Design',
+                    'python': 'Python',
+                    'java': 'Java',
+                    'C': 'C',
+                    'C++': 'C++',
+                    'C#': 'C#'
+                };
+                
+                const courseKey = courseMap[scene.courseTopic];
+                if (courseKey) {
+                    // Import gameManager here to avoid circular dependencies
+                    import('/src/gameManager.js').then(({ default: gameManager }) => {
+                        gameManager.setCourseCompleted(courseKey, true);
+                        console.log(`Course ${courseKey} marked as completed!`);
+                    });
+                }
+            }
+            
             scene.scene.stop();
             // Try to resume DungeonScene, but with better error handling
             try {

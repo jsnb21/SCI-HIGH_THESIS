@@ -71,7 +71,8 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.score = 0;
         this.correctAnswers = 0; // Initialize correct answers counter
         this.questions = [];
-        this.isQuizStarted = false;        // Define available enemy sprites (only include existing files)
+        this.isQuizStarted = false;
+        this.courseTopic = data.topic || null; // Store course topic for completion tracking// Define available enemy sprites (only include existing files)
         const availableEnemies = [
             'goblinNerd', 
             'bigSlime',

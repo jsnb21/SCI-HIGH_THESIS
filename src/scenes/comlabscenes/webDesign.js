@@ -32,10 +32,9 @@ export default class WebDesignScene extends Phaser.Scene {
             courseTitle: 'Web Design',
             iconPath: 'webDesignIcons',
             description: 'This course covers the fundamentals of web design...',
-            buttonText: 'Start',
-            buttonCallback: () => {
+            buttonText: 'Start',            buttonCallback: () => {
                 this.se_confirmSound.play();
-                this.scene.start('DungeonScene');
+                this.scene.start('DungeonScene', { courseTopic: 'webdesign' });
             },
         });
 

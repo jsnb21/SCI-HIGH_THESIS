@@ -83,6 +83,8 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
 
         // Add resume event handler
         this.events.on('resume', this.onResume, this);
+    }    init(data) {
+        this.courseTopic = data?.courseTopic || 'webdesign'; // Default to webdesign
     }    onResume() {        // Sync player HP from GameManager when returning from quiz
         this.player.hp = gameManager.getPlayerHP();
         
@@ -162,9 +164,11 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             );
             if (quizBoxIndex !== -1) {
                 // Remove the triggered quiz box so it can't be triggered again
-                this.quizBoxes.splice(quizBoxIndex, 1);
-                this.scene.pause(); // Pause DungeonScene
-                this.scene.launch('WebDesignQuizScene', { returnScene: 'DungeonScene' });
+                this.quizBoxes.splice(quizBoxIndex, 1);                this.scene.pause(); // Pause DungeonScene
+                this.scene.launch('WebDesignQuizScene', { 
+                    returnScene: 'DungeonScene',
+                    topic: this.courseTopic 
+                });
                 return;
             }            this.drawGrid();
             this.updateLightingEffects();

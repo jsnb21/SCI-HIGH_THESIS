@@ -20,15 +20,14 @@ class Carousel {
     getScale() {
         const { width, height } = this.scene.scale;
         return Math.min(width / BASE_WIDTH, height / BASE_HEIGHT);
-    }
-
-    create(iconKeys, iconInfo, onSelectCallback = null) {
+    }    create(iconKeys, iconInfo, onSelectCallback = null, lockedStates = null) {
         this.iconKeys = iconKeys;
         this.iconInfo = iconInfo;
         this.onSelectCallback = onSelectCallback;
+        this.lockedStates = lockedStates || iconKeys.map(() => false); // Default all unlocked
         this._createUI();
         return this;
-    }    _createUI() {
+    }_createUI() {
         // Clean up existing elements and listeners
         if (this._inputListeners) {
             this._inputListeners.forEach(off => off());
@@ -114,13 +113,31 @@ class Carousel {
             
             const x = iconCenterX + relativePos * iconSpacing;
             const scaleVal = (i === this.carouselIndex) ? largeScale : smallScale;
+            const isLocked = this.lockedStates[i];
 
             const icon = this.scene.add.image(x, iconCenterY, this.iconKeys[i])
                 .setScale(scaleVal)
-                .setInteractive({ useHandCursor: true });
+                .setInteractive({ useHandCursor: !isLocked });
 
-            icon.setTint(i === this.carouselIndex ? 0xffffff : 0x00e0ff);
-            icon.setAlpha(i === this.carouselIndex ? 1 : 0.7);
+            // Store the icon index for event handling
+            icon.iconIndex = i;
+
+            // Apply different visual states for locked/unlocked courses
+            if (isLocked) {
+                icon.setTint(0x666666); // Dark gray for locked
+                icon.setAlpha(0.4);
+                  // Add lock overlay for locked courses
+                const lockIcon = this.scene.add.text(x, iconCenterY, '🔒', {
+                    fontSize: `${Math.round(48 * scale)}px`, // Increased from 24 to 48
+                    color: '#ff6666'
+                }).setOrigin(0.5).setDepth(10);
+                lockIcon.iconIndex = i; // Store the course index for this lock
+                lockIcon.isLockIcon = true; // Mark as lock icon
+                this.carouselIcons.push(lockIcon);
+            } else {
+                icon.setTint(i === this.carouselIndex ? 0xffffff : 0x00e0ff);
+                icon.setAlpha(i === this.carouselIndex ? 1 : 0.7);
+            }
 
             this.carouselIcons.push(icon);
         }
@@ -201,28 +218,42 @@ class Carousel {
         const wheelListener = this.scene.input.on('wheel', (_, __, ___, deltaY) => {
             this.playHoverSound();
             this.move(deltaY > 0 ? 1 : -1);
-        });
-
-        this.carouselIcons.forEach((icon, i) => {
+        });        this.carouselIcons.forEach((icon, arrayIndex) => {
+            // Skip lock icons
+            if (icon.isLockIcon) return;
+            
+            const i = icon.iconIndex;
+            if (i === undefined) return;
+            
+            const isLocked = this.lockedStates[i];
+            
             icon.removeAllListeners();
-            icon.on('pointerover', () => {
-                icon.setTint(0xffffff);
-                icon.setAlpha(1);
-                this.scene.tweens.add({ targets: icon, scale: this._uiConfig.largeScale * 1.08, duration: 120, yoyo: true });
-            });
-            icon.on('pointerout', () => {
-                icon.setTint(i === this.carouselIndex ? 0xffffff : 0x00e0ff);
-                icon.setAlpha(i === this.carouselIndex ? 1 : 0.7);
-            });
-            icon.on('pointerdown', () => {
-                if (i === this.carouselIndex) {
-                    this.playConfirmSound();
-                    this.selectCurrentItem();
-                } else {
-                    this.playHoverSound();
-                    this.move(i - this.carouselIndex);
-                }
-            });
+            
+            if (!isLocked) {
+                icon.on('pointerover', () => {
+                    icon.setTint(0xffffff);
+                    icon.setAlpha(1);
+                    this.scene.tweens.add({ targets: icon, scale: this._uiConfig.largeScale * 1.08, duration: 120, yoyo: true });
+                });
+                icon.on('pointerout', () => {
+                    icon.setTint(i === this.carouselIndex ? 0xffffff : 0x00e0ff);
+                    icon.setAlpha(i === this.carouselIndex ? 1 : 0.7);
+                });
+                icon.on('pointerdown', () => {
+                    if (i === this.carouselIndex) {
+                        this.playConfirmSound();
+                        this.selectCurrentItem();
+                    } else {
+                        this.playHoverSound();
+                        this.move(i - this.carouselIndex);
+                    }
+                });
+            } else {
+                // Show locked message when clicking locked courses
+                icon.on('pointerdown', () => {
+                    this.showLockedMessage(i);
+                });
+            }
         });
 
         this._inputListeners = [
@@ -231,17 +262,21 @@ class Carousel {
             () => pointerUpListener.removeListener('pointerup'),
             () => wheelListener.removeListener('wheel')
         ];
-    }
-
-    move(direction) {
+    }    move(direction) {
         if (!this._uiConfig) return;
-        const iconCount = this.carouselIcons.length;
+        const iconCount = this.iconKeys.length; // Use iconKeys length instead of carouselIcons
         let newIndex = (this.carouselIndex + direction + iconCount) % iconCount;
         this.carouselIndex = newIndex;
 
         const { iconCenterX, iconCenterY, iconSpacing, smallScale, largeScale } = this._uiConfig;
 
-        this.carouselIcons.forEach((icon, i) => {
+        this.carouselIcons.forEach((icon) => {
+            // Skip lock icons - they move with their parent icons
+            if (icon.isLockIcon) return;
+            
+            const i = icon.iconIndex;
+            if (i === undefined) return;
+            
             let relativePos = i - this.carouselIndex;
             if (relativePos > Math.floor(iconCount / 2)) relativePos -= iconCount;
             else if (relativePos < -Math.floor(iconCount / 2)) relativePos += iconCount;
@@ -252,8 +287,27 @@ class Carousel {
 
             this.scene.tweens.add({ targets: icon, x, y, scale: scaleVal, duration: 300, ease: 'Power2' });
 
-            icon.setTint(i === this.carouselIndex ? 0xffffff : 0x00e0ff);
-            this.scene.tweens.add({ targets: icon, alpha: i === this.carouselIndex ? 1 : 0.7, duration: 200 });
+            const isLocked = this.lockedStates[i];
+            if (isLocked) {
+                icon.setTint(0x666666);
+                this.scene.tweens.add({ targets: icon, alpha: 0.4, duration: 200 });
+            } else {
+                icon.setTint(i === this.carouselIndex ? 0xffffff : 0x00e0ff);
+                this.scene.tweens.add({ targets: icon, alpha: i === this.carouselIndex ? 1 : 0.7, duration: 200 });
+            }
+        });        // Update lock icons positions
+        this.carouselIcons.forEach((lockIcon) => {
+            if (!lockIcon.isLockIcon) return;
+            
+            const i = lockIcon.iconIndex;
+            if (i === undefined) return;
+            
+            let relativePos = i - this.carouselIndex;
+            if (relativePos > Math.floor(iconCount / 2)) relativePos -= iconCount;
+            else if (relativePos < -Math.floor(iconCount / 2)) relativePos += iconCount;
+            
+            const x = iconCenterX + relativePos * iconSpacing;
+            this.scene.tweens.add({ targets: lockIcon, x, y: iconCenterY, duration: 300, ease: 'Power2' });
         });
 
         this.scene.tweens.add({
@@ -271,12 +325,12 @@ class Carousel {
         });
 
         this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
-    }
-
-    updateText() {
+    }    updateText() {
         const info = this.iconInfo[this.carouselIndex];
-        this.carouselHeading.setText(info.heading);
-        this.carouselDesc.setText(info.desc);
+        const isLocked = this.lockedStates[this.carouselIndex];
+        
+        this.carouselHeading.setText(isLocked ? `🔒 ${info.heading}` : info.heading);
+        this.carouselDesc.setText(isLocked ? "Complete other courses to unlock" : info.desc);
     }
 
     startBreathingEffect(icon) {
@@ -300,9 +354,23 @@ class Carousel {
         });
     }
 
+    showLockedMessage(courseIndex) {
+        const courseName = this.iconInfo[courseIndex]?.heading || "Course";
+        // You can customize this message or create a proper dialog
+        console.log(`${courseName} is locked! Complete other courses to unlock it.`);
+        // Optionally add a visual feedback or sound effect
+    }
+
     selectCurrentItem() {
         const currentItem = this.iconInfo[this.carouselIndex];
-        if (this.onSelectCallback) {
+        const isLocked = this.lockedStates[this.carouselIndex];
+        
+        if (isLocked) {
+            this.showLockedMessage(this.carouselIndex);
+            return;
+        }
+        
+        if (this.onSelectCallback && currentItem) {
             this.onSelectCallback(currentItem, this.carouselIndex);
         }
     }
