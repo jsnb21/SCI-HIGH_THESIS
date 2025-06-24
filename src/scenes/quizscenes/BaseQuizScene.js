@@ -4,6 +4,7 @@ import ComboMeter from '/src/components/ComboMeter.js';
 import { createPlayerUI } from './ui/playerUI.js';
 import { createQuizBox, createEnemyUI, createTimerText, createQuestionAndOptions } from './ui/quizUI.js';
 import { showFeedback, showVictory, showGameOver } from './ui/feedbackUI.js';
+import gameManager from '/src/gameManager.js';
 
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
@@ -52,7 +53,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.comboMeter = null;
         this.playerConfig = {
             maxHP: 100,
-            currentHP: 100,
+            currentHP: gameManager.getPlayerHP(), // Initialize from GameManager
             label: 'Player'
         };
         this.enemyHPState = {
@@ -80,15 +81,14 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         
         // Randomly select an enemy sprite
         const randomEnemyKey = availableEnemies[Math.floor(Math.random() * availableEnemies.length)];
-        
-        this.enemyConfig = data.enemyConfig || {
+          this.enemyConfig = data.enemyConfig || {
             spriteKey: randomEnemyKey,
             maxHP: 100,
             label: 'Enemy',
         };
         this.playerConfig = {
             maxHP: 100,
-            currentHP: 100,
+            currentHP: gameManager.getPlayerHP(), // Get current HP from GameManager
             label: 'Player'
         };
         this.enemyHPState = {
@@ -185,6 +185,11 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.isAnswering = false; // <-- Reset answering state at the start of every question
         this.scaleFactor = this.getScaleFactor();
         const sf = this.scaleFactor;
+        
+        // Sync playerConfig HP from GameManager before showing question
+        this.playerConfig.currentHP = gameManager.getPlayerHP();
+        console.log(`showQuestion: synced HP from GameManager: ${this.playerConfig.currentHP}`);
+        
         if (!this.questions || this.currentQuestionIndex >= this.questions.length) {
             showVictory(this);
             return;
@@ -238,16 +243,27 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.enemyContainer = null;
         this.playerContainer = null;
         this._quizOptionBgs = []; // <-- Clear option backgrounds to avoid stale references
-    }damageCharacter(container, amount) {
+    }    damageCharacter(container, amount) {
         const sf = this.scaleFactor;
         let hp = container.getData('currentHP');
         const maxHP = container.getData('maxHP');
+        
+        console.log(`Damage before: HP=${hp}, damage=${amount}, isPlayer=${container.getData('label') === 'Player'}`);
+        
         hp = Phaser.Math.Clamp(hp - amount, 0, maxHP);
         container.setData('currentHP', hp);
+        
+        console.log(`Damage after: HP=${hp}`);
 
-        const isPlayer = container.getData('label') === 'Player';
-        if (isPlayer) {
+        const isPlayer = container.getData('label') === 'Player';        if (isPlayer) {
             this.playerConfig.currentHP = hp;
+            
+            console.log(`Player HP updated: playerConfig.currentHP=${this.playerConfig.currentHP}, GameManager HP=${gameManager.getPlayerHP()}`);
+            
+            // Save HP to GameManager for persistence across scenes
+            gameManager.setPlayerHP(hp);
+            
+            console.log(`After saving to GameManager: ${gameManager.getPlayerHP()}`);
             
             // Update hearts for player
             const hearts = container.getData('hearts');
@@ -398,7 +414,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                     });
                     return;
                 }
-            }} else {
+            }        } else {
             // Update combo meter (resets combo)
             this.comboMeter.updateCombo(false, sf);
             
@@ -411,15 +427,17 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             this.gameTimer.subtractTime(3);
             if (this.playerContainer) {
                 this.damageCharacter(this.playerContainer, 15);
+                
+                // Get updated HP after damage has been applied
+                const playerHP = this.playerContainer.getData('currentHP');
+                if (playerHP <= 0) {
+                    // --- Resume timer before ending ---
+                    this.gameTimer.resume();
+                    showGameOver(this);
+                    return;
+                }
             }
-            const playerHP = this.playerContainer.getData('currentHP');
-            if (playerHP <= 0) {
-                // --- Resume timer before ending ---
-                this.gameTimer.resume();
-                showGameOver(this);
-                return;
-            }
-        }        if (this.enemyContainer) {
+        }if (this.enemyContainer) {
             const enemyHP = this.enemyContainer.getData('currentHP');
             if (enemyHP <= 0) {
                 // --- Resume timer before ending ---
@@ -452,7 +470,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.currentQuestionIndex = 0;
         this.isQuizStarted = false;
         this.isAnswering = false; // <-- Reset answering state
-        this.playerConfig.currentHP = this.playerConfig.maxHP;
+        this.playerConfig.currentHP = gameManager.getPlayerHP(); // Get current HP from GameManager
         this.enemyHPState.currentHP = this.enemyHPState.maxHP;
         this.cleanupAllElements();
         this.gameTimer = new GameTimer(this);

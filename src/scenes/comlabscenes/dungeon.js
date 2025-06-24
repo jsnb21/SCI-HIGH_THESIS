@@ -1,17 +1,17 @@
 import Phaser from 'phaser';
 import { playExclusiveBGM } from '../../audioUtils.js';
 import { DungeonHUD, DungeonMenu } from '../../ui/dungeon_hud.js';
+import gameManager from '../../gameManager.js';
 
 const GRID_WIDTH = 7;
 const GRID_HEIGHT = 8;
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
 
-export default class DungeonScene extends Phaser.Scene {
-    constructor() {
+export default class DungeonScene extends Phaser.Scene {    constructor() {
         super('DungeonScene');
         this.grid = [];
-        this.player = { x: Math.floor(GRID_WIDTH / 2), y: GRID_HEIGHT - 1, hp: 5, buffs: [] };
+        this.player = { x: Math.floor(GRID_WIDTH / 2), y: GRID_HEIGHT - 1, hp: gameManager.getPlayerHP(), buffs: [] };
         this.adjacentCells = [];
         this.breathAlpha = 0.5;
         this.breathDir = 1;
@@ -24,7 +24,7 @@ export default class DungeonScene extends Phaser.Scene {
         this.particles = null;
         this.lightingOverlay = null;
         this.playerSprite = null;
-    }    preload() {
+    }preload() {
         this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
         this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
         this.load.image('heart', 'assets/sprites/dungeon/heart.png');
@@ -33,10 +33,9 @@ export default class DungeonScene extends Phaser.Scene {
         this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
     }
 
-    create() {
-        // Reset all persistent state
+    create() {        // Reset all persistent state
         this.grid = [];
-        this.player = { x: Math.floor(GRID_WIDTH / 2), y: GRID_HEIGHT - 1, hp: 5, buffs: [] };
+        this.player = { x: Math.floor(GRID_WIDTH / 2), y: GRID_HEIGHT - 1, hp: gameManager.getPlayerHP(), buffs: [] };
         this.adjacentCells = [];
         this.breathAlpha = 0.5;
         this.breathDir = 1;
@@ -84,9 +83,10 @@ export default class DungeonScene extends Phaser.Scene {
 
         // Add resume event handler
         this.events.on('resume', this.onResume, this);
-    }
-
-    onResume() {        // Update adjacent cells on resume
+    }    onResume() {        // Sync player HP from GameManager when returning from quiz
+        this.player.hp = gameManager.getPlayerHP();
+        
+        // Update adjacent cells on resume
         this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
 
         // Redraw grid and HUD when scene is resumed
@@ -94,7 +94,7 @@ export default class DungeonScene extends Phaser.Scene {
         this.updateLightingEffects();
         if (this.dungeonHUD && this.dungeonHUD.drawHUD) this.dungeonHUD.drawHUD();
         if (this.dungeonMenu && this.dungeonMenu.createMenuButton) this.dungeonMenu.createMenuButton();
-    }    shutdown() {
+    }shutdown() {
         if (this.gridGraphics) {
             this.gridGraphics.destroy();
             this.gridGraphics = null;

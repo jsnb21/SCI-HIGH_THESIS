@@ -2,7 +2,7 @@
 
 class GameManager {
     constructor() {
-        this.playerHP = 3;
+        this.playerHP = 100; // Changed from 3 to 100 to match quiz system
         this.playTime = 0;
         this.gameProgress = 0;
 
@@ -43,11 +43,9 @@ class GameManager {
 
     getPreviousScene() {
         return this.previousScene;
-    }
-
-    // Reset all values
+    }    // Reset all values
     reset() {
-        this.playerHP = 3;
+        this.playerHP = 100; // Changed from 3 to 100 to match quiz system
         this.playTime = 0;
         this.gameProgress = 0;
         this.previousScene = 'MainMenu';
