@@ -17,20 +17,26 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.breathDir = 1;
         this.intensity = 1;
         this.hudElements = [];
-        this.scaleFactor = 1;
-        this.offsetX = 0;        this.offsetY = 0;
+        this.scaleFactor = 1;        this.offsetX = 0;        this.offsetY = 0;
         this.quizBoxes = [];
         this.quizBoxSprites = []; // Track quiz box sprites
         this.particles = null;
         this.lightingOverlay = null;
         this.playerSprite = null;
-    }preload() {
+        
+        // Progression system variables
+        this.enemiesDefeated = 0;
+        this.maxIntensity = 3;
+        this.playerDamage = 10;
+        this.isBossLevel = false;
+    }    preload() {
         this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
         this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
         this.load.image('heart', 'assets/sprites/dungeon/heart.png');
         this.load.audio('bgm_dungeon', 'assets/audio/bgm/bgm_dungeon.mp3');
         this.load.image('quizbox', 'assets/sprites/enemies/box.png');
         this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
+        this.load.image('bigSlime', 'assets/sprites/enemies/big_slime.png');
     }
 
     create() {        // Reset all persistent state
@@ -39,12 +45,19 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.adjacentCells = [];
         this.breathAlpha = 0.5;
         this.breathDir = 1;
-        this.intensity = 1;        this.hudElements = [];
+        this.intensity = 1;
+        this.hudElements = [];
         this.menuOpen = false;
         this.menuBoxGroup = null;
         this.particles = null;
         this.lightingOverlay = null;
         this.playerSprite = null;
+        
+        // Initialize progression variables
+        this.enemiesDefeated = 0;
+        this.maxIntensity = 3;
+        this.playerDamage = 10;
+        this.isBossLevel = false;
 
         // Enhanced background with gradient
         this.cameras.main.setBackgroundColor('#1a1a2e');
@@ -79,14 +92,47 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
 
         this.events.once('shutdown', this.shutdown, this);
 
-        this.quizBoxes = this.placeQuizBoxes(2);
-
-        // Add resume event handler
+        this.quizBoxes = this.placeQuizBoxes(2);        // Add resume event handler
         this.events.on('resume', this.onResume, this);
     }    init(data) {
         this.courseTopic = data?.courseTopic || 'webdesign'; // Default to webdesign
-    }    onResume() {        // Sync player HP from GameManager when returning from quiz
+    }    onResume(data) {
+        // Sync player HP from GameManager when returning from quiz
         this.player.hp = gameManager.getPlayerHP();
+        
+        // Check if enemy was defeated - either from flag or scene
+        let enemyWasDefeated = false;
+        
+        // Check for direct flag set by victory screen
+        if (this.enemyWasDefeatedFlag) {
+            enemyWasDefeated = true;
+            this.enemyWasDefeatedFlag = false; // Reset flag
+            console.log('Enemy defeat detected via direct flag');
+        } else {
+            // Check if an enemy was defeated - check the correct quiz scene based on course topic
+            const quizSceneMap = {
+                'webdesign': 'WebDesignQuizScene',
+                'python': 'PythonQuizScene', 
+                'java': 'JavaQuizScene',
+                'C': 'CQuizScene',
+                'C++': 'CplusplusQuizScene',
+                'C#': 'CSharpQuizScene'
+            };
+            
+            const quizSceneName = quizSceneMap[this.courseTopic] || 'WebDesignQuizScene';
+            const quizScene = this.scene.get(quizSceneName);
+            
+            if (quizScene && quizScene.enemyDefeated) {
+                enemyWasDefeated = true;
+                quizScene.enemyDefeated = false; // Reset flag
+                console.log('Enemy defeat detected via scene flag');
+            }
+        }
+        
+        if (enemyWasDefeated) {
+            console.log('Enemy was defeated! Calling onEnemyDefeated()');
+            this.onEnemyDefeated();
+        }
         
         // Update adjacent cells on resume
         this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
@@ -161,16 +207,34 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             // Check for quiz box trigger
             const quizBoxIndex = this.quizBoxes.findIndex(
                 pos => pos.x === targetX && pos.y === targetY
-            );
-            if (quizBoxIndex !== -1) {
+            );            if (quizBoxIndex !== -1) {
                 // Remove the triggered quiz box so it can't be triggered again
-                this.quizBoxes.splice(quizBoxIndex, 1);                this.scene.pause(); // Pause DungeonScene
-                this.scene.launch('WebDesignQuizScene', { 
+                this.quizBoxes.splice(quizBoxIndex, 1);
+                
+                // Determine enemy configuration based on intensity and boss level
+                const enemyConfig = this.getEnemyConfig();
+                
+                // Determine correct quiz scene based on course topic
+                const quizSceneMap = {
+                    'webdesign': 'WebDesignQuizScene',
+                    'python': 'PythonQuizScene', 
+                    'java': 'JavaQuizScene',
+                    'C': 'CQuizScene',
+                    'C++': 'CplusplusQuizScene',
+                    'C#': 'CSharpQuizScene'
+                };
+                
+                const quizSceneName = quizSceneMap[this.courseTopic] || 'WebDesignQuizScene';
+                
+                this.scene.pause(); // Pause DungeonScene
+                this.scene.launch(quizSceneName, { 
                     returnScene: 'DungeonScene',
-                    topic: this.courseTopic 
+                    topic: this.courseTopic,
+                    enemyConfig: enemyConfig,
+                    playerDamage: this.playerDamage
                 });
                 return;
-            }            this.drawGrid();
+            }this.drawGrid();
             this.updateLightingEffects();
             if (this.dungeonHUD) this.dungeonHUD.drawHUD();
         }
@@ -444,6 +508,145 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             this.lightingOverlay.strokeCircle(playerX, playerY, radius - i * 10);
         }
     }    update(time, delta) {
+        // Enhanced breathing animation for adjacent cells
+        this.breathAlpha += this.breathDir * delta * 0.002;
+        if (this.breathAlpha > 0.9) {
+            this.breathAlpha = 0.9;
+            this.breathDir = -1;
+        }
+        if (this.breathAlpha < 0.5) {
+            this.breathAlpha = 0.5;
+            this.breathDir = 1;
+        }
+        
+        // Only redraw grid occasionally to improve performance
+        if (Math.floor(time / 100) % 2 === 0) {
+            this.drawGrid();
+        }
+    }
+    getEnemyConfig() {
+        // Determine if this is a boss level
+        this.isBossLevel = this.intensity > this.maxIntensity;
+        
+        let enemyHP, enemyLabel;
+        
+        if (this.isBossLevel) {
+            enemyHP = 200;
+            enemyLabel = `Boss Level - HP: ${enemyHP}`;
+        } else {
+            enemyHP = 100;
+            enemyLabel = `Intensity ${this.intensity} - HP: ${enemyHP}`;
+        }
+        
+        return {
+            spriteKey: this.isBossLevel ? 'bigSlime' : 'goblinNerd', // Use different sprite for boss
+            maxHP: enemyHP,
+            label: enemyLabel
+        };
+    }
+      onEnemyDefeated() {
+        this.enemiesDefeated++;
+        console.log(`Enemy defeated! Total defeated: ${this.enemiesDefeated}`);
+        console.log(`Current intensity: ${this.intensity}, isBossLevel: ${this.isBossLevel}`);
+        
+        // Check if intensity should increase (every 2 enemies defeated)
+        if (this.enemiesDefeated % 2 === 0 && this.intensity <= this.maxIntensity) {
+            this.intensity++;
+            console.log(`Intensity increased to ${this.intensity}!`);
+            
+            // Show intensity increase notification
+            this.showIntensityNotification();
+        }
+        
+        // Check if course should be completed (after boss defeat)
+        if (this.isBossLevel && this.courseTopic) {
+            console.log(`Course ${this.courseTopic} completed!`);
+            this.completeCourse();
+        }
+        
+        // Spawn new quiz boxes if needed
+        this.spawnNewQuizBoxes();
+    }
+    
+    showIntensityNotification() {
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
+        
+        // Create notification background
+        const notificationBg = this.add.graphics();
+        notificationBg.fillStyle(0x1a1a2e, 0.9);
+        notificationBg.fillRoundedRect(centerX - 150, centerY - 40, 300, 80, 10);
+        notificationBg.lineStyle(3, 0xff6b6b, 1);
+        notificationBg.strokeRoundedRect(centerX - 150, centerY - 40, 300, 80, 10);
+        notificationBg.setDepth(100);
+        
+        // Create notification text
+        const message = this.intensity > this.maxIntensity ? 
+            "BOSS LEVEL UNLOCKED!" : 
+            `INTENSITY LEVEL ${this.intensity}!`;
+            
+        const notificationText = this.add.text(centerX, centerY, message, {
+            fontSize: '20px',
+            fill: this.intensity > this.maxIntensity ? '#ff6b6b' : '#ffd700',
+            fontFamily: 'Caprasimo-Regular',
+            stroke: '#1a1a2e',
+            strokeThickness: 2
+        }).setOrigin(0.5).setDepth(101);
+        
+        // Animate notification
+        notificationBg.setAlpha(0);
+        notificationText.setAlpha(0);
+        
+        this.tweens.add({
+            targets: [notificationBg, notificationText],
+            alpha: 1,
+            duration: 300,
+            ease: 'Power2'
+        });
+        
+        this.tweens.add({
+            targets: [notificationBg, notificationText],
+            alpha: 0,
+            duration: 500,
+            delay: 2000,
+            ease: 'Power2',
+            onComplete: () => {
+                notificationBg.destroy();
+                notificationText.destroy();
+            }
+        });
+    }
+    
+    completeCourse() {
+        // Mark course as completed in game manager
+        const courseMap = {
+            'webdesign': 'Web_Design',
+            'python': 'Python',
+            'java': 'Java',
+            'C': 'C',
+            'C++': 'C++',
+            'C#': 'C#'
+        };
+        
+        const courseKey = courseMap[this.courseTopic];
+        if (courseKey) {
+            gameManager.setCourseCompleted(courseKey, true);
+            console.log(`Course ${courseKey} marked as completed!`);
+        }
+    }
+      spawnNewQuizBoxes() {
+        // Only spawn new quiz boxes if there are less than 2 on the field
+        const currentBoxCount = this.quizBoxes.length;
+        const targetBoxCount = this.isBossLevel ? 1 : 2; // Boss level has only 1 enemy
+        
+        if (currentBoxCount < targetBoxCount) {
+            const newBoxes = this.placeQuizBoxes(targetBoxCount - currentBoxCount);
+            this.quizBoxes.push(...newBoxes);
+            this.drawGrid(); // Redraw to show new boxes
+        }
+    }
+
+    update(time, delta) {
         // Enhanced breathing animation for adjacent cells
         this.breathAlpha += this.breathDir * delta * 0.002;
         if (this.breathAlpha > 0.9) {

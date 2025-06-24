@@ -69,10 +69,11 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
     }    init(data) {
         this.currentQuestionIndex = 0;
         this.score = 0;
-        this.correctAnswers = 0; // Initialize correct answers counter
-        this.questions = [];
+        this.correctAnswers = 0; // Initialize correct answers counter        this.questions = [];
         this.isQuizStarted = false;
-        this.courseTopic = data.topic || null; // Store course topic for completion tracking// Define available enemy sprites (only include existing files)
+        this.courseTopic = data.topic || null; // Store course topic for completion tracking
+        this.enemyDefeated = false; // Track if enemy was defeated
+        this.playerDamage = data.playerDamage || 10; // Player damage per correct answer// Define available enemy sprites (only include existing files)
         const availableEnemies = [
             'goblinNerd', 
             'bigSlime',
@@ -381,8 +382,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         const boxHeight = 230 * sf; // Match the reduced box height
         // Move feedbackY 20% lower than the previous offset
         const feedbackY = centerY + boxHeight / 2 + (20 * sf * 1.2);        // --- Pause the timer ---
-        this.gameTimer.pause();        if (isCorrect) {
-            // Track correct answer
+        this.gameTimer.pause();        if (isCorrect) {            // Track correct answer
             this.correctAnswers++;
             
             // Update combo meter first
@@ -393,29 +393,29 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             const scoreIncrease = Math.round(1 * multiplier);
             this.score += scoreIncrease;
             
+            // Damage the enemy with visual feedback
+            if (this.enemyContainer) {
+                this.damageCharacter(this.enemyContainer, this.playerDamage);
+            }
+            
             // Show feedback with combo info
-            let feedbackText = "Correct! You attack the enemy!";
+            let feedbackText = `Correct! You deal ${this.playerDamage} damage!`;
             if (multiplier > 1) {
                 feedbackText += ` (${multiplier}x Combo!)`;
-            }
-              showFeedback(this, feedbackText, 0x00ff00, centerX, feedbackY);
-            this.gameTimer.addTime(5);
-            if (this.enemyContainer) {
-                this.damageCharacter(this.enemyContainer, 20);
+            }            showFeedback(this, feedbackText, 0x00ff00, centerX, feedbackY);
+            this.gameTimer.addTime(5);            // Check if enemy HP reached 0 using container data
+            if (this.enemyContainer && this.enemyContainer.getData('currentHP') <= 0) {
+                // Enemy defeated
+                this.enemyDefeated = true;
+                console.log('Enemy defeated in quiz scene! Flag set to true.');
                 
-                // Check if enemy died immediately after damage
-                const enemyHP = this.enemyContainer.getData('currentHP');
-                if (enemyHP <= 0) {
-                    // Enemy died, play death animation and then show victory
-                    this.time.delayedCall(1000, () => {
-                        this.gameTimer.resume();
-                        this.playEnemyDeathAnimation(() => {
-                            showVictory(this);
-                        });
-                    });
-                    return;
-                }
-            }        } else {
+                // Play enemy death animation first, then show victory
+                this.gameTimer.resume(); // Resume timer before playing death animation
+                this.playEnemyDeathAnimation(() => {
+                    showVictory(this);
+                });
+                return;
+            }} else {
             // Update combo meter (resets combo)
             this.comboMeter.updateCombo(false, sf);
             

@@ -132,8 +132,7 @@ class GameManager {    constructor() {
             this.courseProgress[key].unlocked = true;
         });
     }
-    
-    resetCourseProgress() {
+      resetCourseProgress() {
         this.courseProgress = {
             'Web_Design': { unlocked: true, completed: false, progress: 0 },
             'Python': { unlocked: true, completed: false, progress: 0 },

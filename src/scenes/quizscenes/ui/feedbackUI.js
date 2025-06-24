@@ -186,11 +186,20 @@ export function showVictory(scene) {
                     });
                 }
             }
+              // Pass enemy defeat status to the dungeon scene
+            const wasEnemyDefeated = scene.enemyDefeated || false;
+            console.log('Victory screen: Enemy was defeated?', wasEnemyDefeated);
             
             scene.scene.stop();
             // Try to resume DungeonScene, but with better error handling
             try {
                 if (scene.scene.manager.isPaused('DungeonScene')) {
+                    // Pass enemy defeat status when resuming - note: Phaser resume doesn't take data parameter
+                    // So we'll set a flag on the scene manager instead
+                    const dungeonScene = scene.scene.get('DungeonScene');
+                    if (dungeonScene) {
+                        dungeonScene.enemyWasDefeatedFlag = wasEnemyDefeated;
+                    }
                     scene.scene.resume('DungeonScene');
                 } else if (scene.scene.manager.isActive('DungeonScene')) {
                     // DungeonScene is already active, just switch to it
