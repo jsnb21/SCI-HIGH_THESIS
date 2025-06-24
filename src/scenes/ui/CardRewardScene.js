@@ -23,21 +23,23 @@ export default class CardRewardScene extends Phaser.Scene {
         this.load.audio('cardHover', 'assets/audio/se/se_select.wav');
         this.load.audio('cardSelect', 'assets/audio/se/se_confirm.wav');
         
-        // Create simple colored rectangles if images don't exist
+        // Create simple colored rectangles if images don't exist - updated size
         if (!this.textures.exists('cardBack')) {
-            this.add.graphics()
-                .fillStyle(0x2d3748)
-                .fillRoundedRect(0, 0, 120, 160, 10)
-                .generateTexture('cardBack', 120, 160);
+            const graphics = this.add.graphics();
+            graphics.fillStyle(0x2d3748);
+            graphics.fillRoundedRect(0, 0, 144, 192, 12);
+            graphics.generateTexture('cardBack', 144, 192);
+            graphics.destroy(); // Clean up the graphics object
         }
         
         if (!this.textures.exists('cardFrame')) {
-            this.add.graphics()
-                .lineStyle(3, 0xffd700)
-                .strokeRoundedRect(0, 0, 120, 160, 10)
-                .generateTexture('cardFrame', 120, 160);
+            const graphics = this.add.graphics();
+            graphics.lineStyle(3, 0xffd700);
+            graphics.strokeRoundedRect(0, 0, 144, 192, 12);
+            graphics.generateTexture('cardFrame', 144, 192);
+            graphics.destroy(); // Clean up the graphics object
         }
-    }    create() {
+    }create() {
         // Reset selection state for new card selection
         this.isSelecting = false;
         this.selectedCard = null;
@@ -77,63 +79,125 @@ export default class CardRewardScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-ESC', this.skipReward, this);
         
         console.log('CardRewardScene created - ready for selection');
-    }
-
-    generateCardOptions() {
-        const cardTypes = ['buff', 'heal', 'damage', 'special'];
+    }    generateCardOptions() {
+        const cardTypes = ['quiz', 'heal'];
         const numCards = this.isBossReward ? 4 : 3;
         
         this.cardData = [];
         
         for (let i = 0; i < numCards; i++) {
-            const type = Phaser.Utils.Array.GetRandom(cardTypes);
+            // 80% chance for quiz cards, 20% chance for heal cards
+            const type = Math.random() < 0.8 ? 'quiz' : 'heal';
             const card = this.generateCard(type);
             this.cardData.push(card);
         }
-    }
-
-    generateCard(type) {
+    }    generateCard(type) {
         const cards = {
-            buff: [
+            quiz: [
                 {
-                    name: 'Strength Boost',
-                    description: '+5 Player Damage',
-                    effect: 'damage_boost',
-                    value: 5,
+                    name: 'Score Multiplier',
+                    description: '+20% Quiz Score Bonus',
+                    effect: 'score_multiplier',
+                    value: 0.2,
+                    rarity: 'common',
+                    color: 0xffd700
+                },
+                {
+                    name: 'Combo Master',
+                    description: '+2 Combo Per Correct Answer',
+                    effect: 'combo_boost',
+                    value: 2,
                     rarity: 'common',
                     color: 0xff6b6b
                 },
                 {
-                    name: 'Critical Strike',
-                    description: '+10% Critical Chance',
-                    effect: 'critical_chance',
+                    name: 'Time Extension',
+                    description: '+10 Seconds Quiz Time',
+                    effect: 'time_bonus',
                     value: 10,
-                    rarity: 'uncommon',
+                    rarity: 'common',
                     color: 0x4ecdc4
                 },
                 {
-                    name: 'Armor Plating',
-                    description: 'Reduce incoming damage by 2',
+                    name: 'Perfect Streak',
+                    description: '+50% Score for 3+ Correct',
+                    effect: 'streak_bonus',
+                    value: 0.5,
+                    rarity: 'uncommon',
+                    color: 0x9b59b6
+                },
+                {
+                    name: 'Knowledge Surge',
+                    description: '+40% Quiz Score Bonus',
+                    effect: 'score_multiplier',
+                    value: 0.4,
+                    rarity: 'uncommon',
+                    color: 0xffd700
+                },
+                {
+                    name: 'Speed Learner',
+                    description: '+30% Score for Fast Answers',
+                    effect: 'speed_bonus',
+                    value: 0.3,
+                    rarity: 'uncommon',
+                    color: 0x74b9ff
+                },
+                {
+                    name: 'Quiz Shield',
+                    description: 'Wrong answers deal 50% less damage',
                     effect: 'damage_reduction',
-                    value: 2,
+                    value: 0.5,
                     rarity: 'common',
                     color: 0x45b7d1
+                },
+                {
+                    name: 'Second Chance',
+                    description: '25% chance wrong answers don\'t count',
+                    effect: 'second_chance',
+                    value: 0.25,
+                    rarity: 'uncommon',
+                    color: 0x9b59b6
+                },
+                {
+                    name: 'Scholar\'s Focus',
+                    description: '+20 Seconds & +25% Score',
+                    effect: 'scholar_focus',
+                    value: 20,
+                    bonus: 0.25,
+                    rarity: 'rare',
+                    color: 0xa29bfe
+                },
+                {
+                    name: 'Genius Mode',
+                    description: '+100% Score for Perfect Quiz',
+                    effect: 'perfect_bonus',
+                    value: 1.0,
+                    rarity: 'rare',
+                    color: 0xff9f43
+                },
+                {
+                    name: 'Quiz Master',
+                    description: 'See one wrong answer eliminated',
+                    effect: 'answer_hint',
+                    value: 1,
+                    rarity: 'legendary',
+                    color: 0xff9f43
+                },
+                {
+                    name: 'Double Points',
+                    description: 'Next quiz gives double score',
+                    effect: 'double_score',
+                    value: 1,
+                    rarity: 'rare',
+                    color: 0xa29bfe
                 }
             ],
             heal: [
                 {
-                    name: 'Health Potion',
-                    description: 'Restore 25 HP',
+                    name: 'Minor Heal',
+                    description: 'Restore +1 HP',
                     effect: 'heal',
-                    value: 25,
-                    rarity: 'common',
-                    color: 0x5cb85c
-                },
-                {
-                    name: 'Greater Heal',
-                    description: 'Restore 50 HP',
-                    effect: 'heal',
-                    value: 50,
+                    value: 1,
                     rarity: 'uncommon',
                     color: 0x5cb85c
                 },
@@ -142,69 +206,8 @@ export default class CardRewardScene extends Phaser.Scene {
                     description: 'Restore to full HP',
                     effect: 'full_heal',
                     value: 100,
-                    rarity: 'rare',
-                    color: 0x5cb85c
-                }
-            ],
-            damage: [
-                {
-                    name: 'Power Surge',
-                    description: '+3 Permanent Damage',
-                    effect: 'permanent_damage',
-                    value: 3,
-                    rarity: 'uncommon',
-                    color: 0xf39c12
-                },
-                {
-                    name: 'Berserker Rage',
-                    description: '+8 Damage, -5 HP',
-                    effect: 'berserker',
-                    value: 8,
-                    penalty: 5,
-                    rarity: 'rare',
-                    color: 0xe74c3c
-                }
-            ],            special: [
-                {
-                    name: 'Lucky Charm',
-                    description: 'Better rewards from next enemy',
-                    effect: 'lucky',
-                    value: 1,
-                    rarity: 'uncommon',
-                    color: 0x9b59b6
-                },
-                {
-                    name: 'Time Warp',
-                    description: 'Extra turn in next battle',
-                    effect: 'extra_turn',
-                    value: 1,
-                    rarity: 'rare',
-                    color: 0x3498db
-                },
-                {
-                    name: 'Phoenix Feather',
-                    description: 'Revive once if defeated',
-                    effect: 'revive',
-                    value: 1,
                     rarity: 'legendary',
-                    color: 0xff9f43
-                },
-                {
-                    name: 'Shield Generator',
-                    description: 'Gain 3 armor for next 3 battles',
-                    effect: 'temp_armor',
-                    value: 3,
-                    duration: 3,
-                    rarity: 'rare',
-                    color: 0x74b9ff
-                },
-                {
-                    name: 'Mana Crystal',
-                    description: 'Increase max HP by 25',
-                    effect: 'max_hp_boost',
-                    value: 25,
-                    rarity: 'rare',
-                    color: 0xa29bfe
+                    color: 0x5cb85c
                 }
             ]
         };
@@ -225,33 +228,44 @@ export default class CardRewardScene extends Phaser.Scene {
         }
 
         return { ...selectedCard };
-    }
-
-    createCards() {
-        const cardWidth = 120;
-        const cardHeight = 160;
+    }createCards() {
+        const cardWidth = 144;  // Increased from 120 by 20%
+        const cardHeight = 192; // Increased from 160 by 20%
         const spacing = 20;
         const totalWidth = (cardWidth * this.cardData.length) + (spacing * (this.cardData.length - 1));
         const startX = (this.scale.width - totalWidth) / 2 + cardWidth / 2;
         const cardY = this.scale.height / 2;
 
+        console.log(`Creating ${this.cardData.length} cards:`);
+        console.log(`Screen size: ${this.scale.width} x ${this.scale.height}`);
+        console.log(`Card dimensions: ${cardWidth} x ${cardHeight}`);
+        console.log(`Total width needed: ${totalWidth}`);
+        console.log(`Start X: ${startX}, Card Y: ${cardY}`);
+
         this.cards = [];
 
         this.cardData.forEach((cardData, index) => {
             const cardX = startX + (cardWidth + spacing) * index;
+            console.log(`Card ${index} position: (${cardX}, ${cardY})`);
+            
+            // Ensure card positions are valid
+            if (cardX < cardWidth / 2 || cardX > this.scale.width - cardWidth / 2) {
+                console.warn(`Card ${index} X position ${cardX} is out of bounds!`);
+            }
+            
             const card = this.createCard(cardX, cardY, cardData, index);
             this.cards.push(card);
         });
-    }    createCard(x, y, cardData, index) {
+    }createCard(x, y, cardData, index) {
         const container = this.add.container(x, y);
         container.setDepth(5);
 
-        // Card background
-        const bg = this.add.rectangle(0, 0, 120, 160, 0x2d3748)
+        // Card background - increased size by 20%
+        const bg = this.add.rectangle(0, 0, 144, 192, 0x2d3748)
             .setStrokeStyle(2, cardData.color);
         container.add(bg);
 
-        // Rarity border
+        // Rarity border - increased size by 20%
         const rarityColors = {
             common: 0x95a5a6,
             uncommon: 0x2ecc71,
@@ -259,13 +273,13 @@ export default class CardRewardScene extends Phaser.Scene {
             legendary: 0xf39c12
         };
         
-        const rarityBorder = this.add.rectangle(0, 0, 116, 156, 0x000000, 0)
+        const rarityBorder = this.add.rectangle(0, 0, 140, 188, 0x000000, 0)
             .setStrokeStyle(3, rarityColors[cardData.rarity] || 0x95a5a6);
         container.add(rarityBorder);
 
-        // Add subtle glow for legendary cards
+        // Add subtle glow for legendary cards - increased size by 20%
         if (cardData.rarity === 'legendary') {
-            const glow = this.add.rectangle(0, 0, 124, 164, 0xffd700, 0.3);
+            const glow = this.add.rectangle(0, 0, 148, 196, 0xffd700, 0.3);
             container.add(glow);
             glow.setDepth(-1);
             
@@ -280,55 +294,57 @@ export default class CardRewardScene extends Phaser.Scene {
             });
         }
 
-        // Card name
-        const nameText = this.add.text(0, -65, cardData.name, {
-            fontSize: '11px',
+        // Card name - adjusted position for larger card
+        const nameText = this.add.text(0, -78, cardData.name, {
+            fontSize: '13px', // Slightly increased font size
             fill: '#ffffff',
             fontFamily: 'Caprasimo-Regular',
             align: 'center',
-            wordWrap: { width: 110 }
+            wordWrap: { width: 130 } // Increased wrap width
         }).setOrigin(0.5);
         container.add(nameText);
 
-        // Card icon/symbol based on effect
+        // Card icon/symbol based on effect - adjusted position
         const iconSymbol = this.getCardIcon(cardData.effect);
-        const icon = this.add.text(0, -25, iconSymbol, {
-            fontSize: '28px',
+        const icon = this.add.text(0, -30, iconSymbol, {
+            fontSize: '34px', // Increased icon size
             fill: cardData.color,
             fontFamily: 'Caprasimo-Regular'
         }).setOrigin(0.5);
         container.add(icon);
 
-        // Card description
-        const descText = this.add.text(0, 15, cardData.description, {
-            fontSize: '9px',
+        // Card description - adjusted position
+        const descText = this.add.text(0, 18, cardData.description, {
+            fontSize: '11px', // Slightly increased font size
             fill: '#cccccc',
             fontFamily: 'Caprasimo-Regular',
             align: 'center',
-            wordWrap: { width: 105 }
+            wordWrap: { width: 125 } // Increased wrap width
         }).setOrigin(0.5);
         container.add(descText);
 
-        // Rarity text
-        const rarityText = this.add.text(0, 55, cardData.rarity.toUpperCase(), {
-            fontSize: '8px',
+        // Rarity text - adjusted position
+        const rarityText = this.add.text(0, 66, cardData.rarity.toUpperCase(), {
+            fontSize: '10px', // Slightly increased font size
             fill: rarityColors[cardData.rarity] || 0x95a5a6,
             fontFamily: 'Caprasimo-Regular',
             fontStyle: 'bold'
         }).setOrigin(0.5);
         container.add(rarityText);
 
-        // Add value indicator for certain effects
+        // Add value indicator for certain effects - adjusted position
         if (['heal', 'damage_boost', 'permanent_damage', 'damage_reduction'].includes(cardData.effect)) {
-            const valueText = this.add.text(0, 35, `+${cardData.value}`, {
-                fontSize: '12px',
+            const valueText = this.add.text(0, 42, `+${cardData.value}`, {
+                fontSize: '14px', // Increased font size
                 fill: '#ffd700',
                 fontFamily: 'Caprasimo-Regular',
                 fontStyle: 'bold'
             }).setOrigin(0.5);
             container.add(valueText);
-        }        // Make entire container interactive instead of just background
-        container.setSize(120, 160);
+        }
+
+        // Make entire container interactive - updated size
+        container.setSize(144, 192);
         container.setInteractive({ cursor: 'pointer' });
         container.on('pointerover', () => this.onCardHover(container, true));
         container.on('pointerout', () => this.onCardHover(container, false));
@@ -356,21 +372,22 @@ export default class CardRewardScene extends Phaser.Scene {
         return container;
     }    getCardIcon(effect) {
         const icons = {
-            damage_boost: '⚔️',
-            critical_chance: '💥',
-            damage_reduction: '🛡️',
+            score_multiplier: '📊',
+            combo_boost: '�',
+            time_bonus: '⏰',
+            streak_bonus: '⚡',
+            speed_bonus: '�',
+            damage_reduction: '�️',
+            second_chance: '�',
+            scholar_focus: '🧠',
+            perfect_bonus: '⭐',
+            answer_hint: '�',
+            double_score: '�',
             heal: '❤️',
-            full_heal: '💖',
-            permanent_damage: '🔥',
-            berserker: '😈',
-            lucky: '🍀',
-            extra_turn: '⏰',
-            revive: '🐦',
-            temp_armor: '🔰',
-            max_hp_boost: '💎'
+            full_heal: '�'
         };
         return icons[effect] || '⭐';
-    }    onCardHover(container, isHovering) {
+    }onCardHover(container, isHovering) {
         if (this.isSelecting) return;
 
         console.log(`Card hover: ${isHovering ? 'enter' : 'exit'} - Card ${container.cardIndex}`);
@@ -462,7 +479,7 @@ export default class CardRewardScene extends Phaser.Scene {
             this.applyCardEffect(this.selectedCard);
             this.returnToDungeon();
         });
-    }applyCardEffect(card) {
+    }    applyCardEffect(card) {
         switch (card.effect) {
             case 'heal':
                 gameManager.healPlayer(card.value);
@@ -470,39 +487,39 @@ export default class CardRewardScene extends Phaser.Scene {
             case 'full_heal':
                 gameManager.setPlayerHP(gameManager.getMaxPlayerHP());
                 break;
-            case 'damage_boost':
-                gameManager.addPlayerBuff('damage', card.value);
+            case 'score_multiplier':
+                gameManager.addPlayerBuff('score_multiplier', card.value);
                 break;
-            case 'permanent_damage':
-                gameManager.increasePermanentDamage(card.value);
+            case 'combo_boost':
+                gameManager.addPlayerBuff('combo_boost', card.value);
+                break;
+            case 'time_bonus':
+                gameManager.addPlayerBuff('time_bonus', card.value);
+                break;
+            case 'streak_bonus':
+                gameManager.addPlayerBuff('streak_bonus', card.value);
+                break;
+            case 'speed_bonus':
+                gameManager.addPlayerBuff('speed_bonus', card.value);
                 break;
             case 'damage_reduction':
-                gameManager.addPlayerBuff('armor', card.value);
+                gameManager.addPlayerBuff('damage_reduction', card.value);
                 break;
-            case 'critical_chance':
-                gameManager.addPlayerBuff('critical', card.value);
+            case 'second_chance':
+                gameManager.addPlayerBuff('second_chance', card.value);
                 break;
-            case 'berserker':
-                gameManager.addPlayerBuff('damage', card.value);
-                gameManager.damagePlayer(card.penalty);
+            case 'scholar_focus':
+                gameManager.addPlayerBuff('time_bonus', card.value);
+                gameManager.addPlayerBuff('score_multiplier', card.bonus);
                 break;
-            case 'lucky':
-                gameManager.addPlayerBuff('lucky', card.value);
+            case 'perfect_bonus':
+                gameManager.addPlayerBuff('perfect_bonus', card.value);
                 break;
-            case 'extra_turn':
-                gameManager.addPlayerBuff('extra_turn', card.value);
+            case 'answer_hint':
+                gameManager.addPlayerBuff('answer_hint', card.value);
                 break;
-            case 'revive':
-                gameManager.addPlayerBuff('revive', card.value);
-                break;
-            case 'temp_armor':
-                gameManager.addPlayerBuff('temp_armor', card.value);
-                gameManager.addPlayerBuff('temp_armor_duration', card.duration);
-                break;
-            case 'max_hp_boost':
-                const currentMaxHP = gameManager.getMaxPlayerHP();
-                gameManager.setMaxPlayerHP(currentMaxHP + card.value);
-                gameManager.healPlayer(card.value); // Also heal for the amount
+            case 'double_score':
+                gameManager.addPlayerBuff('double_score', card.value);
                 break;
         }
         

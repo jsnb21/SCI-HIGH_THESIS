@@ -219,6 +219,138 @@ class GameManager {    constructor() {
             'C#': { unlocked: false, completed: false, progress: 0 }
         };
     }
+    
+    // Quiz-related buff methods
+    applyScoreMultiplier(baseScore) {
+        const multiplier = 1 + this.getPlayerBuff('score_multiplier');
+        const finalScore = Math.round(baseScore * multiplier);
+        console.log(`Score multiplier applied: ${baseScore} * ${multiplier} = ${finalScore}`);
+        return finalScore;
+    }
+    
+    applyComboBoost(baseCombo) {
+        const boost = this.getPlayerBuff('combo_boost');
+        const finalCombo = baseCombo + boost;
+        console.log(`Combo boost applied: ${baseCombo} + ${boost} = ${finalCombo}`);
+        return finalCombo;
+    }
+    
+    getTimeBonus() {
+        return this.getPlayerBuff('time_bonus') || 0;
+    }
+    
+    applyStreakBonus(baseScore, correctStreak) {
+        if (correctStreak >= 3 && this.getPlayerBuff('streak_bonus')) {
+            const bonus = this.getPlayerBuff('streak_bonus');
+            const bonusScore = Math.round(baseScore * bonus);
+            console.log(`Streak bonus applied (${correctStreak} streak): +${bonusScore} points`);
+            return baseScore + bonusScore;
+        }
+        return baseScore;
+    }
+    
+    applySpeedBonus(baseScore, answerTime, timeLimit) {
+        if (this.getPlayerBuff('speed_bonus') && answerTime < timeLimit * 0.5) {
+            const bonus = this.getPlayerBuff('speed_bonus');
+            const bonusScore = Math.round(baseScore * bonus);
+            console.log(`Speed bonus applied (fast answer): +${bonusScore} points`);
+            return baseScore + bonusScore;
+        }
+        return baseScore;
+    }
+    
+    hasSecondChance() {
+        return this.getPlayerBuff('second_chance') > 0;
+    }
+    
+    checkSecondChance() {
+        const chance = this.getPlayerBuff('second_chance');
+        if (chance > 0 && Math.random() < chance) {
+            console.log('Second chance activated! Wrong answer ignored.');
+            return true;
+        }
+        return false;
+    }
+    
+    hasAnswerHint() {
+        return this.getPlayerBuff('answer_hint') > 0;
+    }
+    
+    useAnswerHint() {
+        if (this.hasAnswerHint()) {
+            this.removePlayerBuff('answer_hint', 1);
+            console.log('Answer hint used');
+            return true;
+        }
+        return false;
+    }
+    
+    hasDoubleScore() {
+        return this.getPlayerBuff('double_score') > 0;
+    }
+    
+    useDoubleScore() {
+        if (this.hasDoubleScore()) {
+            this.removePlayerBuff('double_score', 1);
+            console.log('Double score used');
+            return true;
+        }
+        return false;
+    }
+    
+    applyPerfectBonus(baseScore, isPerfect) {
+        if (isPerfect && this.getPlayerBuff('perfect_bonus')) {
+            const bonus = this.getPlayerBuff('perfect_bonus');
+            const bonusScore = Math.round(baseScore * bonus);
+            console.log(`Perfect quiz bonus applied: +${bonusScore} points`);
+            return baseScore + bonusScore;
+        }
+        return baseScore;
+    }
+    
+    applyScholarFocus() {
+        if (this.getPlayerBuff('scholar_focus')) {
+            const timeBonus = this.getPlayerBuff('scholar_focus');
+            const scoreBonus = this.getPlayerBuff('scholar_focus_score') || 0.25;
+            console.log(`Scholar's Focus applied: +${timeBonus} time, +${scoreBonus * 100}% score`);
+            return { timeBonus, scoreBonus };
+        }
+        return { timeBonus: 0, scoreBonus: 0 };
+    }
+    
+    // Helper method to calculate total quiz score with all buffs
+    calculateQuizScore(baseScore, options = {}) {
+        let finalScore = baseScore;
+        
+        // Apply score multiplier
+        finalScore = this.applyScoreMultiplier(finalScore);
+        
+        // Apply perfect bonus if applicable
+        if (options.isPerfect) {
+            finalScore = this.applyPerfectBonus(finalScore, true);
+        }
+        
+        // Apply streak bonus if applicable
+        if (options.correctStreak >= 3) {
+            finalScore = this.applyStreakBonus(finalScore, options.correctStreak);
+        }
+        
+        // Apply speed bonus if applicable
+        if (options.answerTime && options.timeLimit) {
+            finalScore = this.applySpeedBonus(finalScore, options.answerTime, options.timeLimit);
+        }
+        
+        // Apply double score if available and used
+        if (this.hasDoubleScore() && options.useDoubleScore) {
+            this.useDoubleScore();
+            finalScore *= 2;
+            console.log(`Double score applied: final score = ${finalScore}`);
+        }
+        
+        return finalScore;
+    }
+
+    // ...existing code...
 }
 
 class Character {

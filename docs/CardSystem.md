@@ -1,54 +1,71 @@
-# Card Reward System
+# Card System Documentation
 
 ## Overview
-The Card Reward System is implemented in `src/scenes/ui/CardRewardScene.js` and integrates with the dungeon system to provide players with meaningful choices after defeating enemies.
+The card system provides quiz-focused buffs and limited healing options after each enemy defeat in the dungeon. Cards are designed to enhance quiz performance rather than combat stats.
 
-## How It Works
+## Card Categories
 
-### Integration with Dungeon Scene
-- After every enemy defeat in the dungeon, the card reward scene is automatically launched
-- Boss defeats show legendary cards with enhanced effects
-- Regular enemy defeats show 3 cards, boss defeats show 4 cards
+### Quiz Buffs (80% spawn rate)
+These cards enhance quiz performance through various mechanics:
 
-### Card Types
+#### Common Cards
+- **Score Multiplier**: +20% Quiz Score Bonus (📊)
+- **Combo Master**: +2 Combo Per Correct Answer (🔥)
+- **Time Extension**: +10 Seconds Quiz Time (⏰)
+- **Quiz Shield**: Wrong answers deal 50% less damage (🛡️)
 
-#### Buff Cards
-- **Strength Boost**: +5 Player Damage
-- **Critical Strike**: +10% Critical Chance  
-- **Armor Plating**: Reduce incoming damage by 2
+#### Uncommon Cards
+- **Perfect Streak**: +50% Score for 3+ Correct Answers (⚡)
+- **Knowledge Surge**: +40% Quiz Score Bonus (📊)
+- **Speed Learner**: +30% Score for Fast Answers (💨)
+- **Second Chance**: 25% chance wrong answers don't count (🔄)
 
-#### Heal Cards
-- **Health Potion**: Restore 25 HP
-- **Greater Heal**: Restore 50 HP
-- **Full Recovery**: Restore to full HP
+#### Rare Cards
+- **Scholar's Focus**: +20 Seconds & +25% Score (🧠)
+- **Genius Mode**: +100% Score for Perfect Quiz (⭐)
+- **Double Points**: Next quiz gives double score (💰)
 
-#### Damage Cards
-- **Power Surge**: +3 Permanent Damage
-- **Berserker Rage**: +8 Damage, -5 HP (high risk/reward)
+#### Legendary Cards
+- **Quiz Master**: See one wrong answer eliminated (💡)
 
-#### Special Cards
-- **Lucky Charm**: Better rewards from next enemy
-- **Time Warp**: Extra turn in next battle
-- **Phoenix Feather**: Revive once if defeated
-- **Shield Generator**: Gain 3 armor for next 3 battles
-- **Mana Crystal**: Increase max HP by 25
+### Healing Cards (20% spawn rate)
+Limited healing options to maintain challenge:
+
+#### Uncommon Cards
+- **Minor Heal**: Restore +1 HP (❤️)
+
+#### Legendary Cards
+- **Full Recovery**: Restore to full HP (💖)
+
+## Implementation Details
+
+### GameManager Methods
+The system integrates with GameManager through specialized methods:
+
+- `applyScoreMultiplier(baseScore)`: Applies score multiplier buffs
+- `applyComboBoost(baseCombo)`: Enhances combo points
+- `getTimeBonus()`: Returns additional time for quizzes
+- `applyStreakBonus(baseScore, streak)`: Bonus for correct streaks
+- `applySpeedBonus(baseScore, time, limit)`: Bonus for fast answers
+- `checkSecondChance()`: Checks if wrong answer is negated
+- `useAnswerHint()`: Eliminates one wrong answer
+- `calculateQuizScore(baseScore, options)`: Comprehensive score calculation
+
+### Technical Implementation
+- Cards are generated with 80% quiz / 20% heal probability
+- Visual design includes rarity-based coloring and proper scaling
+- Interactive hover effects and selection feedback
+- Proper state management and cleanup
+- Integration with dungeon scene flow
 
 ### Rarity System
-- **Common** (Gray): Basic effects
-- **Uncommon** (Green): Moderate effects
-- **Rare** (Blue): Strong effects
-- **Legendary** (Gold): Powerful effects, enhanced on boss rewards
+- **Common**: Basic buffs, standard appearance
+- **Uncommon**: Enhanced effects, slightly more prominent
+- **Rare**: Powerful effects, distinctive styling
+- **Legendary**: Game-changing effects, premium appearance
 
-### Game Manager Integration
-The card system integrates with the buff system in `gameManager.js`:
-
-```javascript
-// Example buff applications
-gameManager.addPlayerBuff('damage', 5);
-gameManager.addPlayerBuff('armor', 2);
-gameManager.healPlayer(25);
-gameManager.increasePermanentDamage(3);
-```
+## Usage
+The card system automatically triggers after each enemy defeat in the dungeon. Players choose one card from 3 options (4 for boss rewards). Effects are immediately applied and persist throughout the dungeon run.
 
 ## Testing
 
@@ -73,11 +90,6 @@ window.gameManager.getAllPlayerBuffs();
 window.gameManager.getPlayerHP();
 window.gameManager.getMaxPlayerHP();
 ```
-
-## Visual Features
-- Animated card entrance with staggered timing
-- Hover effects with sound
-- Rarity-based visual styling
 - Legendary cards have animated glow effects
 - Selection feedback with confirmation text
 
