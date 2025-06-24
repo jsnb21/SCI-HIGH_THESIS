@@ -39,6 +39,9 @@ import ReadingScene from './scenes/libraryScenes/readingScene.js';
 import DungeonScene from './scenes/comlabscenes/dungeon.js';
 import DungeonCleared from './scenes/dungeonCleared.js';
 
+// UI Scenes
+import CardRewardScene from './scenes/ui/CardRewardScene.js';
+
 const config = {
   type: Phaser.AUTO,
   width: window.innerWidth,
@@ -53,6 +56,8 @@ const config = {
     /* Main Scenes */
     DungeonScene,
     DungeonCleared,
+    /* UI Scenes */
+    CardRewardScene,
     Intro,
     OptionsScene,
     MainHub,

@@ -2,8 +2,11 @@
 
 class GameManager {    constructor() {
         this.playerHP = 100; // Changed from 3 to 100 to match quiz system
+        this.maxPlayerHP = 100; // Add max HP tracking
         this.playTime = 0;
         this.gameProgress = 0;
+        this.permanentDamage = 10; // Add permanent damage tracking
+        this.playerBuffs = {}; // Add buff system
 
         this.previousScene = 'MainMenu'; // default scene
         
@@ -18,12 +21,83 @@ class GameManager {    constructor() {
         };
     }
 
-    // Player HP
+    // Player HP and Health Management
     setPlayerHP(hp) {
-        this.playerHP = hp;
+        this.playerHP = Math.max(0, Math.min(hp, this.maxPlayerHP));
     }
+    
     getPlayerHP() {
         return this.playerHP;
+    }
+    
+    getMaxPlayerHP() {
+        return this.maxPlayerHP;
+    }
+    
+    setMaxPlayerHP(maxHP) {
+        this.maxPlayerHP = maxHP;
+        // Ensure current HP doesn't exceed new max
+        if (this.playerHP > this.maxPlayerHP) {
+            this.playerHP = this.maxPlayerHP;
+        }
+    }
+    
+    healPlayer(amount) {
+        this.setPlayerHP(this.playerHP + amount);
+        console.log(`Player healed for ${amount}. Current HP: ${this.playerHP}/${this.maxPlayerHP}`);
+    }
+    
+    damagePlayer(amount) {
+        // Apply damage reduction if available
+        const reduction = this.getPlayerBuff('armor') || 0;
+        const actualDamage = Math.max(1, amount - reduction);
+        this.setPlayerHP(this.playerHP - actualDamage);
+        console.log(`Player took ${actualDamage} damage (${amount} - ${reduction} armor). Current HP: ${this.playerHP}/${this.maxPlayerHP}`);
+    }
+
+    // Permanent Damage System
+    getPermanentDamage() {
+        return this.permanentDamage;
+    }
+    
+    increasePermanentDamage(amount) {
+        this.permanentDamage += amount;
+        console.log(`Permanent damage increased by ${amount}. New damage: ${this.permanentDamage}`);
+    }
+
+    // Buff System
+    addPlayerBuff(buffType, value) {
+        if (!this.playerBuffs[buffType]) {
+            this.playerBuffs[buffType] = 0;
+        }
+        this.playerBuffs[buffType] += value;
+        console.log(`Added ${buffType} buff: +${value} (total: ${this.playerBuffs[buffType]})`);
+    }
+    
+    getPlayerBuff(buffType) {
+        return this.playerBuffs[buffType] || 0;
+    }
+    
+    removePlayerBuff(buffType, value = null) {
+        if (this.playerBuffs[buffType]) {
+            if (value === null) {
+                delete this.playerBuffs[buffType];
+            } else {
+                this.playerBuffs[buffType] = Math.max(0, this.playerBuffs[buffType] - value);
+                if (this.playerBuffs[buffType] === 0) {
+                    delete this.playerBuffs[buffType];
+                }
+            }
+        }
+    }
+    
+    clearPlayerBuffs() {
+        this.playerBuffs = {};
+        console.log('All player buffs cleared');
+    }
+    
+    getAllPlayerBuffs() {
+        return { ...this.playerBuffs };
     }
 
     // Play Time
@@ -55,6 +129,9 @@ class GameManager {    constructor() {
     }    // Reset all values
     reset() {
         this.playerHP = 100; // Changed from 3 to 100 to match quiz system
+        this.maxPlayerHP = 100;
+        this.permanentDamage = 10;
+        this.playerBuffs = {};
         this.playTime = 0;
         this.gameProgress = 0;
         this.previousScene = 'MainMenu';

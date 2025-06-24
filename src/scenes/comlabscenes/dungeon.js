@@ -111,12 +111,32 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         // Place quiz boxes based on current level type
         const boxCount = this.isBossLevel ? 1 : 2;
         this.quizBoxes = this.placeQuizBoxes(boxCount);
-        
-        // Add resume event handler
+          // Add resume event handler
         this.events.on('resume', this.onResume, this);
-    }    init(data) {
+        
+        // Expose debug methods for testing
+        if (typeof window !== 'undefined') {
+            window.dungeonScene = this;
+        }
+    }init(data) {
         this.courseTopic = data?.courseTopic || 'webdesign'; // Default to webdesign
     }    onResume(data) {
+        // Check if returning from card reward scene
+        if (this.cardRewardProcessed) {
+            this.cardRewardProcessed = false;
+            if (this.cardRewardCallback) {
+                this.cardRewardCallback();
+                this.cardRewardCallback = null;
+            }
+            // Update display and return early
+            this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
+            this.drawGrid();
+            this.updateLightingEffects();
+            if (this.dungeonHUD && this.dungeonHUD.drawHUD) this.dungeonHUD.drawHUD();
+            if (this.dungeonMenu && this.dungeonMenu.createMenuButton) this.dungeonMenu.createMenuButton();
+            return;
+        }
+        
         // Sync player HP from GameManager when returning from quiz
         this.player.hp = gameManager.getPlayerHP();
         
@@ -599,7 +619,28 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.enemiesDefeated++;
         console.log(`Enemy defeated! Total defeated: ${this.enemiesDefeated}`);
         console.log(`Current intensity: ${this.intensity}, isBossLevel: ${this.isBossLevel}`);
-          // Check if this was a boss defeat - show results screen
+        
+        // Show card reward system before checking for boss defeat
+        const isBossReward = this.isBossLevel;
+        this.showCardReward(isBossReward, () => {
+            // This callback runs after card selection is complete
+            this.continueAfterCardReward();
+        });
+    }
+    
+    showCardReward(isBossReward, callback) {
+        console.log(`Showing card reward - Boss reward: ${isBossReward}`);
+        this.cardRewardCallback = callback;
+        this.scene.pause(); // Pause current scene
+        this.scene.launch('CardRewardScene', {
+            returnScene: 'DungeonScene',
+            playerLevel: this.intensity,
+            isBossReward: isBossReward
+        });
+    }
+    
+    continueAfterCardReward() {
+        // Check if this was a boss defeat - show results screen
         if (this.isBossLevel && this.courseTopic) {
             console.log(`Boss defeated! Course ${this.courseTopic} completed!`);
             this.completeCourse();
@@ -779,6 +820,22 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.scene.start('DungeonCleared', {
             courseStats: this.courseStats,
             courseTopic: this.courseTopic
+        });
+    }
+    
+    // Debug method to test card system (for testing)
+    debugTestCardSystem() {
+        console.log('Debug: Testing card system');
+        this.showCardReward(false, () => {
+            console.log('Card reward completed!');
+        });
+    }
+    
+    // Debug method to test boss card system (for testing)
+    debugTestBossCardSystem() {
+        console.log('Debug: Testing boss card system');
+        this.showCardReward(true, () => {
+            console.log('Boss card reward completed!');
         });
     }
 }
