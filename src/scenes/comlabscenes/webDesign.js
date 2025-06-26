@@ -13,7 +13,7 @@ export default class WebDesignScene extends Phaser.Scene {
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.image('webDesignIcons', 'assets/img/comlab/icons/web-design_logo.png');
 
-        this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
+        this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
     }
 
     create() {
@@ -32,10 +32,9 @@ export default class WebDesignScene extends Phaser.Scene {
             courseTitle: 'Web Design',
             iconPath: 'webDesignIcons',
             description: 'This course covers the fundamentals of web design...',
-            buttonText: 'Start',
-            buttonCallback: () => {
+            buttonText: 'Start',            buttonCallback: () => {
                 this.se_confirmSound.play();
-                this.scene.start('DungeonScene');
+                this.scene.start('DungeonScene', { courseTopic: 'webdesign' });
             },
         });
 

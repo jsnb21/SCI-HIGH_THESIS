@@ -13,7 +13,7 @@ export default class CPlusplusScene extends Phaser.Scene {
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.image('CPlusPlusIcons', 'assets/img/comlab/icons/cplus_logo.png');
 
-        this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
+        this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
     }
 
     create() {
@@ -37,7 +37,7 @@ export default class CPlusplusScene extends Phaser.Scene {
                 this.se_confirmSound.play();
                 this.scene.start('CplusplusQuizScene', { topic: 'C++',
                 enemyConfig: {
-                    spriteKey: 'boxenemy',
+                    spriteKey: 'goblinNerd',
                     maxHP: 150,
                     label: 'Box',
                 },

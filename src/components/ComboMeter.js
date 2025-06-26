@@ -75,18 +75,34 @@ export default class ComboMeter {
             multiplierText: this.multiplierText,
             glowEffect: this.glowEffect
         };
-    }
-
-    updateCombo(isCorrect, scaleFactor = 1) {
+    }    updateCombo(isCorrect, scaleFactor = 1) {
         const sf = scaleFactor;
 
         if (isCorrect) {
             this.combo++;
             this.maxCombo = Math.max(this.maxCombo, this.combo);
-            
-            // Show combo meter if it reaches 2 or more
+              // Show combo meter if it reaches 2 or more
             if (this.combo >= 2 && !this.isVisible) {
                 this.show();
+            }
+
+            // Play combo sound on every correct answer
+            if (this.scene.se_comboSound) {
+                // Calculate pitch based on milestones achieved
+                const milestones = [3, 5, 7, 10, 15, 20];
+                let pitch = 1.0; // Base pitch
+                
+                // Find the highest milestone achieved
+                for (let i = milestones.length - 1; i >= 0; i--) {
+                    if (this.combo >= milestones[i]) {
+                        pitch = 1.0 + (i + 1) * 0.15; // Increase pitch by 0.15 for each milestone
+                        break;
+                    }
+                }
+                
+                // Cap at 2.0x pitch
+                pitch = Math.min(pitch, 2.0);
+                this.scene.se_comboSound.play({ rate: pitch });
             }
 
             // Update combo text with color based on combo level
@@ -269,6 +285,16 @@ export default class ComboMeter {
 
     getMaxCombo() {
         return this.maxCombo;
+    }
+
+    getTotalComboScore() {
+        // Calculate total combo score based on max combo achieved
+        // Higher combos give exponentially more points
+        if (this.maxCombo >= 10) return this.maxCombo * 10;
+        if (this.maxCombo >= 7) return this.maxCombo * 7;
+        if (this.maxCombo >= 5) return this.maxCombo * 5;
+        if (this.maxCombo >= 3) return this.maxCombo * 3;
+        return this.maxCombo * 1;
     }
 
     reset() {

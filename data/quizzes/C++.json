@@ -36,8 +36,7 @@
       "correctIndex": 1
     },
     {
-      "question": "Which access specifier makes members accessible only within the class?",
-      "options": ["public", "private", "protected", "default"],
+      "question": "Which access specifier makes members accessible only within the class?",      "options": ["public", "private", "protected", "default"],
       "correctIndex": 1
     },
     {
@@ -49,6 +48,21 @@
       "question": "What is the use of the `new` operator?",
       "options": ["To free memory", "To define a pointer", "To allocate memory", "To create namespaces"],
       "correctIndex": 2
+    },
+    {
+      "question": "Complete the code: To include the standard input/output library in C++, you write #include <_____>",
+      "type": "fill-in-the-blank",
+      "correctAnswers": ["iostream", "IOSTREAM"]
+    },
+    {
+      "question": "Fill in the blank: To output text to the console in C++, you use _____ << \"Hello World\";",
+      "type": "fill-in-the-blank",
+      "correctAnswers": ["cout", "std::cout", "COUT"]
+    },
+    {
+      "question": "Complete this statement: The _____ operator is used to access members of an object through a pointer.",
+      "type": "fill-in-the-blank",
+      "correctAnswers": ["->", "arrow", "pointer arrow"]
     }
   ]
 }

@@ -118,9 +118,7 @@ export function showVictory(scene) {
         fontFamily: 'Caprasimo-Regular',
         stroke: '#1a1a2e',
         strokeThickness: 2 * sf
-    }).setOrigin(0.5).setDepth(60);
-
-    const scoreText = scene.add.text(centerX, scene.scale.height/2 + 10 * sf, `Your Score: ${scene.score} / ${scene.questions.length}`, {
+    }).setOrigin(0.5).setDepth(60);    const scoreText = scene.add.text(centerX, scene.scale.height/2 + 10 * sf, `Correct Answers: ${scene.correctAnswers} / ${scene.questions.length}`, {
         fontSize: `${22 * sf}px`,
         fill: '#ffffff',
         fontFamily: 'Caprasimo-Regular',
@@ -167,10 +165,70 @@ export function showVictory(scene) {
     )
         .setInteractive({ useHandCursor: true })
         .setOrigin(0.5)
-        .setDepth(61)
-        .on('pointerdown', () => {
+        .setDepth(61)        .on('pointerdown', () => {
+            // Mark course as completed based on the scene
+            if (scene.courseTopic) {
+                const courseMap = {
+                    'webdesign': 'Web_Design',
+                    'python': 'Python',
+                    'java': 'Java',
+                    'C': 'C',
+                    'C++': 'C++',
+                    'C#': 'C#'
+                };
+                
+                const courseKey = courseMap[scene.courseTopic];
+                if (courseKey) {
+                    // Import gameManager here to avoid circular dependencies
+                    import('/src/gameManager.js').then(({ default: gameManager }) => {
+                        gameManager.setCourseCompleted(courseKey, true);
+                        console.log(`Course ${courseKey} marked as completed!`);
+                    });
+                }
+            }            // Pass enemy defeat status and quiz stats to the dungeon scene
+            const wasEnemyDefeated = scene.enemyDefeated || false;
+            console.log('Victory screen: Enemy was defeated?', wasEnemyDefeated);
+            
             scene.scene.stop();
-            scene.scene.resume('DungeonScene');
+            // Try to resume DungeonScene, but with better error handling
+            try {
+                if (scene.scene.manager.isPaused('DungeonScene')) {
+                    // Pass enemy defeat status when resuming - note: Phaser resume doesn't take data parameter
+                    // So we'll set a flag on the scene manager instead
+                    const dungeonScene = scene.scene.get('DungeonScene');
+                    if (dungeonScene && wasEnemyDefeated) {
+                        dungeonScene.enemyWasDefeatedFlag = wasEnemyDefeated;
+                        
+                        // Also pass quiz stats directly
+                        if (scene.score !== undefined) {
+                            dungeonScene.courseStats.totalScore += scene.score;
+                        }
+                        if (scene.correctAnswers !== undefined) {
+                            dungeonScene.courseStats.correctAnswers += scene.correctAnswers;
+                        }
+                        if (scene.questions && scene.correctAnswers !== undefined) {
+                            const questionsAnswered = scene.questions.length;
+                            const wrongAnswers = questionsAnswered - scene.correctAnswers;
+                            dungeonScene.courseStats.wrongAnswers += wrongAnswers;
+                        }
+                        if (scene.comboMeter && scene.comboMeter.getTotalComboScore) {
+                            dungeonScene.courseStats.comboScore += scene.comboMeter.getTotalComboScore();
+                        }
+                        
+                        console.log('Stats passed to dungeon:', dungeonScene.courseStats);
+                    }
+                    scene.scene.resume('DungeonScene');
+                } else if (scene.scene.manager.isActive('DungeonScene')) {
+                    // DungeonScene is already active, just switch to it
+                    scene.scene.switch('DungeonScene');
+                } else {
+                    // DungeonScene doesn't exist, go back to main hub
+                    scene.scene.start('MainHub');
+                }
+            } catch (error) {
+                console.warn('Error resuming DungeonScene, going to MainHub:', error);
+                scene.scene.start('MainHub');
+            }
         })
         .on('pointerover', () => {
             continueButton.setScale(1.1);
@@ -269,9 +327,7 @@ export function showGameOver(scene) {
         fontFamily: 'Caprasimo-Regular',
         stroke: '#1a1a2e',
         strokeThickness: 2 * sf
-    }).setOrigin(0.5).setDepth(60);
-
-    const scoreText = scene.add.text(centerX, scene.scale.height/2 - 10 * sf, `Questions Answered: ${scene.score} / ${scene.questions.length}`, {
+    }).setOrigin(0.5).setDepth(60);    const scoreText = scene.add.text(centerX, scene.scale.height/2 - 10 * sf, `Correct Answers: ${scene.correctAnswers} / ${scene.questions.length}`, {
         fontSize: `${18 * sf}px`,
         fill: '#ffffff',
         fontFamily: 'Caprasimo-Regular',
@@ -367,11 +423,21 @@ export function showGameOver(scene) {
         })
         .on('pointerout', () => {
             menuButton.setScale(1);
-        })
-        .on('pointerdown', () => {
+        })        .on('pointerdown', () => {
             scene.se_confirmSound?.play();
+            
+            // Clean up current scene first
             scene.cleanupAllElements();
-            scene.scene.start('ComputerLab');
+            scene.scene.stop();
+            
+            // Ensure DungeonScene is stopped before going to MainHub
+            const sceneManager = scene.scene.manager;
+            if (sceneManager.isActive('DungeonScene') || sceneManager.isPaused('DungeonScene')) {
+                sceneManager.stop('DungeonScene');
+            }
+            
+            // Start MainHub
+            scene.scene.start('MainHub');
         });
 
     // Animate elements in

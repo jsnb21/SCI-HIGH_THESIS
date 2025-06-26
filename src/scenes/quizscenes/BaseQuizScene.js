@@ -4,22 +4,56 @@ import ComboMeter from '/src/components/ComboMeter.js';
 import { createPlayerUI } from './ui/playerUI.js';
 import { createQuizBox, createEnemyUI, createTimerText, createQuestionAndOptions } from './ui/quizUI.js';
 import { showFeedback, showVictory, showGameOver } from './ui/feedbackUI.js';
+import gameManager from '/src/gameManager.js';
 
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
 
-export default class BaseQuizScene extends Phaser.Scene {
-    constructor(config) {
+// Utility function to shuffle an array (Fisher-Yates algorithm)
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+// Function to randomize multiple choice options and update correct index
+function randomizeOptions(question) {
+    if (question.type === 'fill-in-the-blank' || !question.options) {
+        return question; // No randomization needed for fill-in-the-blank
+    }
+
+    const originalOptions = [...question.options];
+    const originalCorrectIndex = question.correctIndex;
+    const correctAnswer = originalOptions[originalCorrectIndex];
+
+    // Create shuffled options
+    const shuffledOptions = shuffleArray(originalOptions);
+    
+    // Find new correct index
+    const newCorrectIndex = shuffledOptions.findIndex(option => option === correctAnswer);
+
+    return {
+        ...question,
+        options: shuffledOptions,
+        correctIndex: newCorrectIndex
+    };
+}
+
+export default class BaseQuizScene extends Phaser.Scene {    constructor(config) {
         super(config);
         this.currentQuestionIndex = 0;
         this.score = 0;
+        this.correctAnswers = 0; // Track correct answers separately
         this.quizElements = [];
-        this.persistentElements = [];        this.enemyHpBarHeight = 10;
+        this.persistentElements = [];this.enemyHpBarHeight = 10;
         this.gameTimer = null;
         this.comboMeter = null;
         this.playerConfig = {
             maxHP: 100,
-            currentHP: 100,
+            currentHP: gameManager.getPlayerHP(), // Initialize from GameManager
             label: 'Player'
         };
         this.enemyHPState = {
@@ -32,21 +66,31 @@ export default class BaseQuizScene extends Phaser.Scene {
     getScaleFactor() {
         const { width, height } = this.scale.gameSize;
         return Math.min(width / BASE_WIDTH, height / BASE_HEIGHT);
-    }
-
-    init(data) {
+    }    init(data) {
         this.currentQuestionIndex = 0;
         this.score = 0;
-        this.questions = [];
+        this.correctAnswers = 0; // Initialize correct answers counter        this.questions = [];
         this.isQuizStarted = false;
-        this.enemyConfig = data.enemyConfig || {
-            spriteKey: 'boxenemy',
+        this.courseTopic = data.topic || null; // Store course topic for completion tracking
+        this.enemyDefeated = false; // Track if enemy was defeated
+        this.playerDamage = data.playerDamage || 10; // Player damage per correct answer// Define available enemy sprites (only include existing files)
+        const availableEnemies = [
+            'goblinNerd', 
+            'bigSlime',
+            'cyberFighter',
+            'starfishMonster'
+        ];
+        
+        // Randomly select an enemy sprite
+        const randomEnemyKey = availableEnemies[Math.floor(Math.random() * availableEnemies.length)];
+          this.enemyConfig = data.enemyConfig || {
+            spriteKey: randomEnemyKey,
             maxHP: 100,
             label: 'Enemy',
         };
         this.playerConfig = {
             maxHP: 100,
-            currentHP: 100,
+            currentHP: gameManager.getPlayerHP(), // Get current HP from GameManager
             label: 'Player'
         };
         this.enemyHPState = {
@@ -54,21 +98,41 @@ export default class BaseQuizScene extends Phaser.Scene {
             maxHP: this.enemyConfig.maxHP        };
         this.gameTimer = new GameTimer(this);
         this.comboMeter = new ComboMeter(this);
+    }
+
+    // Method to set and randomize questions
+    setQuestions(questions) {
+        // First randomize the order of questions
+        this.questions = shuffleArray(questions);
+        
+        // Then randomize the options for each multiple choice question
+        this.questions = this.questions.map(question => randomizeOptions(question));
     }    preload() {
-        this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
-        this.load.image('player', 'assets/player.png');
-        this.load.image('enemy', 'assets/enemy.png');
-        this.load.image('goblin', 'assets/enemies/goblin.png');
-        this.load.image('dragon', 'assets/enemies/dragon.png');
-        this.load.image('boxenemy', 'assets/sprites/enemies/box.png');
+        // Load custom font properly
+        this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');        // Only load existing enemy sprites
+        this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
+        this.load.image('bigSlime', 'assets/sprites/enemies/big_slime.png');
+        this.load.image('cyberFighter', 'assets/sprites/enemies/cyber_fighter.png');
+        this.load.image('starfishMonster', 'assets/sprites/enemies/starfish_monster.png');
         this.load.image('heart', 'assets/sprites/dungeon/heart.png');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
-    }
-
-    create() {
+        this.load.audio('se_combo', 'assets/audio/se/se_combo.wav');
+        this.load.audio('se_wrong', 'assets/audio/se/se_wrong.wav');
+        this.load.audio('se_hurt', 'assets/audio/se/se_hurt.wav');
+        this.load.audio('se_explosion', 'assets/audio/se/se_explosion.wav');
+        
+        // Handle font loading errors gracefully
+        this.load.on('loaderror', (file) => {
+            console.warn('Failed to load file:', file.src);
+        });
+    }create() {
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
+        this.se_comboSound = this.sound.add('se_combo');
+        this.se_wrongSound = this.sound.add('se_wrong');
+        this.se_hurtSound = this.sound.add('se_hurt');
+        this.se_explosionSound = this.sound.add('se_explosion');
         if (!this.enemyConfig) {
             console.error('enemyConfig is undefined!');
             return;
@@ -119,18 +183,22 @@ export default class BaseQuizScene extends Phaser.Scene {
             );
         }
         this.showQuestion();
-    }
-
-    showQuestion() {
+    }    showQuestion() {
         this.isAnswering = false; // <-- Reset answering state at the start of every question
         this.scaleFactor = this.getScaleFactor();
         const sf = this.scaleFactor;
+        
+        // Sync playerConfig HP from GameManager before showing question
+        this.playerConfig.currentHP = gameManager.getPlayerHP();
+        console.log(`showQuestion: synced HP from GameManager: ${this.playerConfig.currentHP}`);
+        
         if (!this.questions || this.currentQuestionIndex >= this.questions.length) {
             showVictory(this);
             return;
         }
-        const { question, options } = this.questions[this.currentQuestionIndex];
-        this.cleanupQuestionElements();        // Layout
+        const currentQuestion = this.questions[this.currentQuestionIndex];
+        const { question, options, type = 'multiple-choice' } = currentQuestion;
+        this.cleanupQuestionElements();// Layout
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2 + 100 * sf; // Move box further down (80 + 20)
         const boxWidth = 600 * sf;
@@ -145,7 +213,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         // Combo meter (above the enemy)
         const comboMeterY = boxTopY - 140 * sf; // Position above the enemy
         const comboElements = this.comboMeter.create(centerX, comboMeterY, sf);
-        this.quizElements.push(comboElements.comboContainer);// Question and options (inside the box)
+        this.quizElements.push(comboElements.comboContainer);        // Question and options (inside the box)
         createQuestionAndOptions(
             this,
             centerX,
@@ -156,15 +224,20 @@ export default class BaseQuizScene extends Phaser.Scene {
             question,
             options,
             sf,
-            (index) => this.checkAnswer(index)
-        );        // Player hearts at top left
+            type,
+            (index, answer) => this.checkAnswer(index, answer)
+        );// Player hearts at top left
         const heartsX = 140 * sf; // Move to top left
         const heartsY = 30 * sf;
         this.playerContainer = createPlayerUI(this, heartsX, heartsY, this.playerConfig, sf);
         this.quizElements.push(this.playerContainer);
-    }
-
-    cleanupQuestionElements() {
+    }    cleanupQuestionElements() {
+        // Clean up fill-in-the-blank keyboard listeners if they exist
+        if (this._fillInBlankCleanup) {
+            this._fillInBlankCleanup();
+            this._fillInBlankCleanup = null;
+        }
+        
         this.quizElements.forEach(el => {
             if (el && el.active) el.destroy();
         });
@@ -176,12 +249,23 @@ export default class BaseQuizScene extends Phaser.Scene {
         const sf = this.scaleFactor;
         let hp = container.getData('currentHP');
         const maxHP = container.getData('maxHP');
+        
+        console.log(`Damage before: HP=${hp}, damage=${amount}, isPlayer=${container.getData('label') === 'Player'}`);
+        
         hp = Phaser.Math.Clamp(hp - amount, 0, maxHP);
         container.setData('currentHP', hp);
+        
+        console.log(`Damage after: HP=${hp}`);
 
-        const isPlayer = container.getData('label') === 'Player';
-        if (isPlayer) {
+        const isPlayer = container.getData('label') === 'Player';        if (isPlayer) {
             this.playerConfig.currentHP = hp;
+            
+            console.log(`Player HP updated: playerConfig.currentHP=${this.playerConfig.currentHP}, GameManager HP=${gameManager.getPlayerHP()}`);
+            
+            // Save HP to GameManager for persistence across scenes
+            gameManager.setPlayerHP(hp);
+            
+            console.log(`After saving to GameManager: ${gameManager.getPlayerHP()}`);
             
             // Update hearts for player
             const hearts = container.getData('hearts');
@@ -215,9 +299,32 @@ export default class BaseQuizScene extends Phaser.Scene {
                         heart.setData('pulsing', false);
                     }
                 });
-            }
-        } else {
+            }        } else {
             this.enemyHPState.currentHP = hp;
+            
+            // Play hurt sound effect for enemy
+            if (this.se_hurtSound) {
+                this.se_hurtSound.play();
+            }
+            
+            // Add flashing red effect to enemy sprite
+            const enemySprite = container.list.find(child => child.texture && child.texture.key === this.enemyConfig.spriteKey);
+            if (enemySprite) {
+                // Flash red effect
+                enemySprite.setTint(0xff0000); // Set to red
+                this.tweens.add({
+                    targets: enemySprite,
+                    alpha: 0.3,
+                    duration: 100,
+                    ease: 'Power2.easeInOut',
+                    yoyo: true,
+                    repeat: 2, // Flash 3 times total
+                    onComplete: () => {
+                        enemySprite.clearTint(); // Remove red tint
+                        enemySprite.setAlpha(1); // Restore full alpha
+                    }
+                });
+            }
             
             // Update enemy HP bar
             const hpBar = container.getData('hpBar');
@@ -226,10 +333,9 @@ export default class BaseQuizScene extends Phaser.Scene {
                 hpBar.clear();
                 const hpBarWidth = 120 * sf;
                 const hpBarHeight = 12 * sf;
-                
-                // Use the same Y calculation as in createEnemyUI
+                  // Use the same Y calculation as in createEnemyUI
                 const enemySprite = container.list.find(child => child.texture && child.texture.key === this.enemyConfig.spriteKey);
-                const hpBarY = enemySprite ? -(enemySprite.displayHeight / 2) - 25 * sf : -45 * sf;
+                const hpBarY = enemySprite ? -(enemySprite.displayHeight / 2) - 5 * sf : -45 * sf;
                 
                 // Redraw HP bar with gradient
                 const hpPercentage = hp / maxHP;
@@ -251,21 +357,34 @@ export default class BaseQuizScene extends Phaser.Scene {
                 hpText.setText(`${label}`);
             }
         }
-    }
-
-    checkAnswer(selectedIndex) {
+    }    checkAnswer(selectedIndex, userAnswer = null) {
         if (this.isAnswering) return;
         this.isAnswering = true;
-        const correctIndex = this.questions[this.currentQuestionIndex].correctIndex;        // Calculate feedback position below the quiz box, 20% lower
+        
+        const currentQuestion = this.questions[this.currentQuestionIndex];
+        let isCorrect = false;
+        
+        // Handle different question types
+        if (currentQuestion.type === 'fill-in-the-blank') {
+            // For fill-in-the-blank, check if the user's answer matches any correct answer
+            const correctAnswers = currentQuestion.correctAnswers || [];
+            isCorrect = correctAnswers.some(answer => 
+                userAnswer && userAnswer.toLowerCase().trim() === answer.toLowerCase().trim()
+            );
+        } else {
+            // Default multiple choice
+            const correctIndex = currentQuestion.correctIndex;
+            isCorrect = selectedIndex === correctIndex;
+        }// Calculate feedback position below the quiz box, 20% lower
         const sf = this.scaleFactor;
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2 + 100 * sf; // Match the box position (80 + 20)
         const boxHeight = 230 * sf; // Match the reduced box height
         // Move feedbackY 20% lower than the previous offset
-        const feedbackY = centerY + boxHeight / 2 + (20 * sf * 1.2);
-
-        // --- Pause the timer ---
-        this.gameTimer.pause();        if (selectedIndex === correctIndex) {
+        const feedbackY = centerY + boxHeight / 2 + (20 * sf * 1.2);        // --- Pause the timer ---
+        this.gameTimer.pause();        if (isCorrect) {            // Track correct answer
+            this.correctAnswers++;
+            
             // Update combo meter first
             this.comboMeter.updateCombo(true, sf);
             
@@ -274,40 +393,61 @@ export default class BaseQuizScene extends Phaser.Scene {
             const scoreIncrease = Math.round(1 * multiplier);
             this.score += scoreIncrease;
             
-            // Show feedback with combo info
-            let feedbackText = "Correct! You attack the enemy!";
-            if (multiplier > 1) {
-                feedbackText += ` (${multiplier}x Combo!)`;
+            // Damage the enemy with visual feedback
+            if (this.enemyContainer) {
+                this.damageCharacter(this.enemyContainer, this.playerDamage);
             }
             
-            showFeedback(this, feedbackText, 0x00ff00, centerX, feedbackY);
-            this.gameTimer.addTime(5);
-            if (this.enemyContainer) {
-                this.damageCharacter(this.enemyContainer, 20);
-            }
-        } else {
+            // Show feedback with combo info
+            let feedbackText = `Correct! You deal ${this.playerDamage} damage!`;
+            if (multiplier > 1) {
+                feedbackText += ` (${multiplier}x Combo!)`;
+            }            showFeedback(this, feedbackText, 0x00ff00, centerX, feedbackY);
+            this.gameTimer.addTime(5);            // Check if enemy HP reached 0 using container data
+            if (this.enemyContainer && this.enemyContainer.getData('currentHP') <= 0) {
+                // Enemy defeated
+                this.enemyDefeated = true;
+                console.log('Enemy defeated in quiz scene! Flag set to true.');
+                
+                // Play enemy death animation first, then show victory
+                this.gameTimer.resume(); // Resume timer before playing death animation
+                this.playEnemyDeathAnimation(() => {
+                    showVictory(this);
+                });
+                return;
+            }} else {
             // Update combo meter (resets combo)
             this.comboMeter.updateCombo(false, sf);
+            
+            // Play wrong answer sound
+            if (this.se_wrongSound) {
+                this.se_wrongSound.play();
+            }
             
             showFeedback(this, "Wrong! The enemy attacks you!", 0xff0000, centerX, feedbackY);
             this.gameTimer.subtractTime(3);
             if (this.playerContainer) {
                 this.damageCharacter(this.playerContainer, 15);
+                
+                // Get updated HP after damage has been applied
+                const playerHP = this.playerContainer.getData('currentHP');
+                if (playerHP <= 0) {
+                    // --- Resume timer before ending ---
+                    this.gameTimer.resume();
+                    showGameOver(this);
+                    return;
+                }
             }
-            const playerHP = this.playerContainer.getData('currentHP');
-            if (playerHP <= 0) {
-                // --- Resume timer before ending ---
-                this.gameTimer.resume();
-                showGameOver(this);
-                return;
-            }
-        }
-        if (this.enemyContainer) {
+        }if (this.enemyContainer) {
             const enemyHP = this.enemyContainer.getData('currentHP');
             if (enemyHP <= 0) {
                 // --- Resume timer before ending ---
                 this.gameTimer.resume();
-                showVictory(this);
+                
+                // Play enemy death animation before showing victory
+                this.playEnemyDeathAnimation(() => {
+                    showVictory(this);
+                });
                 return;
             }
         }
@@ -327,15 +467,201 @@ export default class BaseQuizScene extends Phaser.Scene {
         });
     }    restartQuiz() {
         this.score = 0;
+        this.correctAnswers = 0; // Reset correct answers counter
         this.currentQuestionIndex = 0;
         this.isQuizStarted = false;
         this.isAnswering = false; // <-- Reset answering state
-        this.playerConfig.currentHP = this.playerConfig.maxHP;
+        this.playerConfig.currentHP = gameManager.getPlayerHP(); // Get current HP from GameManager
         this.enemyHPState.currentHP = this.enemyHPState.maxHP;
         this.cleanupAllElements();
         this.gameTimer = new GameTimer(this);
         this.comboMeter = new ComboMeter(this);
         this.startQuiz(30);
+    }
+
+    playEnemyDeathAnimation(onComplete) {
+        if (!this.enemyContainer) {
+            onComplete();
+            return;
+        }
+
+        const sf = this.scaleFactor;
+        
+        // Find the enemy sprite
+        const enemySprite = this.enemyContainer.list.find(child => 
+            child.texture && child.texture.key === this.enemyConfig.spriteKey
+        );
+        
+        if (!enemySprite) {
+            onComplete();
+            return;
+        }        // Get current scale and calculate consistent enlargement
+        const currentScaleX = enemySprite.scaleX;
+        const currentScaleY = enemySprite.scaleY;
+        const enlargementFactor = 1.4; // 40% larger than current size
+        
+        // Death animation sequence
+        this.tweens.add({
+            targets: enemySprite,
+            scaleX: currentScaleX * enlargementFactor,
+            scaleY: currentScaleY * enlargementFactor,
+            duration: 200,
+            ease: 'Back.easeOut',
+            onComplete: () => {                // Flash white briefly
+                enemySprite.setTint(0xffffff);
+                
+                // Calculate shrink scale relative to current size
+                const shrinkFactor = 0.3; // Shrink to 30% of current size
+                
+                this.tweens.add({
+                    targets: enemySprite,
+                    alpha: 0,
+                    scaleX: currentScaleX * shrinkFactor,
+                    scaleY: currentScaleY * shrinkFactor,
+                    rotation: Math.PI * 2,
+                    duration: 800,
+                    ease: 'Power2.easeIn',
+                    onUpdate: (tween) => {
+                        // Flicker effect during fade
+                        const progress = tween.progress;
+                        if (progress > 0.3) {
+                            const flicker = Math.sin(progress * 20) > 0 ? 1 : 0.3;
+                            enemySprite.setAlpha(flicker * (1 - progress));
+                        }
+                    },                    onComplete: () => {
+                        // Hide the entire enemy container
+                        this.enemyContainer.setVisible(false);
+                          // Play explosion sound effect at much higher volume
+                        if (this.se_explosionSound) {
+                            this.se_explosionSound.play({ volume: 2.0 });
+                        }
+                        
+                        // Create explosion particles effect
+                        this.createDeathParticles(this.enemyContainer.x, this.enemyContainer.y, sf);
+                        
+                        // Wait a bit more before calling completion
+                        this.time.delayedCall(500, onComplete);
+                    }
+                });
+            }
+        });
+    }    createDeathParticles(x, y, sf) {
+        // Create epic multi-layered particle explosion effect
+        
+        // Layer 1: Main explosion burst (larger particles)
+        const mainParticleCount = 16;
+        const mainColors = [0xff4757, 0xffa726, 0xffd700, 0xff6b7d, 0xff3838, 0xff9500];
+        
+        for (let i = 0; i < mainParticleCount; i++) {
+            const angle = (i / mainParticleCount) * Math.PI * 2;
+            const distance = Phaser.Math.Between(80, 120) * sf;
+            const targetX = x + Math.cos(angle) * distance;
+            const targetY = y + Math.sin(angle) * distance;
+            
+            const particleSize = Phaser.Math.Between(4, 8) * sf;
+            const particle = this.add.circle(x, y, particleSize, mainColors[i % mainColors.length]).setDepth(125);
+            
+            this.tweens.add({
+                targets: particle,
+                x: targetX,
+                y: targetY,
+                alpha: 0,
+                scale: 0.1,
+                duration: Phaser.Math.Between(800, 1200),
+                ease: 'Power3.easeOut',
+                onComplete: () => {
+                    particle.destroy();
+                }
+            });
+        }
+        
+        // Layer 2: Secondary scatter particles (medium particles)
+        const scatterCount = 24;
+        const scatterColors = [0xffdd59, 0xff6348, 0xff4757, 0xffc048];
+        
+        for (let i = 0; i < scatterCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Phaser.Math.Between(40, 160) * sf;
+            const targetX = x + Math.cos(angle) * distance;
+            const targetY = y + Math.sin(angle) * distance;
+            
+            const particleSize = Phaser.Math.Between(2, 5) * sf;
+            const particle = this.add.circle(x, y, particleSize, scatterColors[Math.floor(Math.random() * scatterColors.length)]).setDepth(124);
+            
+            this.tweens.add({
+                targets: particle,
+                x: targetX,
+                y: targetY,
+                alpha: 0,
+                scale: 0.2,
+                duration: Phaser.Math.Between(600, 1000),
+                ease: 'Power2.easeOut',
+                delay: Phaser.Math.Between(0, 200),
+                onComplete: () => {
+                    particle.destroy();
+                }
+            });
+        }
+        
+        // Layer 3: Sparks and small debris (tiny particles)
+        const sparkCount = 32;
+        const sparkColors = [0xffffff, 0xffdd59, 0xffa726, 0xff4757];
+        
+        for (let i = 0; i < sparkCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Phaser.Math.Between(20, 200) * sf;
+            const targetX = x + Math.cos(angle) * distance;
+            const targetY = y + Math.sin(angle) * distance;
+            
+            const particleSize = Phaser.Math.Between(1, 3) * sf;
+            const particle = this.add.circle(x, y, particleSize, sparkColors[Math.floor(Math.random() * sparkColors.length)]).setDepth(126);
+            
+            this.tweens.add({
+                targets: particle,
+                x: targetX,
+                y: targetY,
+                alpha: 0,
+                scale: 0.05,
+                duration: Phaser.Math.Between(400, 800),
+                ease: 'Power1.easeOut',
+                delay: Phaser.Math.Between(0, 300),
+                onComplete: () => {
+                    particle.destroy();
+                }
+            });
+        }
+        
+        // Layer 4: Shockwave ring effect
+        const shockwave = this.add.circle(x, y, 10 * sf, 0xffffff, 0.8).setDepth(123);
+        shockwave.setStrokeStyle(3 * sf, 0xffd700);
+        
+        this.tweens.add({
+            targets: shockwave,
+            scale: 8,
+            alpha: 0,
+            duration: 600,
+            ease: 'Power2.easeOut',
+            onComplete: () => {
+                shockwave.destroy();
+            }
+        });
+        
+        // Layer 5: Screen flash effect
+        const flashOverlay = this.add.rectangle(this.cameras.main.centerX, this.cameras.main.centerY, 
+            this.cameras.main.width, this.cameras.main.height, 0xffffff, 0.6).setDepth(130);
+            
+        this.tweens.add({
+            targets: flashOverlay,
+            alpha: 0,
+            duration: 300,
+            ease: 'Power2.easeOut',
+            onComplete: () => {
+                flashOverlay.destroy();
+            }
+        });
+        
+        // Layer 6: Camera shake for impact
+        this.cameras.main.shake(400, 0.02);
     }
 
     cleanupAllElements() {

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import Carousel from '../ui/carouselUI.js';
 import { createBackButton } from '../components/buttons/backbutton'; // <-- Add this import
+import gameManager from '../gameManager.js';
 
 export default class ComputerLab extends Phaser.Scene {
     constructor() {
@@ -39,24 +40,20 @@ export default class ComputerLab extends Phaser.Scene {
 
         // Add sound effects
         this.se_hoverSound = this.sound.add('se_select');
-        this.se_confirmSound = this.sound.add('se_confirm');
-
-        // Define carousel data
+        this.se_confirmSound = this.sound.add('se_confirm');        // Define carousel data
         const iconKeys = ['Web_Design', 'Python', 'Java', 'C', 'C++', 'C#'];
         const iconInfo = [
-            { heading: "Web Design", desc: "Learn HTML, CSS & JavaScript" },
-            { heading: "Python", desc: "Learn Python" },
-            { heading: "Java", desc: "Learn Java" },
-            { heading: "C", desc: "Learn about C" },
-            { heading: "C++", desc: "Learn about C++" },
-            { heading: "C#", desc: "Learn about C#" }
+            { heading: "Web Design", desc: "Learn HTML, CSS & JavaScript", courseKey: "Web_Design" },
+            { heading: "Python", desc: "Learn Python", courseKey: "Python" },
+            { heading: "Java", desc: "Learn Java", courseKey: "Java" },
+            { heading: "C", desc: "Learn about C", courseKey: "C" },
+            { heading: "C++", desc: "Learn about C++", courseKey: "C++" },
+            { heading: "C#", desc: "Learn about C#", courseKey: "C#" }
         ];
 
         // Create the carousel with the icon keys and info
         this.createCarousel(iconKeys, iconInfo);
-    }
-
-    createCarousel(iconKeys, iconInfo) {
+    }    createCarousel(iconKeys, iconInfo) {
         // Initialize the carousel
         this.carousel = new Carousel(this, {
             centerY: 400,
@@ -77,7 +74,12 @@ export default class ComputerLab extends Phaser.Scene {
             if (this.carousel) this.carousel.destroy();
         });
 
-        // Create the carousel with selection callback
+        // Determine locked states based on game progress
+        const lockedStates = iconInfo.map(info => {
+            return !gameManager.isCourseUnlocked(info.courseKey);
+        });
+
+        // Create the carousel with selection callback and locked states
         this.carousel.create(iconKeys, iconInfo, (selectedItem, index) => {
             console.log('Selected:', selectedItem.heading);
             // Transition to the new scene based on the selected icon
@@ -94,6 +96,6 @@ export default class ComputerLab extends Phaser.Scene {
             } else if (selectedItem.heading === "C#"){
                 this.scene.start('CSharpScene', { topic: 'C#' });
             }
-        });
+        }, lockedStates);
     }
 }

@@ -132,15 +132,20 @@ export class DungeonHUD {
             ease: 'Sine.easeInOut',
             yoyo: true,
             repeat: -1
-        });
-    }    createHealthDisplay(scaleFactor) {
+        });    }    createHealthDisplay(scaleFactor) {
         const margin = 16 * scaleFactor;        const healthY = margin + 60 * scaleFactor;        // Enhanced heart display
         const heartSpacing = 35 * scaleFactor;
         const heartY = healthY + 25 * scaleFactor;
-        const heartXStart = margin + 20 * scaleFactor;for (let i = 0; i < 5; i++) { // Show max 5 hearts
+        const heartXStart = margin + 20 * scaleFactor;
+
+        // Convert HP from 100-scale to 5-heart scale (20 HP per heart)
+        const currentHearts = Math.ceil(this.scene.player.hp / 20);
+        const maxHearts = 5;
+
+        for (let i = 0; i < maxHearts; i++) { // Show max 5 hearts
             const heartX = heartXStart + i * heartSpacing;
             
-            if (i < this.scene.player.hp) {                // Active heart without glow circle
+            if (i < currentHearts) {                // Active heart without glow circle
                 const heart = this.scene.add.image(heartX, heartY, 'heart')
                     .setOrigin(0.5, 0.5)
                     .setScale(0.05 * scaleFactor)
@@ -479,16 +484,11 @@ export class DungeonMenu {
 
         const options = [
             { label: 'Continue Adventure', action: () => this.closeMenuBox() },
-            { label: 'Game Options', action: () => { this.scene.scene.switch('OptionsScene', { prevScene: this.scene.key }); } },
-            { 
+            { label: 'Game Options', action: () => { this.scene.scene.switch('OptionsScene', { prevScene: this.scene.key }); } },            { 
                 label: 'Return to Hub', 
                 action: () => {
                     this.closeMenuBox();
                     this.scene.scene.stop(this.scene.key);
-                    this.scene.scale.resize(816, 624);
-                    const canvas = this.scene.game.canvas;
-                    canvas.style.width = `816px`;
-                    canvas.style.height = `624px`;
                     this.scene.scene.start('MainHub');
                 } 
             }

@@ -37,6 +37,10 @@ import ReadingScene from './scenes/libraryScenes/readingScene.js';
 
 // Dungeon Scene
 import DungeonScene from './scenes/comlabscenes/dungeon.js';
+import DungeonCleared from './scenes/dungeonCleared.js';
+
+// UI Scenes
+import CardRewardScene from './scenes/ui/CardRewardScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -46,12 +50,14 @@ const config = {
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
-  },
-  scene: [
+  },  scene: [
     StartUp, // Added StartUp as the first scene
     MainMenu,
     /* Main Scenes */
     DungeonScene,
+    DungeonCleared,
+    /* UI Scenes */
+    CardRewardScene,
     Intro,
     OptionsScene,
     MainHub,
