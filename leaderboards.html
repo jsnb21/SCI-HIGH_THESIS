@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SCI-HIGH Leaderboards</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#F4CE14',
+              accent: '#379777',
+              dark: '#45474B',
+              light: '#F5F7F8',
+              textColor: '#45474B',
+            },
+            fontFamily: {
+              sans: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  </head>
+  <body class="font-sans bg-light text-textColor m-0 p-0 leading-relaxed">
+    <nav class="bg-white py-5 text-center sticky top-0 shadow-md z-50">
+      <a href="index.html" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">Home</a>
+      <a href="#about" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">About Us</a>
+      <a href="#contact" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">Contact</a>
+    </nav>
+    <div class="max-w-2xl mx-auto my-12 p-8 bg-white rounded-xl shadow-lg text-center">
+      <h1 class="text-3xl mb-6 text-dark font-bold">Leaderboards</h1>
+      <div class="flex justify-center gap-4 mb-6">
+        <button class="filter-btn px-4 py-2 rounded-full font-medium border border-primary text-dark bg-light hover:bg-primary hover:text-dark transition-all duration-200" data-filter="overall">Overall</button>
+        <button class="filter-btn px-4 py-2 rounded-full font-medium border border-primary text-dark bg-light hover:bg-primary hover:text-dark transition-all duration-200" data-filter="college">College</button>
+        <button class="filter-btn px-4 py-2 rounded-full font-medium border border-primary text-dark bg-light hover:bg-primary hover:text-dark transition-all duration-200" data-filter="seniorhigh">Senior High</button>
+        <button class="filter-btn px-4 py-2 rounded-full font-medium border border-primary text-dark bg-light hover:bg-primary hover:text-dark transition-all duration-200" data-filter="juniorhigh">Junior High</button>
+      </div>
+      <div id="leaderboard-list" class="mt-8">
+        <p class="text-gray-500">Loading leaderboards...</p>
+      </div>
+    </div>
+    <footer class="text-center py-8 bg-dark text-light mt-12">
+      <p>&copy; 2025 SCI-HIGH Thesis. All rights reserved.</p>
+    </footer>
+    <script>
+      // TODO: Replace with your Firebase config
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        databaseURL: "YOUR_DATABASE_URL",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+      };
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.database();
+      // Fetch leaderboard data with filter
+      function renderLeaderboard(data) {
+        const container = document.getElementById('leaderboard-list');
+        if (!data || data.length === 0) {
+          container.innerHTML = '<p class="text-gray-500">No scores yet.</p>';
+          return;
+        }
+        let html = `<table class="w-full text-left mt-4"><thead><tr><th class="py-2 px-4 text-dark">Rank</th><th class="py-2 px-4 text-dark">Name</th><th class="py-2 px-4 text-dark">Score</th><th class="py-2 px-4 text-dark">Department</th></tr></thead><tbody>`;
+        let rank = 1;
+        data.forEach(entry => {
+          html += `<tr class="border-b border-light"><td class="py-2 px-4">${rank++}</td><td class="py-2 px-4">${entry.name}</td><td class="py-2 px-4">${entry.score}</td><td class="py-2 px-4">${entry.department ? entry.department : '-'}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      }
+
+      function fetchLeaderboard(filter) {
+        db.ref('leaderboards').orderByChild('score').limitToLast(100).once('value', snapshot => {
+          const arr = [];
+          snapshot.forEach(child => {
+            arr.push(child.val());
+          });
+          // Sort descending
+          arr.sort((a, b) => b.score - a.score);
+          let filtered = arr;
+          if (filter === 'college') {
+            filtered = arr.filter(e => (e.department || '').toLowerCase().includes('college'));
+          } else if (filter === 'seniorhigh') {
+            filtered = arr.filter(e => (e.department || '').toLowerCase().includes('senior'));
+          } else if (filter === 'juniorhigh') {
+            filtered = arr.filter(e => (e.department || '').toLowerCase().includes('junior'));
+          }
+          renderLeaderboard(filtered);
+        });
+      }
+
+      // Filter button logic
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('bg-primary', 'text-dark'));
+          this.classList.add('bg-primary', 'text-dark');
+          fetchLeaderboard(this.dataset.filter);
+        });
+      });
+
+      // Initial load: overall
+      fetchLeaderboard('overall');
+    </script>
+  </body>
+</html>
