@@ -42,6 +42,9 @@
         <button class="filter-btn px-4 py-2 rounded-full font-medium border border-primary text-dark bg-light hover:bg-primary hover:text-dark transition-all duration-200" data-filter="seniorhigh">Senior High</button>
         <button class="filter-btn px-4 py-2 rounded-full font-medium border border-primary text-dark bg-light hover:bg-primary hover:text-dark transition-all duration-200" data-filter="juniorhigh">Junior High</button>
       </div>
+      <!-- Add this button somewhere in your HTML for testing -->
+      <!-- Works  -James Pogi -->
+      <button onclick="addScore('userId123', 'Test User', 1234, 'College of Engineering')" class="px-4 py-2 bg-primary text-dark rounded">Add Sample Score</button>
       <div id="leaderboard-list" class="mt-8">
         <p class="text-gray-500">Loading leaderboards...</p>
       </div>
@@ -52,14 +55,14 @@
     <script>
       // TODO: Replace with your Firebase config
       const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        databaseURL: "YOUR_DATABASE_URL",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-      };
+        apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
+        authDomain: "sci-high-website.firebaseapp.com",
+        databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "sci-high-website",
+        storageBucket: "sci-high-website.appspot.com",
+        messagingSenderId: "451463202515",
+        appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
+    };
       // Initialize Firebase
       firebase.initializeApp(firebaseConfig);
       const db = firebase.database();
@@ -77,6 +80,15 @@
         });
         html += '</tbody></table>';
         container.innerHTML = html;
+      }
+
+      function addScore(userId, name, score, department) {
+        db.ref('leaderboards/' + userId).set({
+          name: name,
+          score: score,
+          department: department,
+          timestamp: Date.now()
+        });
       }
 
       function fetchLeaderboard(filter) {

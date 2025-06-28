@@ -83,6 +83,7 @@ const config = {
     CSharpQuizScene,
     /* Library Scenes */
     BaseLibraryScene,
+    ReadingScene
   ],
   dom: {
     createContainer: true
