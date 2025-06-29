@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { char1, char2, char3, char4, char5 } from '../gameManager';
 import { createBackButton } from '../components/buttons/backbutton';
+import Carousel from '../ui/carouselUI';
 
 export default class Classroom extends Phaser.Scene {
     constructor() {
@@ -8,10 +9,12 @@ export default class Classroom extends Phaser.Scene {
     }
 
     preload() {
-        // Load character images and sounds
-        this.load.image('char1', 'assets/img/chars/noah.png');
-        this.load.image('char2', 'assets/img/chars/lily.png');
-        this.load.image('char3', 'assets/img/classroom/char3.png');
+        // Load character images from assets/img/sprites/npcs with their respective names
+        this.load.image('Noah', 'assets/sprites/npcs/noah.png');
+        this.load.image('Lily', 'assets/sprites/npcs/lily.png');
+        this.load.image('Damian', 'assets/sprites/npcs/damian.png');
+        this.load.image('Bella', 'assets/sprites/npcs/bella.png');
+        this.load.image('Finley', 'assets/sprites/npcs/finley.png');
         this.load.audio('se_select', 'assets/sounds/se_select.wav');
         this.load.audio('se_confirm', 'assets/sounds/se_confirm.wav');
     }
@@ -26,9 +29,8 @@ export default class Classroom extends Phaser.Scene {
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
 
-        // Carousel data
-        const charKeys = ['char1', 'char2', 'char3', 'char4', 'char5'];
-        const charObjs = [char1, char2, char3, char4, char5];
+        // Carousel data using images from assets/img/sprites/npcs with their respective names
+        const charKeys = ['Noah', 'Lily', 'Damian', 'Bella', 'Finley'];
         const charInfo = [
             { 
                 name: "Noah", 
@@ -91,97 +93,26 @@ export default class Classroom extends Phaser.Scene {
                 ]
             }
         ];
-        const iconCount = charKeys.length;
-        const centerX = width / 2;
-        const centerY = height / 2 - 40;
-        const spacing = 280;
-        const smallScale = 0.7;
-        const largeScale = 1.2;
 
-        this.carouselIndex = 1; // Start with the second character selected
-        this.carouselIcons = [];
-
-        // Add carousel icons
-        for (let i = 0; i < iconCount; i++) {
-            const x = centerX + (i - this.carouselIndex) * spacing;
-            const scale = (i === this.carouselIndex) ? largeScale : smallScale;
-            const icon = this.add.image(x, centerY, charKeys[i]).setScale(scale).setInteractive();
-            if (i === this.carouselIndex) {
-                icon.setTint(0xffffff);
-                icon.setAlpha(1);
-            } else {
-                icon.setTint(0x888888);
-                icon.setAlpha(0.8);
+        // Create the carousel
+        this.characterCarousel = new Carousel(this, {
+            iconSpacing: 340,
+            smallScale: 0.32, // smaller side images
+            largeScale: 0.48, // smaller main image
+            iconYOffset: 80, // adjust as needed
+            headingStyle: { fontSize: 48 },
+            descStyle: { fontSize: 28 }
+        }).create(
+            charKeys,
+            charInfo.map(c => ({
+                heading: c.name,
+                desc: c.desc
+            })),
+            (selected, index) => {
+                // Show character box or handle selection
+                this.showCharacterBox(charInfo[index], charKeys[index]);
             }
-            this.carouselIcons.push(icon);
-        }
-
-        // Character name and description display
-        this.carouselName = this.add.text(centerX, centerY + 180, '', {
-            fontFamily: 'Jersey15-Regular',
-            fontSize: '48px',
-            color: '#222244',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-
-        // Increased Y from centerY + 225 to centerY + 255 for more space
-        this.carouselDesc = this.add.text(centerX, centerY + 255, '', {
-            fontFamily: 'Jersey15-Regular',
-            fontSize: '32px',
-            color: '#444466',
-            wordWrap: { width: 400 },
-            align: 'center' // Center the text horizontally
-        }).setOrigin(0.5);
-
-        this.updateCarouselText(charInfo);
-
-        // Breathing effect for selected icon
-        this.breathingTween = null;
-        this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
-
-        // Track if character box is open
-        this.characterBoxOpen = false;
-
-        // Keyboard navigation
-        this.input.keyboard.on('keydown-LEFT', () => {
-            if (!this.characterBoxOpen) {
-                this.se_hoverSound.play();
-                this.moveCarousel(-1, charInfo);
-            }
-        });
-        this.input.keyboard.on('keydown-RIGHT', () => {
-            if (!this.characterBoxOpen) {
-                this.se_hoverSound.play();
-                this.moveCarousel(1, charInfo);
-            }
-        });
-
-        // Mouse wheel navigation
-        this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
-            if (!this.characterBoxOpen) {
-                if (deltaY > 0) {
-                    this.se_hoverSound.play();
-                    this.moveCarousel(1, charInfo);
-                } else if (deltaY < 0) {
-                    this.se_hoverSound.play();
-                    this.moveCarousel(-1, charInfo);
-                }
-            }
-        });
-
-        // Click to select or move carousel
-        this.carouselIcons.forEach((icon, i) => {
-            icon.on('pointerdown', () => {
-                if (this.characterBoxOpen) return;
-                if (i === this.carouselIndex) {
-                    this.se_confirmSound.play();
-                    this.showCharacterBox(charInfo[i], charKeys[i]);
-                } else {
-                    this.se_hoverSound.play();
-                    this.moveCarousel(i - this.carouselIndex, charInfo);
-                }
-            });
-        });
+        );
 
         // Back button
         createBackButton(this, 'MainHub');
@@ -222,21 +153,25 @@ export default class Classroom extends Phaser.Scene {
 
         this.carouselIndex = newIndex;
         const centerX = this.scale.width / 2;
-        const spacing = 280;
-        const smallScale = 0.7;
-        const largeScale = 1.2;
+        const spacing = 340;
+        const smallScale = 0.45;
+        const largeScale = 0.7;
 
         this.carouselIcons.forEach((icon, i) => {
             const x = centerX + (i - this.carouselIndex) * spacing;
             const scale = (i === this.carouselIndex) ? largeScale : smallScale;
             icon.setScale(scale);
             icon.setX(x);
+            icon.setOrigin(0.5, 1);
+            icon.y = centerY + 120;
             if (i === this.carouselIndex) {
                 icon.setTint(0xffffff);
                 icon.setAlpha(1);
+                icon.setDepth(2);
             } else {
                 icon.setTint(0x888888);
-                icon.setAlpha(0.8);
+                icon.setAlpha(0.7);
+                icon.setDepth(1);
             }
         });
 
@@ -257,7 +192,7 @@ export default class Classroom extends Phaser.Scene {
         }
         this.breathingTween = this.tweens.add({
             targets: icon,
-            scale: { from: 1.2, to: 1.35 },
+            scale: { from: 0.7, to: 0.8 }, // Subtle breathing for portrait
             duration: 700,
             yoyo: true,
             repeat: -1,
