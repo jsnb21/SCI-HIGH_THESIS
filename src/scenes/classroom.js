@@ -97,9 +97,9 @@ export default class Classroom extends Phaser.Scene {
         // Create the carousel
         this.characterCarousel = new Carousel(this, {
             iconSpacing: 340,
-            smallScale: 0.32, // smaller side images
-            largeScale: 0.48, // smaller main image
-            iconYOffset: 80, // adjust as needed
+            smallScale: 0.18, // smaller side images (was 0.32)
+            largeScale: 0.28, // smaller main image (was 0.48)
+            iconYOffset: 80,
             headingStyle: { fontSize: 48 },
             descStyle: { fontSize: 28 }
         }).create(
@@ -154,8 +154,9 @@ export default class Classroom extends Phaser.Scene {
         this.carouselIndex = newIndex;
         const centerX = this.scale.width / 2;
         const spacing = 340;
-        const smallScale = 0.45;
-        const largeScale = 0.7;
+        const smallScale = 0.125;
+        const largeScale = 0.3;
+        const visualOffset = 100; // Adjust this value as needed
 
         this.carouselIcons.forEach((icon, i) => {
             const x = centerX + (i - this.carouselIndex) * spacing;
@@ -163,7 +164,7 @@ export default class Classroom extends Phaser.Scene {
             icon.setScale(scale);
             icon.setX(x);
             icon.setOrigin(0.5, 1);
-            icon.y = centerY + 120;
+            icon.y = centerY + visualOffset; 
             if (i === this.carouselIndex) {
                 icon.setTint(0xffffff);
                 icon.setAlpha(1);
@@ -231,13 +232,8 @@ export default class Classroom extends Phaser.Scene {
         // Start Y at top of box, add padding
         let y = height / 2 - boxHeight / 2 + BOX_PADDING_TOP;
 
-        // Character image
-        const charImg = this.add.image(width / 2, y, charKey)
-            .setScale(0.8) // Slightly smaller for better fit
-            .setDepth(12);
-        boxObjects.push(charImg);
-
-        y += 76; // Adjusted for new scale and margin
+        // Character image removed (no icon in messageBox)
+        // y += 76; // Adjusted for new scale and margin (skip this since no image)
 
         // Name
         boxObjects.push(
