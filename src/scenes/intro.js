@@ -14,6 +14,7 @@ export default class VNScene extends Phaser.Scene {
     
     // Images
     this.load.image('vnBg', 'assets/img/bg/classroom_day.png');
+    this.load.image('Richard', 'assets/sprites/npcs/principal.png')
     
     // Audio
     this.load.audio('se_select', 'assets/audio/se/se_select.wav');
@@ -23,7 +24,10 @@ export default class VNScene extends Phaser.Scene {
   create() {
     // Add and scale the background image to fit the screen
     const { width, height } = this.scale;
-    this.add.image(width / 2, height / 2, 'vnBg').setDisplaySize(width, height);
+    const bg = this.add.image(width / 2, height / 2, 'vnBg').setDisplaySize(width, height);
+    // Add a dim overlay above the background
+    const dimOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.4);
+    this.children.moveAbove(dimOverlay, bg);
 
     // --- MUSIC LOGIC START ---
     playExclusiveBGM(this, 'bgm_main', { loop: true });
@@ -42,6 +46,12 @@ export default class VNScene extends Phaser.Scene {
       }).setOrigin(0.5);
       return;
     }
+
+    // Add principal image centered above the background, behind the dialogue box
+    const principal = this.add.image(width / 2, height + 50, 'Richard');
+    principal.setOrigin(0.5, 1);
+    principal.setScale(0.7); // Adjust scale as needed
+    this.children.moveAbove(principal, bg);
 
     // Use VNDialogueBox for dialogue
     this.vnBox = new VNDialogueBox(this, dialogueLines, () => {
