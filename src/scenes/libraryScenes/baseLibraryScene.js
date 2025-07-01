@@ -1,6 +1,7 @@
 // Enhanced Library Scene with JSON Data Support and Auto Progress Update
 
 import LibraryUI from './LibraryUI.js';
+import { createBackButton } from '../../components/buttons/backbutton.js';
 
 class BaseLibraryScene extends Phaser.Scene {
     constructor() {
@@ -54,6 +55,18 @@ class BaseLibraryScene extends Phaser.Scene {
         this.setupBackground();
         LibraryUI.createMainMenu(this);
         LibraryUI.createPopupContainer(this);
+        
+        // Ensure main menu container has proper depth
+        if (this.mainMenuContainer) {
+            this.mainMenuContainer.setDepth(100); // High depth to appear above background
+            console.log('Main menu container created and positioned at:', this.mainMenuContainer.x, this.mainMenuContainer.y);
+            console.log('Main menu container depth:', this.mainMenuContainer.depth);
+        } else {
+            console.error('Main menu container was not created!');
+        }
+        
+        // Add back button to return to main hub
+        this.createLibraryBackButton();
         
         // Ensure popup is properly hidden initially
         if (this.popupContainer) {
@@ -208,37 +221,66 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     setupBackground() {
-        this.background = this.add.image(0, 0, 'libraryBg');
-        this.background.setOrigin(0, 0);
+        // Simple solid background matching index.html color palette
+        const graphics = this.add.graphics();
         
-        // Calculate scale to cover entire screen
-        const scaleX = this.cameras.main.width / this.background.width;
-        const scaleY = this.cameras.main.height / this.background.height;
-        const scale = Math.max(scaleX, scaleY);
+        // Create a simple white background
+        graphics.fillStyle(0xffffff, 1);
+        graphics.fillRect(0, 0, this.cameras.main.width, this.cameras.main.height);
+        graphics.setDepth(-100);
         
-        this.background.setScale(scale);
-        this.background.setPosition(
-            (this.cameras.main.width - this.background.displayWidth) / 2,
-            (this.cameras.main.height - this.background.displayHeight) / 2
-        );
+        // Original background image with enhanced effects
+        if (this.textures.exists('libraryBg')) {
+            this.background = this.add.image(0, 0, 'libraryBg');
+            this.background.setOrigin(0, 0);
+            this.background.setAlpha(0.7); // Make it very subtle for white/yellow blend
+            this.background.setDepth(-90); // Very low depth for background image
+            
+            const scaleX = this.cameras.main.width / this.background.width;
+            const scaleY = this.cameras.main.height / this.background.height;
+            const scale = Math.max(scaleX, scaleY);
+            
+            this.background.setScale(scale);
+            this.background.setPosition(
+                (this.cameras.main.width - this.background.displayWidth) / 2,
+                (this.cameras.main.height - this.background.displayHeight) / 2
+            );
+            this.background.setTint(0xF4CE14); // Yellow tint to match color palette
+        }
     }
     
     // Helper to create a rounded rectangle as a graphics texture
     createRoundedRectTexture(key, width, height, radius, fillColor, fillAlpha, strokeColor, strokeAlpha, strokeWidth, shadowColor, shadowAlpha, shadowBlur) {
         const graphics = this.add.graphics();
         graphics.clear();
+        
+        // Enhanced shadow with multiple layers
         if (shadowColor && shadowBlur) {
-            graphics.fillStyle(shadowColor, shadowAlpha || 0.15);
-            graphics.fillRoundedRect(4, 4, width, height, radius);
+            graphics.fillStyle(shadowColor, shadowAlpha || 0.3);
+            graphics.fillRoundedRect(6, 6, width, height, radius);
+            graphics.fillStyle(shadowColor, (shadowAlpha || 0.3) * 0.5);
+            graphics.fillRoundedRect(3, 3, width, height, radius);
         }
-        // Set fillAlpha to 1 for opaque backgrounds
-        graphics.fillStyle(fillColor, fillAlpha === undefined ? 1 : fillAlpha);
+        
+        // Main background with gradient effect
+        graphics.fillStyle(fillColor, fillAlpha === undefined ? 0.95 : fillAlpha);
         graphics.fillRoundedRect(0, 0, width, height, radius);
+        
+        // Add subtle inner glow
+        graphics.lineStyle(2, 0xffffff, 0.3);
+        graphics.strokeRoundedRect(2, 2, width - 4, height - 4, radius - 2);
+        
+        // Enhanced border
         if (strokeColor && strokeWidth) {
             graphics.lineStyle(strokeWidth, strokeColor, strokeAlpha || 1);
             graphics.strokeRoundedRect(0, 0, width, height, radius);
+            
+            // Outer glow effect
+            graphics.lineStyle(strokeWidth * 2, strokeColor, (strokeAlpha || 1) * 0.3);
+            graphics.strokeRoundedRect(-2, -2, width + 4, height + 4, radius + 2);
         }
-        graphics.generateTexture(key, width + 8, height + 8);
+        
+        graphics.generateTexture(key, width + 12, height + 12);
         graphics.destroy();
     }
 
@@ -332,59 +374,167 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     showAddNoteDialog() {
-        // Create a simple input dialog
-        const dialogBg = this.add.rectangle(this.cameras.main.width/2, this.cameras.main.height/2, 400, 200, 0xFFFFFF);
-        dialogBg.setStrokeStyle(3, 0x34495E);
+        // Enhanced dialog with white and yellow colors
+        const dialogBg = this.add.graphics();
+        
+        // White to yellow gradient background
+        dialogBg.fillGradientStyle(0xffffff, 0xffffff, 0xF5F7F8, 0xF4CE14, 0.95);
+        dialogBg.fillRoundedRect(this.cameras.main.width/2 - 220, this.cameras.main.height/2 - 120, 440, 240, 20);
+        
+        // Golden border
+        dialogBg.lineStyle(4, 0xF4CE14, 1);
+        dialogBg.strokeRoundedRect(this.cameras.main.width/2 - 220, this.cameras.main.height/2 - 120, 440, 240, 20);
+        
+        dialogBg.lineStyle(2, 0xffffff, 0.8);
+        dialogBg.strokeRoundedRect(this.cameras.main.width/2 - 216, this.cameras.main.height/2 - 116, 432, 232, 16);
+        
         dialogBg.setDepth(1000);
         
-        const dialogTitle = this.add.text(this.cameras.main.width/2, this.cameras.main.height/2 - 60, 'Add New Note', {
-            fontSize: '18px',
-            color: '#2C3E50',
+        // Enhanced title with yellow theme
+        const dialogTitle = this.add.text(this.cameras.main.width/2, this.cameras.main.height/2 - 80, '✨ Add New Note ✨', {
+            fontSize: '22px',
+            color: '#45474B', // Dark gray from index.html
             fontFamily: 'Arial',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            stroke: '#F4CE14',
+            strokeThickness: 2,
+            shadow: {
+                offsetX: 2,
+                offsetY: 2,
+                color: '#ffffff',
+                blur: 3,
+                stroke: false,
+                fill: true
+            }
         }).setOrigin(0.5).setDepth(1001);
         
-        // Create HTML input element
+        // Enhanced input styling with white/yellow theme
         const inputElement = document.createElement('textarea');
         inputElement.style.position = 'absolute';
-        inputElement.style.left = (this.cameras.main.width/2 + 150) + 'px';
-        inputElement.style.top = (this.cameras.main.height/2 - 20) + 'px';
-        inputElement.style.width = '300px';
-        inputElement.style.height = '60px';
+        inputElement.style.left = (this.cameras.main.width/2 - 180) + 'px';
+        inputElement.style.top = (this.cameras.main.height/2 - 30) + 'px';
+        inputElement.style.width = '360px';
+        inputElement.style.height = '80px';
         inputElement.style.zIndex = '1002';
-        inputElement.placeholder = 'Enter your note here...';
+        inputElement.style.borderRadius = '12px';
+        inputElement.style.border = '3px solid #F4CE14';
+        inputElement.style.background = 'linear-gradient(135deg, #ffffff, #F5F7F8)';
+        inputElement.style.padding = '12px';
+        inputElement.style.fontSize = '16px';
+        inputElement.style.fontFamily = 'Arial, sans-serif';
+        inputElement.style.color = '#45474B';
+        inputElement.style.boxShadow = '0 4px 15px rgba(244, 206, 20, 0.3)';
+        inputElement.placeholder = '🖊️ Enter your brilliant note here...';
         document.body.appendChild(inputElement);
         
-        // Save button
-        const saveBtn = this.add.rectangle(this.cameras.main.width/2 - 50, this.cameras.main.height/2 + 60, 80, 30, 0x27AE60);
-        saveBtn.setStrokeStyle(1, 0x229954);
-        saveBtn.setInteractive();
+        // Enhanced save button with yellow theme
+        const saveBtn = this.add.graphics();
+        saveBtn.fillGradientStyle(0xF4CE14, 0xF4CE14, 0xfde047, 0xfbbf24, 1);
+        saveBtn.fillRoundedRect(this.cameras.main.width/2 - 80, this.cameras.main.height/2 + 70, 100, 40, 20);
+        saveBtn.lineStyle(2, 0xfbbf24, 1);
+        saveBtn.strokeRoundedRect(this.cameras.main.width/2 - 80, this.cameras.main.height/2 + 70, 100, 40, 20);
+        saveBtn.setInteractive(new Phaser.Geom.Rectangle(this.cameras.main.width/2 - 80, this.cameras.main.height/2 + 70, 100, 40), Phaser.Geom.Rectangle.Contains);
         saveBtn.setDepth(1001);
         
-        const saveText = this.add.text(this.cameras.main.width/2 - 50, this.cameras.main.height/2 + 60, 'Save', {
-            fontSize: '14px',
-            color: '#FFFFFF',
-            fontFamily: 'Arial'
+        const saveText = this.add.text(this.cameras.main.width/2 - 30, this.cameras.main.height/2 + 90, '💾 Save', {
+            fontSize: '16px',
+            color: '#45474B',
+            fontFamily: 'Arial',
+            fontStyle: 'bold',
+            stroke: '#ffffff',
+            strokeThickness: 1
         }).setOrigin(0.5).setDepth(1001);
         
-        // Cancel button
-        const cancelBtn = this.add.rectangle(this.cameras.main.width/2 + 50, this.cameras.main.height/2 + 60, 80, 30, 0x6C757D);
-        cancelBtn.setStrokeStyle(1, 0x495057);
-        cancelBtn.setInteractive();
+        // Enhanced cancel button with light theme
+        const cancelBtn = this.add.graphics();
+        cancelBtn.fillGradientStyle(0xF5F7F8, 0xF5F7F8, 0xe5e7eb, 0xd1d5db, 1);
+        cancelBtn.fillRoundedRect(this.cameras.main.width/2 + 20, this.cameras.main.height/2 + 70, 100, 40, 20);
+        cancelBtn.lineStyle(2, 0x9ca3af, 1);
+        cancelBtn.strokeRoundedRect(this.cameras.main.width/2 + 20, this.cameras.main.height/2 + 70, 100, 40, 20);
+        cancelBtn.setInteractive(new Phaser.Geom.Rectangle(this.cameras.main.width/2 + 20, this.cameras.main.height/2 + 70, 100, 40), Phaser.Geom.Rectangle.Contains);
         cancelBtn.setDepth(1001);
         
-        const cancelText = this.add.text(this.cameras.main.width/2 + 50, this.cameras.main.height/2 + 60, 'Cancel', {
-            fontSize: '14px',
-            color: '#FFFFFF',
-            fontFamily: 'Arial'
+        const cancelText = this.add.text(this.cameras.main.width/2 + 70, this.cameras.main.height/2 + 90, '❌ Cancel', {
+            fontSize: '16px',
+            color: '#45474B',
+            fontFamily: 'Arial',
+            fontStyle: 'bold',
+            stroke: '#ffffff',
+            strokeThickness: 1
         }).setOrigin(0.5).setDepth(1001);
         
         const dialogElements = [dialogBg, dialogTitle, saveBtn, saveText, cancelBtn, cancelText];
         
+        // Enhanced animations
+        dialogElements.forEach(element => {
+            element.setAlpha(0);
+            element.setScale(0.7);
+        });
+        
+        this.tweens.add({
+            targets: dialogElements,
+            alpha: 1,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 300,
+            ease: 'Back.easeOut'
+        });
+        
         const closeDialog = () => {
-            dialogElements.forEach(element => element.destroy());
-            document.body.removeChild(inputElement);
+            this.tweens.add({
+                targets: dialogElements,
+                alpha: 0,
+                scaleX: 0.7,
+                scaleY: 0.7,
+                duration: 200,
+                ease: 'Power2.easeIn',
+                onComplete: () => {
+                    dialogElements.forEach(element => element.destroy());
+                    document.body.removeChild(inputElement);
+                }
+            });
         };
+        
+        // Button hover effects
+        saveBtn.on('pointerover', () => {
+            this.tweens.add({
+                targets: [saveBtn, saveText],
+                scaleX: 1.1,
+                scaleY: 1.1,
+                duration: 150,
+                ease: 'Power2.easeOut'
+            });
+        });
+        
+        saveBtn.on('pointerout', () => {
+            this.tweens.add({
+                targets: [saveBtn, saveText],
+                scaleX: 1,
+                scaleY: 1,
+                duration: 150,
+                ease: 'Power2.easeOut'
+            });
+        });
+        
+        cancelBtn.on('pointerover', () => {
+            this.tweens.add({
+                targets: [cancelBtn, cancelText],
+                scaleX: 1.1,
+                scaleY: 1.1,
+                duration: 150,
+                ease: 'Power2.easeOut'
+            });
+        });
+        
+        cancelBtn.on('pointerout', () => {
+            this.tweens.add({
+                targets: [cancelBtn, cancelText],
+                scaleX: 1,
+                scaleY: 1,
+                duration: 150,
+                ease: 'Power2.easeOut'
+            });
+        });
         
         saveBtn.on('pointerdown', () => {
             const noteContent = inputElement.value.trim();
@@ -668,6 +818,11 @@ async syncWithNotesJson() {
         console.error('Failed to sync notes with server:', error);
     }
 }
+
+createLibraryBackButton() {
+        // Create back button using the imported function with proper parameters
+        createBackButton(this, 'MainHub');
+    }
 }
 
 

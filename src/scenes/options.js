@@ -100,7 +100,7 @@ export default class OptionsScene extends Phaser.Scene {    constructor() {
 
         // Card border
         const cardBorder = this.add.graphics();
-        cardBorder.lineStyle(2 * this.scaleFactor, 0x4299e1, 1);
+        cardBorder.lineStyle(2 * this.scaleFactor, 0xF4CE14, 1);
         cardBorder.strokeRoundedRect(
             cardX - cardWidth / 2, cardY - cardHeight / 2,
             cardWidth, cardHeight, 12 * this.scaleFactor
@@ -115,7 +115,7 @@ export default class OptionsScene extends Phaser.Scene {    constructor() {
         // Settings badge
         const settingsBadge = this.add.rectangle(
             cardX, headerY - 20 * this.scaleFactor, 
-            100 * this.scaleFactor, 24 * this.scaleFactor, 0x4299e1
+            100 * this.scaleFactor, 24 * this.scaleFactor, 0xF4CE14
         );
         this.uiElements.push(settingsBadge);
         
@@ -166,7 +166,7 @@ export default class OptionsScene extends Phaser.Scene {    constructor() {
             cardX + cardWidth * 0.35, seY, `${Math.round(seVolume * 100)}%`, {
                 fontFamily: 'Arial',
                 fontSize: `${scaleFont(16)}px`,
-                color: '#4299e1'
+                color: '#F4CE14'
             }
         ).setOrigin(1, 0.5);
         this.uiElements.push(seVolumeText);
@@ -197,7 +197,7 @@ export default class OptionsScene extends Phaser.Scene {    constructor() {
             cardX + cardWidth * 0.35, bgmY, `${Math.round(bgmVolume * 100)}%`, {
                 fontFamily: 'Arial',
                 fontSize: `${scaleFont(16)}px`,
-                color: '#4299e1'
+                color: '#F4CE14'
             }
         ).setOrigin(1, 0.5);
         this.uiElements.push(bgmVolumeText);
@@ -241,7 +241,7 @@ export default class OptionsScene extends Phaser.Scene {    constructor() {
         const toggleBg = this.add.rectangle(
             cardX + cardWidth * 0.25, fullscreenY + 20 * this.scaleFactor,
             60 * this.scaleFactor, 30 * this.scaleFactor, 
-            this.scale.isFullscreen ? 0x4299e1 : 0x2d3748
+            this.scale.isFullscreen ? 0xF4CE14 : 0x2d3748
         );
         toggleBg.setStrokeStyle(2 * this.scaleFactor, 0x4a5568);
         
@@ -250,12 +250,12 @@ export default class OptionsScene extends Phaser.Scene {    constructor() {
             fullscreenY + 20 * this.scaleFactor,
             12 * this.scaleFactor, 0xffffff
         );
-        toggleHandle.setStrokeStyle(2 * this.scaleFactor, 0x4299e1);        const toggleText = this.add.text(
+        toggleHandle.setStrokeStyle(2 * this.scaleFactor, 0xF4CE14);        const toggleText = this.add.text(
             cardX + cardWidth * 0.35, fullscreenY + 20 * this.scaleFactor,
             this.scale.isFullscreen ? 'On' : 'Off', {
                 fontFamily: 'Arial',
                 fontSize: `${scaleFont(16)}px`,
-                color: '#4299e1'
+                color: '#F4CE14'
             }
         ).setOrigin(1, 0.5);
 
@@ -273,7 +273,7 @@ export default class OptionsScene extends Phaser.Scene {    constructor() {
                 // On enter fullscreen
                 () => {
                     if (this.currentUIRefs.toggleBg && this.currentUIRefs.toggleBg.scene) {
-                        this.currentUIRefs.toggleBg.setFillStyle(0x4299e1);
+                        this.currentUIRefs.toggleBg.setFillStyle(0xF4CE14);
                     }
                     if (this.currentUIRefs.toggleText && this.currentUIRefs.toggleText.scene) {
                         this.currentUIRefs.toggleText.setText('On');
@@ -346,7 +346,7 @@ export default class OptionsScene extends Phaser.Scene {    constructor() {
         elements.push(trackBg);        // Slider active track - starts from left bound
         const activeTrack = this.add.rectangle(
             leftBound, y, 
-            0, sliderHeight, 0x4299e1
+            0, sliderHeight, 0xF4CE14
         );
         activeTrack.setOrigin(0, 0.5); // Left-aligned origin
         activeTrack.width = width * initialValue;
@@ -357,7 +357,7 @@ export default class OptionsScene extends Phaser.Scene {    constructor() {
             leftBound + width * initialValue, y, 
             handleSize / 2, 0xffffff
         );
-        handle.setStrokeStyle(2 * this.scaleFactor, 0x4299e1);
+        handle.setStrokeStyle(2 * this.scaleFactor, 0xF4CE14);
         handle.setInteractive();
         this.input.setDraggable(handle);
         elements.push(handle);        // Update function
@@ -388,7 +388,7 @@ export default class OptionsScene extends Phaser.Scene {    constructor() {
         // Visual feedback
         handle.on('pointerover', () => {
             handle.setScale(1.2);
-            handle.setFillStyle(0x63b3ed);
+            handle.setFillStyle(0xfbbf24); // Darker yellow on hover
         });
 
         handle.on('pointerout', () => {

@@ -42,19 +42,19 @@ export class DungeonHUD {
         const panelHeight = 180 * scaleFactor;
         const margin = 16 * scaleFactor;
 
-        // Main HUD panel with gradient and border
+        // Main HUD panel with white/yellow gradient and border
         this.hudBackground = this.scene.add.graphics();
         
-        // Dark gradient background
-        this.hudBackground.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x2d3748, 0x2d3748, 1);
+        // White to light yellow gradient background
+        this.hudBackground.fillGradientStyle(0xffffff, 0xffffff, 0xF5F7F8, 0xF5F7F8, 1);
         this.hudBackground.fillRoundedRect(margin, margin, panelWidth, panelHeight, 12 * scaleFactor);
         
-        // Glowing border effect
-        this.hudBackground.lineStyle(3 * scaleFactor, 0x4a5568, 0.8);
+        // Golden border effect
+        this.hudBackground.lineStyle(3 * scaleFactor, 0xF4CE14, 0.8);
         this.hudBackground.strokeRoundedRect(margin, margin, panelWidth, panelHeight, 12 * scaleFactor);
         
-        // Inner glow
-        this.hudBackground.lineStyle(1 * scaleFactor, 0x63b3ed, 0.4);
+        // Inner golden accent
+        this.hudBackground.lineStyle(1 * scaleFactor, 0xF4CE14, 0.4);
         this.hudBackground.strokeRoundedRect(
             margin + 2 * scaleFactor, 
             margin + 2 * scaleFactor, 
@@ -65,7 +65,7 @@ export class DungeonHUD {
 
         // Corner decorative elements
         const cornerSize = 8 * scaleFactor;
-        this.hudBackground.fillStyle(0xffd700, 0.6);
+        this.hudBackground.fillStyle(0xF4CE14, 0.8);
         
         // Top corners
         this.hudBackground.fillCircle(margin + cornerSize, margin + cornerSize, cornerSize / 2);
@@ -89,7 +89,7 @@ export class DungeonHUD {
             {
                 fontFamily: 'Caprasimo-Regular',
                 fontSize: `${Math.round(18 * scaleFactor)}px`,
-                color: '#000000',
+                color: '#cccccc',
                 alpha: 0.5
             }
         ).setDepth(9);
@@ -102,9 +102,9 @@ export class DungeonHUD {
             {
                 fontFamily: 'Caprasimo-Regular',
                 fontSize: `${Math.round(18 * scaleFactor)}px`,
-                color: '#ffd700',
-                stroke: '#2d3748',
-                strokeThickness: 2 * scaleFactor
+                color: '#45474B',
+                stroke: '#F4CE14',
+                strokeThickness: 1 * scaleFactor
             }
         ).setDepth(10);
         this.hudElements.push(titleText);
@@ -117,9 +117,9 @@ export class DungeonHUD {
             {
                 fontFamily: 'Caprasimo-Regular',
                 fontSize: `${Math.round(32 * scaleFactor)}px`,
-                color: '#00ff88',
-                stroke: '#1a1a2e',
-                strokeThickness: 3 * scaleFactor
+                color: '#F4CE14',
+                stroke: '#45474B',
+                strokeThickness: 2 * scaleFactor
             }
         ).setOrigin(0.5, 0).setDepth(10);
         this.hudElements.push(intensityValue);
@@ -304,10 +304,10 @@ export class DungeonMenu {
         const buttonX = width - buttonWidth / 2 - margin;
         const buttonY = buttonHeight / 2 + margin;
 
-        // Enhanced menu button without glow circle
+        // Enhanced menu button with white/yellow palette
         // Gradient background using graphics
         this.menuButtonBg = this.scene.add.graphics();
-        this.menuButtonBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 1);
+        this.menuButtonBg.fillGradientStyle(0xffffff, 0xffffff, 0xF5F7F8, 0xF5F7F8, 1);
         this.menuButtonBg.fillRoundedRect(
             buttonX - buttonWidth / 2,
             buttonY - buttonHeight / 2,
@@ -316,8 +316,8 @@ export class DungeonMenu {
             8 * scaleFactor
         );
         
-        // Glowing border
-        this.menuButtonBg.lineStyle(3 * scaleFactor, 0x63b3ed, 0.8);
+        // Golden border
+        this.menuButtonBg.lineStyle(3 * scaleFactor, 0xF4CE14, 0.8);
         this.menuButtonBg.strokeRoundedRect(
             buttonX - buttonWidth / 2,
             buttonY - buttonHeight / 2,
@@ -327,7 +327,7 @@ export class DungeonMenu {
         );
 
         // Inner highlight
-        this.menuButtonBg.lineStyle(1 * scaleFactor, 0xffd700, 0.6);
+        this.menuButtonBg.lineStyle(1 * scaleFactor, 0xF4CE14, 0.6);
         this.menuButtonBg.strokeRoundedRect(
             buttonX - buttonWidth / 2 + 2 * scaleFactor,
             buttonY - buttonHeight / 2 + 2 * scaleFactor,
@@ -346,9 +346,9 @@ export class DungeonMenu {
             {
                 fontFamily: 'Caprasimo-Regular',
                 fontSize: `${Math.round(20 * scaleFactor)}px`,
-                color: '#ffd700',
-                stroke: '#1a1a2e',
-                strokeThickness: 2 * scaleFactor
+                color: '#45474B',
+                stroke: '#F4CE14',
+                strokeThickness: 1 * scaleFactor
             }
         ).setOrigin(0.5)
          .setInteractive({ useHandCursor: true })
@@ -408,11 +408,11 @@ export class DungeonMenu {
         const baseX = width / 2;
         const baseY = height / 2;
 
-        // Enhanced menu box with gradient and glow
+        // Enhanced menu box with white/yellow gradient and glow
         const menuBoxBg = this.scene.add.graphics();
         
-        // Outer glow
-        menuBoxBg.fillStyle(0x63b3ed, 0.2);
+        // Outer golden glow
+        menuBoxBg.fillStyle(0xF4CE14, 0.2);
         menuBoxBg.fillRoundedRect(
             baseX - boxWidth / 2 - 8 * scaleFactor,
             baseY - boxHeight / 2 - 8 * scaleFactor,
@@ -421,8 +421,8 @@ export class DungeonMenu {
             20 * scaleFactor
         );
 
-        // Main background gradient
-        menuBoxBg.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x2d3748, 0x2d3748, 0.95);
+        // Main white background gradient
+        menuBoxBg.fillGradientStyle(0xffffff, 0xffffff, 0xF5F7F8, 0xF5F7F8, 0.95);
         menuBoxBg.fillRoundedRect(
             baseX - boxWidth / 2,
             baseY - boxHeight / 2,
@@ -431,8 +431,8 @@ export class DungeonMenu {
             16 * scaleFactor
         );
 
-        // Border and highlights
-        menuBoxBg.lineStyle(4 * scaleFactor, 0x63b3ed, 0.8);
+        // Golden border and highlights
+        menuBoxBg.lineStyle(4 * scaleFactor, 0xF4CE14, 0.8);
         menuBoxBg.strokeRoundedRect(
             baseX - boxWidth / 2,
             baseY - boxHeight / 2,
@@ -441,8 +441,8 @@ export class DungeonMenu {
             16 * scaleFactor
         );
 
-        // Inner highlight
-        menuBoxBg.lineStyle(2 * scaleFactor, 0xffd700, 0.4);
+        // Inner golden accent
+        menuBoxBg.lineStyle(2 * scaleFactor, 0xF4CE14, 0.4);
         menuBoxBg.strokeRoundedRect(
             baseX - boxWidth / 2 + 4 * scaleFactor,
             baseY - boxHeight / 2 + 4 * scaleFactor,
@@ -462,7 +462,7 @@ export class DungeonMenu {
             {
                 fontFamily: 'Caprasimo-Regular',
                 fontSize: `${Math.round(28 * scaleFactor)}px`,
-                color: '#000000',
+                color: '#cccccc',
                 alpha: 0.5
             }
         ).setOrigin(0.5).setDepth(1002);
@@ -475,9 +475,9 @@ export class DungeonMenu {
             {
                 fontFamily: 'Caprasimo-Regular',
                 fontSize: `${Math.round(28 * scaleFactor)}px`,
-                color: '#ffd700',
-                stroke: '#1a1a2e',
-                strokeThickness: 3 * scaleFactor
+                color: '#45474B',
+                stroke: '#F4CE14',
+                strokeThickness: 2 * scaleFactor
             }
         ).setOrigin(0.5).setDepth(1002);
         this.menuBoxGroup.add(title);
