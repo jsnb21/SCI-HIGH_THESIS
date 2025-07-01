@@ -61,11 +61,6 @@ class BaseLibraryScene extends Phaser.Scene {
             const offScreenX = this.cameras.main.width + (this.cameras.main.width / 4);
             this.popupContainer.setPosition(offScreenX, this.cameras.main.height / 2);
         }
-        
-        if (this.overlay) {
-            this.overlay.setVisible(false);
-            this.overlay.setAlpha(0);
-        }
     }
 
     loadJsonData() {
@@ -215,10 +210,6 @@ class BaseLibraryScene extends Phaser.Scene {
     setupBackground() {
         this.background = this.add.image(0, 0, 'libraryBg');
         this.background.setOrigin(0, 0);
-        // Modern: Add a semi-transparent overlay for glassmorphism
-        const overlay = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0xffffff, 0.15);
-        overlay.setOrigin(0, 0);
-        overlay.setDepth(1);
         
         // Calculate scale to cover entire screen
         const scaleX = this.cameras.main.width / this.background.width;
@@ -258,7 +249,6 @@ class BaseLibraryScene extends Phaser.Scene {
         this.currentPopupType = contentType;
         this.popupScrollY = 0; // Reset scroll position
         
-        this.overlay.setVisible(true);
         this.updatePopupContent(contentType);
         this.popupContainer.setVisible(true);
         
@@ -269,14 +259,7 @@ class BaseLibraryScene extends Phaser.Scene {
             x: targetX,
             duration: 400,
             ease: 'Power3.easeOut'
-        });
-        
-        this.overlay.setAlpha(0);
-        this.tweens.add({
-            targets: this.overlay,
-            alpha: 1,
-            duration: 200,
-            ease: 'Power2.easeOut'
+            // Removed mask creation that was causing content to disappear
         });
     }
     
@@ -300,18 +283,13 @@ class BaseLibraryScene extends Phaser.Scene {
                 if (onComplete) onComplete();
             }
         });
-        
-        this.tweens.add({
-            targets: this.overlay,
-            alpha: 0,
-            duration: 300,
-            ease: 'Power2.easeIn'
-        });
     }
     
     updatePopupContent(contentType) {
         this.popupContent.removeAll(true);
-        this.popupContent.y = 0; // Reset position
+        this.popupScrollY = 0; // Reset scroll position
+        // Reset content position to its initial position below header
+        this.popupContent.y = this.popupContentStartY || 0;
         this.popupTitle.setText(contentType.toUpperCase());
         
         switch(contentType) {
@@ -330,186 +308,27 @@ class BaseLibraryScene extends Phaser.Scene {
     scrollPopupContent(deltaY) {
         const scrollSpeed = 30;
         this.popupScrollY -= Math.sign(deltaY) * scrollSpeed;
-        // Clamp so content never scrolls above header
-        const minScroll = 0;
-        // Calculate max scroll so last item doesn't scroll too far up
-        const contentHeight = this.popupContent.getBounds().height;
-        const popupHeight = this.cameras.main.height - 160; // header + some margin
-        const maxScroll = Math.max(contentHeight - popupHeight, 0);
-        this.popupScrollY = Phaser.Math.Clamp(this.popupScrollY, -maxScroll, minScroll);
-        this.popupContent.y = this.popupScrollY;
-    }
-
-    /**
-     * Helper method to get the color associated with a book status
-     * @param {string} status - The book status
-     * @returns {number} - The color hex value
-     */
-    getBookStatusColor(status) {
-        switch(status.toLowerCase()) {
-            case 'available':
-                return 0x27AE60; // Green
-            case 'reading':
-                return 0xF39C12; // Orange
-            case 'completed':
-            case 'read':
-            case 'finished':
-                return 0xE74C3C; // Red - This triggers the progress update
-            case 'unavailable':
-            case 'locked':
-                return 0x95A5A6; // Gray
-            default:
-                return 0x27AE60; // Default to available (green)
-        }
-    }
-
-    /**
-     * Method to mark a book as completed and update progress
-     * @param {Object} book - The book object to mark as completed
-     */
-    markBookAsCompleted(book) {
-        const previousStatus = book.status;
-        book.status = 'completed'; // or 'read' or 'finished'
         
-        // If the book wasn't previously completed, update the progress
-        if (this.getBookStatusColor(previousStatus) !== 0xE74C3C) {
-            this.updateBooksReadProgress();
+        // Get content bounds
+        const contentHeight = this.popupContent.getBounds().height;
+        const availableHeight = this.popupMaskBounds ? this.popupMaskBounds.height : 
+                               (this.cameras.main.height - 160);
+        
+        // Natural scrolling with reasonable bounds
+        if (contentHeight > availableHeight) {
+            // Allow scrolling up to show all content, with a small buffer
+            const maxScrollUp = -(contentHeight - availableHeight + 20);
+            const maxScrollDown = 0;
             
-            // Refresh the popup content if it's currently showing Progress
-            if (this.isPopupOpen && this.currentPopupType === 'Progress') {
-                this.updatePopupContent('Progress');
-            }
+            this.popupScrollY = Phaser.Math.Clamp(this.popupScrollY, maxScrollUp, maxScrollDown);
+        } else {
+            // If content fits, allow minimal overscroll
+            this.popupScrollY = Phaser.Math.Clamp(this.popupScrollY, -20, 20);
         }
         
-        console.log(`Book "${book.title}" marked as completed!`);
-    }
-
-    setupBackground() {
-        this.background = this.add.image(0, 0, 'libraryBg');
-        this.background.setOrigin(0, 0);
-        // Modern: Add a semi-transparent overlay for glassmorphism
-        const overlay = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0xffffff, 0.15);
-        overlay.setOrigin(0, 0);
-        overlay.setDepth(1);
-        
-        // Calculate scale to cover entire screen
-        const scaleX = this.cameras.main.width / this.background.width;
-        const scaleY = this.cameras.main.height / this.background.height;
-        const scale = Math.max(scaleX, scaleY);
-        
-        this.background.setScale(scale);
-        this.background.setPosition(
-            (this.cameras.main.width - this.background.displayWidth) / 2,
-            (this.cameras.main.height - this.background.displayHeight) / 2
-        );
-    }
-    
-    // Helper to create a rounded rectangle as a graphics texture
-    createRoundedRectTexture(key, width, height, radius, fillColor, fillAlpha, strokeColor, strokeAlpha, strokeWidth, shadowColor, shadowAlpha, shadowBlur) {
-        const graphics = this.add.graphics();
-        graphics.clear();
-        if (shadowColor && shadowBlur) {
-            graphics.fillStyle(shadowColor, shadowAlpha || 0.15);
-            graphics.fillRoundedRect(4, 4, width, height, radius);
-        }
-        // Set fillAlpha to 1 for opaque backgrounds
-        graphics.fillStyle(fillColor, fillAlpha === undefined ? 1 : fillAlpha);
-        graphics.fillRoundedRect(0, 0, width, height, radius);
-        if (strokeColor && strokeWidth) {
-            graphics.lineStyle(strokeWidth, strokeColor, strokeAlpha || 1);
-            graphics.strokeRoundedRect(0, 0, width, height, radius);
-        }
-        graphics.generateTexture(key, width + 8, height + 8);
-        graphics.destroy();
-    }
-
-    showPopup(contentType) {
-        if (this.isPopupOpen) return;
-        
-        this.isPopupOpen = true;
-        this.currentPopupType = contentType;
-        this.popupScrollY = 0; // Reset scroll position
-        
-        this.overlay.setVisible(true);
-        this.updatePopupContent(contentType);
-        this.popupContainer.setVisible(true);
-        
-        const targetX = this.cameras.main.width - (this.cameras.main.width / 4);
-        
-        this.tweens.add({
-            targets: this.popupContainer,
-            x: targetX,
-            duration: 400,
-            ease: 'Power3.easeOut'
-        });
-        
-        this.overlay.setAlpha(0);
-        this.tweens.add({
-            targets: this.overlay,
-            alpha: 1,
-            duration: 200,
-            ease: 'Power2.easeOut'
-        });
-    }
-    
-    hidePopup(onComplete) {
-        if (!this.isPopupOpen) {
-            if (onComplete) onComplete();
-            return;
-        }
-        
-        const offScreenX = this.cameras.main.width + (this.cameras.main.width / 4);
-        
-        this.tweens.add({
-            targets: this.popupContainer,
-            x: offScreenX,
-            duration: 300,
-            ease: 'Power3.easeIn',
-            onComplete: () => {
-                this.popupContainer.setVisible(false);
-                this.isPopupOpen = false;
-                this.currentPopupType = null;
-                if (onComplete) onComplete();
-            }
-        });
-        
-        this.tweens.add({
-            targets: this.overlay,
-            alpha: 0,
-            duration: 300,
-            ease: 'Power2.easeIn'
-        });
-    }
-    
-    updatePopupContent(contentType) {
-        this.popupContent.removeAll(true);
-        this.popupContent.y = 0; // Reset position
-        this.popupTitle.setText(contentType.toUpperCase());
-        
-        switch(contentType) {
-            case 'Books':
-                LibraryUI.createBooksContent(this);
-                break;
-            case 'Progress':
-                LibraryUI.createProgressContent(this);
-                break;
-            case 'Notes':
-                LibraryUI.createNotesContent(this);
-                break;
-        }
-    }
-
-    scrollPopupContent(deltaY) {
-        const scrollSpeed = 30;
-        this.popupScrollY -= Math.sign(deltaY) * scrollSpeed;
-        // Clamp so content never scrolls above header
-        const minScroll = 0;
-        // Calculate max scroll so last item doesn't scroll too far up
-        const contentHeight = this.popupContent.getBounds().height;
-        const popupHeight = this.cameras.main.height - 160; // header + some margin
-        const maxScroll = Math.max(contentHeight - popupHeight, 0);
-        this.popupScrollY = Phaser.Math.Clamp(this.popupScrollY, -maxScroll, minScroll);
-        this.popupContent.y = this.popupScrollY;
+        // Update content position
+        const startY = this.popupContentStartY || 0;
+        this.popupContent.y = startY + this.popupScrollY;
     }
 
     showAddNoteDialog() {

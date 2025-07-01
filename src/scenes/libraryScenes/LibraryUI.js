@@ -151,10 +151,10 @@ export default class LibraryUI {
         const screenWidth = scene.scale.width;
         const screenHeight = scene.scale.height;
         
-        // Position popup more to the left
+        // Position popup more to the left and expand to full browser height
         const isSmallScreen = screenWidth < 768;
         const popupWidth = isSmallScreen ? screenWidth * 0.5 : Math.min(screenWidth * 0.45, 500 * sf);
-        const popupHeight = isSmallScreen ? screenHeight * 0.85 : screenHeight * 0.8;
+        const popupHeight = screenHeight; // Full browser height
         const popupX = screenWidth * 0.55; // Moved more to the left (was 0.65)
         const popupY = screenHeight / 2;
         
@@ -252,22 +252,20 @@ export default class LibraryUI {
         
         scene.closeBtn.on('pointerdown', () => { scene.hidePopup(); });
         
-        // Content container for scrolling with clipping mask
-        scene.popupContent = scene.add.container(0, 0);
+        // Content container for scrolling - positioned below header
+        // Calculate position relative to popup container coordinates
+        const contentStartY = -popupHeight/2 + headerHeight + 20; // Start below header with some margin
+        scene.popupContent = scene.add.container(0, contentStartY);
         scene.popupScrollY = 0;
+        scene.popupContentStartY = contentStartY; // Store initial Y position
         
-        // Create a mask to limit content to popup bounds
-        const maskShape = scene.add.graphics();
-        maskShape.fillStyle(0xffffff);
-        maskShape.fillRoundedRect(
-            -popupWidth/2 + 10,
-            -popupHeight/2 + headerHeight + 20,
-            popupWidth - 20,
-            popupHeight - headerHeight - 40,
-            12
-        );
-        const mask = maskShape.createGeometryMask();
-        scene.popupContent.setMask(mask);
+        // Store mask bounds for scroll calculations (but don't create actual mask yet)
+        scene.popupMaskBounds = { 
+            x: -popupWidth/2 + 10, 
+            y: -popupHeight/2 + headerHeight, 
+            width: popupWidth - 20, 
+            height: popupHeight - headerHeight - 20 
+        };
         
         // Store dimensions for later use
         scene.popupDimensions = { width: popupWidth, height: popupHeight, headerHeight };
@@ -292,12 +290,44 @@ export default class LibraryUI {
         scene.popupContainer.setVisible(false);
     }
 
+    static createPopupMask(scene) {
+        // Only create mask if it doesn't exist
+        if (scene.popupMask) {
+            scene.popupMask.destroy();
+        }
+        
+        const { width: popupWidth, height: popupHeight, headerHeight } = scene.popupDimensions;
+        
+        // Create mask graphics in world coordinates
+        scene.popupMask = scene.add.graphics();
+        
+        // Get the current popup position
+        const popupX = scene.popupContainer.x;
+        const popupY = scene.popupContainer.y;
+        
+        // Calculate mask area in world coordinates
+        const maskX = popupX - popupWidth/2 + 10;
+        const maskY = popupY - popupHeight/2 + headerHeight;
+        const maskWidth = popupWidth - 20;
+        const maskHeight = popupHeight - headerHeight - 20;
+        
+        scene.popupMask.fillStyle(0xffffff);
+        scene.popupMask.fillRect(maskX, maskY, maskWidth, maskHeight);
+        
+        // Apply mask to content container
+        scene.popupContent.setMask(scene.popupMask.createGeometryMask());
+        
+        // Update mask bounds for scroll calculations
+        scene.popupMaskBounds.height = maskHeight;
+    }
+
     static createBooksContent(scene) {
         const sf = scene.scaleFactor || 1;
         const { width: popupWidth, height: popupHeight, headerHeight } = scene.popupDimensions;
         const isSmallScreen = scene.scale.width < 768;
         
-        const startY = -popupHeight/2 + headerHeight + 60 * sf; // More space from header
+        // Since content container now starts below header, start from 0 with some margin
+        const startY = 20 * sf; // Small margin from top of content area
         let yOffset = startY;
         
         scene._libraryBookElements = [];
@@ -470,28 +500,175 @@ export default class LibraryUI {
             yOffset += 40 * sf; // Increased spacing between categories
         });
         
-        LibraryUI.updateBooksScrollVisibility(scene);
+        // Initial visibility will be handled by the base scene
     }
 
-    static updateBooksScrollVisibility(scene) {
-        if (!scene._libraryBookElements || !scene._libraryCategoryHeaders || !scene.popupDimensions) return;
+    static createProgressContent(scene) {
+        const sf = scene.scaleFactor || 1;
+        const { width: popupWidth, height: popupHeight, headerHeight } = scene.popupDimensions;
         
-        // Calculate the Y threshold (bottom of header area in popup coordinates)
-        const popupHeaderBottom = (-scene.popupDimensions.height/2) + scene.popupDimensions.headerHeight + 20;
-        const popupBottom = scene.popupDimensions.height/2 - 20;
+        // Since content container now starts below header, start from 0 with some margin
+        const startY = 20 * sf;
+        let yOffset = startY;
         
-        // Hide book elements outside visible area
-        scene._libraryBookElements.forEach(group => {
-            // All elements in group share the same y (bookBg.y)
-            const y = group[0].y + (scene.popupContent.y || 0);
-            const visible = y > popupHeaderBottom && y < popupBottom;
-            group.forEach(el => el.setVisible(visible));
+        // Progress stats
+        scene.libraryData.progress.stats.forEach((stat, index) => {
+            // Progress bar background
+            const barWidth = popupWidth * 0.7;
+            const barHeight = 20 * sf;
+            
+            // Label
+            const label = scene.add.text(-popupWidth/2 + 40 * sf, yOffset, stat.label, {
+                fontSize: `${Math.min(18 * sf, 16)}px`,
+                color: '#ffffff',
+                fontFamily: 'Caprasimo-Regular'
+            }).setOrigin(0, 0.5).setDepth(5);
+            
+            // Progress value text
+            const valueText = scene.add.text(popupWidth/2 - 40 * sf, yOffset, `${stat.value}/${stat.max}`, {
+                fontSize: `${Math.min(16 * sf, 14)}px`,
+                color: '#63b3ed',
+                fontFamily: 'Arial'
+            }).setOrigin(1, 0.5).setDepth(5);
+            
+            yOffset += 30 * sf;
+            
+            // Progress bar background
+            const progressBg = scene.add.graphics();
+            progressBg.fillStyle(0x2d3748, 0.8);
+            progressBg.fillRoundedRect(-barWidth/2, yOffset - barHeight/2, barWidth, barHeight, 10 * sf);
+            
+            // Progress bar fill
+            const fillWidth = (stat.value / stat.max) * barWidth;
+            const progressFill = scene.add.graphics();
+            progressFill.fillStyle(parseInt(stat.color.replace('#', '0x')), 1);
+            progressFill.fillRoundedRect(-barWidth/2, yOffset - barHeight/2, fillWidth, barHeight, 10 * sf);
+            
+            scene.popupContent.add([label, valueText, progressBg, progressFill]);
+            
+            yOffset += 50 * sf;
         });
         
-        // Hide category headers outside visible area
-        scene._libraryCategoryHeaders.forEach(header => {
-            const y = header.y + (scene.popupContent.y || 0);
-            header.setVisible(y > popupHeaderBottom && y < popupBottom);
+        // Achievements section
+        if (scene.libraryData.progress.achievements && scene.libraryData.progress.achievements.length > 0) {
+            yOffset += 20 * sf;
+            
+            const achievementsHeader = scene.add.text(0, yOffset, 'ACHIEVEMENTS', {
+                fontSize: `${Math.min(20 * sf, 18)}px`,
+                color: '#ffd700',
+                fontFamily: 'Caprasimo-Regular'
+            }).setOrigin(0.5, 0.5).setDepth(5);
+            
+            scene.popupContent.add(achievementsHeader);
+            yOffset += 40 * sf;
+            
+            scene.libraryData.progress.achievements.forEach((achievement, index) => {
+                const achBg = scene.add.graphics();
+                achBg.fillStyle(0x2d3748, 0.6);
+                achBg.fillRoundedRect(-popupWidth/2 + 20 * sf, yOffset - 20 * sf, popupWidth - 40 * sf, 40 * sf, 8 * sf);
+                
+                const achText = scene.add.text(0, yOffset, achievement.name || achievement, {
+                    fontSize: `${Math.min(16 * sf, 14)}px`,
+                    color: '#ffffff',
+                    fontFamily: 'Arial'
+                }).setOrigin(0.5, 0.5).setDepth(5);
+                
+                scene.popupContent.add([achBg, achText]);
+                yOffset += 50 * sf;
+            });
+        }
+    }
+
+    static createNotesContent(scene) {
+        const sf = scene.scaleFactor || 1;
+        const { width: popupWidth, height: popupHeight, headerHeight } = scene.popupDimensions;
+        
+        // Since content container now starts below header, start from 0 with some margin
+        const startY = 20 * sf;
+        let yOffset = startY;
+        
+        // Add Note button
+        const addBtn = scene.add.graphics();
+        const btnWidth = popupWidth * 0.6;
+        const btnHeight = 40 * sf;
+        
+        addBtn.fillStyle(0x27AE60, 0.8);
+        addBtn.fillRoundedRect(-btnWidth/2, yOffset - btnHeight/2, btnWidth, btnHeight, 8 * sf);
+        addBtn.setInteractive(new Phaser.Geom.Rectangle(-btnWidth/2, yOffset - btnHeight/2, btnWidth, btnHeight), Phaser.Geom.Rectangle.Contains);
+        
+        const addText = scene.add.text(0, yOffset, '+ Add New Note', {
+            fontSize: `${Math.min(18 * sf, 16)}px`,
+            color: '#ffffff',
+            fontFamily: 'Caprasimo-Regular'
+        }).setOrigin(0.5, 0.5).setDepth(5);
+        
+        addBtn.on('pointerdown', () => { scene.showAddNoteDialog(); });
+        
+        scene.popupContent.add([addBtn, addText]);
+        yOffset += 60 * sf;
+        
+        // Notes categories
+        scene.libraryData.notes.categories.forEach((category, categoryIndex) => {
+            // Category header
+            const categoryHeader = scene.add.text(0, yOffset, category.name, {
+                fontSize: `${Math.min(20 * sf, 18)}px`,
+                color: '#ffd700',
+                fontFamily: 'Caprasimo-Regular'
+            }).setOrigin(0.5, 0.5).setDepth(5);
+            
+            scene.popupContent.add(categoryHeader);
+            yOffset += 40 * sf;
+            
+            // Notes
+            if (category.notes.length === 0) {
+                const emptyText = scene.add.text(0, yOffset, 'No notes yet', {
+                    fontSize: `${Math.min(16 * sf, 14)}px`,
+                    color: '#95a5a6',
+                    fontFamily: 'Arial',
+                    fontStyle: 'italic'
+                }).setOrigin(0.5, 0.5).setDepth(5);
+                
+                scene.popupContent.add(emptyText);
+                yOffset += 40 * sf;
+            } else {
+                category.notes.forEach((note, noteIndex) => {
+                    const noteContent = note.content || note;
+                    const noteDate = note.date || 'No date';
+                    
+                    // Note background
+                    const noteBg = scene.add.graphics();
+                    const noteHeight = 60 * sf;
+                    
+                    noteBg.fillStyle(0x2d3748, 0.6);
+                    noteBg.fillRoundedRect(-popupWidth/2 + 20 * sf, yOffset - noteHeight/2, popupWidth - 40 * sf, noteHeight, 8 * sf);
+                    noteBg.setInteractive(new Phaser.Geom.Rectangle(-popupWidth/2 + 20 * sf, yOffset - noteHeight/2, popupWidth - 40 * sf, noteHeight), Phaser.Geom.Rectangle.Contains);
+                    
+                    // Note text
+                    const noteText = scene.add.text(-popupWidth/2 + 40 * sf, yOffset - 10 * sf, noteContent, {
+                        fontSize: `${Math.min(14 * sf, 12)}px`,
+                        color: '#ffffff',
+                        fontFamily: 'Arial',
+                        wordWrap: { width: popupWidth - 100 * sf }
+                    }).setOrigin(0, 0.5).setDepth(5);
+                    
+                    // Note date
+                    const dateText = scene.add.text(-popupWidth/2 + 40 * sf, yOffset + 15 * sf, noteDate, {
+                        fontSize: `${Math.min(12 * sf, 10)}px`,
+                        color: '#95a5a6',
+                        fontFamily: 'Arial'
+                    }).setOrigin(0, 0.5).setDepth(5);
+                    
+                    // Note options (edit/delete)
+                    noteBg.on('pointerdown', () => {
+                        scene.showEditNoteDialog(note, category.name);
+                    });
+                    
+                    scene.popupContent.add([noteBg, noteText, dateText]);
+                    yOffset += 70 * sf;
+                });
+            }
+            
+            yOffset += 20 * sf;
         });
     }
 }
