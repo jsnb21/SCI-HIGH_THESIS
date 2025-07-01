@@ -10,30 +10,6 @@ class GameManager {    constructor() {
 
         this.previousScene = 'MainMenu'; // default scene
         
-        // Point System
-        this.totalPoints = 0;
-        this.topicPoints = {
-            'Web_Design': 0,
-            'Python': 0,
-            'Java': 0,
-            'C': 0,
-            'C++': 0,
-            'C#': 0
-        };
-        this.pointsHistory = []; // Track point transactions
-        this.achievements = new Set(); // Track earned achievements
-        this.pointMultipliers = {
-            base: 10, // Base points per correct answer
-            combo: 1.5, // Multiplier for combo bonuses
-            speed: 1.2, // Multiplier for fast answers
-            perfect: 2.0, // Multiplier for perfect quizzes
-            difficulty: {
-                easy: 1.0,
-                medium: 1.5,
-                hard: 2.0
-            }
-        };
-        
         // Course progression system
         this.courseProgress = {
             'Web_Design': { unlocked: true, completed: false, progress: 0 },
@@ -44,215 +20,6 @@ class GameManager {    constructor() {
             'C#': { unlocked: false, completed: false, progress: 0 }
         };
     }
-
-    // =========================
-    // POINT SYSTEM METHODS
-    // =========================
-
-    // Get total points
-    getTotalPoints() {
-        return this.totalPoints;
-    }
-
-    // Get points for a specific topic
-    getTopicPoints(topic) {
-        return this.topicPoints[topic] || 0;
-    }
-
-    // Add points with optional topic and description
-    addPoints(points, topic = null, description = 'Points earned') {
-        const roundedPoints = Math.round(points);
-        this.totalPoints += roundedPoints;
-        
-        if (topic && this.topicPoints.hasOwnProperty(topic)) {
-            this.topicPoints[topic] += roundedPoints;
-        }
-        
-        // Track transaction in history
-        this.pointsHistory.push({
-            points: roundedPoints,
-            topic: topic,
-            description: description,
-            timestamp: Date.now(),
-            totalAfter: this.totalPoints
-        });
-        
-        console.log(`+${roundedPoints} points: ${description} (Total: ${this.totalPoints})`);
-        
-        // Check for achievements
-        this.checkPointAchievements();
-        
-        return roundedPoints;
-    }
-
-    // Calculate quiz points with all modifiers
-    calculateQuizPoints(quizResults) {
-        const {
-            correctAnswers = 0,
-            totalQuestions = 1,
-            comboCount = 0,
-            averageAnswerTime = 5,
-            timePerQuestion = 10,
-            topic = null,
-            difficulty = 'medium'
-        } = quizResults;
-
-        let basePoints = correctAnswers * this.pointMultipliers.base;
-        let totalPoints = basePoints;
-        let bonusBreakdown = [];
-
-        // Difficulty multiplier
-        const difficultyMultiplier = this.pointMultipliers.difficulty[difficulty] || 1.0;
-        if (difficultyMultiplier !== 1.0) {
-            totalPoints *= difficultyMultiplier;
-            bonusBreakdown.push(`Difficulty (${difficulty}): x${difficultyMultiplier}`);
-        }
-
-        // Combo bonus
-        if (comboCount > 0) {
-            const comboBonus = Math.round(comboCount * this.pointMultipliers.base * 0.5);
-            totalPoints += comboBonus;
-            bonusBreakdown.push(`Combo bonus: +${comboBonus}`);
-        }
-
-        // Speed bonus (if answered faster than half the time limit)
-        if (averageAnswerTime < timePerQuestion * 0.5) {
-            const speedBonus = Math.round(basePoints * (this.pointMultipliers.speed - 1));
-            totalPoints += speedBonus;
-            bonusBreakdown.push(`Speed bonus: +${speedBonus}`);
-        }
-
-        // Perfect quiz bonus
-        const isPerfect = correctAnswers === totalQuestions && totalQuestions > 0;
-        if (isPerfect) {
-            const perfectBonus = Math.round(basePoints * (this.pointMultipliers.perfect - 1));
-            totalPoints += perfectBonus;
-            bonusBreakdown.push(`Perfect quiz: +${perfectBonus}`);
-        }
-
-        // Apply existing buff multipliers
-        totalPoints = this.applyScoreMultiplier(totalPoints);
-
-        // Apply buff-based bonuses
-        if (isPerfect) {
-            totalPoints = this.applyPerfectBonus(totalPoints, true);
-        }
-
-        const finalPoints = Math.round(totalPoints);
-        
-        return {
-            basePoints,
-            finalPoints,
-            bonusBreakdown,
-            isPerfect,
-            difficulty,
-            topic
-        };
-    }
-
-    // Award points for quiz completion
-    awardQuizPoints(quizResults) {
-        const pointsData = this.calculateQuizPoints(quizResults);
-        const { finalPoints, topic, bonusBreakdown } = pointsData;
-        
-        let description = `Quiz completed: ${quizResults.correctAnswers}/${quizResults.totalQuestions} correct`;
-        if (bonusBreakdown.length > 0) {
-            description += ` (${bonusBreakdown.join(', ')})`;
-        }
-        
-        return this.addPoints(finalPoints, topic, description);
-    }
-
-    // Check and award point-based achievements
-    checkPointAchievements() {
-        const points = this.totalPoints;
-        const newAchievements = [];
-
-        // Point milestones
-        const pointMilestones = [
-            { points: 100, id: 'first_century', name: 'First Century', description: 'Earned 100 points' },
-            { points: 500, id: 'rising_star', name: 'Rising Star', description: 'Earned 500 points' },
-            { points: 1000, id: 'knowledge_collector', name: 'Knowledge Collector', description: 'Earned 1,000 points' },
-            { points: 5000, id: 'point_master', name: 'Point Master', description: 'Earned 5,000 points' },
-            { points: 10000, id: 'legendary_learner', name: 'Legendary Learner', description: 'Earned 10,000 points' }
-        ];
-
-        pointMilestones.forEach(milestone => {
-            if (points >= milestone.points && !this.achievements.has(milestone.id)) {
-                this.achievements.add(milestone.id);
-                newAchievements.push(milestone);
-                console.log(`🏆 Achievement Unlocked: ${milestone.name} - ${milestone.description}`);
-            }
-        });
-
-        // Topic-specific achievements
-        Object.entries(this.topicPoints).forEach(([topic, topicPoints]) => {
-            const achievementId = `${topic.toLowerCase()}_master`;
-            if (topicPoints >= 1000 && !this.achievements.has(achievementId)) {
-                this.achievements.add(achievementId);
-                newAchievements.push({
-                    id: achievementId,
-                    name: `${topic} Master`,
-                    description: `Earned 1,000 points in ${topic}`
-                });
-                console.log(`🏆 Achievement Unlocked: ${topic} Master`);
-            }
-        });
-
-        return newAchievements;
-    }
-
-    // Get recent point transactions
-    getRecentPointsHistory(limit = 10) {
-        return this.pointsHistory
-            .slice(-limit)
-            .reverse(); // Most recent first
-    }
-
-    // Get all achievements
-    getAchievements() {
-        return Array.from(this.achievements);
-    }
-
-    // Check if player has specific achievement
-    hasAchievement(achievementId) {
-        return this.achievements.has(achievementId);
-    }
-
-    // Get points statistics
-    getPointsStatistics() {
-        const topTopics = Object.entries(this.topicPoints)
-            .sort(([,a], [,b]) => b - a)
-            .slice(0, 3);
-
-        return {
-            totalPoints: this.totalPoints,
-            topicPoints: this.topicPoints,
-            topTopics: topTopics,
-            achievementCount: this.achievements.size,
-            transactionCount: this.pointsHistory.length
-        };
-    }
-
-    // Reset points (for testing or new game)
-    resetPoints() {
-        this.totalPoints = 0;
-        this.topicPoints = {
-            'Web_Design': 0,
-            'Python': 0,
-            'Java': 0,
-            'C': 0,
-            'C++': 0,
-            'C#': 0
-        };
-        this.pointsHistory = [];
-        this.achievements.clear();
-        console.log('Point system reset');
-    }
-
-    // =========================
-    // EXISTING METHODS (unchanged)
-    // =========================
 
     // Player HP and Health Management
     setPlayerHP(hp) {
@@ -359,9 +126,7 @@ class GameManager {    constructor() {
 
     getPreviousScene() {
         return this.previousScene;
-    }
-
-    // Reset all values
+    }    // Reset all values
     reset() {
         this.playerHP = 100; // Changed from 3 to 100 to match quiz system
         this.maxPlayerHP = 100;
@@ -370,9 +135,6 @@ class GameManager {    constructor() {
         this.playTime = 0;
         this.gameProgress = 0;
         this.previousScene = 'MainMenu';
-        
-        // Reset point system
-        this.resetPoints();
         
         // Reset course progress
         this.courseProgress = {
@@ -586,77 +348,6 @@ class GameManager {    constructor() {
         }
         
         return finalScore;
-    }
-
-    // Utility method to create a point display UI element
-    createPointsDisplay(scene, x, y, scaleFactor = 1) {
-        const container = scene.add.container(x, y);
-        
-        // Background
-        const bg = scene.add.graphics();
-        bg.fillStyle(0x000000, 0.7);
-        bg.fillRoundedRect(-80 * scaleFactor, -20 * scaleFactor, 160 * scaleFactor, 40 * scaleFactor, 8 * scaleFactor);
-        bg.lineStyle(2 * scaleFactor, 0xffd700, 0.8);
-        bg.strokeRoundedRect(-80 * scaleFactor, -20 * scaleFactor, 160 * scaleFactor, 40 * scaleFactor, 8 * scaleFactor);
-        
-        // Points text
-        const pointsText = scene.add.text(0, 0, `Points: ${this.getTotalPoints()}`, {
-            fontSize: `${14 * scaleFactor}px`,
-            fill: '#ffd700',
-            fontFamily: 'Arial Black',
-            stroke: '#000000',
-            strokeThickness: 2
-        }).setOrigin(0.5);
-        
-        container.add([bg, pointsText]);
-        container.setDepth(100);
-        
-        return {
-            container: container,
-            pointsText: pointsText,
-            update: () => {
-                pointsText.setText(`Points: ${this.getTotalPoints()}`);
-            }
-        };
-    }
-
-    // Debug method to test the point system
-    debugTestPoints() {
-        console.log('=== TESTING POINT SYSTEM ===');
-        
-        // Test basic point addition
-        this.addPoints(50, 'Python', 'Test points');
-        console.log(`Total points: ${this.getTotalPoints()}`);
-        console.log(`Python points: ${this.getTopicPoints('Python')}`);
-        
-        // Test quiz completion
-        const testQuizResults = {
-            correctAnswers: 8,
-            totalQuestions: 10,
-            comboCount: 5,
-            averageAnswerTime: 3.5,
-            timePerQuestion: 10,
-            topic: 'Python',
-            difficulty: 'hard'
-        };
-        
-        const pointsEarned = this.awardQuizPoints(testQuizResults);
-        console.log(`Points earned from test quiz: ${pointsEarned}`);
-        
-        // Test statistics
-        const stats = this.getPointsStatistics();
-        console.log('Point statistics:', stats);
-        
-        console.log('=== END TEST ===');
-    }
-
-    // Quick test method to add some points for testing
-    quickTestPoints() {
-        console.log('Adding test points...');
-        this.addPoints(150, 'Python', 'Test Python quiz');
-        this.addPoints(200, 'Web_Design', 'Test Web Design quiz');
-        this.addPoints(75, 'Java', 'Test Java quiz');
-        console.log(`Total points: ${this.getTotalPoints()}`);
     }
 
     // ...existing code...

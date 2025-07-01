@@ -51,14 +51,6 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.persistentElements = [];this.enemyHpBarHeight = 10;
         this.gameTimer = null;
         this.comboMeter = null;
-        
-        // Point system tracking
-        this.quizStartTime = 0;
-        this.answerTimes = []; // Track time taken for each answer
-        this.currentQuestionStartTime = 0;
-        this.maxComboReached = 0;
-        this.difficulty = 'medium'; // Default difficulty
-        
         this.playerConfig = {
             maxHP: 100,
             currentHP: gameManager.getPlayerHP(), // Initialize from GameManager
@@ -81,14 +73,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.isQuizStarted = false;
         this.courseTopic = data.topic || null; // Store course topic for completion tracking
         this.enemyDefeated = false; // Track if enemy was defeated
-        this.playerDamage = data.playerDamage || 10; // Player damage per correct answer
-        
-        // Initialize point system tracking
-        this.quizStartTime = 0;
-        this.answerTimes = [];
-        this.currentQuestionStartTime = 0;
-        this.maxComboReached = 0;
-        this.difficulty = data.difficulty || 'medium'; // Get difficulty from data// Define available enemy sprites (only include existing files)
+        this.playerDamage = data.playerDamage || 10; // Player damage per correct answer// Define available enemy sprites (only include existing files)
         const availableEnemies = [
             'goblinNerd', 
             'bigSlime',
@@ -171,7 +156,6 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         showGameOver(this);
     }    startQuiz(initialTime = 30) {        if (!this.isQuizStarted) {
             this.isQuizStarted = true;
-            this.quizStartTime = Date.now(); // Record quiz start time
             const sf = this.scaleFactor;
               // Timer at top right
             const timerElements = this.gameTimer.create(this.scale.width - 70 * sf, 30 * sf, initialTime);
@@ -203,9 +187,6 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.isAnswering = false; // <-- Reset answering state at the start of every question
         this.scaleFactor = this.getScaleFactor();
         const sf = this.scaleFactor;
-        
-        // Record question start time for answer speed tracking
-        this.currentQuestionStartTime = Date.now();
         
         // Sync playerConfig HP from GameManager before showing question
         this.playerConfig.currentHP = gameManager.getPlayerHP();
@@ -245,17 +226,11 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             sf,
             type,
             (index, answer) => this.checkAnswer(index, answer)
-        );        // Player hearts at top left
+        );// Player hearts at top left
         const heartsX = 140 * sf; // Move to top left
         const heartsY = 30 * sf;
         this.playerContainer = createPlayerUI(this, heartsX, heartsY, this.playerConfig, sf);
         this.quizElements.push(this.playerContainer);
-
-        // Add small points display (top-left, below hearts)
-        if (!this.pointsDisplay) {
-            this.pointsDisplay = gameManager.createPointsDisplay(this, heartsX, heartsY + 60 * sf, sf * 0.8);
-            this.quizElements.push(this.pointsDisplay.container);
-        }
     }    cleanupQuestionElements() {
         // Clean up fill-in-the-blank keyboard listeners if they exist
         if (this._fillInBlankCleanup) {
@@ -386,10 +361,6 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         if (this.isAnswering) return;
         this.isAnswering = true;
         
-        // Track answer time
-        const answerTime = (Date.now() - this.currentQuestionStartTime) / 1000;
-        this.answerTimes.push(answerTime);
-        
         const currentQuestion = this.questions[this.currentQuestionIndex];
         let isCorrect = false;
         
@@ -417,12 +388,6 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             // Update combo meter first
             this.comboMeter.updateCombo(true, sf);
             
-            // Track max combo reached
-            const currentCombo = this.comboMeter.getCurrentCombo();
-            if (currentCombo > this.maxComboReached) {
-                this.maxComboReached = currentCombo;
-            }
-            
             // Apply score multiplier
             const multiplier = this.comboMeter.getScoreMultiplier();
             const scoreIncrease = Math.round(1 * multiplier);
@@ -443,9 +408,6 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 // Enemy defeated
                 this.enemyDefeated = true;
                 console.log('Enemy defeated in quiz scene! Flag set to true.');
-                
-                // Calculate and award points before ending
-                this.awardQuizPoints();
                 
                 // Play enemy death animation first, then show victory
                 this.gameTimer.resume(); // Resume timer before playing death animation
@@ -491,9 +453,8 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         }
         // --- Wait 1 second before next question or ending ---
         this.time.delayedCall(1000, () => {
-            // If this is the last question, calculate and award points before victory
+            // If this is the last question, show victory after the delay
             if (this.currentQuestionIndex >= this.questions.length - 1) {
-                this.awardQuizPoints();
                 this.gameTimer.resume();
                 showVictory(this);
                 return;
@@ -510,13 +471,6 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.currentQuestionIndex = 0;
         this.isQuizStarted = false;
         this.isAnswering = false; // <-- Reset answering state
-        
-        // Reset point tracking variables
-        this.quizStartTime = 0;
-        this.answerTimes = [];
-        this.currentQuestionStartTime = 0;
-        this.maxComboReached = 0;
-        
         this.playerConfig.currentHP = gameManager.getPlayerHP(); // Get current HP from GameManager
         this.enemyHPState.currentHP = this.enemyHPState.maxHP;
         this.cleanupAllElements();
@@ -720,36 +674,5 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             if (el && el.active) el.destroy();
         });
         this.persistentElements = [];
-    }
-
-    // Calculate and award points for the completed quiz
-    awardQuizPoints() {
-        if (!this.questions || this.questions.length === 0) return;
-        
-        // Calculate average answer time
-        const totalAnswerTime = this.answerTimes.reduce((sum, time) => sum + time, 0);
-        const averageAnswerTime = totalAnswerTime / this.answerTimes.length;
-        
-        // Estimate time per question (can be customized per quiz)
-        const timePerQuestion = 10; // seconds
-        
-        // Prepare quiz results for point calculation
-        const quizResults = {
-            correctAnswers: this.correctAnswers,
-            totalQuestions: this.questions.length,
-            comboCount: this.maxComboReached,
-            averageAnswerTime: averageAnswerTime,
-            timePerQuestion: timePerQuestion,
-            topic: this.courseTopic,
-            difficulty: this.difficulty
-        };
-        
-        // Award points through GameManager
-        const pointsEarned = gameManager.awardQuizPoints(quizResults);
-        
-        console.log(`Quiz completed! Earned ${pointsEarned} points.`);
-        console.log(`Stats: ${this.correctAnswers}/${this.questions.length} correct, Max combo: ${this.maxComboReached}, Avg time: ${averageAnswerTime.toFixed(1)}s`);
-        
-        return pointsEarned;
     }
 }

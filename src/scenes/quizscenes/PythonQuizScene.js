@@ -8,14 +8,8 @@ export default class PythonQuizScene extends BaseQuizScene {
     }
 
     init(data) {
-        // Set topic and difficulty for point calculation
-        const topicData = {
-            ...data,
-            topic: 'Python', // Use the gameManager topic key
-            difficulty: data.difficulty || 'medium' // Default to medium difficulty
-        };
-        super.init(topicData);
-        this.topic = data.topic || 'python'; // Keep for JSON loading
+        super.init(data);
+        this.topic = data.topic || 'python';
     }    preload() {
         // Call parent preload to load base assets
         super.preload();

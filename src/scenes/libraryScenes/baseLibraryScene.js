@@ -10,6 +10,8 @@ class BaseLibraryScene extends Phaser.Scene {
         });
         this.isPopupOpen = false;
         this.libraryData = null;
+        this.editingNote = null; // Track which note is being edited
+        this.noteOptionsVisible = false; // Track if note options menu is visible
     }
 
     init(data) {
@@ -27,6 +29,7 @@ class BaseLibraryScene extends Phaser.Scene {
         this.load.json('libraryData', `/library/library.json`);
         this.load.json('booksData', `/library/books.json`);
         this.load.json('progressData', `/library/progress.json`);
+        this.load.json('notesData', `/library/notes.json`);
         
         // Optional: Load audio and other assets
         // this.load.audio('pageFlip', 'assets/library/page-flip.wav');
@@ -55,8 +58,13 @@ class BaseLibraryScene extends Phaser.Scene {
         // Ensure popup is properly hidden initially
         if (this.popupContainer) {
             this.popupContainer.setVisible(false);
-            const offScreenX = this.cameras.main.width + 100; // Off screen to the right
+            const offScreenX = this.cameras.main.width + (this.cameras.main.width / 4);
             this.popupContainer.setPosition(offScreenX, this.cameras.main.height / 2);
+        }
+        
+        if (this.overlay) {
+            this.overlay.setVisible(false);
+            this.overlay.setAlpha(0);
         }
     }
 
@@ -65,7 +73,8 @@ class BaseLibraryScene extends Phaser.Scene {
         this.libraryData = {
             main: this.cache.json.get('libraryData'),
             books: this.cache.json.get('booksData'),
-            progress: this.cache.json.get('progressData')
+            progress: this.cache.json.get('progressData'),
+            notes: this.cache.json.get('notesData')
         };
     }
 
@@ -75,7 +84,10 @@ class BaseLibraryScene extends Phaser.Scene {
             this.libraryData.main = {
                 title: "LIBRARY MENU",
                 menuItems: [
-                    { name: 'Books', hasPopup: true, icon: '📚' }
+                    { name: 'Books', hasPopup: true, icon: '📚' },
+                    { name: 'Progress', hasPopup: true, icon: '📊' },
+                    { name: 'Notes', hasPopup: true, icon: '📝' },
+                    { name: 'Settings', hasPopup: false, icon: '⚙️' }
                 ]
             };
         }
@@ -104,9 +116,21 @@ class BaseLibraryScene extends Phaser.Scene {
         if (!this.libraryData.progress) {
             this.libraryData.progress = {
                 stats: [
-                    { label: 'Books Read', value: 0, max: 20, color: '#3498DB' }
+                    { label: 'Books Read', value: 0, max: 20, color: '#3498DB' },
+                    { label: 'Notes Written', value: 0, max: 50, color: '#E74C3C' }
                 ],
                 achievements: []
+            };
+        }
+
+        if (!this.libraryData.notes) {
+            this.libraryData.notes = {
+                categories: [
+                    {
+                        name: "Study Notes",
+                        notes: []
+                    }
+                ]
             };
         }
     }
@@ -178,6 +202,11 @@ class BaseLibraryScene extends Phaser.Scene {
         // If the book wasn't previously completed, update the progress
         if (this.getBookStatusColor(previousStatus) !== 0xE74C3C) {
             this.updateBooksReadProgress();
+            
+            // Refresh the popup content if it's currently showing Progress
+            if (this.isPopupOpen && this.currentPopupType === 'Progress') {
+                this.updatePopupContent('Progress');
+            }
         }
         
         console.log(`Book "${book.title}" marked as completed!`);
@@ -225,26 +254,29 @@ class BaseLibraryScene extends Phaser.Scene {
     showPopup(contentType) {
         if (this.isPopupOpen) return;
         
-        if (!this.popupContainer || !this.popupContent) {
-            console.warn('Popup container not properly initialized');
-            return;
-        }
-        
         this.isPopupOpen = true;
         this.currentPopupType = contentType;
         this.popupScrollY = 0; // Reset scroll position
         
+        this.overlay.setVisible(true);
         this.updatePopupContent(contentType);
         this.popupContainer.setVisible(true);
         
-        // Position popup at 65% from left (more centered, not stuck to right)
-        const targetX = this.cameras.main.width * 0.65;
+        const targetX = this.cameras.main.width - (this.cameras.main.width / 4);
         
         this.tweens.add({
             targets: this.popupContainer,
             x: targetX,
             duration: 400,
             ease: 'Power3.easeOut'
+        });
+        
+        this.overlay.setAlpha(0);
+        this.tweens.add({
+            targets: this.overlay,
+            alpha: 1,
+            duration: 200,
+            ease: 'Power2.easeOut'
         });
     }
     
@@ -254,7 +286,7 @@ class BaseLibraryScene extends Phaser.Scene {
             return;
         }
         
-        const offScreenX = this.cameras.main.width + 100; // Move off screen to the right
+        const offScreenX = this.cameras.main.width + (this.cameras.main.width / 4);
         
         this.tweens.add({
             targets: this.popupContainer,
@@ -268,14 +300,16 @@ class BaseLibraryScene extends Phaser.Scene {
                 if (onComplete) onComplete();
             }
         });
+        
+        this.tweens.add({
+            targets: this.overlay,
+            alpha: 0,
+            duration: 300,
+            ease: 'Power2.easeIn'
+        });
     }
     
     updatePopupContent(contentType) {
-        if (!this.popupContent) {
-            console.warn('popupContent not initialized yet');
-            return;
-        }
-        
         this.popupContent.removeAll(true);
         this.popupContent.y = 0; // Reset position
         this.popupTitle.setText(contentType.toUpperCase());
@@ -283,6 +317,12 @@ class BaseLibraryScene extends Phaser.Scene {
         switch(contentType) {
             case 'Books':
                 LibraryUI.createBooksContent(this);
+                break;
+            case 'Progress':
+                LibraryUI.createProgressContent(this);
+                break;
+            case 'Notes':
+                LibraryUI.createNotesContent(this);
                 break;
         }
     }
@@ -300,6 +340,165 @@ class BaseLibraryScene extends Phaser.Scene {
         this.popupContent.y = this.popupScrollY;
     }
 
+    /**
+     * Helper method to get the color associated with a book status
+     * @param {string} status - The book status
+     * @returns {number} - The color hex value
+     */
+    getBookStatusColor(status) {
+        switch(status.toLowerCase()) {
+            case 'available':
+                return 0x27AE60; // Green
+            case 'reading':
+                return 0xF39C12; // Orange
+            case 'completed':
+            case 'read':
+            case 'finished':
+                return 0xE74C3C; // Red - This triggers the progress update
+            case 'unavailable':
+            case 'locked':
+                return 0x95A5A6; // Gray
+            default:
+                return 0x27AE60; // Default to available (green)
+        }
+    }
+
+    /**
+     * Method to mark a book as completed and update progress
+     * @param {Object} book - The book object to mark as completed
+     */
+    markBookAsCompleted(book) {
+        const previousStatus = book.status;
+        book.status = 'completed'; // or 'read' or 'finished'
+        
+        // If the book wasn't previously completed, update the progress
+        if (this.getBookStatusColor(previousStatus) !== 0xE74C3C) {
+            this.updateBooksReadProgress();
+            
+            // Refresh the popup content if it's currently showing Progress
+            if (this.isPopupOpen && this.currentPopupType === 'Progress') {
+                this.updatePopupContent('Progress');
+            }
+        }
+        
+        console.log(`Book "${book.title}" marked as completed!`);
+    }
+
+    setupBackground() {
+        this.background = this.add.image(0, 0, 'libraryBg');
+        this.background.setOrigin(0, 0);
+        // Modern: Add a semi-transparent overlay for glassmorphism
+        const overlay = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0xffffff, 0.15);
+        overlay.setOrigin(0, 0);
+        overlay.setDepth(1);
+        
+        // Calculate scale to cover entire screen
+        const scaleX = this.cameras.main.width / this.background.width;
+        const scaleY = this.cameras.main.height / this.background.height;
+        const scale = Math.max(scaleX, scaleY);
+        
+        this.background.setScale(scale);
+        this.background.setPosition(
+            (this.cameras.main.width - this.background.displayWidth) / 2,
+            (this.cameras.main.height - this.background.displayHeight) / 2
+        );
+    }
+    
+    // Helper to create a rounded rectangle as a graphics texture
+    createRoundedRectTexture(key, width, height, radius, fillColor, fillAlpha, strokeColor, strokeAlpha, strokeWidth, shadowColor, shadowAlpha, shadowBlur) {
+        const graphics = this.add.graphics();
+        graphics.clear();
+        if (shadowColor && shadowBlur) {
+            graphics.fillStyle(shadowColor, shadowAlpha || 0.15);
+            graphics.fillRoundedRect(4, 4, width, height, radius);
+        }
+        // Set fillAlpha to 1 for opaque backgrounds
+        graphics.fillStyle(fillColor, fillAlpha === undefined ? 1 : fillAlpha);
+        graphics.fillRoundedRect(0, 0, width, height, radius);
+        if (strokeColor && strokeWidth) {
+            graphics.lineStyle(strokeWidth, strokeColor, strokeAlpha || 1);
+            graphics.strokeRoundedRect(0, 0, width, height, radius);
+        }
+        graphics.generateTexture(key, width + 8, height + 8);
+        graphics.destroy();
+    }
+
+    showPopup(contentType) {
+        if (this.isPopupOpen) return;
+        
+        this.isPopupOpen = true;
+        this.currentPopupType = contentType;
+        this.popupScrollY = 0; // Reset scroll position
+        
+        this.overlay.setVisible(true);
+        this.updatePopupContent(contentType);
+        this.popupContainer.setVisible(true);
+        
+        const targetX = this.cameras.main.width - (this.cameras.main.width / 4);
+        
+        this.tweens.add({
+            targets: this.popupContainer,
+            x: targetX,
+            duration: 400,
+            ease: 'Power3.easeOut'
+        });
+        
+        this.overlay.setAlpha(0);
+        this.tweens.add({
+            targets: this.overlay,
+            alpha: 1,
+            duration: 200,
+            ease: 'Power2.easeOut'
+        });
+    }
+    
+    hidePopup(onComplete) {
+        if (!this.isPopupOpen) {
+            if (onComplete) onComplete();
+            return;
+        }
+        
+        const offScreenX = this.cameras.main.width + (this.cameras.main.width / 4);
+        
+        this.tweens.add({
+            targets: this.popupContainer,
+            x: offScreenX,
+            duration: 300,
+            ease: 'Power3.easeIn',
+            onComplete: () => {
+                this.popupContainer.setVisible(false);
+                this.isPopupOpen = false;
+                this.currentPopupType = null;
+                if (onComplete) onComplete();
+            }
+        });
+        
+        this.tweens.add({
+            targets: this.overlay,
+            alpha: 0,
+            duration: 300,
+            ease: 'Power2.easeIn'
+        });
+    }
+    
+    updatePopupContent(contentType) {
+        this.popupContent.removeAll(true);
+        this.popupContent.y = 0; // Reset position
+        this.popupTitle.setText(contentType.toUpperCase());
+        
+        switch(contentType) {
+            case 'Books':
+                LibraryUI.createBooksContent(this);
+                break;
+            case 'Progress':
+                LibraryUI.createProgressContent(this);
+                break;
+            case 'Notes':
+                LibraryUI.createNotesContent(this);
+                break;
+        }
+    }
+
     scrollPopupContent(deltaY) {
         const scrollSpeed = 30;
         this.popupScrollY -= Math.sign(deltaY) * scrollSpeed;
@@ -313,6 +512,226 @@ class BaseLibraryScene extends Phaser.Scene {
         this.popupContent.y = this.popupScrollY;
     }
 
+    showAddNoteDialog() {
+        // Create a simple input dialog
+        const dialogBg = this.add.rectangle(this.cameras.main.width/2, this.cameras.main.height/2, 400, 200, 0xFFFFFF);
+        dialogBg.setStrokeStyle(3, 0x34495E);
+        dialogBg.setDepth(1000);
+        
+        const dialogTitle = this.add.text(this.cameras.main.width/2, this.cameras.main.height/2 - 60, 'Add New Note', {
+            fontSize: '18px',
+            color: '#2C3E50',
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+        }).setOrigin(0.5).setDepth(1001);
+        
+        // Create HTML input element
+        const inputElement = document.createElement('textarea');
+        inputElement.style.position = 'absolute';
+        inputElement.style.left = (this.cameras.main.width/2 + 150) + 'px';
+        inputElement.style.top = (this.cameras.main.height/2 - 20) + 'px';
+        inputElement.style.width = '300px';
+        inputElement.style.height = '60px';
+        inputElement.style.zIndex = '1002';
+        inputElement.placeholder = 'Enter your note here...';
+        document.body.appendChild(inputElement);
+        
+        // Save button
+        const saveBtn = this.add.rectangle(this.cameras.main.width/2 - 50, this.cameras.main.height/2 + 60, 80, 30, 0x27AE60);
+        saveBtn.setStrokeStyle(1, 0x229954);
+        saveBtn.setInteractive();
+        saveBtn.setDepth(1001);
+        
+        const saveText = this.add.text(this.cameras.main.width/2 - 50, this.cameras.main.height/2 + 60, 'Save', {
+            fontSize: '14px',
+            color: '#FFFFFF',
+            fontFamily: 'Arial'
+        }).setOrigin(0.5).setDepth(1001);
+        
+        // Cancel button
+        const cancelBtn = this.add.rectangle(this.cameras.main.width/2 + 50, this.cameras.main.height/2 + 60, 80, 30, 0x6C757D);
+        cancelBtn.setStrokeStyle(1, 0x495057);
+        cancelBtn.setInteractive();
+        cancelBtn.setDepth(1001);
+        
+        const cancelText = this.add.text(this.cameras.main.width/2 + 50, this.cameras.main.height/2 + 60, 'Cancel', {
+            fontSize: '14px',
+            color: '#FFFFFF',
+            fontFamily: 'Arial'
+        }).setOrigin(0.5).setDepth(1001);
+        
+        const dialogElements = [dialogBg, dialogTitle, saveBtn, saveText, cancelBtn, cancelText];
+        
+        const closeDialog = () => {
+            dialogElements.forEach(element => element.destroy());
+            document.body.removeChild(inputElement);
+        };
+        
+        saveBtn.on('pointerdown', () => {
+            const noteContent = inputElement.value.trim();
+            if (noteContent) {
+                this.addNote('Study Notes', {
+                    content: noteContent,
+                    date: new Date().toLocaleDateString(),
+                    id: Date.now()
+                });
+                this.updatePopupContent('Notes');
+            }
+            closeDialog();
+        });
+        
+        cancelBtn.on('pointerdown', () => {
+            closeDialog();
+        });
+        
+        inputElement.focus();
+    }
+
+    showEditNoteDialog(note, categoryName) {
+        // Similar to add dialog but pre-filled with existing note content
+        const dialogBg = this.add.rectangle(this.cameras.main.width/2, this.cameras.main.height/2, 400, 200, 0xFFFFFF);
+        dialogBg.setStrokeStyle(3, 0x34495E);
+        dialogBg.setDepth(1000);
+        
+        const dialogTitle = this.add.text(this.cameras.main.width/2, this.cameras.main.height/2 - 60, 'Edit Note', {
+            fontSize: '18px',
+            color: '#2C3E50',
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+        }).setOrigin(0.5).setDepth(1001);
+        
+        const inputElement = document.createElement('textarea');
+        inputElement.style.position = 'absolute';
+        inputElement.style.left = (this.cameras.main.width/2 - 150) + 'px';
+        inputElement.style.top = (this.cameras.main.height/2 - 20) + 'px';
+        inputElement.style.width = '300px';
+        inputElement.style.height = '60px';
+        inputElement.style.zIndex = '1002';
+        inputElement.value = note.content || note;
+        document.body.appendChild(inputElement);
+        
+        const saveBtn = this.add.rectangle(this.cameras.main.width/2 - 50, this.cameras.main.height/2 + 60, 80, 30, 0x17A2B8);
+        saveBtn.setStrokeStyle(1, 0x138496);
+        saveBtn.setInteractive();
+        saveBtn.setDepth(1001);
+        
+        const saveText = this.add.text(this.cameras.main.width/2 - 50, this.cameras.main.height/2 + 60, 'Update', {
+            fontSize: '14px',
+            color: '#FFFFFF',
+            fontFamily: 'Arial'
+        }).setOrigin(0.5).setDepth(1001);
+        
+        const cancelBtn = this.add.rectangle(this.cameras.main.width/2 + 50, this.cameras.main.height/2 + 60, 80, 30, 0x6C757D);
+        cancelBtn.setStrokeStyle(1, 0x495057);
+        cancelBtn.setInteractive();
+        cancelBtn.setDepth(1001);
+        
+        const cancelText = this.add.text(this.cameras.main.width/2 + 50, this.cameras.main.height/2 + 60, 'Cancel', {
+            fontSize: '14px',
+            color: '#FFFFFF',
+            fontFamily: 'Arial'
+        }).setOrigin(0.5).setDepth(1001);
+        
+        const dialogElements = [dialogBg, dialogTitle, saveBtn, saveText, cancelBtn, cancelText];
+        
+        const closeDialog = () => {
+            dialogElements.forEach(element => element.destroy());
+            document.body.removeChild(inputElement);
+        };
+        
+        saveBtn.on('pointerdown', () => {
+            const noteContent = inputElement.value.trim();
+            if (noteContent) {
+                this.editNote(note.id || note, categoryName, {
+                    content: noteContent,
+                    date: note.date || new Date().toLocaleDateString(),
+                    id: note.id || Date.now()
+                });
+                this.updatePopupContent('Notes');
+            }
+            closeDialog();
+        });
+        
+        cancelBtn.on('pointerdown', () => {
+            closeDialog();
+        });
+        
+        inputElement.focus();
+        inputElement.select();
+    }
+
+
+    showRemoveNoteConfirmation(note, categoryName) {
+        const dialogBg = this.add.rectangle(this.cameras.main.width/2, this.cameras.main.height/2, 350, 150, 0xFFFFFF);
+        dialogBg.setStrokeStyle(3, 0xDC3545);
+        dialogBg.setDepth(1000);
+        
+        const dialogTitle = this.add.text(this.cameras.main.width/2, this.cameras.main.height/2 - 30, 'Remove Note', {
+            fontSize: '18px',
+            color: '#DC3545',
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+        }).setOrigin(0.5).setDepth(1001);
+        
+        const confirmText = this.add.text(this.cameras.main.width/2, this.cameras.main.height/2, 'Are you sure you want to remove this note?', {
+            fontSize: '14px',
+            color: '#2C3E50',
+            fontFamily: 'Arial'
+        }).setOrigin(0.5).setDepth(1001);
+        
+        const removeBtn = this.add.rectangle(this.cameras.main.width/2 - 60, this.cameras.main.height/2 + 40, 80, 30, 0xDC3545);
+        removeBtn.setStrokeStyle(1, 0xC82333);
+        removeBtn.setInteractive();
+        removeBtn.setDepth(1001);
+        
+        const removeText = this.add.text(this.cameras.main.width/2 - 60, this.cameras.main.height/2 + 40, 'Remove', {
+            fontSize: '14px',
+            color: '#FFFFFF',
+            fontFamily: 'Arial'
+        }).setOrigin(0.5).setDepth(1001);
+        
+        const cancelBtn = this.add.rectangle(this.cameras.main.width/2 + 60, this.cameras.main.height/2 + 40, 80, 30, 0x6C757D);
+        cancelBtn.setStrokeStyle(1, 0x495057);
+        cancelBtn.setInteractive();
+        cancelBtn.setDepth(1001);
+        
+        const cancelText = this.add.text(this.cameras.main.width/2 + 60, this.cameras.main.height/2 + 40, 'Cancel', {
+            fontSize: '14px',
+            color: '#FFFFFF',
+            fontFamily: 'Arial'
+        }).setOrigin(0.5).setDepth(1001);
+        
+        const dialogElements = [dialogBg, dialogTitle, confirmText, removeBtn, removeText, cancelBtn, cancelText];
+        
+        const closeDialog = () => {
+            dialogElements.forEach(element => element.destroy());
+        };
+        
+        removeBtn.on('pointerdown', () => {
+            this.removeNote(note.id || note);
+            this.updatePopupContent('Notes');
+            closeDialog();
+        });
+        
+        cancelBtn.on('pointerdown', () => {
+            closeDialog();
+        });
+    }
+
+    editNote(noteId, categoryName, updatedNoteData) {
+        const category = this.libraryData.notes.categories.find(cat => cat.name === categoryName);
+        if (category) {
+            const noteIndex = category.notes.findIndex(note => 
+                (note.id && note.id === noteId) || note === noteId
+            );
+            if (noteIndex !== -1) {
+                category.notes[noteIndex] = updatedNoteData;
+                this.saveData();
+                this.syncWithNotesJson();
+            }
+        }
+    }
+    
     handleBookAction(book) {
         console.log(`Reading book: ${book.title}`);
         book.status = 'reading';
@@ -354,6 +773,32 @@ class BaseLibraryScene extends Phaser.Scene {
         this.updateBooksReadProgress();
     }
 
+addNote(categoryName, noteData) {
+    const category = this.libraryData.notes.categories.find(cat => cat.name === categoryName);
+    if (category) {
+        if (typeof noteData === 'string') {
+            noteData = {
+                content: noteData,
+                date: new Date().toLocaleDateString(),
+                id: Date.now()
+            };
+        }
+        category.notes.push(noteData);
+        this.saveData();
+        this.syncWithNotesJson();
+    }
+}
+
+    removeNote(noteId) {
+        this.libraryData.notes.categories.forEach(category => {
+            category.notes = category.notes.filter(note => 
+                (note.id && note.id !== noteId) && note !== noteId
+            );
+        });
+        this.saveData();
+        this.syncWithNotesJson();
+    }
+
     updateProgress(statLabel, newValue) {
         const stat = this.libraryData.progress.stats.find(s => s.label === statLabel);
         if (stat) {
@@ -383,6 +828,27 @@ class BaseLibraryScene extends Phaser.Scene {
             console.warn('Could not load library data from localStorage');
         }
     }
+
+async syncWithNotesJson() {
+    try {
+        // In a real implementation, you would make an API call to update the server-side notes.json
+        // For now, we'll simulate this with a console log
+        console.log('Syncing notes with /library/notes.json:', this.libraryData.notes);
+        
+        // Example of what the server sync would look like:
+        /*
+        await fetch('/api/library/notes', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(this.libraryData.notes)
+        });
+        */
+    } catch (error) {
+        console.error('Failed to sync notes with server:', error);
+    }
+}
 }
 
 

@@ -3,7 +3,6 @@ import VNDialogueBox from '../ui/VNDialogueBox';
 import Carousel from '../ui/carouselUI.js';
 import { playExclusiveBGM } from '../audioUtils';
 import { onceOnlyFlags } from '../gameManager';
-import gameManager from '../gameManager.js';
 import { createBackButton } from '../components/buttons/backbutton.js';
 
 const BASE_WIDTH = 816;
@@ -78,14 +77,7 @@ export default class MainHub extends Phaser.Scene {
         if (this.cameras && this.cameras.main) {
             this.cameras.main.setBackgroundColor('#87ceeb');
         }
-        this.uiElements.push(this.bg);
-
-        // Add points display in top-right corner
-        const pointsDisplay = gameManager.createPointsDisplay(this, width - 100 * this.scaleFactor, 40 * this.scaleFactor, this.scaleFactor);
-        this.pointsDisplay = pointsDisplay;
-        this.uiElements.push(pointsDisplay.container);
-
-        this.se_hoverSound = this.sound.add('se_select');
+        this.uiElements.push(this.bg);        this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
 
         const iconKeys = ['icon1', 'icon2', 'icon3', 'icon4'];
@@ -162,11 +154,6 @@ export default class MainHub extends Phaser.Scene {
     update() {
         if (this.bg) {
             this.bg.tilePositionY -= 1;
-        }
-        
-        // Update points display if it exists
-        if (this.pointsDisplay) {
-            this.pointsDisplay.update();
         }
     }
 }
