@@ -38,6 +38,12 @@ export default class ComputerLab extends Phaser.Scene {
         // Use the shared back button (top-left, consistent style)
         createBackButton(this, 'MainHub');
 
+        // Add points display in top-right corner
+        const { width } = this.scale;
+        const scaleFactor = Math.min(width / 816, this.scale.height / 624); // Using BASE_WIDTH and BASE_HEIGHT
+        const pointsDisplay = gameManager.createPointsDisplay(this, width - 100 * scaleFactor, 40 * scaleFactor, scaleFactor);
+        this.pointsDisplay = pointsDisplay;
+
         // Add sound effects
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');        // Define carousel data
@@ -97,5 +103,12 @@ export default class ComputerLab extends Phaser.Scene {
                 this.scene.start('CSharpScene', { topic: 'C#' });
             }
         }, lockedStates);
+    }
+
+    update() {
+        // Update points display if it exists
+        if (this.pointsDisplay) {
+            this.pointsDisplay.update();
+        }
     }
 }

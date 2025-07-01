@@ -3,55 +3,133 @@
 
 export default class LibraryUI {
     static createMainMenu(scene) {
-        // Modern card background with shadow
-        scene.mainMenuContainer = scene.add.container(350, 400);
-        scene.createRoundedRectTexture('menuBgTex', 280, 440, 32, 0xffffff, 1, 0x3498db, 0.10, 0, 0x3498db, 0.10, 16);
-        const menuBg = scene.add.image(0, 0, 'menuBgTex').setOrigin(0.5).setDepth(2);
-        menuBg.setAlpha(0.98);
-        // Modern shadow for card
-        // (Phaser doesn't support shadow for images, so we use a slightly offset, semi-transparent rectangle)
-        const menuShadow = scene.add.rectangle(6, 8, 280, 440, 0x3498db, 0.10).setOrigin(0.5).setDepth(1);
-        scene.mainMenuContainer.add(menuShadow);
+        // Get responsive dimensions
+        const sf = scene.scaleFactor || 1;
+        const screenWidth = scene.scale.width;
+        const screenHeight = scene.scale.height;
+        const centerY = screenHeight / 2;
+        
+        // Position menu to the left side
+        const menuX = Math.min(200 * sf, screenWidth * 0.25);
+        scene.mainMenuContainer = scene.add.container(menuX, centerY);
+        
+        // Main menu panel with game's design style
+        const panelWidth = Math.min(320 * sf, screenWidth * 0.8);
+        const itemCount = scene.libraryData.main.menuItems.length;
+        const minHeight = 200 + (itemCount * 10);
+        const panelHeight = Math.min(minHeight * sf, screenHeight * 0.7);
+        
+        // Create background with gradient like feedbackUI
+        const menuBg = scene.add.graphics();
+        
+        // Outer glow effect
+        menuBg.fillStyle(0x63b3ed, 0.3);
+        menuBg.fillRoundedRect(
+            -panelWidth/2 - 8 * sf,
+            -panelHeight/2 - 8 * sf,
+            panelWidth + 16 * sf,
+            panelHeight + 16 * sf,
+            20 * sf
+        );
+        
+        // Main panel with gradient
+        menuBg.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x2d3748, 0x2d3748, 0.95);
+        menuBg.fillRoundedRect(
+            -panelWidth/2,
+            -panelHeight/2,
+            panelWidth,
+            panelHeight,
+            16 * sf
+        );
+        
+        // Border
+        menuBg.lineStyle(3 * sf, 0x63b3ed, 0.8);
+        menuBg.strokeRoundedRect(
+            -panelWidth/2,
+            -panelHeight/2,
+            panelWidth,
+            panelHeight,
+            16 * sf
+        );
+        
+        menuBg.setDepth(2);
         scene.mainMenuContainer.add(menuBg);
-        // Modern title
-        const title = scene.add.text(0, -170, scene.libraryData.main.title, {
-            fontSize: '32px',
-            color: '#222',
-            fontFamily: 'Arial Black',
-            fontStyle: 'bold',
-            shadow: { offsetX: 0, offsetY: 2, color: '#b0d4f1', blur: 6, fill: true }
+        
+        // Title with game's style
+        const title = scene.add.text(0, -panelHeight/2 + 50 * sf, scene.libraryData.main.title, {
+            fontSize: `${Math.min(32 * sf, 28)}px`,
+            color: '#ffd700',
+            fontFamily: 'Caprasimo-Regular',
+            stroke: '#1a1a2e',
+            strokeThickness: 2 * sf
         }).setOrigin(0.5);
         scene.mainMenuContainer.add(title);
+        
+        // Menu items with reduced spacing
+        const startY = -panelHeight/2 + 100 * sf;
+        const buttonSpacing = Math.min(60 * sf, Math.max(50 * sf, (panelHeight - 160 * sf) / scene.libraryData.main.menuItems.length));
+        
         scene.libraryData.main.menuItems.forEach((item, index) => {
-            const y = -70 + (index * 70);
-            const btnKey = `menuBtnTex_${index}`;
-            const btnKeyHover = `menuBtnTex_${index}_hover`;
-            const btnKeyActive = `menuBtnTex_${index}_active`;
-            // Modern pill button
-            scene.createRoundedRectTexture(btnKey, 220, 54, 27, 0xffffff, 1, 0x1abc9c, 0.18, 2, 0x3498db, 0.10, 8);
-            scene.createRoundedRectTexture(btnKeyHover, 220, 54, 27, 0x1abc9c, 0.12, 0x1abc9c, 0.18, 2);
-            scene.createRoundedRectTexture(btnKeyActive, 220, 54, 27, 0x3498db, 0.18, 0x1abc9c, 0.18, 2);
-            const btnBg = scene.add.image(0, y, btnKey).setOrigin(0.5);
-            // Modern icon (use emoji or item.icon if available)
+            const y = startY + (index * buttonSpacing);
+            const buttonWidth = panelWidth * 0.8;
+            const buttonHeight = Math.min(54 * sf, 45);
+            
+            // Button background with game's style
+            const btnBg = scene.add.graphics();
+            
+            btnBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 1);
+            btnBg.fillRoundedRect(
+                -buttonWidth/2,
+                y - buttonHeight/2,
+                buttonWidth,
+                buttonHeight,
+                8 * sf
+            );
+            
+            btnBg.lineStyle(2 * sf, 0x63b3ed, 0.8);
+            btnBg.strokeRoundedRect(
+                -buttonWidth/2,
+                y - buttonHeight/2,
+                buttonWidth,
+                buttonHeight,
+                8 * sf
+            );
+            
+            btnBg.setDepth(3);
+            btnBg.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+            
+            // Icon and text
             const icon = item.icon ? item.icon : ['📚','📊','📝','⚙️'][index] || '';
             const btnText = scene.add.text(0, y, `${icon}  ${item.name}`, {
-                fontSize: '20px',
-                color: '#1abc9c',
-                fontFamily: 'Arial Black',
-                fontStyle: 'bold',
-                shadow: { offsetX: 0, offsetY: 1, color: '#b0d4f1', blur: 2, fill: true }
+                fontSize: `${Math.min(18 * sf, 16)}px`,
+                color: '#ffd700',
+                fontFamily: 'Caprasimo-Regular',
+                stroke: '#1a1a2e',
+                strokeThickness: 1 * sf
             }).setOrigin(0.5);
-            btnBg.setInteractive({ useHandCursor: true });
+            
+            // Interactive effects
             btnBg.on('pointerover', () => {
-                btnBg.setTexture(btnKeyHover);
-                btnText.setColor('#fff');
+                btnBg.clear();
+                btnBg.fillGradientStyle(0x63b3ed, 0x63b3ed, 0x3498db, 0x3498db, 0.8);
+                btnBg.fillRoundedRect(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight, 8 * sf);
+                btnBg.lineStyle(2 * sf, 0xffd700, 1);
+                btnBg.strokeRoundedRect(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight, 8 * sf);
+                btnText.setColor('#ffffff');
+                btnText.setScale(1.05);
             });
+            
             btnBg.on('pointerout', () => {
-                btnBg.setTexture(btnKey);
-                btnText.setColor('#1abc9c');
+                btnBg.clear();
+                btnBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 1);
+                btnBg.fillRoundedRect(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight, 8 * sf);
+                btnBg.lineStyle(2 * sf, 0x63b3ed, 0.8);
+                btnBg.strokeRoundedRect(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight, 8 * sf);
+                btnText.setColor('#ffd700');
+                btnText.setScale(1);
             });
+            
             btnBg.on('pointerdown', () => {
-                btnBg.setTexture(btnKeyActive);
                 if (item.hasPopup) {
                     if (scene.isPopupOpen) {
                         if (scene.currentPopupType === item.name) return;
@@ -63,339 +141,357 @@ export default class LibraryUI {
                     scene.handleMenuClick(item.name);
                 }
             });
-            btnBg.on('pointerup', () => {
-                btnBg.setTexture(btnKeyHover);
-            });
+            
             scene.mainMenuContainer.add([btnBg, btnText]);
         });
     }
 
     static createPopupContainer(scene) {
-        const popupWidth = scene.cameras.main.width / 2;
-        const popupHeight = scene.cameras.main.height;
-        const popupX = scene.cameras.main.width + (popupWidth / 2);
-        const popupY = scene.cameras.main.height / 2;
+        const sf = scene.scaleFactor || 1;
+        const screenWidth = scene.scale.width;
+        const screenHeight = scene.scale.height;
+        
+        // Position popup more to the left
+        const isSmallScreen = screenWidth < 768;
+        const popupWidth = isSmallScreen ? screenWidth * 0.5 : Math.min(screenWidth * 0.45, 500 * sf);
+        const popupHeight = isSmallScreen ? screenHeight * 0.85 : screenHeight * 0.8;
+        const popupX = screenWidth * 0.55; // Moved more to the left (was 0.65)
+        const popupY = screenHeight / 2;
+        
         scene.popupContainer = scene.add.container(popupX, popupY);
-        scene.overlay = scene.add.rectangle(-popupWidth, 0, popupWidth, popupHeight, 0x222222, 0.18);
-        scene.overlay.setOrigin(0, 0.5);
-        scene.overlay.setInteractive();
-        scene.overlay.on('pointerdown', () => { scene.hidePopup(); });
-        scene.overlay.setVisible(false);
-        scene.createRoundedRectTexture('popupBgTex', popupWidth, popupHeight, 0, 0xffffff, 1, 0x3498db, 1, 6, 0x3498db, 0.10, 24);
-        scene.popupBg = scene.add.rectangle(0, 0, popupWidth, popupHeight, 0xffffff, 1).setOrigin(0.5, 0.5).setDepth(1);
-        // Modern books header redesign
-        // Header bar with rounded corners and drop shadow
-        const headerBarKey = 'modernHeaderBarTex';
-        scene.createRoundedRectTexture(headerBarKey, popupWidth - 40, 70, 24, 0x1abc9c, 1, 0x3498db, 1, 2, 0x3498db, 0.12, 16);
-        const headerBar = scene.add.image(0, -popupHeight/2 + 75, headerBarKey)
-            .setOrigin(0.5)
-            .setDepth(3)
-            .setAlpha(0.98);
-        // Book icon (Unicode or emoji for simplicity)
-        const bookIcon = scene.add.text(-70, -popupHeight/2 + 75, '\uD83D\uDCD6', {
-            fontSize: '36px',
-            fontFamily: 'Arial Black',
-            color: '#fff',
-            fontStyle: 'bold',
-            shadow: { offsetX: 0, offsetY: 2, color: '#1abc9c', blur: 6, fill: true }
-        }).setOrigin(0.5);
-        // Modern title
-        scene.popupTitle = scene.add.text(0, -popupHeight/2 + 75, 'BOOKS', {
-            fontSize: '32px',
-            fontFamily: 'Arial Black',
-            color: '#fff',
-            fontStyle: 'bold',
-            shadow: { offsetX: 0, offsetY: 3, color: '#3498db', blur: 10, fill: true },
-            letterSpacing: 2
-        }).setOrigin(0.5);
-        // Modern close button (circle with hover effect)
-        scene.closeBtn = scene.add.circle(popupWidth/2 - 50, -popupHeight/2 + 75, 18, 0xffffff, 0.85);
-        scene.closeBtn.setStrokeStyle(2, 0xe74c3c);
-        scene.closeBtn.setInteractive({ useHandCursor: true });
-        scene.closeBtn.on('pointerover', () => { scene.closeBtn.setFillStyle(0xe74c3c, 0.85); });
-        scene.closeBtn.on('pointerout', () => { scene.closeBtn.setFillStyle(0xffffff, 0.85); });
+        
+        // No overlay - popup appears directly without background
+        
+        // Popup background with game's design
+        scene.popupBg = scene.add.graphics();
+        
+        // Main background only (removed outer glow)
+        scene.popupBg.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x2d3748, 0x2d3748, 0.95);
+        scene.popupBg.fillRoundedRect(
+            -popupWidth/2,
+            -popupHeight/2,
+            popupWidth,
+            popupHeight,
+            16 * sf
+        );
+        
+        // Border
+        scene.popupBg.lineStyle(4 * sf, 0x63b3ed, 0.8);
+        scene.popupBg.strokeRoundedRect(
+            -popupWidth/2,
+            -popupHeight/2,
+            popupWidth,
+            popupHeight,
+            16 * sf
+        );
+        
+        scene.popupBg.setDepth(1);
+        
+        // Header section - more compact
+        const headerHeight = Math.min(50 * sf, 45);
+        const headerY = -popupHeight/2 + headerHeight/2;
+        
+        // Header background
+        const headerBg = scene.add.graphics();
+        headerBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 1);
+        headerBg.fillRoundedRect(
+            -popupWidth/2 + 10 * sf,
+            -popupHeight/2 + 10 * sf,
+            popupWidth - 20 * sf,
+            headerHeight - 10 * sf,
+            12 * sf
+        );
+        headerBg.setDepth(2);
+        
+        // Book icon
+        const bookIcon = scene.add.text(-popupWidth/3, headerY, '📚', {
+            fontSize: `${Math.min(32 * sf, 28)}px`,
+            fontFamily: 'Arial'
+        }).setOrigin(0.5).setDepth(3);
+        
+        // Title
+        scene.popupTitle = scene.add.text(0, headerY, 'LIBRARY', {
+            fontSize: `${Math.min(28 * sf, 24)}px`,
+            fontFamily: 'Caprasimo-Regular',
+            color: '#ffd700',
+            stroke: '#1a1a2e',
+            strokeThickness: 2 * sf
+        }).setOrigin(0.5).setDepth(3);
+        
+        // Close button with game's style
+        const closeBtnSize = Math.min(32 * sf, 28);
+        scene.closeBtn = scene.add.graphics();
+        scene.closeBtn.fillStyle(0xff4757, 0.8);
+        scene.closeBtn.fillCircle(popupWidth/2 - 30 * sf, headerY, closeBtnSize/2);
+        scene.closeBtn.lineStyle(2 * sf, 0xffffff, 0.8);
+        scene.closeBtn.strokeCircle(popupWidth/2 - 30 * sf, headerY, closeBtnSize/2);
+        scene.closeBtn.setDepth(3);
+        scene.closeBtn.setInteractive(new Phaser.Geom.Circle(popupWidth/2 - 30 * sf, headerY, closeBtnSize/2), Phaser.Geom.Circle.Contains);
+        
+        scene.closeBtnText = scene.add.text(popupWidth/2 - 30 * sf, headerY, '✕', {
+            fontSize: `${Math.min(18 * sf, 16)}px`,
+            color: '#ffffff',
+            fontFamily: 'Arial Black'
+        }).setOrigin(0.5).setDepth(4);
+        
+        scene.closeBtn.on('pointerover', () => {
+            scene.closeBtn.clear();
+            scene.closeBtn.fillStyle(0xff6b7d, 1);
+            scene.closeBtn.fillCircle(popupWidth/2 - 30 * sf, headerY, closeBtnSize/2);
+            scene.closeBtn.lineStyle(2 * sf, 0xffffff, 1);
+            scene.closeBtn.strokeCircle(popupWidth/2 - 30 * sf, headerY, closeBtnSize/2);
+        });
+        
+        scene.closeBtn.on('pointerout', () => {
+            scene.closeBtn.clear();
+            scene.closeBtn.fillStyle(0xff4757, 0.8);
+            scene.closeBtn.fillCircle(popupWidth/2 - 30 * sf, headerY, closeBtnSize/2);
+            scene.closeBtn.lineStyle(2 * sf, 0xffffff, 0.8);
+            scene.closeBtn.strokeCircle(popupWidth/2 - 30 * sf, headerY, closeBtnSize/2);
+        });
+        
         scene.closeBtn.on('pointerdown', () => { scene.hidePopup(); });
-        scene.closeBtnText = scene.add.text(popupWidth/2 - 50, -popupHeight/2 + 75, '✕', {
-            fontSize: '20px',
-            color: '#e74c3c',
-            fontFamily: 'Arial Black',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        // Remove old headerGradient and old popupTitle from container
-        // Add new modern header bar, icon, title, and close button
+        
+        // Content container for scrolling with clipping mask
         scene.popupContent = scene.add.container(0, 0);
         scene.popupScrollY = 0;
-        scene.popupBg.setInteractive();
-        scene.input.mouse.enabled = true;
+        
+        // Create a mask to limit content to popup bounds
+        const maskShape = scene.add.graphics();
+        maskShape.fillStyle(0xffffff);
+        maskShape.fillRoundedRect(
+            -popupWidth/2 + 10,
+            -popupHeight/2 + headerHeight + 20,
+            popupWidth - 20,
+            popupHeight - headerHeight - 40,
+            12
+        );
+        const mask = maskShape.createGeometryMask();
+        scene.popupContent.setMask(mask);
+        
+        // Store dimensions for later use
+        scene.popupDimensions = { width: popupWidth, height: popupHeight, headerHeight };
+        
+        // Mouse wheel scrolling
         scene.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
-            scene.scrollPopupContent(deltaY);
+            if (scene.isPopupOpen) {
+                scene.scrollPopupContent(deltaY);
+            }
         });
+        
         scene.popupContainer.add([
             scene.popupBg,
-            headerBar,
+            headerBg,
             bookIcon,
             scene.closeBtn,
             scene.closeBtnText,
             scene.popupTitle,
             scene.popupContent
         ]);
+        
         scene.popupContainer.setVisible(false);
     }
 
     static createBooksContent(scene) {
-        const popupHeight = scene.cameras.main.height;
-        const headerHeight = 80;
-        const scrollSafeMargin = 32;
-        const startY = (-popupHeight/2) + headerHeight + 60 + scrollSafeMargin;
+        const sf = scene.scaleFactor || 1;
+        const { width: popupWidth, height: popupHeight, headerHeight } = scene.popupDimensions;
+        const isSmallScreen = scene.scale.width < 768;
+        
+        const startY = -popupHeight/2 + headerHeight + 60 * sf; // More space from header
         let yOffset = startY;
+        
         scene._libraryBookElements = [];
         scene._libraryCategoryHeaders = [];
+        
         scene.libraryData.books.categories.forEach((category, categoryIndex) => {
-            // Modern category header
+            // Category header with much better spacing to prevent overlap
             const headerY = yOffset;
-            const catHeaderKey = `catHeaderTex_${categoryIndex}`;
-            scene.createRoundedRectTexture(catHeaderKey, 340, 48, 18, 0x1abc9c, 0.12, 0x3498db, 0.18, 2);
-            const categoryHeaderBg = scene.add.image(0, headerY, catHeaderKey).setOrigin(0.5).setDepth(9);
+            const categoryHeaderBg = scene.add.graphics();
+            
+            const headerWidth = popupWidth * 0.85; // Slightly smaller width
+            const headerHeightVal = Math.min(45 * sf, 40); // Increased height
+            
+            categoryHeaderBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 0.8);
+            categoryHeaderBg.fillRoundedRect(
+                -headerWidth/2,
+                headerY - headerHeightVal/2,
+                headerWidth,
+                headerHeightVal,
+                8 * sf
+            );
+            
+            categoryHeaderBg.lineStyle(2 * sf, 0x63b3ed, 0.6);
+            categoryHeaderBg.strokeRoundedRect(
+                -headerWidth/2,
+                headerY - headerHeightVal/2,
+                headerWidth,
+                headerHeightVal,
+                8 * sf
+            );
+            
             const categoryHeader = scene.add.text(0, headerY, category.name, {
-                fontSize: '28px',
-                color: '#1abc9c',
-                fontFamily: 'Arial Black',
-                fontStyle: 'bold',
-                shadow: { offsetX: 0, offsetY: 2, color: '#b0d4f1', blur: 6, fill: true },
-                depth: 10
+                fontSize: `${Math.min(22 * sf, 20)}px`,
+                color: '#ffd700',
+                fontFamily: 'Caprasimo-Regular',
+                stroke: '#1a1a2e',
+                strokeThickness: 1 * sf
             }).setOrigin(0.5);
+            
             scene.popupContent.add([categoryHeaderBg, categoryHeader]);
             scene._libraryCategoryHeaders.push(categoryHeader);
-            yOffset += 60;
-            if (category.books.length > 0) {
-                yOffset += 16;
-            }
-            let isFirstBook = true;
+            
+            yOffset += 80 * sf; // Much more spacing between header and first book
+            
             category.books.forEach((book, bookIndex) => {
-                // Modern book card
-                const bookCardKey = `bookCardTex_${categoryIndex}_${bookIndex}`;
-                scene.createRoundedRectTexture(bookCardKey, 500, 110, 22, 0xffffff, 1, 0x1abc9c, 0.12, 2, 0x3498db, 0.10, 8);
-                const bookBg = scene.add.image(0, yOffset, bookCardKey).setOrigin(0.5).setDepth(5);
-                // Book info
-                const leftX = -220;
-                const bookTitle = scene.add.text(leftX, yOffset - 32, book.title, {
-                    fontSize: '20px',
-                    color: '#222',
-                    fontFamily: 'Arial Black',
-                    fontStyle: 'bold',
-                    wordWrap: { width: 260 }
+                // Book card with much better spacing to prevent overlapping
+                const cardWidth = popupWidth * 0.8; // Slightly smaller cards
+                const cardHeight = isSmallScreen ? 130 * sf : 110 * sf; // More height for content
+                
+                const bookBg = scene.add.graphics();
+                
+                // Card background
+                bookBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 0.9);
+                bookBg.fillRoundedRect(
+                    -cardWidth/2,
+                    yOffset - cardHeight/2,
+                    cardWidth,
+                    cardHeight,
+                    12 * sf
+                );
+                
+                bookBg.lineStyle(2 * sf, 0x63b3ed, 0.4);
+                bookBg.strokeRoundedRect(
+                    -cardWidth/2,
+                    yOffset - cardHeight/2,
+                    cardWidth,
+                    cardHeight,
+                    12 * sf
+                );
+                
+                // Book info with responsive layout
+                const leftX = -cardWidth/2 + 20 * sf;
+                const rightX = cardWidth/2 - 20 * sf;
+                
+                const bookTitle = scene.add.text(leftX, yOffset - 25 * sf, book.title, {
+                    fontSize: `${Math.min(18 * sf, 16)}px`,
+                    color: '#ffffff',
+                    fontFamily: 'Caprasimo-Regular',
+                    stroke: '#1a1a2e',
+                    strokeThickness: 1 * sf,
+                    wordWrap: { width: cardWidth * 0.6 }
                 }).setOrigin(0, 0.5).setDepth(5);
-                const bookAuthor = scene.add.text(leftX, yOffset - 6, `by ${book.author}`, {
-                    fontSize: '14px',
-                    color: '#1abc9c',
+                
+                const bookAuthor = scene.add.text(leftX, yOffset, `by ${book.author}`, {
+                    fontSize: `${Math.min(14 * sf, 12)}px`,
+                    color: '#63b3ed',
                     fontFamily: 'Arial',
-                    wordWrap: { width: 260 }
+                    wordWrap: { width: cardWidth * 0.6 }
                 }).setOrigin(0, 0.5).setDepth(5);
-                const bookPages = scene.add.text(leftX, yOffset + 20, `${book.pages} pages • ${book.difficulty}`, {
-                    fontSize: '12px',
+                
+                const bookPages = scene.add.text(leftX, yOffset + 20 * sf, `${book.pages} pages • ${book.difficulty}`, {
+                    fontSize: `${Math.min(12 * sf, 10)}px`,
                     color: '#95A5A6',
                     fontFamily: 'Arial',
-                    wordWrap: { width: 260 }
+                    wordWrap: { width: cardWidth * 0.6 }
                 }).setOrigin(0, 0.5).setDepth(5);
-                // Status badge (modern pill)
+                
+                // Status badge
                 const statusColor = scene.getBookStatusColor(book.status);
-                const statusTextStr = book.status.toUpperCase();
-                const statusTextObj = scene.add.text(0, 0, statusTextStr, {
-                    fontSize: '14px',
-                    color: '#fff',
-                    fontFamily: 'Arial Black',
-                    fontStyle: 'bold',
-                    align: 'center',
-                    shadow: { offsetX: 0, offsetY: 1, color: '#000', blur: 2, fill: true },
-                    padding: { left: 16, right: 16, top: 6, bottom: 6 }
+                const statusText = book.status.toUpperCase();
+                
+                const statusBadge = scene.add.graphics();
+                const badgeWidth = Math.min(80 * sf, 70);
+                const badgeHeight = Math.min(25 * sf, 22);
+                
+                statusBadge.fillStyle(statusColor, 0.8);
+                statusBadge.fillRoundedRect(
+                    rightX - badgeWidth,
+                    yOffset - 25 * sf - badgeHeight/2,
+                    badgeWidth,
+                    badgeHeight,
+                    12 * sf
+                );
+                
+                const statusTextObj = scene.add.text(rightX - badgeWidth/2, yOffset - 25 * sf, statusText, {
+                    fontSize: `${Math.min(12 * sf, 10)}px`,
+                    color: '#ffffff',
+                    fontFamily: 'Arial Black'
                 }).setOrigin(0.5, 0.5).setDepth(5);
-                const statusBadgeKey = `bookStatusTex_${categoryIndex}_${bookIndex}`;
-                const statusBadgeWidth = statusTextObj.width + 32;
-                const statusBadgeHeight = statusTextObj.height + 12;
-                scene.createRoundedRectTexture(statusBadgeKey, statusBadgeWidth, statusBadgeHeight, 16, statusColor, 1);
-                const statusBg = scene.add.image(180, yOffset - 24, statusBadgeKey).setOrigin(0.5, 0.5).setDepth(5);
-                statusTextObj.setPosition(180, yOffset - 24);
-                // Action button (modern pill)
-                const actionTextStr = 'READ';
-                const actionTextObj = scene.add.text(0, 0, actionTextStr, {
-                    fontSize: '16px',
-                    color: '#fff',
-                    fontFamily: 'Arial Black',
-                    fontStyle: 'bold',
-                    align: 'center',
-                    shadow: { offsetX: 0, offsetY: 1, color: '#000', blur: 2, fill: true },
-                    padding: { left: 20, right: 20, top: 8, bottom: 8 }
+                
+                // Action button
+                const actionBtn = scene.add.graphics();
+                const btnWidth = Math.min(60 * sf, 55);
+                const btnHeight = Math.min(30 * sf, 25);
+                
+                // Store original coordinates for reuse
+                const btnX = rightX - btnWidth;
+                const btnY = yOffset + 10 * sf - btnHeight/2;
+                
+                // Draw initial state
+                actionBtn.fillGradientStyle(0x63b3ed, 0x63b3ed, 0x3498db, 0x3498db, 1);
+                actionBtn.fillRoundedRect(btnX, btnY, btnWidth, btnHeight, 8 * sf);
+                
+                actionBtn.setInteractive(new Phaser.Geom.Rectangle(btnX, btnY, btnWidth, btnHeight), Phaser.Geom.Rectangle.Contains);
+                
+                const actionText = scene.add.text(rightX - btnWidth/2, yOffset + 10 * sf, 'READ', {
+                    fontSize: `${Math.min(14 * sf, 12)}px`,
+                    color: '#ffffff',
+                    fontFamily: 'Arial Black'
                 }).setOrigin(0.5, 0.5).setDepth(5);
-                const actionBtnKey = `bookActionBtnTex_${categoryIndex}_${bookIndex}`;
-                const actionBtnKeyHover = `bookActionBtnTex_${categoryIndex}_${bookIndex}_hover`;
-                const actionBtnWidth = actionTextObj.width + 36;
-                const actionBtnHeight = actionTextObj.height + 16;
-                scene.createRoundedRectTexture(actionBtnKey, actionBtnWidth, actionBtnHeight, 18, 0x3498db, 1);
-                scene.createRoundedRectTexture(actionBtnKeyHover, actionBtnWidth, actionBtnHeight, 18, 0x1abc9c, 1);
-                const actionBtn = scene.add.image(180, yOffset + 24, actionBtnKey).setOrigin(0.5, 0.5).setDepth(5);
-                actionBtn.setInteractive({ useHandCursor: true });
+                
+                actionBtn.on('pointerover', () => {
+                    actionBtn.clear();
+                    actionBtn.fillGradientStyle(0xffd700, 0xffd700, 0xff8c42, 0xff8c42, 1);
+                    actionBtn.fillRoundedRect(btnX, btnY, btnWidth, btnHeight, 8 * sf);
+                    actionText.setScale(1.05);
+                });
+                
+                actionBtn.on('pointerout', () => {
+                    actionBtn.clear();
+                    actionBtn.fillGradientStyle(0x63b3ed, 0x63b3ed, 0x3498db, 0x3498db, 1);
+                    actionBtn.fillRoundedRect(btnX, btnY, btnWidth, btnHeight, 8 * sf);
+                    actionText.setScale(1);
+                });
+                
                 actionBtn.on('pointerdown', () => { scene.handleBookAction(book); });
-                actionBtn.on('pointerover', () => { actionBtn.setTexture(actionBtnKeyHover); });
-                actionBtn.on('pointerout', () => { actionBtn.setTexture(actionBtnKey); });
-                actionTextObj.setPosition(180, yOffset + 24);
+                
                 scene.popupContent.add([
                     bookBg, bookTitle, bookAuthor, bookPages,
-                    statusBg, statusTextObj, actionBtn, actionTextObj
+                    statusBadge, statusTextObj, actionBtn, actionText
                 ]);
+                
                 scene._libraryBookElements.push([
-                    bookBg, bookTitle, bookAuthor, bookPages, statusBg, statusTextObj, actionBtn, actionTextObj
+                    bookBg, bookTitle, bookAuthor, bookPages, statusBadge, statusTextObj, actionBtn, actionText
                 ]);
-                yOffset += 130;
-                isFirstBook = false;
+                
+                yOffset += (cardHeight + 25 * sf); // Increased spacing between books
             });
-            yOffset += 32;
+            
+            yOffset += 40 * sf; // Increased spacing between categories
         });
-        scene.input.on('wheel', () => {
-            LibraryUI.updateBooksScrollVisibility(scene);
-        });
+        
         LibraryUI.updateBooksScrollVisibility(scene);
     }
 
     static updateBooksScrollVisibility(scene) {
-        if (!scene._libraryBookElements || !scene._libraryCategoryHeaders) return;
+        if (!scene._libraryBookElements || !scene._libraryCategoryHeaders || !scene.popupDimensions) return;
+        
         // Calculate the Y threshold (bottom of header area in popup coordinates)
-        const popupHeaderBottom = (-scene.cameras.main.height/2) + 80 + 60; // headerHeight + extra margin
-        // Hide book elements above header
+        const popupHeaderBottom = (-scene.popupDimensions.height/2) + scene.popupDimensions.headerHeight + 20;
+        const popupBottom = scene.popupDimensions.height/2 - 20;
+        
+        // Hide book elements outside visible area
         scene._libraryBookElements.forEach(group => {
             // All elements in group share the same y (bookBg.y)
             const y = group[0].y + (scene.popupContent.y || 0);
-            const visible = y > popupHeaderBottom;
+            const visible = y > popupHeaderBottom && y < popupBottom;
             group.forEach(el => el.setVisible(visible));
         });
-        // Hide category headers above header
+        
+        // Hide category headers outside visible area
         scene._libraryCategoryHeaders.forEach(header => {
             const y = header.y + (scene.popupContent.y || 0);
-            header.setVisible(y > popupHeaderBottom);
-        });
-    }
-
-    static createProgressContent(scene) {
-        const popupHeight = scene.cameras.main.height;
-        const headerHeight = 80;
-        const startY = (-popupHeight/2) + headerHeight + 60;
-        let yOffset = startY;
-        scene.libraryData.progress.stats.forEach((stat, index) => {
-            // Modern stat card
-            const statCardKey = `progressCardTex_${index}`;
-            scene.createRoundedRectTexture(statCardKey, 400, 60, 16, 0xffffff, 1, 0x1abc9c, 0.10, 2);
-            const statCard = scene.add.image(0, yOffset + 20, statCardKey).setOrigin(0.5);
-            const label = scene.add.text(-150, yOffset, stat.label, {
-                fontSize: '18px',
-                color: '#3498db',
-                fontFamily: 'Arial Black',
-                fontStyle: 'bold',
-                shadow: { offsetX: 0, offsetY: 1, color: '#b0d4f1', blur: 2, fill: true }
-            }).setOrigin(0, 0.5);
-            const fillWidth = (stat.value / stat.max) * 220;
-            const progressBgKey = `progressBgTex_${index}`;
-            scene.createRoundedRectTexture(progressBgKey, 220, 18, 9, 0xffffff, 1, 0x3498db, 1, 1);
-            const progressBg = scene.add.image(60, yOffset + 20, progressBgKey).setOrigin(0, 0.5);
-            const progressFillKey = `progressFillTex_${index}`;
-            scene.createRoundedRectTexture(progressFillKey, Math.max(fillWidth, 2), 18, 9, parseInt(stat.color.replace('#', '0x')), 1);
-            const progressFill = scene.add.image(60, yOffset + 20, progressFillKey).setOrigin(0, 0.5);
-            const progressText = scene.add.text(170, yOffset + 20, `${stat.value}/${stat.max} (${Math.round((stat.value/stat.max)*100)}%)`, {
-                fontSize: '13px',
-                color: '#1abc9c',
-                fontFamily: 'Arial Black'
-            }).setOrigin(0, 0.5);
-            scene.popupContent.add([statCard, label, progressBg, progressFill, progressText]);
-            yOffset += 80;
-        });
-        if (scene.libraryData.progress.achievements.length > 0) {
-            yOffset += 36;
-            const achievementHeader = scene.add.text(0, yOffset, 'ACHIEVEMENTS', {
-                fontSize: '22px',
-                color: '#1abc9c',
-                fontFamily: 'Arial Black',
-                fontStyle: 'bold',
-                shadow: { offsetX: 0, offsetY: 2, color: '#b0d4f1', blur: 4, fill: true }
-            }).setOrigin(0.5);
-            scene.popupContent.add(achievementHeader);
-            yOffset += 54;
-            scene.libraryData.progress.achievements.forEach((achievement, index) => {
-                const achievementBgKey = `achievementBgTex_${index}`;
-                scene.createRoundedRectTexture(achievementBgKey, 420, 54, 14, 0xffffff, 1, 0x1abc9c, 1, 1);
-                const achievementBg = scene.add.image(0, yOffset, achievementBgKey).setOrigin(0.5);
-                const achievementText = scene.add.text(0, yOffset, achievement.name, {
-                    fontSize: '16px',
-                    color: '#3498db',
-                    fontFamily: 'Arial Black'
-                }).setOrigin(0.5);
-                scene.popupContent.add([achievementBg, achievementText]);
-                yOffset += 74;
-            });
-        }
-    }
-
-    static createNotesContent(scene) {
-        const popupHeight = scene.cameras.main.height;
-        const headerHeight = 80;
-        const startY = (-popupHeight/2) + headerHeight + 60;
-        let yOffset = startY;
-        const addNoteBtnKey = 'addNoteBtnTex';
-        const addNoteBtnKeyHover = 'addNoteBtnTex_hover';
-        scene.createRoundedRectTexture(addNoteBtnKey, 220, 48, 24, 0x1abc9c, 1, 0x16a085, 1, 2);
-        scene.createRoundedRectTexture(addNoteBtnKeyHover, 220, 48, 24, 0x16a085, 1, 0x16a085, 1, 2);
-        const addNoteBtn = scene.add.image(0, yOffset, addNoteBtnKey).setOrigin(0.5);
-        addNoteBtn.setInteractive({ useHandCursor: true });
-        const addNoteText = scene.add.text(0, yOffset, '+ Add New Note', {
-            fontSize: '18px',
-            color: '#fff',
-            fontFamily: 'Arial Black',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        addNoteBtn.on('pointerover', () => { addNoteBtn.setTexture(addNoteBtnKeyHover); });
-        addNoteBtn.on('pointerout', () => { addNoteBtn.setTexture(addNoteBtnKey); });
-        addNoteBtn.on('pointerdown', () => { scene.showAddNoteDialog(); });
-        scene.popupContent.add([addNoteBtn, addNoteText]);
-        yOffset += 80;
-        scene.libraryData.notes.categories.forEach((category, categoryIndex) => {
-            // Modern note category header
-            const catHeaderKey = `noteCatHeaderTex_${categoryIndex}`;
-            scene.createRoundedRectTexture(catHeaderKey, 320, 40, 14, 0x1abc9c, 0.10, 0x3498db, 0.10, 2);
-            const categoryHeaderBg = scene.add.image(0, yOffset, catHeaderKey).setOrigin(0.5);
-            const categoryHeader = scene.add.text(0, yOffset, category.name, {
-                fontSize: '20px',
-                color: '#3498db',
-                fontFamily: 'Arial Black',
-                fontStyle: 'bold',
-                shadow: { offsetX: 0, offsetY: 2, color: '#b0d4f1', blur: 4, fill: true }
-            }).setOrigin(0.5);
-            scene.popupContent.add([categoryHeaderBg, categoryHeader]);
-            yOffset += 48;
-            if (category.notes.length > 0) {
-                yOffset += 18;
-            }
-            if (category.notes.length === 0) {
-                const emptyText = scene.add.text(0, yOffset, 'No notes yet.', {
-                    fontSize: '15px',
-                    color: '#95A5A6',
-                    fontFamily: 'Arial'
-                }).setOrigin(0.5);
-                scene.popupContent.add(emptyText);
-                yOffset += 40;
-            } else {
-                category.notes.forEach((note, noteIndex) => {
-                    // Modern note card
-                    const noteBgKey = `noteBgTex_${categoryIndex}_${noteIndex}`;
-                    scene.createRoundedRectTexture(noteBgKey, 440, 80, 18, 0xffffff, 1, 0x1abc9c, 0.10, 2);
-                    const noteBg = scene.add.image(0, yOffset, noteBgKey).setOrigin(0.5);
-                    const noteText = scene.add.text(-200, yOffset, note.text, {
-                        fontSize: '15px',
-                        color: '#222',
-                        fontFamily: 'Arial',
-                        wordWrap: { width: 380 }
-                    }).setOrigin(0, 0.5);
-                    scene.popupContent.add([noteBg, noteText]);
-                    yOffset += 100;
-                });
-            }
-            yOffset += 36;
+            header.setVisible(y > popupHeaderBottom && y < popupBottom);
         });
     }
 }
