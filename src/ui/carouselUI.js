@@ -13,6 +13,7 @@ class Carousel {
         this.bgPanel = null;
         this.leftArrow = null;
         this.rightArrow = null;
+        this._selecting = false; // Add debounce flag
 
         this.scene.scale.on('resize', this.onResize, this);
     }
@@ -362,6 +363,11 @@ class Carousel {
     }
 
     selectCurrentItem() {
+        // Prevent rapid clicking/selection
+        if (this._selecting) {
+            return;
+        }
+        
         const currentItem = this.iconInfo[this.carouselIndex];
         const isLocked = this.lockedStates[this.carouselIndex];
         
@@ -371,6 +377,13 @@ class Carousel {
         }
         
         if (this.onSelectCallback && currentItem) {
+            this._selecting = true;
+            
+            // Reset the selecting flag after a short delay
+            this.scene.time.delayedCall(500, () => {
+                this._selecting = false;
+            });
+            
             this.onSelectCallback(currentItem, this.carouselIndex);
         }
     }

@@ -22,6 +22,9 @@ export default class Classroom extends Phaser.Scene {
     create() {
         const { width, height } = this.scale;
 
+        // Initialize modal state
+        this.characterBoxOpen = false;
+
         // Add background color
         this.cameras.main.setBackgroundColor('#B2E2B1');
 
@@ -99,7 +102,7 @@ export default class Classroom extends Phaser.Scene {
             iconSpacing: 340,
             smallScale: 0.18, // smaller side images (was 0.32)
             largeScale: 0.28, // smaller main image (was 0.48)
-            iconYOffset: 80,
+            iconYOffset: -20, // Move carousel up to better center the overall layout
             headingStyle: { fontSize: 48 },
             descStyle: { fontSize: 28 }
         }).create(
@@ -127,6 +130,9 @@ export default class Classroom extends Phaser.Scene {
     }
 
     destroyCarousel() {
+        // Clean up modal state
+        this.characterBoxOpen = false;
+        
         // Clean up carousel icons and tweens to prevent ghosting
         if (this.breathingTween) {
             this.breathingTween.stop();
@@ -153,10 +159,11 @@ export default class Classroom extends Phaser.Scene {
 
         this.carouselIndex = newIndex;
         const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2; // Use actual center instead of hardcoded offset
         const spacing = 340;
         const smallScale = 0.125;
         const largeScale = 0.3;
-        const visualOffset = 100; // Adjust this value as needed
+        const visualOffset = -20; // Adjusted to match the carousel config
 
         this.carouselIcons.forEach((icon, i) => {
             const x = centerX + (i - this.carouselIndex) * spacing;
@@ -202,6 +209,11 @@ export default class Classroom extends Phaser.Scene {
     }
 
     showCharacterBox(charData, charKey) {
+        // Prevent opening multiple modals
+        if (this.characterBoxOpen) {
+            return;
+        }
+        
         const { width, height } = this.scale;
 
         // Disable carousel controls
