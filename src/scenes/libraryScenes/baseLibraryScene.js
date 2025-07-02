@@ -1,6 +1,7 @@
 // Enhanced Library Scene with JSON Data Support and Auto Progress Update
 
 import LibraryUI from './LibraryUI.js';
+import { createBackButton } from '../../components/buttons/backbutton.js';
 
 class BaseLibraryScene extends Phaser.Scene {
     constructor() {
@@ -54,6 +55,10 @@ class BaseLibraryScene extends Phaser.Scene {
         this.setupBackground();
         LibraryUI.createMainMenu(this);
         LibraryUI.createPopupContainer(this);
+        
+        // Create back button to return to previous scene
+        const targetScene = this.previousScene === 'MainScene' ? 'MainHub' : this.previousScene;
+        this.backButton = createBackButton(this, targetScene);
         
         // Ensure popup is properly hidden initially
         if (this.popupContainer) {
@@ -668,6 +673,42 @@ async syncWithNotesJson() {
         console.error('Failed to sync notes with server:', error);
     }
 }
+
+destroy() {
+        // Clean up back button if it exists
+        if (this.backButton) {
+            if (this.backButton.buttonBg) this.backButton.buttonBg.destroy();
+            if (this.backButton.backButton) this.backButton.backButton.destroy();
+        }
+        
+        // Clean up popup mask if it exists
+        if (this.popupMask) {
+            this.popupContent.clearMask();
+            this.popupMask.destroy();
+            this.popupMask = null;
+        }
+        
+        // Call parent destroy
+        super.destroy();
+    }
+
+    // Method to handle going back to previous scene
+    goBackToPreviousScene() {
+        // If popup is open, close it first
+        if (this.isPopupOpen) {
+            this.hidePopup(() => {
+                this.transitionToPreviousScene();
+            });
+        } else {
+            this.transitionToPreviousScene();
+        }
+    }
+
+    transitionToPreviousScene() {
+        const targetScene = this.previousScene === 'MainScene' ? 'MainHub' : this.previousScene;
+        console.log(`Transitioning back to: ${targetScene}`);
+        this.scene.start(targetScene);
+    }
 }
 
 

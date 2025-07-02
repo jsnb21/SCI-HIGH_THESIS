@@ -3,6 +3,7 @@ import VNDialogueBox from '../ui/VNDialogueBox';
 import Carousel from '../ui/carouselUI.js';
 import { playExclusiveBGM } from '../audioUtils';
 import { onceOnlyFlags } from '../gameManager';
+import gameManager from '../gameManager.js';
 import { createBackButton } from '../components/buttons/backbutton.js';
 
 const BASE_WIDTH = 816;
@@ -65,6 +66,13 @@ export default class MainHub extends Phaser.Scene {
             this.vnBox.destroy();
             this.vnBox = null;
         }
+        // Clean up points display properly
+        if (this.pointsDisplay) {
+            if (this.pointsDisplay.destroy) {
+                this.pointsDisplay.destroy();
+            }
+            this.pointsDisplay = null;
+        }
 
         const { width, height } = this.scale;
         this.scaleFactor = Math.min(width / BASE_WIDTH, height / BASE_HEIGHT);
@@ -77,7 +85,52 @@ export default class MainHub extends Phaser.Scene {
         if (this.cameras && this.cameras.main) {
             this.cameras.main.setBackgroundColor('#87ceeb');
         }
-        this.uiElements.push(this.bg);        this.se_hoverSound = this.sound.add('se_select');
+        this.uiElements.push(this.bg);
+
+        // Add points display in top-right corner
+        const pointsDisplay = gameManager.createPointsDisplay(this, width - 100 * this.scaleFactor, 40 * this.scaleFactor, this.scaleFactor);
+        this.pointsDisplay = pointsDisplay;
+        this.uiElements.push(pointsDisplay.container);
+
+        // Add leaderboard button just below the points display
+        const leaderboardBtn = this.add.rectangle(width - 100 * this.scaleFactor, 85 * this.scaleFactor, 140 * this.scaleFactor, 35 * this.scaleFactor, 0x3498DB);
+        leaderboardBtn.setStrokeStyle(2 * this.scaleFactor, 0x2980B9);
+        leaderboardBtn.setInteractive({ useHandCursor: true });
+        leaderboardBtn.setDepth(100);
+
+        const leaderboardText = this.add.text(width - 100 * this.scaleFactor, 85 * this.scaleFactor, '🏆 Leaderboard', {
+            fontSize: `${12 * this.scaleFactor}px`,
+            color: '#FFFFFF',
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+        }).setOrigin(0.5).setDepth(101);
+
+        // Hover effects
+        leaderboardBtn.on('pointerover', () => {
+            leaderboardBtn.setFillStyle(0x2980B9);
+            leaderboardText.setStyle({ color: '#F1C40F' });
+            this.se_hoverSound.play();
+        });
+
+        leaderboardBtn.on('pointerout', () => {
+            leaderboardBtn.setFillStyle(0x3498DB);
+            leaderboardText.setStyle({ color: '#FFFFFF' });
+        });
+
+        // Click handler
+        leaderboardBtn.on('pointerdown', () => {
+            this.se_confirmSound.play();
+            gameManager.showLeaderboardDialog(this);
+        });
+
+        this.uiElements.push(leaderboardBtn, leaderboardText);
+
+        // Check if we should show a leaderboard suggestion
+        if (gameManager.shouldPromptLeaderboard()) {
+            this.showLeaderboardSuggestion();
+        }
+
+        this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
 
         const iconKeys = ['icon1', 'icon2', 'icon3', 'icon4'];
@@ -146,7 +199,42 @@ export default class MainHub extends Phaser.Scene {
                     break;
             }
         });
-    }    onResize() {
+    }    showLeaderboardSuggestion() {
+        const { width, height } = this.scale;
+        
+        // Create a subtle notification
+        const notificationBg = this.add.rectangle(width / 2, 120 * this.scaleFactor, 300 * this.scaleFactor, 60 * this.scaleFactor, 0x3498DB, 0.9);
+        notificationBg.setStrokeStyle(2 * this.scaleFactor, 0xF1C40F);
+        notificationBg.setDepth(150);
+
+        const notificationText = this.add.text(width / 2, 120 * this.scaleFactor, '🏆 New milestone reached!\nClick Leaderboard to submit your score!', {
+            fontSize: `${14 * this.scaleFactor}px`,
+            color: '#FFFFFF',
+            fontFamily: 'Arial',
+            align: 'center',
+            fontStyle: 'bold'
+        }).setOrigin(0.5).setDepth(151);
+
+        // Auto-hide after 5 seconds
+        this.time.delayedCall(5000, () => {
+            if (notificationBg && notificationText) {
+                this.tweens.add({
+                    targets: [notificationBg, notificationText],
+                    alpha: 0,
+                    duration: 1000,
+                    onComplete: () => {
+                        notificationBg.destroy();
+                        notificationText.destroy();
+                    }
+                });
+            }
+        });
+
+        // Add to UI elements for cleanup
+        this.uiElements.push(notificationBg, notificationText);
+    }
+
+    onResize() {
         // Just recreate the entire UI to avoid geometry issues
         this.time.delayedCall(50, () => this.createUI());
     }
@@ -154,6 +242,44 @@ export default class MainHub extends Phaser.Scene {
     update() {
         if (this.bg) {
             this.bg.tilePositionY -= 1;
+        }
+        // Update points display if it exists and is still valid
+        if (this.pointsDisplay && this.pointsDisplay.update) {
+            try {
+                this.pointsDisplay.update();
+            } catch (error) {
+                console.warn('Points display update failed, clearing reference:', error);
+                this.pointsDisplay = null;
+            }
+        }
+    }
+
+    shutdown() {
+        // Clean up all UI elements and references when scene shuts down
+        if (this.pointsDisplay) {
+            if (this.pointsDisplay.destroy) {
+                this.pointsDisplay.destroy();
+            }
+            this.pointsDisplay = null;
+        }
+        
+        if (this.uiElements.length) {
+            this.uiElements.forEach(el => {
+                if (el && el.destroy) {
+                    el.destroy();
+                }
+            });
+            this.uiElements = [];
+        }
+        
+        if (this.carousel) {
+            this.carousel.destroy();
+            this.carousel = null;
+        }
+        
+        if (this.vnBox) {
+            this.vnBox.destroy();
+            this.vnBox = null;
         }
     }
 }

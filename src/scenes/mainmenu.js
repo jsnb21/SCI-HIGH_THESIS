@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { DEFAULT_TEXT_STYLE } from '../game';
 import { updateSoundVolumes, playExclusiveBGM } from '../audioUtils';
 import { getAllSaveKeys, loadGame } from '../save';
-import gameManager, { onceOnlyFlags } from '../gameManager';
+import gameManager, { onceOnlyFlags } from '../gameManager.js';
 
 export default class MainMenu extends Phaser.Scene {
     constructor() {

@@ -1,3 +1,5 @@
+import gameManager from '/src/gameManager.js';
+
 export function showFeedback(scene, message, color) {
     const sf = scene.scaleFactor;
     const centerX = scene.scale.width / 2;
@@ -126,15 +128,48 @@ export function showVictory(scene) {
         strokeThickness: 2 * sf
     }).setOrigin(0.5).setDepth(60);
 
+    // Display points earned if available
+    let pointsText = null;
+    if (gameManager && scene.courseTopic) {
+        // Calculate points to show what was earned
+        const pointsData = gameManager.calculateQuizPoints({
+            correctAnswers: scene.correctAnswers,
+            totalQuestions: scene.questions.length,
+            comboCount: scene.maxComboReached || 0,
+            averageAnswerTime: scene.answerTimes ? scene.answerTimes.reduce((sum, time) => sum + time, 0) / scene.answerTimes.length : 5,
+            timePerQuestion: 10,
+            topic: scene.courseTopic,
+            difficulty: scene.difficulty || 'medium'
+        });
+        
+        pointsText = scene.add.text(centerX, scene.scale.height/2 + 35 * sf, `Points Earned: +${pointsData.finalPoints}`, {
+            fontSize: `${18 * sf}px`,
+            fill: '#ffd700',
+            fontFamily: 'Caprasimo-Regular',
+            stroke: '#1a1a2e',
+            strokeThickness: 2 * sf
+        }).setOrigin(0.5).setDepth(60);
+
+        // Add leaderboard submission hint
+        const leaderboardHint = scene.add.text(centerX, scene.scale.height/2 + 55 * sf, 'Check the Main Hub to submit your score!', {
+            fontSize: `${14 * sf}px`,
+            fill: '#00ff88',
+            fontFamily: 'Caprasimo-Regular',
+            stroke: '#1a1a2e',
+            strokeThickness: 1 * sf
+        }).setOrigin(0.5).setDepth(60);
+    }
+
     // Enhanced continue button
     const buttonWidth = 200 * sf;
     const buttonHeight = 50 * sf;
+    const buttonY = pointsText ? scene.scale.height/2 + 100 * sf : scene.scale.height/2 + 60 * sf; // Adjust position for hint text
     const buttonBg = scene.add.graphics();
     
     buttonBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 1);
     buttonBg.fillRoundedRect(
         centerX - buttonWidth/2,
-        scene.scale.height/2 + 60 * sf,
+        buttonY,
         buttonWidth,
         buttonHeight,
         8 * sf
@@ -143,7 +178,7 @@ export function showVictory(scene) {
     buttonBg.lineStyle(3 * sf, 0x63b3ed, 0.8);
     buttonBg.strokeRoundedRect(
         centerX - buttonWidth/2,
-        scene.scale.height/2 + 60 * sf,
+        buttonY,
         buttonWidth,
         buttonHeight,
         8 * sf
@@ -153,7 +188,7 @@ export function showVictory(scene) {
     
     const continueButton = scene.add.text(
         centerX,
-        scene.scale.height/2 + 85 * sf,
+        buttonY + 25 * sf, // Use the same buttonY calculation
         "Continue",
         {
             fontSize: `${20 * sf}px`,
@@ -340,7 +375,7 @@ export function showGameOver(scene) {
     const restartButtonHeight = 50 * sf;
     const restartButtonBg = scene.add.graphics();
     
-    restartButtonBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 1);
+    restartButtonBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a2d3748, 1);
     restartButtonBg.fillRoundedRect(
         centerX - restartButtonWidth/2,
         scene.scale.height/2 + 40 * sf,

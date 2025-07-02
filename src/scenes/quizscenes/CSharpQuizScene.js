@@ -8,8 +8,14 @@ export default class CSharpQuizScene extends BaseQuizScene {
     }
 
     init(data) {
-        super.init(data);
-        this.topic = data.topic || 'csharp';
+        // Set topic and difficulty for point calculation
+        const topicData = {
+            ...data,
+            topic: 'C#', // Use the gameManager topic key
+            difficulty: data.difficulty || 'medium' // Default to medium difficulty
+        };
+        super.init(topicData);
+        this.topic = data.topic || 'csharp'; // Keep for JSON loading
     }    preload() {
         // Call parent preload to load base assets
         super.preload();

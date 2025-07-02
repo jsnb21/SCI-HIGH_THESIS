@@ -51,22 +51,22 @@ const config = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },  scene: [
-    /*StartUp, // Added StartUp as the first scene
+    StartUp, // Added StartUp as the first scene
     MainMenu,
     /* Main Scenes */
-    /*DungeonScene,
+    DungeonScene,
     DungeonCleared,
     /* UI Scenes */
-    /*CardRewardScene,
+    CardRewardScene,
     Intro,
     OptionsScene,
     MainHub,
     /* Classroom */
-    /*Classroom,
+    Classroom,
     /* Office */
-    /*Office,
+    Office,
     /* Computer Lab Scenes */
-    /*ComputerLab,
+    ComputerLab,
     WebDesignScene,
     PythonScene,
     JavaScene,
@@ -74,7 +74,7 @@ const config = {
     CPlusplusScene,
     CSharpScene,
     /* Quiz Scenes */
-    /*BaseQuizScene,
+    BaseQuizScene,
     WebDesignQuizScene,
     JavaQuizScene,
     PythonQuizScene,
@@ -98,16 +98,64 @@ export const DEFAULT_TEXT_STYLE = {
     strokeThickness: 10
 };
 
+// Add error handling and debugging
+console.log('Script loaded, checking environment...');
+
+// Check if we're in a problematic environment
+if (typeof window.SES !== 'undefined') {
+    console.warn('SES detected - this may cause conflicts');
+}
+
 window.addEventListener('resize', () => {
-    if (game && game.scale) {
+    if (window.game && window.game.scale) {
         const width = window.innerWidth;
         const height = window.innerHeight;
-        game.scale.resize(width, height);
+        window.game.scale.resize(width, height);
 
-        const canvas = game.canvas;
+        const canvas = window.game.canvas;
         canvas.style.width = '100%';
         canvas.style.height = '100%';
     }
 });
 
-new Phaser.Game(config);
+// Add error handling for game initialization
+let game;
+try {
+    console.log('Creating Phaser Game instance...');
+    game = new Phaser.Game(config);
+    console.log('Phaser Game created successfully:', game);
+    
+    // Make game globally accessible for debugging
+    window.game = game;
+} catch (error) {
+    console.error('Failed to create Phaser Game:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Display error message on page
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #ff0000;
+        color: white;
+        padding: 20px;
+        border-radius: 5px;
+        font-family: Arial;
+        z-index: 10000;
+        max-width: 500px;
+    `;
+    errorDiv.innerHTML = `
+        <h3>Game Failed to Load</h3>
+        <p><strong>Error:</strong> ${error.message}</p>
+        <p>Please try:</p>
+        <ul>
+            <li>Opening in incognito/private mode</li>
+            <li>Disabling browser extensions</li>
+            <li>Using a different browser</li>
+            <li>Check the browser console for more details</li>
+        </ul>
+    `;
+    document.body.appendChild(errorDiv);
+}

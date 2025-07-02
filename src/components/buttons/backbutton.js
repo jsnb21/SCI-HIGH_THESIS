@@ -36,9 +36,15 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
     const handleClick = () => {
         if (scene.se_confirmSound) scene.se_confirmSound.play();
         if (scene.restartQuiz) scene.restartQuiz();
-        // Use GameManager to set and get previous scene
-        gameManager.setPreviousScene(scene.scene.key);
-        scene.scene.start(targetScene);
+        
+        // Check if the scene has a custom back handler
+        if (scene.goBackToPreviousScene && typeof scene.goBackToPreviousScene === 'function') {
+            scene.goBackToPreviousScene();
+        } else {
+            // Use GameManager to set and get previous scene
+            gameManager.setPreviousScene(scene.scene.key);
+            scene.scene.start(targetScene);
+        }
     };
 
     // Add hover effects to background

@@ -36,7 +36,16 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             wrongAnswers: 0,
             comboScore: 0
         };
-    }    preload() {
+    }    init(data) {
+        // Reset player HP to full when starting a new dungeon
+        gameManager.resetPlayerHP();
+        console.log('DungeonScene: Player HP reset for new dungeon');
+        
+        // Store course topic for completion tracking
+        this.courseTopic = data?.courseTopic || null;
+    }
+
+    preload() {
         this.load.font('Jersey15-Regular', 'assets/font/Jersey15-Regular.ttf');
         this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
         this.load.image('heart', 'assets/sprites/dungeon/heart.png');
@@ -118,8 +127,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         if (typeof window !== 'undefined') {
             window.dungeonScene = this;
         }
-    }init(data) {
-        this.courseTopic = data?.courseTopic || 'webdesign'; // Default to webdesign
     }    onResume(data) {
         // Check if returning from card reward scene
         if (this.cardRewardProcessed) {

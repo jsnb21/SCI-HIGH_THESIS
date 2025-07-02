@@ -8,8 +8,14 @@ export default class JavaQuizScene extends BaseQuizScene {
     }
 
     init(data) {
-        super.init(data);
-        this.topic = data.topic || 'java';
+        // Set topic and difficulty for point calculation
+        const topicData = {
+            ...data,
+            topic: 'Java', // Use the gameManager topic key
+            difficulty: data.difficulty || 'medium' // Default to medium difficulty
+        };
+        super.init(topicData);
+        this.topic = data.topic || 'java'; // Keep for JSON loading
     }    preload() {
         // Call parent preload to load base assets
         super.preload();

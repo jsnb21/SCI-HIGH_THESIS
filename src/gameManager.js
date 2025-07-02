@@ -1,6 +1,7 @@
 // Global Game Manager Singleton
 
-class GameManager {    constructor() {
+class GameManager {
+    constructor() {
         this.playerHP = 100; // Changed from 3 to 100 to match quiz system
         this.maxPlayerHP = 100; // Add max HP tracking
         this.playTime = 0;
@@ -9,6 +10,31 @@ class GameManager {    constructor() {
         this.playerBuffs = {}; // Add buff system
 
         this.previousScene = 'MainMenu'; // default scene
+
+        // Point System
+        this.totalPoints = 0;
+        this.topicPoints = {
+            'Web_Design': 0,
+            'Python': 0,
+            'Java': 0,
+            'C': 0,
+            'C++': 0,
+            'C#': 0
+        };
+        this.pointsHistory = []; // Track point transactions
+        this.achievements = new Set(); // Track earned achievements
+        this.suggestLeaderboardSubmission = false; // Flag for leaderboard suggestions
+        this.pointMultipliers = {
+            base: 10, // Base points per correct answer
+            combo: 1.5, // Multiplier for combo bonuses
+            speed: 1.2, // Multiplier for fast answers
+            perfect: 2.0, // Multiplier for perfect quizzes
+            difficulty: {
+                easy: 1.0,
+                medium: 1.5,
+                hard: 2.0
+            }
+        };
         
         // Course progression system
         this.courseProgress = {
@@ -19,6 +45,284 @@ class GameManager {    constructor() {
             'C++': { unlocked: false, completed: false, progress: 0 },
             'C#': { unlocked: false, completed: false, progress: 0 }
         };
+    }
+
+        // =========================
+    // POINT SYSTEM METHODS
+    // =========================
+
+    // Get total points
+    getTotalPoints() {
+        return this.totalPoints;
+    }
+
+    // Get points for a specific topic
+    getTopicPoints(topic) {
+        return this.topicPoints[topic] || 0;
+    }
+
+    // Add points with optional topic and description
+    addPoints(points, topic = null, description = 'Points earned') {
+        const roundedPoints = Math.round(points);
+        this.totalPoints += roundedPoints;
+        
+        if (topic && this.topicPoints.hasOwnProperty(topic)) {
+            this.topicPoints[topic] += roundedPoints;
+        }
+        
+        // Track transaction in history
+        this.pointsHistory.push({
+            points: roundedPoints,
+            topic: topic,
+            description: description,
+            timestamp: Date.now(),
+            totalAfter: this.totalPoints
+        });
+        
+        console.log(`+${roundedPoints} points: ${description} (Total: ${this.totalPoints})`);
+        
+        // Check for achievements
+        this.checkPointAchievements();
+        
+        return roundedPoints;
+    }
+
+    // Calculate quiz points with all modifiers
+    calculateQuizPoints(quizResults) {
+        const {
+            correctAnswers = 0,
+            totalQuestions = 1,
+            comboCount = 0,
+            averageAnswerTime = 5,
+            timePerQuestion = 10,
+            topic = null,
+            difficulty = 'medium'
+        } = quizResults;
+
+        let basePoints = correctAnswers * this.pointMultipliers.base;
+        let totalPoints = basePoints;
+        let bonusBreakdown = [];
+
+        // Difficulty multiplier
+        const difficultyMultiplier = this.pointMultipliers.difficulty[difficulty] || 1.0;
+        if (difficultyMultiplier !== 1.0) {
+            totalPoints *= difficultyMultiplier;
+            bonusBreakdown.push(`Difficulty (${difficulty}): x${difficultyMultiplier}`);
+        }
+
+        // Combo bonus
+        if (comboCount > 0) {
+            const comboBonus = Math.round(comboCount * this.pointMultipliers.base * 0.5);
+            totalPoints += comboBonus;
+            bonusBreakdown.push(`Combo bonus: +${comboBonus}`);
+        }
+
+        // Speed bonus (if answered faster than half the time limit)
+        if (averageAnswerTime < timePerQuestion * 0.5) {
+            const speedBonus = Math.round(basePoints * (this.pointMultipliers.speed - 1));
+            totalPoints += speedBonus;
+            bonusBreakdown.push(`Speed bonus: +${speedBonus}`);
+        }
+
+        // Perfect quiz bonus
+        const isPerfect = correctAnswers === totalQuestions && totalQuestions > 0;
+        if (isPerfect) {
+            const perfectBonus = Math.round(basePoints * (this.pointMultipliers.perfect - 1));
+            totalPoints += perfectBonus;
+            bonusBreakdown.push(`Perfect quiz: +${perfectBonus}`);
+        }
+
+        // Apply existing buff multipliers
+        totalPoints = this.applyScoreMultiplier(totalPoints);
+
+        // Apply buff-based bonuses
+        if (isPerfect) {
+            totalPoints = this.applyPerfectBonus(totalPoints, true);
+        }
+
+        const finalPoints = Math.round(totalPoints);
+        
+        return {
+            basePoints,
+            finalPoints,
+            bonusBreakdown,
+            isPerfect,
+            difficulty,
+            topic
+        };
+    }
+
+    // Award points for quiz completion
+    awardQuizPoints(quizResults) {
+        const pointsData = this.calculateQuizPoints(quizResults);
+        const { finalPoints, topic, bonusBreakdown } = pointsData;
+        
+        let description = `Quiz completed: ${quizResults.correctAnswers}/${quizResults.totalQuestions} correct`;
+        if (bonusBreakdown.length > 0) {
+            description += ` (${bonusBreakdown.join(', ')})`;
+        }
+        
+        return this.addPoints(finalPoints, topic, description);
+    }
+
+    // Check and award point-based achievements
+    checkPointAchievements() {
+        const points = this.totalPoints;
+        const newAchievements = [];
+
+        // Point milestones
+        const pointMilestones = [
+            { points: 100, id: 'first_century', name: 'First Century', description: 'Earned 100 points' },
+            { points: 500, id: 'rising_star', name: 'Rising Star', description: 'Earned 500 points' },
+            { points: 1000, id: 'knowledge_collector', name: 'Knowledge Collector', description: 'Earned 1,000 points' },
+            { points: 5000, id: 'point_master', name: 'Point Master', description: 'Earned 5,000 points' },
+            { points: 10000, id: 'legendary_learner', name: 'Legendary Learner', description: 'Earned 10,000 points' }
+        ];
+
+        pointMilestones.forEach(milestone => {
+            if (points >= milestone.points && !this.achievements.has(milestone.id)) {
+                this.achievements.add(milestone.id);
+                newAchievements.push(milestone);
+                console.log(`🏆 Achievement Unlocked: ${milestone.name} - ${milestone.description}`);
+                
+                // Suggest leaderboard submission for significant milestones
+                if (milestone.points >= 1000) {
+                    this.suggestLeaderboardSubmission = true;
+                    console.log('💡 Consider submitting your score to the leaderboard!');
+                }
+            }
+        });
+
+        // Topic-specific achievements
+        Object.entries(this.topicPoints).forEach(([topic, topicPoints]) => {
+            const achievementId = `${topic.toLowerCase()}_master`;
+            if (topicPoints >= 1000 && !this.achievements.has(achievementId)) {
+                this.achievements.add(achievementId);
+                newAchievements.push({
+                    id: achievementId,
+                    name: `${topic} Master`,
+                    description: `Earned 1,000 points in ${topic}`
+                });
+                console.log(`🏆 Achievement Unlocked: ${topic} Master`);
+            }
+        });
+
+        return newAchievements;
+    }
+
+    // Get recent point transactions
+    getRecentPointsHistory(limit = 10) {
+        return this.pointsHistory
+            .slice(-limit)
+            .reverse(); // Most recent first
+    }
+
+    // Get all achievements
+    getAchievements() {
+        return Array.from(this.achievements);
+    }
+
+    // Check if player has specific achievement
+    hasAchievement(achievementId) {
+        return this.achievements.has(achievementId);
+    }
+
+    // Check if player should be prompted for leaderboard submission
+    shouldPromptLeaderboard() {
+        const shouldPrompt = this.suggestLeaderboardSubmission;
+        this.suggestLeaderboardSubmission = false; // Reset flag
+        return shouldPrompt;
+    }
+
+    // Set leaderboard suggestion flag manually
+    triggerLeaderboardSuggestion() {
+        this.suggestLeaderboardSubmission = true;
+    }
+
+    // Get points statistics
+    getPointsStatistics() {
+        const topTopics = Object.entries(this.topicPoints)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 3);
+
+        return {
+            totalPoints: this.totalPoints,
+            topicPoints: this.topicPoints,
+            topTopics: topTopics,
+            achievementCount: this.achievements.size,
+            transactionCount: this.pointsHistory.length
+        };
+    }
+
+    // Reset points (for testing or new game)
+    resetPoints() {
+        this.totalPoints = 0;
+        this.topicPoints = {
+            'Web_Design': 0,
+            'Python': 0,
+            'Java': 0,
+            'C': 0,
+            'C++': 0,
+            'C#': 0
+        };
+        this.pointsHistory = [];
+        this.achievements.clear();
+        console.log('Point system reset');
+    }
+
+    // Create points display UI element
+    createPointsDisplay(scene, x, y, scaleFactor = 1) {
+        const container = scene.add.container(x, y);
+        
+        // Background for points display
+        const bg = scene.add.graphics();
+        bg.fillStyle(0x000000, 0.7);
+        bg.fillRoundedRect(-50 * scaleFactor, -15 * scaleFactor, 100 * scaleFactor, 30 * scaleFactor, 5 * scaleFactor);
+        bg.lineStyle(2 * scaleFactor, 0xF1C40F, 0.8);
+        bg.strokeRoundedRect(-50 * scaleFactor, -15 * scaleFactor, 100 * scaleFactor, 30 * scaleFactor, 5 * scaleFactor);
+        
+        // Points text
+        const pointsText = scene.add.text(0, 0, `${this.totalPoints} pts`, {
+            fontSize: `${14 * scaleFactor}px`,
+            color: '#F1C40F',
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        
+        container.add([bg, pointsText]);
+        container.setDepth(100);
+        
+        // Update method with null checks
+        const update = () => {
+            // Check if the text object still exists and hasn't been destroyed
+            if (pointsText && pointsText.active && !pointsText.scene.sys.isDestroyed) {
+                try {
+                    pointsText.setText(`${this.totalPoints} pts`);
+                } catch (error) {
+                    console.warn('Points display update failed - object may be destroyed:', error);
+                }
+            }
+        };
+        
+        // Cleanup method
+        const destroy = () => {
+            if (container && container.active) {
+                container.destroy();
+            }
+        };
+        
+        return {
+            container: container,
+            pointsText: pointsText,
+            update: update,
+            destroy: destroy
+        };
+    }
+
+    // Reset player HP to maximum (useful for starting new quizzes)
+    resetPlayerHP() {
+        this.playerHP = this.maxPlayerHP;
+        console.log(`Player HP reset to full: ${this.playerHP}/${this.maxPlayerHP}`);
     }
 
     // Player HP and Health Management
@@ -135,6 +439,9 @@ class GameManager {    constructor() {
         this.playTime = 0;
         this.gameProgress = 0;
         this.previousScene = 'MainMenu';
+
+        // Reset point system
+        this.resetPoints();
         
         // Reset course progress
         this.courseProgress = {
@@ -350,7 +657,419 @@ class GameManager {    constructor() {
         return finalScore;
     }
 
-    // ...existing code...
+        // =========================
+    // LEADERBOARD INTEGRATION
+    // =========================
+
+    // Submit current points to leaderboard
+    async submitToLeaderboard(playerName, department = 'Unknown', userId = null) {
+        try {
+            // Dynamic import of leaderboard service
+            const { default: leaderboardService } = await import('./services/leaderboardService.js');
+            
+            // Generate user ID if not provided
+            if (!userId) {
+                userId = leaderboardService.generateUserId(playerName);
+            }
+
+            const playerData = {
+                userId: userId,
+                playerName: playerName,
+                score: this.totalPoints,
+                department: department,
+                gameData: {
+                    totalPoints: this.totalPoints,
+                    topicPoints: this.topicPoints,
+                    achievementCount: this.achievements.size,
+                    playTime: this.playTime,
+                    courseProgress: this.courseProgress
+                }
+            };
+
+            const result = await leaderboardService.updateBestScore(playerData);
+            
+            if (result.isNewBest) {
+                console.log('🏆 NEW HIGH SCORE! Submitted to leaderboard:', result.newBest);
+                
+                // Add achievement for submitting to leaderboard
+                if (!this.achievements.has('leaderboard_submission')) {
+                    this.achievements.add('leaderboard_submission');
+                    console.log('🏆 Achievement Unlocked: Leaderboard Climber - First score submission!');
+                }
+                
+                // Add achievement for high scores
+                if (result.newBest >= 1000 && !this.achievements.has('score_master')) {
+                    this.achievements.add('score_master');
+                    console.log('🏆 Achievement Unlocked: Score Master - Reached 1000 points!');
+                }
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Failed to submit to leaderboard:', error);
+            throw error;
+        }
+    }
+
+    // Get player's current rank and best score
+    async getLeaderboardStats(userId) {
+        try {
+            const { default: leaderboardService } = await import('./services/leaderboardService.js');
+            
+            const bestScore = await leaderboardService.getPlayerBestScore(userId);
+            const topScores = await leaderboardService.getTopScores('overall', 100);
+            
+            // Find player's rank
+            const playerRank = topScores.findIndex(entry => entry.id === userId) + 1;
+            
+            return {
+                bestScore: bestScore,
+                currentScore: this.totalPoints,
+                rank: playerRank || 'Unranked',
+                isNewBest: this.totalPoints > bestScore
+            };
+        } catch (error) {
+            console.error('Failed to get leaderboard stats:', error);
+            return {
+                bestScore: 0,
+                currentScore: this.totalPoints,
+                rank: 'Unknown',
+                isNewBest: true
+            };
+        }
+    }
+
+    // Show leaderboard submission dialog
+    showLeaderboardDialog(scene) {
+        // Check if we already have player info stored
+        const savedPlayerInfo = localStorage.getItem('sci_high_player_info');
+        let defaultName = '';
+        let defaultDepartment = '';
+        
+        if (savedPlayerInfo) {
+            const info = JSON.parse(savedPlayerInfo);
+            defaultName = info.name || '';
+            defaultDepartment = info.department || '';
+        }
+
+        // Create overlay to block clicks behind the dialog
+        const overlay = scene.add.rectangle(
+            scene.cameras.main.width / 2, 
+            scene.cameras.main.height / 2, 
+            scene.cameras.main.width, 
+            scene.cameras.main.height, 
+            0x000000, 
+            0.5
+        );
+        overlay.setInteractive(); // Block clicks
+        overlay.setDepth(1999);
+
+        // Create dialog background
+        const dialogBg = scene.add.rectangle(
+            scene.cameras.main.width / 2, 
+            scene.cameras.main.height / 2, 
+            450, 400, 
+            0xFFFFFF
+        );
+        dialogBg.setStrokeStyle(3, 0x34495E);
+        dialogBg.setDepth(2000);
+
+        // Dialog title
+        const title = scene.add.text(
+            scene.cameras.main.width / 2, 
+            scene.cameras.main.height / 2 - 100, 
+            'Submit to Leaderboard', 
+            {
+                fontSize: '20px',
+                color: '#2C3E50',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
+            }
+        ).setOrigin(0.5).setDepth(2001);
+
+        // Score display
+        const scoreText = scene.add.text(
+            scene.cameras.main.width / 2, 
+            scene.cameras.main.height / 2 - 70, 
+            `Your Score: ${this.totalPoints} points`, 
+            {
+                fontSize: '16px',
+                color: '#27AE60',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
+            }
+        ).setOrigin(0.5).setDepth(2001);
+
+        // Create HTML input elements
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.placeholder = 'Enter your name';
+        nameInput.value = defaultName;
+        nameInput.style.cssText = `
+            position: absolute;
+            left: ${scene.cameras.main.width / 2 - 150}px;
+            top: ${scene.cameras.main.height / 2 - 30}px;
+            width: 300px;
+            height: 30px;
+            z-index: 2002;
+            padding: 5px;
+            border: 2px solid #34495E;
+            border-radius: 5px;
+        `;
+        document.body.appendChild(nameInput);
+
+        const departmentSelect = document.createElement('select');
+        departmentSelect.style.cssText = `
+            position: absolute;
+            left: ${scene.cameras.main.width / 2 - 150}px;
+            top: ${scene.cameras.main.height / 2 + 10}px;
+            width: 312px;
+            height: 40px;
+            z-index: 2002;
+            padding: 5px;
+            border: 2px solid #34495E;
+            border-radius: 5px;
+        `;
+        
+        const departments = [
+            'College of Engineering',
+            'College of Computer Studies',
+            'College of Business',
+            'Senior High School',
+            'Junior High School',
+            'Other'
+        ];
+        
+        departments.forEach(dept => {
+            const option = document.createElement('option');
+            option.value = dept;
+            option.textContent = dept;
+            if (dept === defaultDepartment) option.selected = true;
+            departmentSelect.appendChild(option);
+        });
+        
+        document.body.appendChild(departmentSelect);
+
+        // Confirm (Submit) button
+        const confirmBtn = scene.add.rectangle(
+            scene.cameras.main.width / 2 - 80, 
+            scene.cameras.main.height / 2 + 80, 
+            120, 40, 
+            0x27AE60
+        );
+        confirmBtn.setStrokeStyle(2, 0x229954);
+        confirmBtn.setInteractive({ useHandCursor: true });
+        confirmBtn.setDepth(2001);
+
+        const confirmText = scene.add.text(
+            scene.cameras.main.width / 2 - 80, 
+            scene.cameras.main.height / 2 + 80, 
+            'Confirm', 
+            {
+                fontSize: '16px',
+                color: '#FFFFFF',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
+            }
+        ).setOrigin(0.5).setDepth(2001);
+
+        // Exit button
+        const exitBtn = scene.add.rectangle(
+            scene.cameras.main.width / 2 + 80, 
+            scene.cameras.main.height / 2 + 80, 
+            120, 40, 
+            0xE74C3C
+        );
+        exitBtn.setStrokeStyle(2, 0xC0392B);
+        exitBtn.setInteractive({ useHandCursor: true });
+        exitBtn.setDepth(2001);
+
+        const exitText = scene.add.text(
+            scene.cameras.main.width / 2 + 80, 
+            scene.cameras.main.height / 2 + 80, 
+            'Exit', 
+            {
+                fontSize: '16px',
+                color: '#FFFFFF',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
+            }
+        ).setOrigin(0.5).setDepth(2001);
+
+        // View Leaderboard button (moved down)
+        const viewLeaderboardBtn = scene.add.rectangle(
+            scene.cameras.main.width / 2, 
+            scene.cameras.main.height / 2 + 140, 
+            200, 35, 
+            0x3498DB
+        );
+        viewLeaderboardBtn.setStrokeStyle(2, 0x2980B9);
+        viewLeaderboardBtn.setInteractive({ useHandCursor: true });
+        viewLeaderboardBtn.setDepth(2001);
+
+        const viewLeaderboardText = scene.add.text(
+            scene.cameras.main.width / 2, 
+            scene.cameras.main.height / 2 + 140, 
+            'View Full Leaderboard', 
+            {
+                fontSize: '14px',
+                color: '#FFFFFF',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
+            }
+        ).setOrigin(0.5).setDepth(2001);
+
+        const dialogElements = [overlay, dialogBg, title, scoreText, confirmBtn, confirmText, exitBtn, exitText, viewLeaderboardBtn, viewLeaderboardText];
+
+        const closeDialog = () => {
+            dialogElements.forEach(element => element.destroy());
+            document.body.removeChild(nameInput);
+            document.body.removeChild(departmentSelect);
+        };
+
+        // Add hover effects for buttons
+        confirmBtn.on('pointerover', () => {
+            confirmBtn.setFillStyle(0x2ECC71);
+            confirmText.setStyle({ color: '#FFFFFF' });
+        });
+        confirmBtn.on('pointerout', () => {
+            confirmBtn.setFillStyle(0x27AE60);
+            confirmText.setStyle({ color: '#FFFFFF' });
+        });
+
+        exitBtn.on('pointerover', () => {
+            exitBtn.setFillStyle(0xF39C12);
+            exitText.setStyle({ color: '#FFFFFF' });
+        });
+        exitBtn.on('pointerout', () => {
+            exitBtn.setFillStyle(0xE74C3C);
+            exitText.setStyle({ color: '#FFFFFF' });
+        });
+
+        viewLeaderboardBtn.on('pointerover', () => {
+            viewLeaderboardBtn.setFillStyle(0x5DADE2);
+            viewLeaderboardText.setStyle({ color: '#FFFFFF' });
+        });
+        viewLeaderboardBtn.on('pointerout', () => {
+            viewLeaderboardBtn.setFillStyle(0x3498DB);
+            viewLeaderboardText.setStyle({ color: '#FFFFFF' });
+        });
+
+        // Confirm (Submit) handler
+        confirmBtn.on('pointerdown', async () => {
+            const playerName = nameInput.value.trim();
+            const department = departmentSelect.value;
+
+            if (!playerName) {
+                alert('Please enter your name!');
+                return;
+            }
+
+            try {
+                // Save player info for future use
+                localStorage.setItem('sci_high_player_info', JSON.stringify({
+                    name: playerName,
+                    department: department
+                }));
+
+                // Show loading
+                confirmText.setText('Submitting...');
+                confirmBtn.setFillStyle(0x95A5A6);
+
+                // Submit to leaderboard
+                const result = await this.submitToLeaderboard(playerName, department);
+
+                closeDialog();
+
+                // Show result
+                if (result.isNewBest) {
+                    const isOffline = !navigator.onLine;
+                    const resultMessage = isOffline ? 
+                        `🏆 NEW HIGH SCORE!\nSaved locally: ${result.newBest} points\n(Will sync when online)` :
+                        `🏆 NEW HIGH SCORE!\nSubmitted: ${result.newBest} points`;
+                        
+                    scene.add.text(
+                        scene.cameras.main.width / 2,
+                        scene.cameras.main.height / 2,
+                        resultMessage,
+                        {
+                            fontSize: '24px',
+                            color: '#27AE60',
+                            fontFamily: 'Arial',
+                            fontStyle: 'bold',
+                            align: 'center'
+                        }
+                    ).setOrigin(0.5).setDepth(2000);
+                } else {
+                    const isOffline = !navigator.onLine;
+                    const resultMessage = isOffline ?
+                        `Score saved locally!\nCurrent: ${result.submittedScore || this.totalPoints}\nBest: ${result.currentBest}\n(Will sync when online)` :
+                        `Score submitted!\nCurrent: ${result.submittedScore || this.totalPoints}\nBest: ${result.currentBest}`;
+                        
+                    scene.add.text(
+                        scene.cameras.main.width / 2,
+                        scene.cameras.main.height / 2,
+                        resultMessage,
+                        {
+                            fontSize: '18px',
+                            color: '#3498DB',
+                            fontFamily: 'Arial',
+                            align: 'center'
+                        }
+                    ).setOrigin(0.5).setDepth(2000);
+                }
+
+                // Auto-hide result after 3 seconds
+                scene.time.delayedCall(3000, () => {
+                    const resultText = scene.children.list.find(child => 
+                        child.depth === 2000 && child.type === 'Text'
+                    );
+                    if (resultText) resultText.destroy();
+                });
+
+            } catch (error) {
+                closeDialog();
+                console.error('Submission failed:', error);
+                
+                // Show simple error message
+                const errorText = scene.add.text(
+                    scene.cameras.main.width / 2,
+                    scene.cameras.main.height / 2,
+                    `❌ Submission Failed\nPlease try again later.`,
+                    {
+                        fontSize: '18px',
+                        color: '#E74C3C',
+                        fontFamily: 'Arial',
+                        align: 'center',
+                        backgroundColor: '#FFFFFF',
+                        padding: { x: 20, y: 15 }
+                    }
+                ).setOrigin(0.5).setDepth(2000);
+
+                // Auto-hide error after 3 seconds
+                scene.time.delayedCall(3000, () => {
+                    if (errorText) errorText.destroy();
+                });
+            }
+        });
+
+        // Exit handler
+        exitBtn.on('pointerdown', closeDialog);
+
+        // View leaderboard handler
+        viewLeaderboardBtn.on('pointerdown', () => {
+            this.openLeaderboardPage();
+        });
+
+        // Focus on name input
+        nameInput.focus();
+    }
+
+    // Open external leaderboard page
+    openLeaderboardPage() {
+        // Open the leaderboards.html page in a new tab/window
+        window.open('leaderboards.html', '_blank');
+    }
 }
 
 class Character {
