@@ -83,7 +83,7 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         };
 
         // Enhanced background with gradient
-        this.cameras.main.setBackgroundColor('#1a1a2e');
+        this.cameras.main.setBackgroundColor('#ff6b6b');
         this.createBackgroundEffects();
         playExclusiveBGM(this, 'bgm_dungeon', { loop: true, volume: 0.5 });
 
@@ -361,108 +361,155 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
 
         const cellSize = 64 * this.scaleFactor;
         const gap = 4 * this.scaleFactor;
-        const borderWidth = 2 * this.scaleFactor;
+        const borderWidth = 3 * this.scaleFactor;
 
         for (let y = 0; y < GRID_HEIGHT; y++) {
             for (let x = 0; x < GRID_WIDTH; x++) {
                 const cellX = this.offsetX + x * cellSize + gap / 2;
                 const cellY = this.offsetY + y * cellSize + gap / 2;
                 const cellWidth = cellSize - gap;
-                const cellHeight = cellSize - gap;
+                const cellHeight = cellSize - gap;            let fillColor = 0x4c1d95; // Vibrant purple for unvisited
+            let borderColor = 0x8b5cf6;
+            let fillAlpha = 1;
+            let borderAlpha = 0.9;
+            let glowColor = null;
 
-                let fillColor = 0x2d3748; // Dark gray for unvisited
-                let borderColor = 0x4a5568;
-                let fillAlpha = 1;
-                let borderAlpha = 0.8;
+            // Determine cell appearance with vibrant colors
+            if (this.grid[y][x].visited) {
+                fillColor = 0x059669; // Vibrant emerald for visited
+                borderColor = 0x10b981;
+                glowColor = 0x34d399;
+            }
 
-                // Determine cell appearance
-                if (this.grid[y][x].visited) {
-                    fillColor = 0x4a5568; // Lighter for visited
-                    borderColor = 0x718096;
+            // Adjacent cells that can be moved to - bright and pulsing
+            if (this.adjacentCells.some(cell => cell.x === x && cell.y === y) &&
+                !(this.player.x === x && this.player.y === y)) {
+                fillColor = 0xf59e0b; // Vibrant amber
+                borderColor = 0xfbbf24;
+                fillAlpha = this.breathAlpha;
+                borderAlpha = this.breathAlpha;
+                glowColor = 0xfde047;
+            }            // Draw quiz box if present with enhanced effects
+            if (this.quizBoxes.some(pos => pos.x === x && pos.y === y)) {
+                // Multi-layered vibrant background for quiz box
+                this.gridGraphics.fillStyle(0xdc2626, 1); // Bright red base
+                this.gridGraphics.fillRoundedRect(cellX, cellY, cellWidth, cellHeight, 12 * this.scaleFactor);
+                
+                // Pulsing glow layers
+                this.gridGraphics.lineStyle(borderWidth * 3, 0xff6b6b, 0.8); // Bright red outer glow
+                this.gridGraphics.strokeRoundedRect(cellX - 4, cellY - 4, cellWidth + 8, cellHeight + 8, 16 * this.scaleFactor);
+                
+                this.gridGraphics.lineStyle(borderWidth * 2, 0xfbbf24, 1); // Gold middle glow
+                this.gridGraphics.strokeRoundedRect(cellX - 2, cellY - 2, cellWidth + 4, cellHeight + 4, 14 * this.scaleFactor);
+                
+                this.gridGraphics.lineStyle(borderWidth, 0xfde047, 1); // Bright yellow border
+                this.gridGraphics.strokeRoundedRect(cellX, cellY, cellWidth, cellHeight, 12 * this.scaleFactor);
+                
+                // Vibrant inner highlight
+                this.gridGraphics.fillStyle(0xf97316, 0.6); // Bright orange overlay
+                this.gridGraphics.fillRoundedRect(cellX + 4, cellY + 4, cellWidth - 8, cellHeight - 8, 8 * this.scaleFactor);                // Enhanced quiz box sprite with multiple effects
+                const sprite = this.add.image(
+                    cellX + cellWidth / 2,
+                    cellY + cellHeight / 2,
+                    this.isBossLevel ? 'bigSlime' : 'quizbox'
+                ).setDisplaySize(cellWidth * 0.8, cellHeight * 0.8);
+                
+                // Vibrant tinting for different enemy types
+                if (this.isBossLevel) {
+                    sprite.setTint(0xff0066); // Bright magenta for boss
+                } else {
+                    sprite.setTint(0x00ffff); // Bright cyan for regular enemies
                 }
-
-                // Adjacent cells that can be moved to
-                if (this.adjacentCells.some(cell => cell.x === x && cell.y === y) &&
-                    !(this.player.x === x && this.player.y === y)) {
-                    fillColor = 0x3182ce; // Blue for moveable
-                    borderColor = 0x63b3ed;
-                    fillAlpha = this.breathAlpha;
-                    borderAlpha = this.breathAlpha;
-                }
-
-                // Draw quiz box if present
-                if (this.quizBoxes.some(pos => pos.x === x && pos.y === y)) {
-                    // Draw enhanced cell background for quiz box
-                    this.gridGraphics.fillStyle(0x9f7aea, 1); // Purple background
-                    this.gridGraphics.fillRoundedRect(cellX, cellY, cellWidth, cellHeight, 8 * this.scaleFactor);
                     
-                    this.gridGraphics.lineStyle(borderWidth, 0xd69e2e, 1); // Gold border
-                    this.gridGraphics.strokeRoundedRect(cellX, cellY, cellWidth, cellHeight, 8 * this.scaleFactor);
-
-                    // Draw the quiz box sprite with enhanced effects
-                    const sprite = this.add.image(
-                        cellX + cellWidth / 2,
-                        cellY + cellHeight / 2,
-                        'quizbox'
-                    ).setDisplaySize(cellWidth * 0.7, cellHeight * 0.7);
-                    
-                    // Add glow effect to quiz box
-                    sprite.setTint(0xffd700);
                     this.quizBoxSprites.push(sprite);
                     
-                    // Add floating animation
+                    // Enhanced floating animation with rotation
                     this.tweens.add({
                         targets: sprite,
-                        y: sprite.y - 5 * this.scaleFactor,
-                        duration: 1000,
+                        y: sprite.y - 8 * this.scaleFactor,
+                        angle: 5,
+                        duration: 1500,
+                        ease: 'Sine.easeInOut',
+                        yoyo: true,
+                        repeat: -1
+                    });
+                    
+                    // Pulsing scale effect
+                    this.tweens.add({
+                        targets: sprite,
+                        scaleX: sprite.scaleX * 1.2,
+                        scaleY: sprite.scaleY * 1.2,
+                        duration: 2000,
                         ease: 'Sine.easeInOut',
                         yoyo: true,
                         repeat: -1
                     });
                 } else {
-                    // Regular cell
+                    // Regular cell with enhanced gradients
                     this.gridGraphics.fillStyle(fillColor, fillAlpha);
-                    this.gridGraphics.fillRoundedRect(cellX, cellY, cellWidth, cellHeight, 6 * this.scaleFactor);
+                    this.gridGraphics.fillRoundedRect(cellX, cellY, cellWidth, cellHeight, 8 * this.scaleFactor);
+                    
+                    // Vibrant border with glow effect
+                    if (glowColor) {
+                        this.gridGraphics.lineStyle(borderWidth * 1.5, glowColor, 0.3);
+                        this.gridGraphics.strokeRoundedRect(cellX - 2, cellY - 2, cellWidth + 4, cellHeight + 4, 10 * this.scaleFactor);
+                    }
                     
                     this.gridGraphics.lineStyle(borderWidth, borderColor, borderAlpha);
-                    this.gridGraphics.strokeRoundedRect(cellX, cellY, cellWidth, cellHeight, 6 * this.scaleFactor);
-
-                    // Add inner highlight for visited cells
-                    if (this.grid[y][x].visited) {
-                        this.gridGraphics.lineStyle(1 * this.scaleFactor, 0xa0aec0, 0.5);
-                        this.gridGraphics.strokeRoundedRect(
-                            cellX + borderWidth,
-                            cellY + borderWidth,
-                            cellWidth - borderWidth * 2,
-                            cellHeight - borderWidth * 2,
-                            4 * this.scaleFactor
-                        );
-                    }
+                    this.gridGraphics.strokeRoundedRect(cellX, cellY, cellWidth, cellHeight, 8 * this.scaleFactor);                // Enhanced inner highlights for visited cells
+                if (this.grid[y][x].visited) {
+                    this.gridGraphics.fillStyle(0x22d3ee, 0.3); // Bright cyan overlay
+                    this.gridGraphics.fillRoundedRect(cellX + 2, cellY + 2, cellWidth - 4, cellHeight - 4, 6 * this.scaleFactor);
+                    
+                    this.gridGraphics.lineStyle(2 * this.scaleFactor, 0x06b6d4, 0.8);
+                    this.gridGraphics.strokeRoundedRect(
+                        cellX + borderWidth,
+                        cellY + borderWidth,
+                        cellWidth - borderWidth * 2,
+                        cellHeight - borderWidth * 2,
+                        6 * this.scaleFactor
+                    );
+                }
                 }
             }
         }
 
-        // Draw enhanced player representation
+        // Enhanced player representation with multiple effects
         const playerCellX = this.offsetX + this.player.x * cellSize + cellSize / 2;
         const playerCellY = this.offsetY + this.player.y * cellSize + cellSize / 2;
         
-        // Player glow effect
-        const playerGlow = this.add.circle(playerCellX, playerCellY, (cellSize * 0.4), 0x00ff00, 0.3);
-        playerGlow.setDepth(2);
-        this.quizBoxSprites.push(playerGlow); // Track for cleanup
+        // Multi-layered player glow effect with vibrant colors
+        const outerGlow = this.add.circle(playerCellX, playerCellY, cellSize * 0.6, 0xff6b6b, 0.3);
+        outerGlow.setDepth(1);
+        this.quizBoxSprites.push(outerGlow);
         
-        // Player sprite (using goblin as player representation)
+        const innerGlow = this.add.circle(playerCellX, playerCellY, cellSize * 0.4, 0xfbbf24, 0.5);
+        innerGlow.setDepth(2);
+        this.quizBoxSprites.push(innerGlow);
+        
+        // Player sprite with enhanced effects
         this.playerSprite = this.add.image(playerCellX, playerCellY, 'goblinNerd');
-        this.playerSprite.setDisplaySize(cellSize * 0.6, cellSize * 0.6);
+        this.playerSprite.setDisplaySize(cellSize * 0.7, cellSize * 0.7);
         this.playerSprite.setDepth(3);
-        this.playerSprite.setTint(0x00ff88); // Green tint for player
+        this.playerSprite.setTint(0x22d3ee); // Bright cyan tint
         
-        // Player idle animation
+        // Enhanced player animations
+        this.tweens.add({
+            targets: [outerGlow, innerGlow],
+            scaleX: 1.3,
+            scaleY: 1.3,
+            alpha: 0.1,
+            duration: 1200,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+        
         this.tweens.add({
             targets: this.playerSprite,
-            scaleX: 1.1,
-            scaleY: 1.1,
-            duration: 800,
+            scaleX: 1.15,
+            scaleY: 1.15,
+            duration: 1000,
             ease: 'Sine.easeInOut',
             yoyo: true,
             repeat: -1
@@ -498,18 +545,31 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
     }
 
     createBackgroundEffects() {
-        // Create a gradient background
+        // Create a vibrant gradient background
         const graphics = this.add.graphics();
-        graphics.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x16213e, 0x16213e, 1);
+        graphics.fillGradientStyle(0x667eea, 0x764ba2, 0xf093fb, 0xf5576c, 1);
         graphics.fillRect(0, 0, this.scale.width, this.scale.height);
         graphics.setDepth(-10);
 
-        // Add some atmospheric dots for texture
+        // Add colorful atmospheric particles for texture
         for (let i = 0; i < 30; i++) {
             const x = Phaser.Math.Between(0, this.scale.width);
             const y = Phaser.Math.Between(0, this.scale.height);
-            const dot = this.add.circle(x, y, 1, 0x4a5568, 0.3);
+            const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0x96ceb4, 0xfeca57, 0xff9ff3];
+            const color = Phaser.Utils.Array.GetRandom(colors);
+            const dot = this.add.circle(x, y, Phaser.Math.Between(2, 4), color, 0.6);
             dot.setDepth(-5);
+            
+            // Add floating animation to dots
+            this.tweens.add({
+                targets: dot,
+                y: y - Phaser.Math.Between(20, 50),
+                alpha: 0.2,
+                duration: Phaser.Math.Between(3000, 6000),
+                ease: 'Sine.easeInOut',
+                yoyo: true,
+                repeat: -1
+            });
         }
     }
 
@@ -533,7 +593,12 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
                 if (this.scene.isActive()) {
                     const x = Phaser.Math.Between(0, this.scale.width);
                     const y = Phaser.Math.Between(-50, this.scale.height + 50);
-                    const particle = this.add.circle(x, y, 1, 0xffffff, 0.2);
+                    
+                    // Create vibrant floating particles
+                    const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0x96ceb4, 0xfeca57, 0xff9ff3, 0xfbbf24];
+                    const color = Phaser.Utils.Array.GetRandom(colors);
+                    
+                    const particle = this.add.circle(x, y, Phaser.Math.Between(2, 5), color, 0.6);
                     particle.setDepth(-1);
                     
                     this.tweens.add({
@@ -541,8 +606,10 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
                         y: y + Phaser.Math.Between(-100, 100),
                         x: x + Phaser.Math.Between(-50, 50),
                         alpha: 0,
+                        scaleX: 0.2,
+                        scaleY: 0.2,
                         duration: Phaser.Math.Between(3000, 8000),
-                        ease: 'Linear',
+                        ease: 'Sine.easeInOut',
                         onComplete: () => particle.destroy()
                     });
                 }
@@ -570,8 +637,8 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         // Create a radial gradient effect around the player
         const radius = cellSize * 2;
         
-        // Dark overlay
-        this.lightingOverlay.fillStyle(0x000000, 0.3);
+        // Dark overlay with reduced opacity for brighter look
+        this.lightingOverlay.fillStyle(0x000000, 0.15);
         this.lightingOverlay.fillRect(0, 0, this.scale.width, this.scale.height);
         
         // Light circle around player
@@ -581,9 +648,9 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.lightingOverlay.closePath();
         this.lightingOverlay.fillPath();
         
-        // Subtle glow effect
+        // Subtle glow effect with vibrant colors
         for (let i = 0; i < 3; i++) {
-            this.lightingOverlay.lineStyle(2 + i, 0xffd700, 0.1 - i * 0.03);
+            this.lightingOverlay.lineStyle(2 + i, 0xff6b6b, 0.15 - i * 0.04);
             this.lightingOverlay.strokeCircle(playerX, playerY, radius - i * 10);
         }
     }    update(time, delta) {
@@ -688,54 +755,117 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2;
         
-        // Create notification background
+        // Enhanced notification background with gradient
         const notificationBg = this.add.graphics();
-        notificationBg.fillStyle(0x1a1a2e, 0.9);
-        notificationBg.fillRoundedRect(centerX - 150, centerY - 60, 300, 120, 10);
-        notificationBg.lineStyle(3, 0xff6b6b, 1);
-        notificationBg.strokeRoundedRect(centerX - 150, centerY - 60, 300, 120, 10);
+        
+        // Gradient background
+        notificationBg.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x4c1d95, 0x7c2d12, 1);
+        notificationBg.fillRoundedRect(centerX - 200, centerY - 80, 400, 160, 15);
+        
+        // Multiple glowing borders
+        notificationBg.lineStyle(4, 0xfbbf24, 1);
+        notificationBg.strokeRoundedRect(centerX - 200, centerY - 80, 400, 160, 15);
+        
+        notificationBg.lineStyle(2, 0xfef3c7, 0.8);
+        notificationBg.strokeRoundedRect(centerX - 196, centerY - 76, 392, 152, 12);
+        
         notificationBg.setDepth(100);
         
-        // Create notification text
+        // Enhanced notification text with glow effect
         const message = this.intensity > this.maxIntensity ? 
-            "BOSS LEVEL UNLOCKED!" : 
-            `INTENSITY LEVEL ${this.intensity}!`;
+            "🏆 BOSS LEVEL UNLOCKED! 🏆" : 
+            `⚡ INTENSITY LEVEL ${this.intensity}! ⚡`;
             
-        const notificationText = this.add.text(centerX, centerY - 20, message, {
-            fontSize: '20px',
-            fill: this.intensity > this.maxIntensity ? '#ff6b6b' : '#ffd700',
+        const notificationText = this.add.text(centerX, centerY - 30, message, {
+            fontSize: '24px',
+            fill: this.intensity > this.maxIntensity ? '#ff1744' : '#ffd700',
             fontFamily: 'Caprasimo-Regular',
             stroke: '#1a1a2e',
-            strokeThickness: 2
+            strokeThickness: 3,
+            shadow: {
+                offsetX: 2,
+                offsetY: 2,
+                color: '#000000',
+                blur: 5,
+                stroke: true,
+                fill: true
+            }
         }).setOrigin(0.5).setDepth(101);
         
-        // Add position reset notification
-        const resetText = this.add.text(centerX, centerY + 10, 'Player position reset!', {
-            fontSize: '14px',
-            fill: '#ffffff',
+        // Enhanced position reset notification
+        const resetText = this.add.text(centerX, centerY + 20, '🔄 Player position reset! 🔄', {
+            fontSize: '16px',
+            fill: '#00ffff',
             fontFamily: 'Caprasimo-Regular',
             stroke: '#1a1a2e',
-            strokeThickness: 1
+            strokeThickness: 2,
+            shadow: {
+                offsetX: 1,
+                offsetY: 1,
+                color: '#000000',
+                blur: 3,
+                stroke: true,
+                fill: true
+            }
         }).setOrigin(0.5).setDepth(101);
         
-        // Animate notification
+        // Particle burst effect
+        for (let i = 0; i < 20; i++) {
+            const particle = this.add.circle(centerX, centerY, 3, 0xffd700, 1);
+            particle.setDepth(102);
+            
+            this.tweens.add({
+                targets: particle,
+                x: centerX + Phaser.Math.Between(-150, 150),
+                y: centerY + Phaser.Math.Between(-100, 100),
+                alpha: 0,
+                scaleX: 0,
+                scaleY: 0,
+                duration: 1000,
+                ease: 'Power2.easeOut',
+                onComplete: () => particle.destroy()
+            });
+        }
+        
+        // Enhanced animations
         notificationBg.setAlpha(0);
         notificationText.setAlpha(0);
         resetText.setAlpha(0);
         
-        this.tweens.add({
-            targets: [notificationBg, notificationText, resetText],
-            alpha: 1,
-            duration: 300,
-            ease: 'Power2'
-        });
+        // Scale-in animation
+        notificationBg.setScale(0.5);
+        notificationText.setScale(0.5);
+        resetText.setScale(0.5);
         
         this.tweens.add({
             targets: [notificationBg, notificationText, resetText],
-            alpha: 0,
+            alpha: 1,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 400,
+            ease: 'Back.easeOut'
+        });
+        
+        // Pulsing effect
+        this.tweens.add({
+            targets: notificationText,
+            scaleX: 1.1,
+            scaleY: 1.1,
             duration: 500,
-            delay: 2500,
-            ease: 'Power2',
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: 3
+        });
+        
+        // Fade out animation
+        this.tweens.add({
+            targets: [notificationBg, notificationText, resetText],
+            alpha: 0,
+            scaleX: 0.8,
+            scaleY: 0.8,
+            duration: 600,
+            delay: 3000,
+            ease: 'Power2.easeIn',
             onComplete: () => {
                 notificationBg.destroy();
                 notificationText.destroy();

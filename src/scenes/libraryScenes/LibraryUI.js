@@ -19,11 +19,11 @@ export default class LibraryUI {
         const minHeight = 200 + (itemCount * 10);
         const panelHeight = Math.min(minHeight * sf, screenHeight * 0.7);
         
-        // Create background with gradient like feedbackUI
+        // Create background with white and yellow gradient
         const menuBg = scene.add.graphics();
         
-        // Outer glow effect
-        menuBg.fillStyle(0x63b3ed, 0.3);
+        // Outer glow effect with yellow
+        menuBg.fillStyle(0xF4CE14, 0.3);
         menuBg.fillRoundedRect(
             -panelWidth/2 - 8 * sf,
             -panelHeight/2 - 8 * sf,
@@ -32,8 +32,8 @@ export default class LibraryUI {
             20 * sf
         );
         
-        // Main panel with gradient
-        menuBg.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x2d3748, 0x2d3748, 0.95);
+        // Main panel with white to yellow gradient
+        menuBg.fillGradientStyle(0xffffff, 0xffffff, 0xF5F7F8, 0xF4CE14, 0.95);
         menuBg.fillRoundedRect(
             -panelWidth/2,
             -panelHeight/2,
@@ -42,8 +42,8 @@ export default class LibraryUI {
             16 * sf
         );
         
-        // Border
-        menuBg.lineStyle(3 * sf, 0x63b3ed, 0.8);
+        // Golden border
+        menuBg.lineStyle(3 * sf, 0xF4CE14, 0.8);
         menuBg.strokeRoundedRect(
             -panelWidth/2,
             -panelHeight/2,
@@ -52,17 +52,18 @@ export default class LibraryUI {
             16 * sf
         );
         
-        menuBg.setDepth(2);
+        menuBg.setDepth(10); // Higher depth to appear above background
         scene.mainMenuContainer.add(menuBg);
         
-        // Title with game's style
+        // Title with yellow and dark styling
         const title = scene.add.text(0, -panelHeight/2 + 50 * sf, scene.libraryData.main.title, {
             fontSize: `${Math.min(32 * sf, 28)}px`,
-            color: '#ffd700',
+            color: '#45474B', // Dark gray from index.html
             fontFamily: 'Caprasimo-Regular',
-            stroke: '#1a1a2e',
+            stroke: '#F4CE14',
             strokeThickness: 2 * sf
         }).setOrigin(0.5);
+        title.setDepth(15); // High depth for title
         scene.mainMenuContainer.add(title);
         
         // Menu items with reduced spacing
@@ -74,10 +75,10 @@ export default class LibraryUI {
             const buttonWidth = panelWidth * 0.8;
             const buttonHeight = Math.min(54 * sf, 45);
             
-            // Button background with game's style
+            // Button background with white and yellow styling
             const btnBg = scene.add.graphics();
             
-            btnBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 1);
+            btnBg.fillGradientStyle(0xffffff, 0xffffff, 0xF5F7F8, 0xF5F7F8, 1);
             btnBg.fillRoundedRect(
                 -buttonWidth/2,
                 y - buttonHeight/2,
@@ -86,7 +87,7 @@ export default class LibraryUI {
                 8 * sf
             );
             
-            btnBg.lineStyle(2 * sf, 0x63b3ed, 0.8);
+            btnBg.lineStyle(2 * sf, 0xF4CE14, 0.8);
             btnBg.strokeRoundedRect(
                 -buttonWidth/2,
                 y - buttonHeight/2,
@@ -95,25 +96,26 @@ export default class LibraryUI {
                 8 * sf
             );
             
-            btnBg.setDepth(3);
+            btnBg.setDepth(12); // Higher depth for buttons
             btnBg.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
             
-            // Icon and text
+            // Icon and text with dark styling
             const icon = item.icon ? item.icon : ['📚','📊','📝','⚙️'][index] || '';
             const btnText = scene.add.text(0, y, `${icon}  ${item.name}`, {
                 fontSize: `${Math.min(18 * sf, 16)}px`,
-                color: '#ffd700',
+                color: '#45474B', // Dark gray from index.html
                 fontFamily: 'Caprasimo-Regular',
-                stroke: '#1a1a2e',
+                stroke: '#ffffff',
                 strokeThickness: 1 * sf
             }).setOrigin(0.5);
+            btnText.setDepth(15); // High depth for text
             
-            // Interactive effects
+            // Interactive effects with yellow hover
             btnBg.on('pointerover', () => {
                 btnBg.clear();
-                btnBg.fillGradientStyle(0x63b3ed, 0x63b3ed, 0x3498db, 0x3498db, 0.8);
+                btnBg.fillGradientStyle(0xF4CE14, 0xF4CE14, 0xfde047, 0xfde047, 0.9);
                 btnBg.fillRoundedRect(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight, 8 * sf);
-                btnBg.lineStyle(2 * sf, 0xffd700, 1);
+                btnBg.lineStyle(2 * sf, 0xfbbf24, 1);
                 btnBg.strokeRoundedRect(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight, 8 * sf);
                 btnText.setColor('#ffffff');
                 btnText.setScale(1.05);
@@ -121,11 +123,11 @@ export default class LibraryUI {
             
             btnBg.on('pointerout', () => {
                 btnBg.clear();
-                btnBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 1);
+                btnBg.fillGradientStyle(0xffffff, 0xffffff, 0xF5F7F8, 0xF5F7F8, 1);
                 btnBg.fillRoundedRect(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight, 8 * sf);
-                btnBg.lineStyle(2 * sf, 0x63b3ed, 0.8);
+                btnBg.lineStyle(2 * sf, 0xF4CE14, 0.8);
                 btnBg.strokeRoundedRect(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight, 8 * sf);
-                btnText.setColor('#ffd700');
+                btnText.setColor('#45474B');
                 btnText.setScale(1);
             });
             
@@ -162,11 +164,11 @@ export default class LibraryUI {
         
         // No overlay - popup appears directly without background
         
-        // Popup background with game's design
+        // Popup background with white and yellow styling
         scene.popupBg = scene.add.graphics();
         
-        // Main background only (removed outer glow)
-        scene.popupBg.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x2d3748, 0x2d3748, 0.95);
+        // Main background with white to yellow gradient
+        scene.popupBg.fillGradientStyle(0xffffff, 0xffffff, 0xF5F7F8, 0xF4CE14, 0.95);
         scene.popupBg.fillRoundedRect(
             -popupWidth/2,
             -popupHeight/2,
@@ -175,8 +177,8 @@ export default class LibraryUI {
             16 * sf
         );
         
-        // Border
-        scene.popupBg.lineStyle(4 * sf, 0x63b3ed, 0.8);
+        // Golden border
+        scene.popupBg.lineStyle(4 * sf, 0xF4CE14, 0.8);
         scene.popupBg.strokeRoundedRect(
             -popupWidth/2,
             -popupHeight/2,
@@ -191,9 +193,9 @@ export default class LibraryUI {
         const headerHeight = Math.min(50 * sf, 45);
         const headerY = -popupHeight/2 + headerHeight/2;
         
-        // Header background
+        // Header background with white and yellow styling
         const headerBg = scene.add.graphics();
-        headerBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 1);
+        headerBg.fillGradientStyle(0xF4CE14, 0xF4CE14, 0xfde047, 0xfde047, 1);
         headerBg.fillRoundedRect(
             -popupWidth/2 + 10 * sf,
             -popupHeight/2 + 10 * sf,
@@ -209,12 +211,12 @@ export default class LibraryUI {
             fontFamily: 'Arial'
         }).setOrigin(0.5).setDepth(3);
         
-        // Title
+        // Title with dark styling
         scene.popupTitle = scene.add.text(0, headerY, 'LIBRARY', {
             fontSize: `${Math.min(28 * sf, 24)}px`,
             fontFamily: 'Caprasimo-Regular',
-            color: '#ffd700',
-            stroke: '#1a1a2e',
+            color: '#45474B', // Dark gray from index.html
+            stroke: '#ffffff',
             strokeThickness: 2 * sf
         }).setOrigin(0.5).setDepth(3);
         
