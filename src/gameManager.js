@@ -981,14 +981,49 @@ class GameManager {
 
                 closeDialog();
 
+                // Create celebratory background effects
+                this.createLeaderboardSuccessEffect(scene, result.isNewBest);
+
                 // Show result
                 if (result.isNewBest) {
                     const isOffline = !navigator.onLine;
                     const resultMessage = isOffline ? 
                         `🏆 NEW HIGH SCORE!\nSaved locally: ${result.newBest} points\n(Will sync when online)` :
                         `🏆 NEW HIGH SCORE!\nSubmitted: ${result.newBest} points`;
+                    
+                    // Create background window for NEW HIGH SCORE
+                    const msgBg = scene.add.rectangle(
+                        scene.cameras.main.width / 2,
+                        scene.cameras.main.height / 2,
+                        400, 200,
+                        0xFFFFFF
+                    );
+                    msgBg.setStrokeStyle(4, 0xF1C40F);
+                    msgBg.setDepth(1999);
+                    msgBg.setAlpha(0.95);
+                    
+                    // Add inner glow effect
+                    const innerGlow = scene.add.rectangle(
+                        scene.cameras.main.width / 2,
+                        scene.cameras.main.height / 2,
+                        390, 190,
+                        0xF1C40F,
+                        0.1
+                    );
+                    innerGlow.setDepth(1999);
+                    
+                    // Add pulsing animation to background
+                    scene.tweens.add({
+                        targets: [msgBg, innerGlow],
+                        scaleX: 1.05,
+                        scaleY: 1.05,
+                        duration: 1000,
+                        yoyo: true,
+                        repeat: -1,
+                        ease: 'Sine.easeInOut'
+                    });
                         
-                    scene.add.text(
+                    const resultText = scene.add.text(
                         scene.cameras.main.width / 2,
                         scene.cameras.main.height / 2,
                         resultMessage,
@@ -997,16 +1032,36 @@ class GameManager {
                             color: '#27AE60',
                             fontFamily: 'Arial',
                             fontStyle: 'bold',
-                            align: 'center'
+                            align: 'center',
+                            stroke: '#FFFFFF',
+                            strokeThickness: 2
                         }
                     ).setOrigin(0.5).setDepth(2000);
+                    
+                    // Auto-hide result window after 5 seconds
+                    scene.time.delayedCall(5000, () => {
+                        if (msgBg) msgBg.destroy();
+                        if (innerGlow) innerGlow.destroy();
+                        if (resultText) resultText.destroy();
+                    });
                 } else {
                     const isOffline = !navigator.onLine;
                     const resultMessage = isOffline ?
                         `Score saved locally!\nCurrent: ${result.submittedScore || this.totalPoints}\nBest: ${result.currentBest}\n(Will sync when online)` :
                         `Score submitted!\nCurrent: ${result.submittedScore || this.totalPoints}\nBest: ${result.currentBest}`;
+                    
+                    // Create simpler background for regular score submission
+                    const msgBg = scene.add.rectangle(
+                        scene.cameras.main.width / 2,
+                        scene.cameras.main.height / 2,
+                        350, 150,
+                        0xFFFFFF,
+                        0.9
+                    );
+                    msgBg.setStrokeStyle(2, 0x3498DB);
+                    msgBg.setDepth(1999);
                         
-                    scene.add.text(
+                    const resultText = scene.add.text(
                         scene.cameras.main.width / 2,
                         scene.cameras.main.height / 2,
                         resultMessage,
@@ -1017,10 +1072,16 @@ class GameManager {
                             align: 'center'
                         }
                     ).setOrigin(0.5).setDepth(2000);
+                    
+                    // Auto-hide result window after 5 seconds
+                    scene.time.delayedCall(5000, () => {
+                        if (msgBg) msgBg.destroy();
+                        if (resultText) resultText.destroy();
+                    });
                 }
 
-                // Auto-hide result after 3 seconds
-                scene.time.delayedCall(3000, () => {
+                // Auto-hide result after 5 seconds (increased to enjoy the effects)
+                scene.time.delayedCall(5000, () => {
                     const resultText = scene.children.list.find(child => 
                         child.depth === 2000 && child.type === 'Text'
                     );
@@ -1069,6 +1130,196 @@ class GameManager {
     openLeaderboardPage() {
         // Open the leaderboards.html page in a new tab/window
         window.open('leaderboards.html', '_blank');
+    }
+
+    // Create celebratory background effects when leaderboard score is submitted
+    createLeaderboardSuccessEffect(scene, isNewBest = false) {
+        const { width, height } = scene.cameras.main;
+        
+        // Play success sound effects
+        if (scene.sound) {
+            if (isNewBest) {
+                // Play combo sound for new best score
+                const comboSound = scene.sound.add('se_combo', { volume: 0.7 });
+                if (comboSound) comboSound.play();
+                
+                // Add a second confirm sound after a delay
+                scene.time.delayedCall(500, () => {
+                    const confirmSound = scene.sound.add('se_confirm', { volume: 0.5 });
+                    if (confirmSound) confirmSound.play();
+                });
+            } else {
+                // Play confirm sound for regular submission
+                const confirmSound = scene.sound.add('se_confirm', { volume: 0.6 });
+                if (confirmSound) confirmSound.play();
+            }
+        }
+        
+        // Create background overlay with animated color
+        const successOverlay = scene.add.rectangle(width / 2, height / 2, width, height, 0x27AE60, 0.1);
+        successOverlay.setDepth(1500);
+        
+        // Animate the background color
+        scene.tweens.add({
+            targets: successOverlay,
+            alpha: isNewBest ? 0.3 : 0.2,
+            duration: 500,
+            yoyo: true,
+            repeat: 2,
+            ease: 'Power2',
+            onComplete: () => {
+                scene.tweens.add({
+                    targets: successOverlay,
+                    alpha: 0,
+                    duration: 1500,
+                    onComplete: () => successOverlay.destroy()
+                });
+            }
+        });
+
+        // Create confetti/celebration particles
+        this.createConfettiEffect(scene, isNewBest);
+        
+        // Create pulsing rings effect
+        this.createPulseRingsEffect(scene, isNewBest);
+        
+        // Create floating score indicators
+        this.createFloatingScoreEffect(scene, isNewBest);
+        
+        // Screen flash effect for new best scores
+        if (isNewBest) {
+            this.createScreenFlashEffect(scene);
+        }
+    }
+
+    createConfettiEffect(scene, isNewBest) {
+        const { width, height } = scene.cameras.main;
+        const particleCount = isNewBest ? 50 : 30;
+        const colors = [0xF1C40F, 0xE74C3C, 0x3498DB, 0x2ECC71, 0x9B59B6, 0xE67E22];
+        
+        for (let i = 0; i < particleCount; i++) {
+            const x = Math.random() * width;
+            const y = -50;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const size = Math.random() * 8 + 4;
+            
+            const particle = scene.add.rectangle(x, y, size, size, color);
+            particle.setDepth(1600);
+            particle.setRotation(Math.random() * Math.PI * 2);
+            
+            // Animate particle falling
+            scene.tweens.add({
+                targets: particle,
+                y: height + 50,
+                x: x + (Math.random() - 0.5) * 200,
+                rotation: particle.rotation + Math.PI * 4,
+                duration: 3000 + Math.random() * 2000,
+                ease: 'Power2',
+                onComplete: () => particle.destroy()
+            });
+            
+            // Add slight scale animation
+            scene.tweens.add({
+                targets: particle,
+                scaleX: 0.5 + Math.random() * 0.5,
+                scaleY: 0.5 + Math.random() * 0.5,
+                duration: 1000 + Math.random() * 1000,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        }
+    }
+
+    createPulseRingsEffect(scene, isNewBest) {
+        const { width, height } = scene.cameras.main;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const ringCount = isNewBest ? 4 : 2;
+        
+        for (let i = 0; i < ringCount; i++) {
+            setTimeout(() => {
+                const ring = scene.add.circle(centerX, centerY, 10, isNewBest ? 0xF1C40F : 0x3498DB, 0);
+                ring.setStrokeStyle(4, isNewBest ? 0xF39C12 : 0x2980B9, 0.8);
+                ring.setDepth(1550);
+                
+                scene.tweens.add({
+                    targets: ring,
+                    radius: Math.max(width, height) * 0.8,
+                    alpha: 0,
+                    duration: 2000,
+                    ease: 'Power2',
+                    onComplete: () => ring.destroy()
+                });
+            }, i * 300);
+        }
+    }
+
+    createFloatingScoreEffect(scene, isNewBest) {
+        const { width, height } = scene.cameras.main;
+        const scoreTexts = isNewBest ? 
+            ['🏆 AMAZING!', '⭐ EXCELLENT!', '🎉 FANTASTIC!'] : 
+            ['✅ GREAT!', '👍 NICE!', '💫 GOOD JOB!'];
+        
+        scoreTexts.forEach((text, index) => {
+            setTimeout(() => {
+                const scoreText = scene.add.text(
+                    Math.random() * width * 0.6 + width * 0.2,
+                    height + 50,
+                    text,
+                    {
+                        fontSize: isNewBest ? '28px' : '20px',
+                        color: isNewBest ? '#F1C40F' : '#3498DB',
+                        fontFamily: 'Arial',
+                        fontStyle: 'bold',
+                        stroke: '#FFFFFF',
+                        strokeThickness: 3
+                    }
+                ).setOrigin(0.5).setDepth(1650);
+                
+                scene.tweens.add({
+                    targets: scoreText,
+                    y: -100,
+                    alpha: { from: 1, to: 0 },
+                    scale: { from: 0.5, to: 1.2 },
+                    duration: 3000,
+                    ease: 'Power2',
+                    onComplete: () => scoreText.destroy()
+                });
+                
+                // Add gentle sway
+                scene.tweens.add({
+                    targets: scoreText,
+                    x: scoreText.x + (Math.random() - 0.5) * 100,
+                    duration: 3000,
+                    ease: 'Sine.easeInOut'
+                });
+            }, index * 400);
+        });
+    }
+
+    createScreenFlashEffect(scene) {
+        const { width, height } = scene.cameras.main;
+        
+        const flash = scene.add.rectangle(width / 2, height / 2, width, height, 0xFFFFFF, 0.8);
+        flash.setDepth(1700);
+        
+        scene.tweens.add({
+            targets: flash,
+            alpha: 0,
+            duration: 300,
+            ease: 'Power2',
+            onComplete: () => {
+                // Second flash
+                flash.setAlpha(0.4);
+                scene.tweens.add({
+                    targets: flash,
+                    alpha: 0,
+                    duration: 200,
+                    onComplete: () => flash.destroy()
+                });
+            }
+        });
     }
 }
 

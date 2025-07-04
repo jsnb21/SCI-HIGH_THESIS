@@ -57,12 +57,15 @@
     <!-- Chart.js for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
-  <body class="font-sans bg-light text-textColor m-0 p-0 leading-relaxed">
+  <body class="font-sans bg-light text-textColor m-0 p-0 leading-relaxed min-h-screen flex flex-col">
     <nav class="bg-white py-5 text-center sticky top-0 shadow-md z-50">
       <a href="index.html" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">Home</a>
       <a href="#about" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">About Us</a>
       <a href="#contact" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">Contact</a>
     </nav>
+    
+    <!-- Main content wrapper with flex-grow to push footer down -->
+    <div class="flex-grow">
     <div class="max-w-2xl mx-auto my-12 p-8 bg-white rounded-xl shadow-lg text-center">
       <h1 class="text-3xl mb-6 text-dark font-bold">Leaderboards</h1>
       <div class="flex justify-center gap-4 mb-6">
@@ -186,7 +189,9 @@
         </div>
       </div>
     </div>
-    <footer class="text-center py-8 bg-dark text-light mt-12">
+    </div>
+    
+    <footer class="text-center py-8 bg-dark text-light mt-auto">
       <p>&copy; 2025 SCI-HIGH Thesis. All rights reserved.</p>
     </footer>
     <script>
