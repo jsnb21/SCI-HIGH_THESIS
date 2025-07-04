@@ -1,6 +1,23 @@
 export function createDragAndDropOptions(scene, container, centerX, centerY, boxWidth, boxHeight, questionTextY, dragItems, dropZones, sf, onDrop) {
     const optionsStartY = questionTextY + 50 * sf;
-    const itemSpacing = 80 * sf;
+    
+    // Calculate maximum text width to determine spacing
+    const tempTexts = dragItems.map(item => {
+        const tempText = scene.add.text(0, 0, item.text, {
+            fontSize: `${14 * sf}px`,
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+        });
+        const width = tempText.width;
+        tempText.destroy();
+        return width;
+    });
+    
+    const maxTextWidth = Math.max(...tempTexts);
+    const padding = 12 * sf;
+    const minWidth = 50 * sf;
+    const maxItemWidth = Math.max(maxTextWidth + padding * 2, minWidth);
+    const itemSpacing = Math.max(maxItemWidth + 20 * sf, 90 * sf); // Ensure minimum spacing
     
     // Store original positions and states
     scene.dragAndDropState = {
@@ -80,16 +97,8 @@ function createDropZone(scene, x, y, sf, label, id) {
 function createDragItem(scene, x, y, sf, text, id, isDecoy) {
     const itemContainer = scene.add.container(x, y).setDepth(122);
     
-    // Item background
-    const itemBg = scene.add.graphics();
-    const bgColor = isDecoy ? 0xff6b6b : 0x4ecdc4;
-    itemBg.fillStyle(bgColor, 0.9);
-    itemBg.lineStyle(2 * sf, 0x2d3748, 1);
-    itemBg.fillRoundedRect(-35 * sf, -15 * sf, 70 * sf, 30 * sf, 6 * sf);
-    itemBg.strokeRoundedRect(-35 * sf, -15 * sf, 70 * sf, 30 * sf, 6 * sf);
-    
-    // Item text
-    const itemText = scene.add.text(0, 0, text, {
+    // Create temporary text to measure dimensions
+    const tempText = scene.add.text(0, 0, text, {
         fontSize: `${14 * sf}px`,
         fill: '#ffffff',
         align: 'center',
@@ -97,15 +106,38 @@ function createDragItem(scene, x, y, sf, text, id, isDecoy) {
         fontStyle: 'bold'
     }).setOrigin(0.5);
     
+    // Calculate dynamic box size based on text
+    const textWidth = tempText.width;
+    const textHeight = tempText.height;
+    const padding = 12 * sf; // Padding around text
+    const minWidth = 50 * sf; // Minimum width
+    const minHeight = 25 * sf; // Minimum height
+    
+    const boxWidth = Math.max(textWidth + padding * 2, minWidth);
+    const boxHeight = Math.max(textHeight + padding * 1.5, minHeight);
+    
+    // Item background with dynamic size
+    const itemBg = scene.add.graphics();
+    const bgColor = isDecoy ? 0xff6b6b : 0x4ecdc4;
+    itemBg.fillStyle(bgColor, 0.9);
+    itemBg.lineStyle(2 * sf, 0x2d3748, 1);
+    itemBg.fillRoundedRect(-boxWidth / 2, -boxHeight / 2, boxWidth, boxHeight, 6 * sf);
+    itemBg.strokeRoundedRect(-boxWidth / 2, -boxHeight / 2, boxWidth, boxHeight, 6 * sf);
+    
+    // Item text (reuse the temporary text)
+    const itemText = tempText;
+    
     itemContainer.add(itemBg);
     itemContainer.add(itemText);
     itemContainer.setData('id', id);
     itemContainer.setData('text', text);
     itemContainer.setData('background', itemBg);
     itemContainer.setData('isDecoy', isDecoy);
+    itemContainer.setData('boxWidth', boxWidth);
+    itemContainer.setData('boxHeight', boxHeight);
     
-    // Make interactive
-    itemContainer.setInteractive(new Phaser.Geom.Rectangle(-35 * sf, -15 * sf, 70 * sf, 30 * sf), Phaser.Geom.Rectangle.Contains);
+    // Make interactive with dynamic size
+    itemContainer.setInteractive(new Phaser.Geom.Rectangle(-boxWidth / 2, -boxHeight / 2, boxWidth, boxHeight), Phaser.Geom.Rectangle.Contains);
     itemContainer.setData('isDragging', false);
     
     return itemContainer;
@@ -123,13 +155,16 @@ function setupDragAndDropInteractions(scene, onDrop) {
         
         // Visual feedback for drag start
         const bg = gameObject.getData('background');
+        const boxWidth = gameObject.getData('boxWidth');
+        const boxHeight = gameObject.getData('boxHeight');
+        
         bg.clear();
         const isDecoy = gameObject.getData('isDecoy');
         const bgColor = isDecoy ? 0xff6b6b : 0x4ecdc4;
         bg.fillStyle(bgColor, 1);
         bg.lineStyle(3 * scene.scaleFactor, 0xffd700, 1);
-        bg.fillRoundedRect(-35 * scene.scaleFactor, -15 * scene.scaleFactor, 70 * scene.scaleFactor, 30 * scene.scaleFactor, 6 * scene.scaleFactor);
-        bg.strokeRoundedRect(-35 * scene.scaleFactor, -15 * scene.scaleFactor, 70 * scene.scaleFactor, 30 * scene.scaleFactor, 6 * scene.scaleFactor);
+        bg.fillRoundedRect(-boxWidth / 2, -boxHeight / 2, boxWidth, boxHeight, 6 * scene.scaleFactor);
+        bg.strokeRoundedRect(-boxWidth / 2, -boxHeight / 2, boxWidth, boxHeight, 6 * scene.scaleFactor);
         
         // Play select sound
         if (scene.se_hoverSound) {
@@ -250,11 +285,14 @@ function lockItemInPosition(scene, itemState, dropZone) {
     
     // Update visual to show locked state
     const bg = itemState.item.getData('background');
+    const boxWidth = itemState.item.getData('boxWidth');
+    const boxHeight = itemState.item.getData('boxHeight');
+    
     bg.clear();
     bg.fillStyle(0x27ae60, 1); // Green for correct/locked
     bg.lineStyle(3 * scene.scaleFactor, 0x2ecc71, 1);
-    bg.fillRoundedRect(-35 * scene.scaleFactor, -15 * scene.scaleFactor, 70 * scene.scaleFactor, 30 * scene.scaleFactor, 6 * scene.scaleFactor);
-    bg.strokeRoundedRect(-35 * scene.scaleFactor, -15 * scene.scaleFactor, 70 * scene.scaleFactor, 30 * scene.scaleFactor, 6 * scene.scaleFactor);
+    bg.fillRoundedRect(-boxWidth / 2, -boxHeight / 2, boxWidth, boxHeight, 6 * scene.scaleFactor);
+    bg.strokeRoundedRect(-boxWidth / 2, -boxHeight / 2, boxWidth, boxHeight, 6 * scene.scaleFactor);
     
     // Remove interactivity
     itemState.item.removeInteractive();
@@ -290,13 +328,16 @@ function returnItemToOriginal(scene, itemState) {
         onComplete: () => {
             // Reset visual style
             const bg = itemState.item.getData('background');
+            const boxWidth = itemState.item.getData('boxWidth');
+            const boxHeight = itemState.item.getData('boxHeight');
+            
             bg.clear();
             const isDecoy = itemState.item.getData('isDecoy');
             const bgColor = isDecoy ? 0xff6b6b : 0x4ecdc4;
             bg.fillStyle(bgColor, 0.9);
             bg.lineStyle(2 * scene.scaleFactor, 0x2d3748, 1);
-            bg.fillRoundedRect(-35 * scene.scaleFactor, -15 * scene.scaleFactor, 70 * scene.scaleFactor, 30 * scene.scaleFactor, 6 * scene.scaleFactor);
-            bg.strokeRoundedRect(-35 * scene.scaleFactor, -15 * scene.scaleFactor, 70 * scene.scaleFactor, 30 * scene.scaleFactor, 6 * scene.scaleFactor);
+            bg.fillRoundedRect(-boxWidth / 2, -boxHeight / 2, boxWidth, boxHeight, 6 * scene.scaleFactor);
+            bg.strokeRoundedRect(-boxWidth / 2, -boxHeight / 2, boxWidth, boxHeight, 6 * scene.scaleFactor);
         }
     });
 }
