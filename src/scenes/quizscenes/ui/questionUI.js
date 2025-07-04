@@ -1,5 +1,6 @@
 import { createFillInBlankInput } from './fillInBlankUI.js';
 import { createMultipleChoiceOptions } from './multipleChoiceUI.js';
+import { createDragAndDropOptions } from './dragAndDropUI.js';
 
 export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxHeight, questionIndex, question, options, sf, questionType = 'multiple-choice', onSelect) {
     // Container for question and options
@@ -43,6 +44,8 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
     // Handle different question types
     if (questionType === 'fill-in-the-blank') {
         createFillInBlankInput(scene, container, centerX, centerY, boxWidth, boxHeight, questionTextY, sf, onSelect);
+    } else if (questionType === 'drag-and-drop') {
+        createDragAndDropOptions(scene, container, centerX, centerY, boxWidth, boxHeight, questionTextY, options.dragItems, options.dropZones, sf, onSelect);
     } else {
         // Default: multiple choice
         createMultipleChoiceOptions(scene, container, centerX, centerY, boxWidth, boxHeight, questionTextY, options, sf, onSelect);

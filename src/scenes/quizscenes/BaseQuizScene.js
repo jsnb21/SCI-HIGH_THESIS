@@ -21,8 +21,8 @@ function shuffleArray(array) {
 
 // Function to randomize multiple choice options and update correct index
 function randomizeOptions(question) {
-    if (question.type === 'fill-in-the-blank' || !question.options) {
-        return question; // No randomization needed for fill-in-the-blank
+    if (question.type === 'fill-in-the-blank' || question.type === 'drag-and-drop' || !question.options) {
+        return question; // No randomization needed for fill-in-the-blank or drag-and-drop
     }
 
     const originalOptions = [...question.options];
@@ -278,6 +278,15 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             this._fillInBlankCleanup = null;
         }
         
+        // Clean up drag-and-drop state if it exists
+        if (this.dragAndDropState) {
+            // Remove any drag event listeners
+            this.input.off('dragstart');
+            this.input.off('drag');
+            this.input.off('dragend');
+            this.dragAndDropState = null;
+        }
+        
         this.quizElements.forEach(el => {
             if (el && el.active) el.destroy();
         });
@@ -415,6 +424,10 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             isCorrect = correctAnswers.some(answer => 
                 userAnswer && userAnswer.toLowerCase().trim() === answer.toLowerCase().trim()
             );
+        } else if (currentQuestion.type === 'drag-and-drop') {
+            // For drag-and-drop, auto-submit means all items are correctly placed
+            // selectedIndex will be 0 and userAnswer will be null for auto-submit
+            isCorrect = selectedIndex === 0 && userAnswer === null;
         } else {
             // Default multiple choice
             const correctIndex = currentQuestion.correctIndex;
@@ -448,11 +461,15 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 this.damageCharacter(this.enemyContainer, this.playerDamage);
             }
             
-            // Show feedback with combo info
-            let feedbackText = `Correct! You deal ${this.playerDamage} damage!`;
-            if (multiplier > 1) {
-                feedbackText += ` (${multiplier}x Combo!)`;
-            }            showFeedback(this, feedbackText, 0x00ff00, centerX, feedbackY);
+            // Show feedback with combo info (skip for drag-and-drop since it has its own feedback)
+            if (currentQuestion.type !== 'drag-and-drop') {
+                let feedbackText = `Correct! You deal ${this.playerDamage} damage!`;
+                if (multiplier > 1) {
+                    feedbackText += ` (${multiplier}x Combo!)`;
+                }
+                showFeedback(this, feedbackText, 0x00ff00, centerX, feedbackY);
+            }
+            
             this.gameTimer.addTime(5);            // Check if enemy HP reached 0 using container data
             if (this.enemyContainer && this.enemyContainer.getData('currentHP') <= 0) {
                 // --- Mark battle as won immediately to prevent timeout loss ---
@@ -524,8 +541,12 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 return;
             }
         }
-        // --- Wait 1 second before next question or ending ---
-        this.time.delayedCall(1000, () => {
+        
+        // --- Wait for next question or ending ---
+        // For drag-and-drop, use shorter delay since it already has its own feedback timing
+        const delayTime = currentQuestion.type === 'drag-and-drop' ? 500 : 1000;
+        
+        this.time.delayedCall(delayTime, () => {
             // If this is the last question, show victory after the delay
             if (this.currentQuestionIndex >= this.questions.length - 1) {
                 // --- Mark battle as won immediately to prevent timeout loss ---

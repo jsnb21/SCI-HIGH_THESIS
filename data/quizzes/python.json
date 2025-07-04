@@ -6,6 +6,44 @@
       "correctAnswers": ["def", "DEF"]
     },
     {
+      "question": "Arrange the correct order of a Python function definition:",
+      "type": "drag-and-drop",
+      "options": {
+        "dragItems": [
+          { "id": "step1", "text": "def", "isDecoy": false },
+          { "id": "step2", "text": "function_name", "isDecoy": false },
+          { "id": "step3", "text": "():", "isDecoy": false },
+          { "id": "step4", "text": "return", "isDecoy": false },
+          { "id": "decoy1", "text": "class", "isDecoy": true }
+        ],
+        "dropZones": [
+          { "id": "zone1", "label": "1st", "correctItemId": "step1" },
+          { "id": "zone2", "label": "2nd", "correctItemId": "step2" },
+          { "id": "zone3", "label": "3rd", "correctItemId": "step3" },
+          { "id": "zone4", "label": "4th", "correctItemId": "step4" }
+        ]
+      }
+    },
+    {
+      "question": "Order the Python data types from simplest to most complex:",
+      "type": "drag-and-drop", 
+      "options": {
+        "dragItems": [
+          { "id": "int", "text": "int", "isDecoy": false },
+          { "id": "list", "text": "list", "isDecoy": false },
+          { "id": "dict", "text": "dict", "isDecoy": false },
+          { "id": "str", "text": "str", "isDecoy": false },
+          { "id": "decoy1", "text": "array", "isDecoy": true }
+        ],
+        "dropZones": [
+          { "id": "zone1", "label": "1st", "correctItemId": "int" },
+          { "id": "zone2", "label": "2nd", "correctItemId": "str" },
+          { "id": "zone3", "label": "3rd", "correctItemId": "list" },
+          { "id": "zone4", "label": "4th", "correctItemId": "dict" }
+        ]
+      }
+    },
+    {
       "question": "What is Python primarily used for?",
       "options": [
         "Web development",
@@ -117,6 +155,44 @@
       "question": "Fill in the missing operator: To check if two values are equal in Python, you use _____",
       "type": "fill-in-the-blank",
       "correctAnswers": ["==", "equal", "equals"]
+    },
+    {
+      "question": "Arrange the correct order of Python function definition steps:",
+      "type": "drag-and-drop",
+      "options": {
+        "dragItems": [
+          { "id": "step1", "text": "def", "isDecoy": false },
+          { "id": "step2", "text": "function_name", "isDecoy": false },
+          { "id": "step3", "text": "parameters", "isDecoy": false },
+          { "id": "step4", "text": "return", "isDecoy": false },
+          { "id": "decoy1", "text": "class", "isDecoy": true }
+        ],
+        "dropZones": [
+          { "id": "zone1", "label": "1st", "correctItemId": "step1" },
+          { "id": "zone2", "label": "2nd", "correctItemId": "step2" },
+          { "id": "zone3", "label": "3rd", "correctItemId": "step3" },
+          { "id": "zone4", "label": "4th", "correctItemId": "step4" }
+        ]
+      }
+    },
+    {
+      "question": "Order the Python data types from simplest to most complex:",
+      "type": "drag-and-drop", 
+      "options": {
+        "dragItems": [
+          { "id": "int", "text": "int", "isDecoy": false },
+          { "id": "list", "text": "list", "isDecoy": false },
+          { "id": "dict", "text": "dict", "isDecoy": false },
+          { "id": "str", "text": "str", "isDecoy": false },
+          { "id": "decoy1", "text": "array", "isDecoy": true }
+        ],
+        "dropZones": [
+          { "id": "zone1", "label": "1st", "correctItemId": "int" },
+          { "id": "zone2", "label": "2nd", "correctItemId": "str" },
+          { "id": "zone3", "label": "3rd", "correctItemId": "list" },
+          { "id": "zone4", "label": "4th", "correctItemId": "dict" }
+        ]
+      }
     }
   ]
 }
