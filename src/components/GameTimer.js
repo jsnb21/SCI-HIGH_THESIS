@@ -225,6 +225,11 @@ export default class GameTimer {
         // Update progress bar
         this.updateProgressBar();
         
+        // Check for tutorial triggers when timer is running low
+        if (this.scene && this.scene.checkAndShowTutorial && this.timeLeft <= 25 && this.timeLeft > 0) {
+            this.scene.checkAndShowTutorial();
+        }
+        
         // Stop timer immediately when it hits 0 to prevent negative numbers
         if (this.timeLeft <= 0) {
             this.timeLeft = 0;
@@ -505,6 +510,20 @@ export default class GameTimer {
 
     // Get current time left
     getTimeLeft() {
+        return this.timeLeft;
+    }
+
+    /**
+     * Check if timer is currently running
+     */
+    get isRunning() {
+        return this.timerStarted && !this.isPaused && this.timeLeft > 0;
+    }
+    
+    /**
+     * Get remaining time
+     */
+    getTimeRemaining() {
         return this.timeLeft;
     }
 

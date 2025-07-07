@@ -83,7 +83,8 @@ export default class MainMenu extends Phaser.Scene {
             { label: 'Options', y: height / 2 + 180, onClick: () => {
                 se_confirmSound.play();
                 this.scene.start('OptionsScene');
-            }},            { label: 'Quit', y: height / 2 + 250, onClick: () => {
+            }},
+            { label: 'Quit', y: height / 2 + 250, onClick: () => {
                 se_confirmSound.play();
                 this.showQuitConfirmation(se_hoverSound, se_confirmSound);
             }},

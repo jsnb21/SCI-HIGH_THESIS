@@ -1,6 +1,8 @@
 // Import the GameTimer class
 import GameTimer from '/src/components/GameTimer.js';
 import ComboMeter from '/src/components/ComboMeter.js';
+import TutorialManager from '/src/components/TutorialManager.js';
+import { TUTORIAL_TRIGGERS, prepareTutorialSteps } from '/src/components/TutorialConfig.js';
 import { createPlayerUI } from './ui/playerUI.js';
 import { createQuizBox, createEnemyUI, createTimerText, createQuestionAndOptions } from './ui/quizUI.js';
 import { showFeedback, showVictory, showGameOver } from './ui/feedbackUI.js';
@@ -51,6 +53,16 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.persistentElements = [];this.enemyHpBarHeight = 10;
         this.gameTimer = null;
         this.comboMeter = null;
+        
+        // Initialize tutorial system
+        this.tutorialManager = new TutorialManager(this);
+        this.tutorialFlags = {
+            firstTimeTutorialShown: false,
+            powerUpTutorialShown: false,
+            comboTutorialShown: false,
+            lowHealthWarningShown: false,
+            victoryTutorialShown: false
+        };
 
         // Point system tracking
         this.quizStartTime = 0;
@@ -215,6 +227,9 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             );
         }
         this.showQuestion();
+        
+        // Check and show tutorial if needed
+        this.checkAndShowTutorial();
     }    showQuestion() {
         this.isAnswering = false; // <-- Reset answering state at the start of every question
         this.scaleFactor = this.getScaleFactor();
@@ -249,7 +264,8 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         const comboMeterY = boxTopY - 140 * sf; // Position above the enemy
         const comboElements = this.comboMeter.create(centerX, comboMeterY, sf);
         this.quizElements.push(comboElements.comboContainer);        // Question and options (inside the box)
-        createQuestionAndOptions(
+        // Create question and options UI
+        const questionContainer = createQuestionAndOptions(
             this,
             centerX,
             centerY,
@@ -261,7 +277,12 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             sf,
             type,
             (index, answer) => this.checkAnswer(index, answer)
-        );// Player hearts at top left
+        );
+        
+        // Store references for tutorial system
+        this.currentQuestionContainer = questionContainer;
+        this.questionText = questionContainer.list.find(child => child.type === 'Text');
+        this.quizBox = questionContainer;// Player hearts at top left
         const heartsX = 140 * sf; // Move to top left
         const heartsY = 30 * sf;
         this.playerContainer = createPlayerUI(this, heartsX, heartsY, this.playerConfig, sf);
@@ -406,11 +427,13 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 hpText.setText(`${label}`);
             }
         }
-    }    checkAnswer(selectedIndex, userAnswer = null) {
-        if (this.isAnswering) return;
-        this.isAnswering = true;
-
-        // Track answer time
+    }
+    
+    /**
+     * Process answer logic (extracted from original checkAnswer if needed)
+     */
+    processAnswerLogic(selectedIndex, userAnswer = null) {
+        // Record answer time
         const answerTime = (Date.now() - this.currentQuestionStartTime) / 1000;
         this.answerTimes.push(answerTime);
         
@@ -419,27 +442,29 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         
         // Handle different question types
         if (currentQuestion.type === 'fill-in-the-blank') {
-            // For fill-in-the-blank, check if the user's answer matches any correct answer
             const correctAnswers = currentQuestion.correctAnswers || [];
             isCorrect = correctAnswers.some(answer => 
                 userAnswer && userAnswer.toLowerCase().trim() === answer.toLowerCase().trim()
             );
         } else if (currentQuestion.type === 'drag-and-drop') {
-            // For drag-and-drop, auto-submit means all items are correctly placed
-            // selectedIndex will be 0 and userAnswer will be null for auto-submit
             isCorrect = selectedIndex === 0 && userAnswer === null;
         } else {
-            // Default multiple choice
             const correctIndex = currentQuestion.correctIndex;
             isCorrect = selectedIndex === correctIndex;
-        }// Calculate feedback position below the quiz box, 20% lower
+        }
+
+        // Calculate feedback position below the quiz box, 20% lower
         const sf = this.scaleFactor;
         const centerX = this.scale.width / 2;
-        const centerY = this.scale.height / 2 + 100 * sf; // Match the box position (80 + 20)
-        const boxHeight = 230 * sf; // Match the reduced box height
-        // Move feedbackY 20% lower than the previous offset
-        const feedbackY = centerY + boxHeight / 2 + (20 * sf * 1.2);        // --- Pause the timer ---
-        this.gameTimer.pause();        if (isCorrect) {            // Track correct answer
+        const centerY = this.scale.height / 2 + 100 * sf;
+        const boxHeight = 230 * sf;
+        const feedbackY = centerY + boxHeight / 2 + (20 * sf * 1.2);
+
+        // Pause the timer
+        this.gameTimer.pause();
+
+        if (isCorrect) {
+            // Track correct answer
             this.correctAnswers++;
             
             // Update combo meter first
@@ -451,6 +476,11 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 this.maxComboReached = currentCombo;
             }
             
+            // Check for combo tutorial trigger
+            setTimeout(() => {
+                this.checkAndShowTutorial();
+            }, 1000);
+            
             // Apply score multiplier
             const multiplier = this.comboMeter.getScoreMultiplier();
             const scoreIncrease = Math.round(1 * multiplier);
@@ -461,7 +491,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 this.damageCharacter(this.enemyContainer, this.playerDamage);
             }
             
-            // Show feedback with combo info (skip for drag-and-drop since it has its own feedback)
+            // Show feedback with combo info
             if (currentQuestion.type !== 'drag-and-drop') {
                 let feedbackText = `Correct! You deal ${this.playerDamage} damage!`;
                 if (multiplier > 1) {
@@ -470,39 +500,29 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 showFeedback(this, feedbackText, 0x00ff00, centerX, feedbackY);
             }
             
-            this.gameTimer.addTime(5);            // Check if enemy HP reached 0 using container data
+            this.gameTimer.addTime(5);
+
+            // Check if enemy HP reached 0
             if (this.enemyContainer && this.enemyContainer.getData('currentHP') <= 0) {
-                // --- Mark battle as won immediately to prevent timeout loss ---
                 this.battleWon = true;
-                
-                // Enemy defeated
                 this.enemyDefeated = true;
                 console.log('Enemy defeated in quiz scene! Flag set to true.');
 
-                // Calculate and award points before ending
                 this.awardQuizPoints();
                 
-                // Play enemy death animation first, then show victory
-                this.gameTimer.resume(); // Resume timer before playing death animation
-                this.playEnemyDeathAnimation(() => {
-                    showVictory(this);
-                });
-                return;
-            }
-            
-            // Check if this was the last question (all questions completed)
-            if (this.currentQuestionIndex >= this.questions.length - 1) {
-                // --- Mark battle as won immediately to prevent timeout loss ---
-                this.battleWon = true;
+                // Check for victory tutorial
+                setTimeout(() => {
+                    if (TUTORIAL_TRIGGERS.victory(this) && !this.tutorialFlags.victoryTutorialShown) {
+                        this.showTutorial('victory');
+                        this.tutorialFlags.victoryTutorialShown = true;
+                    }
+                }, 2000);
                 
-                // Calculate and award points before ending
-                this.awardQuizPoints();
-                
-                // Resume timer and show victory immediately
                 this.gameTimer.resume();
                 showVictory(this);
                 return;
-            }} else {
+            }
+        } else {
             // Update combo meter (resets combo)
             this.comboMeter.updateCombo(false, sf);
             
@@ -513,56 +533,54 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             
             showFeedback(this, "Wrong! The enemy attacks you!", 0xff0000, centerX, feedbackY);
             this.gameTimer.subtractTime(3);
+            
             if (this.playerContainer) {
                 this.damageCharacter(this.playerContainer, 15);
                 
-                // Get updated HP after damage has been applied
                 const playerHP = this.playerContainer.getData('currentHP');
+                
+                // Check for low health tutorial trigger
+                setTimeout(() => {
+                    this.checkAndShowTutorial();
+                }, 1000);
+                
                 if (playerHP <= 0) {
-                    // --- Resume timer before ending ---
                     this.gameTimer.resume();
                     showGameOver(this);
                     return;
                 }
             }
-        }        if (this.enemyContainer) {
+        }
+
+        // Continue to next question
+        if (this.enemyContainer) {
             const enemyHP = this.enemyContainer.getData('currentHP');
             if (enemyHP <= 0) {
-                // --- Mark battle as won immediately to prevent timeout loss ---
                 this.battleWon = true;
+                this.enemyDefeated = true;
                 
-                // --- Resume timer before ending ---
-                this.gameTimer.resume();
+                this.awardQuizPoints();
                 
-                // Play enemy death animation before showing victory
-                this.playEnemyDeathAnimation(() => {
+                setTimeout(() => {
+                    this.gameTimer.resume();
                     showVictory(this);
-                });
+                }, 1500);
                 return;
             }
         }
-        
-        // --- Wait for next question or ending ---
-        // For drag-and-drop, use shorter delay since it already has its own feedback timing
-        const delayTime = currentQuestion.type === 'drag-and-drop' ? 500 : 1000;
-        
-        this.time.delayedCall(delayTime, () => {
-            // If this is the last question, show victory after the delay
-            if (this.currentQuestionIndex >= this.questions.length - 1) {
-                // --- Mark battle as won immediately to prevent timeout loss ---
-                this.battleWon = true;
-                
-                this.awardQuizPoints();
-                this.gameTimer.resume();
-                showVictory(this);
-                return;
-            }
+
+        // Move to next question
+        setTimeout(() => {
             this.currentQuestionIndex++;
-            this.isAnswering = false;
-            this.showQuestion();
-            // --- Resume timer after showing next question ---
             this.gameTimer.resume();
-        });
+
+            if (this.currentQuestionIndex < this.questions.length) {
+                this.showQuestion();
+            } else {
+                this.awardQuizPoints();
+                showVictory(this);
+            }
+        }, 2000);
     }    restartQuiz() {
         this.score = 0;
         this.correctAnswers = 0; // Reset correct answers counter
@@ -808,5 +826,378 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         console.log(`Stats: ${this.correctAnswers}/${this.questions.length} correct, Max combo: ${this.maxComboReached}, Avg time: ${averageAnswerTime.toFixed(1)}s`);
         
         return pointsEarned;
+    }
+    
+    /**
+     * Check if tutorial is blocking interactions
+     */
+    isTutorialBlocking() {
+        return this.tutorialManager && this.tutorialManager.isRunning();
+    }
+    
+    /**
+     * Check for tutorials and show them if appropriate
+     */
+    checkAndShowTutorial() {
+        // Don't show tutorials if one is already active
+        if (this.tutorialManager.isRunning()) {
+            return;
+        }
+        
+        // Check for first-time tutorial
+        if (TUTORIAL_TRIGGERS.firstTime(this) && !this.tutorialFlags.firstTimeTutorialShown) {
+            this.showTutorial('firstTime');
+            this.tutorialFlags.firstTimeTutorialShown = true;
+            return;
+        }
+        
+        // Check for combo tutorial
+        if (TUTORIAL_TRIGGERS.combo(this) && !this.tutorialFlags.comboTutorialShown) {
+            this.showTutorial('combo');
+            this.tutorialFlags.comboTutorialShown = true;
+            return;
+        }
+        
+        // Check for low health tutorial
+        if (TUTORIAL_TRIGGERS.lowHealth(this) && !this.tutorialFlags.lowHealthWarningShown) {
+            this.showTutorial('lowHealth');
+            this.tutorialFlags.lowHealthWarningShown = true;
+            return;
+        }
+        
+        // Check for victory tutorial
+        if (TUTORIAL_TRIGGERS.victory(this) && !this.tutorialFlags.victoryTutorialShown) {
+            this.showTutorial('victory');
+            this.tutorialFlags.victoryTutorialShown = true;
+            return;
+        }
+    }
+    
+    /**
+     * Show tutorial of specified type
+     * @param {string} tutorialType - Type of tutorial to show
+     */
+    showTutorial(tutorialType) {
+        const steps = prepareTutorialSteps(this, tutorialType);
+        
+        const callbacks = {
+            onComplete: () => {
+                console.log(`Tutorial '${tutorialType}' completed`);
+                
+                // Mark first-time tutorial as seen in localStorage
+                if (tutorialType === 'firstTime') {
+                    localStorage.setItem('sci-high-tutorial-seen', 'true');
+                }
+                
+                // Resume game timer if it was paused
+                if (this.gameTimer && this.gameTimer.isPaused) {
+                    this.gameTimer.resume();
+                }
+            },
+            onSkip: () => {
+                console.log(`Tutorial '${tutorialType}' skipped`);
+                
+                // Mark as seen even if skipped
+                if (tutorialType === 'firstTime') {
+                    localStorage.setItem('sci-high-tutorial-seen', 'true');
+                }
+                
+                // Resume game timer if it was paused
+                if (this.gameTimer && this.gameTimer.isPaused) {
+                    this.gameTimer.resume();
+                }
+            },
+            onStepComplete: (stepIndex) => {
+                console.log(`Tutorial step ${stepIndex} completed`);
+            }
+        };
+        
+        this.tutorialManager.init(steps, callbacks);
+    }
+    
+    /**
+     * Force show a specific tutorial (for debug/testing)
+     * @param {string} tutorialType - Type of tutorial to force show
+     */
+    forceTutorial(tutorialType) {
+        // Temporarily disable the flag to force show
+        const originalFlag = this.tutorialFlags.firstTimeTutorialShown;
+        this.tutorialFlags.firstTimeTutorialShown = false;
+        
+        this.showTutorial(tutorialType);
+        
+        // Restore the flag
+        this.tutorialFlags.firstTimeTutorialShown = originalFlag;
+    }
+    
+    /**
+     * Reset all tutorial flags for testing
+     */
+    resetTutorialFlags() {
+        this.tutorialFlags = {
+            firstTimeTutorialShown: false,
+            powerUpTutorialShown: false,
+            comboTutorialShown: false,
+            lowHealthWarningShown: false,
+            victoryTutorialShown: false
+        };
+        localStorage.removeItem('sci-high-tutorial-seen');
+    }
+    
+    /**
+     * Override checkAnswer to respect tutorial state
+     */
+    checkAnswer(selectedIndex, userAnswer = null) {
+        // Block answer processing during tutorial
+        if (this.isTutorialBlocking()) {
+            console.log('Answer blocked: Tutorial is active');
+            return;
+        }
+        
+        // Continue with normal answer processing
+        return super.checkAnswer ? super.checkAnswer(selectedIndex, userAnswer) : this.processAnswerLogic(selectedIndex, userAnswer);
+    }
+    
+    /**
+     * Process answer logic (extracted from original checkAnswer if needed)
+     */
+    processAnswerLogic(selectedIndex, userAnswer = null) {
+        // Record answer time
+        const answerTime = (Date.now() - this.currentQuestionStartTime) / 1000;
+        this.answerTimes.push(answerTime);
+        
+        const currentQuestion = this.questions[this.currentQuestionIndex];
+        let isCorrect = false;
+        
+        // Handle different question types
+        if (currentQuestion.type === 'fill-in-the-blank') {
+            const correctAnswers = currentQuestion.correctAnswers || [];
+            isCorrect = correctAnswers.some(answer => 
+                userAnswer && userAnswer.toLowerCase().trim() === answer.toLowerCase().trim()
+            );
+        } else if (currentQuestion.type === 'drag-and-drop') {
+            isCorrect = selectedIndex === 0 && userAnswer === null;
+        } else {
+            const correctIndex = currentQuestion.correctIndex;
+            isCorrect = selectedIndex === correctIndex;
+        }
+
+        // Calculate feedback position below the quiz box, 20% lower
+        const sf = this.scaleFactor;
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2 + 100 * sf;
+        const boxHeight = 230 * sf;
+        const feedbackY = centerY + boxHeight / 2 + (20 * sf * 1.2);
+
+        // Pause the timer
+        this.gameTimer.pause();
+
+        if (isCorrect) {
+            // Track correct answer
+            this.correctAnswers++;
+            
+            // Update combo meter first
+            this.comboMeter.updateCombo(true, sf);
+
+            // Track max combo reached
+            const currentCombo = this.comboMeter.getCurrentCombo();
+            if (currentCombo > this.maxComboReached) {
+                this.maxComboReached = currentCombo;
+            }
+            
+            // Check for combo tutorial trigger
+            setTimeout(() => {
+                this.checkAndShowTutorial();
+            }, 1000);
+            
+            // Apply score multiplier
+            const multiplier = this.comboMeter.getScoreMultiplier();
+            const scoreIncrease = Math.round(1 * multiplier);
+            this.score += scoreIncrease;
+            
+            // Damage the enemy with visual feedback
+            if (this.enemyContainer) {
+                this.damageCharacter(this.enemyContainer, this.playerDamage);
+            }
+            
+            // Show feedback with combo info
+            if (currentQuestion.type !== 'drag-and-drop') {
+                let feedbackText = `Correct! You deal ${this.playerDamage} damage!`;
+                if (multiplier > 1) {
+                    feedbackText += ` (${multiplier}x Combo!)`;
+                }
+                showFeedback(this, feedbackText, 0x00ff00, centerX, feedbackY);
+            }
+            
+            this.gameTimer.addTime(5);
+
+            // Check if enemy HP reached 0
+            if (this.enemyContainer && this.enemyContainer.getData('currentHP') <= 0) {
+                this.battleWon = true;
+                this.enemyDefeated = true;
+                console.log('Enemy defeated in quiz scene! Flag set to true.');
+
+                this.awardQuizPoints();
+                
+                // Check for victory tutorial
+                setTimeout(() => {
+                    if (TUTORIAL_TRIGGERS.victory(this) && !this.tutorialFlags.victoryTutorialShown) {
+                        this.showTutorial('victory');
+                        this.tutorialFlags.victoryTutorialShown = true;
+                    }
+                }, 2000);
+                
+                this.gameTimer.resume();
+                showVictory(this);
+                return;
+            }
+        } else {
+            // Update combo meter (resets combo)
+            this.comboMeter.updateCombo(false, sf);
+            
+            // Play wrong answer sound
+            if (this.se_wrongSound) {
+                this.se_wrongSound.play();
+            }
+            
+            showFeedback(this, "Wrong! The enemy attacks you!", 0xff0000, centerX, feedbackY);
+            this.gameTimer.subtractTime(3);
+            
+            if (this.playerContainer) {
+                this.damageCharacter(this.playerContainer, 15);
+                
+                const playerHP = this.playerContainer.getData('currentHP');
+                
+                // Check for low health tutorial trigger
+                setTimeout(() => {
+                    this.checkAndShowTutorial();
+                }, 1000);
+                
+                if (playerHP <= 0) {
+                    this.gameTimer.resume();
+                    showGameOver(this);
+                    return;
+                }
+            }
+        }
+
+        // Continue to next question
+        if (this.enemyContainer) {
+            const enemyHP = this.enemyContainer.getData('currentHP');
+            if (enemyHP <= 0) {
+                this.battleWon = true;
+                this.enemyDefeated = true;
+                
+                this.awardQuizPoints();
+                
+                setTimeout(() => {
+                    this.gameTimer.resume();
+                    showVictory(this);
+                }, 1500);
+                return;
+            }
+        }
+
+        // Move to next question
+        setTimeout(() => {
+            this.currentQuestionIndex++;
+            this.gameTimer.resume();
+
+            if (this.currentQuestionIndex < this.questions.length) {
+                this.showQuestion();
+            } else {
+                this.awardQuizPoints();
+                showVictory(this);
+            }
+        }, 2000);
+    }    restartQuiz() {
+        this.score = 0;
+        this.correctAnswers = 0; // Reset correct answers counter
+        this.currentQuestionIndex = 0;
+        this.isQuizStarted = false;
+        this.isAnswering = false; // <-- Reset answering state
+        this.battleWon = false; // Reset battle won flag
+        // Reset point tracking variables
+        this.quizStartTime = 0;
+        this.answerTimes = [];
+        this.currentQuestionStartTime = 0;
+        this.maxComboReached = 0;
+        this.playerConfig.currentHP = gameManager.getPlayerHP(); // Get current HP from GameManager
+        this.enemyHPState.currentHP = this.enemyHPState.maxHP;
+        this.cleanupAllElements();
+        this.gameTimer = new GameTimer(this);
+        this.comboMeter = new ComboMeter(this);
+        this.startQuiz(30);
+    }
+
+    /**
+     * Override all critical input methods to respect tutorial state
+     */
+    
+    // Override any fill-in-the-blank answer submission
+    submitAnswer(answer) {
+        if (this.isTutorialBlocking()) {
+            console.log('Answer submission blocked: Tutorial is active');
+            return;
+        }
+        
+        // Continue with normal answer submission
+        if (super.submitAnswer) {
+            return super.submitAnswer(answer);
+        }
+        
+        // Default behavior if no parent method
+        return this.checkAnswer(null, answer);
+    }
+    
+    // Override drag and drop handling
+    handleDragDrop(dragObject, dropZone) {
+        if (this.isTutorialBlocking()) {
+            console.log('Drag and drop blocked: Tutorial is active');
+            return;
+        }
+        
+        // Continue with normal drag and drop processing
+        if (super.handleDragDrop) {
+            return super.handleDragDrop(dragObject, dropZone);
+        }
+    }
+    
+    // Override power-up usage
+    usePowerUp(powerUpType) {
+        if (this.isTutorialBlocking()) {
+            console.log('Power-up usage blocked: Tutorial is active');
+            return;
+        }
+        
+        // Continue with normal power-up usage
+        if (super.usePowerUp) {
+            return super.usePowerUp(powerUpType);
+        }
+    }
+    
+    // Override pause/resume functionality
+    pauseGame() {
+        if (this.isTutorialBlocking()) {
+            console.log('Game pause blocked: Tutorial is active');
+            return;
+        }
+        
+        // Continue with normal pause
+        if (this.gameTimer) {
+            this.gameTimer.pause();
+        }
+    }
+    
+    resumeGame() {
+        if (this.isTutorialBlocking()) {
+            console.log('Game resume blocked: Tutorial is active');
+            return;
+        }
+        
+        // Continue with normal resume
+        if (this.gameTimer) {
+            this.gameTimer.resume();
+        }
     }
 }
