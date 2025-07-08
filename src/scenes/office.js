@@ -4,10 +4,14 @@ import { renderStatsSection } from './officeScenes/performanceStats.js';
 import { renderAchievementsSection } from './officeScenes/achievements.js';
 import { renderFeedbackSection } from './officeScenes/feedback.js';
 import { createBackButton } from '../components/buttons/backbutton'; // <-- Add this import
+import { onceOnlyFlags } from '../gameManager';
+import TutorialManager from '../components/TutorialManager.js';
+import { OFFICE_TUTORIAL_STEPS } from '../components/TutorialConfig.js';
 
 export default class Office extends Phaser.Scene {
     constructor() {
         super('Office');
+        this.tutorialManager = null;
     }
 
     preload() {
@@ -137,6 +141,31 @@ export default class Office extends Phaser.Scene {
         // Use the shared back button (top-left, consistent style)
         createBackButton(this, 'MainHub');
 
+        // Initialize tutorial manager
+        this.tutorialManager = new TutorialManager(this);
+
+        // Check if this is the first time visiting the office
+        if (!onceOnlyFlags.hasSeen('office_tutorial')) {
+            // Delay tutorial start to ensure all UI elements are created
+            this.time.delayedCall(500, () => {
+                this.startOfficeTutorial();
+            });
+        }
+
+        // Debug features
+        this.input.keyboard.on('keydown-T', () => {
+            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
+                this.startOfficeTutorial();
+            }
+        });
+
+        this.input.keyboard.on('keydown-R', () => {
+            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
+                onceOnlyFlags.flags['office_tutorial'] = false;
+                console.log('Office tutorial flag reset');
+            }
+        });
+
         // Add shutdown and destroy event listeners to clean up the carousel
         this.events.on('shutdown', () => {
             this.destroyCarousel();
@@ -147,6 +176,12 @@ export default class Office extends Phaser.Scene {
     }
 
     destroyCarousel() {
+        // Clean up tutorial manager
+        if (this.tutorialManager) {
+            this.tutorialManager.destroy();
+            this.tutorialManager = null;
+        }
+        
         // Clean up carousel icons and tweens to prevent ghosting
         if (this.breathingTween) {
             this.breathingTween.stop();
@@ -306,6 +341,53 @@ export default class Office extends Phaser.Scene {
             this.se_confirmSound.play();
             boxObjects.forEach(obj => obj.destroy());
             this.sectionBoxOpen = false;
+        });
+    }
+
+    startOfficeTutorial() {
+        const tutorialSteps = [...OFFICE_TUTORIAL_STEPS.firstTimeOffice];
+        
+        // Set dynamic targets
+        tutorialSteps.forEach(step => {
+            switch (step.target) {
+                case 'carousel':
+                    // Target the general carousel area
+                    if (this.carouselIcons && this.carouselIcons.length > 0) {
+                        step.target = this.carouselIcons[this.carouselIndex];
+                    }
+                    break;
+                case 'profileSection':
+                    if (this.carouselIcons && this.carouselIcons[0]) {
+                        step.target = this.carouselIcons[0];
+                    }
+                    break;
+                case 'statsSection':
+                    if (this.carouselIcons && this.carouselIcons[1]) {
+                        step.target = this.carouselIcons[1];
+                    }
+                    break;
+                case 'achievementsSection':
+                    if (this.carouselIcons && this.carouselIcons[2]) {
+                        step.target = this.carouselIcons[2];
+                    }
+                    break;
+                case 'feedbackSection':
+                    if (this.carouselIcons && this.carouselIcons[3]) {
+                        step.target = this.carouselIcons[3];
+                    }
+                    break;
+            }
+        });
+
+        this.tutorialManager.init(tutorialSteps, {
+            onComplete: () => {
+                onceOnlyFlags.setSeen('office_tutorial');
+                console.log('Office tutorial completed!');
+            },
+            onSkip: () => {
+                onceOnlyFlags.setSeen('office_tutorial');
+                console.log('Office tutorial skipped!');
+            }
         });
     }
 }

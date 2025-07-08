@@ -5,6 +5,8 @@ import { playExclusiveBGM } from '../audioUtils';
 import { onceOnlyFlags } from '../gameManager';
 import gameManager from '../gameManager.js';
 import { createBackButton } from '../components/buttons/backbutton.js';
+import TutorialManager from '../components/TutorialManager.js';
+import { MAIN_HUB_TUTORIAL_STEPS } from '../components/TutorialConfig.js';
 
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
@@ -13,6 +15,7 @@ export default class MainHub extends Phaser.Scene {
     constructor() {
         super({ key: 'MainHub' });
         this.uiElements = [];
+        this.tutorialManager = null;
     }
 
     preload() {
@@ -150,15 +153,137 @@ export default class MainHub extends Phaser.Scene {
             ], () => {
                 onceOnlyFlags.setSeen('mainhub_intro');
                 this.createCarousel(iconKeys, iconInfo);
+                
+                // Start tutorial after carousel is created (if first time visiting hub)
+                if (!onceOnlyFlags.hasSeen('mainhub_tutorial')) {
+                    this.time.delayedCall(300, () => {
+                        this.startHubTutorial();
+                    });
+                }
             });
-            this.uiElements.push(this.vnBox);        } else {
+            this.uiElements.push(this.vnBox);
+        } else {
             this.createCarousel(iconKeys, iconInfo);
+            
+            // Start tutorial after carousel is created (if first time visiting hub)
+            if (!onceOnlyFlags.hasSeen('mainhub_tutorial')) {
+                this.time.delayedCall(300, () => {
+                    this.startHubTutorial();
+                });
+            }
         }
 
         // Create back button using the reusable component
         const backButtonComponents = createBackButton(this, 'MainMenu');
         this.uiElements.push(backButtonComponents.buttonBg, backButtonComponents.backButton);
-    }createCarousel(iconKeys, iconInfo) {
+
+        // Initialize tutorial manager
+        this.tutorialManager = new TutorialManager(this);
+
+        // Debug feature: Add a key to manually trigger the tutorial (T key)
+        this.input.keyboard.on('keydown-T', () => {
+            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
+                // Shift+T to trigger tutorial manually for testing
+                this.startHubTutorial();
+            }
+        });
+
+        // Debug feature: Reset tutorial flag with Shift+R for testing
+        this.input.keyboard.on('keydown-R', () => {
+            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
+                onceOnlyFlags.flags['mainhub_tutorial'] = false;
+                console.log('Main hub tutorial flag reset - tutorial will show on next visit');
+            }
+        });
+    }
+
+    startHubTutorial() {
+        // Prepare tutorial steps with dynamic targets
+        const tutorialSteps = [...MAIN_HUB_TUTORIAL_STEPS.firstTimeHub];
+        
+        // Set dynamic targets for tutorial steps
+        tutorialSteps.forEach(step => {
+            switch (step.target) {
+                case 'pointsDisplay':
+                    if (this.pointsDisplay && this.pointsDisplay.container) {
+                        step.target = this.pointsDisplay.container;
+                    }
+                    break;
+                case 'leaderboardButton':
+                    // Find the leaderboard button from UI elements
+                    const leaderboardBtn = this.uiElements.find(el => 
+                        el.type === 'Rectangle' && el.x > this.scale.width * 0.8
+                    );
+                    if (leaderboardBtn) {
+                        step.target = leaderboardBtn;
+                    }
+                    break;
+                case 'carousel':
+                    if (this.carousel && this.carousel.bgPanel) {
+                        step.target = this.carousel.bgPanel;
+                    }
+                    break;
+                case 'classroomIcon':
+                    if (this.carousel && this.carousel.carouselIcons) {
+                        // Find the classroom icon (index 0) in carouselIcons
+                        const classroomIcon = this.carousel.carouselIcons.find(icon => 
+                            icon.iconIndex === 0 && !icon.isLockIcon
+                        );
+                        if (classroomIcon) {
+                            step.target = classroomIcon;
+                        }
+                    }
+                    break;
+                case 'comlabIcon':
+                    if (this.carousel && this.carousel.carouselIcons) {
+                        // Find the computer lab icon (index 3) in carouselIcons
+                        const comlabIcon = this.carousel.carouselIcons.find(icon => 
+                            icon.iconIndex === 3 && !icon.isLockIcon
+                        );
+                        if (comlabIcon) {
+                            step.target = comlabIcon;
+                        }
+                    }
+                    break;
+                case 'libraryIcon':
+                    if (this.carousel && this.carousel.carouselIcons) {
+                        // Find the library icon (index 1) in carouselIcons
+                        const libraryIcon = this.carousel.carouselIcons.find(icon => 
+                            icon.iconIndex === 1 && !icon.isLockIcon
+                        );
+                        if (libraryIcon) {
+                            step.target = libraryIcon;
+                        }
+                    }
+                    break;
+                case 'officeIcon':
+                    if (this.carousel && this.carousel.carouselIcons) {
+                        // Find the office icon (index 2) in carouselIcons
+                        const officeIcon = this.carousel.carouselIcons.find(icon => 
+                            icon.iconIndex === 2 && !icon.isLockIcon
+                        );
+                        if (officeIcon) {
+                            step.target = officeIcon;
+                        }
+                    }
+                    break;
+            }
+        });
+
+        // Start the tutorial
+        this.tutorialManager.init(tutorialSteps, {
+            onComplete: () => {
+                onceOnlyFlags.setSeen('mainhub_tutorial');
+                console.log('Main hub tutorial completed!');
+            },
+            onSkip: () => {
+                onceOnlyFlags.setSeen('mainhub_tutorial');
+                console.log('Main hub tutorial skipped!');
+            }
+        });
+    }
+
+    createCarousel(iconKeys, iconInfo) {
         const { width } = this.scale;
         this.carousel = new Carousel(this, {
             iconCenterY: 220,
@@ -255,6 +380,12 @@ export default class MainHub extends Phaser.Scene {
     }
 
     shutdown() {
+        // Clean up tutorial manager
+        if (this.tutorialManager) {
+            this.tutorialManager.destroy();
+            this.tutorialManager = null;
+        }
+        
         // Clean up all UI elements and references when scene shuts down
         if (this.pointsDisplay) {
             if (this.pointsDisplay.destroy) {

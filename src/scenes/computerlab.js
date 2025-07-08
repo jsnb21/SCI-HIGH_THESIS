@@ -2,10 +2,14 @@ import Phaser from 'phaser';
 import Carousel from '../ui/carouselUI.js';
 import { createBackButton } from '../components/buttons/backbutton'; // <-- Add this import
 import gameManager from '../gameManager.js';
+import { onceOnlyFlags } from '../gameManager.js';
+import TutorialManager from '../components/TutorialManager.js';
+import { COMPUTER_LAB_TUTORIAL_STEPS } from '../components/TutorialConfig.js';
 
 export default class ComputerLab extends Phaser.Scene {
     constructor() {
         super({ key: 'ComputerLab' });
+        this.tutorialManager = null;
     }
 
     preload() {
@@ -59,7 +63,34 @@ export default class ComputerLab extends Phaser.Scene {
 
         // Create the carousel with the icon keys and info
         this.createCarousel(iconKeys, iconInfo);
-    }    createCarousel(iconKeys, iconInfo) {
+
+        // Initialize tutorial manager
+        this.tutorialManager = new TutorialManager(this);
+
+        // Check if this is the first time visiting the computer lab
+        if (!onceOnlyFlags.hasSeen('computerlab_tutorial')) {
+            // Delay tutorial start to ensure all UI elements are created
+            this.time.delayedCall(500, () => {
+                this.startComLabTutorial();
+            });
+        }
+
+        // Debug features
+        this.input.keyboard.on('keydown-T', () => {
+            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
+                this.startComLabTutorial();
+            }
+        });
+
+        this.input.keyboard.on('keydown-R', () => {
+            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
+                onceOnlyFlags.flags['computerlab_tutorial'] = false;
+                console.log('Computer Lab tutorial flag reset');
+            }
+        });
+    }
+
+    createCarousel(iconKeys, iconInfo) {
         // Initialize the carousel
         this.carousel = new Carousel(this, {
             centerY: 400,
@@ -108,6 +139,74 @@ export default class ComputerLab extends Phaser.Scene {
         // Update points display if it exists
         if (this.pointsDisplay) {
             this.pointsDisplay.update();
+        }
+    }
+
+    startComLabTutorial() {
+        const tutorialSteps = [...COMPUTER_LAB_TUTORIAL_STEPS.firstTimeComLab];
+        
+        // Set dynamic targets
+        tutorialSteps.forEach(step => {
+            switch (step.target) {
+                case 'carousel':
+                    if (this.carousel && this.carousel.bgPanel) {
+                        step.target = this.carousel.bgPanel;
+                    }
+                    break;
+                case 'webDesignIcon':
+                    if (this.carousel && this.carousel.carouselIcons) {
+                        const webDesignIcon = this.carousel.carouselIcons.find(icon => 
+                            icon.iconIndex === 0 && !icon.isLockIcon
+                        );
+                        if (webDesignIcon) {
+                            step.target = webDesignIcon;
+                        }
+                    }
+                    break;
+                case 'pythonIcon':
+                    if (this.carousel && this.carousel.carouselIcons) {
+                        const pythonIcon = this.carousel.carouselIcons.find(icon => 
+                            icon.iconIndex === 1 && !icon.isLockIcon
+                        );
+                        if (pythonIcon) {
+                            step.target = pythonIcon;
+                        }
+                    }
+                    break;
+            }
+        });
+
+        this.tutorialManager.init(tutorialSteps, {
+            onComplete: () => {
+                onceOnlyFlags.setSeen('computerlab_tutorial');
+                console.log('Computer Lab tutorial completed!');
+            },
+            onSkip: () => {
+                onceOnlyFlags.setSeen('computerlab_tutorial');
+                console.log('Computer Lab tutorial skipped!');
+            }
+        });
+    }
+
+    shutdown() {
+        // Clean up tutorial manager
+        if (this.tutorialManager) {
+            this.tutorialManager.destroy();
+            this.tutorialManager = null;
+        }
+        
+        // Clean up carousel
+        if (this.carousel) {
+            this.carousel.destroy();
+            this.carousel = null;
+        }
+        
+        // Clean up points display
+        if (this.pointsDisplay) {
+            if (this.pointsDisplay.destroy) {
+                this.pointsDisplay.destroy();
+            }
+            this.pointsDisplay = null;
         }
     }
 }

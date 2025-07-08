@@ -521,3 +521,397 @@ export const PYTHON_TUTORIAL_TRIGGERS = {
         return scene.battleWon && !scene.tutorialFlags?.victoryTutorialShown && scene.topic === 'python';
     }
 };
+
+// Main Hub Tutorial Configuration
+export const MAIN_HUB_TUTORIAL_STEPS = {
+    firstTimeHub: [
+        {
+            title: "Welcome to SCI-HIGH!",
+            text: "Welcome to your educational adventure! This is the main hub where you can access different areas of the school. Let me show you around!",
+            textBoxPosition: { x: 400, y: 200 },
+            onShow: (scene) => {
+                // Play welcome sound if available
+                if (scene.se_confirmSound) {
+                    scene.se_confirmSound.play();
+                }
+            }
+        },
+        {
+            title: "Your Progress",
+            text: "This shows your current points and progress. You'll earn points by completing quizzes and challenges throughout the school!",
+            target: 'pointsDisplay', // Will be set dynamically to points display
+            highlightStyle: {
+                borderColor: 0xFFD700,
+                pulsate: true,
+                padding: 10
+            },
+            textBoxPosition: { x: 300, y: 150 }
+        },
+        {
+            title: "Leaderboard",
+            text: "Check your ranking against other students! Submit your scores to compete with players worldwide.",
+            target: 'leaderboardButton', // Will be set dynamically to leaderboard button
+            highlightStyle: {
+                borderColor: 0x3498DB,
+                pulsate: true,
+                padding: 5
+            },
+            textBoxPosition: { x: 300, y: 200 }
+        },
+        {
+            title: "School Areas",
+            text: "These icons represent different areas of the school. Each area offers unique learning experiences and challenges!",
+            target: 'carousel', // Will be set dynamically to carousel area
+            highlightStyle: {
+                borderColor: 0x00FF7F,
+                padding: 20
+            },
+            textBoxPosition: { x: 400, y: 100 }
+        },
+        {
+            title: "Classroom",
+            text: "Visit the Classroom to meet your classmates and get introduced to different subjects. This is a great place to start your learning journey!",
+            target: 'classroomIcon', // Will be set dynamically to classroom icon
+            highlightStyle: {
+                borderColor: 0xFF6B6B,
+                pulsate: true,
+                padding: 15
+            },
+            textBoxPosition: { x: 200, y: 400 },
+            arrow: {
+                position: { x: 300, y: 350 },
+                rotation: -45
+            }
+        },
+        {
+            title: "Computer Lab",
+            text: "The Computer Lab is where the real challenges begin! Take programming quizzes in different languages like Python, Java, C++, and more.",
+            target: 'comlabIcon', // Will be set dynamically to computer lab icon
+            highlightStyle: {
+                borderColor: 0x4ECDC4,
+                pulsate: true,
+                padding: 15
+            },
+            textBoxPosition: { x: 500, y: 400 },
+            arrow: {
+                position: { x: 450, y: 350 },
+                rotation: 45
+            }
+        },
+        {
+            title: "Library",
+            text: "The Library contains study materials and resources to help you learn. Read books and notes to improve your knowledge!",
+            target: 'libraryIcon', // Will be set dynamically to library icon
+            highlightStyle: {
+                borderColor: 0x95E1D3,
+                pulsate: true,
+                padding: 15
+            },
+            textBoxPosition: { x: 600, y: 400 }
+        },
+        {
+            title: "Office",
+            text: "Visit the Office to check your achievements, customize settings, and meet with the principal for special tasks!",
+            target: 'officeIcon', // Will be set dynamically to office icon
+            highlightStyle: {
+                borderColor: 0xFCE38A,
+                pulsate: true,
+                padding: 15
+            },
+            textBoxPosition: { x: 200, y: 300 }
+        },
+        {
+            title: "Navigation Tips",
+            text: "You can navigate between areas using these icons. Your progress will be saved automatically as you explore and learn!",
+            textBoxPosition: { x: 400, y: 300 }
+        },
+        {
+            title: "Ready to Explore!",
+            text: "That's everything you need to know! Start your educational journey by visiting the Classroom first. Good luck, and have fun learning!",
+            textBoxPosition: { x: 400, y: 350 },
+            buttonText: "Start Exploring!",
+            onComplete: (scene) => {
+                // Optionally highlight the classroom icon one more time
+                if (scene.carousel && scene.carousel.icons) {
+                    const classroomIcon = scene.carousel.icons[0]; // Assuming classroom is first
+                    if (classroomIcon) {
+                        scene.tweens.add({
+                            targets: classroomIcon,
+                            scaleX: classroomIcon.scaleX * 1.2,
+                            scaleY: classroomIcon.scaleY * 1.2,
+                            duration: 500,
+                            yoyo: true,
+                            repeat: 2
+                        });
+                    }
+                }
+            }
+        }
+    ]
+};
+
+// Computer Lab Tutorial Configuration
+export const COMPUTER_LAB_TUTORIAL_STEPS = {
+    firstTimeComLab: [
+        {
+            title: "Welcome to the Computer Lab!",
+            text: "This is where the real programming challenges begin! Here you can take quizzes in different programming languages and prove your coding skills.",
+            textBoxPosition: { x: 400, y: 200 },
+            onShow: (scene) => {
+                if (scene.se_confirmSound) {
+                    scene.se_confirmSound.play();
+                }
+            }
+        },
+        {
+            title: "Programming Languages",
+            text: "These icons represent different programming languages and technologies. Each one offers unique challenges and learning opportunities!",
+            target: 'carousel',
+            highlightStyle: {
+                borderColor: 0x00FF7F,
+                padding: 20
+            },
+            textBoxPosition: { x: 400, y: 100 }
+        },
+        {
+            title: "Course Progression",
+            text: "Some courses may be locked initially. Complete easier courses first to unlock more advanced ones. Look for the lock icons!",
+            textBoxPosition: { x: 400, y: 150 }
+        },
+        {
+            title: "Web Design",
+            text: "Start with Web Design if you're new to programming! Learn HTML, CSS, and JavaScript fundamentals in an interactive way.",
+            target: 'webDesignIcon',
+            highlightStyle: {
+                borderColor: 0xFF6B6B,
+                pulsate: true,
+                padding: 15
+            },
+            textBoxPosition: { x: 200, y: 400 },
+            arrow: {
+                position: { x: 300, y: 350 },
+                rotation: -45
+            }
+        },
+        {
+            title: "Python Programming",
+            text: "Python is perfect for beginners! Learn one of the most popular programming languages with clear syntax and powerful capabilities.",
+            target: 'pythonIcon',
+            highlightStyle: {
+                borderColor: 0x4ECDC4,
+                pulsate: true,
+                padding: 15
+            },
+            textBoxPosition: { x: 500, y: 400 }
+        },
+        {
+            title: "Advanced Languages",
+            text: "Java, C, C++, and C# offer more advanced programming concepts. Take these courses when you're ready for a challenge!",
+            textBoxPosition: { x: 400, y: 300 }
+        },
+        {
+            title: "Battle System",
+            text: "Each quiz is presented as an exciting battle! Answer questions correctly to defeat enemies and earn points.",
+            textBoxPosition: { x: 400, y: 350 }
+        },
+        {
+            title: "Ready to Code!",
+            text: "Choose a programming language to start your coding adventure! Remember, practice makes perfect in programming.",
+            textBoxPosition: { x: 400, y: 400 },
+            buttonText: "Start Coding!"
+        }
+    ]
+};
+
+// Classroom Tutorial Configuration
+export const CLASSROOM_TUTORIAL_STEPS = {
+    firstTimeClassroom: [
+        {
+            title: "Welcome to the Classroom!",
+            text: "Meet your fellow students! Each character has their own story, quests, and can help you on your learning journey.",
+            textBoxPosition: { x: 400, y: 200 },
+            onShow: (scene) => {
+                if (scene.se_confirmSound) {
+                    scene.se_confirmSound.play();
+                }
+            }
+        },
+        {
+            title: "Your Classmates",
+            text: "Use the arrow keys or click to navigate between different students. Each one has unique quests and challenges for you!",
+            target: 'carousel',
+            highlightStyle: {
+                borderColor: 0x00FF7F,
+                padding: 20
+            },
+            textBoxPosition: { x: 400, y: 100 }
+        },
+        {
+            title: "Student Interactions",
+            text: "Click on any student to learn more about them, view their quests, and see your progress with their challenges.",
+            textBoxPosition: { x: 400, y: 150 }
+        },
+        {
+            title: "Quest System",
+            text: "Each student offers different types of quests: Main quests advance the story, side quests provide extra challenges, and bonus quests offer special rewards!",
+            textBoxPosition: { x: 400, y: 300 }
+        },
+        {
+            title: "Progress Tracking",
+            text: "Your progress with each student is tracked. Complete their quests to build relationships and unlock new opportunities!",
+            textBoxPosition: { x: 400, y: 350 }
+        },
+        {
+            title: "Meet Your Classmates!",
+            text: "Take your time to get to know everyone. They're here to help you succeed and make your learning journey more enjoyable!",
+            textBoxPosition: { x: 400, y: 400 },
+            buttonText: "Meet the Class!"
+        }
+    ]
+};
+
+// Library Tutorial Configuration
+export const LIBRARY_TUTORIAL_STEPS = {
+    firstTimeLibrary: [
+        {
+            title: "Welcome to the Library!",
+            text: "The library is your research center! Here you can read books, track your progress, take notes, and access study materials.",
+            textBoxPosition: { x: 400, y: 200 },
+            onShow: (scene) => {
+                if (scene.sound && scene.sound.add) {
+                    // Play a soft library sound if available
+                }
+            }
+        },
+        {
+            title: "Library Sections",
+            text: "The library is organized into different sections. Use the menu to navigate between books, progress tracking, notes, and settings.",
+            target: 'mainMenu',
+            highlightStyle: {
+                borderColor: 0x00FF7F,
+                padding: 15
+            },
+            textBoxPosition: { x: 400, y: 100 }
+        },
+        {
+            title: "Books Collection",
+            text: "Access a wide variety of programming books and resources. Reading helps reinforce what you learn in quizzes and provides deeper understanding.",
+            target: 'booksSection',
+            highlightStyle: {
+                borderColor: 0xFF6B6B,
+                pulsate: true,
+                padding: 10
+            },
+            textBoxPosition: { x: 200, y: 300 }
+        },
+        {
+            title: "Progress Tracking",
+            text: "Monitor your learning progress across all subjects. See which topics you've mastered and which ones need more attention.",
+            target: 'progressSection',
+            highlightStyle: {
+                borderColor: 0x4ECDC4,
+                pulsate: true,
+                padding: 10
+            },
+            textBoxPosition: { x: 500, y: 300 }
+        },
+        {
+            title: "Personal Notes",
+            text: "Take notes while studying! Write down important concepts, code snippets, or anything that helps you remember key information.",
+            target: 'notesSection',
+            highlightStyle: {
+                borderColor: 0xFFD700,
+                pulsate: true,
+                padding: 10
+            },
+            textBoxPosition: { x: 300, y: 400 }
+        },
+        {
+            title: "Study Tips",
+            text: "Reading books before taking quizzes can improve your performance. Use the library regularly to supplement your practical learning!",
+            textBoxPosition: { x: 400, y: 350 }
+        },
+        {
+            title: "Happy Reading!",
+            text: "Explore the library at your own pace. Knowledge is power, and the library is your gateway to deeper understanding!",
+            textBoxPosition: { x: 400, y: 400 },
+            buttonText: "Start Reading!"
+        }
+    ]
+};
+
+// Office Tutorial Configuration
+export const OFFICE_TUTORIAL_STEPS = {
+    firstTimeOffice: [
+        {
+            title: "Welcome to the Office!",
+            text: "This is your personal space for managing your academic life. Here you can view your profile, check statistics, see achievements, and set goals.",
+            textBoxPosition: { x: 400, y: 200 },
+            onShow: (scene) => {
+                if (scene.se_confirmSound) {
+                    scene.se_confirmSound.play();
+                }
+            }
+        },
+        {
+            title: "Office Sections",
+            text: "Navigate between different sections using the arrow keys or by clicking. Each section provides valuable information about your progress.",
+            target: 'carousel',
+            highlightStyle: {
+                borderColor: 0x00FF7F,
+                padding: 20
+            },
+            textBoxPosition: { x: 400, y: 100 }
+        },
+        {
+            title: "Student Profile",
+            text: "View and edit your personal information. Keep your profile updated to track your academic journey effectively.",
+            target: 'profileSection',
+            highlightStyle: {
+                borderColor: 0xFF6B6B,
+                pulsate: true,
+                padding: 15
+            },
+            textBoxPosition: { x: 200, y: 400 }
+        },
+        {
+            title: "Performance Statistics",
+            text: "Analyze your quiz performance, completion rates, and improvement over time. Use these insights to focus your studies!",
+            target: 'statsSection',
+            highlightStyle: {
+                borderColor: 0x4ECDC4,
+                pulsate: true,
+                padding: 15
+            },
+            textBoxPosition: { x: 500, y: 400 }
+        },
+        {
+            title: "Achievements Wall",
+            text: "View all the achievements you've unlocked! Achievements celebrate your milestones and motivate you to reach new goals.",
+            target: 'achievementsSection',
+            highlightStyle: {
+                borderColor: 0xFFD700,
+                pulsate: true,
+                padding: 15
+            },
+            textBoxPosition: { x: 200, y: 300 }
+        },
+        {
+            title: "Feedback & Goals",
+            text: "Read feedback on your performance and set new learning goals. This section helps you plan your educational path forward.",
+            target: 'feedbackSection',
+            highlightStyle: {
+                borderColor: 0xFF69B4,
+                pulsate: true,
+                padding: 15
+            },
+            textBoxPosition: { x: 500, y: 300 }
+        },
+        {
+            title: "Track Your Success!",
+            text: "Use the office regularly to monitor your progress and celebrate your achievements. You're doing great - keep it up!",
+            textBoxPosition: { x: 400, y: 400 },
+            buttonText: "Manage Profile!"
+        }
+    ]
+};

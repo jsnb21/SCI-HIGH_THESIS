@@ -2,10 +2,14 @@ import Phaser from 'phaser';
 import { char1, char2, char3, char4, char5 } from '../gameManager';
 import { createBackButton } from '../components/buttons/backbutton';
 import Carousel from '../ui/carouselUI';
+import { onceOnlyFlags } from '../gameManager';
+import TutorialManager from '../components/TutorialManager.js';
+import { CLASSROOM_TUTORIAL_STEPS } from '../components/TutorialConfig.js';
 
 export default class Classroom extends Phaser.Scene {
     constructor() {
         super('Classroom');
+        this.tutorialManager = null;
     }
 
     preload() {
@@ -120,6 +124,31 @@ export default class Classroom extends Phaser.Scene {
         // Back button
         createBackButton(this, 'MainHub');
 
+        // Initialize tutorial manager
+        this.tutorialManager = new TutorialManager(this);
+
+        // Check if this is the first time visiting the classroom
+        if (!onceOnlyFlags.hasSeen('classroom_tutorial')) {
+            // Delay tutorial start to ensure all UI elements are created
+            this.time.delayedCall(500, () => {
+                this.startClassroomTutorial();
+            });
+        }
+
+        // Debug features
+        this.input.keyboard.on('keydown-T', () => {
+            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
+                this.startClassroomTutorial();
+            }
+        });
+
+        this.input.keyboard.on('keydown-R', () => {
+            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
+                onceOnlyFlags.flags['classroom_tutorial'] = false;
+                console.log('Classroom tutorial flag reset');
+            }
+        });
+
         // Add shutdown and destroy event listeners to clean up the carousel
         this.events.on('shutdown', () => {
             this.destroyCarousel();
@@ -130,6 +159,12 @@ export default class Classroom extends Phaser.Scene {
     }
 
     destroyCarousel() {
+        // Clean up tutorial manager
+        if (this.tutorialManager) {
+            this.tutorialManager.destroy();
+            this.tutorialManager = null;
+        }
+        
         // Clean up modal state
         this.characterBoxOpen = false;
         
@@ -346,6 +381,32 @@ export default class Classroom extends Phaser.Scene {
             boxObjects.forEach(obj => obj.destroy());
             // Re-enable carousel controls
             this.characterBoxOpen = false;
+        });
+    }
+
+    startClassroomTutorial() {
+        const tutorialSteps = [...CLASSROOM_TUTORIAL_STEPS.firstTimeClassroom];
+        
+        // Set dynamic targets
+        tutorialSteps.forEach(step => {
+            switch (step.target) {
+                case 'carousel':
+                    if (this.characterCarousel && this.characterCarousel.bgPanel) {
+                        step.target = this.characterCarousel.bgPanel;
+                    }
+                    break;
+            }
+        });
+
+        this.tutorialManager.init(tutorialSteps, {
+            onComplete: () => {
+                onceOnlyFlags.setSeen('classroom_tutorial');
+                console.log('Classroom tutorial completed!');
+            },
+            onSkip: () => {
+                onceOnlyFlags.setSeen('classroom_tutorial');
+                console.log('Classroom tutorial skipped!');
+            }
         });
     }
 }

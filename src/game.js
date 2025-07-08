@@ -51,20 +51,20 @@ const config = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },  scene: [
-    /*StartUp, // Added StartUp as the first scene
+    StartUp, // Added StartUp as the first scene
     MainMenu,
     /* Main Scenes */
-   /* DungeonScene,
+    DungeonScene,
     DungeonCleared,
     /* UI Scenes */
-   /* CardRewardScene,
+    CardRewardScene,
     Intro,
     OptionsScene,
     MainHub,
     /* Classroom */
-   /* Classroom,
+    Classroom,
     /* Office */
-    /*Office,
+    Office,
     /* Computer Lab Scenes */
     ComputerLab,
     WebDesignScene,

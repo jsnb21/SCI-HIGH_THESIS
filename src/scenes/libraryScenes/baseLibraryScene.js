@@ -2,6 +2,9 @@
 
 import LibraryUI from './LibraryUI.js';
 import { createBackButton } from '../../components/buttons/backbutton.js';
+import { onceOnlyFlags } from '../../gameManager';
+import TutorialManager from '../../components/TutorialManager.js';
+import { LIBRARY_TUTORIAL_STEPS } from '../../components/TutorialConfig.js';
 
 class BaseLibraryScene extends Phaser.Scene {
     constructor() {
@@ -13,6 +16,7 @@ class BaseLibraryScene extends Phaser.Scene {
         this.libraryData = null;
         this.editingNote = null; // Track which note is being edited
         this.noteOptionsVisible = false; // Track if note options menu is visible
+        this.tutorialManager = null;
     }
 
     init(data) {
@@ -67,6 +71,31 @@ class BaseLibraryScene extends Phaser.Scene {
         
         // Add back button to return to main hub
         this.createLibraryBackButton();
+
+        // Initialize tutorial manager
+        this.tutorialManager = new TutorialManager(this);
+
+        // Check if this is the first time visiting the library
+        if (!onceOnlyFlags.hasSeen('library_tutorial')) {
+            // Delay tutorial start to ensure all UI elements are created
+            this.time.delayedCall(500, () => {
+                this.startLibraryTutorial();
+            });
+        }
+
+        // Debug features
+        this.input.keyboard.on('keydown-T', () => {
+            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
+                this.startLibraryTutorial();
+            }
+        });
+
+        this.input.keyboard.on('keydown-R', () => {
+            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
+                onceOnlyFlags.flags['library_tutorial'] = false;
+                console.log('Library tutorial flag reset');
+            }
+        });
         
         // Ensure popup is properly hidden initially
         if (this.popupContainer) {
@@ -825,6 +854,12 @@ createLibraryBackButton() {
     }
 
     destroy() {
+        // Clean up tutorial manager
+        if (this.tutorialManager) {
+            this.tutorialManager.destroy();
+            this.tutorialManager = null;
+        }
+        
         // Clean up back button if it exists
         if (this.backButton) {
             if (this.backButton.buttonBg) this.backButton.buttonBg.destroy();
@@ -858,6 +893,50 @@ createLibraryBackButton() {
         const targetScene = this.previousScene === 'MainScene' ? 'MainHub' : this.previousScene;
         console.log(`Transitioning back to: ${targetScene}`);
         this.scene.start(targetScene);
+    }
+
+    startLibraryTutorial() {
+        const tutorialSteps = [...LIBRARY_TUTORIAL_STEPS.firstTimeLibrary];
+        
+        // Set dynamic targets based on LibraryUI structure
+        tutorialSteps.forEach(step => {
+            switch (step.target) {
+                case 'mainMenu':
+                    if (this.mainMenuContainer) {
+                        step.target = this.mainMenuContainer;
+                    }
+                    break;
+                case 'booksSection':
+                    // Try to find the books menu item
+                    if (this.menuItems && this.menuItems[0]) {
+                        step.target = this.menuItems[0];
+                    }
+                    break;
+                case 'progressSection':
+                    // Try to find the progress menu item
+                    if (this.menuItems && this.menuItems[1]) {
+                        step.target = this.menuItems[1];
+                    }
+                    break;
+                case 'notesSection':
+                    // Try to find the notes menu item
+                    if (this.menuItems && this.menuItems[2]) {
+                        step.target = this.menuItems[2];
+                    }
+                    break;
+            }
+        });
+
+        this.tutorialManager.init(tutorialSteps, {
+            onComplete: () => {
+                onceOnlyFlags.setSeen('library_tutorial');
+                console.log('Library tutorial completed!');
+            },
+            onSkip: () => {
+                onceOnlyFlags.setSeen('library_tutorial');
+                console.log('Library tutorial skipped!');
+            }
+        });
     }
 }
 
