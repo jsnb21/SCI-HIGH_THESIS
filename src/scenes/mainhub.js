@@ -218,11 +218,6 @@ export default class MainHub extends Phaser.Scene {
                         step.target = leaderboardBtn;
                     }
                     break;
-                case 'carousel':
-                    if (this.carousel && this.carousel.bgPanel) {
-                        step.target = this.carousel.bgPanel;
-                    }
-                    break;
                 case 'classroomIcon':
                     if (this.carousel && this.carousel.carouselIcons) {
                         // Find the classroom icon (index 0) in carouselIcons

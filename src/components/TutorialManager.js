@@ -13,6 +13,7 @@ export default class TutorialManager {
         this.arrowPointer = null;
         this.nextButton = null;
         this.skipButton = null;
+        this.backButton = null;
         this.callbacks = {
             onComplete: null,
             onSkip: null,
@@ -64,9 +65,13 @@ export default class TutorialManager {
         });
         
         // Simple event blocking - tutorial elements will have higher depth and receive events first
-        this.overlay.on('pointerdown', (event) => {
+        this.overlay.on('pointerdown', (pointer, localX, localY, event) => {
             // Prevent this event from reaching game elements underneath
-            event.stopPropagation();
+            if (event && event.stopImmediatePropagation) {
+                event.stopImmediatePropagation();
+            }
+            // Alternative: just consume the event by returning false
+            return false;
         });
         
         this.tutorialElements.push(this.overlay);
@@ -223,19 +228,23 @@ export default class TutorialManager {
     createTextBox(step) {
         const { width, height } = this.scene.scale;
         const boxStyle = {
-            width: 400,
-            height: 150,
+            width: 600,  // Increased from 400
+            height: 220, // Increased from 150
             backgroundColor: 0x1a1a2e,
             borderColor: 0x16213e,
-            borderWidth: 3,
-            cornerRadius: 10,
-            padding: 20,
+            borderWidth: 4,  // Increased from 3
+            cornerRadius: 12, // Increased from 10
+            padding: 30,     // Increased from 20
             ...step.textBoxStyle
         };
 
-        // Always position text box in the center of the screen
+        // Position text box at center X but at leaderboard Y level
+        const scaleFactor = Math.min(width / 816, height / 624);
+        const margin = 24 * scaleFactor;
+        const buttonHeight = 50 * scaleFactor;
+        
         let boxX = width / 2;
-        let boxY = height / 2;
+        let boxY = buttonHeight / 2 + margin + 60 * scaleFactor; // Slightly below the leaderboard level
 
         // Create background
         this.textBox = this.scene.add.graphics();
@@ -260,9 +269,9 @@ export default class TutorialManager {
 
         // Create title text if provided
         if (step.title) {
-            this.titleText = this.scene.add.text(boxX, boxY - boxStyle.height / 2 + 30, step.title, {
+            this.titleText = this.scene.add.text(boxX, boxY - boxStyle.height / 2 + 40, step.title, {
                 fontFamily: 'Arial',
-                fontSize: '18px',
+                fontSize: '24px',  // Increased from 18px
                 fontStyle: 'bold',
                 color: '#FFD700',
                 align: 'center',
@@ -280,7 +289,7 @@ export default class TutorialManager {
             step.text, 
             {
                 fontFamily: 'Arial',
-                fontSize: '14px',
+                fontSize: '18px',  // Increased from 14px
                 color: '#FFFFFF',
                 align: 'center',
                 wordWrap: { width: boxStyle.width - boxStyle.padding * 2 }
@@ -356,15 +365,15 @@ export default class TutorialManager {
         // Next/Continue button
         const nextButtonText = step.buttonText || (this.currentStep < this.tutorialSteps.length - 1 ? 'Next' : 'Finish');
         this.nextButton = this.scene.add.text(
-            boxBounds.x + boxBounds.width / 2 - 60,
-            boxBounds.y + boxBounds.height / 2 - 20,
+            boxBounds.x + boxBounds.width / 2 - 80,  // Adjusted position for larger button
+            boxBounds.y + boxBounds.height / 2 - 25,
             nextButtonText,
             {
                 fontFamily: 'Arial',
-                fontSize: '14px',
+                fontSize: '18px',  // Increased from 14px
                 color: '#000000',
                 backgroundColor: '#4CAF50',
-                padding: { x: 15, y: 8 }
+                padding: { x: 20, y: 12 }  // Increased padding
             }
         );
         this.nextButton.setOrigin(0.5, 0.5);
@@ -375,18 +384,41 @@ export default class TutorialManager {
         this.nextButton.on('pointerout', () => this.nextButton.clearTint());
         this.tutorialElements.push(this.nextButton);
 
+        // Back button (only show if not the first step)
+        if (this.currentStep > 0) {
+            this.backButton = this.scene.add.text(
+                boxBounds.x - 20,  // Position to the left of Next button
+                boxBounds.y + boxBounds.height / 2 - 25,
+                'Back',
+                {
+                    fontFamily: 'Arial',
+                    fontSize: '18px',
+                    color: '#000000',
+                    backgroundColor: '#2196F3',
+                    padding: { x: 20, y: 12 }
+                }
+            );
+            this.backButton.setOrigin(0.5, 0.5);
+            this.backButton.setDepth(1003);
+            this.backButton.setInteractive({ useHandCursor: true });
+            this.backButton.on('pointerdown', () => this.prevStep());
+            this.backButton.on('pointerover', () => this.backButton.setTint(0xCCCCCC));
+            this.backButton.on('pointerout', () => this.backButton.clearTint());
+            this.tutorialElements.push(this.backButton);
+        }
+
         // Skip button (only show if not the last step)
         if (this.currentStep < this.tutorialSteps.length - 1) {
             this.skipButton = this.scene.add.text(
-                boxBounds.x - boxBounds.width / 2 + 60,
-                boxBounds.y + boxBounds.height / 2 - 20,
+                boxBounds.x - boxBounds.width / 2 + 80,  // Adjusted position for larger button
+                boxBounds.y + boxBounds.height / 2 - 25,
                 'Skip Tutorial',
                 {
                     fontFamily: 'Arial',
-                    fontSize: '12px',
+                    fontSize: '16px',  // Increased from 12px
                     color: '#000000',
                     backgroundColor: '#FF9800',
-                    padding: { x: 10, y: 6 }
+                    padding: { x: 15, y: 10 }  // Increased padding
                 }
             );
             this.skipButton.setOrigin(0.5, 0.5);
@@ -403,7 +435,7 @@ export default class TutorialManager {
      * Clear elements from current step
      */
     clearStepElements() {
-        [this.highlightBox, this.textBox, this.titleText, this.mainText, this.arrowPointer, this.nextButton, this.skipButton].forEach(element => {
+        [this.highlightBox, this.textBox, this.titleText, this.mainText, this.arrowPointer, this.nextButton, this.skipButton, this.backButton].forEach(element => {
             if (element) {
                 element.destroy();
             }
@@ -415,6 +447,7 @@ export default class TutorialManager {
         this.arrowPointer = null;
         this.nextButton = null;
         this.skipButton = null;
+        this.backButton = null;
         
         // Clear and recreate overlay for next step
         if (this.overlay) {
@@ -435,6 +468,16 @@ export default class TutorialManager {
 
         this.currentStep++;
         this.showStep(this.currentStep);
+    }
+
+    /**
+     * Go to the previous tutorial step
+     */
+    prevStep() {
+        if (this.currentStep > 0) {
+            this.currentStep--;
+            this.showStep(this.currentStep);
+        }
     }
 
     /**

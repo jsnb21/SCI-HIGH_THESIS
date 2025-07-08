@@ -390,11 +390,6 @@ export default class Classroom extends Phaser.Scene {
         // Set dynamic targets
         tutorialSteps.forEach(step => {
             switch (step.target) {
-                case 'carousel':
-                    if (this.characterCarousel && this.characterCarousel.bgPanel) {
-                        step.target = this.characterCarousel.bgPanel;
-                    }
-                    break;
             }
         });
 

@@ -507,6 +507,50 @@ export const TUTORIAL_ELEMENT_SELECTORS = {
     powerUpButton: (scene) => {
         // Return the power-up button
         return scene.powerUpButton;
+    },
+    
+    carousel: (scene) => {
+        // Try to target the carousel background panel first (computer lab uses scene.carousel)
+        if (scene.carousel?.bgPanel) {
+            console.log('Using carousel bgPanel for highlight');
+            return scene.carousel.bgPanel;
+        }
+        
+        // Try to target the character carousel background panel (classroom uses scene.characterCarousel)
+        if (scene.characterCarousel?.bgPanel) {
+            console.log('Using characterCarousel bgPanel for highlight');
+            return scene.characterCarousel.bgPanel;
+        }
+        
+        // Create a custom bounds object for the carousel area based on scene dimensions
+        const carouselObj = scene.carousel || scene.characterCarousel;
+        if (carouselObj && scene.scale) {
+            const { width, height } = scene.scale;
+            const centerY = carouselObj.config?.centerY || (height / 2);
+            const carouselHeight = 340; // Based on panelHeight in carousel code
+            const carouselWidth = width * 0.8; // 80% of screen width
+            
+            // Create a mock element with proper bounds for the entire carousel area
+            const carouselMockElement = {
+                getBounds: () => ({
+                    x: width * 0.1, // 10% margin on left
+                    y: centerY - carouselHeight / 2,
+                    width: carouselWidth,
+                    height: carouselHeight
+                }),
+                x: width / 2,
+                y: centerY,
+                width: carouselWidth,
+                height: carouselHeight
+            };
+            
+            console.log('Using custom carousel bounds:', carouselMockElement.getBounds());
+            return carouselMockElement;
+        }
+        
+        // Last fallback to carousel object itself
+        console.log('Using carousel object as fallback');
+        return scene.carousel || scene.characterCarousel || scene.carouselContainer;
     }
 };
 
@@ -587,7 +631,10 @@ export function prepareTutorialSteps(scene, stepType) {
                 }
             } else {
                 // Handle quiz scene targeting (existing logic)
-                if (step.title.includes('Player Health') || step.title.includes('Your Health') || step.title.includes('coding stamina') || step.title.includes('coding energy')) {
+                if (step.target === 'carousel' || step.title.includes('Programming Languages') || step.title.includes('Your Classmates') || step.title.includes('Library Sections') || step.title.includes('Office Sections')) {
+                    targetElement = elementSelectors.carousel(scene);
+                    console.log(`Tutorial targeting carousel for step: "${step.title}":`, targetElement);
+                } else if (step.title.includes('Player Health') || step.title.includes('Your Health') || step.title.includes('coding stamina') || step.title.includes('coding energy')) {
                     targetElement = elementSelectors.playerHealth(scene);
                     console.log(`Tutorial targeting player health for step: "${step.title}":`, targetElement);
                 } else if (step.title.includes('Enemy Health') || step.title.includes('Challenge Enemy') || step.title.includes('Python Challenge') || step.title.includes('Enemy Web Bug') || step.title.includes('web bug')) {
@@ -751,16 +798,6 @@ export const MAIN_HUB_TUTORIAL_STEPS = {
             textBoxPosition: { x: 300, y: 200 }
         },
         {
-            title: "School Areas",
-            text: "These icons represent different areas of the school. Each area offers unique learning experiences and challenges!",
-            target: 'carousel', // Will be set dynamically to carousel area
-            highlightStyle: {
-                borderColor: 0x00FF7F,
-                padding: 20
-            },
-            textBoxPosition: { x: 400, y: 100 }
-        },
-        {
             title: "Classroom",
             text: "Visit the Classroom to meet your classmates and get introduced to different subjects. This is a great place to start your learning journey!",
             target: 'classroomIcon', // Will be set dynamically to classroom icon
@@ -854,16 +891,6 @@ export const COMPUTER_LAB_TUTORIAL_STEPS = {
                     scene.se_confirmSound.play();
                 }
             }
-        },
-        {
-            title: "Programming Languages",
-            text: "These icons represent different programming languages and technologies. Each one offers unique challenges and learning opportunities!",
-            target: 'carousel',
-            highlightStyle: {
-                borderColor: 0x00FF7F,
-                padding: 20
-            },
-            textBoxPosition: { x: 400, y: 100 }
         },
         {
             title: "Course Progression",
