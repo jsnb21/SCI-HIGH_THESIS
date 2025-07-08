@@ -318,6 +318,132 @@ export const PYTHON_TUTORIAL_STEPS = {
     ]
 };
 
+// Web Design-specific tutorial steps
+export const WEB_DESIGN_TUTORIAL_STEPS = {
+    firstTime: [
+        {
+            title: "Welcome to Web Design Battle!",
+            text: "Ready to test your HTML, CSS, and JavaScript knowledge? Let's learn the basics of web development combat!",
+            textBoxPosition: { x: 400, y: 200 },
+            onShow: (scene) => {
+                if (scene.se_confirmSound) {
+                    scene.se_confirmSound.play();
+                }
+            }
+        },
+        {
+            title: "Your Health Points",
+            text: "This represents your coding energy! Wrong answers about HTML tags, CSS properties, or JavaScript will drain your stamina.",
+            target: null, // Will be set dynamically to player health UI
+            highlightStyle: {
+                borderColor: 0x00FF00,
+                pulsate: true
+            },
+            textBoxPosition: { x: 150, y: 400 }
+        },
+        {
+            title: "Enemy Web Bug",
+            text: "This web bug represents coding errors! Defeat it by correctly answering web development questions and debugging code!",
+            target: null, // Will be set dynamically to enemy health UI
+            highlightStyle: {
+                borderColor: 0xFF0000,
+                pulsate: true
+            },
+            textBoxPosition: { x: 600, y: 400 }
+        },
+        {
+            title: "Development Timer",
+            text: "Web development requires quick thinking! You have limited time to solve each coding challenge, just like in real development.",
+            target: null, // Will be set dynamically to timer
+            highlightStyle: {
+                borderColor: 0xFFFF00,
+                pulsate: true
+            },
+            textBoxPosition: { x: 600, y: 150 }
+        },
+        {
+            title: "Code Combo Meter",
+            text: "Chain correct answers to build your coding flow! Higher combos give bonus points and represent your development momentum.",
+            target: null, // Will be set dynamically to combo meter
+            highlightStyle: {
+                borderColor: 0xFF00FF,
+                pulsate: true
+            },
+            textBoxPosition: { x: 150, y: 150 }
+        },
+        {
+            title: "Web Development Questions",
+            text: "Questions cover HTML structure, CSS styling, JavaScript functionality, and web best practices. Read carefully!",
+            target: null, // Will be set dynamically to question area
+            highlightStyle: {
+                borderColor: 0x00FFFF,
+                padding: 15
+            },
+            textBoxPosition: { x: 400, y: 500 }
+        },
+        {
+            title: "Code Answer Options",
+            text: "Choose the correct HTML tag, CSS property, JavaScript method, or web development concept. Think like a web developer!",
+            target: null, // Will be set dynamically to answer options
+            highlightStyle: {
+                borderColor: 0xFFA500,
+                padding: 10
+            },
+            textBoxPosition: { x: 400, y: 150 }
+        },
+        {
+            title: "Ready to Build the Web!",
+            text: "Now you're ready to tackle web development challenges! Use your HTML, CSS, and JavaScript knowledge to win. Good luck, developer!",
+            textBoxPosition: { x: 400, y: 300 },
+            buttonText: "Start Coding!"
+        }
+    ],
+    
+    combo: [
+        {
+            title: "Coding Flow Achieved!",
+            text: "Excellent! You're in the zone! This combo multiplier shows you're thinking like a true web developer.",
+            target: null, // Will be set to combo meter
+            highlightStyle: {
+                borderColor: 0xFF00FF,
+                pulsate: true
+            },
+            textBoxPosition: { x: 150, y: 300 }
+        },
+        {
+            title: "Keep the Momentum!",
+            text: "In web development, maintaining focus leads to better code! Keep this streak going for maximum points and damage.",
+            textBoxPosition: { x: 400, y: 350 }
+        }
+    ],
+    
+    lowHealth: [
+        {
+            title: "Debug Mode Activated!",
+            text: "Your coding energy is low! Take a moment to carefully read each question. In web development, debugging requires patience.",
+            textBoxPosition: { x: 400, y: 250 }
+        },
+        {
+            title: "Web Development Tips",
+            text: "Remember: HTML provides structure, CSS handles styling, and JavaScript adds interactivity. Think about which technology applies to each question.",
+            textBoxPosition: { x: 400, y: 350 }
+        }
+    ],
+    
+    victory: [
+        {
+            title: "Web Development Mastery!",
+            text: "Outstanding! You've successfully debugged the web! Your HTML, CSS, and JavaScript skills are impressive.",
+            textBoxPosition: { x: 400, y: 250 }
+        },
+        {
+            title: "Build Your Portfolio!",
+            text: "You're ready to create amazing websites! Keep practicing these skills and exploring new web technologies.",
+            textBoxPosition: { x: 400, y: 350 }
+        }
+    ]
+};
+
 export const TUTORIAL_ELEMENT_SELECTORS = {
     playerHealth: (scene) => {
         // Return the player health container with hearts
@@ -421,44 +547,77 @@ export function getElementBounds(element) {
 
 // Function to update tutorial steps with actual element references
 export function prepareTutorialSteps(scene, stepType) {
-    // Check if this is a Python-specific tutorial
+    // Check if this is a topic-specific tutorial
     const isPythonTutorial = scene.topic === 'python' || scene.courseTopic === 'Python';
-    const tutorialSource = isPythonTutorial ? PYTHON_TUTORIAL_STEPS : QUIZ_TUTORIAL_STEPS;
+    const isWebDesignTutorial = scene.topic === 'webdesign' || scene.courseTopic === 'Web Design';
+    const isDungeonScene = scene.scene.key === 'DungeonScene';
+    
+    let tutorialSource = QUIZ_TUTORIAL_STEPS;
+    let elementSelectors = TUTORIAL_ELEMENT_SELECTORS;
+    
+    if (isDungeonScene) {
+        tutorialSource = DUNGEON_TUTORIAL_STEPS;
+        elementSelectors = DUNGEON_ELEMENT_SELECTORS;
+    } else if (isPythonTutorial) {
+        tutorialSource = PYTHON_TUTORIAL_STEPS;
+    } else if (isWebDesignTutorial) {
+        tutorialSource = WEB_DESIGN_TUTORIAL_STEPS;
+    }
     
     const steps = [...(tutorialSource[stepType] || QUIZ_TUTORIAL_STEPS[stepType] || [])];
     
     steps.forEach(step => {
-        if (step.target === null) {
+        if (step.target === null || typeof step.target === 'string') {
             let targetElement = null;
             
-            // Determine which element to target based on step content
-            if (step.title.includes('Player Health') || step.title.includes('Your Health') || step.title.includes('coding stamina')) {
-                targetElement = TUTORIAL_ELEMENT_SELECTORS.playerHealth(scene);
-                console.log(`Tutorial targeting player health for step: "${step.title}":`, targetElement);
-            } else if (step.title.includes('Enemy Health') || step.title.includes('Challenge Enemy') || step.title.includes('Python Challenge')) {
-                targetElement = TUTORIAL_ELEMENT_SELECTORS.enemyHealth(scene);
-                console.log(`Tutorial targeting enemy health for step: "${step.title}":`, targetElement);
-            } else if (step.title.includes('Timer') || step.title.includes('Coding Timer')) {
-                targetElement = TUTORIAL_ELEMENT_SELECTORS.timer(scene);
-                console.log(`Tutorial targeting timer for step: "${step.title}":`, targetElement);
-            } else if (step.title.includes('Combo') || step.title.includes('Mastery')) {
-                targetElement = TUTORIAL_ELEMENT_SELECTORS.comboMeter(scene);
-                console.log(`Tutorial targeting combo meter for step: "${step.title}":`, targetElement);
-            } else if (step.title.includes('Question') || step.title.includes('Challenge') || step.title.includes('Code Challenge')) {
-                targetElement = TUTORIAL_ELEMENT_SELECTORS.questionArea(scene);
-                console.log(`Tutorial targeting question area for step: "${step.title}":`, targetElement);
-            } else if (step.title.includes('Answer') || step.title.includes('Choose')) {
-                targetElement = TUTORIAL_ELEMENT_SELECTORS.answerOptions(scene);
-                console.log(`Tutorial targeting answer options for step: "${step.title}":`, targetElement);
-            } else if (step.title.includes('Power-Up')) {
-                targetElement = TUTORIAL_ELEMENT_SELECTORS.powerUpButton(scene);
-                console.log(`Tutorial targeting power-up button for step: "${step.title}":`, targetElement);
-            } else if (step.title.includes('Syntax')) {
-                targetElement = TUTORIAL_ELEMENT_SELECTORS.questionArea(scene);
-                console.log(`Tutorial targeting question area for syntax step: "${step.title}":`, targetElement);
+            // Handle dungeon-specific targeting
+            if (isDungeonScene) {
+                if (step.target === 'player' || step.title.includes('Your Character')) {
+                    targetElement = elementSelectors.player(scene);
+                } else if (step.target === 'healthDisplay' || step.title.includes('Health Display')) {
+                    targetElement = elementSelectors.healthDisplay(scene);
+                } else if (step.target === 'menuButton' || step.title.includes('Dungeon Menu')) {
+                    targetElement = elementSelectors.menuButton(scene);
+                } else if (step.target === 'quizBox' || step.title.includes('Quiz Box') || step.title.includes('Challenge') || step.title.includes('Boss')) {
+                    targetElement = elementSelectors.quizBox(scene);
+                } else if (step.target === 'adjacentCells' || step.title.includes('Movement Areas')) {
+                    targetElement = elementSelectors.adjacentCells(scene);
+                } else if (step.target === 'visitedCells' || step.title.includes('Visited Path')) {
+                    targetElement = elementSelectors.visitedCells(scene);
+                }
+            } else {
+                // Handle quiz scene targeting (existing logic)
+                if (step.title.includes('Player Health') || step.title.includes('Your Health') || step.title.includes('coding stamina') || step.title.includes('coding energy')) {
+                    targetElement = elementSelectors.playerHealth(scene);
+                    console.log(`Tutorial targeting player health for step: "${step.title}":`, targetElement);
+                } else if (step.title.includes('Enemy Health') || step.title.includes('Challenge Enemy') || step.title.includes('Python Challenge') || step.title.includes('Enemy Web Bug') || step.title.includes('web bug')) {
+                    targetElement = elementSelectors.enemyHealth(scene);
+                    console.log(`Tutorial targeting enemy health for step: "${step.title}":`, targetElement);
+                } else if (step.title.includes('Timer') || step.title.includes('Coding Timer') || step.title.includes('Development Timer')) {
+                    targetElement = elementSelectors.timer(scene);
+                    console.log(`Tutorial targeting timer for step: "${step.title}":`, targetElement);
+                } else if (step.title.includes('Combo') || step.title.includes('Mastery') || step.title.includes('Code Combo') || step.title.includes('Coding Flow')) {
+                    targetElement = elementSelectors.comboMeter(scene);
+                    console.log(`Tutorial targeting combo meter for step: "${step.title}":`, targetElement);
+                } else if (step.title.includes('Question') || step.title.includes('Challenge') || step.title.includes('Code Challenge') || step.title.includes('Web Development Questions')) {
+                    targetElement = elementSelectors.questionArea(scene);
+                    console.log(`Tutorial targeting question area for step: "${step.title}":`, targetElement);
+                } else if (step.title.includes('Answer') || step.title.includes('Choose') || step.title.includes('Code Answer')) {
+                    targetElement = elementSelectors.answerOptions(scene);
+                    console.log(`Tutorial targeting answer options for step: "${step.title}":`, targetElement);
+                } else if (step.title.includes('Power-Up')) {
+                    targetElement = elementSelectors.powerUpButton(scene);
+                    console.log(`Tutorial targeting power-up button for step: "${step.title}":`, targetElement);
+                } else if (step.title.includes('Syntax')) {
+                    targetElement = elementSelectors.questionArea(scene);
+                    console.log(`Tutorial targeting question area for syntax step: "${step.title}":`, targetElement);
+                }
             }
             
-            step.target = targetElement;
+            if (targetElement) {
+                step.target = targetElement;
+                console.log(`Dungeon tutorial targeting element for step: "${step.title}":`, targetElement);
+            }
         }
     });
     
@@ -519,6 +678,39 @@ export const PYTHON_TUTORIAL_TRIGGERS = {
     victory: (scene) => {
         // Python-specific victory message
         return scene.battleWon && !scene.tutorialFlags?.victoryTutorialShown && scene.topic === 'python';
+    }
+};
+
+// Web Design tutorial triggers
+export const WEB_DESIGN_TUTORIAL_TRIGGERS = {
+    firstTime: (scene) => {
+        // Show Web Design first-time tutorial if player hasn't seen it before and is in web design scene
+        const hasSeenWebDesignTutorial = localStorage.getItem('sci-high-webdesign-tutorial-seen');
+        return !hasSeenWebDesignTutorial && scene.topic === 'webdesign';
+    },
+    
+    combo: (scene) => {
+        // Show combo tutorial when player reaches 3x combo for first time in web design
+        const hasSeenComboTutorial = localStorage.getItem('sci-high-webdesign-combo-tutorial-seen');
+        return scene.comboMeter && 
+               scene.comboMeter.getCurrentCombo && 
+               scene.comboMeter.getCurrentCombo() >= 3 && 
+               !hasSeenComboTutorial && 
+               scene.topic === 'webdesign';
+    },
+    
+    lowHealth: (scene) => {
+        // Show low health warning when player health drops below 30% in web design
+        if (!scene.playerConfig || scene.topic !== 'webdesign') return false;
+        const healthRatio = scene.playerConfig.currentHP / scene.playerConfig.maxHP;
+        const hasSeenLowHealthTutorial = localStorage.getItem('sci-high-webdesign-lowhealth-tutorial-seen');
+        return healthRatio <= 0.3 && !hasSeenLowHealthTutorial;
+    },
+    
+    victory: (scene) => {
+        // Show victory tutorial after first web design win
+        const hasSeenVictoryTutorial = localStorage.getItem('sci-high-webdesign-victory-tutorial-seen');
+        return scene.battleWon && !hasSeenVictoryTutorial && scene.topic === 'webdesign';
     }
 };
 
@@ -914,4 +1106,232 @@ export const OFFICE_TUTORIAL_STEPS = {
             buttonText: "Manage Profile!"
         }
     ]
+};
+
+// Dungeon Tutorial Configuration (specifically for web design topic)
+export const DUNGEON_TUTORIAL_STEPS = {
+    firstTimeDungeon: [
+        {
+            title: "Welcome to the Web Design Dungeon!",
+            text: "You've entered a dangerous coding labyrinth! Navigate through this grid-based dungeon to face web development challenges and grow stronger.",
+            textBoxPosition: { x: 400, y: 150 },
+            onShow: (scene) => {
+                if (scene.se_confirmSound) {
+                    scene.se_confirmSound.play();
+                }
+            }
+        },
+        {
+            title: "Your Character",
+            text: "This is you! Use arrow keys or click on adjacent highlighted cells to move through the dungeon. Your health carries over between battles.",
+            target: 'player',
+            highlightStyle: {
+                borderColor: 0x00FF7F,
+                pulsate: true,
+                padding: 15
+            },
+            textBoxPosition: { x: 200, y: 300 }
+        },
+        {
+            title: "Health Display",
+            text: "Keep an eye on your health! It shows how many hit points you have remaining. Losing all health will end your dungeon run.",
+            target: 'healthDisplay',
+            highlightStyle: {
+                borderColor: 0xFF0000,
+                pulsate: true,
+                padding: 10
+            },
+            textBoxPosition: { x: 150, y: 100 }
+        },
+        {
+            title: "Dungeon Menu",
+            text: "Click the menu button to pause, view stats, or exit the dungeon. Your progress is saved so you can return anytime!",
+            target: 'menuButton',
+            highlightStyle: {
+                borderColor: 0xFFD700,
+                pulsate: true,
+                padding: 8
+            },
+            textBoxPosition: { x: 600, y: 100 }
+        },
+        {
+            title: "Quiz Boxes - Your Enemies!",
+            text: "These glowing boxes contain web development challenges! Step on them to trigger quiz battles. Defeat enemies to clear the path forward.",
+            target: 'quizBox',
+            highlightStyle: {
+                borderColor: 0xFF6B6B,
+                pulsate: true,
+                padding: 20
+            },
+            textBoxPosition: { x: 400, y: 350 }
+        },
+        {
+            title: "Movement Areas",
+            text: "Yellow highlighted cells show where you can move next. You can only move to adjacent cells (up, down, left, right) one step at a time.",
+            target: 'adjacentCells',
+            highlightStyle: {
+                borderColor: 0xFFFF00,
+                pulsate: true,
+                padding: 12
+            },
+            textBoxPosition: { x: 500, y: 450 }
+        },
+        {
+            title: "Visited Path",
+            text: "Green cells show where you've already been. You can return to these areas safely, but new challenges await in unexplored territories.",
+            target: 'visitedCells',
+            highlightStyle: {
+                borderColor: 0x00FF00,
+                pulsate: false,
+                padding: 10
+            },
+            textBoxPosition: { x: 300, y: 500 }
+        },
+        {
+            title: "Progressive Difficulty",
+            text: "As you defeat more enemies, the challenges become harder and rewards greater. Prepare for increasingly complex web development questions!",
+            textBoxPosition: { x: 400, y: 200 }
+        },
+        {
+            title: "Ready for Adventure!",
+            text: "Navigate the dungeon, battle coding challenges, and master web development! Click on highlighted areas to move and explore. Good luck, web developer!",
+            textBoxPosition: { x: 400, y: 250 },
+            buttonText: "Start Exploring!"
+        }
+    ],
+
+    firstQuizBox: [
+        {
+            title: "First Web Challenge!",
+            text: "You've encountered your first coding challenge! Stepping on quiz boxes will start quiz battles with web development questions.",
+            target: 'quizBox',
+            highlightStyle: {
+                borderColor: 0xFF6B6B,
+                pulsate: true,
+                padding: 15
+            },
+            textBoxPosition: { x: 400, y: 300 }
+        },
+        {
+            title: "Battle Strategy",
+            text: "Answer questions correctly to deal damage, avoid wrong answers to protect your health. Your web development knowledge is your weapon!",
+            textBoxPosition: { x: 400, y: 350 }
+        }
+    ],
+
+    bossEncounter: [
+        {
+            title: "Boss Challenge Detected!",
+            text: "You've reached a boss level! This enhanced enemy will test your mastery of web development concepts with harder questions.",
+            target: 'quizBox',
+            highlightStyle: {
+                borderColor: 0xFF0066,
+                pulsate: true,
+                padding: 25
+            },
+            textBoxPosition: { x: 400, y: 200 }
+        },
+        {
+            title: "Boss Battle Tips",
+            text: "Boss enemies have more health and ask more challenging questions. Take your time and think carefully about advanced HTML, CSS, and JavaScript concepts!",
+            textBoxPosition: { x: 400, y: 300 }
+        }
+    ]
+};
+
+// Dungeon tutorial triggers
+export const DUNGEON_TUTORIAL_TRIGGERS = {
+    firstTimeDungeon: (scene) => {
+        // Show dungeon tutorial on first visit
+        const hasSeenDungeonTutorial = localStorage.getItem('sci-high-dungeon-tutorial-seen');
+        const isWebDesign = scene.courseTopic === 'webdesign';
+        
+        console.log('Dungeon tutorial firstTime check:', {
+            hasSeenDungeonTutorial,
+            courseTopic: scene.courseTopic,
+            isWebDesign,
+            willShowTutorial: !hasSeenDungeonTutorial && isWebDesign
+        });
+        
+        return !hasSeenDungeonTutorial && isWebDesign;
+    },
+
+    firstQuizBox: (scene) => {
+        // Show tutorial when player first approaches a quiz box
+        return scene.quizBoxes && scene.quizBoxes.length > 0 && !scene.tutorialFlags?.firstQuizBoxShown;
+    },
+
+    bossEncounter: (scene) => {
+        // Show boss tutorial when entering boss level
+        return scene.isBossLevel && !scene.tutorialFlags?.bossEncounterShown;
+    }
+};
+
+// Dungeon element selectors for targeting specific UI elements
+export const DUNGEON_ELEMENT_SELECTORS = {
+    player: (scene) => {
+        return scene.playerSprite;
+    },
+    
+    healthDisplay: (scene) => {
+        return scene.dungeonHUD?.healthHearts || scene.dungeonHUD?.healthContainer;
+    },
+    
+    menuButton: (scene) => {
+        return scene.dungeonMenu?.menuButton;
+    },
+    
+    quizBox: (scene) => {
+        // Return the first quiz box sprite if available
+        return scene.quizBoxSprites && scene.quizBoxSprites.length > 0 ? scene.quizBoxSprites[0] : null;
+    },
+    
+    adjacentCells: (scene) => {
+        // Create a mock element representing the adjacent movement areas
+        if (scene.adjacentCells && scene.adjacentCells.length > 0 && scene.offsetX !== undefined) {
+            const cellSize = 64 * (scene.scaleFactor || 1);
+            const firstAdjacent = scene.adjacentCells[0];
+            
+            return {
+                getBounds: () => ({
+                    x: scene.offsetX + firstAdjacent.x * cellSize,
+                    y: scene.offsetY + firstAdjacent.y * cellSize,
+                    width: cellSize,
+                    height: cellSize
+                }),
+                x: scene.offsetX + firstAdjacent.x * cellSize + cellSize / 2,
+                y: scene.offsetY + firstAdjacent.y * cellSize + cellSize / 2,
+                width: cellSize,
+                height: cellSize
+            };
+        }
+        return null;
+    },
+    
+    visitedCells: (scene) => {
+        // Create a mock element for visited cells area
+        if (scene.grid && scene.offsetX !== undefined) {
+            const cellSize = 64 * (scene.scaleFactor || 1);
+            // Find a visited cell (preferably the starting position)
+            for (let y = 0; y < scene.grid.length; y++) {
+                for (let x = 0; x < scene.grid[y].length; x++) {
+                    if (scene.grid[y][x].visited && !(x === scene.player.x && y === scene.player.y)) {
+                        return {
+                            getBounds: () => ({
+                                x: scene.offsetX + x * cellSize,
+                                y: scene.offsetY + y * cellSize,
+                                width: cellSize,
+                                height: cellSize
+                            }),
+                            x: scene.offsetX + x * cellSize + cellSize / 2,
+                            y: scene.offsetY + y * cellSize + cellSize / 2,
+                            width: cellSize,
+                            height: cellSize
+                        };
+                    }
+                }
+            }
+        }
+        return null;
+    }
 };
