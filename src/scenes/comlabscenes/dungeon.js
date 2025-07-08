@@ -29,7 +29,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.enemiesDefeated = 0;
         this.maxIntensity = 3;
         this.playerDamage = 10;
-        this.isBossLevel = false;
         
         // Course statistics tracking
         this.courseStats = {
@@ -86,7 +85,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.enemiesDefeated = 0;
         this.maxIntensity = 3;
         this.playerDamage = 10;
-        this.isBossLevel = false;
         
         // Reset course statistics
         this.courseStats = {
@@ -145,12 +143,8 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.scale.on('resize', this.onResize, this);
         this.updateScale();        this.events.once('shutdown', this.shutdown, this);
 
-        // Check if this should be a boss level based on current intensity
-        this.isBossLevel = this.intensity > this.maxIntensity;
-        console.log(`Initial boss level check: intensity=${this.intensity}, maxIntensity=${this.maxIntensity}, isBossLevel=${this.isBossLevel}`);
-
-        // Place quiz boxes based on current level type
-        const boxCount = this.isBossLevel ? 1 : 2;
+        // Place quiz boxes
+        const boxCount = 2;
         this.quizBoxes = this.placeQuizBoxes(boxCount);
         
         // Validate quiz box positions before path checking
@@ -659,7 +653,7 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             }
 
             // Check for boss encounter tutorial trigger
-            if (this.isBossLevel && !this.tutorialFlags.bossEncounterShown) {
+            if (this.intensity > this.maxIntensity && !this.tutorialFlags.bossEncounterShown) {
                 this.checkAndShowTutorial();
             }
 
@@ -758,36 +752,36 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
                 borderAlpha = this.breathAlpha;
                 glowColor = 0xfde047;
             }            // Draw quiz box if present with enhanced effects
-            if (this.quizBoxes.some(pos => pos.x === x && pos.y === y)) {
-                // Multi-layered vibrant background for quiz box
-                this.gridGraphics.fillStyle(0xdc2626, 1); // Bright red base
+            const quizBox = this.quizBoxes.find(pos => pos.x === x && pos.y === y);
+            if (quizBox) {
+                // Get difficulty colors
+                let difficultyColors = this.getDifficultyColors(quizBox.difficulty);
+                
+                // Multi-layered vibrant background for quiz box with difficulty color
+                this.gridGraphics.fillStyle(difficultyColors.base, 1);
                 this.gridGraphics.fillRoundedRect(cellX, cellY, cellWidth, cellHeight, 12 * this.scaleFactor);
                 
-                // Pulsing glow layers
-                this.gridGraphics.lineStyle(borderWidth * 3, 0xff6b6b, 0.8); // Bright red outer glow
+                // Pulsing glow layers with difficulty colors
+                this.gridGraphics.lineStyle(borderWidth * 3, difficultyColors.outerGlow, 0.8);
                 this.gridGraphics.strokeRoundedRect(cellX - 4, cellY - 4, cellWidth + 8, cellHeight + 8, 16 * this.scaleFactor);
                 
-                this.gridGraphics.lineStyle(borderWidth * 2, 0xfbbf24, 1); // Gold middle glow
+                this.gridGraphics.lineStyle(borderWidth * 2, difficultyColors.middleGlow, 1);
                 this.gridGraphics.strokeRoundedRect(cellX - 2, cellY - 2, cellWidth + 4, cellHeight + 4, 14 * this.scaleFactor);
                 
-                this.gridGraphics.lineStyle(borderWidth, 0xfde047, 1); // Bright yellow border
+                this.gridGraphics.lineStyle(borderWidth, difficultyColors.border, 1);
                 this.gridGraphics.strokeRoundedRect(cellX, cellY, cellWidth, cellHeight, 12 * this.scaleFactor);
                 
-                // Vibrant inner highlight
-                this.gridGraphics.fillStyle(0xf97316, 0.6); // Bright orange overlay
+                // Vibrant inner highlight with difficulty color
+                this.gridGraphics.fillStyle(difficultyColors.overlay, 0.6);
                 this.gridGraphics.fillRoundedRect(cellX + 4, cellY + 4, cellWidth - 8, cellHeight - 8, 8 * this.scaleFactor);                // Enhanced quiz box sprite with multiple effects
                 const sprite = this.add.image(
                     cellX + cellWidth / 2,
                     cellY + cellHeight / 2,
-                    this.isBossLevel ? 'bigSlime' : 'quizbox'
+                    'quizbox'
                 ).setDisplaySize(cellWidth * 0.8, cellHeight * 0.8);
                 
-                // Vibrant tinting for different enemy types
-                if (this.isBossLevel) {
-                    sprite.setTint(0xff0066); // Bright magenta for boss
-                } else {
-                    sprite.setTint(0x00ffff); // Bright cyan for regular enemies
-                }
+                // Tinting based on difficulty
+                sprite.setTint(difficultyColors.spriteTint);
                     
                     this.quizBoxSprites.push(sprite);
                     
@@ -901,26 +895,68 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
     placeQuizBoxes(count) {
         const positions = [];
         
-        // Special placement for boss level - boss goes in the center
-        if (this.isBossLevel && count === 1) {
-            const centerX = Math.floor(GRID_WIDTH / 2);
-            const centerY = Math.floor(GRID_HEIGHT / 2);
-            positions.push({ x: centerX, y: centerY });
-            console.log(`Boss placed at center: (${centerX}, ${centerY})`);
-            return positions;
-        }
-        
         // Generate positions based on the selected dungeon shape
+        let generatedPositions;
         switch (this.currentDungeonShape) {
             case 'square':
-                return this.generateSquarePattern(count);
+                generatedPositions = this.generateSquarePattern(count);
+                break;
             case 'circle':
-                return this.generateCirclePattern(count);
+                generatedPositions = this.generateCirclePattern(count);
+                break;
             case 'triangle':
-                return this.generateTrianglePattern(count);
+                generatedPositions = this.generateTrianglePattern(count);
+                break;
             case 'random':
             default:
-                return this.generateRandomPattern(count);
+                generatedPositions = this.generateRandomPattern(count);
+                break;
+        }
+        
+        // Add difficulty to each position
+        return generatedPositions.map(pos => ({
+            ...pos,
+            difficulty: this.getRandomDifficulty()
+        }));
+    }
+
+    getRandomDifficulty() {
+        const difficulties = ['easy', 'medium', 'hard'];
+        return Phaser.Utils.Array.GetRandom(difficulties);
+    }
+
+    getDifficultyColors(difficulty) {
+        switch (difficulty) {
+            case 'easy':
+                return {
+                    base: 0x22c55e,        // Green base
+                    outerGlow: 0x4ade80,   // Light green outer glow
+                    middleGlow: 0x86efac,  // Lighter green middle glow
+                    border: 0xbbf7d0,     // Very light green border
+                    overlay: 0x16a34a,    // Dark green overlay
+                    spriteTint: 0x00ff7f   // Spring green sprite tint
+                };
+            case 'medium':
+                return {
+                    base: 0xeab308,        // Yellow base
+                    outerGlow: 0xfbbf24,   // Light yellow outer glow
+                    middleGlow: 0xfde047,  // Lighter yellow middle glow
+                    border: 0xfef3c7,     // Very light yellow border
+                    overlay: 0xd97706,    // Dark yellow overlay
+                    spriteTint: 0xffff00   // Pure yellow sprite tint
+                };
+            case 'hard':
+                return {
+                    base: 0xdc2626,        // Red base
+                    outerGlow: 0xff6b6b,   // Light red outer glow
+                    middleGlow: 0xfbbf24,  // Gold middle glow (keeping existing)
+                    border: 0xfde047,     // Yellow border (keeping existing)
+                    overlay: 0xf97316,    // Orange overlay (keeping existing)
+                    spriteTint: 0xff0000   // Pure red sprite tint
+                };
+            default:
+                // Default to medium difficulty colors
+                return this.getDifficultyColors('medium');
         }
     }
 
@@ -1046,7 +1082,11 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
                 this.grid[y][x].walkable &&
                 !positions.some(pos => pos.x === x && pos.y === y)
             ) {
-                positions.push({ x, y });
+                positions.push({ 
+                    x, 
+                    y, 
+                    difficulty: this.getRandomDifficulty() 
+                });
             }
         }
         return positions;
@@ -1057,7 +1097,10 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         const shuffled = Phaser.Utils.Array.Shuffle([...availablePositions]);
         
         for (let i = 0; i < Math.min(count, shuffled.length); i++) {
-            positions.push(shuffled[i]);
+            positions.push({
+                ...shuffled[i],
+                difficulty: this.getRandomDifficulty()
+            });
         }
         
         // If we need more positions than the pattern provides, fill randomly from walkable tiles
@@ -1069,7 +1112,11 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
                 this.grid[y][x].walkable &&
                 !positions.some(pos => pos.x === x && pos.y === y)
             ) {
-                positions.push({ x, y });
+                positions.push({ 
+                    x, 
+                    y, 
+                    difficulty: this.getRandomDifficulty() 
+                });
             }
         }
         
@@ -1203,70 +1250,42 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         }
     }
     getEnemyConfig() {
-        // Determine if this is a boss level
-        this.isBossLevel = this.intensity > this.maxIntensity;
-        
-        let enemyHP, enemyLabel;
-        
-        if (this.isBossLevel) {
-            enemyHP = 200;
-            enemyLabel = `Boss Level - HP: ${enemyHP}`;
-        } else {
-            enemyHP = 100;
-            enemyLabel = `Intensity ${this.intensity} - HP: ${enemyHP}`;
-        }
+        let enemyHP = 100;
+        let enemyLabel = `Intensity ${this.intensity} - HP: ${enemyHP}`;
         
         return {
-            spriteKey: this.isBossLevel ? 'bigSlime' : 'goblinNerd', // Use different sprite for boss
+            spriteKey: 'goblinNerd',
             maxHP: enemyHP,
             label: enemyLabel
         };
     }    onEnemyDefeated() {
         this.enemiesDefeated++;
         console.log(`Enemy defeated! Total defeated: ${this.enemiesDefeated}`);
-        console.log(`Current intensity: ${this.intensity}, isBossLevel: ${this.isBossLevel}`);
+        console.log(`Current intensity: ${this.intensity}`);
         
-        // Show card reward system before checking for boss defeat
-        const isBossReward = this.isBossLevel;
-        this.showCardReward(isBossReward, () => {
+        // Show card reward system
+        this.showCardReward(false, () => {
             // This callback runs after card selection is complete
             this.continueAfterCardReward();
         });
     }
     
     showCardReward(isBossReward, callback) {
-        console.log(`Showing card reward - Boss reward: ${isBossReward}`);
+        console.log(`Showing card reward`);
         this.cardRewardCallback = callback;
         this.scene.pause(); // Pause current scene
         this.scene.launch('CardRewardScene', {
             returnScene: 'DungeonScene',
             playerLevel: this.intensity,
-            isBossReward: isBossReward
+            isBossReward: false
         });
     }
     
     continueAfterCardReward() {
-        // Check if this was a boss defeat - show results screen
-        if (this.isBossLevel && this.courseTopic) {
-            console.log(`Boss defeated! Course ${this.courseTopic} completed!`);
-            this.completeCourse();
-            
-            // Launch DungeonCleared scene with course stats
-            console.log('Launching DungeonCleared scene with stats:', this.courseStats);
-            this.scene.start('DungeonCleared', {
-                courseStats: this.courseStats,
-                courseTopic: this.courseTopic
-            });
-            return;
-        }
-          // Check if intensity should increase (every 2 enemies defeated)
+        // Check if intensity should increase (every 2 enemies defeated)
         if (this.enemiesDefeated % 2 === 0 && this.intensity <= this.maxIntensity) {
             this.intensity++;
             console.log(`Intensity increased to ${this.intensity}!`);
-            
-            // Update boss level status
-            this.isBossLevel = this.intensity > this.maxIntensity;
-            console.log(`Boss level status: ${this.isBossLevel}`);
             
             // Reset player position to starting position when intensity increases
             this.player.x = Math.floor(GRID_WIDTH / 2);
@@ -1278,6 +1297,20 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             
             // Show intensity increase notification
             this.showIntensityNotification();
+        }
+        
+        // Check if we've reached max course completion
+        if (this.intensity > this.maxIntensity && this.courseTopic) {
+            console.log(`Course ${this.courseTopic} completed!`);
+            this.completeCourse();
+            
+            // Launch DungeonCleared scene with course stats
+            console.log('Launching DungeonCleared scene with stats:', this.courseStats);
+            this.scene.start('DungeonCleared', {
+                courseStats: this.courseStats,
+                courseTopic: this.courseTopic
+            });
+            return;
         }
         
         // Spawn new quiz boxes if needed (only if no enemies remain)
@@ -1305,8 +1338,8 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         
         // Enhanced notification text with glow effect
         const message = this.intensity > this.maxIntensity ? 
-            "🏆 BOSS LEVEL UNLOCKED! 🏆" : 
-            `⚡ INTENSITY LEVEL ${this.intensity}! ⚡`;;
+            "🏆 COURSE COMPLETE! 🏆" : 
+            `⚡ INTENSITY LEVEL ${this.intensity}! ⚡`;
             
         const notificationText = this.add.text(centerX, centerY - 30, message, {
             fontSize: '24px',
@@ -1438,9 +1471,9 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             return;
         }
         
-        const targetBoxCount = this.isBossLevel ? 1 : 2; // Boss level has only 1 enemy
+        const targetBoxCount = 2; // Always spawn 2 enemies
         
-        console.log(`Spawning ${targetBoxCount} new enemies for ${this.isBossLevel ? 'boss' : 'regular'} level`);
+        console.log(`Spawning ${targetBoxCount} new enemies`);
         const newBoxes = this.placeQuizBoxes(targetBoxCount);
         
         // Validate new boxes before adding them
