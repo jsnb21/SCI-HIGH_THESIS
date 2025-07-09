@@ -686,7 +686,7 @@ export default class BaseQuizScene extends Phaser.Scene {
         }
 
         // Go to next question after a delay
-        this.time.delayedCall(1500, () => {
+        this.time.delayedCall(800, () => { // Reduced from 1500ms to 800ms
             this.currentQuestionIndex++;
             if (this.currentQuestionIndex < this.questions.length) {
                 this.showQuestion();

@@ -433,7 +433,7 @@ function checkAutoSubmit(scene, onDrop) {
         showCompletionEffect(scene);
         
         // Auto-submit after brief delay
-        scene.time.delayedCall(1000, () => {
+        scene.time.delayedCall(600, () => { // Reduced from 1000ms to 600ms
             onDrop(0, null); // Pass 0 as index and null as answer for auto-submit
         });
     }

@@ -1268,21 +1268,6 @@ export const DUNGEON_TUTORIAL_STEPS = {
 
 // Dungeon tutorial triggers
 export const DUNGEON_TUTORIAL_TRIGGERS = {
-    firstTimeDungeon: (scene) => {
-        // Show dungeon tutorial on first visit
-        const hasSeenDungeonTutorial = localStorage.getItem('sci-high-dungeon-tutorial-seen');
-        const isWebDesign = scene.courseTopic === 'webdesign';
-        
-        console.log('Dungeon tutorial firstTime check:', {
-            hasSeenDungeonTutorial,
-            courseTopic: scene.courseTopic,
-            isWebDesign,
-            willShowTutorial: !hasSeenDungeonTutorial && isWebDesign
-        });
-        
-        return !hasSeenDungeonTutorial && isWebDesign;
-    },
-
     firstQuizBox: (scene) => {
         // Show tutorial when player first approaches a quiz box
         return scene.quizBoxes && scene.quizBoxes.length > 0 && !scene.tutorialFlags?.firstQuizBoxShown;

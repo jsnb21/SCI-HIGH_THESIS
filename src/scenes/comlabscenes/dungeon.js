@@ -15,8 +15,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.grid = [];
         this.player = { x: Math.floor(GRID_WIDTH / 2), y: GRID_HEIGHT - 1, hp: gameManager.getPlayerHP(), buffs: [] };
         this.adjacentCells = [];
-        this.breathAlpha = 0.5;
-        this.breathDir = 1;
         this.intensity = 1;
         this.hudElements = [];
         this.scaleFactor = 1;        this.offsetX = 0;        this.offsetY = 0;
@@ -48,7 +46,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
     }    init(data) {
         // Reset player HP to full when starting a new dungeon
         gameManager.resetPlayerHP();
-        console.log('DungeonScene: Player HP reset for new dungeon');
         
         // Store course topic for completion tracking
         this.courseTopic = data?.courseTopic || null;
@@ -68,8 +65,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.grid = [];
         this.player = { x: Math.floor(GRID_WIDTH / 2), y: GRID_HEIGHT - 1, hp: gameManager.getPlayerHP(), buffs: [] };
         this.adjacentCells = [];
-        this.breathAlpha = 0.5;
-        this.breathDir = 1;
         this.intensity = 1;
         this.hudElements = [];
         this.menuOpen = false;
@@ -117,7 +112,13 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
 
         this.input.keyboard.on('keydown', this.handleInput, this);
-        this.input.on('pointerdown', this.handlePointer, this);        this.drawGrid();
+        this.input.on('pointerdown', this.handlePointer, this);
+
+        // Calculate scale and centering BEFORE drawing anything
+        this.updateScale();
+        
+        // Draw initial grid
+        this.drawGrid();
 
         // Create atmospheric particles
         this.createParticleEffects();
@@ -133,20 +134,25 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.dungeonMenu.createMenuButton();
 
         // Add resize listener
-        this.scale.on('resize', this.onResize, this);
-        this.updateScale();        this.events.once('shutdown', this.shutdown, this);
+        this.scale.on('resize', this.onResize, this);        this.events.once('shutdown', this.shutdown, this);
+
+        // Initialize tutorial system first
+        this.tutorialManager = new TutorialManager(this);
+        this.setupTutorialSystem();
 
         // Place quiz boxes
         const boxCount = 2;
+        console.log('About to place quiz boxes...');
         this.quizBoxes = this.placeQuizBoxes(boxCount);
+        console.log('Quiz boxes placed:', this.quizBoxes);
         
-        // Validate quiz box positions before path checking
+        // Validate quiz box positions
         if (!this.quizBoxes || this.quizBoxes.length === 0) {
             console.error('Quiz box placement failed');
             return;
         }
         
-        // Validate each quiz box position
+        // Simple validation - just check that positions are valid
         for (const quizBox of this.quizBoxes) {
             if (typeof quizBox.x !== 'number' || typeof quizBox.y !== 'number' ||
                 quizBox.x < 0 || quizBox.x >= GRID_WIDTH ||
@@ -156,18 +162,27 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             }
         }
         
-        // Ensure paths to quiz box positions exist after placing them
-        this.ensurePathToQuizBoxes();
-          // Add resume event handler
+        // Draw grid with quiz boxes immediately - no pathfinding delays
+        console.log('About to draw grid with quiz boxes...');
+        this.drawGrid();
+        this.updateLightingEffects();
+        console.log('Grid drawn, quiz box sprites:', this.quizBoxSprites.length);
+          
+        // Add resume event handler
         this.events.on('resume', this.onResume, this);
-
-        // Initialize tutorial system
-        this.tutorialManager = new TutorialManager(this);
-        this.setupTutorialSystem();
         
-        // Check and show tutorial after setup is complete
-        this.time.delayedCall(500, () => {
-            this.checkAndShowTutorial();
+        // Check and show tutorial immediately - don't wait
+        this.time.delayedCall(100, () => {
+            // Check if basic tutorial has been seen
+            const basicTutorialSeen = localStorage.getItem('sci-high-dungeon-basic-tutorial-seen');
+            
+            if (!basicTutorialSeen) {
+                // Show basic tutorial first
+                this.showInitialDungeonTutorial();
+            } else {
+                // Skip to advanced tutorials
+                this.checkAndShowTutorial();
+            }
         });
         
         // Expose debug methods for testing
@@ -201,7 +216,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         if (this.enemyWasDefeatedFlag) {
             enemyWasDefeated = true;
             this.enemyWasDefeatedFlag = false; // Reset flag
-            console.log('Enemy defeat detected via direct flag');
         } else {
             // Check if an enemy was defeated - check the correct quiz scene based on course topic
             const quizSceneMap = {
@@ -235,19 +249,11 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
                     this.courseStats.comboScore += quizScene.comboMeter.getTotalComboScore();
                 }
                 
-                console.log('Quiz stats collected:', {
-                    score: quizScene.score,
-                    correct: quizScene.correctAnswers,
-                    courseStats: this.courseStats
-                });
-                
                 quizScene.enemyDefeated = false; // Reset flag
-                console.log('Enemy defeat detected via scene flag');
             }
         }
         
         if (enemyWasDefeated) {
-            console.log('Enemy was defeated! Calling onEnemyDefeated()');
             this.onEnemyDefeated();
         }
         
@@ -413,10 +419,14 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.updateLightingEffects();
         if (this.dungeonHUD && this.dungeonHUD.drawHUD) this.dungeonHUD.drawHUD();
         if (this.dungeonMenu && this.dungeonMenu.createMenuButton) this.dungeonMenu.createMenuButton();
-    }drawGrid() {
+    }    drawGrid() {
         // Clear previous quiz box sprites and player sprite
         if (this.quizBoxSprites && this.quizBoxSprites.length) {
-            this.quizBoxSprites.forEach(sprite => sprite.destroy());
+            this.quizBoxSprites.forEach(sprite => {
+                if (sprite && sprite.destroy) {
+                    sprite.destroy();
+                }
+            });
             this.quizBoxSprites = [];
         }
         if (this.playerSprite) {
@@ -458,17 +468,17 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
                 }
             }
 
-            // Adjacent cells that can be moved to - bright and pulsing
+            // Adjacent cells that can be moved to - bright and static
             if (this.adjacentCells.some(cell => cell.x === x && cell.y === y) &&
                 !(this.player.x === x && this.player.y === y)) {
                 fillColor = 0xf59e0b; // Vibrant amber
                 borderColor = 0xfbbf24;
-                fillAlpha = this.breathAlpha;
-                borderAlpha = this.breathAlpha;
                 glowColor = 0xfde047;
             }            // Draw quiz box if present with enhanced effects
             const quizBox = this.quizBoxes.find(pos => pos.x === x && pos.y === y);
             if (quizBox) {
+                console.log(`Rendering quiz box at (${x}, ${y}) with difficulty: ${quizBox.difficulty}`);
+                
                 // Get difficulty colors
                 let difficultyColors = this.getDifficultyColors(quizBox.difficulty);
                 
@@ -488,7 +498,7 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
                 
                 // Vibrant inner highlight with difficulty color
                 this.gridGraphics.fillStyle(difficultyColors.overlay, 0.6);
-                this.gridGraphics.fillRoundedRect(cellX + 4, cellY + 4, cellWidth - 8, cellHeight - 8, 8 * this.scaleFactor);                // Enhanced quiz box sprite with multiple effects
+                this.gridGraphics.fillRoundedRect(cellX + 4, cellY + 4, cellWidth - 8, cellHeight - 8, 8 * this.scaleFactor);                // Enhanced quiz box sprite with static effects
                 const sprite = this.add.image(
                     cellX + cellWidth / 2,
                     cellY + cellHeight / 2,
@@ -497,30 +507,15 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
                 
                 // Tinting based on difficulty
                 sprite.setTint(difficultyColors.spriteTint);
+                
+                // Set depth to ensure visibility
+                sprite.setDepth(10);
+                
+                // Make sure sprite is visible
+                sprite.setAlpha(1);
+                sprite.setVisible(true);
                     
-                    this.quizBoxSprites.push(sprite);
-                    
-                    // Enhanced floating animation with rotation
-                    this.tweens.add({
-                        targets: sprite,
-                        y: sprite.y - 8 * this.scaleFactor,
-                        angle: 5,
-                        duration: 1500,
-                        ease: 'Sine.easeInOut',
-                        yoyo: true,
-                        repeat: -1
-                    });
-                    
-                    // Pulsing scale effect
-                    this.tweens.add({
-                        targets: sprite,
-                        scaleX: sprite.scaleX * 1.2,
-                        scaleY: sprite.scaleY * 1.2,
-                        duration: 2000,
-                        ease: 'Sine.easeInOut',
-                        yoyo: true,
-                        repeat: -1
-                    });
+                this.quizBoxSprites.push(sprite);
                 } else {
                     // Regular cell with enhanced gradients
                     this.gridGraphics.fillStyle(fillColor, fillAlpha);
@@ -551,7 +546,7 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             }
         }
 
-        // Enhanced player representation with multiple effects
+        // Enhanced player representation with static effects
         const playerCellX = this.offsetX + this.player.x * cellSize + cellSize / 2;
         const playerCellY = this.offsetY + this.player.y * cellSize + cellSize / 2;
         
@@ -564,33 +559,11 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         innerGlow.setDepth(2);
         this.quizBoxSprites.push(innerGlow);
         
-        // Player sprite with enhanced effects
+        // Player sprite with static effects
         this.playerSprite = this.add.image(playerCellX, playerCellY, 'goblinNerd');
         this.playerSprite.setDisplaySize(cellSize * 0.7, cellSize * 0.7);
         this.playerSprite.setDepth(3);
         this.playerSprite.setTint(0x22d3ee); // Bright cyan tint
-        
-        // Enhanced player animations
-        this.tweens.add({
-            targets: [outerGlow, innerGlow],
-            scaleX: 1.3,
-            scaleY: 1.3,
-            alpha: 0.1,
-            duration: 1200,
-            ease: 'Sine.easeInOut',
-            yoyo: true,
-            repeat: -1
-        });
-        
-        this.tweens.add({
-            targets: this.playerSprite,
-            scaleX: 1.15,
-            scaleY: 1.15,
-            duration: 1000,
-            ease: 'Sine.easeInOut',
-            yoyo: true,
-            repeat: -1
-        });
 
         // Update lighting effects
         this.updateLightingEffects();
@@ -603,19 +576,22 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         while (positions.length < count) {
             const x = Phaser.Math.Between(0, GRID_WIDTH - 1);
             const y = Phaser.Math.Between(0, GRID_HEIGHT - 2); // avoid starting row
+            
             // Avoid player start, duplicates, and ensure walkable
             if (
                 (x !== this.player.x || y !== this.player.y) &&
                 this.grid[y][x].walkable &&
                 !positions.some(pos => pos.x === x && pos.y === y)
             ) {
-                positions.push({ 
+                const newPos = { 
                     x, 
                     y, 
                     difficulty: this.getRandomDifficulty() 
-                });
+                };
+                positions.push(newPos);
             }
         }
+        
         return positions;
     }
 
@@ -769,21 +745,8 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             this.lightingOverlay.strokeCircle(playerX, playerY, radius - i * 10);
         }
     }    update(time, delta) {
-        // Enhanced breathing animation for adjacent cells
-        this.breathAlpha += this.breathDir * delta * 0.002;
-        if (this.breathAlpha > 0.9) {
-            this.breathAlpha = 0.9;
-            this.breathDir = -1;
-        }
-        if (this.breathAlpha < 0.5) {
-            this.breathAlpha = 0.5;
-            this.breathDir = 1;
-        }
-        
-        // Only redraw grid occasionally to improve performance
-        if (Math.floor(time / 100) % 2 === 0) {
-            this.drawGrid();
-        }
+        // Remove the constant grid redrawing to prevent interference with quiz box visibility
+        // Grid will be redrawn when needed (player movement, enemy defeat, etc.)
     }
     getEnemyConfig() {
         let enemyHP = 100;
@@ -796,8 +759,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         };
     }    onEnemyDefeated() {
         this.enemiesDefeated++;
-        console.log(`Enemy defeated! Total defeated: ${this.enemiesDefeated}`);
-        console.log(`Current intensity: ${this.intensity}`);
         
         // Show card reward system
         this.showCardReward(false, () => {
@@ -807,7 +768,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
     }
     
     showCardReward(isBossReward, callback) {
-        console.log(`Showing card reward`);
         this.cardRewardCallback = callback;
         this.scene.pause(); // Pause current scene
         this.scene.launch('CardRewardScene', {
@@ -821,7 +781,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         // Check if intensity should increase (every 2 enemies defeated)
         if (this.enemiesDefeated % 2 === 0 && this.intensity <= this.maxIntensity) {
             this.intensity++;
-            console.log(`Intensity increased to ${this.intensity}!`);
             
             // Reset player position to starting position when intensity increases
             this.player.x = Math.floor(GRID_WIDTH / 2);
@@ -837,11 +796,9 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         
         // Check if we've reached max course completion
         if (this.intensity > this.maxIntensity && this.courseTopic) {
-            console.log(`Course ${this.courseTopic} completed!`);
             this.completeCourse();
             
             // Launch DungeonCleared scene with course stats
-            console.log('Launching DungeonCleared scene with stats:', this.courseStats);
             this.scene.start('DungeonCleared', {
                 courseStats: this.courseStats,
                 courseTopic: this.courseTopic
@@ -989,11 +946,10 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         const courseKey = courseMap[this.courseTopic];
         if (courseKey) {
             gameManager.setCourseCompleted(courseKey, true);
-            console.log(`Course ${courseKey} marked as completed!`);
         }
     }    spawnNewQuizBoxes() {
         // Validate grid state before spawning
-        if (!this.grid || this.grid.length !== GRID_HEIGHT) {
+        if (!this.grid || this.grid.length === 0) {
             console.error('Cannot spawn quiz boxes - grid not properly initialized');
             return;
         }
@@ -1003,13 +959,11 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         
         // Don't spawn new enemies until all current enemies are defeated
         if (currentBoxCount > 0) {
-            console.log(`Not spawning new enemies - ${currentBoxCount} enemies still remain`);
             return;
         }
         
         const targetBoxCount = 2; // Always spawn 2 enemies
         
-        console.log(`Spawning ${targetBoxCount} new enemies`);
         const newBoxes = this.placeQuizBoxes(targetBoxCount);
         
         // Validate new boxes before adding them
@@ -1018,64 +972,13 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             return;
         }
         
-        this.quizBoxes.push(...newBoxes);
+        this.quizBoxes = newBoxes; // Replace instead of push to avoid accumulation
         
-        // Ensure paths to new quiz boxes exist
-        this.ensurePathToQuizBoxes();
-        
-        this.drawGrid(); // Redraw to show new boxes
-    }
-    // Debug method to manually trigger boss level (for testing)
-    debugTriggerBossLevel() {
-        console.log('Debug: Triggering boss level manually');
-        this.intensity = this.maxIntensity + 1;
-        this.isBossLevel = true;
-        this.enemiesDefeated = 6; // Simulate having defeated enough enemies
-        
-        // Clear existing boxes
-        this.quizBoxes = [];
-        
-        // Place boss in center
-        this.quizBoxes = this.placeQuizBoxes(1);
+        // Immediately redraw grid to show new boxes
         this.drawGrid();
-        
-        console.log(`Boss level active: ${this.isBossLevel}, intensity: ${this.intensity}`);
-    }
-
-    // Debug method to simulate course completion (for testing)
-    debugCompleteWithStats() {
-        console.log('Debug: Completing course with sample stats');
-        this.courseStats = {
-            totalScore: 850,
-            correctAnswers: 8,
-            wrongAnswers: 2,
-            comboScore: 35
-        };
-        this.completeCourse();
-        
-        // Use the new DungeonCleared scene
-        this.scene.start('DungeonCleared', {
-            courseStats: this.courseStats,
-            courseTopic: this.courseTopic
-        });
+        this.updateLightingEffects();
     }
     
-    // Debug method to test card system (for testing)
-    debugTestCardSystem() {
-        console.log('Debug: Testing card system');
-        this.showCardReward(false, () => {
-            console.log('Card reward completed!');
-        });
-    }
-    
-    // Debug method to test boss card system (for testing)
-    debugTestBossCardSystem() {
-        console.log('Debug: Testing boss card system');
-        this.showCardReward(true, () => {
-            console.log('Boss card reward completed!');
-        });
-    }
-
     // Enhanced notification method
     showNotification(title, message = '') {
         const centerX = this.scale.width / 2;
@@ -1126,24 +1029,24 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.input.keyboard.on('keydown', (event) => {
             if (event.shiftKey && event.code === 'KeyT') {
                 // Shift+T: Manual tutorial trigger (for testing)
-                console.log('Manual tutorial trigger (Shift+T)');
                 this.triggerManualTutorial();
             } else if (event.shiftKey && event.code === 'KeyR') {
                 // Shift+R: Reset tutorial flags (for testing)
-                console.log('Resetting tutorial flags (Shift+R)');
                 this.resetTutorialFlags();
             }
         });
     }
 
     checkAndShowTutorial() {
-        if (!this.tutorialManager) return;
+        if (!this.tutorialManager) {
+            return;
+        }
 
         // Check each tutorial trigger condition
         for (const [triggerName, triggerFunction] of Object.entries(DUNGEON_TUTORIAL_TRIGGERS)) {
-            if (triggerFunction(this)) {
-                console.log(`Dungeon tutorial trigger activated: ${triggerName}`);
-                
+            const shouldTrigger = triggerFunction(this);
+            
+            if (shouldTrigger) {
                 const tutorialSteps = prepareTutorialSteps(this, triggerName);
                 
                 this.tutorialManager.init(tutorialSteps, {
@@ -1160,8 +1063,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
     }
 
     onTutorialComplete(tutorialType) {
-        console.log(`Dungeon tutorial completed: ${tutorialType}`);
-        
         // Mark tutorial as seen and update flags
         if (tutorialType === 'firstTimeDungeon') {
             localStorage.setItem('sci-high-dungeon-tutorial-seen', 'true');
@@ -1175,26 +1076,17 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
 
     triggerManualTutorial() {
         if (!this.tutorialManager) {
-            console.log('Tutorial manager not available');
             return;
         }
 
-        // Trigger first-time tutorial manually for testing
-        const tutorialSteps = prepareTutorialSteps(this, 'firstTimeDungeon');
-        
-        this.tutorialManager.init(tutorialSteps, {
-            onComplete: () => {
-                console.log('Manual tutorial completed');
-            },
-            onSkip: () => {
-                console.log('Manual tutorial skipped');
-            }
-        });
+        // Trigger basic tutorial manually for testing
+        this.showInitialDungeonTutorial();
     }
 
     resetTutorialFlags() {
         // Reset localStorage flags
         localStorage.removeItem('sci-high-dungeon-tutorial-seen');
+        localStorage.removeItem('sci-high-dungeon-basic-tutorial-seen');
         
         // Reset scene flags
         this.tutorialFlags = {
@@ -1203,10 +1095,56 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             bossEncounterShown: false
         };
         
-        console.log('All dungeon tutorial flags reset');
-        
         // Show notification to user
         this.showNotification('Tutorial flags reset!', 'Press Shift+T to trigger tutorial');
+    }
+
+    showInitialDungeonTutorial() {
+        if (!this.tutorialManager) {
+            return;
+        }
+
+        // Create tutorial steps for dungeon basics
+        const tutorialSteps = [
+            {
+                title: "🎮 Dungeon Controls",
+                text: "Welcome to the dungeon! You can move your character using the arrow keys on your keyboard, or by clicking on the highlighted tiles around your player.",
+                textBoxPosition: { x: 400, y: 150 }
+            },
+            {
+                title: "⚔️ Combat System",
+                text: "Move your character into an enemy (the colored boxes) to start a quiz-battle! Each enemy has different difficulty levels indicated by their colors.",
+                textBoxPosition: { x: 400, y: 200 }
+            },
+            {
+                title: "🎯 Your Goal",
+                text: "Defeat all enemies in the dungeon to progress! Your intensity level will increase as you defeat more enemies, making them stronger but earning you better rewards.",
+                textBoxPosition: { x: 400, y: 250 }
+            },
+            {
+                title: "✨ Let's Begin!",
+                text: "Good luck, adventurer! Use your programming knowledge to defeat the enemies and conquer the dungeon!",
+                textBoxPosition: { x: 400, y: 300 },
+                buttonText: "Start Adventure!"
+            }
+        ];
+
+        this.tutorialManager.init(tutorialSteps, {
+            onComplete: () => {
+                // Mark tutorial as seen
+                localStorage.setItem('sci-high-dungeon-basic-tutorial-seen', 'true');
+                
+                // Now check for other tutorials
+                this.checkAndShowTutorial();
+            },
+            onSkip: () => {
+                // Mark tutorial as seen even if skipped
+                localStorage.setItem('sci-high-dungeon-basic-tutorial-seen', 'true');
+                
+                // Now check for other tutorials
+                this.checkAndShowTutorial();
+            }
+        });
     }
 
     // Pathfinding and connectivity methods
@@ -1323,10 +1261,7 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         }
 
         if (reachablePositions.length < requiredPositions) {
-            console.log(`Only ${reachablePositions.length} reachable positions found, need ${requiredPositions}. Creating additional paths...`);
             this.createAdditionalPaths(playerStartX, playerStartY, potentialPositions, requiredPositions - reachablePositions.length);
-        } else {
-            console.log(`Path validation successful: ${reachablePositions.length}/${potentialPositions.length} positions reachable`);
         }
     }
 
@@ -1339,7 +1274,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         for (let i = 0; i < Math.min(neededPaths, unreachablePositions.length); i++) {
             const target = unreachablePositions[i];
             this.createDirectPath(startX, startY, target.x, target.y);
-            console.log(`Created path from (${startX},${startY}) to (${target.x},${target.y})`);
         }
     }
 
@@ -1387,6 +1321,27 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
                 }
             }
         }
+        return positions;
+    }
+
+    getAdjacentPositions(x, y, width, height) {
+        const positions = [];
+        const directions = [
+            { dx: 0, dy: -1 }, // up
+            { dx: 0, dy: 1 },  // down
+            { dx: -1, dy: 0 }, // left
+            { dx: 1, dy: 0 }   // right
+        ];
+        
+        for (const dir of directions) {
+            const newX = x + dir.dx;
+            const newY = y + dir.dy;
+            
+            if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                positions.push({ x: newX, y: newY });
+            }
+        }
+        
         return positions;
     }
 }

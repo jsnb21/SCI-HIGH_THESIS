@@ -479,7 +479,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             // Check for combo tutorial trigger
             setTimeout(() => {
                 this.checkAndShowTutorial();
-            }, 1000);
+            }, 500); // Reduced from 1000ms to 500ms
             
             // Apply score multiplier
             const multiplier = this.comboMeter.getScoreMultiplier();
@@ -510,16 +510,19 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
 
                 this.awardQuizPoints();
                 
-                // Check for victory tutorial
-                setTimeout(() => {
-                    if (TUTORIAL_TRIGGERS.victory(this) && !this.tutorialFlags.victoryTutorialShown) {
-                        this.showTutorial('victory');
-                        this.tutorialFlags.victoryTutorialShown = true;
-                    }
-                }, 2000);
-                
-                this.gameTimer.resume();
-                showVictory(this);
+                // Play death animation before showing victory screen
+                this.playEnemyDeathAnimation(() => {
+                    // Check for victory tutorial
+                    setTimeout(() => {
+                        if (TUTORIAL_TRIGGERS.victory(this) && !this.tutorialFlags.victoryTutorialShown) {
+                            this.showTutorial('victory');
+                            this.tutorialFlags.victoryTutorialShown = true;
+                        }
+                    }, 600); // Reduced from 1000ms to 600ms
+                    
+                    this.gameTimer.resume();
+                    showVictory(this);
+                });
                 return;
             }
         } else {
@@ -542,7 +545,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 // Check for low health tutorial trigger
                 setTimeout(() => {
                     this.checkAndShowTutorial();
-                }, 1000);
+                }, 500); // Reduced from 1000ms to 500ms
                 
                 if (playerHP <= 0) {
                     this.gameTimer.resume();
@@ -564,7 +567,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 setTimeout(() => {
                     this.gameTimer.resume();
                     showVictory(this);
-                }, 1500);
+                }, 600); // Reduced from 1500ms to 600ms
                 return;
             }
         }
@@ -580,7 +583,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 this.awardQuizPoints();
                 showVictory(this);
             }
-        }, 2000);
+        }, 800); // Reduced from 2000ms to 800ms
     }    restartQuiz() {
         this.score = 0;
         this.correctAnswers = 0; // Reset correct answers counter
@@ -1008,7 +1011,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             // Check for combo tutorial trigger
             setTimeout(() => {
                 this.checkAndShowTutorial();
-            }, 1000);
+            }, 500); // Reduced from 1000ms to 500ms
             
             // Apply score multiplier
             const multiplier = this.comboMeter.getScoreMultiplier();
@@ -1039,16 +1042,19 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
 
                 this.awardQuizPoints();
                 
-                // Check for victory tutorial
-                setTimeout(() => {
-                    if (TUTORIAL_TRIGGERS.victory(this) && !this.tutorialFlags.victoryTutorialShown) {
-                        this.showTutorial('victory');
-                        this.tutorialFlags.victoryTutorialShown = true;
-                    }
-                }, 2000);
-                
-                this.gameTimer.resume();
-                showVictory(this);
+                // Play death animation before showing victory screen
+                this.playEnemyDeathAnimation(() => {
+                    // Check for victory tutorial
+                    setTimeout(() => {
+                        if (TUTORIAL_TRIGGERS.victory(this) && !this.tutorialFlags.victoryTutorialShown) {
+                            this.showTutorial('victory');
+                            this.tutorialFlags.victoryTutorialShown = true;
+                        }
+                    }, 600); // Reduced from 1000ms to 600ms
+                    
+                    this.gameTimer.resume();
+                    showVictory(this);
+                });
                 return;
             }
         } else {
@@ -1071,7 +1077,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 // Check for low health tutorial trigger
                 setTimeout(() => {
                     this.checkAndShowTutorial();
-                }, 1000);
+                }, 500); // Reduced from 1000ms to 500ms
                 
                 if (playerHP <= 0) {
                     this.gameTimer.resume();
@@ -1093,7 +1099,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 setTimeout(() => {
                     this.gameTimer.resume();
                     showVictory(this);
-                }, 1500);
+                }, 600); // Reduced from 1500ms to 600ms
                 return;
             }
         }
@@ -1109,7 +1115,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                 this.awardQuizPoints();
                 showVictory(this);
             }
-        }, 2000);
+        }, 800); // Reduced from 2000ms to 800ms
     }    restartQuiz() {
         this.score = 0;
         this.correctAnswers = 0; // Reset correct answers counter

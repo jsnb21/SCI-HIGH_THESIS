@@ -186,7 +186,7 @@ export default class PythonQuizScene extends BaseQuizScene {
         // Check for Python-specific tutorials after answer processing
         setTimeout(() => {
             this.checkAndShowTutorial();
-        }, 1500); // Delay to let feedback finish
+        }, 750); // Reduced from 1500ms to 750ms
         
         return result;
     }
