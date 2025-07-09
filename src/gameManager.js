@@ -10,6 +10,9 @@ class GameManager {
         this.playerBuffs = {}; // Add buff system
 
         this.previousScene = 'MainMenu'; // default scene
+        
+        // Track leaderboard dialog elements for cleanup
+        this.activeLeaderboardDialog = null;
 
         // Point System
         this.totalPoints = 0;
@@ -739,8 +742,33 @@ class GameManager {
         }
     }
 
+    // Clean up any active leaderboard dialog
+    cleanupLeaderboardDialog() {
+        if (this.activeLeaderboardDialog) {
+            // Clean up Phaser elements
+            this.activeLeaderboardDialog.dialogElements.forEach(element => {
+                if (element && element.destroy) {
+                    element.destroy();
+                }
+            });
+            
+            // Clean up HTML elements
+            if (this.activeLeaderboardDialog.nameInput && this.activeLeaderboardDialog.nameInput.parentNode) {
+                document.body.removeChild(this.activeLeaderboardDialog.nameInput);
+            }
+            if (this.activeLeaderboardDialog.departmentSelect && this.activeLeaderboardDialog.departmentSelect.parentNode) {
+                document.body.removeChild(this.activeLeaderboardDialog.departmentSelect);
+            }
+            
+            this.activeLeaderboardDialog = null;
+        }
+    }
+
     // Show leaderboard submission dialog
     showLeaderboardDialog(scene) {
+        // Clean up any existing dialog first
+        this.cleanupLeaderboardDialog();
+        
         // Check if we already have player info stored
         const savedPlayerInfo = localStorage.getItem('sci_high_player_info');
         let defaultName = '';
@@ -752,6 +780,14 @@ class GameManager {
             defaultDepartment = info.department || '';
         }
 
+        // Use VNDialogue scaling system for consistency
+        const BASE_WIDTH = 816;
+        const BASE_HEIGHT = 624;
+        const { width, height } = scene.scale;
+        const scaleX = width / BASE_WIDTH;
+        const scaleY = height / BASE_HEIGHT;
+        const scale = Math.min(scaleX, scaleY);
+
         // Create overlay to block clicks behind the dialog
         const overlay = scene.add.rectangle(
             scene.cameras.main.width / 2, 
@@ -759,77 +795,120 @@ class GameManager {
             scene.cameras.main.width, 
             scene.cameras.main.height, 
             0x000000, 
-            0.5
-        );
-        overlay.setInteractive(); // Block clicks
-        overlay.setDepth(1999);
+            0.8
+        ).setOrigin(0.5).setDepth(1999);
 
-        // Create dialog background
-        const dialogBg = scene.add.rectangle(
-            scene.cameras.main.width / 2, 
-            scene.cameras.main.height / 2, 
-            450, 400, 
-            0xFFFFFF
+        // Create dialog background using VNDialogue styling
+        const dialogWidth = 500 * scale;
+        const dialogHeight = 400 * scale;
+        const borderRadius = 20 * scale;
+        const borderThickness = 4 * scale;
+        
+        const dialogBg = scene.add.graphics();
+        dialogBg.fillStyle(0x222244, 0.8);  // Match VNDialogue background
+        dialogBg.lineStyle(borderThickness, 0xffffff, 1);  // Match VNDialogue border
+        dialogBg.fillRoundedRect(
+            scene.cameras.main.width / 2 - dialogWidth / 2,
+            scene.cameras.main.height / 2 - dialogHeight / 2,
+            dialogWidth,
+            dialogHeight,
+            borderRadius
         );
-        dialogBg.setStrokeStyle(3, 0x34495E);
+        dialogBg.strokeRoundedRect(
+            scene.cameras.main.width / 2 - dialogWidth / 2,
+            scene.cameras.main.height / 2 - dialogHeight / 2,
+            dialogWidth,
+            dialogHeight,
+            borderRadius
+        );
         dialogBg.setDepth(2000);
 
-        // Dialog title
+        // Dialog title with main menu styling
         const title = scene.add.text(
             scene.cameras.main.width / 2, 
-            scene.cameras.main.height / 2 - 100, 
+            scene.cameras.main.height / 2 - 120 * scale, 
             'Submit to Leaderboard', 
             {
-                fontSize: '20px',
-                color: '#2C3E50',
-                fontFamily: 'Arial',
-                fontStyle: 'bold'
+                fontFamily: 'Caprasimo-Regular',  // Match main menu font
+                fontSize: `${Math.round(24 * scale)}px`,
+                color: '#ffff00',  // Match main menu yellow
+                stroke: '#000',
+                strokeThickness: 4,
+                shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 4, fill: true }
             }
         ).setOrigin(0.5).setDepth(2001);
 
-        // Score display
+        // Score display with VNDialogue text styling
         const scoreText = scene.add.text(
             scene.cameras.main.width / 2, 
-            scene.cameras.main.height / 2 - 70, 
+            scene.cameras.main.height / 2 - 80 * scale, 
             `Your Score: ${this.totalPoints} points`, 
             {
-                fontSize: '16px',
-                color: '#27AE60',
-                fontFamily: 'Arial',
-                fontStyle: 'bold'
+                fontFamily: 'Caprasimo-Regular',  // Match VNDialogue font
+                fontSize: `${Math.round(18 * scale)}px`,
+                color: '#ffffff',  // Match VNDialogue white text
+                align: 'center'
             }
         ).setOrigin(0.5).setDepth(2001);
 
-        // Create HTML input elements
+        // Create HTML input elements with improved styling
         const nameInput = document.createElement('input');
         nameInput.type = 'text';
         nameInput.placeholder = 'Enter your name';
         nameInput.value = defaultName;
         nameInput.style.cssText = `
             position: absolute;
-            left: ${scene.cameras.main.width / 2 - 150}px;
-            top: ${scene.cameras.main.height / 2 - 30}px;
-            width: 300px;
-            height: 30px;
+            left: ${scene.cameras.main.width / 2 - 150 * scale}px;
+            top: ${scene.cameras.main.height / 2 - 20 * scale}px;
+            width: ${300 * scale}px;
+            height: ${35 * scale}px;
             z-index: 2002;
-            padding: 5px;
-            border: 2px solid #34495E;
-            border-radius: 5px;
+            padding: ${8 * scale}px;
+            border: ${3 * scale}px solid #ffffcc;
+            border-radius: ${10 * scale}px;
+            background-color: #222244;
+            color: #ffffff;
+            font-family: Caprasimo-Regular;
+            font-size: ${16 * scale}px;
+            box-shadow: 0 ${2 * scale}px ${4 * scale}px rgba(0,0,0,0.3);
+            box-sizing: border-box;
         `;
+        nameInput.addEventListener('focus', () => {
+            nameInput.style.borderColor = '#ffff00';
+            nameInput.style.boxShadow = `0 0 ${8 * scale}px rgba(255,255,0,0.5)`;
+        });
+        nameInput.addEventListener('blur', () => {
+            nameInput.style.borderColor = '#ffffcc';
+            nameInput.style.boxShadow = `0 ${2 * scale}px ${4 * scale}px rgba(0,0,0,0.3)`;
+        });
         document.body.appendChild(nameInput);
 
         const departmentSelect = document.createElement('select');
         departmentSelect.style.cssText = `
             position: absolute;
-            left: ${scene.cameras.main.width / 2 - 150}px;
-            top: ${scene.cameras.main.height / 2 + 10}px;
-            width: 312px;
-            height: 40px;
+            left: ${scene.cameras.main.width / 2 - 150 * scale}px;
+            top: ${scene.cameras.main.height / 2 + 25 * scale}px;
+            width: ${300 * scale}px;
+            height: ${40 * scale}px;
             z-index: 2002;
-            padding: 5px;
-            border: 2px solid #34495E;
-            border-radius: 5px;
+            padding: ${8 * scale}px;
+            border: ${3 * scale}px solid #ffffcc;
+            border-radius: ${10 * scale}px;
+            background-color: #222244;
+            color: #ffffff;
+            font-family: Caprasimo-Regular;
+            font-size: ${14 * scale}px;
+            box-shadow: 0 ${2 * scale}px ${4 * scale}px rgba(0,0,0,0.3);
+            box-sizing: border-box;
         `;
+        departmentSelect.addEventListener('focus', () => {
+            departmentSelect.style.borderColor = '#ffff00';
+            departmentSelect.style.boxShadow = `0 0 ${8 * scale}px rgba(255,255,0,0.5)`;
+        });
+        departmentSelect.addEventListener('blur', () => {
+            departmentSelect.style.borderColor = '#ffffcc';
+            departmentSelect.style.boxShadow = `0 ${2 * scale}px ${4 * scale}px rgba(0,0,0,0.3)`;
+        });
         
         const departments = [
             'College of Engineering',
@@ -844,119 +923,180 @@ class GameManager {
             const option = document.createElement('option');
             option.value = dept;
             option.textContent = dept;
+            option.style.cssText = `
+                background-color: #222244;
+                color: #ffffff;
+            `;
             if (dept === defaultDepartment) option.selected = true;
             departmentSelect.appendChild(option);
         });
         
         document.body.appendChild(departmentSelect);
 
-        // Confirm (Submit) button
-        const confirmBtn = scene.add.rectangle(
-            scene.cameras.main.width / 2 - 80, 
-            scene.cameras.main.height / 2 + 80, 
-            120, 40, 
-            0x27AE60
-        );
-        confirmBtn.setStrokeStyle(2, 0x229954);
-        confirmBtn.setInteractive({ useHandCursor: true });
-        confirmBtn.setDepth(2001);
-
-        const confirmText = scene.add.text(
-            scene.cameras.main.width / 2 - 80, 
-            scene.cameras.main.height / 2 + 80, 
-            'Confirm', 
-            {
-                fontSize: '16px',
-                color: '#FFFFFF',
-                fontFamily: 'Arial',
-                fontStyle: 'bold'
+        // Helper function to create styled buttons matching quit confirmation dialog
+        const createStyledButton = (x, y, width, height, text, buttonType, callback) => {
+            const cornerRadius = 16 * scale;
+            const borderWidth = 2 * scale;
+            
+            // Color scheme based on button type
+            let colors;
+            if (buttonType === 'confirm') {
+                colors = {
+                    bg: 0x224422,
+                    bgHover: 0x336633,
+                    border: 0x44ff44,
+                    text: '#44ff44',
+                    textHover: '#ffffff'
+                };
+            } else if (buttonType === 'cancel') {
+                colors = {
+                    bg: 0x662222,
+                    bgHover: 0x883333,
+                    border: 0xff4444,
+                    text: '#ff4444',
+                    textHover: '#ffffff'
+                };
+            } else if (buttonType === 'info') {
+                colors = {
+                    bg: 0x444422,
+                    bgHover: 0x666633,
+                    border: 0xffff44,
+                    text: '#ffff44',
+                    textHover: '#ffffff'
+                };
             }
-        ).setOrigin(0.5).setDepth(2001);
+            
+            // Button background
+            const btnBg = scene.add.graphics();
+            btnBg.fillStyle(colors.bg, 0.9);
+            btnBg.fillRoundedRect(x - width / 2, y - height / 2, width, height, cornerRadius);
+            btnBg.lineStyle(borderWidth, colors.border, 1);
+            btnBg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, cornerRadius);
+            btnBg.setDepth(2001);
 
-        // Exit button
-        const exitBtn = scene.add.rectangle(
-            scene.cameras.main.width / 2 + 80, 
-            scene.cameras.main.height / 2 + 80, 
-            120, 40, 
-            0xE74C3C
+            // Button text with quit confirmation styling
+            const btnText = scene.add.text(x, y, text, {
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: `${Math.round(16 * scale)}px`,
+                color: colors.text,
+                stroke: '#000',
+                strokeThickness: 2
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(2002);
+
+            // Hover effects matching quit confirmation dialog
+            btnText.on('pointerover', () => {
+                btnText.setStyle({ color: colors.textHover });
+                btnBg.clear();
+                btnBg.fillStyle(colors.bgHover, 1);
+                btnBg.fillRoundedRect(x - width / 2, y - height / 2, width, height, cornerRadius);
+                btnBg.lineStyle(borderWidth, colors.border, 1);
+                btnBg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, cornerRadius);
+            });
+            
+            btnText.on('pointerout', () => {
+                btnText.setStyle({ color: colors.text });
+                btnBg.clear();
+                btnBg.fillStyle(colors.bg, 0.9);
+                btnBg.fillRoundedRect(x - width / 2, y - height / 2, width, height, cornerRadius);
+                btnBg.lineStyle(borderWidth, colors.border, 1);
+                btnBg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, cornerRadius);
+            });
+            
+            btnText.on('pointerdown', () => {
+                btnText.setScale(0.95);
+            });
+            
+            btnText.on('pointerup', () => {
+                btnText.setScale(1);
+                callback();
+            });
+
+            return { bg: btnBg, text: btnText };
+        };
+
+        // Create buttons with quit confirmation color scheme
+        const confirmBtn = createStyledButton(
+            scene.cameras.main.width / 2 - 80 * scale, 
+            scene.cameras.main.height / 2 + 90 * scale, 
+            120 * scale, 
+            40 * scale, 
+            'Submit', 
+            'confirm',  // Green for positive action (confirm)
+            () => {} // Will be set later
         );
-        exitBtn.setStrokeStyle(2, 0xC0392B);
-        exitBtn.setInteractive({ useHandCursor: true });
-        exitBtn.setDepth(2001);
 
-        const exitText = scene.add.text(
-            scene.cameras.main.width / 2 + 80, 
-            scene.cameras.main.height / 2 + 80, 
+        const exitBtn = createStyledButton(
+            scene.cameras.main.width / 2 + 80 * scale, 
+            scene.cameras.main.height / 2 + 90 * scale, 
+            120 * scale, 
+            40 * scale, 
             'Exit', 
-            {
-                fontSize: '16px',
-                color: '#FFFFFF',
-                fontFamily: 'Arial',
-                fontStyle: 'bold'
-            }
-        ).setOrigin(0.5).setDepth(2001);
-
-        // View Leaderboard button (moved down)
-        const viewLeaderboardBtn = scene.add.rectangle(
-            scene.cameras.main.width / 2, 
-            scene.cameras.main.height / 2 + 140, 
-            200, 35, 
-            0x3498DB
+            'cancel',  // Red for negative action (cancel/exit)
+            () => {} // Will be set later
         );
-        viewLeaderboardBtn.setStrokeStyle(2, 0x2980B9);
-        viewLeaderboardBtn.setInteractive({ useHandCursor: true });
-        viewLeaderboardBtn.setDepth(2001);
 
-        const viewLeaderboardText = scene.add.text(
+        const viewLeaderboardBtn = createStyledButton(
             scene.cameras.main.width / 2, 
-            scene.cameras.main.height / 2 + 140, 
+            scene.cameras.main.height / 2 + 140 * scale, 
+            200 * scale, 
+            35 * scale, 
             'View Full Leaderboard', 
-            {
-                fontSize: '14px',
-                color: '#FFFFFF',
-                fontFamily: 'Arial',
-                fontStyle: 'bold'
-            }
-        ).setOrigin(0.5).setDepth(2001);
+            'info',  // Yellow for informational action
+            () => {} // Will be set later
+        );
 
-        const dialogElements = [overlay, dialogBg, title, scoreText, confirmBtn, confirmText, exitBtn, exitText, viewLeaderboardBtn, viewLeaderboardText];
+        const dialogElements = [
+            overlay, 
+            dialogBg, 
+            title, 
+            scoreText, 
+            confirmBtn.bg, 
+            confirmBtn.text, 
+            exitBtn.bg, 
+            exitBtn.text, 
+            viewLeaderboardBtn.bg, 
+            viewLeaderboardBtn.text
+        ];
 
         const closeDialog = () => {
             dialogElements.forEach(element => element.destroy());
             document.body.removeChild(nameInput);
             document.body.removeChild(departmentSelect);
+            this.activeLeaderboardDialog = null;
         };
 
-        // Add hover effects for buttons
-        confirmBtn.on('pointerover', () => {
-            confirmBtn.setFillStyle(0x2ECC71);
-            confirmText.setStyle({ color: '#FFFFFF' });
-        });
-        confirmBtn.on('pointerout', () => {
-            confirmBtn.setFillStyle(0x27AE60);
-            confirmText.setStyle({ color: '#FFFFFF' });
+        // Track the dialog for cleanup
+        this.activeLeaderboardDialog = {
+            dialogElements,
+            nameInput,
+            departmentSelect,
+            scene
+        };
+
+        // Set up automatic cleanup when the scene is switched
+        const originalSceneStart = scene.scene.start;
+        const originalSceneStop = scene.scene.stop;
+        
+        scene.scene.start = (key, data) => {
+            this.cleanupLeaderboardDialog();
+            return originalSceneStart.call(scene.scene, key, data);
+        };
+        
+        scene.scene.stop = (key) => {
+            this.cleanupLeaderboardDialog();
+            return originalSceneStop.call(scene.scene, key);
+        };
+
+        // Also clean up if the scene is destroyed
+        scene.events.once('shutdown', () => {
+            this.cleanupLeaderboardDialog();
         });
 
-        exitBtn.on('pointerover', () => {
-            exitBtn.setFillStyle(0xF39C12);
-            exitText.setStyle({ color: '#FFFFFF' });
-        });
-        exitBtn.on('pointerout', () => {
-            exitBtn.setFillStyle(0xE74C3C);
-            exitText.setStyle({ color: '#FFFFFF' });
-        });
-
-        viewLeaderboardBtn.on('pointerover', () => {
-            viewLeaderboardBtn.setFillStyle(0x5DADE2);
-            viewLeaderboardText.setStyle({ color: '#FFFFFF' });
-        });
-        viewLeaderboardBtn.on('pointerout', () => {
-            viewLeaderboardBtn.setFillStyle(0x3498DB);
-            viewLeaderboardText.setStyle({ color: '#FFFFFF' });
-        });
-
+        // Set up button callbacks now that we have the closeDialog function
         // Confirm (Submit) handler
-        confirmBtn.on('pointerdown', async () => {
+        confirmBtn.text.off('pointerup').on('pointerup', async () => {
+            confirmBtn.text.setScale(1);
+            
             const playerName = nameInput.value.trim();
             const department = departmentSelect.value;
 
@@ -972,9 +1112,26 @@ class GameManager {
                     department: department
                 }));
 
-                // Show loading
-                confirmText.setText('Submitting...');
-                confirmBtn.setFillStyle(0x95A5A6);
+                // Show loading - use gray color scheme
+                confirmBtn.text.setText('Submitting...');
+                confirmBtn.text.setStyle({ color: '#cccccc' });
+                confirmBtn.bg.clear();
+                confirmBtn.bg.fillStyle(0x555555, 0.9);
+                confirmBtn.bg.fillRoundedRect(
+                    scene.cameras.main.width / 2 - 80 * scale - 60 * scale, 
+                    scene.cameras.main.height / 2 + 90 * scale - 20 * scale, 
+                    120 * scale, 
+                    40 * scale, 
+                    16 * scale
+                );
+                confirmBtn.bg.lineStyle(2 * scale, 0x888888, 1);
+                confirmBtn.bg.strokeRoundedRect(
+                    scene.cameras.main.width / 2 - 80 * scale - 60 * scale, 
+                    scene.cameras.main.height / 2 + 90 * scale - 20 * scale, 
+                    120 * scale, 
+                    40 * scale, 
+                    16 * scale
+                );
 
                 // Submit to leaderboard
                 const result = await this.submitToLeaderboard(playerName, department);
@@ -1115,10 +1272,14 @@ class GameManager {
         });
 
         // Exit handler
-        exitBtn.on('pointerdown', closeDialog);
+        exitBtn.text.off('pointerup').on('pointerup', () => {
+            exitBtn.text.setScale(1);
+            closeDialog();
+        });
 
         // View leaderboard handler
-        viewLeaderboardBtn.on('pointerdown', () => {
+        viewLeaderboardBtn.text.off('pointerup').on('pointerup', () => {
+            viewLeaderboardBtn.text.setScale(1);
             this.openLeaderboardPage();
         });
 

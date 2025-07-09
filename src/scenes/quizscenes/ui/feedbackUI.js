@@ -168,7 +168,7 @@ export function showVictory(scene) {
     // Enhanced continue button
     const buttonWidth = 200 * sf;
     const buttonHeight = 50 * sf;
-    const buttonY = pointsText ? scene.scale.height/2 + 100 * sf : scene.scale.height/2 + 60 * sf; // Adjust position for hint text
+    const buttonY = pointsText ? scene.scale.height/2 + 80 * sf : scene.scale.height/2 + 40 * sf; // Raised from +100 to +80, and from +60 to +40
     const buttonBg = scene.add.graphics();
     
     buttonBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 1);
@@ -388,7 +388,7 @@ export function showGameOver(scene) {
     restartButtonBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a2d3748, 1);
     restartButtonBg.fillRoundedRect(
         centerX - restartButtonWidth/2,
-        scene.scale.height/2 + 40 * sf,
+        scene.scale.height/2 + 20 * sf,  // Raised from +40 to +20
         restartButtonWidth,
         restartButtonHeight,
         8 * sf
@@ -397,7 +397,7 @@ export function showGameOver(scene) {
     restartButtonBg.lineStyle(3 * sf, 0x63b3ed, 0.8);
     restartButtonBg.strokeRoundedRect(
         centerX - restartButtonWidth/2,
-        scene.scale.height/2 + 40 * sf,
+        scene.scale.height/2 + 20 * sf,  // Raised from +40 to +20
         restartButtonWidth,
         restartButtonHeight,
         8 * sf
@@ -405,7 +405,7 @@ export function showGameOver(scene) {
     
     restartButtonBg.setDepth(60);
 
-    const restartButton = scene.add.text(centerX, scene.scale.height/2 + 65 * sf, "Try Again", {
+    const restartButton = scene.add.text(centerX, scene.scale.height/2 + 45 * sf, "Try Again", {  // Raised from +65 to +45
         fontSize: `${20 * sf}px`,
         color: '#ffd700',
         fontFamily: 'Caprasimo-Regular',
@@ -435,7 +435,7 @@ export function showGameOver(scene) {
     menuButtonBg.fillGradientStyle(0x4a5568, 0x4a5568, 0x2d3748, 0x2d3748, 1);
     menuButtonBg.fillRoundedRect(
         centerX - menuButtonWidth/2,
-        scene.scale.height/2 + 110 * sf,
+        scene.scale.height/2 + 90 * sf,  // Raised from +110 to +90
         menuButtonWidth,
         menuButtonHeight,
         8 * sf
@@ -444,7 +444,7 @@ export function showGameOver(scene) {
     menuButtonBg.lineStyle(2 * sf, 0x718096, 0.8);
     menuButtonBg.strokeRoundedRect(
         centerX - menuButtonWidth/2,
-        scene.scale.height/2 + 110 * sf,
+        scene.scale.height/2 + 90 * sf,  // Raised from +110 to +90
         menuButtonWidth,
         menuButtonHeight,
         8 * sf
@@ -452,7 +452,7 @@ export function showGameOver(scene) {
     
     menuButtonBg.setDepth(60);
 
-    const menuButton = scene.add.text(centerX, scene.scale.height/2 + 132 * sf, "Back to Menu", {
+    const menuButton = scene.add.text(centerX, scene.scale.height/2 + 112 * sf, "Back to Menu", {  // Raised from +132 to +112
         fontSize: `${18 * sf}px`,
         color: '#ffffff',
         fontFamily: 'Caprasimo-Regular',

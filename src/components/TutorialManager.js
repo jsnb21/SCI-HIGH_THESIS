@@ -227,28 +227,35 @@ export default class TutorialManager {
      */
     createTextBox(step) {
         const { width, height } = this.scene.scale;
+        
+        // Use VNDialogue scaling system for consistency
+        const BASE_WIDTH = 816;
+        const BASE_HEIGHT = 624;
+        const scaleX = width / BASE_WIDTH;
+        const scaleY = height / BASE_HEIGHT;
+        const scale = Math.min(scaleX, scaleY);
+        
         const boxStyle = {
-            width: 600,  // Increased from 400
-            height: 220, // Increased from 150
-            backgroundColor: 0x1a1a2e,
-            borderColor: 0x16213e,
-            borderWidth: 4,  // Increased from 3
-            cornerRadius: 12, // Increased from 10
-            padding: 30,     // Increased from 20
+            width: 600 * scale,
+            height: 220 * scale,
+            backgroundColor: 0x222244,  // Match VNDialogue and main menu
+            borderColor: 0xffffff,     // Match VNDialogue border
+            borderWidth: 4 * scale,
+            cornerRadius: 20 * scale,  // Match VNDialogue border radius
+            padding: 30 * scale,
             ...step.textBoxStyle
         };
 
         // Position text box at center X but at leaderboard Y level
-        const scaleFactor = Math.min(width / 816, height / 624);
-        const margin = 24 * scaleFactor;
-        const buttonHeight = 50 * scaleFactor;
+        const margin = 24 * scale;
+        const buttonHeight = 50 * scale;
         
         let boxX = width / 2;
-        let boxY = buttonHeight / 2 + margin + 60 * scaleFactor; // Slightly below the leaderboard level
+        let boxY = buttonHeight / 2 + margin + 60 * scale; // Slightly below the leaderboard level
 
-        // Create background
+        // Create background with VNDialogue styling
         this.textBox = this.scene.add.graphics();
-        this.textBox.fillStyle(boxStyle.backgroundColor, 0.95);
+        this.textBox.fillStyle(boxStyle.backgroundColor, 0.8);  // Match VNDialogue opacity
         this.textBox.lineStyle(boxStyle.borderWidth, boxStyle.borderColor, 1);
         this.textBox.fillRoundedRect(
             boxX - boxStyle.width / 2,
@@ -267,13 +274,15 @@ export default class TutorialManager {
         this.textBox.setDepth(1002);
         this.tutorialElements.push(this.textBox);
 
-        // Create title text if provided
+        // Create title text if provided - match main menu text styling
         if (step.title) {
-            this.titleText = this.scene.add.text(boxX, boxY - boxStyle.height / 2 + 40, step.title, {
-                fontFamily: 'Arial',
-                fontSize: '24px',  // Increased from 18px
-                fontStyle: 'bold',
-                color: '#FFD700',
+            this.titleText = this.scene.add.text(boxX, boxY - boxStyle.height / 2 + 40 * scale, step.title, {
+                fontFamily: 'Caprasimo-Regular',  // Match main menu font
+                fontSize: `${Math.round(24 * scale)}px`,
+                color: '#ffff00',  // Match main menu yellow
+                stroke: '#000',
+                strokeThickness: 4,
+                shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 4, fill: true },
                 align: 'center',
                 wordWrap: { width: boxStyle.width - boxStyle.padding * 2 }
             });
@@ -282,15 +291,15 @@ export default class TutorialManager {
             this.tutorialElements.push(this.titleText);
         }
 
-        // Create main text
+        // Create main text - match VNDialogue text styling
         this.mainText = this.scene.add.text(
             boxX, 
-            boxY + (step.title ? -10 : -20), 
+            boxY + (step.title ? -10 * scale : -20 * scale), 
             step.text, 
             {
-                fontFamily: 'Arial',
-                fontSize: '18px',  // Increased from 14px
-                color: '#FFFFFF',
+                fontFamily: 'Caprasimo-Regular',  // Match VNDialogue font
+                fontSize: `${Math.round(18 * scale)}px`,
+                color: '#ffffff',  // Match VNDialogue white text
                 align: 'center',
                 wordWrap: { width: boxStyle.width - boxStyle.padding * 2 }
             }
@@ -304,7 +313,8 @@ export default class TutorialManager {
             x: boxX,
             y: boxY,
             width: boxStyle.width,
-            height: boxStyle.height
+            height: boxStyle.height,
+            scale: scale
         };
     }
 
@@ -361,73 +371,106 @@ export default class TutorialManager {
      */
     createNavigationButtons(step) {
         const boxBounds = this.textBoxBounds;
+        const scale = boxBounds.scale;
+        
+        // Button styling to match main menu buttons
+        const btnStyle = {
+            width: 140 * scale,
+            height: 40 * scale,
+            cornerRadius: 18 * scale,
+            borderWidth: 3 * scale,
+            backgroundColor: 0x222244,
+            borderColor: 0xffffcc,
+            hoverBackgroundColor: 0x333388
+        };
+        
+        // Helper function to create styled buttons
+        const createStyledButton = (x, y, text, callback, color = '#ffff00') => {
+            // Button background
+            const bg = this.scene.add.graphics();
+            bg.fillStyle(btnStyle.backgroundColor, 0.92);
+            bg.fillRoundedRect(x - btnStyle.width / 2, y - btnStyle.height / 2, btnStyle.width, btnStyle.height, btnStyle.cornerRadius);
+            bg.lineStyle(btnStyle.borderWidth, btnStyle.borderColor, 1);
+            bg.strokeRoundedRect(x - btnStyle.width / 2, y - btnStyle.height / 2, btnStyle.width, btnStyle.height, btnStyle.cornerRadius);
+            bg.setDepth(1003);
+            this.tutorialElements.push(bg);
+
+            // Button text with main menu styling
+            const buttonText = this.scene.add.text(x, y, text, {
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: `${Math.round(16 * scale)}px`,
+                color: color,
+                stroke: '#000',
+                strokeThickness: 2,
+                shadow: { offsetX: 1, offsetY: 1, color: '#000', blur: 2, fill: true }
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+            buttonText.setDepth(1004);
+            this.tutorialElements.push(buttonText);
+
+            // Hover effects matching main menu
+            buttonText.on('pointerover', () => {
+                buttonText.setStyle({ color: '#ffffff' });
+                bg.clear();
+                bg.fillStyle(btnStyle.hoverBackgroundColor, 1);
+                bg.fillRoundedRect(x - btnStyle.width / 2, y - btnStyle.height / 2, btnStyle.width, btnStyle.height, btnStyle.cornerRadius);
+                bg.lineStyle(btnStyle.borderWidth, btnStyle.borderColor, 1);
+                bg.strokeRoundedRect(x - btnStyle.width / 2, y - btnStyle.height / 2, btnStyle.width, btnStyle.height, btnStyle.cornerRadius);
+            });
+            
+            buttonText.on('pointerout', () => {
+                buttonText.setStyle({ color: color });
+                bg.clear();
+                bg.fillStyle(btnStyle.backgroundColor, 0.92);
+                bg.fillRoundedRect(x - btnStyle.width / 2, y - btnStyle.height / 2, btnStyle.width, btnStyle.height, btnStyle.cornerRadius);
+                bg.lineStyle(btnStyle.borderWidth, btnStyle.borderColor, 1);
+                bg.strokeRoundedRect(x - btnStyle.width / 2, y - btnStyle.height / 2, btnStyle.width, btnStyle.height, btnStyle.cornerRadius);
+            });
+            
+            buttonText.on('pointerdown', () => {
+                buttonText.setScale(0.96);
+            });
+            
+            buttonText.on('pointerup', () => {
+                buttonText.setScale(1);
+                callback();
+            });
+
+            return { bg, text: buttonText };
+        };
         
         // Next/Continue button
         const nextButtonText = step.buttonText || (this.currentStep < this.tutorialSteps.length - 1 ? 'Next' : 'Finish');
-        this.nextButton = this.scene.add.text(
-            boxBounds.x + boxBounds.width / 2 - 80,  // Adjusted position for larger button
-            boxBounds.y + boxBounds.height / 2 - 25,
+        const nextBtn = createStyledButton(
+            boxBounds.x + boxBounds.width / 2 - 80 * scale,
+            boxBounds.y + boxBounds.height / 2 - 25 * scale,
             nextButtonText,
-            {
-                fontFamily: 'Arial',
-                fontSize: '18px',  // Increased from 14px
-                color: '#000000',
-                backgroundColor: '#4CAF50',
-                padding: { x: 20, y: 12 }  // Increased padding
-            }
+            () => this.nextStep(),
+            '#4CAF50'  // Green color for positive action
         );
-        this.nextButton.setOrigin(0.5, 0.5);
-        this.nextButton.setDepth(1003);
-        this.nextButton.setInteractive({ useHandCursor: true });
-        this.nextButton.on('pointerdown', () => this.nextStep());
-        this.nextButton.on('pointerover', () => this.nextButton.setTint(0xCCCCCC));
-        this.nextButton.on('pointerout', () => this.nextButton.clearTint());
-        this.tutorialElements.push(this.nextButton);
+        this.nextButton = nextBtn.text;
 
         // Back button (only show if not the first step)
         if (this.currentStep > 0) {
-            this.backButton = this.scene.add.text(
-                boxBounds.x - 20,  // Position to the left of Next button
-                boxBounds.y + boxBounds.height / 2 - 25,
+            const backBtn = createStyledButton(
+                boxBounds.x - 20 * scale,
+                boxBounds.y + boxBounds.height / 2 - 25 * scale,
                 'Back',
-                {
-                    fontFamily: 'Arial',
-                    fontSize: '18px',
-                    color: '#000000',
-                    backgroundColor: '#2196F3',
-                    padding: { x: 20, y: 12 }
-                }
+                () => this.prevStep(),
+                '#2196F3'  // Blue color for navigation
             );
-            this.backButton.setOrigin(0.5, 0.5);
-            this.backButton.setDepth(1003);
-            this.backButton.setInteractive({ useHandCursor: true });
-            this.backButton.on('pointerdown', () => this.prevStep());
-            this.backButton.on('pointerover', () => this.backButton.setTint(0xCCCCCC));
-            this.backButton.on('pointerout', () => this.backButton.clearTint());
-            this.tutorialElements.push(this.backButton);
+            this.backButton = backBtn.text;
         }
 
         // Skip button (only show if not the last step)
         if (this.currentStep < this.tutorialSteps.length - 1) {
-            this.skipButton = this.scene.add.text(
-                boxBounds.x - boxBounds.width / 2 + 80,  // Adjusted position for larger button
-                boxBounds.y + boxBounds.height / 2 - 25,
+            const skipBtn = createStyledButton(
+                boxBounds.x - boxBounds.width / 2 + 80 * scale,
+                boxBounds.y + boxBounds.height / 2 - 25 * scale,
                 'Skip Tutorial',
-                {
-                    fontFamily: 'Arial',
-                    fontSize: '16px',  // Increased from 12px
-                    color: '#000000',
-                    backgroundColor: '#FF9800',
-                    padding: { x: 15, y: 10 }  // Increased padding
-                }
+                () => this.skip(),
+                '#FF9800'  // Orange color for skip action
             );
-            this.skipButton.setOrigin(0.5, 0.5);
-            this.skipButton.setDepth(1003);
-            this.skipButton.setInteractive({ useHandCursor: true });
-            this.skipButton.on('pointerdown', () => this.skip());
-            this.skipButton.on('pointerover', () => this.skipButton.setTint(0xCCCCCC));
-            this.skipButton.on('pointerout', () => this.skipButton.clearTint());
-            this.tutorialElements.push(this.skipButton);
+            this.skipButton = skipBtn.text;
         }
     }
 
