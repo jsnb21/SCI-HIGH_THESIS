@@ -1,104 +1,152 @@
 {
   "questions": [
     {
+      "type": "multiple-choice",
       "question": "What does HTML stand for?",
       "options": ["Hyper Text Markup Language", "High Tech Modern Language", "Home Tool Markup Language", "Hyperlink and Text Markup Language"],
       "correctIndex": 0
     },
     {
-      "question": "Which CSS property is used to change the text color of an element?",
-      "options": ["font-color", "text-color", "color", "foreground-color"],
-      "correctIndex": 2
+      "type": "fill-in-the-blank",
+      "question": "The CSS property used to change the text color of an element is _____.",
+      "correctAnswers": ["color"]
     },
     {
+      "type": "multiple-choice",
       "question": "What is the correct HTML element for the largest heading?",
       "options": ["<heading>", "<h6>", "<h1>", "<header>"],
       "correctIndex": 2
     },
     {
-      "question": "Which JavaScript method is used to select an element by its ID?",
-      "options": ["getElementById()", "selectById()", "findElementById()", "getElement()"],
-      "correctIndex": 0
+      "type": "drag-and-drop",
+      "question": "Match the HTML elements to their correct purpose:",
+      "options": {
+        "dragItems": [
+          { "id": "ul", "text": "<ul>", "isDecoy": false },
+          { "id": "a", "text": "<a>", "isDecoy": false },
+          { "id": "img", "text": "<img>", "isDecoy": false },
+          { "id": "h1", "text": "<h1>", "isDecoy": false }
+        ],
+        "dropZones": [
+          { "id": "zone1", "label": "Creates a hyperlink", "correctItemId": "a" },
+          { "id": "zone2", "label": "Displays an image", "correctItemId": "img" },
+          { "id": "zone3", "label": "Largest heading", "correctItemId": "h1" },
+          { "id": "zone4", "label": "Unordered list", "correctItemId": "ul" }
+        ]
+      }
     },
     {
-      "question": "What does CSS stand for?",
-      "options": ["Computer Style Sheets", "Creative Style Sheets", "Cascading Style Sheets", "Colorful Style Sheets"],
-      "correctIndex": 2
+      "type": "fill-in-the-blank",
+      "question": "The correct HTML for creating a hyperlink is <a _____='http://example.com'>Example</a>.",
+      "correctAnswers": ["href"]
     },
     {
-      "question": "Which HTML attribute specifies an alternate text for an image?",
-      "options": ["title", "alt", "src", "longdesc"],
-      "correctIndex": 1
-    },
-    {
-      "question": "What is the correct way to write a JavaScript array?",
-      "options": ["var colors = 'red', 'green', 'blue'", "var colors = ['red', 'green', 'blue']", "var colors = 1 = ('red'), 2 = ('green'), 3 = ('blue')", "var colors = (1:'red', 2:'green', 3:'blue')"],
-      "correctIndex": 1
-    },
-    {
-      "question": "Which CSS property controls the text size?",
-      "options": ["text-style", "font-size", "text-size", "font-style"],
-      "correctIndex": 1
-    },
-    {
-      "question": "What is the correct HTML for creating a hyperlink?",
-      "options": ["<a url='http://example.com'>Example</a>", "<a href='http://example.com'>Example</a>", "<a>http://example.com</a>", "<a name='http://example.com'>Example</a>"],
-      "correctIndex": 1
-    },
-    {
+      "type": "multiple-choice",
       "question": "Which event occurs when the user clicks on an HTML element?",
       "options": ["onchange", "onclick", "onmouseclick", "onmouseover"],
       "correctIndex": 1
     },
     {
-      "question": "What is the default display value for most HTML elements?",
-      "options": ["inline", "block", "inline-block", "flex"],
-      "correctIndex": 1
+      "type": "drag-and-drop",
+      "question": "Drag the correct CSS property to its effect:",
+      "options": {
+        "dragItems": [
+          { "id": "font-size", "text": "font-size", "isDecoy": false },
+          { "id": "background-color", "text": "background-color", "isDecoy": false },
+          { "id": "font-weight", "text": "font-weight", "isDecoy": false },
+          { "id": "color", "text": "color", "isDecoy": false }
+        ],
+        "dropZones": [
+          { "id": "zone1", "label": "Changes the text color", "correctItemId": "color" },
+          { "id": "zone2", "label": "Sets the background color", "correctItemId": "background-color" },
+          { "id": "zone3", "label": "Makes text bold", "correctItemId": "font-weight" },
+          { "id": "zone4", "label": "Changes the size of text", "correctItemId": "font-size" }
+        ]
+      }
     },
     {
-      "question": "Which CSS property is used to make text bold?",
-      "options": ["font-weight", "text-weight", "font-style", "text-style"],
-      "correctIndex": 0
+      "type": "fill-in-the-blank",
+      "question": "The correct way to write a CSS comment is _____ this is a comment */.",
+      "correctAnswers": ["/*"]
     },
     {
-      "question": "What is the correct way to write a CSS comment?",
-      "options": ["// this is a comment", "<!-- this is a comment -->", "/* this is a comment */", "# this is a comment"],
-      "correctIndex": 2
-    },
-    {
-      "question": "Which HTML element is used to define internal CSS?",
-      "options": ["<css>", "<script>", "<style>", "<link>"],
-      "correctIndex": 2
-    },
-    {
+      "type": "multiple-choice",
       "question": "What does the 'typeof' operator in JavaScript return?",
       "options": ["The value of a variable", "The data type of a variable", "The memory address", "The variable name"],
       "correctIndex": 1
     },
     {
-      "question": "Which CSS property is used to change the background color?",
-      "options": ["color", "bgcolor", "background-color", "bg-color"],
-      "correctIndex": 2
+      "type": "fill-in-the-blank",
+      "question": "The HTML element used to create an unordered list is _____.",
+      "correctAnswers": ["<ul>"]
     },
     {
-      "question": "What is the correct HTML for inserting a line break?",
-      "options": ["<break>", "<br>", "<lb>", "<newline>"],
-      "correctIndex": 1
-    },
-    {
-      "question": "Which JavaScript function is used to print content to the browser console?",
-      "options": ["print()", "console.log()", "alert()", "document.write()"],
-      "correctIndex": 1
-    },
-    {
-      "question": "What is the CSS Box Model composed of?",
-      "options": ["Content, Padding, Border, Margin", "Header, Body, Footer", "HTML, CSS, JavaScript", "Width, Height, Position"],
+      "type": "multiple-choice",
+      "question": "Which tag is used to define an image in HTML?",
+      "options": ["<img>", "<image>", "<pic>", "<src>"],
       "correctIndex": 0
     },
     {
-      "question": "Which HTML element is used to create an unordered list?",
-      "options": ["<ol>", "<ul>", "<list>", "<li>"],
-      "correctIndex": 1
+      "type": "fill-in-the-blank",
+      "question": "In JavaScript, you declare a variable using the keyword _____.",
+      "correctAnswers": ["var", "let", "const"]
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property controls the spacing between elements?",
+      "options": ["margin", "padding", "border", "spacing"],
+      "correctIndex": 0
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The default value of the position property in CSS is _____.",
+      "correctAnswers": ["static"]
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which of the following is not a JavaScript data type?",
+      "options": ["Boolean", "Number", "Character", "Object"],
+      "correctIndex": 2
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "HTML documents are saved with the file extension _____.",
+      "correctAnswers": [".html", ".htm"]
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which property is used in CSS to align text?",
+      "options": ["text-align", "align", "text", "font-align"],
+      "correctIndex": 0
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To make a website mobile responsive, we use the _____ meta tag.",
+      "correctAnswers": ["viewport"]
+    },
+    {
+      "type": "drag-and-drop",
+      "question": "Match the CSS units with what they represent:",
+      "options": {
+        "dragItems": [
+          { "id": "px", "text": "px", "isDecoy": false },
+          { "id": "em", "text": "em", "isDecoy": false },
+          { "id": "rem", "text": "rem", "isDecoy": false },
+          { "id": "percent", "text": "%", "isDecoy": false }
+        ],
+        "dropZones": [
+          { "id": "zone1", "label": "Relative to parent font size", "correctItemId": "em" },
+          { "id": "zone2", "label": "Relative to root font size", "correctItemId": "rem" },
+          { "id": "zone3", "label": "Absolute pixels", "correctItemId": "px" },
+          { "id": "zone4", "label": "Percentage of parent element", "correctItemId": "percent" }
+        ]
+      }
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which method is used to output data in JavaScript?",
+      "options": ["print()", "log()", "console.log()", "write()"],
+      "correctIndex": 2
     }
   ]
 }

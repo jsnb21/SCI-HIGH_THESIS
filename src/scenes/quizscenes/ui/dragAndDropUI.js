@@ -17,7 +17,7 @@ export function createDragAndDropOptions(scene, container, centerX, centerY, box
     const padding = 12 * sf;
     const minWidth = 50 * sf;
     const maxItemWidth = Math.max(maxTextWidth + padding * 2, minWidth);
-    const itemSpacing = Math.max(maxItemWidth + 20 * sf, 90 * sf); // Ensure minimum spacing
+    const itemSpacing = Math.max(maxItemWidth + 30 * sf, 120 * sf); // Increased spacing from 90 to 120
     
     // Store original positions and states
     scene.dragAndDropState = {
@@ -28,11 +28,11 @@ export function createDragAndDropOptions(scene, container, centerX, centerY, box
         isAutoSubmitting: false
     };
     
-    // Create drop zones first
+    // Create drop zones first - position them higher to stay within the quiz box
     const zoneStartX = centerX - ((dropZones.length - 1) * itemSpacing) / 2;
     dropZones.forEach((zone, index) => {
         const zoneX = zoneStartX + index * itemSpacing;
-        const zoneY = optionsStartY + 80 * sf;
+        const zoneY = optionsStartY + 80 * sf; // Reduced from 120 to 80 to move zones higher
         
         const dropZone = createDropZone(scene, zoneX, zoneY, sf, zone.label, zone.id);
         scene.dragAndDropState.zones.push({
@@ -70,19 +70,24 @@ export function createDragAndDropOptions(scene, container, centerX, centerY, box
 function createDropZone(scene, x, y, sf, label, id) {
     const zoneContainer = scene.add.container(x, y).setDepth(120);
     
-    // Zone background
+    // Zone background - make it much taller and extend upwards to accommodate text
     const zoneBg = scene.add.graphics();
     zoneBg.lineStyle(3 * sf, 0x4a90e2, 0.8);
     zoneBg.fillStyle(0x2d3748, 0.3);
-    zoneBg.strokeRoundedRect(-35 * sf, -20 * sf, 70 * sf, 40 * sf, 8 * sf);
-    zoneBg.fillRoundedRect(-35 * sf, -20 * sf, 70 * sf, 40 * sf, 8 * sf);
+    // Extend the zone upwards by increasing height and shifting Y position
+    zoneBg.strokeRoundedRect(-45 * sf, -35 * sf, 90 * sf, 70 * sf, 8 * sf);
+    zoneBg.fillRoundedRect(-45 * sf, -35 * sf, 90 * sf, 70 * sf, 8 * sf);
     
-    // Zone label
-    const zoneLabel = scene.add.text(0, 25 * sf, label, {
-        fontSize: `${12 * sf}px`,
+    // Zone label - position it higher up within the extended zone
+    const zoneLabel = scene.add.text(0, 15 * sf, label, {
+        fontSize: `${10 * sf}px`,
         fill: '#ffffff',
         align: 'center',
-        fontFamily: 'Arial'
+        fontFamily: 'Arial',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 2,
+        wordWrap: { width: 80 * sf, useAdvancedWrap: true }
     }).setOrigin(0.5);
     
     zoneContainer.add(zoneBg);
