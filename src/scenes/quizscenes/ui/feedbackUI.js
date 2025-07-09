@@ -165,6 +165,16 @@ export function showVictory(scene) {
         }).setOrigin(0.5).setDepth(60);
     }
 
+    // Check for Web Design victory tutorial before showing the continue button
+    if (scene.checkAndShowVictoryTutorial && typeof scene.checkAndShowVictoryTutorial === 'function') {
+        const tutorialShown = scene.checkAndShowVictoryTutorial();
+        if (tutorialShown) {
+            // If tutorial was shown, don't show the continue button yet
+            // The tutorial completion callback will handle showing the victory screen again
+            return;
+        }
+    }
+
     // Enhanced continue button
     const buttonWidth = 200 * sf;
     const buttonHeight = 50 * sf;

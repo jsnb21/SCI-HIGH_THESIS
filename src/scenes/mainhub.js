@@ -22,7 +22,7 @@ export default class MainHub extends Phaser.Scene {
         this.load.image('MainHubBG', 'assets/img/mainhub/MainHubBG.png');
         this.load.image('icon1', 'assets/img/mainhub/CLASSROOM_ICON.png');
         this.load.image('icon2', 'assets/img/mainhub/LIBRARY_ICON.png');
-        this.load.image('icon3', 'assets/img/mainhub/OFFICE_ICON.png');        this.load.image('icon4', 'assets/img/mainhub/COMLAB_ICON.png');
+        this.load.image('icon3', 'assets/img/mainhub/COMLAB_ICON.png');
         // this.load.image('icon5', 'assets/img/mainhub/canteenIcon.png');
 
         this.load.audio('se_select', 'assets/sounds/se_select.wav');
@@ -136,11 +136,10 @@ export default class MainHub extends Phaser.Scene {
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
 
-        const iconKeys = ['icon1', 'icon2', 'icon3', 'icon4'];
+        const iconKeys = ['icon1', 'icon2', 'icon3'];
         const iconInfo = [
             { heading: "Classroom", desc: "Meet your classmates!" },
             { heading: "Library", desc: "Read and research." },
-            { heading: "Office", desc: "Meet your professor." },
             { heading: "Computer Lab", desc: "Take on different courses!" }
             // { heading: "Cafeteria", desc: "Take a break and eat." }
         ];
@@ -229,17 +228,6 @@ export default class MainHub extends Phaser.Scene {
                         }
                     }
                     break;
-                case 'comlabIcon':
-                    if (this.carousel && this.carousel.carouselIcons) {
-                        // Find the computer lab icon (index 3) in carouselIcons
-                        const comlabIcon = this.carousel.carouselIcons.find(icon => 
-                            icon.iconIndex === 3 && !icon.isLockIcon
-                        );
-                        if (comlabIcon) {
-                            step.target = comlabIcon;
-                        }
-                    }
-                    break;
                 case 'libraryIcon':
                     if (this.carousel && this.carousel.carouselIcons) {
                         // Find the library icon (index 1) in carouselIcons
@@ -251,14 +239,14 @@ export default class MainHub extends Phaser.Scene {
                         }
                     }
                     break;
-                case 'officeIcon':
+                case 'comlabIcon':
                     if (this.carousel && this.carousel.carouselIcons) {
-                        // Find the office icon (index 2) in carouselIcons
-                        const officeIcon = this.carousel.carouselIcons.find(icon => 
+                        // Find the computer lab icon (index 2) in carouselIcons
+                        const comlabIcon = this.carousel.carouselIcons.find(icon => 
                             icon.iconIndex === 2 && !icon.isLockIcon
                         );
-                        if (officeIcon) {
-                            step.target = officeIcon;
+                        if (comlabIcon) {
+                            step.target = comlabIcon;
                         }
                     }
                     break;
@@ -307,9 +295,6 @@ export default class MainHub extends Phaser.Scene {
                     break;
                 case "Classroom":
                     this.scene.start('Classroom');
-                    break;
-                case "Office":
-                    this.scene.start('Office');
                     break;
                 case "Library":
                     this.scene.start('BaseLibraryScene');

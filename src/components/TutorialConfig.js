@@ -839,17 +839,6 @@ export const MAIN_HUB_TUTORIAL_STEPS = {
             textBoxPosition: { x: 600, y: 400 }
         },
         {
-            title: "Office",
-            text: "Visit the Office to check your achievements, customize settings, and meet with the principal for special tasks!",
-            target: 'officeIcon', // Will be set dynamically to office icon
-            highlightStyle: {
-                borderColor: 0xFCE38A,
-                pulsate: true,
-                padding: 15
-            },
-            textBoxPosition: { x: 200, y: 300 }
-        },
-        {
             title: "Navigation Tips",
             text: "You can navigate between areas using these icons. Your progress will be saved automatically as you explore and learn!",
             textBoxPosition: { x: 400, y: 300 }

@@ -78,13 +78,6 @@ export default class WebDesignQuizScene extends BaseQuizScene {
             return;
         }
         
-        // Check for Web Design victory tutorial
-        if (WEB_DESIGN_TUTORIAL_TRIGGERS.victory(this) && !this.webDesignTutorialFlags.victoryTutorialShown) {
-            this.showWebDesignTutorial('victory');
-            this.webDesignTutorialFlags.victoryTutorialShown = true;
-            return;
-        }
-        
         // Fall back to base class tutorial checks
         super.checkAndShowTutorial();
     }
@@ -99,7 +92,7 @@ export default class WebDesignQuizScene extends BaseQuizScene {
             const steps = module.prepareTutorialSteps(this, tutorialType);
             
             const callbacks = {
-                onComplete: () => {
+                onComplete: async () => {
                     console.log(`Web Design tutorial '${tutorialType}' completed`);
                     
                     // Mark Web Design tutorial as seen in localStorage
@@ -111,6 +104,10 @@ export default class WebDesignQuizScene extends BaseQuizScene {
                         localStorage.setItem('sci-high-webdesign-lowhealth-tutorial-seen', 'true');
                     } else if (tutorialType === 'victory') {
                         localStorage.setItem('sci-high-webdesign-victory-tutorial-seen', 'true');
+                        // Re-show victory screen after victory tutorial
+                        const { showVictory } = await import('/src/scenes/quizscenes/ui/feedbackUI.js');
+                        showVictory(this);
+                        return; // Don't resume game timer since we're showing victory screen
                     }
                     
                     // Resume game timer if it was paused
@@ -118,7 +115,7 @@ export default class WebDesignQuizScene extends BaseQuizScene {
                         this.gameTimer.resume();
                     }
                 },
-                onSkip: () => {
+                onSkip: async () => {
                     console.log(`Web Design tutorial '${tutorialType}' skipped`);
                     
                     // Mark as seen even if skipped
@@ -130,6 +127,10 @@ export default class WebDesignQuizScene extends BaseQuizScene {
                         localStorage.setItem('sci-high-webdesign-lowhealth-tutorial-seen', 'true');
                     } else if (tutorialType === 'victory') {
                         localStorage.setItem('sci-high-webdesign-victory-tutorial-seen', 'true');
+                        // Re-show victory screen after victory tutorial is skipped
+                        const { showVictory } = await import('/src/scenes/quizscenes/ui/feedbackUI.js');
+                        showVictory(this);
+                        return; // Don't resume game timer since we're showing victory screen
                     }
                     
                     // Resume game timer if it was paused
@@ -146,5 +147,28 @@ export default class WebDesignQuizScene extends BaseQuizScene {
 
             this.tutorialManager.init(steps, callbacks);
         });
+    }
+
+    /**
+     * Check and show victory tutorial during victory dialogue
+     */
+    checkAndShowVictoryTutorial() {
+        // Check for Web Design victory tutorial
+        if (WEB_DESIGN_TUTORIAL_TRIGGERS.victory(this) && !this.webDesignTutorialFlags.victoryTutorialShown) {
+            this.showWebDesignTutorial('victory');
+            this.webDesignTutorialFlags.victoryTutorialShown = true;
+            return true; // Return true to indicate tutorial was shown
+        }
+        return false; // Return false to indicate no tutorial was shown
+    }
+
+    /**
+     * Override the enemyDefeated method to include victory tutorial check
+     */
+    enemyDefeated(enemy) {
+        super.enemyDefeated(enemy);
+        
+        // Check and show victory tutorial if applicable
+        this.checkAndShowVictoryTutorial();
     }
 }
