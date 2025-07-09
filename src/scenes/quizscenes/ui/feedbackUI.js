@@ -58,6 +58,11 @@ export function showFeedback(scene, message, color) {
 }
 
 export function showVictory(scene) {
+    // End any active tutorials before showing victory screen
+    if (scene.tutorialManager && scene.tutorialManager.isRunning()) {
+        scene.tutorialManager.destroy();
+    }
+    
     scene.cleanupAllElements();
     scene.gameTimer.destroy();
     const sf = scene.scaleFactor;
@@ -289,6 +294,11 @@ export function showVictory(scene) {
 }
 
 export function showGameOver(scene) {
+    // End any active tutorials before showing game over screen
+    if (scene.tutorialManager && scene.tutorialManager.isRunning()) {
+        scene.tutorialManager.destroy();
+    }
+    
     scene.isAnswering = false;
     scene.cleanupAllElements();
     if (scene.gameTimer) scene.gameTimer.destroy();

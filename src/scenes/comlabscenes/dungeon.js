@@ -38,10 +38,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             comboScore: 0
         };
 
-        // Dungeon shape generation
-        this.dungeonShapes = ['random', 'square', 'circle', 'triangle'];
-        this.currentDungeonShape = null;
-
         // Initialize tutorial system
         this.tutorialManager = null;
         this.tutorialFlags = {
@@ -93,9 +89,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             wrongAnswers: 0,
             comboScore: 0
         };
-
-        // Select random dungeon shape for this run
-        this.selectDungeonShape();
 
         // Enhanced background with gradient
         this.cameras.main.setBackgroundColor('#ff6b6b');
@@ -175,11 +168,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         // Check and show tutorial after setup is complete
         this.time.delayedCall(500, () => {
             this.checkAndShowTutorial();
-        });
-        
-        // Show current dungeon shape notification
-        this.time.delayedCall(1000, () => {
-            this.showNotification(`Dungeon Layout: ${this.currentDungeonShape.toUpperCase()}`, 'Use Shift+D to cycle shapes');
         });
         
         // Expose debug methods for testing
@@ -312,280 +300,7 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             grid.push(row);
         }
         
-        // Generate walkable paths based on selected dungeon shape
-        this.generateWalkablePaths(grid, width, height);
-        
         return grid;
-    }
-
-    generateWalkablePaths(grid, width, height) {
-        // First, make everything a wall
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                grid[y][x].walkable = false;
-                grid[y][x].isWall = true;
-            }
-        }
-
-        // Generate walkable paths based on the selected dungeon shape
-        switch (this.currentDungeonShape) {
-            case 'square':
-                this.generateSquareWalkablePaths(grid, width, height);
-                break;
-            case 'circle':
-                this.generateCircleWalkablePaths(grid, width, height);
-                break;
-            case 'triangle':
-                this.generateTriangleWalkablePaths(grid, width, height);
-                break;
-            case 'random':
-            default:
-                this.generateRandomWalkablePaths(grid, width, height);
-                break;
-        }
-
-        // Ensure player starting position is always walkable
-        const playerStartX = Math.floor(width / 2);
-        const playerStartY = height - 1;
-        grid[playerStartY][playerStartX].walkable = true;
-        grid[playerStartY][playerStartX].isWall = false;
-        
-        console.log(`Generated ${this.currentDungeonShape} walkable path pattern`);
-    }
-
-    generateSquareWalkablePaths(grid, width, height) {
-        const centerX = Math.floor(width / 2);
-        const centerY = Math.floor(height / 2);
-        const size = 4; // Square size from center
-        
-        // Create square perimeter walkable path
-        for (let i = -size; i <= size; i++) {
-            // Top and bottom edges
-            const topY = centerY - size;
-            const bottomY = centerY + size;
-            if (topY >= 0 && topY < height) {
-                const x = centerX + i;
-                if (x >= 0 && x < width) {
-                    grid[topY][x].walkable = true;
-                    grid[topY][x].isWall = false;
-                }
-            }
-            if (bottomY >= 0 && bottomY < height) {
-                const x = centerX + i;
-                if (x >= 0 && x < width) {
-                    grid[bottomY][x].walkable = true;
-                    grid[bottomY][x].isWall = false;
-                }
-            }
-            
-            // Left and right edges
-            const leftX = centerX - size;
-            const rightX = centerX + size;
-            if (leftX >= 0 && leftX < width) {
-                const y = centerY + i;
-                if (y >= 0 && y < height) {
-                    grid[y][leftX].walkable = true;
-                    grid[y][leftX].isWall = false;
-                }
-            }
-            if (rightX >= 0 && rightX < width) {
-                const y = centerY + i;
-                if (y >= 0 && y < height) {
-                    grid[y][rightX].walkable = true;
-                    grid[y][rightX].isWall = false;
-                }
-            }
-        }
-        
-        // Add connecting paths to player start
-        this.addConnectingPath(grid, width, height, centerX, centerY + size);
-    }
-
-    generateCircleWalkablePaths(grid, width, height) {
-        const centerX = Math.floor(width / 2);
-        const centerY = Math.floor(height / 2);
-        const radius = 3;
-        
-        // Create circular walkable path
-        for (let angle = 0; angle < 360; angle += 15) {
-            const radians = (angle * Math.PI) / 180;
-            const x = Math.round(centerX + radius * Math.cos(radians));
-            const y = Math.round(centerY + radius * Math.sin(radians));
-            
-            if (x >= 0 && x < width && y >= 0 && y < height) {
-                grid[y][x].walkable = true;
-                grid[y][x].isWall = false;
-                
-                // Add thickness to the circle path
-                for (let dx = -1; dx <= 1; dx++) {
-                    for (let dy = -1; dy <= 1; dy++) {
-                        const nx = x + dx;
-                        const ny = y + dy;
-                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                            const distance = Math.sqrt(dx * dx + dy * dy);
-                            if (distance <= 1) {
-                                grid[ny][nx].walkable = true;
-                                grid[ny][nx].isWall = false;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Add connecting paths to player start
-        this.addConnectingPath(grid, width, height, centerX, centerY + radius);
-    }
-
-    generateTriangleWalkablePaths(grid, width, height) {
-        const centerX = Math.floor(width / 2);
-        const centerY = Math.floor(height / 2);
-        const size = 3;
-        
-        // Create triangular walkable paths
-        // Top vertex
-        grid[centerY - size][centerX].walkable = true;
-        grid[centerY - size][centerX].isWall = false;
-        
-        // Left and right edges of triangle
-        for (let i = 0; i <= size * 2; i++) {
-            const y = centerY - size + i;
-            if (y >= 0 && y < height) {
-                // Left edge
-                const leftX = centerX - i;
-                if (leftX >= 0 && leftX < width) {
-                    grid[y][leftX].walkable = true;
-                    grid[y][leftX].isWall = false;
-                }
-                
-                // Right edge
-                const rightX = centerX + i;
-                if (rightX >= 0 && rightX < width) {
-                    grid[y][rightX].walkable = true;
-                    grid[y][rightX].isWall = false;
-                }
-                
-                // Bottom edge (when we reach the bottom)
-                if (i === size * 2) {
-                    for (let x = leftX; x <= rightX; x++) {
-                        if (x >= 0 && x < width) {
-                            grid[y][x].walkable = true;
-                            grid[y][x].isWall = false;
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Add connecting paths to player start
-        this.addConnectingPath(grid, width, height, centerX, centerY + size);
-    }
-
-    generateRandomWalkablePaths(grid, width, height) {
-        // Generate random maze-like paths
-        const centerX = Math.floor(width / 2);
-        const centerY = Math.floor(height / 2);
-        
-        // Start with a cross pattern and add random branches
-        for (let x = 0; x < width; x++) {
-            grid[centerY][x].walkable = true;
-            grid[centerY][x].isWall = false;
-        }
-        
-        for (let y = 0; y < height; y++) {
-            grid[y][centerX].walkable = true;
-            grid[y][centerX].isWall = false;
-        }
-        
-        // Add random additional paths
-        for (let i = 0; i < 15; i++) {
-            const x = Phaser.Math.Between(0, width - 1);
-            const y = Phaser.Math.Between(0, height - 1);
-            grid[y][x].walkable = true;
-            grid[y][x].isWall = false;
-            
-            // Add some neighboring cells for better connectivity
-            const neighbors = this.getAdjacentPositions(x, y, width, height);
-            neighbors.forEach(pos => {
-                if (Math.random() < 0.6) {
-                    grid[pos.y][pos.x].walkable = true;
-                    grid[pos.y][pos.x].isWall = false;
-                }
-            });
-        }
-    }
-
-    addConnectingPath(grid, width, height, startX, startY) {
-        // Add a path from the pattern to the player starting position
-        const playerStartX = Math.floor(width / 2);
-        const playerStartY = height - 1;
-        
-        // Create a more robust connection with multiple path options
-        // Primary path: direct line
-        this.createRobustPath(grid, width, height, startX, startY, playerStartX, playerStartY);
-        
-        // Secondary paths: L-shaped connections for redundancy
-        const midX = Math.floor((startX + playerStartX) / 2);
-        const midY = Math.floor((startY + playerStartY) / 2);
-        
-        // Horizontal then vertical
-        this.createRobustPath(grid, width, height, startX, startY, midX, startY);
-        this.createRobustPath(grid, width, height, midX, startY, midX, playerStartY);
-        this.createRobustPath(grid, width, height, midX, playerStartY, playerStartX, playerStartY);
-        
-        // Vertical then horizontal
-        this.createRobustPath(grid, width, height, startX, startY, startX, midY);
-        this.createRobustPath(grid, width, height, startX, midY, playerStartX, midY);
-        this.createRobustPath(grid, width, height, playerStartX, midY, playerStartX, playerStartY);
-    }
-
-    createRobustPath(grid, width, height, startX, startY, endX, endY) {
-        // Create a walkable path with some width for better connectivity
-        const deltaX = endX - startX;
-        const deltaY = endY - startY;
-        const steps = Math.max(Math.abs(deltaX), Math.abs(deltaY));
-
-        for (let i = 0; i <= steps; i++) {
-            const x = Math.round(startX + (deltaX * i) / steps);
-            const y = Math.round(startY + (deltaY * i) / steps);
-            
-            if (x >= 0 && x < width && y >= 0 && y < height) {
-                grid[y][x].walkable = true;
-                grid[y][x].isWall = false;
-                
-                // Add width to the path by making adjacent cells walkable
-                for (let dx = -1; dx <= 1; dx++) {
-                    for (let dy = -1; dy <= 1; dy++) {
-                        const nx = x + dx;
-                        const ny = y + dy;
-                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                            if (Math.random() < 0.7) { // 70% chance for wider paths
-                                grid[ny][nx].walkable = true;
-                                grid[ny][nx].isWall = false;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    getAdjacentPositions(x, y, width, height) {
-        const positions = [];
-        const moves = [
-            { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
-            { dx: -1, dy: 0 }, { dx: 1, dy: 0 }
-        ];
-        
-        moves.forEach(move => {
-            const newX = x + move.dx;
-            const newY = y + move.dy;
-            if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
-                positions.push({ x: newX, y: newY });
-            }
-        });
-        
-        return positions;
     }
 
     getAdjacentCells(x, y) {
@@ -879,45 +594,29 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
 
         // Update lighting effects
         this.updateLightingEffects();
-    }    selectDungeonShape() {
-        // Ensure dungeonShapes array is initialized
-        if (!this.dungeonShapes || this.dungeonShapes.length === 0) {
-            console.warn('dungeonShapes not initialized, using default shape');
-            this.currentDungeonShape = 'random';
-            return;
-        }
-        
-        // Randomly select a dungeon shape for this run
-        this.currentDungeonShape = Phaser.Utils.Array.GetRandom(this.dungeonShapes);
-        console.log(`Selected dungeon shape: ${this.currentDungeonShape}`);
     }
 
     placeQuizBoxes(count) {
         const positions = [];
         
-        // Generate positions based on the selected dungeon shape
-        let generatedPositions;
-        switch (this.currentDungeonShape) {
-            case 'square':
-                generatedPositions = this.generateSquarePattern(count);
-                break;
-            case 'circle':
-                generatedPositions = this.generateCirclePattern(count);
-                break;
-            case 'triangle':
-                generatedPositions = this.generateTrianglePattern(count);
-                break;
-            case 'random':
-            default:
-                generatedPositions = this.generateRandomPattern(count);
-                break;
+        // Random placement logic - only on walkable tiles
+        while (positions.length < count) {
+            const x = Phaser.Math.Between(0, GRID_WIDTH - 1);
+            const y = Phaser.Math.Between(0, GRID_HEIGHT - 2); // avoid starting row
+            // Avoid player start, duplicates, and ensure walkable
+            if (
+                (x !== this.player.x || y !== this.player.y) &&
+                this.grid[y][x].walkable &&
+                !positions.some(pos => pos.x === x && pos.y === y)
+            ) {
+                positions.push({ 
+                    x, 
+                    y, 
+                    difficulty: this.getRandomDifficulty() 
+                });
+            }
         }
-        
-        // Add difficulty to each position
-        return generatedPositions.map(pos => ({
-            ...pos,
-            difficulty: this.getRandomDifficulty()
-        }));
+        return positions;
     }
 
     getRandomDifficulty() {
@@ -958,169 +657,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
                 // Default to medium difficulty colors
                 return this.getDifficultyColors('medium');
         }
-    }
-
-    generateSquarePattern(count) {
-        const positions = [];
-        const centerX = Math.floor(GRID_WIDTH / 2);
-        const centerY = Math.floor(GRID_HEIGHT / 2);
-        
-        // Define square perimeter positions
-        const squarePositions = [
-            // Top row
-            { x: centerX - 2, y: centerY - 2 },
-            { x: centerX - 1, y: centerY - 2 },
-            { x: centerX, y: centerY - 2 },
-            { x: centerX + 1, y: centerY - 2 },
-            { x: centerX + 2, y: centerY - 2 },
-            // Right column
-            { x: centerX + 2, y: centerY - 1 },
-            { x: centerX + 2, y: centerY },
-            { x: centerX + 2, y: centerY + 1 },
-            { x: centerX + 2, y: centerY + 2 },
-            // Bottom row
-            { x: centerX + 1, y: centerY + 2 },
-            { x: centerX, y: centerY + 2 },
-            { x: centerX - 1, y: centerY + 2 },
-            { x: centerX - 2, y: centerY + 2 },
-            // Left column
-            { x: centerX - 2, y: centerY + 1 },
-            { x: centerX - 2, y: centerY },
-            { x: centerX - 2, y: centerY - 1 }
-        ];
-        
-        // Filter valid positions - walkable, avoid player start
-        const validPositions = squarePositions.filter(pos => 
-            pos.x >= 0 && pos.x < GRID_WIDTH &&
-            pos.y >= 0 && pos.y < GRID_HEIGHT - 1 &&
-            this.grid[pos.y][pos.x].walkable &&
-            !(pos.x === this.player.x && pos.y === this.player.y)
-        );
-        
-        // Select random positions from the square pattern
-        return this.selectRandomPositions(validPositions, count);
-    }
-
-    generateCirclePattern(count) {
-        const positions = [];
-        const centerX = Math.floor(GRID_WIDTH / 2);
-        const centerY = Math.floor(GRID_HEIGHT / 2);
-        const radius = 2.5;
-        
-        // Generate circle positions using trigonometry
-        const circlePositions = [];
-        for (let angle = 0; angle < 360; angle += 30) { // Every 30 degrees
-            const radians = (angle * Math.PI) / 180;
-            const x = Math.round(centerX + radius * Math.cos(radians));
-            const y = Math.round(centerY + radius * Math.sin(radians));
-            
-            if (x >= 0 && x < GRID_WIDTH && 
-                y >= 0 && y < GRID_HEIGHT - 1 &&
-                this.grid[y][x].walkable &&
-                !(x === this.player.x && y === this.player.y)) {
-                circlePositions.push({ x, y });
-            }
-        }
-        
-        // Remove duplicates
-        const uniquePositions = circlePositions.filter((pos, index, arr) => 
-            arr.findIndex(p => p.x === pos.x && p.y === pos.y) === index
-        );
-        
-        return this.selectRandomPositions(uniquePositions, count);
-    }
-
-    generateTrianglePattern(count) {
-        const positions = [];
-        const centerX = Math.floor(GRID_WIDTH / 2);
-        const centerY = Math.floor(GRID_HEIGHT / 2);
-        
-        // Define triangle points (equilateral triangle)
-        const trianglePositions = [
-            // Top point
-            { x: centerX, y: centerY - 2 },
-            // Top edges
-            { x: centerX - 1, y: centerY - 1 },
-            { x: centerX + 1, y: centerY - 1 },
-            // Middle edges
-            { x: centerX - 2, y: centerY },
-            { x: centerX + 2, y: centerY },
-            // Bottom edges
-            { x: centerX - 3, y: centerY + 1 },
-            { x: centerX - 2, y: centerY + 1 },
-            { x: centerX - 1, y: centerY + 1 },
-            { x: centerX, y: centerY + 1 },
-            { x: centerX + 1, y: centerY + 1 },
-            { x: centerX + 2, y: centerY + 1 },
-            { x: centerX + 3, y: centerY + 1 },
-            // Bottom points
-            { x: centerX - 2, y: centerY + 2 },
-            { x: centerX + 2, y: centerY + 2 }
-        ];
-        
-        // Filter valid positions and avoid player start
-        const validPositions = trianglePositions.filter(pos => 
-            pos.x >= 0 && pos.x < GRID_WIDTH &&
-            pos.y >= 0 && pos.y < GRID_HEIGHT - 1 &&
-            this.grid[pos.y][pos.x].walkable &&
-            !(pos.x === this.player.x && pos.y === this.player.y)
-        );
-        
-        return this.selectRandomPositions(validPositions, count);
-    }
-
-    generateRandomPattern(count) {
-        const positions = [];
-        
-        // Original random placement logic - only on walkable tiles
-        while (positions.length < count) {
-            const x = Phaser.Math.Between(0, GRID_WIDTH - 1);
-            const y = Phaser.Math.Between(0, GRID_HEIGHT - 2); // avoid starting row
-            // Avoid player start, duplicates, and ensure walkable
-            if (
-                (x !== this.player.x || y !== this.player.y) &&
-                this.grid[y][x].walkable &&
-                !positions.some(pos => pos.x === x && pos.y === y)
-            ) {
-                positions.push({ 
-                    x, 
-                    y, 
-                    difficulty: this.getRandomDifficulty() 
-                });
-            }
-        }
-        return positions;
-    }
-
-    selectRandomPositions(availablePositions, count) {
-        const positions = [];
-        const shuffled = Phaser.Utils.Array.Shuffle([...availablePositions]);
-        
-        for (let i = 0; i < Math.min(count, shuffled.length); i++) {
-            positions.push({
-                ...shuffled[i],
-                difficulty: this.getRandomDifficulty()
-            });
-        }
-        
-        // If we need more positions than the pattern provides, fill randomly from walkable tiles
-        while (positions.length < count) {
-            const x = Phaser.Math.Between(0, GRID_WIDTH - 1);
-            const y = Phaser.Math.Between(0, GRID_HEIGHT - 2);
-            if (
-                (x !== this.player.x || y !== this.player.y) &&
-                this.grid[y][x].walkable &&
-                !positions.some(pos => pos.x === x && pos.y === y)
-            ) {
-                positions.push({ 
-                    x, 
-                    y, 
-                    difficulty: this.getRandomDifficulty() 
-                });
-            }
-        }
-        
-        return positions;
     }
 
     createBackgroundEffects() {
@@ -1540,90 +1076,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         });
     }
 
-    // Debug method to manually set dungeon shape for testing
-    debugSetDungeonShape(shapeName) {
-        if (this.dungeonShapes.includes(shapeName)) {
-            this.currentDungeonShape = shapeName;
-            console.log(`Debug: Set dungeon shape to ${shapeName}`);
-            
-            // Regenerate the grid with new shape
-            this.grid = this.createGrid(GRID_WIDTH, GRID_HEIGHT);
-            
-            // Validate grid after creation
-            if (!this.grid || this.grid.length !== GRID_HEIGHT) {
-                console.error('Debug: Grid creation failed - invalid dimensions');
-                return;
-            }
-            
-            this.grid[this.player.y][this.player.x].visited = true;
-            
-            // Update adjacent cells
-            this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
-            
-            // Regenerate quiz boxes based on new walkable paths
-            const boxCount = this.isBossLevel ? 1 : 2;
-            this.quizBoxes = this.placeQuizBoxes(boxCount);
-            
-            // Validate quiz boxes before path checking
-            if (!this.quizBoxes || this.quizBoxes.length === 0) {
-                console.error('Debug: Quiz box placement failed');
-                return;
-            }
-            
-            // Ensure paths to quiz box positions exist
-            this.ensurePathToQuizBoxes();
-            
-            // Verify connectivity with proper validation
-            const playerStartX = Math.floor(GRID_WIDTH / 2);
-            const playerStartY = GRID_HEIGHT - 1;
-            let reachableQuizBoxes = 0;
-            
-            for (const quizBox of this.quizBoxes) {
-                try {
-                    if (this.isPathExists(playerStartX, playerStartY, quizBox.x, quizBox.y)) {
-                        reachableQuizBoxes++;
-                    }
-                } catch (error) {
-                    console.error('Error checking path connectivity:', error);
-                    console.error('Debug grid state:', {
-                        gridExists: !!this.grid,
-                        gridLength: this.grid ? this.grid.length : 'N/A',
-                        quizBoxPosition: `(${quizBox.x}, ${quizBox.y})`,
-                        playerPosition: `(${playerStartX}, ${playerStartY})`
-                    });
-                }
-            }
-            
-            console.log(`Shape: ${shapeName}, Quiz boxes: ${this.quizBoxes.length}, Reachable: ${reachableQuizBoxes}`);
-            
-            // Redraw the grid
-            this.drawGrid();
-            
-            this.showNotification(`Dungeon shape: ${shapeName}`, `${reachableQuizBoxes}/${this.quizBoxes.length} quiz boxes reachable`);
-        } else {
-            console.log(`Debug: Invalid shape name. Available: ${this.dungeonShapes.join(', ')}`);
-        }
-    }
-
-    // Debug method to cycle through all dungeon shapes
-    debugCycleDungeonShape() {
-        if (!this.dungeonShapes || this.dungeonShapes.length === 0) {
-            console.error('dungeonShapes not initialized');
-            return;
-        }
-        
-        if (!this.currentDungeonShape) {
-            console.error('currentDungeonShape not set');
-            return;
-        }
-        
-        const currentIndex = this.dungeonShapes.indexOf(this.currentDungeonShape);
-        const nextIndex = (currentIndex + 1) % this.dungeonShapes.length;
-        const nextShape = this.dungeonShapes[nextIndex];
-        
-        this.debugSetDungeonShape(nextShape);
-    }
-
     // Enhanced notification method
     showNotification(title, message = '') {
         const centerX = this.scale.width / 2;
@@ -1680,10 +1132,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
                 // Shift+R: Reset tutorial flags (for testing)
                 console.log('Resetting tutorial flags (Shift+R)');
                 this.resetTutorialFlags();
-            } else if (event.shiftKey && event.code === 'KeyD') {
-                // Shift+D: Cycle dungeon shapes (for testing)
-                console.log('Cycling dungeon shape (Shift+D)');
-                this.debugCycleDungeonShape();
             }
         });
     }
@@ -1843,26 +1291,12 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             return;
         }
 
-        // Get all potential quiz box positions based on current shape
+        // Get all walkable positions as potential quiz box positions
         let potentialPositions = [];
         
         try {
-            switch (this.currentDungeonShape) {
-                case 'square':
-                    potentialPositions = this.getSquarePatternPositions();
-                    break;
-                case 'circle':
-                    potentialPositions = this.getCirclePatternPositions();
-                    break;
-                case 'triangle':
-                    potentialPositions = this.getTrianglePatternPositions();
-                    break;
-                case 'random':
-                default:
-                    // For random, we'll check all walkable positions
-                    potentialPositions = this.getAllWalkablePositions();
-                    break;
-            }
+            // For default dungeon, check all walkable positions
+            potentialPositions = this.getAllWalkablePositions();
         } catch (error) {
             console.error('Error getting potential positions:', error);
             return;
@@ -1933,86 +1367,6 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
                 });
             }
         }
-    }
-
-    getSquarePatternPositions() {
-        const centerX = Math.floor(GRID_WIDTH / 2);
-        const centerY = Math.floor(GRID_HEIGHT / 2);
-        
-        return [
-            // Top row
-            { x: centerX - 2, y: centerY - 2 },
-            { x: centerX - 1, y: centerY - 2 },
-            { x: centerX, y: centerY - 2 },
-            { x: centerX + 1, y: centerY - 2 },
-            { x: centerX + 2, y: centerY - 2 },
-            // Right column
-            { x: centerX + 2, y: centerY - 1 },
-            { x: centerX + 2, y: centerY },
-            { x: centerX + 2, y: centerY + 1 },
-            { x: centerX + 2, y: centerY + 2 },
-            // Bottom row
-            { x: centerX + 1, y: centerY + 2 },
-            { x: centerX, y: centerY + 2 },
-            { x: centerX - 1, y: centerY + 2 },
-            { x: centerX - 2, y: centerY + 2 },
-            // Left column
-            { x: centerX - 2, y: centerY + 1 },
-            { x: centerX - 2, y: centerY },
-            { x: centerX - 2, y: centerY - 1 }
-        ].filter(pos => 
-            pos.x >= 0 && pos.x < GRID_WIDTH &&
-            pos.y >= 0 && pos.y < GRID_HEIGHT - 1
-        );
-    }
-
-    getCirclePatternPositions() {
-        const centerX = Math.floor(GRID_WIDTH / 2);
-        const centerY = Math.floor(GRID_HEIGHT / 2);
-        const radius = 2.5;
-        
-        const positions = [];
-        for (let angle = 0; angle < 360; angle += 30) {
-            const radians = (angle * Math.PI) / 180;
-            const x = Math.round(centerX + radius * Math.cos(radians));
-            const y = Math.round(centerY + radius * Math.sin(radians));
-            
-            if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT - 1) {
-                positions.push({ x, y });
-            }
-        }
-        
-        return positions;
-    }
-
-    getTrianglePatternPositions() {
-        const centerX = Math.floor(GRID_WIDTH / 2);
-        const centerY = Math.floor(GRID_HEIGHT / 2);
-        
-        return [
-            // Top point
-            { x: centerX, y: centerY - 2 },
-            // Top edges
-            { x: centerX - 1, y: centerY - 1 },
-            { x: centerX + 1, y: centerY - 1 },
-            // Middle edges
-            { x: centerX - 2, y: centerY },
-            { x: centerX + 2, y: centerY },
-            // Bottom edges
-            { x: centerX - 3, y: centerY + 1 },
-            { x: centerX - 2, y: centerY + 1 },
-            { x: centerX - 1, y: centerY + 1 },
-            { x: centerX, y: centerY + 1 },
-            { x: centerX + 1, y: centerY + 1 },
-            { x: centerX + 2, y: centerY + 1 },
-            { x: centerX + 3, y: centerY + 1 },
-            // Bottom points
-            { x: centerX - 2, y: centerY + 2 },
-            { x: centerX + 2, y: centerY + 2 }
-        ].filter(pos => 
-            pos.x >= 0 && pos.x < GRID_WIDTH &&
-            pos.y >= 0 && pos.y < GRID_HEIGHT - 1
-        );
     }
 
     getAllWalkablePositions() {

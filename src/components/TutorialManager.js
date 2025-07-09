@@ -700,13 +700,14 @@ export default class TutorialManager {
             }
         }
         
-        // Disable any other interactive elements in the scene (except tutorial elements)
+        // Disable any other interactive elements in the scene (except tutorial elements and persistent elements)
         if (this.scene.children && this.scene.children.list) {
             this.scene.children.list.forEach(child => {
                 if (child.input && child.input.enabled && 
                     !this.tutorialElements.includes(child) && 
                     child !== this.overlay &&
-                    !this.isPartOfTutorial(child)) {
+                    !this.isPartOfTutorial(child) &&
+                    !this.isPersistentElement(child)) {
                     try {
                         child.disableInteractive();
                         this.disabledElements.push({ element: child, type: 'general' });
@@ -733,6 +734,60 @@ export default class TutorialManager {
                element === this.arrowPointer || 
                element === this.nextButton || 
                element === this.skipButton;
+    }
+    
+    /**
+     * Check if an element is a persistent element that should remain interactive
+     */
+    isPersistentElement(element) {
+        // Check if the element is in the scene's persistentElements array
+        if (this.scene.persistentElements && this.scene.persistentElements.includes(element)) {
+            return true;
+        }
+        
+        // Check for specific element types that should remain interactive
+        // Look for elements with specific text content or properties that indicate they're completion buttons
+        if (element.text && typeof element.text === 'string') {
+            const elementText = element.text.toLowerCase();
+            if (elementText.includes('continue') || 
+                elementText.includes('next level') || 
+                elementText.includes('back to') ||
+                elementText.includes('finish') ||
+                elementText.includes('complete')) {
+                return true;
+            }
+        }
+        
+        // Check for elements with specific styling that indicates they're completion UI
+        if (element.style && element.style.backgroundColor === '#4CAF50') {
+            // This might be a completion button
+            return true;
+        }
+        
+        // Check if element has a gold color (common for continue buttons)
+        if (element.style && element.style.color === '#ffd700') {
+            return true;
+        }
+        
+        // Check if the element is a victory/completion overlay or panel
+        if (element.fillColor === 0x1a1a2e || element.fillColor === 0x2d1b69) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Update disabled elements list - remove elements that should no longer be disabled
+     */
+    updateDisabledElements() {
+        if (!this.disabledElements) return;
+        
+        // Filter out elements that should no longer be disabled (like newly created persistent elements)
+        this.disabledElements = this.disabledElements.filter(item => {
+            const element = item.element || item;
+            return !this.isPersistentElement(element);
+        });
     }
     
     /**
