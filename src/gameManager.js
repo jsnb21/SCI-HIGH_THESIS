@@ -665,7 +665,7 @@ class GameManager {
     // =========================
 
     // Submit current points to leaderboard
-    async submitToLeaderboard(playerName, department = 'Unknown', userId = null) {
+    async submitToLeaderboard(playerName, department = 'Unknown', userId = null, studentId = '') {
         try {
             // Dynamic import of leaderboard service
             const { default: leaderboardService } = await import('./services/leaderboardService.js');
@@ -678,6 +678,7 @@ class GameManager {
             const playerData = {
                 userId: userId,
                 playerName: playerName,
+                studentId: studentId, // Add the student ID to the player data
                 score: this.totalPoints,
                 department: department,
                 gameData: {
@@ -756,8 +757,16 @@ class GameManager {
             if (this.activeLeaderboardDialog.nameInput && this.activeLeaderboardDialog.nameInput.parentNode) {
                 document.body.removeChild(this.activeLeaderboardDialog.nameInput);
             }
+            if (this.activeLeaderboardDialog.studentIdInput && this.activeLeaderboardDialog.studentIdInput.parentNode) {
+                document.body.removeChild(this.activeLeaderboardDialog.studentIdInput);
+            }
             if (this.activeLeaderboardDialog.departmentSelect && this.activeLeaderboardDialog.departmentSelect.parentNode) {
                 document.body.removeChild(this.activeLeaderboardDialog.departmentSelect);
+            }
+            
+            // Re-enable carousel interactions if we're in the MainHub scene
+            if (this.activeLeaderboardDialog.scene && this.activeLeaderboardDialog.scene.carousel) {
+                this.activeLeaderboardDialog.scene.carousel.setInteractive(true);
             }
             
             this.activeLeaderboardDialog = null;
@@ -769,15 +778,22 @@ class GameManager {
         // Clean up any existing dialog first
         this.cleanupLeaderboardDialog();
         
+        // Disable carousel interactions if we're in the MainHub scene
+        if (scene.carousel) {
+            scene.carousel.setInteractive(false);
+        }
+        
         // Check if we already have player info stored
         const savedPlayerInfo = localStorage.getItem('sci_high_player_info');
         let defaultName = '';
         let defaultDepartment = '';
+        let defaultStudentId = '';
         
         if (savedPlayerInfo) {
             const info = JSON.parse(savedPlayerInfo);
             defaultName = info.name || '';
             defaultDepartment = info.department || '';
+            defaultStudentId = info.studentId || '';
         }
 
         // Use VNDialogue scaling system for consistency
@@ -800,7 +816,7 @@ class GameManager {
 
         // Create dialog background using VNDialogue styling
         const dialogWidth = 500 * scale;
-        const dialogHeight = 400 * scale;
+        const dialogHeight = 450 * scale; // Increased height to accommodate Student ID field
         const borderRadius = 20 * scale;
         const borderThickness = 4 * scale;
         
@@ -826,7 +842,7 @@ class GameManager {
         // Dialog title with main menu styling
         const title = scene.add.text(
             scene.cameras.main.width / 2, 
-            scene.cameras.main.height / 2 - 120 * scale, 
+            scene.cameras.main.height / 2 - 150 * scale, // Moved up to create more space
             'Submit to Leaderboard', 
             {
                 fontFamily: 'Caprasimo-Regular',  // Match main menu font
@@ -841,7 +857,7 @@ class GameManager {
         // Score display with VNDialogue text styling
         const scoreText = scene.add.text(
             scene.cameras.main.width / 2, 
-            scene.cameras.main.height / 2 - 80 * scale, 
+            scene.cameras.main.height / 2 - 110 * scale, // Moved up to create more space
             `Your Score: ${this.totalPoints} points`, 
             {
                 fontFamily: 'Caprasimo-Regular',  // Match VNDialogue font
@@ -859,7 +875,7 @@ class GameManager {
         nameInput.style.cssText = `
             position: absolute;
             left: ${scene.cameras.main.width / 2 - 150 * scale}px;
-            top: ${scene.cameras.main.height / 2 - 20 * scale}px;
+            top: ${scene.cameras.main.height / 2 - 60 * scale}px;
             width: ${300 * scale}px;
             height: ${35 * scale}px;
             z-index: 2002;
@@ -883,11 +899,43 @@ class GameManager {
         });
         document.body.appendChild(nameInput);
 
+        // Add Student ID input field
+        const studentIdInput = document.createElement('input');
+        studentIdInput.type = 'text';
+        studentIdInput.placeholder = 'Enter your Student ID';
+        studentIdInput.value = defaultStudentId;
+        studentIdInput.style.cssText = `
+            position: absolute;
+            left: ${scene.cameras.main.width / 2 - 150 * scale}px;
+            top: ${scene.cameras.main.height / 2 - 10 * scale}px;
+            width: ${300 * scale}px;
+            height: ${35 * scale}px;
+            z-index: 2002;
+            padding: ${8 * scale}px;
+            border: ${3 * scale}px solid #ffffcc;
+            border-radius: ${10 * scale}px;
+            background-color: #222244;
+            color: #ffffff;
+            font-family: Caprasimo-Regular;
+            font-size: ${16 * scale}px;
+            box-shadow: 0 ${2 * scale}px ${4 * scale}px rgba(0,0,0,0.3);
+            box-sizing: border-box;
+        `;
+        studentIdInput.addEventListener('focus', () => {
+            studentIdInput.style.borderColor = '#ffff00';
+            studentIdInput.style.boxShadow = `0 0 ${8 * scale}px rgba(255,255,0,0.5)`;
+        });
+        studentIdInput.addEventListener('blur', () => {
+            studentIdInput.style.borderColor = '#ffffcc';
+            studentIdInput.style.boxShadow = `0 ${2 * scale}px ${4 * scale}px rgba(0,0,0,0.3)`;
+        });
+        document.body.appendChild(studentIdInput);
+
         const departmentSelect = document.createElement('select');
         departmentSelect.style.cssText = `
             position: absolute;
             left: ${scene.cameras.main.width / 2 - 150 * scale}px;
-            top: ${scene.cameras.main.height / 2 + 25 * scale}px;
+            top: ${scene.cameras.main.height / 2 + 40 * scale}px;
             width: ${300 * scale}px;
             height: ${40 * scale}px;
             z-index: 2002;
@@ -1017,7 +1065,7 @@ class GameManager {
         // Create buttons with quit confirmation color scheme
         const confirmBtn = createStyledButton(
             scene.cameras.main.width / 2 - 80 * scale, 
-            scene.cameras.main.height / 2 + 90 * scale, 
+            scene.cameras.main.height / 2 + 100 * scale, // Moved down to match new spacing
             120 * scale, 
             40 * scale, 
             'Submit', 
@@ -1027,7 +1075,7 @@ class GameManager {
 
         const exitBtn = createStyledButton(
             scene.cameras.main.width / 2 + 80 * scale, 
-            scene.cameras.main.height / 2 + 90 * scale, 
+            scene.cameras.main.height / 2 + 100 * scale, // Moved down to match new spacing
             120 * scale, 
             40 * scale, 
             'Exit', 
@@ -1037,7 +1085,7 @@ class GameManager {
 
         const viewLeaderboardBtn = createStyledButton(
             scene.cameras.main.width / 2, 
-            scene.cameras.main.height / 2 + 140 * scale, 
+            scene.cameras.main.height / 2 + 150 * scale, // Moved down to match new spacing
             200 * scale, 
             35 * scale, 
             'View Full Leaderboard', 
@@ -1061,14 +1109,21 @@ class GameManager {
         const closeDialog = () => {
             dialogElements.forEach(element => element.destroy());
             document.body.removeChild(nameInput);
+            document.body.removeChild(studentIdInput);
             document.body.removeChild(departmentSelect);
             this.activeLeaderboardDialog = null;
+            
+            // Re-enable carousel interactions if we're in the MainHub scene
+            if (scene.carousel) {
+                scene.carousel.setInteractive(true);
+            }
         };
 
         // Track the dialog for cleanup
         this.activeLeaderboardDialog = {
             dialogElements,
             nameInput,
+            studentIdInput,
             departmentSelect,
             scene
         };
@@ -1098,6 +1153,7 @@ class GameManager {
             confirmBtn.text.setScale(1);
             
             const playerName = nameInput.value.trim();
+            const studentId = studentIdInput.value.trim();
             const department = departmentSelect.value;
 
             if (!playerName) {
@@ -1109,6 +1165,7 @@ class GameManager {
                 // Save player info for future use
                 localStorage.setItem('sci_high_player_info', JSON.stringify({
                     name: playerName,
+                    studentId: studentId,
                     department: department
                 }));
 
@@ -1119,7 +1176,7 @@ class GameManager {
                 confirmBtn.bg.fillStyle(0x555555, 0.9);
                 confirmBtn.bg.fillRoundedRect(
                     scene.cameras.main.width / 2 - 80 * scale - 60 * scale, 
-                    scene.cameras.main.height / 2 + 90 * scale - 20 * scale, 
+                    scene.cameras.main.height / 2 + 100 * scale - 20 * scale, // Updated to match new button position
                     120 * scale, 
                     40 * scale, 
                     16 * scale
@@ -1127,14 +1184,14 @@ class GameManager {
                 confirmBtn.bg.lineStyle(2 * scale, 0x888888, 1);
                 confirmBtn.bg.strokeRoundedRect(
                     scene.cameras.main.width / 2 - 80 * scale - 60 * scale, 
-                    scene.cameras.main.height / 2 + 90 * scale - 20 * scale, 
+                    scene.cameras.main.height / 2 + 100 * scale - 20 * scale, // Updated to match new button position
                     120 * scale, 
                     40 * scale, 
                     16 * scale
                 );
 
                 // Submit to leaderboard
-                const result = await this.submitToLeaderboard(playerName, department);
+                const result = await this.submitToLeaderboard(playerName, department, null, studentId);
 
                 closeDialog();
 

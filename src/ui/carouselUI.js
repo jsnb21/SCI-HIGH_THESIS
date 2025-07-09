@@ -430,6 +430,46 @@ class Carousel {
         if (this._inputListeners) this._inputListeners.forEach(off => off());
         this.scene.scale.off('resize', this.onResize, this);
     }
+
+    setInteractive(enabled) {
+        // Store the current state to restore later if needed
+        this._interactiveState = enabled;
+
+        // Enable/disable all icons
+        this.carouselIcons.forEach(icon => {
+            if (!icon.isLockIcon) {
+                if (enabled) {
+                    icon.setInteractive({ useHandCursor: !this.lockedStates[icon.iconIndex] });
+                } else {
+                    icon.disableInteractive();
+                }
+            }
+        });
+
+        // Enable/disable arrow controls
+        if (this.leftArrow) {
+            if (enabled) {
+                this.leftArrow.setInteractive({ useHandCursor: true });
+            } else {
+                this.leftArrow.disableInteractive();
+            }
+        }
+
+        if (this.rightArrow) {
+            if (enabled) {
+                this.rightArrow.setInteractive({ useHandCursor: true });
+            } else {
+                this.rightArrow.disableInteractive();
+            }
+        }
+
+        // Disable keyboard input listeners if needed
+        if (this._inputListeners) {
+            this._inputListeners.forEach(listener => {
+                listener.enabled = enabled;
+            });
+        }
+    }
 }
 
 export default Carousel;

@@ -203,6 +203,7 @@ class LeaderboardService {
         const {
             userId,
             playerName,
+            studentId = '',
             score,
             department = 'Unknown',
             gameData = {}
@@ -216,6 +217,7 @@ class LeaderboardService {
         try {
             const scoreData = {
                 name: playerName,
+                studentId: studentId,
                 score: score,
                 department: department,
                 timestamp: Date.now(),
