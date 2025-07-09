@@ -935,7 +935,7 @@ class GameManager {
         departmentSelect.style.cssText = `
             position: absolute;
             left: ${scene.cameras.main.width / 2 - 150 * scale}px;
-            top: ${scene.cameras.main.height / 2 + 40 * scale}px;
+            top: ${scene.cameras.main.height / 2 + 45 * scale}px;
             width: ${300 * scale}px;
             height: ${40 * scale}px;
             z-index: 2002;
@@ -1065,7 +1065,7 @@ class GameManager {
         // Create buttons with quit confirmation color scheme
         const confirmBtn = createStyledButton(
             scene.cameras.main.width / 2 - 80 * scale, 
-            scene.cameras.main.height / 2 + 100 * scale, // Moved down to match new spacing
+            scene.cameras.main.height / 2 + 120 * scale, // Increased spacing between dropdown and buttons
             120 * scale, 
             40 * scale, 
             'Submit', 
@@ -1075,7 +1075,7 @@ class GameManager {
 
         const exitBtn = createStyledButton(
             scene.cameras.main.width / 2 + 80 * scale, 
-            scene.cameras.main.height / 2 + 100 * scale, // Moved down to match new spacing
+            scene.cameras.main.height / 2 + 120 * scale, // Increased spacing between dropdown and buttons
             120 * scale, 
             40 * scale, 
             'Exit', 
@@ -1085,7 +1085,7 @@ class GameManager {
 
         const viewLeaderboardBtn = createStyledButton(
             scene.cameras.main.width / 2, 
-            scene.cameras.main.height / 2 + 150 * scale, // Moved down to match new spacing
+            scene.cameras.main.height / 2 + 170 * scale, // Adjusted to maintain spacing with other buttons
             200 * scale, 
             35 * scale, 
             'View Full Leaderboard', 
