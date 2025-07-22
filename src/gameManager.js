@@ -1544,11 +1544,18 @@ class GameManager {
 class Character {
     constructor() {
         this.quest1 = 0;
-        this.quest1Desc = "";
+        this.quest1Desc = "Start Noah's story to learn HTML basics";
         this.quest2 = 0;
-        this.quest2Desc = "";
+        this.quest2Desc = "Continue the story to learn CSS styling";
         this.quest3 = 0;
-        this.quest3Desc = "";
+        this.quest3Desc = "Complete the story to learn JavaScript";
+        
+        // Story progress tracking
+        this.storyProgress = {
+            chapter: 0,
+            scene: 0,
+            completed: false
+        };
     }
 }
 

@@ -19,8 +19,8 @@ export default class Classroom extends Phaser.Scene {
         this.load.image('Damian', 'assets/sprites/npcs/damian.png');
         this.load.image('Bella', 'assets/sprites/npcs/bella.png');
         this.load.image('Finley', 'assets/sprites/npcs/finley.png');
-        this.load.audio('se_select', 'assets/sounds/se_select.wav');
-        this.load.audio('se_confirm', 'assets/sounds/se_confirm.wav');
+        this.load.audio('se_select', 'assets/audio/se/se_select.wav');
+        this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
     }
 
     create() {
@@ -285,9 +285,11 @@ export default class Classroom extends Phaser.Scene {
         // Name
         boxObjects.push(
             this.add.text(width / 2, y, charData.name, {
-                fontFamily: 'Jersey15-Regular',
-                fontSize: '42px',
-                color: '#1e90ff'
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: '32px',
+                color: '#1e90ff',
+                stroke: '#000000',
+                strokeThickness: 4
             }).setOrigin(0.5).setDepth(12)
         );
 
@@ -296,8 +298,8 @@ export default class Classroom extends Phaser.Scene {
         // Description
         boxObjects.push(
             this.add.text(width / 2, y, charData.desc, {
-                fontFamily: 'Jersey15-Regular',
-                fontSize: '24px',
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: '18px',
                 color: '#444466',
                 wordWrap: { width: boxWidth - 60 },
                 align: 'center'
@@ -309,9 +311,11 @@ export default class Classroom extends Phaser.Scene {
         // "Quests" label
         boxObjects.push(
             this.add.text(width / 2, y, "Quests", {
-                fontFamily: 'Jersey15-Regular',
-                fontSize: '32px',
-                color: '#1e90ff'
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: '24px',
+                color: '#1e90ff',
+                stroke: '#000000',
+                strokeThickness: 3
             }).setOrigin(0.5).setDepth(12)
         );
 
@@ -326,9 +330,11 @@ export default class Classroom extends Phaser.Scene {
             // Label
             boxObjects.push(
                 this.add.text(width / 2, y, `${questLabels[i]}: ${(questPercents[i] * 100).toFixed(0)}%`, {
-                    fontFamily: 'Jersey15-Regular',
-                    fontSize: '20px',
-                    color: '#222244'
+                    fontFamily: 'Caprasimo-Regular',
+                    fontSize: '16px',
+                    color: '#222244',
+                    stroke: '#ffffff',
+                    strokeThickness: 2
                 }).setOrigin(0.5).setDepth(12)
             );
             y += 28;
@@ -353,13 +359,92 @@ export default class Classroom extends Phaser.Scene {
             y += BAR_HEIGHT;
             boxObjects.push(
                 this.add.text(width / 2, y, charData.questDescs[i], {
-                    fontFamily: 'Jersey15-Regular',
-                    fontSize: '18px',
+                    fontFamily: 'Caprasimo-Regular',
+                    fontSize: '14px',
                     color: '#444466',
                     wordWrap: { width: boxWidth - 60 }
                 }).setOrigin(0.5).setDepth(12)
             );
             y += SPACING;
+        }
+
+        // Story Mode button (only for Noah)
+        if (charData.name === "Noah") {
+            const storyBtn = this.add.rectangle(
+                width / 2 - 110,
+                height / 2 + boxHeight / 2 - 50,
+                180,
+                40,
+                0x4caf50
+            ).setDepth(12).setInteractive({ useHandCursor: true });
+            boxObjects.push(storyBtn);
+
+            const storyBtnText = this.add.text(
+                width / 2 - 110,
+                height / 2 + boxHeight / 2 - 50,
+                'Story Mode',
+                {
+                    fontFamily: 'Caprasimo-Regular',
+                    fontSize: '14px',
+                    color: '#ffffff',
+                    stroke: '#000000',
+                    strokeThickness: 2
+                }
+            ).setOrigin(0.5).setDepth(13);
+            boxObjects.push(storyBtnText);
+
+            storyBtn.on('pointerdown', () => {
+                this.se_confirmSound.play();
+                boxObjects.forEach(obj => obj.destroy());
+                this.characterBoxOpen = false;
+                // Launch Noah's chapter selection
+                this.scene.start('NoahChapterSelect');
+            });
+
+            // Progress button
+            const progressBtn = this.add.rectangle(
+                width / 2 + 110,
+                height / 2 + boxHeight / 2 - 50,
+                180,
+                40,
+                0x2196f3
+            ).setDepth(12).setInteractive({ useHandCursor: true });
+            boxObjects.push(progressBtn);
+
+            const progressBtnText = this.add.text(
+                width / 2 + 110,
+                height / 2 + boxHeight / 2 - 50,
+                'Progress',
+                {
+                    fontFamily: 'Caprasimo-Regular',
+                    fontSize: '14px',
+                    color: '#ffffff',
+                    stroke: '#000000',
+                    strokeThickness: 2
+                }
+            ).setOrigin(0.5).setDepth(13);
+            boxObjects.push(progressBtnText);
+
+            progressBtn.on('pointerdown', () => {
+                this.se_confirmSound.play();
+                boxObjects.forEach(obj => obj.destroy());
+                this.characterBoxOpen = false;
+                // Launch Noah's progress tracker
+                this.scene.start('NoahProgressTracker');
+            });
+
+            // Hover effects
+            storyBtn.on('pointerover', () => {
+                storyBtn.setFillStyle(0x66bb6a);
+                this.se_hoverSound.play();
+            });
+            storyBtn.on('pointerout', () => storyBtn.setFillStyle(0x4caf50));
+
+            progressBtn.on('pointerover', () => {
+                progressBtn.setFillStyle(0x42a5f5);
+                this.se_hoverSound.play();
+            });
+            progressBtn.on('pointerout', () => progressBtn.setFillStyle(0x2196f3));
         }
 
         // Close button (top right of box)
@@ -368,10 +453,12 @@ export default class Classroom extends Phaser.Scene {
             height / 2 - boxHeight / 2 + 30,
             '✕',
             {
-                fontFamily: 'Jersey15-Regular',
-                fontSize: '32px',
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: '24px',
                 color: '#1e90ff',
-                backgroundColor: '#fff'
+                backgroundColor: '#fff',
+                stroke: '#000000',
+                strokeThickness: 2
             }
         ).setOrigin(0.5).setDepth(13).setInteractive({ useHandCursor: true });
         boxObjects.push(closeBtn);

@@ -10,6 +10,12 @@ import StartUp from './scenes/startup.js'
 // Add Classroom import
 import Classroom from './scenes/classroom.js';
 
+// Story Scenes
+import NoahStoryMode from './scenes/storyScenes/NoahStoryMode.js';
+import NoahChapterSelect from './scenes/storyScenes/NoahChapterSelect.js';
+import NoahStoryQuiz from './scenes/storyScenes/NoahStoryQuiz.js';
+import NoahProgressTracker from './scenes/storyScenes/NoahProgressTracker.js';
+
 // Office 
 import Office from './scenes/office.js';
 
@@ -63,6 +69,11 @@ const config = {
     MainHub,
     /* Classroom */
     Classroom,
+    /* Story Scenes */
+    NoahStoryMode,
+    NoahChapterSelect,
+    NoahStoryQuiz,
+    NoahProgressTracker,
     /* Office */
     Office,
     /* Computer Lab Scenes */
