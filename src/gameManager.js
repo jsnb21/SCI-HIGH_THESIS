@@ -1582,6 +1582,33 @@ const char2 = new Character();
 const char3 = new Character();
 const char4 = new Character();
 const char5 = new Character();
+
+// Customize quest descriptions for each character
+// char1 (Noah) - Web Development
+char1.quest1Desc = "Start Noah's story to learn HTML basics";
+char1.quest2Desc = "Continue the story to learn CSS styling";
+char1.quest3Desc = "Complete the story to learn JavaScript";
+
+// char2 (Lily) - Python
+char2.quest1Desc = "Begin Lily's Python journey with fundamentals";
+char2.quest2Desc = "Learn Python control structures and functions";
+char2.quest3Desc = "Master advanced Python concepts with Lily";
+
+// char3 (Damian) - Java
+char3.quest1Desc = "Start Damian's Java adventure with foundations";
+char3.quest2Desc = "Explore object-oriented programming concepts";
+char3.quest3Desc = "Complete advanced Java techniques with Damian";
+
+// char4 (Bella) - Future content
+char4.quest1Desc = "Bella's programming journey (Coming Soon)";
+char4.quest2Desc = "Advanced concepts with Bella (Coming Soon)";
+char4.quest3Desc = "Master programming with Bella (Coming Soon)";
+
+// char5 (Finley) - Future content
+char5.quest1Desc = "Finley's coding lessons (Coming Soon)";
+char5.quest2Desc = "Advanced topics with Finley (Coming Soon)";
+char5.quest3Desc = "Complete the journey with Finley (Coming Soon)";
+
 const onceOnlyFlags = new OnceOnlyFlags();
 
 // Export singleton instance

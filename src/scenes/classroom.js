@@ -368,14 +368,30 @@ export default class Classroom extends Phaser.Scene {
             y += SPACING;
         }
 
-        // Story Mode button (only for Noah)
-        if (charData.name === "Noah") {
+        // Story Mode and Progress buttons for characters with story content
+        if (charData.name === "Noah" || charData.name === "Lily" || charData.name === "Damian") {
+            let storyColor = 0x4caf50; // Default green for Noah
+            let progressColor = 0x2196f3; // Default blue
+            let chapterSelectScene = 'NoahChapterSelect';
+            let progressTrackerScene = 'NoahProgressTracker';
+            
+            // Set colors and scenes based on character
+            if (charData.name === "Lily") {
+                storyColor = 0xff6b9d; // Pink for Lily
+                chapterSelectScene = 'LilyChapterSelect';
+                progressTrackerScene = 'LilyProgressTracker';
+            } else if (charData.name === "Damian") {
+                storyColor = 0xf57c00; // Orange for Damian
+                chapterSelectScene = 'DamianChapterSelect';
+                progressTrackerScene = 'DamianProgressTracker';
+            }
+            
             const storyBtn = this.add.rectangle(
                 width / 2 - 110,
                 height / 2 + boxHeight / 2 - 50,
                 180,
                 40,
-                0x4caf50
+                storyColor
             ).setDepth(12).setInteractive({ useHandCursor: true });
             boxObjects.push(storyBtn);
 
@@ -397,8 +413,8 @@ export default class Classroom extends Phaser.Scene {
                 this.se_confirmSound.play();
                 boxObjects.forEach(obj => obj.destroy());
                 this.characterBoxOpen = false;
-                // Launch Noah's chapter selection
-                this.scene.start('NoahChapterSelect');
+                // Launch character's chapter selection
+                this.scene.start(chapterSelectScene);
             });
 
             // Progress button
@@ -407,7 +423,7 @@ export default class Classroom extends Phaser.Scene {
                 height / 2 + boxHeight / 2 - 50,
                 180,
                 40,
-                0x2196f3
+                progressColor
             ).setDepth(12).setInteractive({ useHandCursor: true });
             boxObjects.push(progressBtn);
 
@@ -429,22 +445,23 @@ export default class Classroom extends Phaser.Scene {
                 this.se_confirmSound.play();
                 boxObjects.forEach(obj => obj.destroy());
                 this.characterBoxOpen = false;
-                // Launch Noah's progress tracker
-                this.scene.start('NoahProgressTracker');
+                // Launch character's progress tracker
+                this.scene.start(progressTrackerScene);
             });
 
             // Hover effects
+            const storyHoverColor = charData.name === "Lily" ? 0xff85b3 : (charData.name === "Damian" ? 0xff9800 : 0x66bb6a);
             storyBtn.on('pointerover', () => {
-                storyBtn.setFillStyle(0x66bb6a);
+                storyBtn.setFillStyle(storyHoverColor);
                 this.se_hoverSound.play();
             });
-            storyBtn.on('pointerout', () => storyBtn.setFillStyle(0x4caf50));
+            storyBtn.on('pointerout', () => storyBtn.setFillStyle(storyColor));
 
             progressBtn.on('pointerover', () => {
                 progressBtn.setFillStyle(0x42a5f5);
                 this.se_hoverSound.play();
             });
-            progressBtn.on('pointerout', () => progressBtn.setFillStyle(0x2196f3));
+            progressBtn.on('pointerout', () => progressBtn.setFillStyle(progressColor));
         }
 
         // Close button (top right of box)

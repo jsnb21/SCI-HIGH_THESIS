@@ -11,10 +11,22 @@ import StartUp from './scenes/startup.js'
 import Classroom from './scenes/classroom.js';
 
 // Story Scenes
-import NoahStoryMode from './scenes/storyScenes/NoahStoryMode.js';
-import NoahChapterSelect from './scenes/storyScenes/NoahChapterSelect.js';
-import NoahStoryQuiz from './scenes/storyScenes/NoahStoryQuiz.js';
-import NoahProgressTracker from './scenes/storyScenes/NoahProgressTracker.js';
+import NoahStoryMode from './scenes/storyScenes/noah/NoahStoryMode.js';
+import NoahChapterSelect from './scenes/storyScenes/noah/NoahChapterSelect.js';
+import NoahStoryQuiz from './scenes/storyScenes/noah/NoahStoryQuiz.js';
+import NoahProgressTracker from './scenes/storyScenes/noah/NoahProgressTracker.js';
+
+// Lily's Python Story Scenes
+import LilyStoryMode from './scenes/storyScenes/lily/LilyStoryMode.js';
+import LilyChapterSelect from './scenes/storyScenes/lily/LilyChapterSelect.js';
+import LilyStoryQuiz from './scenes/storyScenes/lily/LilyStoryQuiz.js';
+import LilyProgressTracker from './scenes/storyScenes/lily/LilyProgressTracker.js';
+
+// Damian's Java Story Scenes
+import DamianStoryMode from './scenes/storyScenes/damian/DamianStoryMode.js';
+import DamianChapterSelect from './scenes/storyScenes/damian/DamianChapterSelect.js';
+import DamianStoryQuiz from './scenes/storyScenes/damian/DamianStoryQuiz.js';
+import DamianProgressTracker from './scenes/storyScenes/damian/DamianProgressTracker.js';
 
 // Office 
 import Office from './scenes/office.js';
@@ -74,6 +86,16 @@ const config = {
     NoahChapterSelect,
     NoahStoryQuiz,
     NoahProgressTracker,
+    /* Lily's Python Story Scenes */
+    LilyStoryMode,
+    LilyChapterSelect,
+    LilyStoryQuiz,
+    LilyProgressTracker,
+    /* Damian's Java Story Scenes */
+    DamianStoryMode,
+    DamianChapterSelect,
+    DamianStoryQuiz,
+    DamianProgressTracker,
     /* Office */
     Office,
     /* Computer Lab Scenes */
