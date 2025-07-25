@@ -1,0 +1,21 @@
+{
+  "categories": [
+    {
+      "name": "Study Notes",
+      "notes": [
+      ]
+    }
+  ],
+  "templates": [
+    {
+      "name": "Study Note",
+      "fields": ["content", "date", "category", "tags", "source"]
+    }
+  ],
+  "settings": {
+    "defaultCategory": "Study Notes",
+    "autoDate": true,
+    "suggestTags": true,
+    "maxNotesPerCategory": 50
+  }
+}

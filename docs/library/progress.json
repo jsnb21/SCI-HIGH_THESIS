@@ -1,0 +1,60 @@
+{
+  "stats": [
+    {
+      "label": "Books Read",
+      "value": 12,
+      "max": 20,
+      "color": "#3498DB"
+    },
+    {
+      "label": "Notes Written",
+      "value": 25,
+      "max": 50,
+      "color": "#E74C3C"
+    },
+    {
+      "label": "Study Hours",
+      "value": 45,
+      "max": 100,
+      "color": "#F39C12"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "name": "First Book Complete",
+      "description": "Completed your first book",
+      "icon": "🏆",
+      "unlocked": true,
+      "date": "2024-01-15"
+    },
+    {
+      "id": 2,
+      "name": "Note Taker",
+      "description": "Write 10 notes",
+      "icon": "📝",
+      "unlocked": true,
+      "date": "2024-01-20"
+    },
+    {
+      "id": 3,
+      "name": "Programming Master",
+      "description": "Complete all programming books",
+      "icon": "💻",
+      "unlocked": false,
+      "date": null
+    }
+  ],
+  "streaks": {
+    "dailyReading": {
+      "current": 7,
+      "best": 15,
+      "goal": 30
+    },
+    "noteWriting": {
+      "current": 3,
+      "best": 8,
+      "goal": 14
+    }
+  }
+}

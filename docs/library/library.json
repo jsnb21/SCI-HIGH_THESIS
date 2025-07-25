@@ -1,0 +1,10 @@
+{
+  "title": "LIBRARY MENU",
+  "menuItems": [
+    {
+      "name": "Books",
+      "hasPopup": true,
+      "icon": "📚"
+    }
+  ]
+}

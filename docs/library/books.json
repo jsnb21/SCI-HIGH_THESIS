@@ -1,0 +1,125 @@
+{
+  "categories": [
+    {
+      "name": "Programming",
+      "books": [
+        {
+          "id": 1,
+          "title": "Web Design Basics",
+          "author": "Jane Smith",
+          "status": "available",
+          "description": "Learn the fundamentals of web design including HTML, CSS, and responsive layouts.",
+          "pages": 250,
+          "difficulty": "beginner",
+          "content": {
+          "pages": [
+              {
+                "pageNumber": 1,
+                "type": "cover",
+                "title": "Web Design Basics",
+                "subtitle": "A Complete Guide",
+                "author": "Jane Smith"
+              },
+              {
+                "pageNumber": 2,
+                "type": "table-of-contents",
+                "title": "Table of Contents",
+                "items": [
+                  "Chapter 1: Introduction - Page 3",
+                  "Chapter 2: HTML Basics - Page 15",
+                  "Chapter 3: CSS Fundamentals - Page 30"
+                ]
+              },
+              {
+                "pageNumber": 3,
+                "type": "chapter-start",
+                "chapterNumber": 1,
+                "title": "Introduction to Web Design",
+                "content": "Welcome to the world of web design..."
+              },
+              {
+                "pageNumber": 4,
+                "type": "content",
+                "title": "CSS Grid Layout",
+                "content": "CSS Grid Layout is a two-dimensional layout system for the web. It lets you lay content out in rows and columns, and has many features that make building complex layouts straightforward. Here's how to get started with CSS Grid..."
+              }
+            ]
+          }
+        },
+        {
+          "id": 2,
+          "title": "Java Programming Essentials",
+          "author": "Robert Johnson",
+          "status": "reading",
+          "description": "Comprehensive guide to Java programming from basics to advanced concepts.",
+          "pages": 450,
+          "difficulty": "intermediate"
+        },
+        {
+          "id": 3,
+          "title": "Python for Beginners",
+          "author": "Alice Brown",
+          "status": "available",
+          "description": "Start your programming journey with Python, the most beginner-friendly language.",
+          "pages": 320,
+          "difficulty": "beginner"
+        },
+        {
+          "id": 4,
+          "title": "C++ Advanced Techniques",
+          "author": "Michael Davis",
+          "status": "available",
+          "description": "Master advanced C++ programming techniques and best practices.",
+          "pages": 580,
+          "difficulty": "advanced"
+        }
+      ]
+    },
+    {
+      "name": "Data Science",
+      "books": [
+        {
+          "id": 5,
+          "title": "Data Analysis with Python",
+          "author": "Sarah Wilson",
+          "status": "available",
+          "description": "Learn data analysis techniques using Python and popular libraries.",
+          "pages": 400,
+          "difficulty": "intermediate"
+        },
+        {
+          "id": 6,
+          "title": "Machine Learning Fundamentals",
+          "author": "David Lee",
+          "status": "available",
+          "description": "Introduction to machine learning concepts and algorithms.",
+          "pages": 350,
+          "difficulty": "intermediate"
+        }
+      ]
+    },
+    {
+      "name": "Web Development",
+      "books": [
+        {
+          "id": 7,
+          "title": "React Development Guide",
+          "author": "Emily Chen",
+          "status": "available",
+          "description": "Build modern web applications with React and its ecosystem.",
+          "pages": 380,
+          "difficulty": "intermediate"
+        },
+        {
+          "id": 8,
+          "title": "Node.js Backend Development",
+          "author": "Kevin Rodriguez",
+          "status": "available",
+          "description": "Create scalable backend applications with Node.js and Express.",
+          "pages": 420,
+          "difficulty": "intermediate"
+        }
+      ]
+    }
+  ]
+}
