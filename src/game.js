@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+
 import Intro from '/src/scenes/intro.js';
 import MainMenu from './scenes/mainmenu';
 import OptionsScene from './scenes/options.js';
