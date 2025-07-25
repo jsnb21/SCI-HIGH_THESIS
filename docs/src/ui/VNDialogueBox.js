@@ -35,6 +35,7 @@ export default class VNDialogueBox {
     this.border.fillStyle(0x222244, 0.8);
     this.border.strokeRoundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius);
     this.border.fillRoundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius);
+    this.border.setDepth(10); // Set high depth for dialogue box
 
     // Create text object
     this.textObject = scene.add.text(boxX + 20 * scale, boxY + 15 * scale, '', {
@@ -43,6 +44,7 @@ export default class VNDialogueBox {
       color: '#ffffff',
       wordWrap: { width: boxWidth - 40 * scale }
     });
+    this.textObject.setDepth(11); // Text should be above the dialogue box
 
     // Sound
     this.selectSound = scene.sound.get('se_select') || scene.sound.add('se_select');

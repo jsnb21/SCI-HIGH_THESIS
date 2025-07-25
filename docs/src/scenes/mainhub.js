@@ -20,9 +20,9 @@ export default class MainHub extends Phaser.Scene {
 
     preload() {
         this.load.image('MainHubBG', 'assets/img/mainhub/MainHubBG.png');
-        this.load.image('icon1', 'assets/img/mainhub/CLASSROOM_ICON.png');
+        this.load.image('icon1', 'assets/img/mainhub/PLAY_BUTTON.png');
         this.load.image('icon2', 'assets/img/mainhub/LIBRARY_ICON.png');
-        this.load.image('icon3', 'assets/img/mainhub/COMLAB_ICON.png');
+        this.load.image('icon3', 'assets/img/mainhub/PUZZLE.png');
         // this.load.image('icon5', 'assets/img/mainhub/canteenIcon.png');
 
         this.load.audio('se_select', 'assets/sounds/se_select.wav');

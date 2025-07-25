@@ -234,7 +234,6 @@ class Carousel {
                 icon.on('pointerover', () => {
                     icon.setTint(0xffffff);
                     icon.setAlpha(1);
-                    this.scene.tweens.add({ targets: icon, scale: this._uiConfig.largeScale * 1.08, duration: 120, yoyo: true });
                 });
                 icon.on('pointerout', () => {
                     icon.setTint(i === this.carouselIndex ? 0xffffff : 0x00e0ff);
@@ -346,9 +345,9 @@ class Carousel {
             targets: icon,
             scale: {
                 from: this._uiConfig.largeScale,
-                to: this._uiConfig.largeScale + 0.13 * this.getScale()
+                to: this._uiConfig.largeScale + 0.03 * this.getScale()
             },
-            duration: 700,
+            duration: 1200,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
