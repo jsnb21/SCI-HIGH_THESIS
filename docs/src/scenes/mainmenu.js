@@ -32,9 +32,16 @@ export default class MainMenu extends Phaser.Scene {
     }
 
     create() {
+        console.log('MainMenu create() called');
+        
         const scaleInfo = getScaleInfo(this);
+        console.log('ScaleInfo:', scaleInfo);
+        
         const { width, height } = scaleInfo;
         const safeArea = getSafeArea(scaleInfo);
+        
+        console.log('Screen size:', width, 'x', height);
+        console.log('Is mobile:', scaleInfo.isMobile);
         
         const se_hoverSound = this.sound.add('se_select');
         const se_confirmSound = this.sound.add('se_confirm');
@@ -93,7 +100,7 @@ export default class MainMenu extends Phaser.Scene {
             height / 2 + scaleDimension(60, scaleInfo) : 
             height / 2 + scaleDimension(40, scaleInfo);
 
-        // Menu button data
+        // Menu button data with responsive positioning
         const menuButtons = [
             { label: 'New Game', y: startY, onClick: () => {
                 se_confirmSound.play();
@@ -105,11 +112,11 @@ export default class MainMenu extends Phaser.Scene {
                 se_confirmSound.play();
                 showSaveSelectAndContinue(this, se_hoverSound, se_confirmSound);
             }},
-            { label: 'Options', y: height / 2 + 180, onClick: () => {
+            { label: 'Options', y: startY + (buttonSpacing * 2), onClick: () => {
                 se_confirmSound.play();
                 this.scene.start('OptionsScene');
             }},
-            { label: 'Quit', y: height / 2 + 250, onClick: () => {
+            { label: 'Quit', y: startY + (buttonSpacing * 3), onClick: () => {
                 se_confirmSound.play();
                 this.showQuitConfirmation(se_hoverSound, se_confirmSound);
             }},
@@ -122,7 +129,8 @@ export default class MainMenu extends Phaser.Scene {
     }
 
     createScrollingClouds() {
-        const { width, height } = this.scale;
+        const scaleInfo = getScaleInfo(this);
+        const { width, height } = scaleInfo;
         
         // Create multiple cloud layers for parallax depth
         this.cloudLayers = [];
@@ -394,6 +402,11 @@ export default class MainMenu extends Phaser.Scene {
 
 // Helper to create a menu button with background and effects
 function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 0, scaleInfo) {
+    // Fallback scaling if scaleInfo is not provided
+    if (!scaleInfo) {
+        scaleInfo = getScaleInfo(scene);
+    }
+    
     // Get responsive scaling
     const baseWidth = 320;
     const baseHeight = 56;
