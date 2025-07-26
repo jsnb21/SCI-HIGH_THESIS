@@ -157,20 +157,45 @@ export function createResponsiveButton(scene, x, y, baseWidth, baseHeight, text,
     
     const buttonText = scene.add.text(x, y, text, textStyle).setOrigin(0.5);
     
-    // Add hover effects
-    buttonBg.on('pointerover', () => {
-        buttonBg.setFillStyle(0x2980B9);
-        buttonText.setStyle({ color: '#F1C40F' });
-    });
+    // Add hover effects (only for non-mobile devices to prevent issues)
+    if (!scaleInfo.isMobile) {
+        buttonBg.on('pointerover', () => {
+            buttonBg.setFillStyle(0x2980B9);
+            buttonText.setStyle({ color: '#F1C40F' });
+        });
+        
+        buttonBg.on('pointerout', () => {
+            buttonBg.setFillStyle(0x3498DB);
+            buttonText.setStyle({ color: '#FFFFFF' });
+        });
+    }
     
-    buttonBg.on('pointerout', () => {
-        buttonBg.setFillStyle(0x3498DB);
-        buttonText.setStyle({ color: '#FFFFFF' });
-    });
-    
-    // Add click handler
+    // Add click handler with debouncing for mobile
     if (callback) {
-        buttonBg.on('pointerdown', callback);
+        let lastClickTime = 0;
+        const debounceDelay = 300; // 300ms debounce
+        
+        buttonBg.on('pointerdown', (pointer) => {
+            const currentTime = Date.now();
+            
+            // Prevent double clicks within debounce period
+            if (currentTime - lastClickTime < debounceDelay) {
+                return;
+            }
+            
+            lastClickTime = currentTime;
+            
+            // Visual feedback
+            buttonBg.setScale(0.95);
+            
+            // Execute callback
+            callback();
+            
+            // Reset scale after a short delay
+            scene.time.delayedCall(100, () => {
+                buttonBg.setScale(1);
+            });
+        });
     }
     
     return {
@@ -228,4 +253,51 @@ export function getSafeArea(scaleInfo) {
         width: width - (safeMargin * 2),
         height: height - (safeMargin * 2)
     };
+}
+
+/**
+ * Create a debounced click handler to prevent double touches on mobile
+ * @param {function} callback - The function to call when clicked
+ * @param {number} debounceDelay - Delay in milliseconds (default: 300)
+ * @returns {function} - Debounced click handler
+ */
+export function createDebouncedClickHandler(callback, debounceDelay = 300) {
+    let lastClickTime = 0;
+    
+    return function(pointer) {
+        const currentTime = Date.now();
+        
+        // Prevent double clicks within debounce period
+        if (currentTime - lastClickTime < debounceDelay) {
+            return;
+        }
+        
+        lastClickTime = currentTime;
+        callback(pointer);
+    };
+}
+
+/**
+ * Add mobile-safe click handler to a game object
+ * @param {Phaser.GameObjects.GameObject} gameObject - The object to add click handler to
+ * @param {function} callback - The callback function
+ * @param {Phaser.Scene} scene - The scene (for visual feedback)
+ * @param {number} debounceDelay - Debounce delay in milliseconds
+ */
+export function addMobileSafeClickHandler(gameObject, callback, scene, debounceDelay = 300) {
+    const debouncedCallback = createDebouncedClickHandler(callback, debounceDelay);
+    
+    gameObject.on('pointerdown', (pointer) => {
+        // Visual feedback
+        const originalScale = gameObject.scaleX;
+        gameObject.setScale(originalScale * 0.95);
+        
+        // Execute callback
+        debouncedCallback(pointer);
+        
+        // Reset scale after a short delay
+        scene.time.delayedCall(100, () => {
+            gameObject.setScale(originalScale);
+        });
+    });
 }

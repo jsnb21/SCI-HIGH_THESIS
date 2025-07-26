@@ -15,17 +15,25 @@ export default class Office extends Phaser.Scene {
     }
 
     preload() {
+        // Load office background
+        this.load.image('officeBG', 'assets/img/mainhub/MainHubBG.png'); // Using MainHub as placeholder
+        
         // Load icons for each section
         this.load.image('profile', 'assets/img/icons/office/studentProfile.png');
         this.load.image('stats', 'assets/img/icons/office/performanceStats.png');
         this.load.image('achievements', 'assets/img/icons/office/achievements.png');
         this.load.image('feedback', 'assets/img/icons/office/feedback.png');
-        this.load.audio('se_select', 'assets/sounds/se_select.wav');
-        this.load.audio('se_confirm', 'assets/sounds/se_confirm.wav');
+        this.load.audio('se_select', 'assets/audio/se/se_select.wav');
+        this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
     }
 
     create() {
         const { width, height } = this.scale;
+        
+        // Add office background
+        this.bg = this.add.tileSprite(0, 0, width, height, 'officeBG').setOrigin(0, 0);
+        
+        // Add background color overlay
         this.cameras.main.setBackgroundColor('#F6C1D0');
 
         // Sound effects

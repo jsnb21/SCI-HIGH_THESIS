@@ -9,6 +9,9 @@ export default class PythonScene extends Phaser.Scene {
     }
 
     preload() {
+        // Load computer lab background
+        this.load.image('comlabBG', 'assets/img/mainhub/MainHubBG.png');
+        
         // Load assets for this scene
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.image('pythonIcon', 'assets/img/comlab/icons/python_logo.png');
@@ -17,8 +20,10 @@ export default class PythonScene extends Phaser.Scene {
     }
 
     create() {
+        // Add computer lab background
+        this.bg = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'comlabBG').setOrigin(0, 0);
 
-        // Body Background 
+        // Body Background overlay
         this.cameras.main.setBackgroundColor('#ADD8E6');
         
         // Load sound effect

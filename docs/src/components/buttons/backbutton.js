@@ -1,4 +1,5 @@
 import gameManager from '../../gameManager.js'; // Add this import
+import { createDebouncedClickHandler } from '../../utils/mobileUtils.js'; // Add mobile utils import
 
 // This file is for the back button component in the game, separated to reduce lines of code in the main file
 
@@ -60,9 +61,21 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
         backButton.setStyle({ fill: '#ffffff' }); // White text
     });
 
-    // Add click event to background
-    buttonBg.on('pointerdown', handleClick);    // Add click event to background
-    buttonBg.on('pointerdown', handleClick);
+    // Add click event to background with debouncing
+    const debouncedClick = createDebouncedClickHandler(handleClick, 300);
+    
+    buttonBg.on('pointerdown', (pointer) => {
+        // Visual feedback
+        buttonBg.setScale(0.95);
+        
+        // Execute debounced callback
+        debouncedClick(pointer);
+        
+        // Reset scale after a short delay
+        scene.time.delayedCall(100, () => {
+            buttonBg.setScale(1);
+        });
+    });
 
     // Add to persistent elements if the array exists
     if (scene.persistentElements) {

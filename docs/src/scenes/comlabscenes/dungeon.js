@@ -396,6 +396,14 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
 
     handlePointer(pointer) {
         if (this.menuOpen) return;
+        
+        // Add simple debouncing for mobile touch to prevent double moves
+        const currentTime = Date.now();
+        if (this.lastMoveTime && currentTime - this.lastMoveTime < 200) {
+            return; // Ignore rapid touches within 200ms
+        }
+        this.lastMoveTime = currentTime;
+        
         const cellSize = 64 * this.scaleFactor;
         const x = Math.floor((pointer.x - this.offsetX) / cellSize);
         const y = Math.floor((pointer.y - this.offsetY) / cellSize);

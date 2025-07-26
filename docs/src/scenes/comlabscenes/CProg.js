@@ -10,14 +10,21 @@ export default class CSProgrammingScene extends Phaser.Scene {
     }
 
     preload() {
+        // Load computer lab background
+        this.load.image('comlabBG', 'assets/img/mainhub/MainHubBG.png');
+        
         // Load assets for this scene
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
+        this.load.image('comlabBG', 'assets/img/mainhub/MainHubBG.png');
         this.load.image('webDesignIcons', 'assets/img/comlab/icons/c_logo.png');
 
         this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
     }
 
     create() {
+
+        // Add background image
+        this.bg = this.add.tileSprite(0, 0, 1920, 1080, 'comlabBG').setOrigin(0, 0);
 
         // Body Background 
         this.cameras.main.setBackgroundColor('#ADD8E6');

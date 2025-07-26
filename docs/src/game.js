@@ -138,10 +138,15 @@ const config = {
     createContainer: true
   },
   input: {
-    activePointers: 3, // Support multi-touch for mobile
+    activePointers: 1, // Reduce to single touch to prevent double events
     touch: {
-      capture: false // Don't capture touch events by default
-    }
+      capture: true, // Capture touch events to prevent double firing
+      target: null   // Let Phaser handle the target
+    },
+    mouse: {
+      capture: true  // Also capture mouse events for consistency
+    },
+    preventDefaultMove: false // Allow default touch behaviors like scrolling
   },
   physics: {
     default: 'arcade',

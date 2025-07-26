@@ -10,7 +10,8 @@ import {
     getResponsivePosition,
     createResponsiveTextStyle,
     createResponsiveButton,
-    getSafeArea
+    getSafeArea,
+    createDebouncedClickHandler
 } from '../utils/mobileUtils.js';
 
 export default class MainMenu extends Phaser.Scene {
@@ -388,14 +389,19 @@ export default class MainMenu extends Phaser.Scene {
             yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
         });
         
-        yesBtn.on('pointerdown', () => {
-            yesBtn.setScale(0.95);
-        });
-        
-        yesBtn.on('pointerup', () => {
-            yesBtn.setScale(1);
+        // Use debounced click handler for Yes button
+        const debouncedYesClick = createDebouncedClickHandler(() => {
             confirmSound.play();
             window.location.href = 'index.html';
+        }, 300);
+        
+        yesBtn.on('pointerdown', (pointer) => {
+            yesBtn.setScale(0.95);
+            debouncedYesClick(pointer);
+            
+            this.time.delayedCall(100, () => {
+                yesBtn.setScale(1);
+            });
         });
         
         // No button events
@@ -418,14 +424,19 @@ export default class MainMenu extends Phaser.Scene {
             noBg.strokeRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
         });
         
-        noBtn.on('pointerdown', () => {
-            noBtn.setScale(0.95);
-        });
-        
-        noBtn.on('pointerup', () => {
-            noBtn.setScale(1);
+        // Use debounced click handler for No button
+        const debouncedNoClick = createDebouncedClickHandler(() => {
             confirmSound.play();
             this.quitConfirmGroup.clear(true, true);
+        }, 300);
+        
+        noBtn.on('pointerdown', (pointer) => {
+            noBtn.setScale(0.95);
+            debouncedNoClick(pointer);
+            
+            this.time.delayedCall(100, () => {
+                noBtn.setScale(1);
+            });
         });
         
         // Add fade-in animation for the dialog
@@ -518,29 +529,44 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
 
     // Hover/press effects - use scaled stroke width
     const strokeWidth = scaleInfo.finalScale ? 3 * scaleInfo.finalScale : 3;
-    text.on('pointerover', () => {
-        text.setStyle({ color: '#ffffff' });
-        bg.clear();
-        bg.fillStyle(0x333388, 1);
-        bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
-        bg.lineStyle(strokeWidth, 0xffffcc, 1);
-        bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
-        if (!hoverSound.isPlaying) hoverSound.play();
-    });
-    text.on('pointerout', () => {
-        text.setStyle({ color: '#ffff00' });
-        bg.clear();
-        bg.fillStyle(0x222244, 0.92);
-        bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
-        bg.lineStyle(strokeWidth, 0xffffcc, 1);
-        bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
-    });
-    text.on('pointerdown', () => {
-        text.setScale(0.96);
-    });
-    text.on('pointerup', () => {
-        text.setScale(1);
+    
+    // Only add hover effects for non-mobile devices
+    if (!scaleInfo.isMobile) {
+        text.on('pointerover', () => {
+            text.setStyle({ color: '#ffffff' });
+            bg.clear();
+            bg.fillStyle(0x333388, 1);
+            bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+            bg.lineStyle(strokeWidth, 0xffffcc, 1);
+            bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+            if (!hoverSound.isPlaying) hoverSound.play();
+        });
+        text.on('pointerout', () => {
+            text.setStyle({ color: '#ffff00' });
+            bg.clear();
+            bg.fillStyle(0x222244, 0.92);
+            bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+            bg.lineStyle(strokeWidth, 0xffffcc, 1);
+            bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+        });
+    }
+    
+    // Use debounced click handler to prevent double touches
+    const debouncedClick = createDebouncedClickHandler(() => {
         onClick();
+    }, 300);
+    
+    text.on('pointerdown', (pointer) => {
+        // Visual feedback
+        text.setScale(0.96);
+        
+        // Execute debounced callback
+        debouncedClick(pointer);
+        
+        // Reset scale after a short delay
+        scene.time.delayedCall(100, () => {
+            text.setScale(1);
+        });
     });
 }
 
@@ -615,11 +641,9 @@ function showSaveSelectAndContinue(scene, hoverSound, confirmSound) {
             slotBg.fillStyle(0x333366, 0.85);
             slotBg.fillRoundedRect(baseX - btnWidth / 2, slotY - btnHeight / 2, btnWidth, btnHeight, corner);
         });
-        btn.on('pointerdown', () => {
-            btn.setScale(0.97);
-        });
-        btn.on('pointerup', () => {
-            btn.setScale(1);
+        
+        // Use debounced click handler for save slot selection
+        const debouncedSaveClick = createDebouncedClickHandler(() => {
             const saveData = loadGame(slot);
             if (!saveData) {
                 btn.setStyle({ color: '#ff4444' });
@@ -628,6 +652,15 @@ function showSaveSelectAndContinue(scene, hoverSound, confirmSound) {
             window.__SCI_HIGH_SAVE_DATA__ = saveData;
             scene.saveMenuGroup.clear(true, true);
             scene.scene.start('MainHub');
+        }, 300);
+        
+        btn.on('pointerdown', (pointer) => {
+            btn.setScale(0.97);
+            debouncedSaveClick(pointer);
+            
+            scene.time.delayedCall(100, () => {
+                btn.setScale(1);
+            });
         });
 
         scene.saveMenuGroup.add(slotBg);
@@ -665,12 +698,19 @@ function showSaveSelectAndContinue(scene, hoverSound, confirmSound) {
         cancelBg.fillStyle(0x442222, 0.85);
         cancelBg.fillRoundedRect(baseX - cancelBtnWidth / 2, cancelY - cancelBtnHeight / 2, cancelBtnWidth, cancelBtnHeight, cancelCorner);
     });
-    cancelBtn.on('pointerdown', () => {
-        cancelBtn.setScale(0.97);
-    });
-    cancelBtn.on('pointerup', () => {
-        cancelBtn.setScale(1);
+    
+    // Use debounced click handler for cancel button
+    const debouncedCancelClick = createDebouncedClickHandler(() => {
         scene.saveMenuGroup.clear(true, true);
+    }, 300);
+    
+    cancelBtn.on('pointerdown', (pointer) => {
+        cancelBtn.setScale(0.97);
+        debouncedCancelClick(pointer);
+        
+        scene.time.delayedCall(100, () => {
+            cancelBtn.setScale(1);
+        });
     });
 
     scene.saveMenuGroup.add(cancelBg);

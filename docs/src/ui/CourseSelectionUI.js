@@ -1,4 +1,5 @@
 import { createBackButton } from '/src/components/buttons/backbutton.js';
+import { createDebouncedClickHandler } from '/src/utils/mobileUtils.js';
 
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
@@ -46,7 +47,7 @@ export default class CourseSelectionUI {
                 }
             ).setOrigin(0.5).setDepth(104);
 
-            backButtonBg.on('pointerdown', backCallback);
+            backButtonBg.on('pointerdown', createDebouncedClickHandler(backCallback, 300));
             backButtonBg.on('pointerover', () => backButtonBg.setFillStyle(0x4a5568));
             backButtonBg.on('pointerout', () => backButtonBg.setFillStyle(0x2d3748));
             
@@ -157,7 +158,7 @@ export default class CourseSelectionUI {
             ),
             Phaser.Geom.Rectangle.Contains
         )
-        .on('pointerdown', buttonCallback)
+        .on('pointerdown', createDebouncedClickHandler(buttonCallback, 300))
         .on('pointerover', () => drawModernButton(true))
         .on('pointerout', () => drawModernButton(false));
         this.elements.buttonGraphics = buttonGraphics;
