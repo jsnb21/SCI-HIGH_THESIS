@@ -12,6 +12,46 @@
         box-sizing: border-box;
       }
       
+      /* Orientation overlay */
+      #orientation-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+      }
+      
+      #orientation-overlay .rotate-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+        animation: rotate 2s linear infinite;
+      }
+      
+      @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      
+      #orientation-overlay h2 {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+      
+      #orientation-overlay p {
+        font-size: 16px;
+        opacity: 0.8;
+      }
+      
       html, body {
         height: 100%;
         margin: 0;
@@ -114,7 +154,50 @@
     </style>
   </head>
   <body>
+    <!-- Orientation overlay for mobile portrait mode -->
+    <div id="orientation-overlay">
+      <div class="rotate-icon">📱</div>
+      <h2>Please rotate your device</h2>
+      <p>This game is best played in landscape mode</p>
+    </div>
+    
     <div id="game"></div>
+    
+    <script>
+      // Function to check if device is mobile
+      function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               (window.innerWidth <= 768 && window.innerHeight <= 1024);
+      }
+      
+      // Function to handle orientation
+      function handleOrientation() {
+        const overlay = document.getElementById('orientation-overlay');
+        const isMobile = isMobileDevice();
+        const isPortrait = window.innerHeight > window.innerWidth;
+        
+        if (isMobile && isPortrait) {
+          overlay.style.display = 'flex';
+        } else {
+          overlay.style.display = 'none';
+        }
+      }
+      
+      // Check orientation on load and resize
+      window.addEventListener('load', handleOrientation);
+      window.addEventListener('resize', handleOrientation);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(handleOrientation, 100); // Small delay for orientation change
+      });
+      
+      // Try to lock to landscape on mobile if Screen Orientation API is available
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(err => {
+          console.log('Could not lock orientation:', err);
+        });
+      }
+    </script>
+    
     <script type="module" src="./src/game.js"></script>
   </body>
 </html>

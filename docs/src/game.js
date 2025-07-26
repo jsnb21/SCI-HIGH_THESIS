@@ -67,7 +67,10 @@ const config = {
   parent: 'game',
   scale: {
     mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    // Better mobile handling
+    width: window.innerWidth,
+    height: window.innerHeight
   },  scene: [
     StartUp, // Added StartUp as the first scene
     MainMenu,
@@ -149,6 +152,18 @@ window.addEventListener('resize', () => {
         canvas.style.width = '100%';
         canvas.style.height = '100%';
     }
+});
+
+// Handle orientation changes specifically for mobile
+window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+        if (window.game && window.game.scale) {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            window.game.scale.resize(width, height);
+            window.game.scale.refresh();
+        }
+    }, 100);
 });
 
 // Add error handling for game initialization
