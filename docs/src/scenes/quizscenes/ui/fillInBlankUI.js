@@ -37,7 +37,7 @@ export function createFillInBlankInput(scene, container, centerX, centerY, boxWi
 
     // Instruction text above input - different text for mobile
     const instructionText = scene.add.text(centerX, inputY - 40 * sf, 
-        isMobile ? 'Use the virtual keyboard below or type your answer' : 'Type your answer and press Enter or click Submit', {
+        isMobile ? 'Tap the input field to open keyboard' : 'Type your answer and press Enter or click Submit', {
         fontSize: `${12 * sf}px`,
         fill: '#a0aec0',
         align: 'center',
@@ -130,450 +130,63 @@ export function createFillInBlankInput(scene, container, centerX, centerY, boxWi
     let userInput = '';
     let isSubmitted = false;
 
-    // Virtual Keyboard Implementation for Mobile
-    let virtualKeyboard = null;
-    let keyboardButtons = [];
-    let keyboardVisible = true;
-    let keyboardToggleButton = null;
+    // Hidden HTML input for mobile devices to trigger native keyboard
+    let hiddenInput = null;
     
-    const createKeyboardToggle = () => {
+    const createHiddenInput = () => {
         if (!isMobile) return;
         
-        const toggleY = submitButtonY + 40 * sf;
-        const toggleWidth = 150 * sf;
-        const toggleHeight = 30 * sf;
+        hiddenInput = document.createElement('input');
+        hiddenInput.type = 'text';
+        hiddenInput.maxLength = 50;
+        hiddenInput.style.position = 'absolute';
+        hiddenInput.style.left = '-9999px';
+        hiddenInput.style.top = '-9999px';
+        hiddenInput.style.opacity = '0';
+        hiddenInput.style.pointerEvents = 'none';
+        hiddenInput.style.fontSize = '16px'; // Prevents zoom on iOS
         
-        const toggleBg = scene.add.graphics().setDepth(125);
-        const updateToggleButton = () => {
-            toggleBg.clear();
-            const color = keyboardVisible ? 0x22c55e : 0x6b7280;
-            toggleBg.fillStyle(color, 0.9);
-            toggleBg.fillRoundedRect(
-                centerX - toggleWidth / 2,
-                toggleY - toggleHeight / 2,
-                toggleWidth,
-                toggleHeight,
-                5 * sf
-            );
-            toggleBg.lineStyle(1 * sf, keyboardVisible ? 0x16a34a : 0x4b5563, 1);
-            toggleBg.strokeRoundedRect(
-                centerX - toggleWidth / 2,
-                toggleY - toggleHeight / 2,
-                toggleWidth,
-                toggleHeight,
-                5 * sf
-            );
-        };
-        
-        updateToggleButton();
-        
-        const toggleText = scene.add.text(centerX, toggleY, 
-            keyboardVisible ? '⌨️ Hide Keyboard' : '⌨️ Show Keyboard', {
-            fontSize: `${10 * sf}px`,
-            fill: '#ffffff',
-            align: 'center',
-            fontFamily: 'Caprasimo-Regular'
-        }).setOrigin(0.5).setDepth(126);
-        
-        const toggleButton = scene.add.rectangle(
-            centerX,
-            toggleY,
-            toggleWidth,
-            toggleHeight,
-            0x000000,
-            0
-        ).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(127);
-        
-        toggleButton.on('pointerdown', () => {
-            keyboardVisible = !keyboardVisible;
-            if (virtualKeyboard) {
-                virtualKeyboard.setVisible(keyboardVisible);
-            }
-            toggleText.setText(keyboardVisible ? '⌨️ Hide Keyboard' : '⌨️ Show Keyboard');
-            updateToggleButton();
+        // Add input event listener
+        hiddenInput.addEventListener('input', (e) => {
+            if (isSubmitted) return;
+            userInput = e.target.value;
+            updateInputDisplay();
         });
         
-        keyboardToggleButton = { bg: toggleBg, text: toggleText, button: toggleButton };
-        container.add([toggleBg, toggleText, toggleButton]);
+        // Add enter key listener
+        hiddenInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitAnswer();
+            }
+        });
+        
+        // Add blur listener to keep focus if not submitted
+        hiddenInput.addEventListener('blur', () => {
+            if (!isSubmitted) {
+                setTimeout(() => hiddenInput.focus(), 10);
+            }
+        });
+        
+        document.body.appendChild(hiddenInput);
     };
     
-    const createVirtualKeyboard = () => {
-        if (!isMobile || virtualKeyboard) return;
-        
-        const keyboardContainer = scene.add.container(0, 0).setDepth(130);
-        virtualKeyboard = keyboardContainer;
-        
-        const keyboardY = submitButtonY + 100 * sf; // Position after toggle button
-        const keySize = 35 * sf;
-        const keyGap = 5 * sf;
-        
-        // Define keyboard layout
-        const keyRows = [
-            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
-            ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-            ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-            ['Z', 'X', 'C', 'V', 'B', 'N', 'M']
-        ];
-        
-        // Create keyboard background
-        const totalWidth = (keyRows[0].length * keySize) + ((keyRows[0].length - 1) * keyGap);
-        const totalHeight = (keyRows.length * keySize) + ((keyRows.length - 1) * keyGap) + (keySize * 0.5); // Extra space for special keys
-        
-        const keyboardBg = scene.add.graphics().setDepth(129);
-        keyboardBg.fillStyle(0x2a2a3e, 0.95);
-        keyboardBg.fillRoundedRect(
-            centerX - totalWidth / 2 - 10 * sf,
-            keyboardY - 10 * sf,
-            totalWidth + 20 * sf,
-            totalHeight + 20 * sf,
-            10 * sf
-        );
-        keyboardBg.lineStyle(2 * sf, 0x4a5568, 1);
-        keyboardBg.strokeRoundedRect(
-            centerX - totalWidth / 2 - 10 * sf,
-            keyboardY - 10 * sf,
-            totalWidth + 20 * sf,
-            totalHeight + 20 * sf,
-            10 * sf
-        );
-        
-        keyboardContainer.add(keyboardBg);
-        
-        // Create keys
-        keyRows.forEach((row, rowIndex) => {
-            const rowWidth = (row.length * keySize) + ((row.length - 1) * keyGap);
-            const rowStartX = centerX - rowWidth / 2;
-            const currentY = keyboardY + (rowIndex * (keySize + keyGap));
-            
-            row.forEach((key, keyIndex) => {
-                const keyX = rowStartX + (keyIndex * (keySize + keyGap)) + (keySize / 2);
-                
-                // Key background
-                const keyBg = scene.add.graphics().setDepth(131);
-                keyBg.fillStyle(0x4a5568, 1);
-                keyBg.fillRoundedRect(
-                    keyX - keySize / 2,
-                    currentY - keySize / 2,
-                    keySize,
-                    keySize,
-                    5 * sf
-                );
-                keyBg.lineStyle(1 * sf, 0x718096, 1);
-                keyBg.strokeRoundedRect(
-                    keyX - keySize / 2,
-                    currentY - keySize / 2,
-                    keySize,
-                    keySize,
-                    5 * sf
-                );
-                
-                // Key text
-                const keyText = scene.add.text(keyX, currentY, key, {
-                    fontSize: `${14 * sf}px`,
-                    fill: '#ffffff',
-                    align: 'center',
-                    fontFamily: 'Caprasimo-Regular'
-                }).setOrigin(0.5).setDepth(132);
-                
-                // Key button
-                const keyButton = scene.add.rectangle(
-                    keyX,
-                    currentY,
-                    keySize,
-                    keySize,
-                    0x000000,
-                    0
-                ).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(133);
-                
-                // Key press handler
-                keyButton.on('pointerdown', () => {
-                    if (isSubmitted) return;
-                    
-                    // Visual feedback
-                    keyBg.clear();
-                    keyBg.fillStyle(0x63b3ed, 1);
-                    keyBg.fillRoundedRect(
-                        keyX - keySize / 2,
-                        currentY - keySize / 2,
-                        keySize,
-                        keySize,
-                        5 * sf
-                    );
-                    
-                    // Add character to input
-                    if (userInput.length < 50) {
-                        userInput += key.toLowerCase();
-                        updateInputDisplay();
-                    }
-                    
-                    // Reset key appearance
-                    scene.time.delayedCall(100, () => {
-                        keyBg.clear();
-                        keyBg.fillStyle(0x4a5568, 1);
-                        keyBg.fillRoundedRect(
-                            keyX - keySize / 2,
-                            currentY - keySize / 2,
-                            keySize,
-                            keySize,
-                            5 * sf
-                        );
-                        keyBg.lineStyle(1 * sf, 0x718096, 1);
-                        keyBg.strokeRoundedRect(
-                            keyX - keySize / 2,
-                            currentY - keySize / 2,
-                            keySize,
-                            keySize,
-                            5 * sf
-                        );
-                    });
-                });
-                
-                keyboardContainer.add([keyBg, keyText, keyButton]);
-                keyboardButtons.push({ bg: keyBg, text: keyText, button: keyButton });
-            });
-        });
-        
-        // Add special keys row
-        const specialKeysY = keyboardY + (keyRows.length * (keySize + keyGap));
-        const specialKeyWidth = keySize * 1.5;
-        
-        // Space bar
-        const spaceX = centerX;
-        const spaceBg = scene.add.graphics().setDepth(131);
-        spaceBg.fillStyle(0x4a5568, 1);
-        spaceBg.fillRoundedRect(
-            spaceX - (specialKeyWidth * 1.5) / 2,
-            specialKeysY - keySize / 2,
-            specialKeyWidth * 1.5,
-            keySize,
-            5 * sf
-        );
-        spaceBg.lineStyle(1 * sf, 0x718096, 1);
-        spaceBg.strokeRoundedRect(
-            spaceX - (specialKeyWidth * 1.5) / 2,
-            specialKeysY - keySize / 2,
-            specialKeyWidth * 1.5,
-            keySize,
-            5 * sf
-        );
-        
-        const spaceText = scene.add.text(spaceX, specialKeysY, 'SPACE', {
-            fontSize: `${12 * sf}px`,
-            fill: '#ffffff',
-            align: 'center',
-            fontFamily: 'Caprasimo-Regular'
-        }).setOrigin(0.5).setDepth(132);
-        
-        const spaceButton = scene.add.rectangle(
-            spaceX,
-            specialKeysY,
-            specialKeyWidth * 1.5,
-            keySize,
-            0x000000,
-            0
-        ).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(133);
-        
-        spaceButton.on('pointerdown', () => {
-            if (isSubmitted || userInput.length >= 50) return;
-            
-            // Visual feedback
-            spaceBg.clear();
-            spaceBg.fillStyle(0x63b3ed, 1);
-            spaceBg.fillRoundedRect(
-                spaceX - (specialKeyWidth * 1.5) / 2,
-                specialKeysY - keySize / 2,
-                specialKeyWidth * 1.5,
-                keySize,
-                5 * sf
-            );
-            
-            userInput += ' ';
-            updateInputDisplay();
-            
-            // Reset appearance
-            scene.time.delayedCall(100, () => {
-                spaceBg.clear();
-                spaceBg.fillStyle(0x4a5568, 1);
-                spaceBg.fillRoundedRect(
-                    spaceX - (specialKeyWidth * 1.5) / 2,
-                    specialKeysY - keySize / 2,
-                    specialKeyWidth * 1.5,
-                    keySize,
-                    5 * sf
-                );
-                spaceBg.lineStyle(1 * sf, 0x718096, 1);
-                spaceBg.strokeRoundedRect(
-                    spaceX - (specialKeyWidth * 1.5) / 2,
-                    specialKeysY - keySize / 2,
-                    specialKeyWidth * 1.5,
-                    keySize,
-                    5 * sf
-                );
-            });
-        });
-        
-        // Backspace button
-        const backspaceX = centerX + (specialKeyWidth * 1.2);
-        const backspaceBg = scene.add.graphics().setDepth(131);
-        backspaceBg.fillStyle(0x6b5b95, 1);
-        backspaceBg.fillRoundedRect(
-            backspaceX - specialKeyWidth / 2,
-            specialKeysY - keySize / 2,
-            specialKeyWidth,
-            keySize,
-            5 * sf
-        );
-        backspaceBg.lineStyle(1 * sf, 0x8b7bb8, 1);
-        backspaceBg.strokeRoundedRect(
-            backspaceX - specialKeyWidth / 2,
-            specialKeysY - keySize / 2,
-            specialKeyWidth,
-            keySize,
-            5 * sf
-        );
-        
-        const backspaceText = scene.add.text(backspaceX, specialKeysY, '⌫', {
-            fontSize: `${16 * sf}px`,
-            fill: '#ffffff',
-            align: 'center',
-            fontFamily: 'Caprasimo-Regular'
-        }).setOrigin(0.5).setDepth(132);
-        
-        const backspaceButton = scene.add.rectangle(
-            backspaceX,
-            specialKeysY,
-            specialKeyWidth,
-            keySize,
-            0x000000,
-            0
-        ).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(133);
-        
-        backspaceButton.on('pointerdown', () => {
-            if (isSubmitted) return;
-            
-            // Visual feedback
-            backspaceBg.clear();
-            backspaceBg.fillStyle(0x9333ea, 1);
-            backspaceBg.fillRoundedRect(
-                backspaceX - specialKeyWidth / 2,
-                specialKeysY - keySize / 2,
-                specialKeyWidth,
-                keySize,
-                5 * sf
-            );
-            
-            userInput = userInput.slice(0, -1);
-            updateInputDisplay();
-            
-            // Reset appearance
-            scene.time.delayedCall(100, () => {
-                backspaceBg.clear();
-                backspaceBg.fillStyle(0x6b5b95, 1);
-                backspaceBg.fillRoundedRect(
-                    backspaceX - specialKeyWidth / 2,
-                    specialKeysY - keySize / 2,
-                    specialKeyWidth,
-                    keySize,
-                    5 * sf
-                );
-                backspaceBg.lineStyle(1 * sf, 0x8b7bb8, 1);
-                backspaceBg.strokeRoundedRect(
-                    backspaceX - specialKeyWidth / 2,
-                    specialKeysY - keySize / 2,
-                    specialKeyWidth,
-                    keySize,
-                    5 * sf
-                );
-            });
-        });
-        
-        // Clear button
-        const clearX = centerX - (specialKeyWidth * 1.2);
-        const clearBg = scene.add.graphics().setDepth(131);
-        clearBg.fillStyle(0xdc2626, 1);
-        clearBg.fillRoundedRect(
-            clearX - specialKeyWidth / 2,
-            specialKeysY - keySize / 2,
-            specialKeyWidth,
-            keySize,
-            5 * sf
-        );
-        clearBg.lineStyle(1 * sf, 0xf87171, 1);
-        clearBg.strokeRoundedRect(
-            clearX - specialKeyWidth / 2,
-            specialKeysY - keySize / 2,
-            specialKeyWidth,
-            keySize,
-            5 * sf
-        );
-        
-        const clearText = scene.add.text(clearX, specialKeysY, 'CLEAR', {
-            fontSize: `${11 * sf}px`,
-            fill: '#ffffff',
-            align: 'center',
-            fontFamily: 'Caprasimo-Regular'
-        }).setOrigin(0.5).setDepth(132);
-        
-        const clearButton = scene.add.rectangle(
-            clearX,
-            specialKeysY,
-            specialKeyWidth,
-            keySize,
-            0x000000,
-            0
-        ).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(133);
-        
-        clearButton.on('pointerdown', () => {
-            if (isSubmitted) return;
-            
-            // Visual feedback
-            clearBg.clear();
-            clearBg.fillStyle(0xef4444, 1);
-            clearBg.fillRoundedRect(
-                clearX - specialKeyWidth / 2,
-                specialKeysY - keySize / 2,
-                specialKeyWidth,
-                keySize,
-                5 * sf
-            );
-            
-            userInput = '';
-            updateInputDisplay();
-            
-            // Reset appearance
-            scene.time.delayedCall(100, () => {
-                clearBg.clear();
-                clearBg.fillStyle(0xdc2626, 1);
-                clearBg.fillRoundedRect(
-                    clearX - specialKeyWidth / 2,
-                    specialKeysY - keySize / 2,
-                    specialKeyWidth,
-                    keySize,
-                    5 * sf
-                );
-                clearBg.lineStyle(1 * sf, 0xf87171, 1);
-                clearBg.strokeRoundedRect(
-                    clearX - specialKeyWidth / 2,
-                    specialKeysY - keySize / 2,
-                    specialKeyWidth,
-                    keySize,
-                    5 * sf
-                );
-            });
-        });
-        
-        keyboardContainer.add([spaceBg, spaceText, spaceButton]);
-        keyboardContainer.add([backspaceBg, backspaceText, backspaceButton]);
-        keyboardContainer.add([clearBg, clearText, clearButton]);
-        
-        keyboardButtons.push(
-            { bg: spaceBg, text: spaceText, button: spaceButton },
-            { bg: backspaceBg, text: backspaceText, button: backspaceButton },
-            { bg: clearBg, text: clearText, button: clearButton }
-        );
-        
-        container.add(keyboardContainer);
-    };
+    // Create interactive area for mobile input
+    const inputInteractiveArea = scene.add.rectangle(
+        centerX,
+        inputY,
+        inputWidth,
+        inputHeight,
+        0x000000,
+        0
+    ).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(124);
+    
+    // Handle mobile input area tap
+    inputInteractiveArea.on('pointerdown', () => {
+        if (isMobile && hiddenInput && !isSubmitted) {
+            hiddenInput.focus();
+        }
+    });
 
     // Create physical keyboard input handling
     const handleKeyInput = (event) => {
@@ -631,9 +244,11 @@ export function createFillInBlankInput(scene, container, centerX, centerY, boxWi
         cursor.setVisible(false);
         cursorTween.stop();
         
-        // Hide virtual keyboard if it exists
-        if (virtualKeyboard) {
-            virtualKeyboard.setVisible(false);
+        // Remove hidden input if it exists
+        if (hiddenInput) {
+            hiddenInput.blur();
+            document.body.removeChild(hiddenInput);
+            hiddenInput = null;
         }
         
         // Visual feedback
@@ -660,10 +275,9 @@ export function createFillInBlankInput(scene, container, centerX, centerY, boxWi
         scene.input.keyboard.on('keydown', handleKeyInput);
     }
 
-    // Create virtual keyboard for mobile
+    // Create hidden input for mobile native keyboard
     if (isMobile) {
-        createKeyboardToggle();
-        createVirtualKeyboard();
+        createHiddenInput();
     }
 
     // Submit button click handler
@@ -723,6 +337,7 @@ export function createFillInBlankInput(scene, container, centerX, centerY, boxWi
     container.add(submitBg);
     container.add(submitText);
     container.add(submitButton);
+    container.add(inputInteractiveArea);
 
     // Initialize display
     updateInputDisplay();
@@ -733,18 +348,11 @@ export function createFillInBlankInput(scene, container, centerX, centerY, boxWi
         if (cursorTween) {
             cursorTween.stop();
         }
-        // Clean up virtual keyboard
-        if (virtualKeyboard) {
-            virtualKeyboard.destroy();
-            virtualKeyboard = null;
+        // Clean up hidden input
+        if (hiddenInput) {
+            hiddenInput.blur();
+            document.body.removeChild(hiddenInput);
+            hiddenInput = null;
         }
-        // Clean up toggle button
-        if (keyboardToggleButton) {
-            keyboardToggleButton.bg.destroy();
-            keyboardToggleButton.text.destroy();
-            keyboardToggleButton.button.destroy();
-            keyboardToggleButton = null;
-        }
-        keyboardButtons = [];
     };
 }
