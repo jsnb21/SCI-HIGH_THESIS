@@ -4,26 +4,38 @@ import { DungeonHUD, DungeonMenu } from '../../ui/dungeon_hud.js';
 import gameManager from '../../gameManager.js';
 import TutorialManager from '../../components/TutorialManager.js';
 import { DUNGEON_TUTORIAL_TRIGGERS, prepareTutorialSteps } from '../../components/TutorialConfig.js';
+import { getScaleInfo } from '../../utils/mobileUtils.js';
 
 const GRID_WIDTH = 7;
 const GRID_HEIGHT = 8;
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
 
-export default class DungeonScene extends Phaser.Scene {    constructor() {
+export default class DungeonScene extends Phaser.Scene {
+    constructor() {
         super('DungeonScene');
         this.grid = [];
         this.player = { x: Math.floor(GRID_WIDTH / 2), y: GRID_HEIGHT - 1, hp: gameManager.getPlayerHP(), buffs: [] };
         this.adjacentCells = [];
         this.intensity = 1;
         this.hudElements = [];
-        this.scaleFactor = 1;        this.offsetX = 0;        this.offsetY = 0;
+        this.scaleFactor = 1;
+        this.offsetX = 0;
+        this.offsetY = 0;
         this.quizBoxes = [];
         this.quizBoxSprites = []; // Track quiz box sprites
         this.particles = null;
         this.lightingOverlay = null;
         this.playerSprite = null;
-          // Progression system variables
+        
+        // Mobile-specific properties
+        this.isMobile = false;
+        this.touchControls = null;
+        this.virtualDPad = null;
+        this.lastTouchTime = 0;
+        this.touchSensitivity = 200; // ms between touches
+        
+        // Progression system variables
         this.enemiesDefeated = 0;
         this.maxIntensity = 3;
         this.playerDamage = 10;
@@ -61,7 +73,11 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.load.image('bigSlime', 'assets/sprites/enemies/big_slime.png');
     }
 
-    create() {        // Reset all persistent state
+    create() {
+        // Detect mobile device
+        this.isMobile = this.detectMobile();
+        
+        // Reset all persistent state
         this.grid = [];
         this.player = { x: Math.floor(GRID_WIDTH / 2), y: GRID_HEIGHT - 1, hp: gameManager.getPlayerHP(), buffs: [] };
         this.adjacentCells = [];
@@ -113,6 +129,11 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
 
         this.input.keyboard.on('keydown', this.handleInput, this);
         this.input.on('pointerdown', this.handlePointer, this);
+
+        // Add mobile-specific input handling
+        if (this.isMobile) {
+            this.setupMobileControls();
+        }
 
         // Calculate scale and centering BEFORE drawing anything
         this.updateScale();
@@ -265,7 +286,9 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         this.updateLightingEffects();
         if (this.dungeonHUD && this.dungeonHUD.drawHUD) this.dungeonHUD.drawHUD();
         if (this.dungeonMenu && this.dungeonMenu.createMenuButton) this.dungeonMenu.createMenuButton();
-    }shutdown() {
+    }
+    
+    shutdown() {
         if (this.gridGraphics) {
             this.gridGraphics.destroy();
             this.gridGraphics = null;
@@ -281,6 +304,14 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         if (this.playerSprite) {
             this.playerSprite.destroy();
             this.playerSprite = null;
+        }
+        if (this.virtualDPad) {
+            this.virtualDPad.destroy();
+            this.virtualDPad = null;
+        }
+        if (this.mobileInstructions) {
+            this.mobileInstructions.destroy();
+            this.mobileInstructions = null;
         }
         if (this.dungeonHUD) this.dungeonHUD.shutdown();
         if (this.dungeonMenu) this.dungeonMenu.shutdown();
@@ -397,36 +428,65 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
     handlePointer(pointer) {
         if (this.menuOpen) return;
         
-        // Add simple debouncing for mobile touch to prevent double moves
+        // Enhanced mobile touch handling with debouncing
         const currentTime = Date.now();
-        if (this.lastMoveTime && currentTime - this.lastMoveTime < 200) {
-            return; // Ignore rapid touches within 200ms
+        if (this.lastTouchTime && currentTime - this.lastTouchTime < this.touchSensitivity) {
+            return; // Ignore rapid touches
         }
-        this.lastMoveTime = currentTime;
+        this.lastTouchTime = currentTime;
         
-        const cellSize = 64 * this.scaleFactor;
+        // Check if touch is on virtual D-pad (mobile only)
+        if (this.isMobile && this.isPointerOnVirtualDPad(pointer)) {
+            return; // Don't process grid movement if touching D-pad
+        }
+        
+        const cellSize = this.getCellSize();
         const x = Math.floor((pointer.x - this.offsetX) / cellSize);
         const y = Math.floor((pointer.y - this.offsetY) / cellSize);
-        this.movePlayer(x, y);
+        
+        // Validate coordinates are within grid bounds
+        if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
+            this.movePlayer(x, y);
+        }
     }
 
     updateScale() {
         const width = this.scale.width;
         const height = this.scale.height;
-        this.scaleFactor = Math.min(width / BASE_WIDTH, height / BASE_HEIGHT);
+        
+        // Enhanced mobile scaling
+        if (this.isMobile) {
+            // More aggressive scaling for mobile to ensure visibility
+            const mobileScaleFactor = Math.min(width / BASE_WIDTH, height / BASE_HEIGHT) * 0.8;
+            this.scaleFactor = Math.max(mobileScaleFactor, 0.5); // Minimum scale of 0.5
+        } else {
+            this.scaleFactor = Math.min(width / BASE_WIDTH, height / BASE_HEIGHT);
+        }
 
         // Calculate grid size and offsets for centering
-        const cellSize = 64 * this.scaleFactor;
+        const cellSize = this.getCellSize();
         const gridPixelWidth = GRID_WIDTH * cellSize;
         const gridPixelHeight = GRID_HEIGHT * cellSize;
-        this.offsetX = (width - gridPixelWidth) / 2;
-        this.offsetY = (height - gridPixelHeight) / 2;
+        
+        // Adjust offsets for mobile to account for virtual controls
+        if (this.isMobile) {
+            this.offsetX = (width - gridPixelWidth) / 2;
+            this.offsetY = Math.max((height - gridPixelHeight) / 2 - 50, 20); // Leave space for mobile UI
+        } else {
+            this.offsetX = (width - gridPixelWidth) / 2;
+            this.offsetY = (height - gridPixelHeight) / 2;
+        }
     }    onResize(gameSize) {
         this.updateScale();
         this.drawGrid();
         this.updateLightingEffects();
         if (this.dungeonHUD && this.dungeonHUD.drawHUD) this.dungeonHUD.drawHUD();
         if (this.dungeonMenu && this.dungeonMenu.createMenuButton) this.dungeonMenu.createMenuButton();
+        
+        // Recreate mobile controls on resize
+        if (this.isMobile) {
+            this.setupMobileControls();
+        }
     }    drawGrid() {
         // Clear previous quiz box sprites and player sprite
         if (this.quizBoxSprites && this.quizBoxSprites.length) {
@@ -445,9 +505,9 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         if (this.gridGraphics) this.gridGraphics.clear();
         else this.gridGraphics = this.add.graphics();
 
-        const cellSize = 64 * this.scaleFactor;
+        const cellSize = this.getCellSize();
         const gap = 4 * this.scaleFactor;
-        const borderWidth = 3 * this.scaleFactor;
+        const borderWidth = Math.max(3 * this.scaleFactor, 1); // Ensure minimum border width
 
         for (let y = 0; y < GRID_HEIGHT; y++) {
             for (let x = 0; x < GRID_WIDTH; x++) {
@@ -558,18 +618,22 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         const playerCellX = this.offsetX + this.player.x * cellSize + cellSize / 2;
         const playerCellY = this.offsetY + this.player.y * cellSize + cellSize / 2;
         
+        // Adjust glow size for mobile
+        const glowSizeMultiplier = this.isMobile ? 0.8 : 1.0;
+        
         // Multi-layered player glow effect with vibrant colors
-        const outerGlow = this.add.circle(playerCellX, playerCellY, cellSize * 0.6, 0xff6b6b, 0.3);
+        const outerGlow = this.add.circle(playerCellX, playerCellY, cellSize * 0.6 * glowSizeMultiplier, 0xff6b6b, 0.3);
         outerGlow.setDepth(1);
         this.quizBoxSprites.push(outerGlow);
         
-        const innerGlow = this.add.circle(playerCellX, playerCellY, cellSize * 0.4, 0xfbbf24, 0.5);
+        const innerGlow = this.add.circle(playerCellX, playerCellY, cellSize * 0.4 * glowSizeMultiplier, 0xfbbf24, 0.5);
         innerGlow.setDepth(2);
         this.quizBoxSprites.push(innerGlow);
         
-        // Player sprite with static effects
+        // Player sprite with mobile-friendly sizing
         this.playerSprite = this.add.image(playerCellX, playerCellY, 'goblinNerd');
-        this.playerSprite.setDisplaySize(cellSize * 0.7, cellSize * 0.7);
+        const spriteSize = this.isMobile ? cellSize * 0.8 : cellSize * 0.7; // Slightly larger on mobile
+        this.playerSprite.setDisplaySize(spriteSize, spriteSize);
         this.playerSprite.setDepth(3);
         this.playerSprite.setTint(0x22d3ee); // Bright cyan tint
 
@@ -1112,11 +1176,15 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
             return;
         }
 
-        // Create tutorial steps for dungeon basics
+        // Create mobile-aware tutorial steps
+        const controlsText = this.isMobile ? 
+            "Welcome to the dungeon! You can move your character by tapping on the highlighted tiles around your player, or use the virtual D-pad in the bottom-left corner." :
+            "Welcome to the dungeon! You can move your character using the arrow keys on your keyboard, or by clicking on the highlighted tiles around your player.";
+
         const tutorialSteps = [
             {
                 title: "🎮 Dungeon Controls",
-                text: "Welcome to the dungeon! You can move your character using the arrow keys on your keyboard, or by clicking on the highlighted tiles around your player.",
+                text: controlsText,
                 textBoxPosition: { x: 400, y: 150 }
             },
             {
@@ -1351,5 +1419,107 @@ export default class DungeonScene extends Phaser.Scene {    constructor() {
         }
         
         return positions;
+    }
+    
+    // Mobile-specific methods
+    detectMobile() {
+        const scaleInfo = getScaleInfo(this);
+        return scaleInfo.isMobile || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    }
+    
+    getCellSize() {
+        return this.isMobile ? Math.max(48 * this.scaleFactor, 32) : 64 * this.scaleFactor;
+    }
+    
+    setupMobileControls() {
+        // Clean up existing mobile controls
+        if (this.virtualDPad) {
+            this.virtualDPad.destroy();
+            this.virtualDPad = null;
+        }
+        
+        if (!this.isMobile) return;
+        
+        // Create virtual D-pad container
+        this.virtualDPad = this.add.container(0, 0);
+        this.virtualDPad.setDepth(1000);
+        
+        // D-pad position (bottom-left corner)
+        const dpadX = 80;
+        const dpadY = this.scale.height - 80;
+        const buttonSize = 50;
+        const buttonGap = 5;
+        
+        // D-pad background
+        const dpadBg = this.add.circle(dpadX, dpadY, buttonSize + 15, 0x1a1a1a, 0.6);
+        dpadBg.setStrokeStyle(2, 0x4a5568, 0.8);
+        this.virtualDPad.add(dpadBg);
+        
+        // Create directional buttons
+        const directions = [
+            { key: 'up', x: 0, y: -buttonSize - buttonGap, dx: 0, dy: -1, text: '↑' },
+            { key: 'down', x: 0, y: buttonSize + buttonGap, dx: 0, dy: 1, text: '↓' },
+            { key: 'left', x: -buttonSize - buttonGap, y: 0, dx: -1, dy: 0, text: '←' },
+            { key: 'right', x: buttonSize + buttonGap, y: 0, dx: 1, dy: 0, text: '→' }
+        ];
+        
+        directions.forEach(dir => {
+            const buttonX = dpadX + dir.x;
+            const buttonY = dpadY + dir.y;
+            
+            // Button background
+            const button = this.add.circle(buttonX, buttonY, buttonSize / 2, 0x4a5568, 0.8);
+            button.setStrokeStyle(2, 0x718096, 1);
+            button.setInteractive({ useHandCursor: true });
+            
+            // Button text
+            const buttonText = this.add.text(buttonX, buttonY, dir.text, {
+                fontSize: '24px',
+                fill: '#ffffff',
+                fontFamily: 'Caprasimo-Regular'
+            }).setOrigin(0.5);
+            
+            // Button interaction
+            button.on('pointerdown', () => {
+                const newX = this.player.x + dir.dx;
+                const newY = this.player.y + dir.dy;
+                this.movePlayer(newX, newY);
+                
+                // Visual feedback
+                button.setFillStyle(0x63b3ed, 1);
+                this.time.delayedCall(150, () => {
+                    button.setFillStyle(0x4a5568, 0.8);
+                });
+            });
+            
+            this.virtualDPad.add([button, buttonText]);
+        });
+        
+        // Add tap-to-move instructions for mobile
+        const instructionText = this.add.text(this.scale.width / 2, 30, 
+            'Tap grid to move or use D-pad', {
+            fontSize: '14px',
+            fill: '#ffffff',
+            fontFamily: 'Caprasimo-Regular',
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5).setDepth(1000);
+        
+        if (this.mobileInstructions) {
+            this.mobileInstructions.destroy();
+        }
+        this.mobileInstructions = instructionText;
+    }
+    
+    isPointerOnVirtualDPad(pointer) {
+        if (!this.virtualDPad || !this.isMobile) return false;
+        
+        const dpadX = 80;
+        const dpadY = this.scale.height - 80;
+        const dpadRadius = 120; // Detection radius around D-pad
+        
+        const distance = Phaser.Math.Distance.Between(pointer.x, pointer.y, dpadX, dpadY);
+        return distance <= dpadRadius;
     }
 }
