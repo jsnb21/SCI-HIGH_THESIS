@@ -5,6 +5,12 @@ import Carousel from '../ui/carouselUI';
 import { onceOnlyFlags } from '../gameManager';
 import TutorialManager from '../components/TutorialManager.js';
 import { CLASSROOM_TUTORIAL_STEPS } from '../components/TutorialConfig.js';
+import { 
+    getScaleInfo, 
+    scaleFontSize, 
+    scaleDimension, 
+    getSafeArea
+} from '../utils/mobileUtils.js';
 
 export default class Classroom extends Phaser.Scene {
     constructor() {
@@ -13,24 +19,38 @@ export default class Classroom extends Phaser.Scene {
     }
 
     preload() {
-        // Load character images from assets/img/sprites/npcs with their respective names
-        this.load.image('Noah', 'assets/sprites/npcs/noah.png');
-        this.load.image('Lily', 'assets/sprites/npcs/lily.png');
-        this.load.image('Damian', 'assets/sprites/npcs/damian.png');
-        this.load.image('Bella', 'assets/sprites/npcs/bella.png');
-        this.load.image('Finley', 'assets/sprites/npcs/finley.png');
+        // Load classroom background
+        this.load.image('classroomBG', 'assets/img/bg/classroom_day.png');
+        
+        // Load character images from assets/sprites/npcs with their respective names
+        this.load.image('Noah', 'assets/sprites/npcs/Noah.png');
+        this.load.image('Lily', 'assets/sprites/npcs/Lily.png');
+        this.load.image('Damian', 'assets/sprites/npcs/Damian.png');
+        this.load.image('Bella', 'assets/sprites/npcs/Bella.png');
+        this.load.image('Finley', 'assets/sprites/npcs/Finley.png');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
     }
 
     create() {
-        const { width, height } = this.scale;
+        // Get mobile scaling info
+        const scaleInfo = getScaleInfo(this);
+        const { width, height } = scaleInfo;
+        const safeArea = getSafeArea(scaleInfo);
 
         // Initialize modal state
         this.characterBoxOpen = false;
 
-        // Add background color
-        this.cameras.main.setBackgroundColor('#B2E2B1');
+        // Add classroom background
+        this.bg = this.add.tileSprite(0, 0, width, height, 'classroomBG').setOrigin(0, 0);
+        
+        // Add background color overlay for better visibility (reduced opacity for mobile)
+        if (scaleInfo.isMobile) {
+            // For mobile, use a lighter overlay so background is more visible
+            this.add.rectangle(width / 2, height / 2, width, height, 0xB2E2B1, 0.3);
+        } else {
+            this.cameras.main.setBackgroundColor('#B2E2B1');
+        }
 
         // Sound effects
         this.se_hoverSound = this.sound.add('se_select');
@@ -101,15 +121,21 @@ export default class Classroom extends Phaser.Scene {
             }
         ];
 
-        // Create the carousel
-        this.characterCarousel = new Carousel(this, {
-            iconSpacing: 340,
-            smallScale: 0.18, // smaller side images (was 0.32)
-            largeScale: 0.28, // smaller main image (was 0.48)
-            iconYOffset: -20, // Move carousel up to better center the overall layout
-            headingStyle: { fontSize: 48 },
-            descStyle: { fontSize: 28 }
-        }).create(
+        // Create the carousel with mobile-responsive settings
+        const carouselConfig = {
+            iconSpacing: scaleInfo.isMobile ? 
+                (scaleInfo.isPortrait ? scaleDimension(220, scaleInfo) : scaleDimension(280, scaleInfo)) : 
+                scaleDimension(340, scaleInfo),
+            smallScale: scaleInfo.isMobile ? 0.12 : 0.18, // Smaller for mobile
+            largeScale: scaleInfo.isMobile ? 0.20 : 0.28, // Smaller for mobile
+            iconYOffset: scaleInfo.isMobile ? 
+                scaleDimension(-40, scaleInfo) : 
+                scaleDimension(-20, scaleInfo), // Move up more on mobile
+            headingStyle: { fontSize: scaleFontSize(48, scaleInfo) },
+            descStyle: { fontSize: scaleFontSize(28, scaleInfo) }
+        };
+        
+        this.characterCarousel = new Carousel(this, carouselConfig).create(
             charKeys,
             charInfo.map(c => ({
                 heading: c.name,
