@@ -1,4 +1,12 @@
 import Phaser from 'phaser';
+import { 
+    getScaleInfo, 
+    scaleFontSize, 
+    scaleDimension, 
+    getResponsivePosition,
+    createResponsiveTextStyle,
+    getSafeArea
+} from '../utils/mobileUtils.js';
 import { FullscreenUtils } from '../utils/fullscreenUtils.js';
 
 const SCREEN_CONFIG = {
@@ -27,45 +35,60 @@ export default class StartupScene extends Phaser.Scene {
         
         // Start with fullscreen prompt
         this.showFullscreenPrompt();
-    }showFullscreenPrompt() {
+    }
+
+    showFullscreenPrompt() {
         // Clear any existing elements
         this.clearUI();
         
-        const { width, height } = this.scale;
+        const scaleInfo = getScaleInfo(this);
+        const { width, height } = scaleInfo;
+        const safeArea = getSafeArea(scaleInfo);
 
         // Create animated background with gradient effect
         const background = this.add.rectangle(width / 2, height / 2, width, height, 0x0f0f0f)
             .setOrigin(0.5)
-            .setAlpha(0);        // Create dialog with modern design
-        const dialogWidth = Math.min(500, width * 0.8);
-        const dialogHeight = 300;
+            .setAlpha(0);
+            
+        // Create dialog with mobile-responsive design
+        const baseDialogWidth = 500;
+        const baseDialogHeight = 300;
+        const dialogWidth = Math.min(scaleDimension(baseDialogWidth, scaleInfo), safeArea.width);
+        const dialogHeight = scaleDimension(baseDialogHeight, scaleInfo);
         
         const dialog = this.add.rectangle(width / 2, height / 2, dialogWidth, dialogHeight, 0x1a1a1a, 1)
             .setOrigin(0.5)
-            .setStrokeStyle(3, 0x4a4a4a, 0.8)
-            .setScale(0.8)
+            .setStrokeStyle(scaleDimension(3, scaleInfo), 0x4a4a4a, 0.8)
+            .setScale(scaleInfo.isMobile ? 0.9 : 0.8)
             .setAlpha(0);
 
         // Add glow effect to dialog
-        const dialogGlow = this.add.rectangle(width / 2, height / 2, dialogWidth + 10, dialogHeight + 10, 0x2a2a2a, 0.3)
+        const glowOffset = scaleDimension(10, scaleInfo);
+        const dialogGlow = this.add.rectangle(width / 2, height / 2, dialogWidth + glowOffset, dialogHeight + glowOffset, 0x2a2a2a, 0.3)
             .setOrigin(0.5)
-            .setScale(0.8)
-            .setAlpha(0);// Main title with simplified text
-        const titleText = this.add.text(width / 2, height / 2 - 50, 'Go Fullscreen?', {
+            .setScale(scaleInfo.isMobile ? 0.9 : 0.8)
+            .setAlpha(0);
+
+        // Main title with responsive text
+        const titleStyle = createResponsiveTextStyle(32, scaleInfo, {
             fontFamily: 'Arial Black, Arial',
-            fontSize: '32px',
             color: '#ffffff',
             fontStyle: 'bold',
-            align: 'center'
-        }).setOrigin(0.5).setAlpha(0);
+            align: 'center',
+            stroke: 'transparent',
+            strokeThickness: 0
+        });
+        const titleText = this.add.text(width / 2, height / 2 - scaleDimension(50, scaleInfo), 'Go Fullscreen?', titleStyle).setOrigin(0.5).setAlpha(0);
         
         // Subtitle with helpful note
-        const subtitleText = this.add.text(width / 2, height / 2 - 10, 'This can be toggled in the options later.', {
+        const subtitleStyle = createResponsiveTextStyle(16, scaleInfo, {
             fontFamily: 'Arial',
-            fontSize: '16px',
             color: '#cccccc',
-            align: 'center'
-        }).setOrigin(0.5).setAlpha(0);
+            align: 'center',
+            stroke: 'transparent',
+            strokeThickness: 0
+        });
+        const subtitleText = this.add.text(width / 2, height / 2 - scaleDimension(10, scaleInfo), 'This can be toggled in the options later.', subtitleStyle).setOrigin(0.5).setAlpha(0);
 
         // Remove benefits text - no longer needed
         const benefitsText = null;        // Enhanced button styles

@@ -7,7 +7,16 @@ import gameManager from '../gameManager.js';
 import { createBackButton } from '../components/buttons/backbutton.js';
 import TutorialManager from '../components/TutorialManager.js';
 import { MAIN_HUB_TUTORIAL_STEPS } from '../components/TutorialConfig.js';
+import { 
+    getScaleInfo, 
+    scaleFontSize, 
+    scaleDimension, 
+    getResponsivePosition,
+    createResponsiveTextStyle,
+    getSafeArea
+} from '../utils/mobileUtils.js';
 
+// Legacy constants for backward compatibility
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
 

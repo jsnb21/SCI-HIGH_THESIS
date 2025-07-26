@@ -3,6 +3,15 @@ import { DEFAULT_TEXT_STYLE } from '../game';
 import { updateSoundVolumes, playExclusiveBGM } from '../audioUtils';
 import { getAllSaveKeys, loadGame } from '../save';
 import gameManager, { onceOnlyFlags } from '../gameManager.js';
+import { 
+    getScaleInfo, 
+    scaleFontSize, 
+    scaleDimension, 
+    getResponsivePosition,
+    createResponsiveTextStyle,
+    createResponsiveButton,
+    getSafeArea
+} from '../utils/mobileUtils.js';
 
 export default class MainMenu extends Phaser.Scene {
     constructor() {
@@ -23,7 +32,10 @@ export default class MainMenu extends Phaser.Scene {
     }
 
     create() {
-        const { width, height } = this.scale;
+        const scaleInfo = getScaleInfo(this);
+        const { width, height } = scaleInfo;
+        const safeArea = getSafeArea(scaleInfo);
+        
         const se_hoverSound = this.sound.add('se_select');
         const se_confirmSound = this.sound.add('se_confirm');
 
@@ -41,11 +53,15 @@ export default class MainMenu extends Phaser.Scene {
         // Create scrolling clouds behind everything
         this.createScrollingClouds();
 
-        // Add the logo image above the New Game button
-        const logo = this.add.image(width / 2, height / 2 - 180, 'game_logo');
+        // Add the logo image - responsive positioning
+        const logoPos = getResponsivePosition(scaleInfo, 'center', { x: 0, y: -scaleDimension(180, scaleInfo) });
+        const logo = this.add.image(logoPos.x, logoPos.y, 'game_logo');
         
-        // Scale the logo to appropriate size (adjust as needed)
-        logo.setScale(0.8);
+        // Scale the logo appropriately for mobile
+        const logoScale = scaleInfo.isMobile ? 
+            (scaleInfo.isPortrait ? 0.6 : 0.5) : 
+            0.8 * scaleInfo.finalScale;
+        logo.setScale(logoScale);
         
         // Add fade-in animation for the logo
         logo.setAlpha(0);
@@ -60,7 +76,7 @@ export default class MainMenu extends Phaser.Scene {
         // Optional: Add a subtle floating animation to the logo
         this.tweens.add({
             targets: logo,
-            y: logo.y - 10,
+            y: logo.y - scaleDimension(10, scaleInfo),
             duration: 2000,
             yoyo: true,
             repeat: -1,
@@ -68,15 +84,24 @@ export default class MainMenu extends Phaser.Scene {
             delay: 800
         });
 
+        // Menu button spacing - adjust for mobile
+        const buttonSpacing = scaleInfo.isMobile ? 
+            (scaleInfo.isPortrait ? scaleDimension(80, scaleInfo) : scaleDimension(60, scaleInfo)) :
+            scaleDimension(70, scaleInfo);
+        
+        const startY = scaleInfo.isMobile && scaleInfo.isPortrait ? 
+            height / 2 + scaleDimension(60, scaleInfo) : 
+            height / 2 + scaleDimension(40, scaleInfo);
+
         // Menu button data
         const menuButtons = [
-            { label: 'New Game', y: height / 2 + 40, onClick: () => {
+            { label: 'New Game', y: startY, onClick: () => {
                 se_confirmSound.play();
                 gameManager.reset();
                 onceOnlyFlags.reset();
                 this.scene.start('VNScene');
             }},
-            { label: 'Continue', y: height / 2 + 110, onClick: () => {
+            { label: 'Continue', y: startY + buttonSpacing, onClick: () => {
                 se_confirmSound.play();
                 showSaveSelectAndContinue(this, se_hoverSound, se_confirmSound);
             }},
@@ -92,7 +117,7 @@ export default class MainMenu extends Phaser.Scene {
 
         // Create menu buttons with backgrounds and effects
         menuButtons.forEach((btn, i) => {
-            createMenuButton(this, width / 2, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400);
+            createMenuButton(this, width / 2, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo);
         });
     }
 
@@ -368,28 +393,39 @@ export default class MainMenu extends Phaser.Scene {
 }
 
 // Helper to create a menu button with background and effects
-function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 0) {
-    const btnWidth = 320;
-    const btnHeight = 56;
-    const corner = 18;
+function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 0, scaleInfo) {
+    // Get responsive scaling
+    const baseWidth = 320;
+    const baseHeight = 56;
+    const btnWidth = scaleDimension(baseWidth, scaleInfo);
+    const btnHeight = scaleDimension(baseHeight, scaleInfo);
+    const corner = scaleDimension(18, scaleInfo);
 
     // Button background
     const bg = scene.add.graphics();
     bg.fillStyle(0x222244, 0.92);
     bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
-    bg.lineStyle(3, 0xffffcc, 1);
+    bg.lineStyle(scaleDimension(3, scaleInfo), 0xffffcc, 1);
     bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
     bg.setAlpha(0);
 
-    // Button text
-    const text = scene.add.text(x, y, label, {
-        ...DEFAULT_TEXT_STYLE,
-        fontSize: '36px',
+    // Button text with responsive styling
+    const textStyle = createResponsiveTextStyle(36, scaleInfo, {
         color: '#ffff00',
         stroke: '#000',
-        strokeThickness: 4,
-        shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 4, fill: true }
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        strokeThickness: scaleDimension(4, scaleInfo),
+        shadow: { 
+            offsetX: scaleDimension(2, scaleInfo), 
+            offsetY: scaleDimension(2, scaleInfo), 
+            color: '#000', 
+            blur: scaleDimension(4, scaleInfo), 
+            fill: true 
+        }
+    });
+    
+    const text = scene.add.text(x, y, label, textStyle)
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
     text.setAlpha(0);
 
     // Fade in animation
@@ -401,7 +437,7 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
         bg.clear();
         bg.fillStyle(0x333388, 1);
         bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
-        bg.lineStyle(3, 0xffffcc, 1);
+        bg.lineStyle(scaleDimension(3, scaleInfo), 0xffffcc, 1);
         bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
         if (!hoverSound.isPlaying) hoverSound.play();
     });
@@ -410,7 +446,7 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
         bg.clear();
         bg.fillStyle(0x222244, 0.92);
         bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
-        bg.lineStyle(3, 0xffffcc, 1);
+        bg.lineStyle(scaleDimension(3, scaleInfo), 0xffffcc, 1);
         bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
     });
     text.on('pointerdown', () => {

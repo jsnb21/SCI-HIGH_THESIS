@@ -62,16 +62,25 @@ import CardRewardScene from './scenes/ui/CardRewardScene.js';
 
 const config = {
   type: Phaser.AUTO,
-  width: window.innerWidth,
-  height: window.innerHeight,
+  width: 1920,
+  height: 1080,
   parent: 'game',
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    // Better mobile handling
-    width: window.innerWidth,
-    height: window.innerHeight
-  },  scene: [
+    // Mobile-optimized scaling
+    width: 1920,
+    height: 1080,
+    min: {
+      width: 320,
+      height: 240
+    },
+    max: {
+      width: 1920,
+      height: 1080
+    }
+  },
+  scene: [
     StartUp, // Added StartUp as the first scene
     MainMenu,
     /* Main Scenes */
@@ -123,15 +132,28 @@ const config = {
   ],
   dom: {
     createContainer: true
+  },
+  input: {
+    activePointers: 3, // Support multi-touch for mobile
+    touch: {
+      capture: false // Don't capture touch events by default
+    }
+  },
+  physics: {
+    default: 'arcade',
+    arcade: {
+      gravity: { y: 0 },
+      debug: false
+    }
   }
 };
 
 export const DEFAULT_TEXT_STYLE = {
-    fontSize: '42px',
+    fontSize: '32px', // Increased base size for better mobile readability
     fontFamily: 'Caprasimo-Regular',
     color: '#ffffff',
     stroke: '#000000',
-    strokeThickness: 10
+    strokeThickness: 6 // Increased for better visibility on mobile
 };
 
 // Add error handling and debugging
