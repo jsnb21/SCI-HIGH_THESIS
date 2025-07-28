@@ -51,62 +51,66 @@ export default class StartupScene extends Phaser.Scene {
             .setAlpha(0);
             
         // Create dialog with mobile-responsive design
-        const baseDialogWidth = scaleInfo.isMobile ? 320 : 500;
-        const baseDialogHeight = scaleInfo.isMobile ? 250 : 300;
-        const dialogWidth = Math.min(scaleDimension(baseDialogWidth, scaleInfo), safeArea.width * 0.9);
-        const dialogHeight = scaleDimension(baseDialogHeight, scaleInfo);
+        const baseDialogWidth = scaleInfo.isMobile ? 280 : 500;
+        const baseDialogHeight = scaleInfo.isMobile ? 200 : 300;
+        const dialogWidth = Math.min(baseDialogWidth, safeArea.width * 0.85);
+        const dialogHeight = baseDialogHeight;
         
         const dialog = this.add.rectangle(width / 2, height / 2, dialogWidth, dialogHeight, 0x1a1a1a, 1)
             .setOrigin(0.5)
-            .setStrokeStyle(scaleDimension(scaleInfo.isMobile ? 2 : 3, scaleInfo), 0x4a4a4a, 0.8)
+            .setStrokeStyle(scaleInfo.isMobile ? 1 : 2, 0x4a4a4a, 0.8)
             .setAlpha(0);
 
         // Add glow effect to dialog
-        const glowOffset = scaleDimension(scaleInfo.isMobile ? 6 : 10, scaleInfo);
+        const glowOffset = scaleInfo.isMobile ? 4 : 8;
         const dialogGlow = this.add.rectangle(width / 2, height / 2, dialogWidth + glowOffset, dialogHeight + glowOffset, 0x2a2a2a, 0.3)
             .setOrigin(0.5)
             .setAlpha(0);
 
         // Main title with responsive text
-        const titleStyle = createResponsiveTextStyle(scaleInfo.isMobile ? 24 : 32, scaleInfo, {
+        const titleStyle = {
             fontFamily: 'Arial Black, Arial',
+            fontSize: scaleInfo.isMobile ? '20px' : '32px',
             color: '#ffffff',
             fontStyle: 'bold',
             align: 'center',
             stroke: 'transparent',
             strokeThickness: 0
-        });
-        const titleText = this.add.text(width / 2, height / 2 - scaleDimension(scaleInfo.isMobile ? 35 : 50, scaleInfo), 'Go Fullscreen?', titleStyle).setOrigin(0.5).setAlpha(0);
+        };
+        const titleOffset = scaleInfo.isMobile ? 30 : 50;
+        const titleText = this.add.text(width / 2, height / 2 - titleOffset, 'Go Fullscreen?', titleStyle).setOrigin(0.5).setAlpha(0);
         
         // Subtitle with helpful note
-        const subtitleStyle = createResponsiveTextStyle(scaleInfo.isMobile ? 12 : 16, scaleInfo, {
+        const subtitleStyle = {
             fontFamily: 'Arial',
+            fontSize: scaleInfo.isMobile ? '11px' : '16px',
             color: '#cccccc',
             align: 'center',
             stroke: 'transparent',
             strokeThickness: 0
-        });
-        const subtitleText = this.add.text(width / 2, height / 2 - scaleDimension(scaleInfo.isMobile ? 5 : 10, scaleInfo), 'This can be toggled in the options later.', subtitleStyle).setOrigin(0.5).setAlpha(0);
+        };
+        const subtitleOffset = scaleInfo.isMobile ? 5 : 10;
+        const subtitleText = this.add.text(width / 2, height / 2 - subtitleOffset, 'This can be toggled in the options later.', subtitleStyle).setOrigin(0.5).setAlpha(0);
 
         // Remove benefits text - no longer needed
         const benefitsText = null;        // Enhanced button styles
         const createStyledButton = (x, y, text, isPrimary = false) => {
             const buttonColor = isPrimary ? 0x3B82F6 : 0x374151;
             const textColor = isPrimary ? '#ffffff' : '#e5e7eb';
-            const buttonWidth = scaleInfo.isMobile ? 100 : 120;
-            const buttonHeight = scaleInfo.isMobile ? 45 : 50;
+            const buttonWidth = scaleInfo.isMobile ? 90 : 120;
+            const buttonHeight = scaleInfo.isMobile ? 40 : 50;
             
             // Button background
             const buttonBg = this.add.rectangle(x, y, buttonWidth, buttonHeight, buttonColor, 1)
                 .setOrigin(0.5)
                 .setInteractive({ useHandCursor: true })
-                .setStrokeStyle(scaleDimension(2, scaleInfo), isPrimary ? 0x60A5FA : 0x555555, 0.8)
+                .setStrokeStyle(1, isPrimary ? 0x60A5FA : 0x555555, 0.8)
                 .setAlpha(0);
             
             // Button text
             const buttonText = this.add.text(x, y, text, {
                 fontFamily: 'Arial',
-                fontSize: scaleInfo.isMobile ? '16px' : '18px',
+                fontSize: scaleInfo.isMobile ? '14px' : '18px',
                 color: textColor,
                 fontStyle: 'bold'
             }).setOrigin(0.5).setAlpha(0);
