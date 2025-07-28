@@ -129,11 +129,11 @@ export default class MainMenu extends Phaser.Scene {
         if (scaleInfo.isMobile) {
             // Mobile: 2x2 grid layout with bigger buttons (moved lower)
             const horizontalSpacing = 130 * scaleInfo.finalScale; // Increased horizontal gap between buttons in same row
-            const verticalSpacing = 20 * scaleInfo.finalScale;    // Reduced vertical gap between rows
+            const verticalSpacing = 10 * scaleInfo.finalScale;    // Reduced vertical gap between rows
             
             const startY = scaleInfo.isPortrait ? 
-                height / 2 + 120 * scaleInfo.finalScale : 
-                height / 2 + 80 * scaleInfo.finalScale;
+                height / 2 + 180 * scaleInfo.finalScale : 
+                height / 2 + 140 * scaleInfo.finalScale;
             
             // Calculate button positions for 2x2 grid - buttons will auto-size to fit text
             const centerX = width / 2;
@@ -173,7 +173,7 @@ export default class MainMenu extends Phaser.Scene {
         } else {
             // Desktop: vertical layout (original) - moved lower
             const buttonSpacing = 90 * scaleInfo.finalScale; // Increased gap
-            const startY = height / 2 + 80 * scaleInfo.finalScale;
+            const startY = height / 2 + 120 * scaleInfo.finalScale;
 
             // Menu button data with responsive positioning
             const menuButtons = [
