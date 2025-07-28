@@ -51,26 +51,24 @@ export default class StartupScene extends Phaser.Scene {
             .setAlpha(0);
             
         // Create dialog with mobile-responsive design
-        const baseDialogWidth = 500;
-        const baseDialogHeight = 300;
-        const dialogWidth = Math.min(scaleDimension(baseDialogWidth, scaleInfo), safeArea.width);
+        const baseDialogWidth = scaleInfo.isMobile ? 320 : 500;
+        const baseDialogHeight = scaleInfo.isMobile ? 250 : 300;
+        const dialogWidth = Math.min(scaleDimension(baseDialogWidth, scaleInfo), safeArea.width * 0.9);
         const dialogHeight = scaleDimension(baseDialogHeight, scaleInfo);
         
         const dialog = this.add.rectangle(width / 2, height / 2, dialogWidth, dialogHeight, 0x1a1a1a, 1)
             .setOrigin(0.5)
-            .setStrokeStyle(scaleDimension(3, scaleInfo), 0x4a4a4a, 0.8)
-            .setScale(scaleInfo.isMobile ? 0.9 : 0.8)
+            .setStrokeStyle(scaleDimension(scaleInfo.isMobile ? 2 : 3, scaleInfo), 0x4a4a4a, 0.8)
             .setAlpha(0);
 
         // Add glow effect to dialog
-        const glowOffset = scaleDimension(10, scaleInfo);
+        const glowOffset = scaleDimension(scaleInfo.isMobile ? 6 : 10, scaleInfo);
         const dialogGlow = this.add.rectangle(width / 2, height / 2, dialogWidth + glowOffset, dialogHeight + glowOffset, 0x2a2a2a, 0.3)
             .setOrigin(0.5)
-            .setScale(scaleInfo.isMobile ? 0.9 : 0.8)
             .setAlpha(0);
 
         // Main title with responsive text
-        const titleStyle = createResponsiveTextStyle(32, scaleInfo, {
+        const titleStyle = createResponsiveTextStyle(scaleInfo.isMobile ? 24 : 32, scaleInfo, {
             fontFamily: 'Arial Black, Arial',
             color: '#ffffff',
             fontStyle: 'bold',
@@ -78,37 +76,37 @@ export default class StartupScene extends Phaser.Scene {
             stroke: 'transparent',
             strokeThickness: 0
         });
-        const titleText = this.add.text(width / 2, height / 2 - scaleDimension(50, scaleInfo), 'Go Fullscreen?', titleStyle).setOrigin(0.5).setAlpha(0);
+        const titleText = this.add.text(width / 2, height / 2 - scaleDimension(scaleInfo.isMobile ? 35 : 50, scaleInfo), 'Go Fullscreen?', titleStyle).setOrigin(0.5).setAlpha(0);
         
         // Subtitle with helpful note
-        const subtitleStyle = createResponsiveTextStyle(16, scaleInfo, {
+        const subtitleStyle = createResponsiveTextStyle(scaleInfo.isMobile ? 12 : 16, scaleInfo, {
             fontFamily: 'Arial',
             color: '#cccccc',
             align: 'center',
             stroke: 'transparent',
             strokeThickness: 0
         });
-        const subtitleText = this.add.text(width / 2, height / 2 - scaleDimension(10, scaleInfo), 'This can be toggled in the options later.', subtitleStyle).setOrigin(0.5).setAlpha(0);
+        const subtitleText = this.add.text(width / 2, height / 2 - scaleDimension(scaleInfo.isMobile ? 5 : 10, scaleInfo), 'This can be toggled in the options later.', subtitleStyle).setOrigin(0.5).setAlpha(0);
 
         // Remove benefits text - no longer needed
         const benefitsText = null;        // Enhanced button styles
         const createStyledButton = (x, y, text, isPrimary = false) => {
             const buttonColor = isPrimary ? 0x3B82F6 : 0x374151;
             const textColor = isPrimary ? '#ffffff' : '#e5e7eb';
-            const buttonWidth = 120;
-            const buttonHeight = 50;
+            const buttonWidth = scaleInfo.isMobile ? 100 : 120;
+            const buttonHeight = scaleInfo.isMobile ? 45 : 50;
             
             // Button background
             const buttonBg = this.add.rectangle(x, y, buttonWidth, buttonHeight, buttonColor, 1)
                 .setOrigin(0.5)
                 .setInteractive({ useHandCursor: true })
-                .setStrokeStyle(2, isPrimary ? 0x60A5FA : 0x555555, 0.8)
+                .setStrokeStyle(scaleDimension(2, scaleInfo), isPrimary ? 0x60A5FA : 0x555555, 0.8)
                 .setAlpha(0);
             
             // Button text
             const buttonText = this.add.text(x, y, text, {
                 fontFamily: 'Arial',
-                fontSize: '18px',
+                fontSize: scaleInfo.isMobile ? '16px' : '18px',
                 color: textColor,
                 fontStyle: 'bold'
             }).setOrigin(0.5).setAlpha(0);
@@ -139,9 +137,11 @@ export default class StartupScene extends Phaser.Scene {
             return { bg: buttonBg, text: buttonText };
         };
 
-        // Create buttons
-        const yesButton = createStyledButton(width / 2 - 80, height / 2 + 60, 'YES', true);
-        const noButton = createStyledButton(width / 2 + 80, height / 2 + 60, 'SKIP', false);
+        // Create buttons with mobile-responsive spacing
+        const buttonSpacing = scaleInfo.isMobile ? 60 : 80;
+        const buttonY = height / 2 + scaleDimension(scaleInfo.isMobile ? 40 : 60, scaleInfo);
+        const yesButton = createStyledButton(width / 2 - buttonSpacing / 2, buttonY, 'YES', true);
+        const noButton = createStyledButton(width / 2 + buttonSpacing / 2, buttonY, 'SKIP', false);
 
         // Add click animations and functionality
         const addButtonClick = (button, callback) => {
@@ -181,11 +181,12 @@ export default class StartupScene extends Phaser.Scene {
     }
 
     setupKeyboardControls(yesButton, noButton) {
-        // Add keyboard hint text
+        // Add keyboard hint text with mobile-responsive positioning and sizing
         const { width, height } = this.scale;
-        const keyboardHint = this.add.text(width / 2, height / 2 + 120, 'Press ENTER for fullscreen, ESC to skip', {
+        const scaleInfo = getScaleInfo(this);
+        const keyboardHint = this.add.text(width / 2, height / 2 + scaleDimension(scaleInfo.isMobile ? 90 : 120, scaleInfo), 'Press ENTER for fullscreen, ESC to skip', {
             fontFamily: 'Arial',
-            fontSize: '12px',
+            fontSize: scaleInfo.isMobile ? '10px' : '12px',
             color: '#666666',
             align: 'center'
         }).setOrigin(0.5).setAlpha(0);
@@ -263,7 +264,6 @@ export default class StartupScene extends Phaser.Scene {
             this.tweens.add({
                 targets: [dialogGlow, dialog],
                 alpha: 1,
-                scale: 1,
                 duration: 600,
                 ease: 'Back.easeOut'
             });
