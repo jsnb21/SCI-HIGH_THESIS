@@ -98,10 +98,10 @@ export default class MainMenu extends Phaser.Scene {
         
         const logo = this.add.image(logoPos.x, logoPos.y, 'game_logo');
         
-        // Scale the logo appropriately for mobile
+        // Scale the logo appropriately for mobile - made bigger
         const logoScale = scaleInfo.isMobile ? 
-            (scaleInfo.isPortrait ? 0.6 * scaleInfo.finalScale : 0.5 * scaleInfo.finalScale) : 
-            0.8 * scaleInfo.finalScale;
+            (scaleInfo.isPortrait ? 0.8 * scaleInfo.finalScale : 0.7 * scaleInfo.finalScale) : 
+            1.0 * scaleInfo.finalScale;
         logo.setScale(logoScale);
         
         // Add fade-in animation for the logo
@@ -127,21 +127,20 @@ export default class MainMenu extends Phaser.Scene {
 
         // Menu button spacing and positioning - different for mobile and desktop
         if (scaleInfo.isMobile) {
-            // Mobile: 2x2 grid layout
-            const buttonWidth = 160 * scaleInfo.finalScale;
-            const buttonHeight = 60 * scaleInfo.finalScale;
-            const horizontalSpacing = 40 * scaleInfo.finalScale;
-            const verticalSpacing = 30 * scaleInfo.finalScale;
+            // Mobile: 2x2 grid layout with bigger buttons
+            const horizontalSpacing = 60 * scaleInfo.finalScale;
+            const verticalSpacing = 40 * scaleInfo.finalScale;
             
             const startY = scaleInfo.isPortrait ? 
-                height / 2 + 60 * scaleInfo.finalScale : 
-                height / 2 + 20 * scaleInfo.finalScale;
+                height / 2 + 80 * scaleInfo.finalScale : 
+                height / 2 + 40 * scaleInfo.finalScale;
             
-            // Calculate positions for 2x2 grid
-            const leftX = width / 2 - (buttonWidth / 2 + horizontalSpacing / 2);
-            const rightX = width / 2 + (buttonWidth / 2 + horizontalSpacing / 2);
+            // Calculate button positions for 2x2 grid - buttons will auto-size to fit text
+            const centerX = width / 2;
+            const leftX = centerX - horizontalSpacing;
+            const rightX = centerX + horizontalSpacing;
             const topY = startY;
-            const bottomY = startY + buttonHeight + verticalSpacing;
+            const bottomY = startY + 80 * scaleInfo.finalScale + verticalSpacing;
 
             // Menu button data for mobile 2x2 grid
             const menuButtons = [
@@ -517,14 +516,26 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
         }
     }
     
-    // Get responsive scaling
-    const baseWidth = scaleInfo.isMobile ? 180 : 320;  // Smaller width for mobile grid
-    const baseHeight = scaleInfo.isMobile ? 50 : 56;   // Slightly smaller height for mobile
+    // Get responsive scaling - auto-fit button size based on text
+    const baseFontSize = scaleInfo.isMobile ? 28 : 36;  // Bigger font for mobile
+    const padding = scaleInfo.isMobile ? 40 : 60;       // More padding for bigger buttons
     
-    // Use scaleInfo if available, otherwise fallback to simple scaling
-    const btnWidth = scaleInfo.finalScale ? baseWidth * scaleInfo.finalScale : baseWidth;
-    const btnHeight = scaleInfo.finalScale ? baseHeight * scaleInfo.finalScale : baseHeight;
-    const corner = scaleInfo.finalScale ? 18 * scaleInfo.finalScale : 18;
+    // Create temporary text to measure dimensions
+    const tempText = scene.add.text(0, 0, label, {
+        ...DEFAULT_TEXT_STYLE,
+        fontSize: `${baseFontSize * (scaleInfo.finalScale || 1)}px`
+    });
+    
+    // Calculate button size based on text dimensions with padding
+    const textWidth = tempText.width;
+    const textHeight = tempText.height;
+    const btnWidth = textWidth + padding * (scaleInfo.finalScale || 1);
+    const btnHeight = Math.max(textHeight + (padding * 0.6) * (scaleInfo.finalScale || 1), 
+                              scaleInfo.isMobile ? 60 * (scaleInfo.finalScale || 1) : 70 * (scaleInfo.finalScale || 1));
+    const corner = scaleInfo.finalScale ? 20 * scaleInfo.finalScale : 20;
+    
+    // Remove temporary text
+    tempText.destroy();
 
     // Button background
     const bg = scene.add.graphics();
@@ -534,11 +545,11 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
     bg.setAlpha(0);
 
-    // Button text with responsive styling
+    // Button text with responsive styling - bigger font
     let textStyle;
     try {
-        const baseFontSize = scaleInfo.isMobile ? 24 : 36;  // Smaller font for mobile grid
-        textStyle = createResponsiveTextStyle(baseFontSize, scaleInfo, {
+        const fontSize = scaleInfo.isMobile ? 28 : 36;  // Bigger font for both mobile and desktop
+        textStyle = createResponsiveTextStyle(fontSize, scaleInfo, {
             color: '#ffff00',
             stroke: '#000',
             strokeThickness: scaleInfo.finalScale ? 4 * scaleInfo.finalScale : 4,
@@ -553,8 +564,8 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     } catch (error) {
         console.warn('Using fallback text style');
         const fontSize = scaleInfo.finalScale ? 
-            Math.max(14, (scaleInfo.isMobile ? 24 : 36) * scaleInfo.finalScale) : 
-            (scaleInfo.isMobile ? 24 : 36);
+            Math.max(18, (scaleInfo.isMobile ? 28 : 36) * scaleInfo.finalScale) : 
+            (scaleInfo.isMobile ? 28 : 36);
         textStyle = {
             ...DEFAULT_TEXT_STYLE,
             fontSize: `${fontSize}px`,
