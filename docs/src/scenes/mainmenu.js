@@ -128,8 +128,8 @@ export default class MainMenu extends Phaser.Scene {
         // Menu button spacing and positioning - different for mobile and desktop
         if (scaleInfo.isMobile) {
             // Mobile: 2x2 grid layout with bigger buttons (moved lower)
-            const horizontalSpacing = 80 * scaleInfo.finalScale;
-            const verticalSpacing = 50 * scaleInfo.finalScale;
+            const horizontalSpacing = 100 * scaleInfo.finalScale; // Increased gap
+            const verticalSpacing = 60 * scaleInfo.finalScale;    // Increased gap
             
             const startY = scaleInfo.isPortrait ? 
                 height / 2 + 120 * scaleInfo.finalScale : 
@@ -166,13 +166,13 @@ export default class MainMenu extends Phaser.Scene {
                 }},
             ];
 
-            // Create menu buttons with 2x2 grid positioning
+            // Create menu buttons with consistent sizes and 2x2 grid positioning
             menuButtons.forEach((btn, i) => {
-                createMenuButton(this, btn.x, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo);
+                createMenuButton(this, btn.x, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo, menuButtons);
             });
         } else {
             // Desktop: vertical layout (original) - moved lower
-            const buttonSpacing = 80 * scaleInfo.finalScale;
+            const buttonSpacing = 90 * scaleInfo.finalScale; // Increased gap
             const startY = height / 2 + 80 * scaleInfo.finalScale;
 
             // Menu button data with responsive positioning
@@ -197,9 +197,9 @@ export default class MainMenu extends Phaser.Scene {
                 }},
             ];
 
-            // Create menu buttons with backgrounds and effects
+            // Create menu buttons with consistent sizes and backgrounds and effects
             menuButtons.forEach((btn, i) => {
-                createMenuButton(this, width / 2, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo);
+                createMenuButton(this, width / 2, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo, menuButtons);
             });
         }
     }
@@ -498,7 +498,7 @@ export default class MainMenu extends Phaser.Scene {
 }
 
 // Helper to create a menu button with background and effects
-function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 0, scaleInfo) {
+function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 0, scaleInfo, allButtons = null) {
     // Simple fallback scaling if scaleInfo is not provided or utils are unavailable
     if (!scaleInfo) {
         try {
@@ -516,26 +516,40 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
         }
     }
     
-    // Get responsive scaling - auto-fit button size based on text (made bigger)
+    // Get responsive scaling - calculate consistent button size based on longest text
     const baseFontSize = scaleInfo.isMobile ? 32 : 42;  // Even bigger font
     const padding = scaleInfo.isMobile ? 50 : 80;       // More padding for even bigger buttons
     
-    // Create temporary text to measure dimensions
-    const tempText = scene.add.text(0, 0, label, {
-        ...DEFAULT_TEXT_STYLE,
-        fontSize: `${baseFontSize * (scaleInfo.finalScale || 1)}px`
-    });
+    let maxWidth = 0;
+    let maxHeight = 0;
     
-    // Calculate button size based on text dimensions with padding
-    const textWidth = tempText.width;
-    const textHeight = tempText.height;
-    const btnWidth = textWidth + padding * (scaleInfo.finalScale || 1);
-    const btnHeight = Math.max(textHeight + (padding * 0.6) * (scaleInfo.finalScale || 1), 
+    // If we have all buttons, calculate the size based on the longest text
+    if (allButtons && allButtons.length > 0) {
+        allButtons.forEach(buttonData => {
+            const tempText = scene.add.text(0, 0, buttonData.label, {
+                ...DEFAULT_TEXT_STYLE,
+                fontSize: `${baseFontSize * (scaleInfo.finalScale || 1)}px`
+            });
+            maxWidth = Math.max(maxWidth, tempText.width);
+            maxHeight = Math.max(maxHeight, tempText.height);
+            tempText.destroy();
+        });
+    } else {
+        // Fallback: measure current button text only
+        const tempText = scene.add.text(0, 0, label, {
+            ...DEFAULT_TEXT_STYLE,
+            fontSize: `${baseFontSize * (scaleInfo.finalScale || 1)}px`
+        });
+        maxWidth = tempText.width;
+        maxHeight = tempText.height;
+        tempText.destroy();
+    }
+    
+    // Calculate consistent button size based on longest text with padding
+    const btnWidth = maxWidth + padding * (scaleInfo.finalScale || 1);
+    const btnHeight = Math.max(maxHeight + (padding * 0.6) * (scaleInfo.finalScale || 1), 
                               scaleInfo.isMobile ? 70 * (scaleInfo.finalScale || 1) : 80 * (scaleInfo.finalScale || 1));
     const corner = scaleInfo.finalScale ? 25 * scaleInfo.finalScale : 25;
-    
-    // Remove temporary text
-    tempText.destroy();
 
     // Button background
     const bg = scene.add.graphics();
