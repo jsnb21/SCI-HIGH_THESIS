@@ -125,41 +125,84 @@ export default class MainMenu extends Phaser.Scene {
             delay: 800
         });
 
-        // Menu button spacing - adjust for mobile
-        const buttonSpacing = scaleInfo.isMobile ? 
-            (scaleInfo.isPortrait ? 80 * scaleInfo.finalScale : 60 * scaleInfo.finalScale) :
-            70 * scaleInfo.finalScale;
-        
-        const startY = scaleInfo.isMobile && scaleInfo.isPortrait ? 
-            height / 2 + 60 * scaleInfo.finalScale : 
-            height / 2 + 40 * scaleInfo.finalScale;
+        // Menu button spacing and positioning - different for mobile and desktop
+        if (scaleInfo.isMobile) {
+            // Mobile: 2x2 grid layout
+            const buttonWidth = 160 * scaleInfo.finalScale;
+            const buttonHeight = 60 * scaleInfo.finalScale;
+            const horizontalSpacing = 40 * scaleInfo.finalScale;
+            const verticalSpacing = 30 * scaleInfo.finalScale;
+            
+            const startY = scaleInfo.isPortrait ? 
+                height / 2 + 60 * scaleInfo.finalScale : 
+                height / 2 + 20 * scaleInfo.finalScale;
+            
+            // Calculate positions for 2x2 grid
+            const leftX = width / 2 - (buttonWidth / 2 + horizontalSpacing / 2);
+            const rightX = width / 2 + (buttonWidth / 2 + horizontalSpacing / 2);
+            const topY = startY;
+            const bottomY = startY + buttonHeight + verticalSpacing;
 
-        // Menu button data with responsive positioning
-        const menuButtons = [
-            { label: 'New Game', y: startY, onClick: () => {
-                se_confirmSound.play();
-                gameManager.reset();
-                onceOnlyFlags.reset();
-                this.scene.start('VNScene');
-            }},
-            { label: 'Continue', y: startY + buttonSpacing, onClick: () => {
-                se_confirmSound.play();
-                showSaveSelectAndContinue(this, se_hoverSound, se_confirmSound);
-            }},
-            { label: 'Options', y: startY + (buttonSpacing * 2), onClick: () => {
-                se_confirmSound.play();
-                this.scene.start('OptionsScene');
-            }},
-            { label: 'Quit', y: startY + (buttonSpacing * 3), onClick: () => {
-                se_confirmSound.play();
-                this.showQuitConfirmation(se_hoverSound, se_confirmSound);
-            }},
-        ];
+            // Menu button data for mobile 2x2 grid
+            const menuButtons = [
+                // Top row
+                { label: 'New Game', x: leftX, y: topY, onClick: () => {
+                    se_confirmSound.play();
+                    gameManager.reset();
+                    onceOnlyFlags.reset();
+                    this.scene.start('VNScene');
+                }},
+                { label: 'Continue', x: rightX, y: topY, onClick: () => {
+                    se_confirmSound.play();
+                    showSaveSelectAndContinue(this, se_hoverSound, se_confirmSound);
+                }},
+                // Bottom row
+                { label: 'Options', x: leftX, y: bottomY, onClick: () => {
+                    se_confirmSound.play();
+                    this.scene.start('OptionsScene');
+                }},
+                { label: 'Quit', x: rightX, y: bottomY, onClick: () => {
+                    se_confirmSound.play();
+                    this.showQuitConfirmation(se_hoverSound, se_confirmSound);
+                }},
+            ];
 
-        // Create menu buttons with backgrounds and effects
-        menuButtons.forEach((btn, i) => {
-            createMenuButton(this, width / 2, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo);
-        });
+            // Create menu buttons with 2x2 grid positioning
+            menuButtons.forEach((btn, i) => {
+                createMenuButton(this, btn.x, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo);
+            });
+        } else {
+            // Desktop: vertical layout (original)
+            const buttonSpacing = 70 * scaleInfo.finalScale;
+            const startY = height / 2 + 40 * scaleInfo.finalScale;
+
+            // Menu button data with responsive positioning
+            const menuButtons = [
+                { label: 'New Game', y: startY, onClick: () => {
+                    se_confirmSound.play();
+                    gameManager.reset();
+                    onceOnlyFlags.reset();
+                    this.scene.start('VNScene');
+                }},
+                { label: 'Continue', y: startY + buttonSpacing, onClick: () => {
+                    se_confirmSound.play();
+                    showSaveSelectAndContinue(this, se_hoverSound, se_confirmSound);
+                }},
+                { label: 'Options', y: startY + (buttonSpacing * 2), onClick: () => {
+                    se_confirmSound.play();
+                    this.scene.start('OptionsScene');
+                }},
+                { label: 'Quit', y: startY + (buttonSpacing * 3), onClick: () => {
+                    se_confirmSound.play();
+                    this.showQuitConfirmation(se_hoverSound, se_confirmSound);
+                }},
+            ];
+
+            // Create menu buttons with backgrounds and effects
+            menuButtons.forEach((btn, i) => {
+                createMenuButton(this, width / 2, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo);
+            });
+        }
     }
 
     createScrollingClouds() {
@@ -475,8 +518,8 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     }
     
     // Get responsive scaling
-    const baseWidth = 320;
-    const baseHeight = 56;
+    const baseWidth = scaleInfo.isMobile ? 180 : 320;  // Smaller width for mobile grid
+    const baseHeight = scaleInfo.isMobile ? 50 : 56;   // Slightly smaller height for mobile
     
     // Use scaleInfo if available, otherwise fallback to simple scaling
     const btnWidth = scaleInfo.finalScale ? baseWidth * scaleInfo.finalScale : baseWidth;
@@ -494,7 +537,8 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     // Button text with responsive styling
     let textStyle;
     try {
-        textStyle = createResponsiveTextStyle(36, scaleInfo, {
+        const baseFontSize = scaleInfo.isMobile ? 24 : 36;  // Smaller font for mobile grid
+        textStyle = createResponsiveTextStyle(baseFontSize, scaleInfo, {
             color: '#ffff00',
             stroke: '#000',
             strokeThickness: scaleInfo.finalScale ? 4 * scaleInfo.finalScale : 4,
@@ -508,7 +552,9 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
         });
     } catch (error) {
         console.warn('Using fallback text style');
-        const fontSize = scaleInfo.finalScale ? Math.max(16, 36 * scaleInfo.finalScale) : 36;
+        const fontSize = scaleInfo.finalScale ? 
+            Math.max(14, (scaleInfo.isMobile ? 24 : 36) * scaleInfo.finalScale) : 
+            (scaleInfo.isMobile ? 24 : 36);
         textStyle = {
             ...DEFAULT_TEXT_STYLE,
             fontSize: `${fontSize}px`,
