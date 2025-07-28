@@ -51,7 +51,7 @@ export default class StartupScene extends Phaser.Scene {
             .setAlpha(0);
             
         // Create dialog with mobile-responsive design
-        const baseDialogWidth = scaleInfo.isMobile ? 280 : 500;
+        const baseDialogWidth = scaleInfo.isMobile ? 320 : 550;
         const baseDialogHeight = scaleInfo.isMobile ? 200 : 300;
         const dialogWidth = Math.min(baseDialogWidth, safeArea.width * 0.85);
         const dialogHeight = baseDialogHeight;
@@ -142,7 +142,7 @@ export default class StartupScene extends Phaser.Scene {
         };
 
         // Create buttons with mobile-responsive spacing
-        const buttonSpacing = scaleInfo.isMobile ? 60 : 80;
+        const buttonSpacing = scaleInfo.isMobile ? 100 : 140;
         const buttonY = height / 2 + scaleDimension(scaleInfo.isMobile ? 40 : 60, scaleInfo);
         const yesButton = createStyledButton(width / 2 - buttonSpacing / 2, buttonY, 'YES', true);
         const noButton = createStyledButton(width / 2 + buttonSpacing / 2, buttonY, 'SKIP', false);
