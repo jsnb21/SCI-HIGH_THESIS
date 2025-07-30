@@ -2,11 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="public/assets/img/logo/SCI-HIGH_LOGO.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, orientation=landscape" />
-    <title>SCI-HIGH Thesis Home</title>
+    <title>SCI-HIGH: A Byte-Size Learning Adventure!</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Gaming Feel -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
@@ -14,123 +16,498 @@
             colors: {
               primary: '#F4CE14', // yellow
               accent: '#379777', // green
-              dark: '#45474B',   // dark gray
-              light: '#F5F7F8',  // light gray
-              textColor: '#45474B',
+              dark: '#1a1a2e',   // darker navy
+              light: '#16213e',  // dark blue
+              purple: '#9c27b0', // gaming purple
+              cyan: '#00bcd4',   // gaming cyan
+              textColor: '#ffffff',
+              cardBg: 'rgba(22, 33, 62, 0.8)',
             },
             fontFamily: {
-              sans: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+              gaming: ['Orbitron', 'monospace'],
+              body: ['Exo 2', 'sans-serif'],
+            },
+            animation: {
+              'pulse-glow': 'pulse-glow 2s ease-in-out infinite alternate',
+              'float': 'float 6s ease-in-out infinite',
+              'slide-in': 'slide-in 0.8s ease-out',
+              'bounce-in': 'bounce-in 1s ease-out',
             }
           }
         }
       }
     </script>
+    <style>
+      @keyframes pulse-glow {
+        from { box-shadow: 0 0 20px #F4CE14; }
+        to { box-shadow: 0 0 30px #F4CE14, 0 0 40px #F4CE14; }
+      }
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+      }
+      @keyframes slide-in {
+        from { transform: translateX(-100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes bounce-in {
+        0% { transform: scale(0); opacity: 0; }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      
+      .game-bg {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
+        position: relative;
+        overflow-x: hidden;
+      }
+      
+      .game-bg::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+          radial-gradient(circle at 20% 80%, rgba(244, 206, 20, 0.1) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(55, 151, 119, 0.1) 0%, transparent 50%),
+          radial-gradient(circle at 40% 40%, rgba(156, 39, 176, 0.1) 0%, transparent 50%);
+        animation: float 8s ease-in-out infinite;
+        pointer-events: none;
+        z-index: -1;
+      }
+      
+      .pixelated {
+        image-rendering: pixelated;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: crisp-edges;
+      }
+      
+      .neon-border {
+        border: 2px solid #F4CE14;
+        background: rgba(22, 33, 62, 0.8);
+        box-shadow: 0 0 10px rgba(244, 206, 20, 0.3);
+      }
+    </style>
   </head>
-  <body class="font-sans bg-light text-textColor m-0 p-0 leading-relaxed">
-    <div id="game-container"></div>
+  <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed">
+    <!-- Particle Background Effect -->
+    <div id="particles" class="fixed inset-0 pointer-events-none z-0"></div>
     
-    <!-- Navigation -->
-    <nav class="bg-white py-5 text-center sticky top-0 shadow-md z-50">
-      <a href="index.html" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">Home</a>
-      <a href="#about" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">About Us</a>
-      <a href="#contact" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">Contact</a>
-    </nav>
-    
-    <!-- Carousel removed -->
-
-    <!-- Main Content -->
-    <div class="max-w-4xl mx-auto my-12 p-12 bg-light rounded-xl shadow-lg text-center">
-      <h1 class="text-4xl mb-8 text-dark font-bold">Welcome to SCI-HIGH!</h1>
-      <p class="text-lg">
-        SCI-HIGH is an interactive game experience. Explore, learn, and have fun!
-      </p>
-      <div class="flex flex-col gap-6 items-center justify-center mt-8">
-        <button id="open-screenshots-modal" class="inline-block px-8 py-3 text-lg text-dark bg-primary border-none rounded-full font-medium cursor-pointer transition-all duration-300 shadow-md hover:bg-accent hover:text-white hover:-translate-y-0.5 hover:shadow-lg">Start Game</button>
-        <a href="leaderboards.html" class="inline-block px-8 py-3 text-lg text-dark bg-primary border-none rounded-full font-medium cursor-pointer transition-all duration-300 shadow-md hover:bg-accent hover:text-white hover:-translate-y-0.5 hover:shadow-lg">View Leaderboards</a>
-    <!-- Game Screenshots Modal -->
-    <div id="screenshots-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden">
-      <div class="bg-light rounded-xl shadow-2xl max-w-lg w-full p-6 relative flex flex-col items-center">
-        <button id="close-screenshots-modal" class="absolute top-4 right-4 text-2xl text-gray-400 hover:text-dark">&times;</button>
-        <h2 class="text-2xl font-bold mb-2 text-dark">Game Preview</h2>
-        <p class="mb-4 text-gray-700 text-center text-base max-w-md">SCI-HIGH is an interactive educational adventure game where you explore, solve puzzles, and learn programming concepts in a fun, story-driven environment. Embark on your journey and level up your knowledge!</p>
-        <div class="relative w-full flex items-center justify-center mb-4">
-          <button id="carousel-prev" class="absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 border-none rounded-full w-10 h-10 flex items-center justify-center text-xl text-dark shadow hover:bg-white hover:shadow-md">&#10094;</button>
-          <div class="w-full flex items-center justify-center">
-            <img id="carousel-image" src="assets/img/bg/classroom_day.png" alt="Game Screenshot" class="rounded-lg object-cover h-56 w-full max-w-xs transition-all duration-500" />
+    <!-- Gaming HUD Navigation -->
+    <nav class="relative z-50 bg-gradient-to-r from-dark/90 to-light/90 backdrop-blur-md border-b-2 border-primary/30 py-4 sticky top-0">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <img src="public/assets/img/buko_productions-logo.png" alt="Buko Productions Logo" class="w-16 h-16 animate-bounce-in" />
+            <span class="font-gaming text-xl font-bold text-primary">SCI-HIGH</span>
           </div>
-          <button id="carousel-next" class="absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 border-none rounded-full w-10 h-10 flex items-center justify-center text-xl text-dark shadow hover:bg-white hover:shadow-md">&#10095;</button>
+          <div class="flex space-x-8">
+            <a href="#home" class="gaming-nav-link text-textColor hover:text-primary transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
+              <span class="relative z-10">Home</span>
+              <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </a>
+            <a href="#about" class="gaming-nav-link text-textColor hover:text-primary transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
+              <span class="relative z-10">About</span>
+              <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </a>
+            <a href="#contact" class="gaming-nav-link text-textColor hover:text-primary transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
+              <span class="relative z-10">Contact</span>
+              <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </a>
+          </div>
         </div>
-        <div class="flex justify-center gap-2 mb-4" id="carousel-dots">
-          <span class="dot w-3 h-3 rounded-full bg-primary scale-110 inline-block cursor-pointer"></span>
-          <span class="dot w-3 h-3 rounded-full bg-gray-300 inline-block cursor-pointer"></span>
-          <span class="dot w-3 h-3 rounded-full bg-gray-300 inline-block cursor-pointer"></span>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="relative z-10 min-h-screen flex items-center justify-center px-6 py-20">
+      <div class="max-w-6xl mx-auto text-center">
+        <!-- Main Hero Content -->
+        <div class="mb-12 animate-slide-in">
+          <div class="mb-8 relative">
+            <img src="public/assets/img/buko_productions-logo.png" alt="Buko Productions - SCI-HIGH" class="mx-auto w-48 h-48 animate-float drop-shadow-2xl relative z-10" />
+            <div class="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse-glow"></div>
+          </div>
+          
+          <h1 class="font-gaming text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-cyan mb-6 animate-bounce-in">
+            SCI-HIGH
+          </h1>
+          
+          <div class="font-gaming text-xl md:text-2xl text-primary mb-4 tracking-widest animate-bounce-in" style="animation-delay: 0.2s;">
+            A BYTE-SIZE LEARNING ADVENTURE!
+          </div>
+          
+          <p class="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-12 animate-bounce-in" style="animation-delay: 0.4s;">
+            Embark on an epic educational journey where programming meets adventure. 
+            Battle bugs, solve coding puzzles, and level up your skills in this immersive learning experience!
+          </p>
         </div>
-        <a href="game.html" id="play-game-btn" class="mt-2 px-8 py-3 text-lg text-dark bg-primary border-none rounded-full font-medium cursor-pointer transition-all duration-300 shadow-md hover:bg-accent hover:text-white hover:-translate-y-0.5 hover:shadow-lg">Play Game</a>
+
+        <!-- Gaming Action Buttons -->
+        <div class="flex flex-col md:flex-row gap-6 justify-center items-center mb-16 animate-bounce-in" style="animation-delay: 0.6s;">
+          <button id="start-game-btn" class="group relative px-12 py-4 font-gaming text-lg font-bold text-dark bg-gradient-to-r from-primary to-yellow-300 rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50 uppercase tracking-wider">
+            <span class="relative z-10">⚡ Start Adventure</span>
+            <div class="absolute inset-0 bg-gradient-to-r from-yellow-300 to-primary rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </button>
+          
+          <a href="leaderboards.html" class="group relative px-12 py-4 font-gaming text-lg font-bold text-textColor bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-accent/50 uppercase tracking-wider border-2 border-accent/50">
+            <span class="relative z-10">🏆 Leaderboards</span>
+            <div class="absolute inset-0 bg-gradient-to-r from-cyan to-accent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </a>
+        </div>
+
+        <!-- Game Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto animate-bounce-in" style="animation-delay: 0.8s;">
+          <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105">
+            <div class="text-3xl mb-2">🎮</div>
+            <h3 class="font-gaming text-primary text-lg mb-2">Interactive Learning</h3>
+            <p class="text-gray-300 text-sm">Hands-on coding challenges and puzzles</p>
+            <div class="mt-4 text-xs text-gray-400">
+              <span class="bg-primary/20 text-primary px-2 py-1 rounded">5+ Languages</span>
+            </div>
+          </div>
+          
+          <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105">
+            <div class="text-3xl mb-2">⚔️</div>
+            <h3 class="font-gaming text-accent text-lg mb-2">Epic Adventures</h3>
+            <p class="text-gray-300 text-sm">Story-driven gameplay with RPG elements</p>
+            <div class="mt-4 text-xs text-gray-400">
+              <span class="bg-accent/20 text-accent px-2 py-1 rounded">Story Mode</span>
+            </div>
+          </div>
+          
+          <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105">
+            <div class="text-3xl mb-2">📚</div>
+            <h3 class="font-gaming text-cyan text-lg mb-2">Skill Progression</h3>
+            <p class="text-gray-300 text-sm">Level up your programming knowledge</p>
+            <div class="mt-4 text-xs text-gray-400">
+              <span class="bg-cyan/20 text-cyan px-2 py-1 rounded">XP System</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Feature Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mt-12 animate-bounce-in" style="animation-delay: 1s;">
+          <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
+            <div class="w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+              <img src="public/assets/img/mainhub/CLASSROOM_ICON.png" alt="Classroom" class="w-12 h-12 object-contain" />
+            </div>
+            <h4 class="font-gaming text-purple text-md mb-2">Interactive Lessons</h4>
+            <p class="text-gray-400 text-xs">Immersive classroom experiences with hands-on coding</p>
+          </div>
+
+          <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
+            <div class="w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+              <img src="public/assets/img/mainhub/PUZZLE.png" alt="Puzzles" class="w-12 h-12 object-contain" />
+            </div>
+            <h4 class="font-gaming text-primary text-md mb-2">Logic Puzzles</h4>
+            <p class="text-gray-400 text-xs">Brain-teasing challenges that teach programming concepts</p>
+          </div>
+
+          <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
+            <div class="w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+              <img src="public/assets/img/mainhub/COMLAB_ICON.png" alt="Computer Lab" class="w-12 h-12 object-contain" />
+            </div>
+            <h4 class="font-gaming text-accent text-md mb-2">Computer Lab</h4>
+            <p class="text-gray-400 text-xs">Practice coding in virtual computer lab environments</p>
+          </div>
+
+          <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
+            <div class="w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+              <img src="public/assets/img/icons/office/achievements.png" alt="Achievements" class="w-12 h-12 object-contain" />
+            </div>
+            <h4 class="font-gaming text-cyan text-md mb-2">Achievements</h4>
+            <p class="text-gray-400 text-xs">Unlock badges and celebrate your coding victories</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Game Screenshots Modal -->
+    <div id="screenshots-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] hidden backdrop-blur-sm">
+      <div class="neon-border bg-cardBg rounded-xl shadow-2xl max-w-2xl w-full mx-4 p-8 relative animate-bounce-in">
+        <button id="close-screenshots-modal" class="absolute top-4 right-4 text-3xl text-gray-400 hover:text-primary transition-colors duration-300 font-gaming">&times;</button>
+        
+        <div class="text-center mb-6">
+          <h2 class="font-gaming text-3xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Game Preview</h2>
+          <p class="text-gray-300 text-lg max-w-lg mx-auto leading-relaxed">
+            Experience the ultimate educational adventure! Battle through coding challenges, explore mystical dungeons, and master programming languages in an epic quest for knowledge.
+          </p>
+        </div>
+        
+        <div class="relative mb-6">
+          <div class="relative w-full flex items-center justify-center">
+            <button id="carousel-prev" class="absolute left-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-primary to-yellow-300 border-none rounded-full w-12 h-12 flex items-center justify-center text-xl text-dark shadow-lg hover:shadow-primary/50 transition-all duration-300 transform hover:scale-110 z-10">‹</button>
+            <div class="w-full flex items-center justify-center px-16">
+              <img id="carousel-image" src="public/assets/classroom_day-7QRgWPJs.png" alt="Game Screenshot" class="rounded-lg object-cover h-64 w-full max-w-md transition-all duration-500 shadow-2xl border-2 border-primary/30" />
+            </div>
+            <button id="carousel-next" class="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-primary to-yellow-300 border-none rounded-full w-12 h-12 flex items-center justify-center text-xl text-dark shadow-lg hover:shadow-primary/50 transition-all duration-300 transform hover:scale-110 z-10">›</button>
+          </div>
+        </div>
+        
+        <div class="flex justify-center gap-3 mb-6" id="carousel-dots">
+          <span class="dot w-4 h-4 rounded-full bg-primary scale-110 inline-block cursor-pointer transition-all duration-300"></span>
+          <span class="dot w-4 h-4 rounded-full bg-gray-500 inline-block cursor-pointer transition-all duration-300 hover:bg-gray-400"></span>
+          <span class="dot w-4 h-4 rounded-full bg-gray-500 inline-block cursor-pointer transition-all duration-300 hover:bg-gray-400"></span>
+        </div>
+        
+        <div class="text-center">
+          <a href="game.html" id="play-game-btn" class="inline-block px-10 py-4 font-gaming text-lg font-bold text-dark bg-gradient-to-r from-primary to-yellow-300 rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50 uppercase tracking-wider">
+            🚀 Launch Game
+          </a>
+        </div>
       </div>
     </div>
+
+    <!-- About Section -->
+    <section id="about" class="relative z-10 py-20 px-6">
+      <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-16">
+          <h2 class="font-gaming text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-accent to-cyan mb-6">About Our Quest</h2>
+          <div class="w-32 h-1 bg-gradient-to-r from-accent to-cyan mx-auto rounded-full"></div>
+        </div>
+
+        <!-- Hero Banner with Gaming Style -->
+        <div class="neon-border rounded-xl overflow-hidden shadow-2xl mb-12 transform transition-all duration-300 hover:scale-105">
+          <div class="relative">
+            <img src="public/assets/ABOUT_US-Drs9y4b1.jpg" alt="About Us - SCI-HIGH Team" class="w-full h-80 object-cover object-top" />
+            <div class="absolute inset-0 bg-gradient-to-t from-dark/80 via-transparent to-transparent"></div>
+            <div class="absolute bottom-6 left-6 right-6">
+              <h3 class="font-gaming text-2xl font-bold text-primary mb-2">The Development Team</h3>
+              <p class="text-gray-200 text-lg">Crafting the future of educational gaming</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <!-- Mission Description -->
+          <div class="space-y-6">
+            <div class="neon-border bg-cardBg rounded-lg p-8 backdrop-blur-sm">
+              <h3 class="font-gaming text-2xl text-primary mb-4 flex items-center">
+                <span class="mr-3">🎯</span> Our Mission
+              </h3>
+              <p class="text-gray-300 text-lg leading-relaxed">
+                SCI-HIGH is an innovative thesis project that transforms programming education into an epic adventure. 
+                We're revolutionizing how students learn by combining the excitement of gaming with the power of education.
+              </p>
+            </div>
+            
+            <div class="neon-border bg-cardBg rounded-lg p-8 backdrop-blur-sm">
+              <h3 class="font-gaming text-2xl text-accent mb-4 flex items-center">
+                <span class="mr-3">🎮</span> Game Features
+              </h3>
+              <ul class="text-gray-300 space-y-2">
+                <li class="flex items-center"><span class="text-primary mr-2">▶</span> Interactive storytelling with RPG elements</li>
+                <li class="flex items-center"><span class="text-primary mr-2">▶</span> Multiple programming languages and concepts</li>
+                <li class="flex items-center"><span class="text-primary mr-2">▶</span> Dungeon exploration and puzzle solving</li>
+                <li class="flex items-center"><span class="text-primary mr-2">▶</span> Adaptive learning for all skill levels</li>
+                <li class="flex items-center"><span class="text-primary mr-2">▶</span> Real-time progress tracking</li>
+                <li class="flex items-center"><span class="text-primary mr-2">▶</span> Achievement system with rewards</li>
+              </ul>
+            </div>
+
+            <!-- Game Statistics -->
+            <div class="neon-border bg-cardBg rounded-lg p-8 backdrop-blur-sm">
+              <h3 class="font-gaming text-2xl text-purple mb-4 flex items-center">
+                <span class="mr-3">📊</span> Game Stats
+              </h3>
+              <div class="grid grid-cols-2 gap-4 text-center">
+                <div class="bg-dark/50 rounded-lg p-4">
+                  <div class="text-2xl font-gaming text-primary">500+</div>
+                  <div class="text-xs text-gray-400">Challenges</div>
+                </div>
+                <div class="bg-dark/50 rounded-lg p-4">
+                  <div class="text-2xl font-gaming text-accent">50+</div>
+                  <div class="text-xs text-gray-400">Levels</div>
+                </div>
+                <div class="bg-dark/50 rounded-lg p-4">
+                  <div class="text-2xl font-gaming text-cyan">15+</div>
+                  <div class="text-xs text-gray-400">Characters</div>
+                </div>
+                <div class="bg-dark/50 rounded-lg p-4">
+                  <div class="text-2xl font-gaming text-purple">100+</div>
+                  <div class="text-xs text-gray-400">Achievements</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Team Members -->
+          <div class="space-y-6">
+            <h3 class="font-gaming text-3xl text-cyan mb-8 text-center">⚔️ The Guild</h3>
+            <div class="space-y-4">
+              <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105">
+                <div class="flex items-center space-x-4">
+                  <div class="w-16 h-16 bg-gradient-to-br from-primary to-yellow-300 rounded-full flex items-center justify-center text-2xl font-gaming font-bold text-dark">JS</div>
+                  <div>
+                    <h4 class="font-gaming text-xl text-primary font-bold">Baronia, James Scott</h4>
+                    <p class="text-gray-400">Project Lead & Developer</p>
+                    <p class="text-sm text-gray-500">Quest Designer & System Architect</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105">
+                <div class="flex items-center space-x-4">
+                  <div class="w-16 h-16 bg-gradient-to-br from-accent to-cyan rounded-full flex items-center justify-center text-2xl font-gaming font-bold text-white">RJ</div>
+                  <div>
+                    <h4 class="font-gaming text-xl text-accent font-bold">Dela Cruz, Richard Joseph</h4>
+                    <p class="text-gray-400">Documentation & QA Tester</p>
+                    <p class="text-sm text-gray-500">Lore Master & Quality Guardian</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105">
+                <div class="flex items-center space-x-4">
+                  <div class="w-16 h-16 bg-gradient-to-br from-purple to-pink-500 rounded-full flex items-center justify-center text-2xl font-gaming font-bold text-white">JE</div>
+                  <div>
+                    <h4 class="font-gaming text-xl text-purple font-bold">Verceles, James Edward</h4>
+                    <p class="text-gray-400">Lead Developer</p>
+                    <p class="text-sm text-gray-500">Code Wizard & Technical Lead</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Programming Languages Section -->
+        <div class="mt-16">
+          <div class="flex items-center justify-center gap-4 mb-8">
+            <img src="public/assets/img/mainhub/PLAY_BUTTON.png" alt="Play" class="w-8 h-8 object-contain" />
+            <h3 class="font-gaming text-3xl text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Master These Languages</h3>
+            <img src="public/assets/img/mainhub/PLAY_BUTTON.png" alt="Play" class="w-8 h-8 object-contain" />
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 max-w-6xl mx-auto">
+            <!-- HTML/CSS/JavaScript -->
+            <div class="neon-border bg-cardBg rounded-lg p-4 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
+              <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+                <img src="public/assets/img/comlab/icons/web-design_logo.png" alt="Web Design" class="w-10 h-10 object-contain" />
+              </div>
+              <h4 class="font-gaming text-primary text-sm">HTML/CSS/JS</h4>
+              <div class="w-full bg-dark/50 rounded-full h-2 mt-2">
+                <div class="bg-primary h-2 rounded-full" style="width: 90%"></div>
+              </div>
+            </div>
+
+            <!-- Python -->
+            <div class="neon-border bg-cardBg rounded-lg p-4 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
+              <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+                <img src="public/assets/img/comlab/icons/python_logo.png" alt="Python" class="w-10 h-10 object-contain" />
+              </div>
+              <h4 class="font-gaming text-accent text-sm">Python</h4>
+              <div class="w-full bg-dark/50 rounded-full h-2 mt-2">
+                <div class="bg-accent h-2 rounded-full" style="width: 85%"></div>
+              </div>
+            </div>
+
+            <!-- Java -->
+            <div class="neon-border bg-cardBg rounded-lg p-4 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
+              <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+                <img src="public/assets/img/comlab/icons/java_logo.png" alt="Java" class="w-10 h-10 object-contain" />
+              </div>
+              <h4 class="font-gaming text-cyan text-sm">Java</h4>
+              <div class="w-full bg-dark/50 rounded-full h-2 mt-2">
+                <div class="bg-cyan h-2 rounded-full" style="width: 75%"></div>
+              </div>
+            </div>
+
+            <!-- C Programming -->
+            <div class="neon-border bg-cardBg rounded-lg p-4 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
+              <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+                <img src="public/assets/img/comlab/icons/c_logo.png" alt="C Programming" class="w-10 h-10 object-contain" />
+              </div>
+              <h4 class="font-gaming text-purple text-sm">C Programming</h4>
+              <div class="w-full bg-dark/50 rounded-full h-2 mt-2">
+                <div class="bg-purple h-2 rounded-full" style="width: 80%"></div>
+              </div>
+            </div>
+
+            <!-- C++ -->
+            <div class="neon-border bg-cardBg rounded-lg p-4 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
+              <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+                <img src="public/assets/img/comlab/icons/cplus_logo.png" alt="C++" class="w-10 h-10 object-contain" />
+              </div>
+              <h4 class="font-gaming text-primary text-sm">C++</h4>
+              <div class="w-full bg-dark/50 rounded-full h-2 mt-2">
+                <div class="bg-primary h-2 rounded-full" style="width: 70%"></div>
+              </div>
+            </div>
+
+            <!-- C# -->
+            <div class="neon-border bg-cardBg rounded-lg p-4 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
+              <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+                <img src="public/assets/img/comlab/icons/csharp_logo.png" alt="C#" class="w-10 h-10 object-contain" />
+              </div>
+              <h4 class="font-gaming text-accent text-sm">C#</h4>
+              <div class="w-full bg-dark/50 rounded-full h-2 mt-2">
+                <div class="bg-accent h-2 rounded-full" style="width: 65%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <!-- About Section -->
-      <section id="about" class="mt-16 pt-4 border-t border-gray-100">
-        <h2 class="text-2xl text-dark font-semibold">About Us</h2>
-        
-        <!-- Hero Banner -->
-        <div class="mt-6 mb-8 rounded-lg overflow-hidden shadow-lg">
-          <img src="ABOUT_US.jpg" alt="About Us - SCI-HIGH Team" class="w-full h-72 object-cover object-top" />
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="relative z-10 py-20 px-6">
+      <div class="max-w-4xl mx-auto text-center">
+        <div class="neon-border bg-cardBg rounded-xl p-12 backdrop-blur-sm">
+          <h2 class="font-gaming text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent mb-8">📡 Contact Command Center</h2>
+          <p class="text-gray-300 text-xl mb-8 leading-relaxed">
+            Ready to join the adventure or have questions about our quest? Send us a transmission!
+          </p>
+          <div class="inline-block neon-border bg-dark/50 rounded-lg p-6">
+            <p class="text-lg text-gray-300 mb-4">📧 Mission Control:</p>
+            <a href="mailto:info@sci-high-thesis.com" class="font-gaming text-xl text-primary hover:text-accent transition-colors duration-300 underline decoration-primary/50">
+              info@sci-high-thesis.com
+            </a>
+          </div>
         </div>
-        
-        <p class="mt-4">
-        SCI-HIGH is a thesis project designed to make learning programming engaging and accessible. It aims to be used as an educational tool for college, senior high, and junior high school departments, combining interactive storytelling and games to enhance the learning experience.
-        </p>
-        <div class="mt-8">
-          <h3 class="text-xl text-primary font-semibold mb-2">Team Members</h3>
-          <ul class="flex flex-col items-center gap-2">
-            <li class="flex items-center bg-light border border-primary rounded-lg px-4 py-2 w-full max-w-xs shadow-sm text-dark">
-              <div class="flex flex-col items-start">
-                <span class="font-medium">Baronia, James Scott</span>
-                <span class="text-sm text-gray-500">Project Lead & Developer</span>
-              </div>
-            </li>
-            <li class="flex items-center bg-light border border-primary rounded-lg px-4 py-2 w-full max-w-xs shadow-sm text-dark">
-              <div class="flex flex-col items-start">
-                <span class="font-medium">Dela Cruz, Richard Joseph</span>
-                <span class="text-sm text-gray-500">Documentation & QA Tester</span>
-              </div>
-            </li>
-            <li class="flex items-center bg-light border border-primary rounded-lg px-4 py-2 w-full max-w-xs shadow-sm text-dark">
-              <div class="flex flex-col items-start">
-                <span class="font-medium">Verceles, James Edward</span>
-                <span class="text-sm text-gray-500">Lead Developer</span>
-              </div>
-            </li>
-          </ul>
+      </div>
+    </section>
+
+    <!-- Gaming Footer -->
+    <footer class="relative z-10 bg-gradient-to-r from-dark to-light border-t-2 border-primary/30 py-12">
+      <div class="max-w-6xl mx-auto px-6 text-center">
+        <div class="flex items-center justify-center space-x-4 mb-6">
+          <img src="public/assets/img/buko_productions-logo.png" alt="Buko Productions" class="w-16 h-16" />
+          <div>
+            <h3 class="font-gaming text-2xl font-bold text-primary">SCI-HIGH</h3>
+            <p class="text-gray-400 text-sm">Level up your knowledge!</p>
+          </div>
         </div>
-      </section>
-      
-      <!-- Contact Section -->
-      <section id="contact" class="mt-16 pt-4 border-t border-gray-100">
-        <h2 class="text-2xl text-dark font-semibold">Contact</h2>
-        <p class="mt-4">
-          For inquiries, please email us at <a href="mailto:info@sci-high-thesis.com" class="text-primary no-underline hover:text-blue-600 transition-colors">info@sci-high-thesis.com</a>
-        </p>
-      </section>
-    </div>
-    
-    <!-- Footer -->
-    <footer class="text-center py-8 bg-dark text-light mt-12">
-      <p>&copy; 2025 SCI-HIGH Thesis. All rights reserved.</p>
+        <div class="w-32 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full mb-6"></div>
+        <p class="text-gray-400 font-gaming">&copy; 2025 SCI-HIGH Thesis Project. All rights reserved. Game on! 🎮</p>
+      </div>
     </footer>
     
-    <!-- Carousel JS removed -->
     <script>
-      // Modal and Carousel for Game Screenshots
+      // Particle System for Background Effect
+      function createParticles() {
+        const particles = document.getElementById('particles');
+        for (let i = 0; i < 50; i++) {
+          const particle = document.createElement('div');
+          particle.className = 'absolute w-1 h-1 bg-primary/30 rounded-full animate-pulse';
+          particle.style.left = Math.random() * 100 + '%';
+          particle.style.top = Math.random() * 100 + '%';
+          particle.style.animationDelay = Math.random() * 3 + 's';
+          particle.style.animationDuration = (Math.random() * 3 + 2) + 's';
+          particles.appendChild(particle);
+        }
+      }
+
+      // Gaming Modal and Carousel System
       const screenshots = [
-        'assets/img/bg/classroom_day.png',
-        'assets/img/bg/libraryBG.png',
-        'assets/img/mainhub/MainHubBG.png'
+        'public/assets/classroom_day-7QRgWPJs.png',
+        'public/assets/img/bg/libraryBG.png',
+        'public/assets/img/mainhub/MainHubBG.png'
       ];
+      
       const modal = document.getElementById('screenshots-modal');
-      const openModalBtn = document.getElementById('open-screenshots-modal');
+      const startGameBtn = document.getElementById('start-game-btn');
       const closeModalBtn = document.getElementById('close-screenshots-modal');
       const carouselImg = document.getElementById('carousel-image');
       const prevBtn = document.getElementById('carousel-prev');
@@ -140,39 +517,110 @@
 
       function showScreenshot(idx) {
         carouselImg.src = screenshots[idx];
+        carouselImg.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          carouselImg.style.transform = 'scale(1)';
+        }, 150);
+        
         dots.forEach((dot, i) => {
           if (i === idx) {
             dot.classList.add('bg-primary', 'scale-110');
-            dot.classList.remove('bg-gray-300');
+            dot.classList.remove('bg-gray-500');
           } else {
             dot.classList.remove('bg-primary', 'scale-110');
-            dot.classList.add('bg-gray-300');
+            dot.classList.add('bg-gray-500');
           }
         });
         current = idx;
       }
 
-      openModalBtn.addEventListener('click', () => {
+      // Event Listeners
+      startGameBtn.addEventListener('click', () => {
         modal.classList.remove('hidden');
         showScreenshot(current);
       });
+      
       closeModalBtn.addEventListener('click', () => {
         modal.classList.add('hidden');
       });
+      
       prevBtn.addEventListener('click', () => {
         let prev = (current - 1 + screenshots.length) % screenshots.length;
         showScreenshot(prev);
       });
+      
       nextBtn.addEventListener('click', () => {
         let next = (current + 1) % screenshots.length;
         showScreenshot(next);
       });
+      
       dots.forEach((dot, i) => {
         dot.addEventListener('click', () => showScreenshot(i));
       });
-      // Optional: Close modal on outside click
+      
+      // Close modal on outside click
       modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.classList.add('hidden');
+      });
+
+      // Smooth scrolling for navigation
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      });
+
+      // Gaming hover effects for nav links
+      document.querySelectorAll('.gaming-nav-link').forEach(link => {
+        link.addEventListener('mouseenter', function() {
+          this.querySelector('div').style.transform = 'skewX(12deg) scaleX(1)';
+        });
+        link.addEventListener('mouseleave', function() {
+          this.querySelector('div').style.transform = 'skewX(12deg) scaleX(0)';
+        });
+      });
+
+      // Initialize particle system when page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        createParticles();
+        
+        // Add random floating animation to particles
+        setInterval(() => {
+          const particles = document.querySelectorAll('#particles div');
+          particles.forEach(particle => {
+            if (Math.random() > 0.95) {
+              particle.style.transform = `translateY(${Math.random() * 20 - 10}px)`;
+              setTimeout(() => {
+                particle.style.transform = 'translateY(0)';
+              }, 2000);
+            }
+          });
+        }, 3000);
+      });
+
+      // Easter egg: Konami code
+      let konamiCode = [];
+      const konami = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65]; // ↑↑↓↓←→←→BA
+      
+      document.addEventListener('keydown', (e) => {
+        konamiCode.push(e.keyCode);
+        if (konamiCode.length > konami.length) {
+          konamiCode.shift();
+        }
+        if (konamiCode.join(',') === konami.join(',')) {
+          document.body.style.filter = 'hue-rotate(180deg)';
+          setTimeout(() => {
+            document.body.style.filter = 'none';
+          }, 3000);
+          konamiCode = [];
+        }
       });
     </script>
   </body>

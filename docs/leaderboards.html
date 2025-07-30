@@ -2,12 +2,94 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="public/assets/img/logo/SCI-HIGH_LOGO.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SCI-HIGH Leaderboards</title>
+    <title>SCI-HIGH: Global Leaderboards</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Gaming Feel -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#F4CE14', // yellow
+              accent: '#379777', // green
+              dark: '#1a1a2e',   // darker navy
+              light: '#16213e',  // dark blue
+              purple: '#9c27b0', // gaming purple
+              cyan: '#00bcd4',   // gaming cyan
+              textColor: '#ffffff',
+              cardBg: 'rgba(22, 33, 62, 0.8)',
+            },
+            fontFamily: {
+              gaming: ['Orbitron', 'monospace'],
+              body: ['Exo 2', 'sans-serif'],
+            },
+            animation: {
+              'pulse-glow': 'pulse-glow 2s ease-in-out infinite alternate',
+              'float': 'float 6s ease-in-out infinite',
+              'slide-in': 'slide-in 0.8s ease-out',
+              'bounce-in': 'bounce-in 1s ease-out',
+              'rank-glow': 'rank-glow 3s ease-in-out infinite',
+            }
+          }
+        }
+      }
+    </script>
     <style>
-      /* Custom animations for modal */
+      @keyframes pulse-glow {
+        from { box-shadow: 0 0 20px #F4CE14; }
+        to { box-shadow: 0 0 30px #F4CE14, 0 0 40px #F4CE14; }
+      }
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+      }
+      @keyframes slide-in {
+        from { transform: translateX(-100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes bounce-in {
+        0% { transform: scale(0); opacity: 0; }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      @keyframes rank-glow {
+        0%, 100% { box-shadow: 0 0 10px rgba(244, 206, 20, 0.3); }
+        50% { box-shadow: 0 0 20px rgba(244, 206, 20, 0.8); }
+      }
+      
+      .game-bg {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
+        position: relative;
+        overflow-x: hidden;
+      }
+      
+      .game-bg::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+          radial-gradient(circle at 20% 80%, rgba(244, 206, 20, 0.1) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(55, 151, 119, 0.1) 0%, transparent 50%),
+          radial-gradient(circle at 40% 40%, rgba(156, 39, 176, 0.1) 0%, transparent 50%);
+        animation: float 8s ease-in-out infinite;
+        pointer-events: none;
+        z-index: -1;
+      }
+      
+      .neon-border {
+        border: 2px solid #F4CE14;
+        background: rgba(22, 33, 62, 0.8);
+        box-shadow: 0 0 10px rgba(244, 206, 20, 0.3);
+      }
+      
+      /* Custom modal animations */
       .modal-enter {
         animation: modalFadeIn 0.3s ease-out;
       }
@@ -23,6 +105,11 @@
         }
       }
       
+      /* Gaming rank styles */
+      .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+      .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); }
+      .rank-3 { background: linear-gradient(135deg, #CD7F32, #B8860B); }
+      
       /* Hover effects for clickable names */
       .player-name-link {
         transition: all 0.2s ease;
@@ -30,79 +117,332 @@
       
       .player-name-link:hover {
         transform: translateY(-1px);
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        text-shadow: 0 2px 4px rgba(244, 206, 20, 0.5);
       }
     </style>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              primary: '#F4CE14',
-              accent: '#379777',
-              dark: '#45474B',
-              light: '#F5F7F8',
-              textColor: '#45474B',
-            },
-            fontFamily: {
-              sans: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
-            }
-          }
-        }
-      }
-    </script>
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <!-- Chart.js for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
-  <body class="font-sans bg-light text-textColor m-0 p-0 leading-relaxed min-h-screen flex flex-col">
-    <nav class="bg-white py-5 text-center sticky top-0 shadow-md z-50">
-      <a href="index.html" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">Home</a>
-      <a href="#about" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">About Us</a>
-      <a href="#contact" class="text-dark no-underline mx-6 text-lg font-medium py-2 relative hover:text-primary transition-all duration-300 inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">Contact</a>
+  <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed min-h-screen flex flex-col">
+    <!-- Particle Background Effect -->
+    <div id="particles" class="fixed inset-0 pointer-events-none z-0"></div>
+    
+    <!-- Gaming HUD Navigation -->
+    <nav class="relative z-50 bg-gradient-to-r from-dark/90 to-light/90 backdrop-blur-md border-b-2 border-primary/30 py-4 sticky top-0">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <img src="public/assets/img/buko_productions-logo.png" alt="Buko Productions Logo" class="w-12 h-12 animate-bounce-in" />
+            <span class="font-gaming text-xl font-bold text-primary">SCI-HIGH</span>
+          </div>
+          <div class="flex space-x-8">
+            <a href="index.html" class="gaming-nav-link text-textColor hover:text-primary transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
+              <span class="relative z-10">Home</span>
+              <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </a>
+            <a href="index.html#about" class="gaming-nav-link text-textColor hover:text-primary transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
+              <span class="relative z-10">About</span>
+              <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </a>
+            <a href="index.html#contact" class="gaming-nav-link text-textColor hover:text-primary transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
+              <span class="relative z-10">Contact</span>
+              <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </a>
+          </div>
+        </div>
+      </div>
     </nav>
     
     <!-- Main content wrapper with flex-grow to push footer down -->
-    <div class="flex-grow">
-    <div class="max-w-2xl mx-auto my-12 p-8 bg-white rounded-xl shadow-lg text-center">
-      <h1 class="text-3xl mb-6 text-dark font-bold">Leaderboards</h1>
-      <div class="flex justify-center gap-4 mb-6">
-        <button class="filter-btn px-4 py-2 rounded-full font-medium border border-primary text-dark bg-light hover:bg-primary hover:text-dark transition-all duration-200" data-filter="overall">Overall</button>
-        <button class="filter-btn px-4 py-2 rounded-full font-medium border border-primary text-dark bg-light hover:bg-primary hover:text-dark transition-all duration-200" data-filter="college">College</button>
-        <button class="filter-btn px-4 py-2 rounded-full font-medium border border-primary text-dark bg-light hover:bg-primary hover:text-dark transition-all duration-200" data-filter="seniorhigh">Senior High</button>
-        <button class="filter-btn px-4 py-2 rounded-full font-medium border border-primary text-dark bg-light hover:bg-primary hover:text-dark transition-all duration-200" data-filter="juniorhigh">Junior High</button>
-      </div>
-      <!-- Add this button somewhere in your HTML for testing -->
-      <!-- Works  -James Pogi -->
-      <!-- Commented out test buttons for production
-      <div class="flex gap-2 justify-center mb-4">
-        <button onclick="addScore('userId123', 'Test User', 1234, 'College of Engineering')" class="px-4 py-2 bg-primary text-dark rounded">Add Sample Score</button>
-        <button onclick="testUpdateBestScore()" class="px-4 py-2 bg-accent text-light rounded">Test Update Best</button>
-        <button onclick="testGameIntegration()" class="px-4 py-2 bg-dark text-light rounded">Test Game Integration</button>
-      </div>
-      -->
-      <div id="leaderboard-list" class="mt-8">
-        <p class="text-gray-500">Loading leaderboards...</p>
-      </div>
+    <div class="flex-grow relative z-10">
+      <!-- Hero Section -->
+      <section class="py-16 px-6">
+        <div class="max-w-6xl mx-auto text-center">
+          <div class="mb-12 animate-bounce-in">
+            <h1 class="font-gaming text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-cyan mb-6">
+              🏆 Global Leaderboards
+            </h1>
+            <p class="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-8">
+              Compete with programmers worldwide and climb the ranks in the ultimate coding challenge!
+            </p>
+          </div>
+          
+          <!-- Gaming Filter Buttons -->
+          <div class="flex flex-wrap justify-center gap-4 mb-12 animate-slide-in">
+            <button class="filter-btn px-8 py-3 font-gaming text-sm uppercase tracking-wider rounded-lg font-bold text-dark bg-gradient-to-r from-primary to-yellow-300 transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50 border-2 border-primary" data-filter="overall">
+              <span class="relative z-10">🌟 Overall</span>
+            </button>
+            <button class="filter-btn px-8 py-3 font-gaming text-sm uppercase tracking-wider rounded-lg font-bold text-textColor bg-gradient-to-r from-accent to-cyan transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-accent/50 border-2 border-accent/50" data-filter="college">
+              <span class="relative z-10">🎓 College</span>
+            </button>
+            <button class="filter-btn px-8 py-3 font-gaming text-sm uppercase tracking-wider rounded-lg font-bold text-textColor bg-gradient-to-r from-purple to-pink-500 transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple/50 border-2 border-purple/50" data-filter="seniorhigh">
+              <span class="relative z-10">📚 Senior High</span>
+            </button>
+            <button class="filter-btn px-8 py-3 font-gaming text-sm uppercase tracking-wider rounded-lg font-bold text-textColor bg-gradient-to-r from-cyan to-blue-500 transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-cyan/50 border-2 border-cyan/50" data-filter="juniorhigh">
+              <span class="relative z-10">🎒 Junior High</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Leaderboard Section -->
+      <section class="px-6 pb-16">
+        <div class="max-w-6xl mx-auto">
+          <div class="neon-border rounded-xl backdrop-blur-sm p-8">
+            <div class="flex items-center justify-between mb-8">
+              <h2 class="font-gaming text-2xl font-bold text-primary flex items-center gap-3">
+                <span class="text-3xl">⚔️</span>
+                Battle Rankings
+              </h2>
+              <div class="flex items-center gap-4 text-sm text-gray-400">
+                <span class="flex items-center gap-2">
+                  <div class="w-3 h-3 bg-primary rounded-full animate-pulse"></div>
+                  Live Updates
+                </span>
+                <span id="player-count">Loading...</span>
+              </div>
+            </div>
+
+            <!-- Featured Players Section (Top 3) -->
+            <div id="featured-players" class="mt-8 mb-8">
+              <div class="neon-border rounded-xl shadow-xl overflow-hidden backdrop-blur-sm bg-dark/50">
+                <div class="bg-gradient-to-r from-dark via-light to-dark text-white p-6 border-b-2 border-primary/30">
+                  <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-primary to-yellow-300 rounded-lg flex items-center justify-center neon-border">
+                      <img src="public/assets/img/icons/office/achievements.png" alt="Featured" class="w-8 h-8 object-contain" />
+                    </div>
+                    <div>
+                      <h2 class="font-gaming text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Top Champions</h2>
+                      <p class="text-gray-300 font-body text-sm">The elite warriors leading the leaderboards</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Player Cards Grid -->
+                <div id="player-cards-container" class="p-6">
+                  <div id="player-cards-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Player cards will be inserted here by JavaScript -->
+                  </div>
+                  
+                  <!-- Loading State for Player Cards -->
+                  <div id="player-cards-loading" class="text-center py-8">
+                    <div class="flex flex-col items-center space-y-3">
+                      <div class="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <p class="text-gray-400 font-gaming text-sm">Loading champions...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div id="leaderboard-list" class="mt-8 space-y-8">
+              <!-- Global Leaderboard Section -->
+              <div id="global-leaderboard" class="leaderboard-section">
+                <div class="neon-border rounded-xl shadow-xl overflow-hidden backdrop-blur-sm bg-dark/50">
+                  <!-- Leaderboard Header -->
+                  <div class="bg-gradient-to-r from-dark via-light to-dark text-white p-8 border-b-2 border-primary/30">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                      <div class="flex items-center space-x-4">
+                        <div class="w-16 h-16 bg-gradient-to-br from-primary to-yellow-300 rounded-xl flex items-center justify-center neon-border animate-float">
+                          <img src="public/assets/img/icons/office/achievements.png" alt="Achievements" class="w-10 h-10 object-contain" />
+                        </div>
+                        <div>
+                          <h2 class="font-gaming text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Global Champions</h2>
+                          <p class="text-gray-300 font-body">Top warriors across all departments</p>
+                        </div>
+                      </div>
+                      <div class="text-center">
+                        <div class="text-sm text-gray-400 font-gaming">Total Players</div>
+                        <div id="total-players" class="text-2xl font-gaming font-bold text-primary">0</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Leaderboard Table -->
+                  <div class="overflow-x-auto">
+                    <table class="w-full">
+                      <thead>
+                        <tr class="bg-gradient-to-r from-primary/20 to-accent/20 border-b border-primary/30">
+                          <th class="px-6 py-4 text-left font-gaming text-primary border-r border-primary/30">
+                            <span class="flex items-center space-x-2">
+                              <span>⚡</span>
+                              <span>Rank</span>
+                            </span>
+                          </th>
+                          <th class="px-6 py-4 text-left font-gaming text-primary border-r border-primary/30">
+                            <span class="flex items-center space-x-2">
+                              <span>🎮</span>
+                              <span>Player</span>
+                            </span>
+                          </th>
+                          <th class="px-6 py-4 text-left font-gaming text-primary border-r border-primary/30">
+                            <span class="flex items-center space-x-2">
+                              <span>🏫</span>
+                              <span>Department</span>
+                            </span>
+                          </th>
+                          <th class="px-6 py-4 text-left font-gaming text-primary border-r border-primary/30">
+                            <span class="flex items-center space-x-2">
+                              <span>⭐</span>
+                              <span>Battle Score</span>
+                            </span>
+                          </th>
+                          <th class="px-6 py-4 text-left font-gaming text-primary border-r border-primary/30">
+                            <span class="flex items-center space-x-2">
+                              <span>🎯</span>
+                              <span>Accuracy</span>
+                            </span>
+                          </th>
+                          <th class="px-6 py-4 text-left font-gaming text-primary">
+                            <span class="flex items-center space-x-2">
+                              <span>🔥</span>
+                              <span>Max Combo</span>
+                            </span>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody id="global-leaderboard-body" class="divide-y divide-primary/20">
+                        <!-- Leaderboard rows will be inserted here by JavaScript -->
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  <!-- Loading State -->
+                  <div id="global-loading" class="text-center py-16">
+                    <div class="flex flex-col items-center space-y-4">
+                      <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <p class="text-gray-400 font-gaming">Loading battle results...</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Empty State -->
+                  <div id="global-empty" class="text-center py-16 hidden">
+                    <div class="flex flex-col items-center space-y-4">
+                      <div class="w-24 h-24 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl flex items-center justify-center">
+                        <img src="public/assets/img/mainhub/PLAY_BUTTON.png" alt="Play" class="w-16 h-16 object-contain" />
+                      </div>
+                      <h3 class="text-xl font-gaming font-bold text-gray-300">No Champions Yet</h3>
+                      <p class="text-gray-400 font-body">Be the first to join the leaderboard!</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Department Leaderboard Section -->
+              <div id="department-leaderboard" class="leaderboard-section hidden">
+                <div class="neon-border rounded-xl shadow-xl overflow-hidden backdrop-blur-sm bg-dark/50">
+                  <!-- Department Header -->
+                  <div class="bg-gradient-to-r from-dark via-light to-dark text-white p-8 border-b-2 border-accent/30">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                      <div class="flex items-center space-x-4">
+                        <div class="w-16 h-16 bg-gradient-to-br from-accent to-cyan-400 rounded-xl flex items-center justify-center neon-border animate-float">
+                          <img src="public/assets/img/mainhub/office_icon.png" alt="Office" class="w-10 h-10 object-contain" />
+                        </div>
+                        <div>
+                          <h2 class="font-gaming text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-accent to-cyan-400">Department Leaders</h2>
+                          <p id="department-subtitle" class="text-gray-300 font-body">Elite warriors of the department</p>
+                        </div>
+                      </div>
+                      <div class="text-center">
+                        <div class="text-sm text-gray-400 font-gaming">Department Players</div>
+                        <div id="dept-total-players" class="text-2xl font-gaming font-bold text-accent">0</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Department Table -->
+                  <div class="overflow-x-auto">
+                    <table class="w-full">
+                      <thead>
+                        <tr class="bg-gradient-to-r from-accent/20 to-cyan-400/20 border-b border-accent/30">
+                          <th class="px-6 py-4 text-left font-gaming text-accent border-r border-accent/30">
+                            <span class="flex items-center space-x-2">
+                              <span>⚡</span>
+                              <span>Rank</span>
+                            </span>
+                          </th>
+                          <th class="px-6 py-4 text-left font-gaming text-accent border-r border-accent/30">
+                            <span class="flex items-center space-x-2">
+                              <span>🎮</span>
+                              <span>Player</span>
+                            </span>
+                          </th>
+                          <th class="px-6 py-4 text-left font-gaming text-accent border-r border-accent/30">
+                            <span class="flex items-center space-x-2">
+                              <span>⭐</span>
+                              <span>Battle Score</span>
+                            </span>
+                          </th>
+                          <th class="px-6 py-4 text-left font-gaming text-accent border-r border-accent/30">
+                            <span class="flex items-center space-x-2">
+                              <span>🎯</span>
+                              <span>Accuracy</span>
+                            </span>
+                          </th>
+                          <th class="px-6 py-4 text-left font-gaming text-accent border-r border-accent/30">
+                            <span class="flex items-center space-x-2">
+                              <span>🔥</span>
+                              <span>Max Combo</span>
+                            </span>
+                          </th>
+                          <th class="px-6 py-4 text-left font-gaming text-accent">
+                            <span class="flex items-center space-x-2">
+                              <span>📊</span>
+                              <span>Global Rank</span>
+                            </span>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody id="department-leaderboard-body" class="divide-y divide-accent/20">
+                        <!-- Department leaderboard rows will be inserted here by JavaScript -->
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  <!-- Department Loading State -->
+                  <div id="department-loading" class="text-center py-16">
+                    <div class="flex flex-col items-center space-y-4">
+                      <div class="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+                      <p class="text-gray-400 font-gaming">Loading department champions...</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Department Empty State -->
+                  <div id="department-empty" class="text-center py-16 hidden">
+                    <div class="flex flex-col items-center space-y-4">
+                      <div class="w-24 h-24 bg-gradient-to-br from-accent/20 to-cyan-400/20 rounded-xl flex items-center justify-center">
+                        <img src="public/assets/img/mainhub/office_icon.png" alt="Office" class="w-16 h-16 object-contain" />
+                      </div>
+                      <h3 class="text-xl font-gaming font-bold text-gray-300">No Department Champions</h3>
+                      <p class="text-gray-400 font-body">Rise up and claim your department's glory!</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
 
     <!-- Player Profile Modal -->
-    <div id="player-profile-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
-      <div class="bg-white rounded-xl shadow-xl max-w-7xl w-full mx-4 max-h-[95vh] overflow-y-auto">
+    <div id="player-profile-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
+      <div class="neon-border rounded-xl shadow-2xl max-w-7xl w-full mx-4 max-h-[95vh] overflow-y-auto">
         <div class="relative">
           <!-- Header Section with Avatar and Basic Info -->
-          <div id="profile-header" class="relative bg-gradient-to-r from-gray-800 via-gray-700 to-gray-900 text-white p-8 rounded-t-xl">
+          <div id="profile-header" class="relative bg-gradient-to-r from-dark via-light to-dark text-white p-8 rounded-t-xl">
             <!-- Close button -->
-            <button onclick="closePlayerProfile()" class="absolute top-4 right-4 text-white hover:text-gray-200 text-2xl font-bold z-10">&times;</button>
+            <button onclick="closePlayerProfile()" class="absolute top-4 right-4 text-white hover:text-primary text-3xl font-gaming font-bold z-10 transition-colors duration-300">&times;</button>
             
             <!-- Player Info Container -->
             <div class="flex flex-col lg:flex-row items-start lg:items-end gap-6">
               <!-- Avatar Section -->
               <div class="flex-shrink-0">
-                <div class="w-32 h-32 bg-white rounded-lg shadow-lg flex items-center justify-center">
-                  <div id="player-avatar" class="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
+                <div class="w-32 h-32 bg-gradient-to-br from-primary to-yellow-300 rounded-xl shadow-lg flex items-center justify-center neon-border">
+                  <div id="player-avatar" class="w-24 h-24 bg-dark rounded-full flex items-center justify-center text-primary text-3xl font-gaming font-bold">
                     <!-- Avatar will be generated from player name -->
                   </div>
                 </div>
@@ -113,9 +453,9 @@
                 <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
                   <!-- Name and Location -->
                   <div>
-                    <h2 id="profile-player-name" class="text-4xl font-bold mb-2">Player Name</h2>
+                    <h2 id="profile-player-name" class="font-gaming text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Player Name</h2>
                     <p id="profile-department" class="text-xl opacity-90 flex items-center gap-2">
-                      <span class="inline-block w-6 h-4 bg-white rounded shadow"></span>
+                      <span class="inline-block w-6 h-4 bg-primary rounded shadow"></span>
                       Department
                     </p>
                   </div>
@@ -123,41 +463,41 @@
                   <!-- Rankings -->
                   <div class="flex gap-8">
                     <div class="text-center">
-                      <div class="text-sm opacity-75">Global Ranking</div>
-                      <div id="global-rank" class="text-2xl font-bold">#0</div>
+                      <div class="text-sm opacity-75 font-gaming">Global Rank</div>
+                      <div id="global-rank" class="text-2xl font-gaming font-bold text-primary">#0</div>
                     </div>
                     <div class="text-center">
-                      <div class="text-sm opacity-75">Department Ranking</div>
-                      <div id="dept-rank" class="text-2xl font-bold">#0</div>
+                      <div class="text-sm opacity-75 font-gaming">Department Rank</div>
+                      <div id="dept-rank" class="text-2xl font-gaming font-bold text-accent">#0</div>
                     </div>
                   </div>
                 </div>
                 
                 <!-- Stats Bar -->
                 <div class="mt-6 grid grid-cols-2 lg:grid-cols-6 gap-4 text-center">
-                  <div>
-                    <div class="text-sm opacity-75">Ranked Score</div>
-                    <div id="ranked-score" class="text-lg font-bold">0</div>
+                  <div class="bg-cardBg rounded-lg p-3 neon-border">
+                    <div class="text-xs opacity-75 font-gaming">Ranked Score</div>
+                    <div id="ranked-score" class="text-lg font-gaming font-bold text-primary">0</div>
                   </div>
-                  <div>
-                    <div class="text-sm opacity-75">Accuracy</div>
-                    <div id="accuracy" class="text-lg font-bold">0%</div>
+                  <div class="bg-cardBg rounded-lg p-3 neon-border">
+                    <div class="text-xs opacity-75 font-gaming">Accuracy</div>
+                    <div id="accuracy" class="text-lg font-gaming font-bold text-accent">0%</div>
                   </div>
-                  <div>
-                    <div class="text-sm opacity-75">Quiz Count</div>
-                    <div id="quiz-count" class="text-lg font-bold">0</div>
+                  <div class="bg-cardBg rounded-lg p-3 neon-border">
+                    <div class="text-xs opacity-75 font-gaming">Quiz Count</div>
+                    <div id="quiz-count" class="text-lg font-gaming font-bold text-cyan">0</div>
                   </div>
-                  <div>
-                    <div class="text-sm opacity-75">Total Score</div>
-                    <div id="total-score" class="text-lg font-bold">0</div>
+                  <div class="bg-cardBg rounded-lg p-3 neon-border">
+                    <div class="text-xs opacity-75 font-gaming">Total Score</div>
+                    <div id="total-score" class="text-lg font-gaming font-bold text-purple">0</div>
                   </div>
-                  <div>
-                    <div class="text-sm opacity-75">Total Questions</div>
-                    <div id="total-questions" class="text-lg font-bold">0</div>
+                  <div class="bg-cardBg rounded-lg p-3 neon-border">
+                    <div class="text-xs opacity-75 font-gaming">Questions</div>
+                    <div id="total-questions" class="text-lg font-gaming font-bold text-gray-300">0</div>
                   </div>
-                  <div>
-                    <div class="text-sm opacity-75">Max Combo</div>
-                    <div id="max-combo" class="text-lg font-bold">0</div>
+                  <div class="bg-cardBg rounded-lg p-3 neon-border">
+                    <div class="text-xs opacity-75 font-gaming">Max Combo</div>
+                    <div id="max-combo" class="text-lg font-gaming font-bold text-primary">0</div>
                   </div>
                 </div>
               </div>
@@ -165,10 +505,10 @@
           </div>
           
           <!-- Grade/Level Bar -->
-          <div class="bg-gray-100 px-8 py-4 border-b">
+          <div class="bg-cardBg px-8 py-4 border-b border-primary/30">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-4">
-                <div class="text-sm font-medium text-gray-600">Level Progress</div>
+                <div class="text-sm font-gaming font-medium text-primary">Level Progress</div>
                 <div class="flex items-center gap-2">
                   <div id="level-badges" class="flex gap-1">
                     <!-- Level badges will be generated here -->
@@ -176,14 +516,14 @@
                 </div>
               </div>
               <div class="text-right">
-                <div class="text-sm text-gray-600">Total Play Time</div>
-                <div id="total-playtime" class="font-bold">0h 0m</div>
+                <div class="text-sm text-gray-400 font-gaming">Total Play Time</div>
+                <div id="total-playtime" class="font-gaming font-bold text-accent">0h 0m</div>
               </div>
             </div>
           </div>
           
           <!-- Main Content -->
-          <div class="p-8">
+          <div class="p-8 bg-cardBg">
             <div id="profile-content" class="space-y-8">
               <!-- Content will be loaded here -->
             </div>
@@ -193,8 +533,19 @@
     </div>
     </div>
     
-    <footer class="text-center py-8 bg-dark text-light mt-auto">
-      <p>&copy; 2025 SCI-HIGH Thesis. All rights reserved.</p>
+    <!-- Gaming Footer -->
+    <footer class="relative z-10 bg-gradient-to-r from-dark to-light border-t-2 border-primary/30 py-12 mt-auto">
+      <div class="max-w-6xl mx-auto px-6 text-center">
+        <div class="flex items-center justify-center space-x-4 mb-6">
+          <img src="public/assets/img/buko_productions-logo.png" alt="Buko Productions" class="w-16 h-16" />
+          <div>
+            <h3 class="font-gaming text-2xl font-bold text-primary">SCI-HIGH</h3>
+            <p class="text-gray-400 text-sm">Level up your knowledge!</p>
+          </div>
+        </div>
+        <div class="w-32 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full mb-6"></div>
+        <p class="text-gray-400 font-gaming">&copy; 2025 SCI-HIGH Thesis Project. All rights reserved. Game on! 🎮</p>
+      </div>
     </footer>
     <script>
       // TODO: Replace with your Firebase config
@@ -309,6 +660,96 @@
         });
       }
 
+      // Render Top 3 Player Cards
+      function renderPlayerCards(data) {
+        const container = document.getElementById('player-cards-grid');
+        const loading = document.getElementById('player-cards-loading');
+        
+        if (!data || data.length === 0) {
+          loading.innerHTML = '<p class="text-gray-400 text-center font-gaming">No champions found</p>';
+          return;
+        }
+        
+        // Hide loading and show cards
+        loading.style.display = 'none';
+        
+        // Take only top 3 players for featured cards
+        const topPlayers = data.slice(0, 3);
+        
+        let cardsHtml = '';
+        topPlayers.forEach((player, index) => {
+          const initials = player.name.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
+          
+          // Special styling for each position
+          let cardStyle, rankIcon, rankColor;
+          if (index === 0) {
+            cardStyle = 'from-yellow-400/20 to-yellow-600/20';
+            rankIcon = '👑';
+            rankColor = 'from-yellow-400 to-yellow-600';
+          } else if (index === 1) {
+            cardStyle = 'from-gray-300/20 to-gray-500/20';
+            rankIcon = '🥈';
+            rankColor = 'from-gray-300 to-gray-500';
+          } else {
+            cardStyle = 'from-orange-400/20 to-orange-600/20';
+            rankIcon = '🥉';
+            rankColor = 'from-orange-400 to-orange-600';
+          }
+          
+          cardsHtml += `
+            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105" onclick="showPlayerProfile('${player.userId}')">
+              <div class="neon-border bg-gradient-to-br ${cardStyle} rounded-lg p-6 backdrop-blur-sm relative overflow-hidden">
+                <!-- Rank Badge -->
+                <div class="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br ${rankColor} rounded-full flex items-center justify-center text-lg font-bold text-white border-3 border-white shadow-xl z-10">
+                  ${rankIcon}
+                </div>
+                
+                <!-- Player Avatar -->
+                <div class="flex flex-col items-center mb-4">
+                  <div class="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-2xl font-bold text-dark mb-3 border-3 border-primary/50 shadow-lg">
+                    ${initials}
+                  </div>
+                  <div class="text-center">
+                    <h3 class="font-gaming text-primary text-lg font-bold">${player.name}</h3>
+                    <p class="text-gray-400 text-sm">${player.department || 'Unknown'}</p>
+                  </div>
+                </div>
+                
+                <!-- Player Stats -->
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center">
+                    <span class="text-gray-300 text-sm font-gaming">Battle Score</span>
+                    <span class="text-primary font-gaming font-bold text-lg">${player.score.toLocaleString()}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-gray-300 text-sm font-gaming">Global Rank</span>
+                    <span class="text-accent font-gaming font-bold text-lg">#${index + 1}</span>
+                  </div>
+                  
+                  <!-- Progress Bar -->
+                  <div class="mt-4">
+                    <div class="w-full bg-dark/50 rounded-full h-2">
+                      <div class="bg-gradient-to-r from-primary to-accent h-2 rounded-full transition-all duration-500" 
+                           style="width: ${Math.min(100, (player.score / Math.max(...data.map(p => p.score))) * 100)}%"></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Hover Overlay -->
+                <div class="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+                
+                <!-- Click to view label -->
+                <div class="absolute bottom-3 left-3 right-3 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <span class="text-xs font-gaming text-primary bg-dark/90 px-3 py-1 rounded-full">Click to view profile</span>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        
+        container.innerHTML = cardsHtml;
+      }
+
       function fetchLeaderboard(filter) {
         db.ref('leaderboards').orderByChild('score').limitToLast(100).once('value', snapshot => {
           const arr = [];
@@ -327,6 +768,9 @@
           } else if (filter === 'juniorhigh') {
             filtered = arr.filter(e => (e.department || '').toLowerCase().includes('junior'));
           }
+          
+          // Render top 3 player cards and leaderboard table
+          renderPlayerCards(arr); // Always show global top 3 for featured section
           renderLeaderboard(filtered);
         });
       }
@@ -358,10 +802,22 @@
         // Show modal with animation
         const modal = document.getElementById('player-profile-modal');
         modal.classList.remove('hidden');
-        modal.querySelector('.bg-white').classList.add('modal-enter');
+        
+        // Add modal enter animation to the modal content
+        const modalContent = modal.querySelector('.neon-border');
+        if (modalContent) {
+          modalContent.classList.add('modal-enter');
+        }
         
         // Show loading state
-        document.getElementById('profile-content').innerHTML = '<p class="text-center text-gray-500">Loading player profile...</p>';
+        document.getElementById('profile-content').innerHTML = `
+          <div class="text-center py-8">
+            <div class="flex flex-col items-center space-y-4">
+              <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <p class="text-gray-300 font-gaming">Loading warrior profile...</p>
+            </div>
+          </div>
+        `;
         
         // Fetch player data
         db.ref('leaderboards/' + userId).once('value').then(snapshot => {
@@ -369,11 +825,21 @@
           if (playerData) {
             renderPlayerProfile(playerData);
           } else {
-            document.getElementById('profile-content').innerHTML = '<p class="text-center text-red-500">Player profile not found.</p>';
+            document.getElementById('profile-content').innerHTML = `
+              <div class="text-center py-8">
+                <div class="text-red-400 font-gaming text-lg">⚠️ Warrior profile not found</div>
+                <p class="text-gray-400 mt-2">This player might not exist in our records.</p>
+              </div>
+            `;
           }
         }).catch(error => {
           console.error('Error loading player profile:', error);
-          document.getElementById('profile-content').innerHTML = '<p class="text-center text-red-500">Error loading player profile.</p>';
+          document.getElementById('profile-content').innerHTML = `
+            <div class="text-center py-8">
+              <div class="text-red-400 font-gaming text-lg">🚫 Error loading profile</div>
+              <p class="text-gray-400 mt-2">Failed to fetch warrior data. Please try again.</p>
+            </div>
+          `;
         });
       }
 
@@ -413,7 +879,7 @@
         document.getElementById('player-avatar').textContent = initials;
         document.getElementById('profile-player-name').textContent = playerData.name;
         document.getElementById('profile-department').innerHTML = `
-          <span class="inline-block w-6 h-4 bg-white rounded shadow"></span>
+          <span class="inline-block w-6 h-4 bg-primary rounded shadow"></span>
           ${playerData.department || 'Unknown'}
         `;
         
@@ -437,31 +903,31 @@
         const content = document.getElementById('profile-content');
         content.innerHTML = `
           <!-- Badges Section -->
-          <div class="bg-light p-6 rounded-lg">
-            <h3 class="text-xl font-bold text-dark mb-4 flex items-center gap-2">
+          <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <h3 class="text-xl font-bold text-primary mb-4 flex items-center gap-2 font-gaming">
               <span class="text-primary">🏆</span>
               Badges & Achievements
             </h3>
             <div id="badges-container" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 min-h-[100px]">
               ${generateAchievementBadges(gameData.achievementCount || 0)}
             </div>
-            ${(gameData.achievementCount || 0) === 0 ? '<p class="text-gray-500 text-center mt-4">No badges earned yet. Keep playing to unlock achievements!</p>' : ''}
+            ${(gameData.achievementCount || 0) === 0 ? '<p class="text-gray-400 text-center mt-4">No badges earned yet. Keep playing to unlock achievements!</p>' : ''}
           </div>
 
           <!-- Performance Charts Section -->
           <div class="grid lg:grid-cols-2 gap-6">
             <!-- Topic Performance Chart -->
-            <div class="bg-light p-6 rounded-lg">
-              <h3 class="text-lg font-semibold text-dark mb-4">Topic Performance</h3>
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-accent mb-4 font-gaming">Topic Performance</h3>
               ${Object.keys(topicPoints).length > 0 ? `
-                <div class="relative h-64 mb-4">
+                <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
                   <canvas id="topicChart"></canvas>
                 </div>
-                <div class="text-sm text-gray-600 text-center">
+                <div class="text-sm text-gray-300 text-center">
                   Best Topic: ${getBestTopic(topicPoints)} • Average: ${averageTopicScore} pts
                 </div>
               ` : `
-                <div class="h-64 flex items-center justify-center text-gray-500">
+                <div class="h-64 flex items-center justify-center text-gray-400">
                   <div class="text-center">
                     <div class="text-4xl mb-2">📊</div>
                     <div>No topic data available</div>
@@ -471,12 +937,12 @@
             </div>
 
             <!-- Score Analysis Chart -->
-            <div class="bg-light p-6 rounded-lg">
-              <h3 class="text-lg font-semibold text-dark mb-4">Score Analysis</h3>
-              <div class="relative h-64 mb-4">
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-cyan mb-4 font-gaming">Score Analysis</h3>
+              <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
                 <canvas id="scoreChart"></canvas>
               </div>
-              <div class="text-sm text-gray-600 text-center">
+              <div class="text-sm text-gray-300 text-center">
                 Total Contribution Analysis
               </div>
             </div>
@@ -485,41 +951,41 @@
           <!-- Detailed Statistics -->
           <div class="grid lg:grid-cols-2 gap-6">
             <!-- Performance Metrics -->
-            <div class="bg-light p-6 rounded-lg">
-              <h3 class="text-lg font-semibold text-dark mb-4">Performance Radar</h3>
-              <div class="relative h-64 mb-4">
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-purple mb-4 font-gaming">Performance Radar</h3>
+              <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
                 <canvas id="radarChart"></canvas>
               </div>
-              <div class="text-sm text-gray-600 text-center">
+              <div class="text-sm text-gray-300 text-center">
                 Overall performance across all metrics
               </div>
             </div>
 
             <!-- Course Progress -->
             ${gameData.courseProgress ? `
-            <div class="bg-light p-6 rounded-lg">
-              <h3 class="text-lg font-semibold text-dark mb-4">Course Progress</h3>
-              <div class="relative h-64 mb-4">
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-primary mb-4 font-gaming">Course Progress</h3>
+              <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
                 <canvas id="progressChart"></canvas>
               </div>
-              <div class="text-sm text-gray-600 text-center">
+              <div class="text-sm text-gray-300 text-center">
                 ${formatCourseProgress(gameData.courseProgress)}
               </div>
             </div>
             ` : `
-            <div class="bg-light p-6 rounded-lg">
-              <h3 class="text-lg font-semibold text-dark mb-4">Recent Activity</h3>
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-accent mb-4 font-gaming">Recent Activity</h3>
               <div class="space-y-3">
-                <div class="flex items-center gap-3 p-3 bg-white rounded">
-                  <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
+                <div class="flex items-center gap-3 p-3 bg-dark/50 rounded neon-border">
+                  <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-dark font-bold">
                     ${playerData.score >= 1000 ? 'S' : playerData.score >= 500 ? 'A' : 'B'}
                   </div>
                   <div>
-                    <div class="font-medium">Best Score Achieved</div>
-                    <div class="text-sm text-gray-600">${submissionDate} • ${playerData.score} points</div>
+                    <div class="font-medium text-primary">Best Score Achieved</div>
+                    <div class="text-sm text-gray-400">${submissionDate} • ${playerData.score} points</div>
                   </div>
                 </div>
-                <div class="text-center text-gray-500 mt-4">
+                <div class="text-center text-gray-400 mt-4">
                   More activity data will appear as you play more games!
                 </div>
               </div>
@@ -529,33 +995,33 @@
 
           <!-- Topic Breakdown Table -->
           ${Object.keys(topicPoints).length > 0 ? `
-          <div class="bg-light p-6 rounded-lg">
-            <h3 class="text-lg font-semibold text-dark mb-4">Topic Performance Breakdown</h3>
+          <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <h3 class="text-lg font-semibold text-primary mb-4 font-gaming">Topic Performance Breakdown</h3>
             <div class="overflow-x-auto">
               <table class="w-full">
                 <thead>
-                  <tr class="border-b border-gray-300">
-                    <th class="text-left py-2 px-4">Topic</th>
-                    <th class="text-center py-2 px-4">Score</th>
-                    <th class="text-center py-2 px-4">Percentage</th>
-                    <th class="text-center py-2 px-4">Rank</th>
+                  <tr class="border-b border-primary/30">
+                    <th class="text-left py-2 px-4 text-primary font-gaming">Topic</th>
+                    <th class="text-center py-2 px-4 text-accent font-gaming">Score</th>
+                    <th class="text-center py-2 px-4 text-cyan font-gaming">Percentage</th>
+                    <th class="text-center py-2 px-4 text-purple font-gaming">Rank</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${Object.entries(topicPoints)
                     .sort(([,a], [,b]) => b - a)
                     .map(([topic, points], index) => `
-                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <tr class="border-b border-primary/20 hover:bg-dark/30">
                       <td class="py-3 px-4">
                         <div class="flex items-center gap-2">
                           <div class="w-3 h-3 rounded-full" style="background-color: ${getTopicColor(topic)}"></div>
-                          <span class="font-medium">${formatTopicName(topic)}</span>
+                          <span class="font-medium text-gray-200">${formatTopicName(topic)}</span>
                         </div>
                       </td>
                       <td class="text-center py-3 px-4 font-bold text-primary">${points}</td>
-                      <td class="text-center py-3 px-4">${((points / totalTopicPoints) * 100).toFixed(1)}%</td>
+                      <td class="text-center py-3 px-4 text-gray-300">${((points / totalTopicPoints) * 100).toFixed(1)}%</td>
                       <td class="text-center py-3 px-4">
-                        <span class="inline-block px-2 py-1 rounded text-sm ${index === 0 ? 'bg-yellow-100 text-yellow-800' : index < 3 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}">
+                        <span class="inline-block px-2 py-1 rounded text-sm ${index === 0 ? 'bg-primary/20 text-primary' : index < 3 ? 'bg-accent/20 text-accent' : 'bg-gray-600/20 text-gray-300'}">
                           #${index + 1}
                         </span>
                       </td>
@@ -568,24 +1034,24 @@
           ` : ''}
 
           <!-- Player Statistics Summary -->
-          <div class="bg-light p-6 rounded-lg">
-            <h3 class="text-lg font-semibold text-dark mb-4">Player Summary</h3>
+          <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <h3 class="text-lg font-semibold text-cyan mb-4 font-gaming">Player Summary</h3>
             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div class="bg-white p-4 rounded text-center">
-                <div class="text-2xl font-bold text-primary">${playerData.score}</div>
-                <div class="text-sm text-gray-600">Highest Score</div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-primary font-gaming">${playerData.score}</div>
+                <div class="text-sm text-gray-400">Highest Score</div>
               </div>
-              <div class="bg-white p-4 rounded text-center">
-                <div class="text-2xl font-bold text-accent">${gameData.achievementCount || 0}</div>
-                <div class="text-sm text-gray-600">Achievements</div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-accent font-gaming">${gameData.achievementCount || 0}</div>
+                <div class="text-sm text-gray-400">Achievements</div>
               </div>
-              <div class="bg-white p-4 rounded text-center">
-                <div class="text-2xl font-bold text-dark">${Object.keys(topicPoints).length}</div>
-                <div class="text-sm text-gray-600">Topics Mastered</div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-cyan font-gaming">${Object.keys(topicPoints).length}</div>
+                <div class="text-sm text-gray-400">Topics Mastered</div>
               </div>
-              <div class="bg-white p-4 rounded text-center">
-                <div class="text-2xl font-bold text-gray-700">${playTimeFormatted}</div>
-                <div class="text-sm text-gray-600">Time Invested</div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-purple font-gaming">${playTimeFormatted}</div>
+                <div class="text-sm text-gray-400">Time Invested</div>
               </div>
             </div>
           </div>
