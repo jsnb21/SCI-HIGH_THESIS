@@ -88,20 +88,26 @@ export default class MainMenu extends Phaser.Scene {
         // Create scrolling clouds behind everything
         this.createScrollingClouds();
 
-        // Add the logo image - responsive positioning (moved higher)
+        // Add the logo image - responsive positioning with better desktop scaling
         let logoPos;
         try {
-            logoPos = getResponsivePosition(scaleInfo, 'center', { x: 0, y: -280 * scaleInfo.finalScale });
+            logoPos = getResponsivePosition(scaleInfo, 'center', { 
+                x: 0, 
+                y: scaleInfo.isMobile ? -280 * scaleInfo.finalScale : -310 * scaleInfo.finalScale 
+            });
         } catch (error) {
-            logoPos = { x: width / 2, y: height / 2 - 280 * scaleInfo.finalScale };
+            logoPos = { 
+                x: width / 2, 
+                y: scaleInfo.isMobile ? height / 2 - 280 * scaleInfo.finalScale : height / 2 - 310 * scaleInfo.finalScale 
+            };
         }
         
         const logo = this.add.image(logoPos.x, logoPos.y, 'game_logo');
         
-        // Scale the logo appropriately for mobile - made much bigger
+        // Scale the logo appropriately - reduced desktop scale to prevent overlap
         const logoScale = scaleInfo.isMobile ? 
             (scaleInfo.isPortrait ? 1.0 * scaleInfo.finalScale : 0.9 * scaleInfo.finalScale) : 
-            1.3 * scaleInfo.finalScale;
+            0.8 * scaleInfo.finalScale; // Reduced from 1.3 to 0.8 for desktop
         logo.setScale(logoScale);
         
         // Add fade-in animation for the logo
@@ -171,9 +177,9 @@ export default class MainMenu extends Phaser.Scene {
                 createMenuButton(this, btn.x, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo, menuButtons);
             });
         } else {
-            // Desktop: vertical layout (original) - moved lower
-            const buttonSpacing = 90 * scaleInfo.finalScale; // Increased gap
-            const startY = height / 2 + 120 * scaleInfo.finalScale;
+            // Desktop: vertical layout with better spacing to prevent overlap
+            const buttonSpacing = 85 * scaleInfo.finalScale; // Increased from 70 to 85 for better spacing
+            const startY = height / 2 + 40 * scaleInfo.finalScale; // Moved up from +120 to +40
 
             // Menu button data with responsive positioning
             const menuButtons = [
@@ -517,8 +523,8 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     }
     
     // Get responsive scaling - calculate consistent button size based on longest text
-    const baseFontSize = scaleInfo.isMobile ? 32 : 42;  // Even bigger font
-    const padding = scaleInfo.isMobile ? 50 : 80;       // More padding for even bigger buttons
+    const baseFontSize = scaleInfo.isMobile ? 32 : 32;  // Reduced desktop font from 42 to 32
+    const padding = scaleInfo.isMobile ? 50 : 60;       // Reduced desktop padding from 80 to 60
     
     let maxWidth = 0;
     let maxHeight = 0;
@@ -548,7 +554,7 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     // Calculate consistent button size based on longest text with padding
     const btnWidth = maxWidth + padding * (scaleInfo.finalScale || 1);
     const btnHeight = Math.max(maxHeight + (padding * 0.6) * (scaleInfo.finalScale || 1), 
-                              scaleInfo.isMobile ? 70 * (scaleInfo.finalScale || 1) : 80 * (scaleInfo.finalScale || 1));
+                              scaleInfo.isMobile ? 70 * (scaleInfo.finalScale || 1) : 60 * (scaleInfo.finalScale || 1)); // Reduced desktop height from 80 to 60
     const corner = scaleInfo.finalScale ? 25 * scaleInfo.finalScale : 25;
 
     // Button background
@@ -559,10 +565,10 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
     bg.setAlpha(0);
 
-    // Button text with responsive styling - even bigger font
+    // Button text with responsive styling - consistent with button sizing
     let textStyle;
     try {
-        const fontSize = scaleInfo.isMobile ? 32 : 42;  // Even bigger font for both mobile and desktop
+        const fontSize = scaleInfo.isMobile ? 32 : 32;  // Consistent font size for both mobile and desktop
         textStyle = createResponsiveTextStyle(fontSize, scaleInfo, {
             color: '#ffff00',
             stroke: '#000',
@@ -578,8 +584,8 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     } catch (error) {
         console.warn('Using fallback text style');
         const fontSize = scaleInfo.finalScale ? 
-            Math.max(20, (scaleInfo.isMobile ? 32 : 42) * scaleInfo.finalScale) : 
-            (scaleInfo.isMobile ? 32 : 42);
+            Math.max(20, (scaleInfo.isMobile ? 32 : 32) * scaleInfo.finalScale) : 
+            (scaleInfo.isMobile ? 32 : 32);
         textStyle = {
             ...DEFAULT_TEXT_STYLE,
             fontSize: `${fontSize}px`,
