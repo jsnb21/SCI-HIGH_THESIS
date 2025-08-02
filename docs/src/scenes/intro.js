@@ -107,10 +107,14 @@ export default class VNScene extends Phaser.Scene {
     // Position character in the center-upper area to avoid dialogue box overlap
     const characterY = height * 0.45; // Position at 45% of screen height from top
     
+    // Responsive scaling for mobile devices
+    const isMobile = width < 768 || height < 600;
+    const characterScale = isMobile ? 0.35 : 0.56; // Smaller scale for mobile devices
+    
     // Add new character
     this.characterDisplay = this.add.image(width / 2, characterY, characterKey);
     this.characterDisplay.setOrigin(0.5, 0.5); // Center origin for better positioning
-    this.characterDisplay.setScale(0.56); // Reduced by 20% from 0.7 to 0.56
+    this.characterDisplay.setScale(characterScale);
     this.characterDisplay.setDepth(5); // Behind dialogue box but above background
     
     this.currentCharacter = characterKey;
