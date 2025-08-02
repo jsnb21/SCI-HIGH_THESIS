@@ -109,7 +109,7 @@ export default class VNScene extends Phaser.Scene {
     
     // Responsive scaling for mobile devices
     const isMobile = width < 768 || height < 600;
-    const characterScale = isMobile ? 0.35 : 0.56; // Smaller scale for mobile devices
+    const characterScale = isMobile ? 0.175 : 0.56; // 50% smaller for mobile devices
     
     // Add new character
     this.characterDisplay = this.add.image(width / 2, characterY, characterKey);
