@@ -3,6 +3,7 @@ import { DEFAULT_TEXT_STYLE } from '../game';
 import { updateSoundVolumes, playExclusiveBGM } from '../audioUtils';
 import { getAllSaveKeys, loadGame } from '../save';
 import gameManager, { onceOnlyFlags } from '../gameManager.js';
+import LoadingScreen from '../ui/LoadingScreen';
 import { 
     getScaleInfo, 
     scaleFontSize, 
@@ -155,7 +156,7 @@ export default class MainMenu extends Phaser.Scene {
                     se_confirmSound.play();
                     gameManager.reset();
                     onceOnlyFlags.reset();
-                    this.scene.start('VNScene');
+                    LoadingScreen.transitionToSceneWithProgress(this, 'VNScene', 'Loading...', 1500);
                 }},
                 { label: 'Continue', x: rightX, y: topY, onClick: () => {
                     se_confirmSound.play();
@@ -164,7 +165,7 @@ export default class MainMenu extends Phaser.Scene {
                 // Bottom row
                 { label: 'Options', x: leftX, y: bottomY, onClick: () => {
                     se_confirmSound.play();
-                    this.scene.start('OptionsScene');
+                    LoadingScreen.transitionToScene(this, 'OptionsScene', 800);
                 }},
                 { label: 'Quit', x: rightX, y: bottomY, onClick: () => {
                     se_confirmSound.play();
@@ -187,7 +188,7 @@ export default class MainMenu extends Phaser.Scene {
                     se_confirmSound.play();
                     gameManager.reset();
                     onceOnlyFlags.reset();
-                    this.scene.start('VNScene');
+                    LoadingScreen.transitionToSceneWithProgress(this, 'VNScene', 'Loading...', 1500);
                 }},
                 { label: 'Continue', y: startY + buttonSpacing, onClick: () => {
                     se_confirmSound.play();
@@ -195,7 +196,7 @@ export default class MainMenu extends Phaser.Scene {
                 }},
                 { label: 'Options', y: startY + (buttonSpacing * 2), onClick: () => {
                     se_confirmSound.play();
-                    this.scene.start('OptionsScene');
+                    LoadingScreen.transitionToScene(this, 'OptionsScene', 'Loading...', 800);
                 }},
                 { label: 'Quit', y: startY + (buttonSpacing * 3), onClick: () => {
                     se_confirmSound.play();

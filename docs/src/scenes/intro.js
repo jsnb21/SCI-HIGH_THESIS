@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { updateSoundVolumes, playExclusiveBGM } from '../audioUtils'; // <-- updated import
 import VNDialogueBox from '../ui/VNDialogueBox';
+import LoadingScreen from '../ui/LoadingScreen';
 
 // Visual Novel Scene class extending Phaser.Scene
 export default class VNScene extends Phaser.Scene {
@@ -79,7 +80,7 @@ export default class VNScene extends Phaser.Scene {
 
     // Use VNDialogueBox for dialogue
     this.vnBox = new VNDialogueBox(this, dialogueLines, () => {
-      this.scene.start('MainHub');
+      LoadingScreen.transitionToMainHub(this, 'Preparing SCI-HIGH Academy...', 2500);
     });
     this.add.existing(this.vnBox);
 

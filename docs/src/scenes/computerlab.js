@@ -5,6 +5,7 @@ import gameManager from '../gameManager.js';
 import { onceOnlyFlags } from '../gameManager.js';
 import TutorialManager from '../components/TutorialManager.js';
 import { COMPUTER_LAB_TUTORIAL_STEPS } from '../components/TutorialConfig.js';
+import LoadingScreen from '../ui/LoadingScreen.js';
 
 export default class ComputerLab extends Phaser.Scene {
     constructor() {
@@ -119,19 +120,19 @@ export default class ComputerLab extends Phaser.Scene {
         // Create the carousel with selection callback and locked states
         this.carousel.create(iconKeys, iconInfo, (selectedItem, index) => {
             console.log('Selected:', selectedItem.heading);
-            // Transition to the new scene based on the selected icon
+            // Transition to the new scene based on the selected icon with loading screens
             if (selectedItem.heading === "Web Design") {
-                this.scene.start('WebDesignScene', { topic: 'webdesign' }); // Changed to DungeonScene
+                LoadingScreen.transitionToCourse(this, 'WebDesignScene', 'Web Design Course', { topic: 'webdesign' });
             } else if (selectedItem.heading === "Python") {
-                this.scene.start('PythonScene', { topic: 'python' }); 
+                LoadingScreen.transitionToCourse(this, 'PythonScene', 'Python Course', { topic: 'python' });
             } else if (selectedItem.heading === "Java"){
-                this.scene.start('JavaScene', { topic: 'java' }); 
+                LoadingScreen.transitionToCourse(this, 'JavaScene', 'Java Course', { topic: 'java' });
             } else if (selectedItem.heading === "C"){
-                this.scene.start('CSProgrammingScene', { topic: 'C' });
+                LoadingScreen.transitionToCourse(this, 'CSProgrammingScene', 'C Programming Course', { topic: 'C' });
             } else if (selectedItem.heading === "C++"){
-                this.scene.start('CPlusplusScene', { topic: 'C++' });
+                LoadingScreen.transitionToCourse(this, 'CPlusplusScene', 'C++ Course', { topic: 'C++' });
             } else if (selectedItem.heading === "C#"){
-                this.scene.start('CSharpScene', { topic: 'C#' });
+                LoadingScreen.transitionToCourse(this, 'CSharpScene', 'C# Course', { topic: 'C#' });
             }
         }, lockedStates);
     }
