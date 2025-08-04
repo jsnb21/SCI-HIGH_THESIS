@@ -85,6 +85,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         
         // Battle state tracking
         this.battleWon = false; // Flag to prevent time-out loss when battle is won
+        this.gameOverState = false; // Flag to prevent gameplay after timeout
     }
 
     getScaleFactor() {
@@ -195,6 +196,18 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
     handleTimeUp() {
         // Only show game over if the battle hasn't been won yet
         if (!this.battleWon) {
+            // Immediately disable all game interactions to prevent further gameplay
+            this.isAnswering = false;
+            this.isQuizStarted = false;
+            this.gameOverState = true; // Set game over flag
+            
+            // Clear any ongoing timers or events
+            if (this.gameTimer) {
+                this.gameTimer.destroy();
+                this.gameTimer = null;
+            }
+            
+            // Show game over screen immediately (keep input enabled for UI buttons)
             showGameOver(this);
         }
     }    startQuiz(initialTime = 30) {        if (!this.isQuizStarted) {
@@ -591,6 +604,8 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.isQuizStarted = false;
         this.isAnswering = false; // <-- Reset answering state
         this.battleWon = false; // Reset battle won flag
+        this.gameOverState = false; // Reset game over flag
+        
         // Reset point tracking variables
         this.quizStartTime = 0;
         this.answerTimes = [];
@@ -957,6 +972,12 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             return;
         }
         
+        // Block answer processing if game is over
+        if (this.gameOverState) {
+            console.log('Answer blocked: Game is over');
+            return;
+        }
+        
         // Continue with normal answer processing
         return super.checkAnswer ? super.checkAnswer(selectedIndex, userAnswer) : this.processAnswerLogic(selectedIndex, userAnswer);
     }
@@ -1144,6 +1165,12 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
     submitAnswer(answer) {
         if (this.isTutorialBlocking()) {
             console.log('Answer submission blocked: Tutorial is active');
+            return;
+        }
+        
+        // Block answer submission if game is over
+        if (this.gameOverState) {
+            console.log('Answer submission blocked: Game is over');
             return;
         }
         

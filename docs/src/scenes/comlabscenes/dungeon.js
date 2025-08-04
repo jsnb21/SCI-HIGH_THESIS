@@ -647,25 +647,57 @@ export default class DungeonScene extends Phaser.Scene {
     placeQuizBoxes(count) {
         const positions = [];
         
-        // Random placement logic - only on walkable tiles
-        while (positions.length < count) {
-            const x = Phaser.Math.Between(0, GRID_WIDTH - 1);
-            const y = Phaser.Math.Between(0, GRID_HEIGHT - 2); // avoid starting row
+        // For intensity 3 (boss), create a single boss enemy
+        if (this.intensity === 3) {
+            // Random placement logic for boss - only on walkable tiles
+            while (positions.length < count) {
+                const x = Phaser.Math.Between(0, GRID_WIDTH - 1);
+                const y = Phaser.Math.Between(0, GRID_HEIGHT - 2); // avoid starting row
+                
+                // Avoid player start, duplicates, and ensure walkable
+                if (
+                    (x !== this.player.x || y !== this.player.y) &&
+                    this.grid[y][x].walkable &&
+                    !positions.some(pos => pos.x === x && pos.y === y)
+                ) {
+                    const newPos = { 
+                        x, 
+                        y, 
+                        difficulty: 'boss', // Special boss difficulty
+                        sprite: this.getRandomEnemySprite(),
+                        isBoss: true
+                    };
+                    console.log(`Created BOSS at (${x}, ${y}) with sprite: ${newPos.sprite}`);
+                    positions.push(newPos);
+                }
+            }
+        } else {
+            // Define specific difficulties for 3 enemies: easy, medium, hard
+            const difficulties = ['easy', 'medium', 'hard'];
             
-            // Avoid player start, duplicates, and ensure walkable
-            if (
-                (x !== this.player.x || y !== this.player.y) &&
-                this.grid[y][x].walkable &&
-                !positions.some(pos => pos.x === x && pos.y === y)
-            ) {
-                const newPos = { 
-                    x, 
-                    y, 
-                    difficulty: this.getRandomDifficulty(),
-                    sprite: this.getRandomEnemySprite()
-                };
-                console.log(`Created quiz box at (${x}, ${y}) with difficulty: ${newPos.difficulty}, sprite: ${newPos.sprite}`);
-                positions.push(newPos);
+            // Random placement logic - only on walkable tiles
+            let difficultyIndex = 0;
+            while (positions.length < count) {
+                const x = Phaser.Math.Between(0, GRID_WIDTH - 1);
+                const y = Phaser.Math.Between(0, GRID_HEIGHT - 2); // avoid starting row
+                
+                // Avoid player start, duplicates, and ensure walkable
+                if (
+                    (x !== this.player.x || y !== this.player.y) &&
+                    this.grid[y][x].walkable &&
+                    !positions.some(pos => pos.x === x && pos.y === y)
+                ) {
+                    const newPos = { 
+                        x, 
+                        y, 
+                        difficulty: difficulties[difficultyIndex % difficulties.length], // Cycle through difficulties
+                        sprite: this.getRandomEnemySprite(),
+                        isBoss: false
+                    };
+                    console.log(`Created quiz box at (${x}, ${y}) with difficulty: ${newPos.difficulty}, sprite: ${newPos.sprite}`);
+                    positions.push(newPos);
+                    difficultyIndex++; // Move to next difficulty
+                }
             }
         }
         
@@ -710,6 +742,15 @@ export default class DungeonScene extends Phaser.Scene {
                     border: 0xfde047,     // Yellow border (keeping existing)
                     overlay: 0xf97316,    // Orange overlay (keeping existing)
                     spriteTint: 0xff0000   // Pure red sprite tint
+                };
+            case 'boss':
+                return {
+                    base: 0x7c2d12,        // Dark red-brown base
+                    outerGlow: 0xff0000,   // Bright red outer glow
+                    middleGlow: 0xff4500,  // Orange-red middle glow
+                    border: 0xffd700,     // Gold border
+                    overlay: 0x8b0000,    // Dark red overlay
+                    spriteTint: 0xff1493   // Deep pink sprite tint
                 };
             default:
                 // Default to medium difficulty colors
@@ -834,16 +875,26 @@ export default class DungeonScene extends Phaser.Scene {
         let enemyHP = 100;
         let enemyLabel = `Intensity ${this.intensity} - HP: ${enemyHP}`;
         let spriteKey = 'goblinNerd'; // Default sprite
+        let questionCount = 10; // Default question count
         
         // Use the quiz box's sprite if available
         if (quizBox && quizBox.sprite) {
             spriteKey = quizBox.sprite;
         }
         
+        // Check if this is a boss enemy
+        if (quizBox && quizBox.isBoss) {
+            enemyHP = 500; // Boss has more HP
+            enemyLabel = `🔥 BOSS ENCOUNTER - Intensity ${this.intensity} 🔥`;
+            questionCount = 20; // Boss requires 20 questions
+        }
+        
         return {
             spriteKey: spriteKey,
             maxHP: enemyHP,
-            label: enemyLabel
+            label: enemyLabel,
+            questionCount: questionCount,
+            isBoss: quizBox ? quizBox.isBoss : false
         };
     }    onEnemyDefeated() {
         this.enemiesDefeated++;
@@ -866,24 +917,21 @@ export default class DungeonScene extends Phaser.Scene {
     }
     
     continueAfterCardReward() {
-        // Check if intensity should increase (every 2 enemies defeated)
-        if (this.enemiesDefeated % 2 === 0 && this.intensity <= this.maxIntensity) {
-            this.intensity++;
-            
-            // Reset player position to starting position when intensity increases
-            this.player.x = Math.floor(GRID_WIDTH / 2);
-            this.player.y = GRID_HEIGHT - 1;
-            this.grid[this.player.y][this.player.x].visited = true;
-            
-            // Update adjacent cells after position reset
-            this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
-            
-            // Show intensity increase notification
-            this.showIntensityNotification();
-        }
+        // Check if intensity should increase based on new system
+        // Intensity 1: 3 enemies -> Intensity 2
+        // Intensity 2: 3 enemies -> Intensity 3 (Boss)
+        // Intensity 3: 1 boss (20 questions) -> Course Complete
         
-        // Check if we've reached max course completion
-        if (this.intensity > this.maxIntensity && this.courseTopic) {
+        if (this.intensity === 1 && this.enemiesDefeated >= 3) {
+            this.intensity = 2;
+            this.resetPlayerPosition();
+            this.showIntensityNotification();
+        } else if (this.intensity === 2 && this.enemiesDefeated >= 6) { // 3 from intensity 1 + 3 from intensity 2
+            this.intensity = 3;
+            this.resetPlayerPosition();
+            this.showIntensityNotification();
+        } else if (this.intensity === 3 && this.enemiesDefeated >= 7) { // 6 from previous + 1 boss
+            // Course completed after boss defeat
             this.completeCourse();
             
             // Launch DungeonCleared scene with course stats
@@ -896,6 +944,16 @@ export default class DungeonScene extends Phaser.Scene {
         
         // Spawn new quiz boxes if needed (only if no enemies remain)
         this.spawnNewQuizBoxes();
+    }
+    
+    resetPlayerPosition() {
+        // Reset player position to starting position when intensity increases
+        this.player.x = Math.floor(GRID_WIDTH / 2);
+        this.player.y = GRID_HEIGHT - 1;
+        this.grid[this.player.y][this.player.x].visited = true;
+        
+        // Update adjacent cells after position reset
+        this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
     }
       showIntensityNotification() {
         const centerX = this.scale.width / 2;
@@ -918,13 +976,26 @@ export default class DungeonScene extends Phaser.Scene {
         notificationBg.setDepth(100);
         
         // Enhanced notification text with glow effect
-        const message = this.intensity > this.maxIntensity ? 
-            "🏆 COURSE COMPLETE! 🏆" : 
-            `⚡ INTENSITY LEVEL ${this.intensity}! ⚡`;
+        let message = '';
+        let subMessage = '';
+        
+        if (this.intensity > this.maxIntensity) {
+            message = "🏆 COURSE COMPLETE! 🏆";
+            subMessage = 'Congratulations on finishing all challenges!';
+        } else if (this.intensity <= 2) {
+            message = `⚡ INTENSITY LEVEL ${this.intensity}! ⚡`;
+            subMessage = '3 Enemies await! Defeat them all to advance!';
+        } else if (this.intensity === 3) {
+            message = "🔥 BOSS ENCOUNTER! 🔥";
+            subMessage = 'Final Challenge - Requires 20 Questions!';
+        } else {
+            message = `⚡ INTENSITY LEVEL ${this.intensity}! ⚡`;
+            subMessage = 'The challenge continues...';
+        }
             
         const notificationText = this.add.text(centerX, centerY - 30, message, {
             fontSize: '24px',
-            fill: this.intensity > this.maxIntensity ? '#ff1744' : '#ffd700',
+            fill: this.intensity === 3 ? '#ff1744' : this.intensity > this.maxIntensity ? '#00ff00' : '#ffd700',
             fontFamily: 'Caprasimo-Regular',
             stroke: '#1a1a2e',
             strokeThickness: 3,
@@ -933,6 +1004,23 @@ export default class DungeonScene extends Phaser.Scene {
                 offsetY: 2,
                 color: '#000000',
                 blur: 5,
+                stroke: true,
+                fill: true
+            }
+        }).setOrigin(0.5).setDepth(101);
+        
+        // Detailed message for new intensity system
+        const detailText = this.add.text(centerX, centerY + 5, subMessage, {
+            fontSize: '14px',
+            fill: '#ffffff',
+            fontFamily: 'Arial',
+            stroke: '#1a1a2e',
+            strokeThickness: 2,
+            shadow: {
+                offsetX: 1,
+                offsetY: 1,
+                color: '#000000',
+                blur: 3,
                 stroke: true,
                 fill: true
             }
@@ -976,15 +1064,17 @@ export default class DungeonScene extends Phaser.Scene {
         // Enhanced animations
         notificationBg.setAlpha(0);
         notificationText.setAlpha(0);
+        detailText.setAlpha(0);
         resetText.setAlpha(0);
         
         // Scale-in animation
         notificationBg.setScale(0.5);
         notificationText.setScale(0.5);
+        detailText.setScale(0.5);
         resetText.setScale(0.5);
         
         this.tweens.add({
-            targets: [notificationBg, notificationText, resetText],
+            targets: [notificationBg, notificationText, detailText, resetText],
             alpha: 1,
             scaleX: 1,
             scaleY: 1,
@@ -1005,7 +1095,7 @@ export default class DungeonScene extends Phaser.Scene {
         
         // Fade out animation
         this.tweens.add({
-            targets: [notificationBg, notificationText, resetText],
+            targets: [notificationBg, notificationText, detailText, resetText],
             alpha: 0,
             scaleX: 0.8,
             scaleY: 0.8,
@@ -1015,6 +1105,7 @@ export default class DungeonScene extends Phaser.Scene {
             onComplete: () => {
                 notificationBg.destroy();
                 notificationText.destroy();
+                detailText.destroy();
                 resetText.destroy();
             }
         });
@@ -1050,7 +1141,15 @@ export default class DungeonScene extends Phaser.Scene {
             return;
         }
         
-        const targetBoxCount = 3; // Always spawn 3 enemies
+        // Determine number of enemies based on intensity
+        let targetBoxCount;
+        if (this.intensity === 1 || this.intensity === 2) {
+            targetBoxCount = 3; // 3 enemies for intensity 1 and 2
+        } else if (this.intensity === 3) {
+            targetBoxCount = 1; // 1 boss for intensity 3
+        } else {
+            targetBoxCount = 3; // Default fallback
+        }
         
         const newBoxes = this.placeQuizBoxes(targetBoxCount);
         

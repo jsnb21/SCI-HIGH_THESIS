@@ -309,7 +309,11 @@ export function showGameOver(scene) {
         scene.tutorialManager.destroy();
     }
     
+    // Ensure the game is completely stopped but UI remains functional
     scene.isAnswering = false;
+    scene.isQuizStarted = false;
+    
+    // Clean up game elements but keep UI functional
     scene.cleanupAllElements();
     if (scene.gameTimer) scene.gameTimer.destroy();
     const sf = scene.scaleFactor;
@@ -390,80 +394,33 @@ export function showGameOver(scene) {
         strokeThickness: 2 * sf
     }).setOrigin(0.5).setDepth(60);
 
-    // Enhanced restart button
-    const restartButtonWidth = 200 * sf;
-    const restartButtonHeight = 50 * sf;
-    const restartButtonBg = scene.add.graphics();
+    // Enhanced "Back to Courses" button (centered since we removed try again)
+    const backButtonWidth = 220 * sf;
+    const backButtonHeight = 50 * sf;
+    const backButtonBg = scene.add.graphics();
     
-    restartButtonBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a2d3748, 1);
-    restartButtonBg.fillRoundedRect(
-        centerX - restartButtonWidth/2,
-        scene.scale.height/2 + 20 * sf,  // Raised from +40 to +20
-        restartButtonWidth,
-        restartButtonHeight,
+    backButtonBg.fillGradientStyle(0x4a5568, 0x4a5568, 0x2d3748, 0x2d3748, 1);
+    backButtonBg.fillRoundedRect(
+        centerX - backButtonWidth/2,
+        scene.scale.height/2 + 40 * sf,  // Moved up since it's the only button
+        backButtonWidth,
+        backButtonHeight,
         8 * sf
     );
     
-    restartButtonBg.lineStyle(3 * sf, 0x63b3ed, 0.8);
-    restartButtonBg.strokeRoundedRect(
-        centerX - restartButtonWidth/2,
-        scene.scale.height/2 + 20 * sf,  // Raised from +40 to +20
-        restartButtonWidth,
-        restartButtonHeight,
+    backButtonBg.lineStyle(2 * sf, 0x718096, 0.8);
+    backButtonBg.strokeRoundedRect(
+        centerX - backButtonWidth/2,
+        scene.scale.height/2 + 40 * sf,  
+        backButtonWidth,
+        backButtonHeight,
         8 * sf
     );
     
-    restartButtonBg.setDepth(60);
+    backButtonBg.setDepth(60);
 
-    const restartButton = scene.add.text(centerX, scene.scale.height/2 + 45 * sf, "Try Again", {  // Raised from +65 to +45
+    const backButton = scene.add.text(centerX, scene.scale.height/2 + 65 * sf, "Back to Courses", {
         fontSize: `${20 * sf}px`,
-        color: '#ffd700',
-        fontFamily: 'Caprasimo-Regular',
-        stroke: '#1a1a2e',
-        strokeThickness: 2 * sf
-    })
-        .setInteractive({ useHandCursor: true })
-        .setOrigin(0.5)
-        .setDepth(61)
-        .on('pointerover', () => {
-            restartButton.setScale(1.1);
-            scene.se_hoverSound?.play();
-        })
-        .on('pointerout', () => {
-            restartButton.setScale(1);
-        })
-        .on('pointerdown', () => {
-            scene.se_confirmSound?.play();
-            scene.restartQuiz();
-        });
-
-    // Enhanced menu button
-    const menuButtonWidth = 180 * sf;
-    const menuButtonHeight = 45 * sf;
-    const menuButtonBg = scene.add.graphics();
-    
-    menuButtonBg.fillGradientStyle(0x4a5568, 0x4a5568, 0x2d3748, 0x2d3748, 1);
-    menuButtonBg.fillRoundedRect(
-        centerX - menuButtonWidth/2,
-        scene.scale.height/2 + 90 * sf,  // Raised from +110 to +90
-        menuButtonWidth,
-        menuButtonHeight,
-        8 * sf
-    );
-    
-    menuButtonBg.lineStyle(2 * sf, 0x718096, 0.8);
-    menuButtonBg.strokeRoundedRect(
-        centerX - menuButtonWidth/2,
-        scene.scale.height/2 + 90 * sf,  // Raised from +110 to +90
-        menuButtonWidth,
-        menuButtonHeight,
-        8 * sf
-    );
-    
-    menuButtonBg.setDepth(60);
-
-    const menuButton = scene.add.text(centerX, scene.scale.height/2 + 112 * sf, "Back to Menu", {  // Raised from +132 to +112
-        fontSize: `${18 * sf}px`,
         color: '#ffffff',
         fontFamily: 'Caprasimo-Regular',
         stroke: '#1a1a2e',
@@ -473,30 +430,31 @@ export function showGameOver(scene) {
         .setOrigin(0.5)
         .setDepth(61)
         .on('pointerover', () => {
-            menuButton.setScale(1.05);
+            backButton.setScale(1.05);
             scene.se_hoverSound?.play();
         })
         .on('pointerout', () => {
-            menuButton.setScale(1);
-        })        .on('pointerdown', () => {
+            backButton.setScale(1);
+        })
+        .on('pointerdown', () => {
             scene.se_confirmSound?.play();
             
             // Clean up current scene first
             scene.cleanupAllElements();
             scene.scene.stop();
             
-            // Ensure DungeonScene is stopped before going to MainHub
+            // Ensure DungeonScene is stopped before going to ComputerLab
             const sceneManager = scene.scene.manager;
             if (sceneManager.isActive('DungeonScene') || sceneManager.isPaused('DungeonScene')) {
                 sceneManager.stop('DungeonScene');
             }
             
-            // Start MainHub
-            scene.scene.start('MainHub');
+            // Go to ComputerLab instead of MainHub
+            scene.scene.start('ComputerLab');
         });
 
     // Animate elements in
-    const elementsToAnimate = [overlay, panelBg, gameOverText, defeatText, scoreText, restartButtonBg, restartButton, menuButtonBg, menuButton];
+    const elementsToAnimate = [overlay, panelBg, gameOverText, defeatText, scoreText, backButtonBg, backButton];
     elementsToAnimate.forEach((element, index) => {
         element.setAlpha(0);
         scene.tweens.add({
@@ -508,5 +466,5 @@ export function showGameOver(scene) {
         });
     });
     
-    scene.persistentElements.push(overlay, panelBg, gameOverText, defeatText, scoreText, restartButtonBg, restartButton, menuButtonBg, menuButton);
+    scene.persistentElements.push(overlay, panelBg, gameOverText, defeatText, scoreText, backButtonBg, backButton);
 }
