@@ -162,7 +162,7 @@ export default class DungeonScene extends Phaser.Scene {
         this.setupTutorialSystem();
 
         // Place quiz boxes
-        const boxCount = 2;
+        const boxCount = 3;
         console.log('About to place quiz boxes...');
         this.quizBoxes = this.placeQuizBoxes(boxCount);
         console.log('Quiz boxes placed:', this.quizBoxes);
@@ -1050,7 +1050,7 @@ export default class DungeonScene extends Phaser.Scene {
             return;
         }
         
-        const targetBoxCount = 2; // Always spawn 2 enemies
+        const targetBoxCount = 3; // Always spawn 3 enemies
         
         const newBoxes = this.placeQuizBoxes(targetBoxCount);
         
