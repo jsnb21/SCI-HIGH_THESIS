@@ -376,11 +376,14 @@ export default class DungeonScene extends Phaser.Scene {
                     // Still proceed with quiz after tutorial
                 }
 
+                // Get the specific quiz box being triggered
+                const triggeredQuizBox = this.quizBoxes[quizBoxIndex];
+
                 // Remove the triggered quiz box so it can't be triggered again
                 this.quizBoxes.splice(quizBoxIndex, 1);
                 
-                // Determine enemy configuration based on intensity and boss level
-                const enemyConfig = this.getEnemyConfig();
+                // Determine enemy configuration based on intensity and the specific quiz box
+                const enemyConfig = this.getEnemyConfig(triggeredQuizBox);
                 
                 // Determine correct quiz scene based on course topic
                 const quizSceneMap = {
@@ -570,7 +573,7 @@ export default class DungeonScene extends Phaser.Scene {
                 const sprite = this.add.image(
                     cellX + cellWidth / 2,
                     cellY + cellHeight / 2,
-                    'quizbox'
+                    quizBox.sprite || 'quizbox'  // Use the assigned sprite or fallback to quizbox
                 ).setDisplaySize(cellWidth * 0.8, cellHeight * 0.8);
                 
                 // Tinting based on difficulty
@@ -658,8 +661,10 @@ export default class DungeonScene extends Phaser.Scene {
                 const newPos = { 
                     x, 
                     y, 
-                    difficulty: this.getRandomDifficulty() 
+                    difficulty: this.getRandomDifficulty(),
+                    sprite: this.getRandomEnemySprite()
                 };
+                console.log(`Created quiz box at (${x}, ${y}) with difficulty: ${newPos.difficulty}, sprite: ${newPos.sprite}`);
                 positions.push(newPos);
             }
         }
@@ -670,6 +675,11 @@ export default class DungeonScene extends Phaser.Scene {
     getRandomDifficulty() {
         const difficulties = ['easy', 'medium', 'hard'];
         return Phaser.Utils.Array.GetRandom(difficulties);
+    }
+
+    getRandomEnemySprite() {
+        const enemySprites = ['quizbox', 'goblinNerd', 'bigSlime'];
+        return Phaser.Utils.Array.GetRandom(enemySprites);
     }
 
     getDifficultyColors(difficulty) {
@@ -820,12 +830,18 @@ export default class DungeonScene extends Phaser.Scene {
         // Remove the constant grid redrawing to prevent interference with quiz box visibility
         // Grid will be redrawn when needed (player movement, enemy defeat, etc.)
     }
-    getEnemyConfig() {
+    getEnemyConfig(quizBox = null) {
         let enemyHP = 100;
         let enemyLabel = `Intensity ${this.intensity} - HP: ${enemyHP}`;
+        let spriteKey = 'goblinNerd'; // Default sprite
+        
+        // Use the quiz box's sprite if available
+        if (quizBox && quizBox.sprite) {
+            spriteKey = quizBox.sprite;
+        }
         
         return {
-            spriteKey: 'goblinNerd',
+            spriteKey: spriteKey,
             maxHP: enemyHP,
             label: enemyLabel
         };
