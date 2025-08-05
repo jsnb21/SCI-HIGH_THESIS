@@ -4,11 +4,12 @@ import { createDebouncedClickHandler } from '../../utils/mobileUtils.js'; // Add
 // This file is for the back button component in the game, separated to reduce lines of code in the main file
 
 export function createBackButton(scene, targetScene = 'ComputerLab') {
-    // Visual style parameters
-    const buttonX = 100;
-    const buttonY = 50;
-    const buttonWidth = 120;
-    const buttonHeight = 40;    // Create button background (rectangle with stroke)
+    // Visual style parameters - increased size for PC
+    const buttonX = 120;
+    const buttonY = 60;
+    const buttonWidth = 180; // Increased from 120
+    const buttonHeight = 60; // Increased from 40
+    // Create button background (rectangle with stroke)
     const buttonBg = scene.add.rectangle(
         buttonX,
         buttonY,
@@ -26,7 +27,7 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
         buttonY,
         'Back',
         {
-            font: '24px Caprasimo-Regular',
+            font: '32px Caprasimo-Regular', // Increased from 24px
             fill: '#ffffff',
             padding: { left: 0, right: 0, top: 0, bottom: 0 }
         }

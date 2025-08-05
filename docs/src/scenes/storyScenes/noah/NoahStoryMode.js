@@ -268,43 +268,43 @@ export default class NoahStoryMode extends Phaser.Scene {
     showInlineQuiz(quizData) {
         const { width, height } = this.scale;
         
-        // Create a better-sized quiz interface
-        const quizWidth = Math.min(width * 0.85, 1000); // Max width of 1000px
-        const quizHeight = height * 0.45; // Slightly taller
+        // Create a larger quiz interface (50% larger)
+        const quizWidth = Math.min(width * 0.9, 1200) * 1.5;
+        const quizHeight = height * 0.35 * 1.5;
         const quizX = width / 2;
-        const quizY = height * 0.68; // Position slightly higher
-        
-        // Background for quiz
+        const quizY = height * 0.5;
+
+        // Background for quiz (50% larger)
         const quizBg = this.add.graphics();
         quizBg.fillStyle(0x2c3e50, 0.95);
-        quizBg.fillRoundedRect(quizX - quizWidth/2, quizY - quizHeight/2, quizWidth, quizHeight, 15);
-        quizBg.lineStyle(3, 0x3498db, 1);
-        quizBg.strokeRoundedRect(quizX - quizWidth/2, quizY - quizHeight/2, quizWidth, quizHeight, 15);
+        quizBg.fillRoundedRect(quizX - quizWidth/2, quizY - quizHeight/2, quizWidth, quizHeight, 22);
+        quizBg.lineStyle(5, 0x3498db, 1);
+        quizBg.strokeRoundedRect(quizX - quizWidth/2, quizY - quizHeight/2, quizWidth, quizHeight, 22);
         quizBg.setDepth(8);
-        
-        // Question text with better positioning
-        const questionText = this.add.text(quizX, quizY - quizHeight/2 + 50, quizData.question, {
+
+        // Question text with increased size
+        const questionText = this.add.text(quizX, quizY - quizHeight/2 + 60, quizData.question, {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '20px', // Increased from 16px
+            fontSize: '39px', // 26px * 1.5
             color: '#ffffff',
-            wordWrap: { width: quizWidth - 80 },
+            wordWrap: { width: quizWidth - 150 },
             align: 'center',
-            lineSpacing: 6 // Increased from 4
+            lineSpacing: 12 // 8 * 1.5
         }).setOrigin(0.5);
         questionText.setDepth(9);
-        
-        // Calculate button layout
-        const buttonWidth = Math.min(280, (quizWidth - 100) / 2); // Increased from 220 and adjusted spacing
-        const buttonHeight = 55; // Increased from 45
+
+        // Calculate button layout with better spacing distribution
+        const buttonWidth = Math.min(320 * 1.5, (quizWidth - 180) / 2);
+        const buttonHeight = 65 * 1.5;
         const buttonsPerRow = 2;
-        const buttonSpacing = 20;
+        const buttonSpacing = 25 * 1.5;
         const totalButtonWidth = buttonsPerRow * buttonWidth + (buttonsPerRow - 1) * buttonSpacing;
         const startX = quizX - totalButtonWidth/2 + buttonWidth/2;
-        
-        // Start buttons below question with proper spacing
+
+        // Position buttons with increased spacing from question
         const questionHeight = questionText.height;
-        const buttonStartY = quizY - quizHeight/2 + 50 + questionHeight/2 + 30;
-        
+        const buttonStartY = quizY - quizHeight/2 + 60 + questionHeight/2 + 180; // 120 * 1.5
+
         this.inlineQuizElements = [quizBg, questionText];
         
         quizData.answers.forEach((answer, index) => {
@@ -313,24 +313,24 @@ export default class NoahStoryMode extends Phaser.Scene {
             const btnX = startX + col * (buttonWidth + buttonSpacing);
             const btnY = buttonStartY + row * (buttonHeight + 15);
             
-            // Button background
+            // Button background (50% larger)
             const btnBg = this.add.graphics();
             btnBg.fillStyle(0x34495e, 1);
-            btnBg.fillRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 8);
-            btnBg.lineStyle(2, 0x7f8c8d, 1);
-            btnBg.strokeRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 8);
+            btnBg.fillRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+            btnBg.lineStyle(3, 0x7f8c8d, 1);
+            btnBg.strokeRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 12);
             btnBg.setDepth(9);
             btnBg.setInteractive(new Phaser.Geom.Rectangle(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
             btnBg.setData('useHandCursor', true);
-            
-            // Button text with better sizing
+
+            // Button text with increased size
             const btnText = this.add.text(btnX, btnY, answer, {
                 fontFamily: 'Caprasimo-Regular',
-                fontSize: '16px', // Increased from 13px
+                fontSize: '30px', // 20px * 1.5
                 color: '#ffffff',
-                wordWrap: { width: buttonWidth - 40 }, // Increased padding from 30
+                wordWrap: { width: buttonWidth - 75 },
                 align: 'center',
-                lineSpacing: 3 // Increased from 2
+                lineSpacing: 7.5 // 5 * 1.5
             }).setOrigin(0.5);
             btnText.setDepth(10);
             
@@ -384,52 +384,52 @@ export default class NoahStoryMode extends Phaser.Scene {
         const feedbackColor = isCorrect ? 0x27ae60 : 0xe74c3c;
         const feedbackIcon = isCorrect ? '✅' : '❌';
         const feedbackTitle = isCorrect ? 'Correct!' : 'Not quite right';
-        
-        // Feedback background
+
+        // Feedback background (50% larger)
         const feedbackBg = this.add.graphics();
         feedbackBg.fillStyle(feedbackColor, 0.9);
-        feedbackBg.fillRoundedRect(width/2 - 300, height/2 - 100, 600, 200, 15);
+        feedbackBg.fillRoundedRect(width/2 - 450, height/2 - 150, 900, 300, 22);
         feedbackBg.setDepth(10);
-        
-        // Icon
-        const icon = this.add.text(width/2, height/2 - 60, feedbackIcon, {
-            fontSize: '32px'
+
+        // Icon (50% larger)
+        const icon = this.add.text(width/2, height/2 - 90, feedbackIcon, {
+            fontSize: '48px' // 32px * 1.5
         }).setOrigin(0.5);
         icon.setDepth(11);
-        
-        // Title
-        const title = this.add.text(width/2, height/2 - 20, feedbackTitle, {
+
+        // Title (50% larger)
+        const title = this.add.text(width/2, height/2 - 30, feedbackTitle, {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '20px',
+            fontSize: '30px', // 20px * 1.5
             color: '#ffffff'
         }).setOrigin(0.5);
         title.setDepth(11);
-        
-        // Explanation
-        const explanation = this.add.text(width/2, height/2 + 20, quizData.explanation || '', {
+
+        // Explanation (50% larger)
+        const explanation = this.add.text(width/2, height/2 + 30, quizData.explanation || '', {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '14px',
+            fontSize: '21px', // 14px * 1.5
             color: '#ffffff',
-            wordWrap: { width: 560 },
+            wordWrap: { width: 840 }, // 560 * 1.5
             align: 'center'
         }).setOrigin(0.5);
         explanation.setDepth(11);
-        
-        // Continue button
+
+        // Continue button (50% larger)
         const continueBtn = this.add.graphics();
         continueBtn.fillStyle(0xffffff, 1);
-        continueBtn.fillRoundedRect(width/2 - 50, height/2 + 60, 100, 30, 8);
+        continueBtn.fillRoundedRect(width/2 - 75, height/2 + 90, 150, 45, 12);
         continueBtn.setDepth(11);
-        continueBtn.setInteractive(new Phaser.Geom.Rectangle(width/2 - 50, height/2 + 60, 100, 30), Phaser.Geom.Rectangle.Contains);
+        continueBtn.setInteractive(new Phaser.Geom.Rectangle(width/2 - 75, height/2 + 90, 150, 45), Phaser.Geom.Rectangle.Contains);
         continueBtn.setData('useHandCursor', true);
-        
-        const continueText = this.add.text(width/2, height/2 + 75, 'Continue', {
+
+        const continueText = this.add.text(width/2, height/2 + 112, 'Continue', {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '12px',
+            fontSize: '18px', // 12px * 1.5
             color: '#000000'
         }).setOrigin(0.5);
         continueText.setDepth(12);
-        
+
         this.feedbackElements = [feedbackBg, icon, title, explanation, continueBtn, continueText];
         
         continueBtn.on('pointerdown', () => {

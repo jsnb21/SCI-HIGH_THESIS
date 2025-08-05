@@ -111,130 +111,362 @@ export default class LilyStoryMode extends Phaser.Scene {
             this.dialogueBox.destroy();
         }
 
-        this.dialogueBox = new VNDialogueBox(this, {
-            x: this.scale.width / 2,
-            y: this.scale.height - 120,
-            width: this.scale.width - 100,
-            height: 200,
-            backgroundColor: 0x1a1a2e,
-            borderColor: 0xff6b9d,
-            textColor: '#ffffff',
-            fontSize: 24,
-            padding: 20
-        });
+        // Show code example if present
+        if (storySegment.codeExample) {
+            this.showCodeExample(storySegment.codeExample);
+        }
 
-        this.dialogueBox.showDialogue(storySegment.dialogue, storySegment.character, () => {
-            this.onDialogueComplete(storySegment);
+        this.dialogueBox = new VNDialogueBox(
+            this, 
+            storySegment.dialogue, 
+            () => {
+                this.onDialogueComplete(storySegment);
+            }
+        );
+    }
+
+    showCodeExample(codeExample) {
+        const { width, height } = this.scale;
+        
+        // Create a much larger code display area
+        const codeBox = this.add.rectangle(width * 0.3, height * 0.4, 720, 450, 0x1e1e1e, 0.9);
+        codeBox.setStrokeStyle(4, 0xff6b9d);
+        codeBox.setDepth(5); // Above Lily (depth 1) but below dialogue (depth 10)
+        
+        const codeText = this.add.text(width * 0.3, height * 0.4, codeExample.code, {
+            fontFamily: 'Courier New, monospace',
+            fontSize: '22px', // Increased from 18px
+            color: '#00ff00',
+            wordWrap: { width: 680 }, // Adjusted for larger box
+            align: 'left',
+            lineSpacing: 6 // Increased line spacing for better readability with larger text
         });
+        codeText.setOrigin(0.5);
+        codeText.setDepth(6); // Above code box
+        
+        // Label for the code
+        const codeLabel = this.add.text(width * 0.3, height * 0.18, codeExample.title, {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '22px', // Increased from 18px
+            color: '#ffffff',
+            backgroundColor: '#ff6b9d',
+            padding: { x: 16, y: 8 } // Increased padding
+        });
+        codeLabel.setOrigin(0.5);
+        codeLabel.setDepth(6); // Same as code text
+        
+        // Store for cleanup
+        this.codeElements = [codeBox, codeText, codeLabel];
     }
 
     onDialogueComplete(storySegment) {
-        // Handle story progression
-        if (storySegment.action) {
-            switch (storySegment.action) {
-                case 'next_scene':
-                    this.currentScene++;
-                    this.startCurrentStory();
-                    break;
-                case 'next_chapter':
-                    this.currentChapter++;
-                    this.currentScene = 0;
-                    
-                    // Update progress
-                    char2.storyProgress.chapter = this.currentChapter;
-                    char2.storyProgress.scene = this.currentScene;
-                    
-                    // Update quest progress
-                    this.updateQuestProgress();
-                    
-                    this.setupScene();
-                    this.startCurrentStory();
-                    break;
-                case 'quiz':
-                    this.startQuiz(storySegment.quizData);
-                    break;
-                case 'complete':
-                    this.showStoryComplete();
-                    break;
-                default:
-                    this.startCurrentStory();
-                    break;
-            }
-        } else {
-            this.currentScene++;
-            this.startCurrentStory();
+        // Clean up code example if shown
+        if (this.codeElements) {
+            this.codeElements.forEach(element => element.destroy());
+            this.codeElements = null;
         }
-    }
 
-    updateQuestProgress() {
-        const chapter = this.currentChapter;
+        // Update progress
+        if (storySegment.progressUpdate) {
+            this.updateCharacterProgress(storySegment.progressUpdate);
+        }
+
+        // Check if this segment has an inline quiz
+        if (storySegment.inlineQuiz) {
+            this.showInlineQuiz(storySegment.inlineQuiz);
+            return;
+        }
+
+        // Move to next scene/chapter
+        this.currentScene++;
+        const storyData = this.getStoryData();
         
-        if (chapter >= 1) {
-            char2.quest1 = Math.min(100, (chapter / 5) * 100);
-            char2.quest1Desc = "Learn Python fundamentals through Lily's story";
+        // Check if we need to move to next chapter
+        if (this.currentScene >= storyData[this.currentChapter].scenes.length) {
+            this.currentChapter++;
+            this.currentScene = 0;
+            
+            // Setup new scene environment
+            if (this.currentChapter < storyData.length) {
+                this.setupScene();
+            }
         }
-        if (chapter >= 3) {
-            char2.quest2 = Math.min(100, ((chapter - 2) / 3) * 100);
-            char2.quest2Desc = "Master Python control structures and functions";
-        }
-        if (chapter >= 5) {
-            char2.quest3 = 100;
-            char2.quest3Desc = "Complete advanced Python concepts";
+        
+        // Save progress
+        char2.storyProgress = {
+            chapter: this.currentChapter,
+            scene: this.currentScene,
+            completed: this.currentChapter >= storyData.length
+        };
+
+        // Continue or complete
+        if (this.currentChapter < storyData.length) {
+            this.time.delayedCall(1000, () => {
+                this.startCurrentStory();
+            });
+        } else {
+            this.showStoryComplete();
         }
     }
 
-    startQuiz(quizData) {
-        // Start a Python quiz
-        this.scene.start('LilyStoryQuiz', {
-            quizData: quizData,
-            returnScene: 'LilyStoryMode',
-            returnData: {
-                chapter: this.currentChapter,
-                scene: this.currentScene + 1
-            }
-        });
+    updateCharacterProgress(progressUpdate) {
+        if (progressUpdate.quest1) {
+            char2.quest1 = Math.min(char2.quest1 + progressUpdate.quest1, 100);
+        }
+        if (progressUpdate.quest2) {
+            char2.quest2 = Math.min(char2.quest2 + progressUpdate.quest2, 100);
+        }
+        if (progressUpdate.quest3) {
+            char2.quest3 = Math.min(char2.quest3 + progressUpdate.quest3, 100);
+        }
+        
+        // Update descriptions
+        if (progressUpdate.quest1Desc) char2.quest1Desc = progressUpdate.quest1Desc;
+        if (progressUpdate.quest2Desc) char2.quest2Desc = progressUpdate.quest2Desc;
+        if (progressUpdate.quest3Desc) char2.quest3Desc = progressUpdate.quest3Desc;
     }
 
     showStoryComplete() {
-        if (this.dialogueBox) {
-            this.dialogueBox.destroy();
-        }
-
         const { width, height } = this.scale;
         
         // Completion message
-        this.add.text(width / 2, height / 2, 'Chapter Complete!', {
-            fontFamily: 'Caprasimo-Regular',
-            fontSize: '48px',
-            color: '#ff6b9d',
-            stroke: '#000000',
-            strokeThickness: 4
-        }).setOrigin(0.5);
+        const completionDialogue = [
+            "Congratulations! You've completed Lily's Python journey!",
+            "Lily has learned the fundamentals of Python programming.",
+            "These skills will serve as a solid foundation for programming!",
+            "Continue learning and practicing to become a skilled programmer!"
+        ];
+        
+        this.dialogueBox = new VNDialogueBox(
+            this,
+            completionDialogue,
+            () => {
+                // Mark story as completed
+                char2.storyProgress.completed = true;
+                onceOnlyFlags.setSeen('lily_story_completed');
+                
+                // Return to classroom
+                this.scene.start('Classroom');
+            }
+        );
+    }
 
-        this.add.text(width / 2, height / 2 + 60, 'Great job learning Python with Lily!', {
+    showInlineQuiz(quizData) {
+        const { width, height } = this.scale;
+        
+        // Create a larger quiz interface (50% larger)
+        const quizWidth = Math.min(width * 0.9, 1200) * 1.5;
+        const quizHeight = height * 0.35 * 1.5;
+        const quizX = width / 2;
+        const quizY = height * 0.5;
+
+        // Background for quiz (50% larger)
+        const quizBg = this.add.graphics();
+        quizBg.fillStyle(0x1a1a2e, 0.95);
+        quizBg.fillRoundedRect(quizX - quizWidth/2, quizY - quizHeight/2, quizWidth, quizHeight, 22);
+        quizBg.lineStyle(5, 0xff6b9d, 1);
+        quizBg.strokeRoundedRect(quizX - quizWidth/2, quizY - quizHeight/2, quizWidth, quizHeight, 22);
+        quizBg.setDepth(8);
+
+        // Question text with increased size
+        const questionText = this.add.text(quizX, quizY - quizHeight/2 + 60, quizData.question, {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '24px',
+            fontSize: '39px', // 26px * 1.5
             color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 2
+            wordWrap: { width: quizWidth - 150 },
+            align: 'center',
+            lineSpacing: 12 // 8 * 1.5
         }).setOrigin(0.5);
+        questionText.setDepth(9);
 
-        // Continue button
-        const continueBtn = this.add.rectangle(width / 2, height / 2 + 120, 200, 50, 0xff6b9d)
-            .setStrokeStyle(3, 0x000000)
-            .setInteractive({ useHandCursor: true });
+        // Calculate button layout with better spacing distribution
+        const buttonWidth = Math.min(320 * 1.5, (quizWidth - 180) / 2);
+        const buttonHeight = 65 * 1.5;
+        const buttonsPerRow = 2;
+        const buttonSpacing = 25 * 1.5;
+        const totalButtonWidth = buttonsPerRow * buttonWidth + (buttonsPerRow - 1) * buttonSpacing;
+        const startX = quizX - totalButtonWidth/2 + buttonWidth/2;
 
-        this.add.text(width / 2, height / 2 + 120, 'Continue', {
-            fontFamily: 'Caprasimo-Regular',
-            fontSize: '20px',
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 2
-        }).setOrigin(0.5);
+        // Position buttons with increased spacing from question
+        const questionHeight = questionText.height;
+        const buttonStartY = quizY - quizHeight/2 + 60 + questionHeight/2 + 180; // 120 * 1.5
 
-        continueBtn.on('pointerdown', () => {
-            this.scene.start('LilyChapterSelect');
+        this.inlineQuizElements = [quizBg, questionText];
+        
+        quizData.answers.forEach((answer, index) => {
+            const row = Math.floor(index / buttonsPerRow);
+            const col = index % buttonsPerRow;
+            const btnX = startX + col * (buttonWidth + buttonSpacing);
+            const btnY = buttonStartY + row * (buttonHeight + 15);
+            
+            // Button background (50% larger)
+            const btnBg = this.add.graphics();
+            btnBg.fillStyle(0x2e1a4d, 1);
+            btnBg.fillRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+            btnBg.lineStyle(3, 0xff6b9d, 1);
+            btnBg.strokeRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+            btnBg.setDepth(9);
+            btnBg.setInteractive(new Phaser.Geom.Rectangle(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+            btnBg.setData('useHandCursor', true);
+
+            // Button text with increased size
+            const btnText = this.add.text(btnX, btnY, answer, {
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: '30px', // 20px * 1.5
+                color: '#ffffff',
+                wordWrap: { width: buttonWidth - 75 },
+                align: 'center',
+                lineSpacing: 7.5 // 5 * 1.5
+            }).setOrigin(0.5);
+            btnText.setDepth(10);
+            
+            // Store elements
+            this.inlineQuizElements.push(btnBg, btnText);
+            
+            // Handle click
+            btnBg.on('pointerdown', () => {
+                this.handleInlineQuizAnswer(index === quizData.correct, quizData);
+            });
+            
+            // Hover effects
+            btnBg.on('pointerover', () => {
+                btnBg.clear();
+                btnBg.fillStyle(0xff6b9d, 0.8);
+                btnBg.fillRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+                btnBg.lineStyle(3, 0xffffff, 1);
+                btnBg.strokeRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+                this.sound.play('se_select');
+            });
+            
+            btnBg.on('pointerout', () => {
+                btnBg.clear();
+                btnBg.fillStyle(0x2e1a4d, 1);
+                btnBg.fillRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+                btnBg.lineStyle(3, 0xff6b9d, 1);
+                btnBg.strokeRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+            });
         });
+    }
+
+    handleInlineQuizAnswer(isCorrect, quizData) {
+        this.sound.play(isCorrect ? 'se_confirm' : 'se_wrong');
+        
+        // Clear quiz elements
+        if (this.inlineQuizElements) {
+            this.inlineQuizElements.forEach(element => element.destroy());
+            this.inlineQuizElements = null;
+        }
+        
+        // Show feedback briefly
+        this.showInlineQuizFeedback(isCorrect, quizData, () => {
+            // Continue to next scene after feedback
+            this.continueStoryAfterInlineQuiz();
+        });
+    }
+
+    showInlineQuizFeedback(isCorrect, quizData, callback) {
+        const { width, height } = this.scale;
+        
+        const feedbackColor = isCorrect ? 0x27ae60 : 0xe74c3c;
+        const feedbackIcon = isCorrect ? '✅' : '❌';
+        const feedbackTitle = isCorrect ? 'Correct!' : 'Not quite right';
+
+        // Feedback background (50% larger)
+        const feedbackBg = this.add.graphics();
+        feedbackBg.fillStyle(feedbackColor, 0.9);
+        feedbackBg.fillRoundedRect(width/2 - 450, height/2 - 150, 900, 300, 22);
+        feedbackBg.setDepth(10);
+
+        // Icon (50% larger)
+        const icon = this.add.text(width/2, height/2 - 90, feedbackIcon, {
+            fontSize: '48px' // 32px * 1.5
+        }).setOrigin(0.5);
+        icon.setDepth(11);
+
+        // Title (50% larger)
+        const title = this.add.text(width/2, height/2 - 30, feedbackTitle, {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '30px', // 20px * 1.5
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        title.setDepth(11);
+
+        // Explanation (50% larger)
+        const explanation = this.add.text(width/2, height/2 + 30, quizData.explanation || '', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '21px', // 14px * 1.5
+            color: '#ffffff',
+            wordWrap: { width: 840 }, // 560 * 1.5
+            align: 'center'
+        }).setOrigin(0.5);
+        explanation.setDepth(11);
+
+        // Continue button (50% larger)
+        const continueBtn = this.add.graphics();
+        continueBtn.fillStyle(0xffffff, 1);
+        continueBtn.fillRoundedRect(width/2 - 75, height/2 + 90, 150, 45, 12);
+        continueBtn.setDepth(11);
+        continueBtn.setInteractive(new Phaser.Geom.Rectangle(width/2 - 75, height/2 + 90, 150, 45), Phaser.Geom.Rectangle.Contains);
+        continueBtn.setData('useHandCursor', true);
+
+        const continueText = this.add.text(width/2, height/2 + 112, 'Continue', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '18px', // 12px * 1.5
+            color: '#000000'
+        }).setOrigin(0.5);
+        continueText.setDepth(12);
+
+        this.feedbackElements = [feedbackBg, icon, title, explanation, continueBtn, continueText];
+        
+        continueBtn.on('pointerdown', () => {
+            this.sound.play('se_confirm');
+            // Clean up feedback
+            this.feedbackElements.forEach(element => element.destroy());
+            this.feedbackElements = null;
+            callback();
+        });
+        
+        // Auto-continue after 3 seconds if no interaction
+        this.time.delayedCall(3000, () => {
+            if (this.feedbackElements) {
+                this.feedbackElements.forEach(element => element.destroy());
+                this.feedbackElements = null;
+                callback();
+            }
+        });
+    }
+
+    continueStoryAfterInlineQuiz() {
+        // Move to next scene/chapter
+        this.currentScene++;
+        const storyData = this.getStoryData();
+        
+        // Check if we need to move to next chapter
+        if (this.currentScene >= storyData[this.currentChapter].scenes.length) {
+            this.currentChapter++;
+            this.currentScene = 0;
+            
+            // Setup new scene environment
+            if (this.currentChapter < storyData.length) {
+                this.setupScene();
+            }
+        }
+        
+        // Save progress
+        char2.storyProgress = {
+            chapter: this.currentChapter,
+            scene: this.currentScene,
+            completed: this.currentChapter >= storyData.length
+        };
+
+        // Continue or complete
+        if (this.currentChapter < storyData.length) {
+            this.time.delayedCall(1000, () => {
+                this.startCurrentStory();
+            });
+        } else {
+            this.showStoryComplete();
+        }
     }
 
     getStoryData() {
@@ -263,38 +495,41 @@ export default class LilyStoryMode extends Phaser.Scene {
                         action: 'next_scene'
                     },
                     {
-                        character: 'Lily',
                         dialogue: [
                             "Let's try some basic operations! Python can do math just like a calculator.",
                             "print(5 + 3) would show us 8!",
                             "print('Hello' + ' ' + 'World') would show us 'Hello World'!",
                             "The print() function is like our way to show things to the audience - just like performing on stage!"
                         ],
-                        action: 'quiz',
-                        quizData: {
-                            questions: [
-                                {
-                                    question: "What would 'print(10 + 5)' display?",
-                                    options: ["105", "15", "10 + 5", "Error"],
-                                    correct: 1
-                                },
-                                {
-                                    question: "How do you create a variable named 'song' with the value 'Hello'?",
-                                    options: ["song = Hello", "song = 'Hello'", "var song = Hello", "song: Hello"],
-                                    correct: 1
-                                }
-                            ]
+                        codeExample: {
+                            title: "Python Basic Operations",
+                            code: `# Math operations
+print(5 + 3)  # Addition: 8
+print(10 - 4)  # Subtraction: 6
+print(3 * 7)  # Multiplication: 21
+
+# String operations
+print('Hello' + ' ' + 'World')  # Hello World
+print('Python' * 3)  # PythonPythonPython`
+                        },
+                        inlineQuiz: {
+                            question: "What would 'print(10 + 5)' display?",
+                            answers: ["105", "15", "10 + 5", "Error"],
+                            correct: 1,
+                            explanation: "In Python, + performs addition with numbers. So 10 + 5 equals 15, which gets printed to the console."
                         }
                     },
                     {
-                        character: 'Lily',
                         dialogue: [
                             "Awesome work! You're getting the hang of Python basics!",
                             "Remember, practice makes perfect - just like my singing and dancing!",
                             "In the next chapter, we'll learn about making decisions in our code with if statements!",
                             "Get ready to make your programs even smarter!"
                         ],
-                        action: 'next_chapter'
+                        progressUpdate: {
+                            quest1: 20,
+                            quest1Desc: "Completed Python basics and variables"
+                        }
                     }
                 ]
             },
@@ -312,48 +547,60 @@ export default class LilyStoryMode extends Phaser.Scene {
                         action: 'next_scene'
                     },
                     {
-                        character: 'Lily',
                         dialogue: [
                             "Here's a simple if statement:",
                             "if temperature > 25:\n    print('It's a warm day!')",
                             "The code after the colon only runs if the condition is true!",
                             "Notice the indentation - Python uses spaces to group code together!"
                         ],
-                        action: 'next_scene'
+                        codeExample: {
+                            title: "Python If Statement",
+                            code: `temperature = 30
+
+if temperature > 25:
+    print("It's a warm day!")
+    print("Perfect for dancing outside!")
+else:
+    print("It's a cool day!")
+    print("Time for indoor practice!")`
+                        }
                     },
                     {
-                        character: 'Lily',
                         dialogue: [
                             "We can also use 'else' for when the condition is false:",
                             "if score >= 80:\n    print('Great job!')\nelse:\n    print('Keep practicing!')",
                             "And 'elif' for multiple conditions - like choosing between different songs to perform!",
                             "Let's practice with some loops next!"
                         ],
-                        action: 'quiz',
-                        quizData: {
-                            questions: [
-                                {
-                                    question: "What happens if the condition in an if statement is false?",
-                                    options: ["The code runs anyway", "Python shows an error", "The code is skipped", "The program stops"],
-                                    correct: 2
-                                },
-                                {
-                                    question: "What is used to group code in Python?",
-                                    options: ["Curly braces {}", "Parentheses ()", "Indentation", "Square brackets []"],
-                                    correct: 2
-                                }
-                            ]
+                        inlineQuiz: {
+                            question: "What happens if the condition in an if statement is false?",
+                            answers: ["The code runs anyway", "Python shows an error", "The code is skipped", "The program stops"],
+                            correct: 2,
+                            explanation: "When an if condition is false, Python skips the code block and continues to the next part of the program."
                         }
                     },
                     {
-                        character: 'Lily',
                         dialogue: [
                             "Now let's talk about loops - they're like repeating a dance move!",
                             "A 'for' loop repeats code for each item in a list:",
                             "for i in range(5):\n    print('Hello!')",
                             "This would print 'Hello!' five times - perfect for practice sessions!"
                         ],
-                        action: 'next_chapter'
+                        codeExample: {
+                            title: "Python Loops",
+                            code: `# For loop with range
+for i in range(3):
+    print(f"Practice session {i+1}")
+
+# For loop with list
+songs = ["Hello World", "Python Love", "Code Dreams"]
+for song in songs:
+    print(f"Now playing: {song}")`
+                        },
+                        progressUpdate: {
+                            quest2: 15,
+                            quest2Desc: "Learning Python control structures"
+                        }
                     }
                 ]
             },
