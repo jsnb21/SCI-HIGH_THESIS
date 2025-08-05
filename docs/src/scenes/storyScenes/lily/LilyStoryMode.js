@@ -20,10 +20,8 @@ export default class LilyStoryMode extends Phaser.Scene {
     }
 
     preload() {
-        // Load character sprites
-        this.load.image('lily_happy', 'assets/sprites/npcs/lily.png');
-        this.load.image('lily_excited', 'assets/sprites/npcs/lily.png');
-        this.load.image('lily_thinking', 'assets/sprites/npcs/lily.png');
+        // Load character sprite (using same path as carousel)
+        this.load.image('Lily', 'assets/sprites/npcs/Lily.png');
         
         // Load backgrounds
         this.load.image('classroom_bg', 'assets/img/bg/classroom_day.png');
@@ -77,7 +75,7 @@ export default class LilyStoryMode extends Phaser.Scene {
         this.dimOverlay.setDepth(0); // Behind everything else
         
         // Add character sprite - behind dialogue box (half-body size)
-        this.lily = this.add.image(width * 0.82, height * 0.72, 'lily_happy');
+        this.lily = this.add.image(width * 0.82, height * 0.72, 'Lily');
         this.lily.setScale(0.9); // Half-body appearance
         this.lily.setDepth(1); // Lower depth so dialogue appears in front
         

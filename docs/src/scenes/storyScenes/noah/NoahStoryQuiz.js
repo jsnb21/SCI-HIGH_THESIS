@@ -1,22 +1,24 @@
 import Phaser from 'phaser';
 import VNDialogueBox from '/src/ui/VNDialogueBox.js';
 import { createBackButton } from '/src/components/buttons/backbutton.js';
-import { char1 } from '/src/gameManager.js';
+import { char1, onceOnlyFlags } from '/src/gameManager.js';
 
 export default class NoahStoryQuiz extends Phaser.Scene {
     constructor() {
         super('NoahStoryQuiz');
+        this.chapterType = 'html'; // Default
+        this.questions = [];
         this.currentQuestionIndex = 0;
         this.score = 0;
-        this.questions = [];
-        this.chapterType = 'html'; // Will be set when scene starts
+        this.questionElements = [];
+        this.dialogueBox = null;
     }
 
     init(data) {
-        this.chapterType = data.chapter || 'html';
-        this.questions = this.getQuestionsForChapter(this.chapterType);
-        this.currentQuestionIndex = 0;
-        this.score = 0;
+        console.log('NoahStoryQuiz init called with data:', data);
+        this.chapterType = data?.chapter || 'html';
+        console.log('Chapter type set to:', this.chapterType);
+        this.loadQuestions();
     }
 
     preload() {
@@ -26,7 +28,7 @@ export default class NoahStoryQuiz extends Phaser.Scene {
         // Load sounds
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
-        this.load.audio('se_correct', 'assets/audio/se/se_confirm.wav'); // Reuse confirm sound
+        this.load.audio('se_correct', 'assets/audio/se/se_confirm.wav');
         this.load.audio('se_wrong', 'assets/audio/se/se_wrong.wav');
     }
 
@@ -37,100 +39,286 @@ export default class NoahStoryQuiz extends Phaser.Scene {
         this.bg = this.add.image(width / 2, height / 2, 'classroom_bg');
         this.bg.setDisplaySize(width, height);
         
-        // Add dimming overlay for better readability
-        this.dimOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.4);
-        this.dimOverlay.setDepth(0); // Behind everything else
+        // Add dimming overlay
+        this.dimOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6);
+        
+        // Back button
+        createBackButton(this, () => {
+            // Return to story mode indicating quiz was not completed
+            this.scene.start('NoahStoryMode', { quizCancelled: true, chapter: this.chapterType });
+        });
         
         // Start quiz
         this.showQuestion();
+    }
+
+    loadQuestions() {
+        // Sample questions for each chapter type
+        const questionSets = {
+            html: [
+                {
+                    question: "What does HTML stand for?",
+                    answers: [
+                        "HyperText Markup Language",
+                        "HyperText Making Language", 
+                        "Home Tool Markup Language",
+                        "Hyperlink Text Markup Language"
+                    ],
+                    correct: 0,
+                    explanation: "HTML stands for HyperText Markup Language."
+                },
+                {
+                    question: "Which HTML tag is used to create a paragraph?",
+                    code: "<p>This is a paragraph</p>",
+                    answers: [
+                        "<paragraph>",
+                        "<p>",
+                        "<para>", 
+                        "<text>"
+                    ],
+                    correct: 1,
+                    explanation: "The <p> tag is used to create paragraphs in HTML."
+                }
+            ],
+            css: [
+                {
+                    question: "What does CSS stand for?",
+                    answers: [
+                        "Cascading Style Sheets",
+                        "Computer Style Sheets",
+                        "Creative Style Sheets",
+                        "Colorful Style Sheets"
+                    ],
+                    correct: 0,
+                    explanation: "CSS stands for Cascading Style Sheets."
+                },
+                {
+                    question: "Which CSS property is used to change the text color?",
+                    code: "p { color: blue; }",
+                    answers: [
+                        "text-color",
+                        "font-color",
+                        "color",
+                        "text-style"
+                    ],
+                    correct: 2,
+                    explanation: "The 'color' property is used to change the text color in CSS."
+                }
+            ],
+            javascript: [
+                {
+                    question: "Which of the following is used to declare a variable in JavaScript?",
+                    code: "let myVariable = 'Hello World';",
+                    answers: [
+                        "var",
+                        "let", 
+                        "const",
+                        "All of the above"
+                    ],
+                    correct: 3,
+                    explanation: "All three keywords (var, let, const) can be used to declare variables in JavaScript."
+                },
+                {
+                    question: "How do you write a comment in JavaScript?",
+                    code: "// This is a comment",
+                    answers: [
+                        "<!-- This is a comment -->",
+                        "/* This is a comment */",
+                        "// This is a comment",
+                        "Both B and C are correct"
+                    ],
+                    correct: 3,
+                    explanation: "JavaScript supports both // for single-line comments and /* */ for multi-line comments."
+                }
+            ]
+        };
         
-        // Back button
-        createBackButton(this, 'NoahStoryMode');
+        this.questions = questionSets[this.chapterType] || questionSets.html;
+        console.log('Questions loaded for chapter:', this.chapterType, 'Count:', this.questions.length);
     }
 
     showQuestion() {
         const { width, height } = this.scale;
         
-        // Clear previous question elements
+        // Clear previous elements
         if (this.questionElements) {
             this.questionElements.forEach(element => element.destroy());
+            this.questionElements = [];
         }
-        this.questionElements = [];
-
+        
+        // Validate that we have questions and a current question
+        if (!this.questions || this.questions.length === 0) {
+            console.error('No questions loaded for chapter:', this.chapterType);
+            this.loadQuestions(); // Try to reload questions
+            if (!this.questions || this.questions.length === 0) {
+                this.showErrorMessage('No questions available for this chapter.');
+                return;
+            }
+        }
+        
+        if (this.currentQuestionIndex >= this.questions.length) {
+            this.showResults();
+            return;
+        }
+        
         const question = this.questions[this.currentQuestionIndex];
         
-        // Progress indicator
-        const progressText = this.add.text(width / 2, height * 0.1, 
-            `Question ${this.currentQuestionIndex + 1} of ${this.questions.length}`, {
-            fontFamily: 'Caprasimo-Regular',
-            fontSize: '20px',
-            color: '#1e90ff',
-            stroke: '#000000',
-            strokeThickness: 3
-        }).setOrigin(0.5);
-        this.questionElements.push(progressText);
+        if (!question) {
+            console.error('Question not found at index:', this.currentQuestionIndex);
+            this.showErrorMessage('Question data is missing.');
+            return;
+        }
         
-        // Question text
-        const questionText = this.add.text(width / 2, height * 0.25, question.question, {
+        // Theme colors
+        const themes = {
+            html: { color: 0xe74c3c, name: 'HTML', icon: '🏗️' },
+            css: { color: 0x3498db, name: 'CSS', icon: '🎨' },
+            javascript: { color: 0xf1c40f, name: 'JavaScript', icon: '⚡' }
+        };
+        const theme = themes[this.chapterType] || themes.html;
+        
+        // Card dimensions - Larger for PC
+        const cardWidth = Math.min(width * 0.9, 1200);
+        const cardHeight = Math.min(height * 0.85, 700);
+        const cardX = width / 2;
+        const cardY = height / 2;
+        
+        // Main card
+        const card = this.add.graphics();
+        card.fillStyle(0x2c3e50, 0.95);
+        card.fillRoundedRect(cardX - cardWidth/2, cardY - cardHeight/2, cardWidth, cardHeight, 15);
+        card.lineStyle(2, theme.color, 1);
+        card.strokeRoundedRect(cardX - cardWidth/2, cardY - cardHeight/2, cardWidth, cardHeight, 15);
+        this.questionElements.push(card);
+        
+        // Header
+        const headerY = cardY - cardHeight/2 + 30;
+        
+        const chapterBadge = this.add.text(cardX, headerY, `${theme.icon} ${theme.name} Quiz`, {
             fontFamily: 'Caprasimo-Regular',
             fontSize: '24px',
             color: '#ffffff',
-            wordWrap: { width: width * 0.8 },
+            backgroundColor: theme.color,
+            padding: { x: 15, y: 8 }
+        }).setOrigin(0.5);
+        this.questionElements.push(chapterBadge);
+        
+        const progress = this.add.text(cardX, headerY + 35, `Question ${this.currentQuestionIndex + 1} of ${this.questions.length}`, {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '18px',
+            color: '#bdc3c7'
+        }).setOrigin(0.5);
+        this.questionElements.push(progress);
+        
+        // Progress bar
+        const progressWidth = cardWidth * 0.6;
+        const progressBg = this.add.graphics();
+        progressBg.fillStyle(0x34495e, 1);
+        progressBg.fillRoundedRect(cardX - progressWidth/2, headerY + 45, progressWidth, 6, 3);
+        this.questionElements.push(progressBg);
+        
+        const progressFill = this.add.graphics();
+        progressFill.fillStyle(theme.color, 1);
+        const fillWidth = progressWidth * ((this.currentQuestionIndex + 1) / this.questions.length);
+        progressFill.fillRoundedRect(cardX - progressWidth/2, headerY + 45, fillWidth, 6, 3);
+        this.questionElements.push(progressFill);
+        
+        // Question
+        const questionY = headerY + 90; // Increased from 75
+        const questionText = this.add.text(cardX, questionY, question.question, {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '22px',
+            color: '#ffffff',
+            wordWrap: { width: cardWidth - 60 },
             align: 'center',
-            stroke: '#000000',
-            strokeThickness: 4
+            lineSpacing: 12 // Increased from 8
         }).setOrigin(0.5);
         this.questionElements.push(questionText);
         
-        // Code example if present
+        // Code (if present)
+        let codeHeight = 0;
         if (question.code) {
-            const codeBox = this.add.rectangle(width / 2, height * 0.45, 500, 120, 0x1e1e1e, 0.9);
-            codeBox.setStrokeStyle(2, 0x4a90e2);
+            codeHeight = 100; // Increased from 80
+            const codeY = questionY + 70; // Increased spacing from 50
+            
+            const codeBox = this.add.graphics();
+            codeBox.fillStyle(0x1a1a1a, 0.9);
+            codeBox.fillRoundedRect(cardX - (cardWidth * 0.75)/2, codeY - 40, cardWidth * 0.75, 80, 8); // Larger box
+            codeBox.lineStyle(1, theme.color, 0.5);
+            codeBox.strokeRoundedRect(cardX - (cardWidth * 0.75)/2, codeY - 40, cardWidth * 0.75, 80, 8);
             this.questionElements.push(codeBox);
             
-            const codeText = this.add.text(width / 2, height * 0.45, question.code, {
-                fontFamily: 'Courier New, monospace',
+            const codeText = this.add.text(cardX, codeY, question.code, {
+                fontFamily: 'Courier New',
                 fontSize: '16px',
-                color: '#00ff00',
-                wordWrap: { width: 480 },
-                align: 'left'
+                color: '#00ff41',
+                align: 'center'
             }).setOrigin(0.5);
             this.questionElements.push(codeText);
         }
         
-        // Answer buttons
-        const startY = question.code ? height * 0.6 : height * 0.45;
-        const buttonHeight = 50;
-        const buttonSpacing = 70;
+        // Answers
+        const answersY = questionY + 130 + codeHeight; // Increased spacing from 90
+        const answerHeight = 50; // Increased from 40
+        const answerSpacing = 65; // Increased from 50
+        const answerWidth = cardWidth * 0.85;
         
         question.answers.forEach((answer, index) => {
-            const y = startY + (index * buttonSpacing);
+            const y = answersY + (index * answerSpacing);
             
-            const button = this.add.rectangle(width / 2, y, 600, buttonHeight, 0x4caf50);
-            button.setStrokeStyle(2, 0x2e7d32);
-            button.setInteractive({ useHandCursor: true });
-            this.questionElements.push(button);
+            // Answer button
+            const btn = this.add.graphics();
+            btn.fillStyle(0x34495e, 0.8);
+            btn.fillRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, 8);
+            btn.lineStyle(1, 0x7f8c8d, 0.6);
+            btn.strokeRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, 8);
+            btn.setInteractive(new Phaser.Geom.Rectangle(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight), Phaser.Geom.Rectangle.Contains);
+            btn.setData('useHandCursor', true);
+            this.questionElements.push(btn);
             
-            const buttonText = this.add.text(width / 2, y, answer, {
+            // Letter badge
+            const letter = this.add.graphics();
+            letter.fillStyle(theme.color, 1);
+            letter.fillCircle(cardX - answerWidth/2 + 28, y, 15); // Larger circle and adjusted position
+            this.questionElements.push(letter);
+            
+            const letterText = this.add.text(cardX - answerWidth/2 + 28, y, String.fromCharCode(65 + index), {
                 fontFamily: 'Caprasimo-Regular',
-                fontSize: '16px',
-                color: '#ffffff',
-                wordWrap: { width: 580 }
+                fontSize: '16px', // Increased from 14px
+                color: '#ffffff'
             }).setOrigin(0.5);
-            this.questionElements.push(buttonText);
+            this.questionElements.push(letterText);
             
-            // Hover effects
-            button.on('pointerover', () => {
-                button.setFillStyle(0x66bb6a);
+            // Answer text
+            const answerText = this.add.text(cardX - answerWidth/2 + 55, y, answer, {
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: '18px',
+                color: '#ecf0f1',
+                wordWrap: { width: answerWidth - 80 }, // Adjusted for larger badge
+                lineSpacing: 4 // Added line spacing for multi-line answers
+            }).setOrigin(0, 0.5);
+            this.questionElements.push(answerText);
+            
+            // Hover effect
+            btn.on('pointerover', () => {
+                btn.clear();
+                btn.fillStyle(theme.color, 0.3);
+                btn.fillRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, 8);
+                btn.lineStyle(1, theme.color, 0.8);
+                btn.strokeRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, 8);
                 this.sound.play('se_select');
             });
             
-            button.on('pointerout', () => {
-                button.setFillStyle(0x4caf50);
+            btn.on('pointerout', () => {
+                btn.clear();
+                btn.fillStyle(0x34495e, 0.8);
+                btn.fillRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, 8);
+                btn.lineStyle(1, 0x7f8c8d, 0.6);
+                btn.strokeRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, 8);
             });
             
-            // Click handler
-            button.on('pointerdown', () => {
+            btn.on('pointerdown', () => {
+                this.sound.play('se_confirm');
                 this.selectAnswer(index);
             });
         });
@@ -142,19 +330,15 @@ export default class NoahStoryQuiz extends Phaser.Scene {
         
         if (isCorrect) {
             this.score++;
-            this.sound.play('se_confirm');
+            this.sound.play('se_correct');
         } else {
             this.sound.play('se_wrong');
         }
         
         // Show feedback
-        this.showFeedback(isCorrect, question.explanation);
-    }
-
-    showFeedback(isCorrect, explanation) {
         const feedback = isCorrect ? 
-            [`Correct! ${explanation}`] : 
-            [`Wrong! ${explanation}`];
+            [`Correct! ${question.explanation}`] : 
+            [`Wrong! ${question.explanation}`];
         
         this.dialogueBox = new VNDialogueBox(this, feedback, () => {
             this.nextQuestion();
@@ -174,54 +358,69 @@ export default class NoahStoryQuiz extends Phaser.Scene {
     showResults() {
         const { width, height } = this.scale;
         
-        // Clear question elements
+        // Clear ALL elements (both question and result elements)
         if (this.questionElements) {
             this.questionElements.forEach(element => element.destroy());
+            this.questionElements = [];
+        }
+        if (this.resultElements) {
+            this.resultElements.forEach(element => element.destroy());
+            this.resultElements = [];
         }
         
+        // Initialize result elements array
+        this.resultElements = [];
+        
         const percentage = Math.round((this.score / this.questions.length) * 100);
-        const grade = percentage >= 80 ? 'Excellent!' : 
-                     percentage >= 60 ? 'Good!' : 'Keep practicing!';
+        const passed = percentage >= 60;
         
-        // Results display
-        this.add.text(width / 2, height * 0.3, 'Quiz Complete!', {
+        // Results card
+        const cardWidth = Math.min(width * 0.7, 600);
+        const cardHeight = Math.min(height * 0.6, 400);
+        const cardX = width / 2;
+        const cardY = height / 2;
+        
+        const card = this.add.graphics();
+        card.fillStyle(0x2c3e50, 0.95);
+        card.fillRoundedRect(cardX - cardWidth/2, cardY - cardHeight/2, cardWidth, cardHeight, 15);
+        card.lineStyle(2, passed ? 0x27ae60 : 0xe74c3c, 1);
+        card.strokeRoundedRect(cardX - cardWidth/2, cardY - cardHeight/2, cardWidth, cardHeight, 15);
+        this.resultElements.push(card);
+        
+        // Icon
+        const icon = passed ? '🎉' : '📚';
+        const iconText = this.add.text(cardX, cardY - 80, icon, { fontSize: '48px' }).setOrigin(0.5);
+        this.resultElements.push(iconText);
+        
+        // Title
+        const titleText = this.add.text(cardX, cardY - 30, 'Quiz Complete!', {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '36px',
-            color: '#1e90ff',
-            stroke: '#000000',
-            strokeThickness: 4
+            fontSize: '28px',
+            color: '#ffffff'
         }).setOrigin(0.5);
+        this.resultElements.push(titleText);
         
-        this.add.text(width / 2, height * 0.45, `Score: ${this.score}/${this.questions.length} (${percentage}%)`, {
+        // Score
+        const scoreText = this.add.text(cardX, cardY + 10, `Score: ${this.score}/${this.questions.length} (${percentage}%)`, {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '24px',
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 3
+            fontSize: '22px',
+            color: passed ? '#27ae60' : '#e74c3c'
         }).setOrigin(0.5);
+        this.resultElements.push(scoreText);
         
-        this.add.text(width / 2, height * 0.55, grade, {
-            fontFamily: 'Caprasimo-Regular',
-            fontSize: '20px',
-            color: percentage >= 80 ? '#4caf50' : percentage >= 60 ? '#ff9800' : '#f44336',
-            stroke: '#000000',
-            strokeThickness: 3
-        }).setOrigin(0.5);
-        
-        // Different buttons based on performance
-        if (percentage >= 60) {
-            // Passed - show continue button
-            const continueBtn = this.add.rectangle(width / 2, height * 0.75, 200, 50, 0x4caf50);
-            continueBtn.setStrokeStyle(2, 0x2e7d32);
+        // Buttons
+        if (passed) {
+            const continueBtn = this.add.rectangle(cardX, cardY + 60, 280, 40, 0x27ae60);
+            continueBtn.setStrokeStyle(2, 0xffffff);
             continueBtn.setInteractive({ useHandCursor: true });
+            this.resultElements.push(continueBtn);
             
-            this.add.text(width / 2, height * 0.75, 'Continue to Next Chapter', {
+            const continueBtnText = this.add.text(cardX, cardY + 60, 'Continue to Next Chapter', {
                 fontFamily: 'Caprasimo-Regular',
                 fontSize: '16px',
-                color: '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 2
+                color: '#ffffff'
             }).setOrigin(0.5);
+            this.resultElements.push(continueBtnText);
             
             continueBtn.on('pointerdown', () => {
                 this.sound.play('se_confirm');
@@ -229,34 +428,39 @@ export default class NoahStoryQuiz extends Phaser.Scene {
                 this.advanceToNextChapter();
             });
         } else {
-            // Failed - show retry and back buttons
-            const retryBtn = this.add.rectangle(width / 2 - 120, height * 0.75, 180, 50, 0xff9800);
-            retryBtn.setStrokeStyle(2, 0xf57c00);
+            // Retry button
+            const retryBtn = this.add.rectangle(cardX - 80, cardY + 60, 120, 40, 0xf39c12);
+            retryBtn.setStrokeStyle(2, 0xffffff);
             retryBtn.setInteractive({ useHandCursor: true });
+            this.resultElements.push(retryBtn);
             
-            this.add.text(width / 2 - 120, height * 0.75, 'Retry Quiz', {
+            const retryBtnText = this.add.text(cardX - 80, cardY + 60, 'Retry Quiz', {
                 fontFamily: 'Caprasimo-Regular',
                 fontSize: '16px',
-                color: '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 2
+                color: '#ffffff'
             }).setOrigin(0.5);
+            this.resultElements.push(retryBtnText);
             
-            const backBtn = this.add.rectangle(width / 2 + 120, height * 0.75, 180, 50, 0xf44336);
-            backBtn.setStrokeStyle(2, 0xd32f2f);
+            // Back button
+            const backBtn = this.add.rectangle(cardX + 80, cardY + 60, 120, 40, 0x7f8c8d);
+            backBtn.setStrokeStyle(2, 0xffffff);
             backBtn.setInteractive({ useHandCursor: true });
+            this.resultElements.push(backBtn);
             
-            this.add.text(width / 2 + 120, height * 0.75, 'Back to Story', {
+            const backBtnText = this.add.text(cardX + 80, cardY + 60, 'Back to Story', {
                 fontFamily: 'Caprasimo-Regular',
                 fontSize: '16px',
-                color: '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 2
+                color: '#ffffff'
             }).setOrigin(0.5);
+            this.resultElements.push(backBtnText);
             
             retryBtn.on('pointerdown', () => {
                 this.sound.play('se_confirm');
-                // Reset quiz
+                // Clear result elements before restarting
+                if (this.resultElements) {
+                    this.resultElements.forEach(element => element.destroy());
+                    this.resultElements = [];
+                }
                 this.currentQuestionIndex = 0;
                 this.score = 0;
                 this.showQuestion();
@@ -264,153 +468,56 @@ export default class NoahStoryQuiz extends Phaser.Scene {
             
             backBtn.on('pointerdown', () => {
                 this.sound.play('se_confirm');
-                this.scene.start('NoahStoryMode');
+                this.scene.start('NoahStoryMode', { quizCancelled: true, chapter: this.chapterType });
             });
         }
-        
-        // Update character progress based on performance
-        // Progress update moved to continue button handler
-    }
-
-    advanceToNextChapter() {
-        // Get current chapter and advance to next
-        const chapterMap = { 'html': 0, 'css': 1, 'javascript': 2 };
-        const currentChapter = chapterMap[this.chapterType];
-        const nextChapter = currentChapter + 1;
-        
-        // Update story progress to next chapter
-        char1.storyProgress = {
-            chapter: nextChapter,
-            scene: 0,
-            completed: nextChapter >= 3 // Story is complete if we've finished all 3 chapters
-        };
-        
-        // Return to story mode which will now load the next chapter
-        this.scene.start('NoahStoryMode');
     }
 
     updateProgress() {
-        const progressAmount = 10;
-        
-        switch (this.chapterType) {
-            case 'html':
-                char1.quest1 = Math.min(char1.quest1 + progressAmount, 100);
-                char1.quest1Desc = "Completed HTML quiz with good results";
-                break;
-            case 'css':
-                char1.quest2 = Math.min(char1.quest2 + progressAmount, 100);
-                char1.quest2Desc = "Completed CSS quiz with good results";
-                break;
-            case 'javascript':
-                char1.quest3 = Math.min(char1.quest3 + progressAmount, 100);
-                char1.quest3Desc = "Completed JavaScript quiz with good results";
-                break;
+        // Mark quiz as completed for current chapter, but don't advance chapter here
+        // Let NoahStoryMode handle the chapter progression
+        if (!char1.storyProgress.quizCompleted) {
+            char1.storyProgress.quizCompleted = {};
         }
+        char1.storyProgress.quizCompleted[this.chapterType] = true;
     }
 
-    getQuestionsForChapter(chapter) {
-        switch (chapter) {
-            case 'html':
-                return [
-                    {
-                        question: "What does HTML stand for?",
-                        answers: [
-                            "HyperText Markup Language",
-                            "HyperText Making Language", 
-                            "Home Tool Markup Language",
-                            "Hyperlink Text Markup Language"
-                        ],
-                        correct: 0,
-                        explanation: "HTML stands for HyperText Markup Language - it's the standard language for creating web pages."
-                    },
-                    {
-                        question: "Which tag is used to create the largest heading?",
-                        answers: ["<h6>", "<h1>", "<header>", "<head>"],
-                        correct: 1,
-                        explanation: "<h1> creates the largest heading, with <h6> being the smallest."
-                    },
-                    {
-                        question: "What does this HTML code create?",
-                        code: "<p>Hello <strong>World</strong>!</p>",
-                        answers: [
-                            "A paragraph with bold text",
-                            "A heading with italic text",
-                            "A link with bold text",
-                            "A button with bold text"
-                        ],
-                        correct: 0,
-                        explanation: "The <p> tag creates a paragraph, and <strong> makes the text bold."
-                    }
-                ];
-            
-            case 'css':
-                return [
-                    {
-                        question: "What does CSS stand for?",
-                        answers: [
-                            "Computer Style Sheets",
-                            "Cascading Style Sheets",
-                            "Creative Style Sheets", 
-                            "Colorful Style Sheets"
-                        ],
-                        correct: 1,
-                        explanation: "CSS stands for Cascading Style Sheets - it controls the appearance of HTML elements."
-                    },
-                    {
-                        question: "Which property changes the text color?",
-                        answers: ["background-color", "font-color", "color", "text-color"],
-                        correct: 2,
-                        explanation: "The 'color' property is used to change the text color of an element."
-                    },
-                    {
-                        question: "What will this CSS do?",
-                        code: "h1 {\n  text-align: center;\n  color: blue;\n}",
-                        answers: [
-                            "Make h1 text centered and blue",
-                            "Make h1 text left-aligned and red",
-                            "Make h1 background blue and centered",
-                            "Make h1 text right-aligned and blue"
-                        ],
-                        correct: 0,
-                        explanation: "This CSS centers the h1 text and makes it blue in color."
-                    }
-                ];
-                
-            case 'javascript':
-                return [
-                    {
-                        question: "How do you declare a variable in JavaScript?",
-                        answers: ["var name;", "variable name;", "v name;", "declare name;"],
-                        correct: 0,
-                        explanation: "Variables in JavaScript are declared using 'var', 'let', or 'const' keywords."
-                    },
-                    {
-                        question: "What does this JavaScript code do?",
-                        code: "function greet(name) {\n  return 'Hello, ' + name;\n}",
-                        answers: [
-                            "Creates a greeting function",
-                            "Prints a greeting",
-                            "Creates a variable",
-                            "Deletes text"
-                        ],
-                        correct: 0,
-                        explanation: "This creates a function that takes a name parameter and returns a greeting message."
-                    },
-                    {
-                        question: "How do you add an event listener to a button?",
-                        answers: [
-                            "button.onClick = function() {}",
-                            "button.addEventListener('click', function() {})",
-                            "button.addEvent('click', function() {})",
-                            "button.listen('click', function() {})"
-                        ],
-                        correct: 1,
-                        explanation: "addEventListener() is the standard method to add event handlers to elements."
-                    }
-                ];
-                
-            default:
-                return [];
+    advanceToNextChapter() {
+        // Return to story mode with quiz completion flag
+        this.scene.start('NoahStoryMode', { quizCompleted: true, chapter: this.chapterType });
+    }
+
+    showErrorMessage(message) {
+        const { width, height } = this.scale;
+        
+        // Clear any existing elements
+        if (this.questionElements) {
+            this.questionElements.forEach(element => element.destroy());
+            this.questionElements = [];
         }
+        
+        // Show error message
+        const errorText = this.add.text(width / 2, height / 2, message, {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '24px',
+            color: '#e74c3c',
+            wordWrap: { width: width * 0.8 },
+            align: 'center'
+        }).setOrigin(0.5);
+        
+        const backButton = this.add.rectangle(width / 2, height / 2 + 100, 200, 50, 0x7f8c8d);
+        backButton.setStrokeStyle(2, 0xffffff);
+        backButton.setInteractive({ useHandCursor: true });
+        
+        const backText = this.add.text(width / 2, height / 2 + 100, 'Back to Story', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '18px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        
+        backButton.on('pointerdown', () => {
+            this.sound.play('se_confirm');
+            this.scene.start('NoahStoryMode', { quizCancelled: true, chapter: this.chapterType });
+        });
     }
 }

@@ -10,13 +10,18 @@ export default class NoahStoryMode extends Phaser.Scene {
         this.currentScene = 0;
         this.dialogueBox = null;
         this.storyCompleted = false;
+        this.quizJustCompleted = false;
+    }
+
+    init(data) {
+        // Reset any previous state
+        this.quizJustCompleted = false;
+        console.log('NoahStoryMode initialized');
     }
 
     preload() {
-        // Load character sprites
-        this.load.image('noah_happy', 'assets/sprites/npcs/noah.png');
-        this.load.image('noah_excited', 'assets/sprites/npcs/noah.png');
-        this.load.image('noah_thinking', 'assets/sprites/npcs/noah.png');
+        // Load character sprite (using same path as carousel)
+        this.load.image('Noah', 'assets/sprites/npcs/Noah.png');
         
         // Load backgrounds
         this.load.image('classroom_bg', 'assets/img/bg/classroom_day.png');
@@ -25,6 +30,8 @@ export default class NoahStoryMode extends Phaser.Scene {
         // Load sounds
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
+        this.load.audio('se_correct', 'assets/audio/se/se_confirm.wav');
+        this.load.audio('se_wrong', 'assets/audio/se/se_wrong.wav');
     }
 
     create() {
@@ -41,6 +48,8 @@ export default class NoahStoryMode extends Phaser.Scene {
 
         this.currentChapter = char1.storyProgress.chapter || 0;
         this.currentScene = char1.storyProgress.scene || 0;
+
+        console.log('Starting story:', { chapter: this.currentChapter, scene: this.currentScene });
 
         // Set up the scene based on current progress
         this.setupScene();
@@ -73,7 +82,7 @@ export default class NoahStoryMode extends Phaser.Scene {
         this.dimOverlay.setDepth(0); // Behind everything else
         
         // Add character sprite - behind dialogue box (half-body size)
-        this.noah = this.add.image(width * 0.82, height * 0.72, 'noah_happy');
+        this.noah = this.add.image(width * 0.82, height * 0.72, 'Noah');
         this.noah.setScale(0.9); // Half-body appearance
         this.noah.setDepth(1); // Lower depth so dialogue appears in front
         
@@ -85,19 +94,26 @@ export default class NoahStoryMode extends Phaser.Scene {
         const storyData = this.getStoryData();
         const currentStorySegment = storyData[this.currentChapter]?.scenes[this.currentScene];
         
+        console.log(`Starting story: Chapter ${this.currentChapter}, Scene ${this.currentScene}`);
+        console.log(`Total chapters: ${storyData.length}`);
+        console.log(`Current segment exists:`, !!currentStorySegment);
+        
         if (currentStorySegment) {
             this.showDialogue(currentStorySegment);
         } else {
             // Story completed or invalid chapter/scene
             if (this.currentChapter >= storyData.length) {
+                console.log('Story completed - showing completion screen');
                 this.showStoryComplete();
             } else {
                 // Invalid scene, reset to start of current chapter
+                console.log('Invalid scene, resetting to start of chapter');
                 this.currentScene = 0;
                 const resetStorySegment = storyData[this.currentChapter]?.scenes[this.currentScene];
                 if (resetStorySegment) {
                     this.showDialogue(resetStorySegment);
                 } else {
+                    console.log('No valid scenes found, showing completion');
                     this.showStoryComplete();
                 }
             }
@@ -107,11 +123,6 @@ export default class NoahStoryMode extends Phaser.Scene {
     showDialogue(storySegment) {
         if (this.dialogueBox) {
             this.dialogueBox.destroy();
-        }
-
-        // Update character expression if specified
-        if (storySegment.expression) {
-            this.noah.setTexture(`noah_${storySegment.expression}`);
         }
 
         // Show code example if present
@@ -131,29 +142,29 @@ export default class NoahStoryMode extends Phaser.Scene {
     showCodeExample(codeExample) {
         const { width, height } = this.scale;
         
-        // Create a larger code display area
-        const codeBox = this.add.rectangle(width * 0.3, height * 0.4, 520, 320, 0x1e1e1e, 0.9);
-        codeBox.setStrokeStyle(3, 0x4a90e2);
+        // Create a much larger code display area
+        const codeBox = this.add.rectangle(width * 0.3, height * 0.4, 720, 450, 0x1e1e1e, 0.9);
+        codeBox.setStrokeStyle(4, 0x4a90e2);
         codeBox.setDepth(5); // Above Noah (depth 1) but below dialogue (depth 10)
         
         const codeText = this.add.text(width * 0.3, height * 0.4, codeExample.code, {
             fontFamily: 'Courier New, monospace',
-            fontSize: '16px', // Increased from 14px
+            fontSize: '22px', // Increased from 18px
             color: '#00ff00',
-            wordWrap: { width: 490 }, // Adjusted for larger box
+            wordWrap: { width: 680 }, // Adjusted for larger box
             align: 'left',
-            lineSpacing: 2 // Add line spacing for better readability
+            lineSpacing: 6 // Increased line spacing for better readability with larger text
         });
         codeText.setOrigin(0.5);
         codeText.setDepth(6); // Above code box
         
         // Label for the code
-        const codeLabel = this.add.text(width * 0.3, height * 0.23, codeExample.title, {
+        const codeLabel = this.add.text(width * 0.3, height * 0.18, codeExample.title, {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '18px', // Increased from 16px
+            fontSize: '22px', // Increased from 18px
             color: '#ffffff',
             backgroundColor: '#4a90e2',
-            padding: { x: 12, y: 6 } // Slightly more padding
+            padding: { x: 16, y: 8 } // Increased padding
         });
         codeLabel.setOrigin(0.5);
         codeLabel.setDepth(6); // Same as code text
@@ -174,18 +185,18 @@ export default class NoahStoryMode extends Phaser.Scene {
             this.updateCharacterProgress(storySegment.progressUpdate);
         }
 
+        // Check if this segment has an inline quiz
+        if (storySegment.inlineQuiz) {
+            this.showInlineQuiz(storySegment.inlineQuiz);
+            return;
+        }
+
         // Move to next scene/chapter
         this.currentScene++;
         const storyData = this.getStoryData();
         
         // Check if we need to move to next chapter
         if (this.currentScene >= storyData[this.currentChapter].scenes.length) {
-            // Before moving to next chapter, offer quiz
-            if (this.shouldOfferQuiz()) {
-                this.offerChapterQuiz();
-                return;
-            }
-            
             this.currentChapter++;
             this.currentScene = 0;
             
@@ -254,109 +265,224 @@ export default class NoahStoryMode extends Phaser.Scene {
         );
     }
 
-    shouldOfferQuiz() {
-        // Offer quiz at end of each chapter
-        return this.currentChapter < 3; // We have 3 chapters (0, 1, 2)
-    }
-
-    offerChapterQuiz() {
+    showInlineQuiz(quizData) {
         const { width, height } = this.scale;
         
-        // Clear previous elements
-        this.children.removeAll();
-        this.setupScene();
+        // Create a better-sized quiz interface
+        const quizWidth = Math.min(width * 0.85, 1000); // Max width of 1000px
+        const quizHeight = height * 0.45; // Slightly taller
+        const quizX = width / 2;
+        const quizY = height * 0.68; // Position slightly higher
         
-        // Quiz offer dialogue
-        const chapterNames = ['HTML', 'CSS', 'JavaScript'];
-        const quizDialogue = [
-            `Great job completing the ${chapterNames[this.currentChapter]} chapter!`,
-            "Would you like to take a quiz to test your knowledge?",
-            "The quiz will help reinforce what you've learned!"
-        ];
+        // Background for quiz
+        const quizBg = this.add.graphics();
+        quizBg.fillStyle(0x2c3e50, 0.95);
+        quizBg.fillRoundedRect(quizX - quizWidth/2, quizY - quizHeight/2, quizWidth, quizHeight, 15);
+        quizBg.lineStyle(3, 0x3498db, 1);
+        quizBg.strokeRoundedRect(quizX - quizWidth/2, quizY - quizHeight/2, quizWidth, quizHeight, 15);
+        quizBg.setDepth(8);
         
-        this.dialogueBox = new VNDialogueBox(
-            this,
-            quizDialogue,
-            () => {
-                this.showQuizOptions();
-            }
-        );
-    }
-
-    showQuizOptions() {
-        const { width, height } = this.scale;
-        
-        // Get quiz descriptions for each chapter
-        const chapterQuizInfo = {
-            0: {
-                title: 'HTML Basics Quiz',
-                description: 'Test your knowledge of HTML tags, structure, headings, paragraphs, and basic formatting elements.'
-            },
-            1: {
-                title: 'CSS Styling Quiz',
-                description: 'Challenge yourself with CSS selectors, properties, colors, layouts, and styling techniques.'
-            },
-            2: {
-                title: 'JavaScript Fundamentals Quiz',
-                description: 'Evaluate your understanding of variables, functions, events, and interactive programming concepts.'
-            }
-        };
-        
-        const currentQuizInfo = chapterQuizInfo[this.currentChapter];
-        
-        // Quiz title
-        const quizTitle = this.add.text(width / 2, height * 0.45, currentQuizInfo.title, {
+        // Question text with better positioning
+        const questionText = this.add.text(quizX, quizY - quizHeight/2 + 50, quizData.question, {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '28px',
-            color: '#1e90ff',
-            stroke: '#000000',
-            strokeThickness: 3
-        }).setOrigin(0.5);
-        
-        // Quiz description
-        const quizDescription = this.add.text(width / 2, height * 0.55, currentQuizInfo.description, {
-            fontFamily: 'Caprasimo-Regular',
-            fontSize: '18px',
+            fontSize: '20px', // Increased from 16px
             color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 2,
-            wordWrap: { width: width * 0.7 },
+            wordWrap: { width: quizWidth - 80 },
+            align: 'center',
+            lineSpacing: 6 // Increased from 4
+        }).setOrigin(0.5);
+        questionText.setDepth(9);
+        
+        // Calculate button layout
+        const buttonWidth = Math.min(280, (quizWidth - 100) / 2); // Increased from 220 and adjusted spacing
+        const buttonHeight = 55; // Increased from 45
+        const buttonsPerRow = 2;
+        const buttonSpacing = 20;
+        const totalButtonWidth = buttonsPerRow * buttonWidth + (buttonsPerRow - 1) * buttonSpacing;
+        const startX = quizX - totalButtonWidth/2 + buttonWidth/2;
+        
+        // Start buttons below question with proper spacing
+        const questionHeight = questionText.height;
+        const buttonStartY = quizY - quizHeight/2 + 50 + questionHeight/2 + 30;
+        
+        this.inlineQuizElements = [quizBg, questionText];
+        
+        quizData.answers.forEach((answer, index) => {
+            const row = Math.floor(index / buttonsPerRow);
+            const col = index % buttonsPerRow;
+            const btnX = startX + col * (buttonWidth + buttonSpacing);
+            const btnY = buttonStartY + row * (buttonHeight + 15);
+            
+            // Button background
+            const btnBg = this.add.graphics();
+            btnBg.fillStyle(0x34495e, 1);
+            btnBg.fillRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 8);
+            btnBg.lineStyle(2, 0x7f8c8d, 1);
+            btnBg.strokeRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 8);
+            btnBg.setDepth(9);
+            btnBg.setInteractive(new Phaser.Geom.Rectangle(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+            btnBg.setData('useHandCursor', true);
+            
+            // Button text with better sizing
+            const btnText = this.add.text(btnX, btnY, answer, {
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: '16px', // Increased from 13px
+                color: '#ffffff',
+                wordWrap: { width: buttonWidth - 40 }, // Increased padding from 30
+                align: 'center',
+                lineSpacing: 3 // Increased from 2
+            }).setOrigin(0.5);
+            btnText.setDepth(10);
+            
+            // Store elements
+            this.inlineQuizElements.push(btnBg, btnText);
+            
+            // Handle click
+            btnBg.on('pointerdown', () => {
+                this.handleInlineQuizAnswer(index === quizData.correct, quizData);
+            });
+            
+            // Hover effects
+            btnBg.on('pointerover', () => {
+                btnBg.clear();
+                btnBg.fillStyle(0x4a90e2, 1);
+                btnBg.fillRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 8);
+                btnBg.lineStyle(2, 0x3498db, 1);
+                btnBg.strokeRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 8);
+                this.sound.play('se_select');
+            });
+            
+            btnBg.on('pointerout', () => {
+                btnBg.clear();
+                btnBg.fillStyle(0x34495e, 1);
+                btnBg.fillRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 8);
+                btnBg.lineStyle(2, 0x7f8c8d, 1);
+                btnBg.strokeRoundedRect(btnX - buttonWidth/2, btnY - buttonHeight/2, buttonWidth, buttonHeight, 8);
+            });
+        });
+    }
+
+    handleInlineQuizAnswer(isCorrect, quizData) {
+        this.sound.play(isCorrect ? 'se_correct' : 'se_wrong');
+        
+        // Clear quiz elements
+        if (this.inlineQuizElements) {
+            this.inlineQuizElements.forEach(element => element.destroy());
+            this.inlineQuizElements = null;
+        }
+        
+        // Show feedback briefly
+        this.showInlineQuizFeedback(isCorrect, quizData, () => {
+            // Continue to next scene after feedback
+            this.continueStoryAfterInlineQuiz();
+        });
+    }
+
+    showInlineQuizFeedback(isCorrect, quizData, callback) {
+        const { width, height } = this.scale;
+        
+        const feedbackColor = isCorrect ? 0x27ae60 : 0xe74c3c;
+        const feedbackIcon = isCorrect ? '✅' : '❌';
+        const feedbackTitle = isCorrect ? 'Correct!' : 'Not quite right';
+        
+        // Feedback background
+        const feedbackBg = this.add.graphics();
+        feedbackBg.fillStyle(feedbackColor, 0.9);
+        feedbackBg.fillRoundedRect(width/2 - 300, height/2 - 100, 600, 200, 15);
+        feedbackBg.setDepth(10);
+        
+        // Icon
+        const icon = this.add.text(width/2, height/2 - 60, feedbackIcon, {
+            fontSize: '32px'
+        }).setOrigin(0.5);
+        icon.setDepth(11);
+        
+        // Title
+        const title = this.add.text(width/2, height/2 - 20, feedbackTitle, {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '20px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        title.setDepth(11);
+        
+        // Explanation
+        const explanation = this.add.text(width/2, height/2 + 20, quizData.explanation || '', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '14px',
+            color: '#ffffff',
+            wordWrap: { width: 560 },
             align: 'center'
         }).setOrigin(0.5);
+        explanation.setDepth(11);
         
-        // Prominent quiz button (centered and larger)
-        const quizBtn = this.add.rectangle(width / 2, height * 0.75, 300, 60, 0x4caf50);
-        quizBtn.setStrokeStyle(4, 0x2e7d32);
-        quizBtn.setInteractive({ useHandCursor: true });
+        // Continue button
+        const continueBtn = this.add.graphics();
+        continueBtn.fillStyle(0xffffff, 1);
+        continueBtn.fillRoundedRect(width/2 - 50, height/2 + 60, 100, 30, 8);
+        continueBtn.setDepth(11);
+        continueBtn.setInteractive(new Phaser.Geom.Rectangle(width/2 - 50, height/2 + 60, 100, 30), Phaser.Geom.Rectangle.Contains);
+        continueBtn.setData('useHandCursor', true);
         
-        const quizText = this.add.text(width / 2, height * 0.75, 'Start Quiz', {
+        const continueText = this.add.text(width/2, height/2 + 75, 'Continue', {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '24px',
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 2
+            fontSize: '12px',
+            color: '#000000'
         }).setOrigin(0.5);
+        continueText.setDepth(12);
         
-        // Button handler
-        quizBtn.on('pointerdown', () => {
-            const quizTypes = ['html', 'css', 'javascript'];
-            this.scene.start('NoahStoryQuiz', { chapter: quizTypes[this.currentChapter] });
+        this.feedbackElements = [feedbackBg, icon, title, explanation, continueBtn, continueText];
+        
+        continueBtn.on('pointerdown', () => {
+            this.sound.play('se_confirm');
+            // Clean up feedback
+            this.feedbackElements.forEach(element => element.destroy());
+            this.feedbackElements = null;
+            callback();
         });
         
-        // Enhanced hover effects
-        quizBtn.on('pointerover', () => {
-            quizBtn.setFillStyle(0x66bb6a);
-            quizBtn.setScale(1.05); // Slight scale up on hover
-            this.sound.play('se_select');
+        // Auto-continue after 3 seconds if no interaction
+        this.time.delayedCall(3000, () => {
+            if (this.feedbackElements) {
+                this.feedbackElements.forEach(element => element.destroy());
+                this.feedbackElements = null;
+                callback();
+            }
         });
-        quizBtn.on('pointerout', () => {
-            quizBtn.setFillStyle(0x4caf50);
-            quizBtn.setScale(1.0); // Return to normal scale
-        });
-        
-        // Store elements for cleanup
-        this.quizElements = [quizTitle, quizDescription, quizBtn, quizText];
     }
+
+    continueStoryAfterInlineQuiz() {
+        // Move to next scene/chapter
+        this.currentScene++;
+        const storyData = this.getStoryData();
+        
+        // Check if we need to move to next chapter
+        if (this.currentScene >= storyData[this.currentChapter].scenes.length) {
+            this.currentChapter++;
+            this.currentScene = 0;
+            
+            // Setup new scene environment
+            if (this.currentChapter < storyData.length) {
+                this.setupScene();
+            }
+        }
+        
+        // Save progress
+        char1.storyProgress = {
+            chapter: this.currentChapter,
+            scene: this.currentScene,
+            completed: this.currentChapter >= storyData.length
+        };
+
+        // Continue or complete
+        if (this.currentChapter < storyData.length) {
+            this.time.delayedCall(1000, () => {
+                this.startCurrentStory();
+            });
+        } else {
+            this.showStoryComplete();
+        }
+    }
+
     getStoryData() {
         return [
             // Chapter 0: Introduction to Web Development
@@ -370,7 +496,6 @@ export default class NoahStoryMode extends Phaser.Scene {
                             "There are three core technologies we need to master:",
                             "HTML for structure, CSS for styling, and JavaScript for interactivity!"
                         ],
-                        expression: "happy",
                         progressUpdate: {
                             quest1: 10,
                             quest1Desc: "Started learning web development fundamentals"
@@ -383,7 +508,6 @@ export default class NoahStoryMode extends Phaser.Scene {
                             "HTML uses tags to define different parts of a webpage.",
                             "Here's what a basic HTML structure looks like:"
                         ],
-                        expression: "excited",
                         codeExample: {
                             title: "Basic HTML Structure",
                             code: `<!DOCTYPE html>
@@ -409,7 +533,6 @@ export default class NoahStoryMode extends Phaser.Scene {
                             "<p> creates a paragraph, and </p> closes it.",
                             "The content goes between the opening and closing tags!"
                         ],
-                        expression: "thinking",
                         codeExample: {
                             title: "HTML Tags Example",
                             code: `<h1>This is a heading</h1>
@@ -422,6 +545,23 @@ export default class NoahStoryMode extends Phaser.Scene {
                             quest1: 20,
                             quest1Desc: "Understanding HTML tags and their usage"
                         }
+                    },
+                    {
+                        dialogue: [
+                            "Now let's test what you've learned so far!",
+                            "Quick question: What does HTML stand for?"
+                        ],
+                        inlineQuiz: {
+                            question: "What does HTML stand for?",
+                            answers: [
+                                "Hyper Text Markup Language",
+                                "Home Tool Markup Language",
+                                "Hyperlinks and Text Markup Language",
+                                "Hyper Text Making Language"
+                            ],
+                            correct: 0,
+                            explanation: "HTML stands for HyperText Markup Language. It's the standard markup language for creating web pages."
+                        }
                     }
                 ]
             },
@@ -431,12 +571,11 @@ export default class NoahStoryMode extends Phaser.Scene {
                 scenes: [
                     {
                         dialogue: [
-                            "Now that we understand HTML structure, let's make it look good!",
+                            "Great job! Now that we understand HTML structure, let's make it look good!",
                             "CSS stands for Cascading Style Sheets.",
                             "CSS controls how HTML elements appear on the page.",
                             "Colors, fonts, layouts, and animations - CSS does it all!"
                         ],
-                        expression: "excited",
                         progressUpdate: {
                             quest2: 15,
                             quest2Desc: "Started learning CSS fundamentals"
@@ -449,7 +588,6 @@ export default class NoahStoryMode extends Phaser.Scene {
                             "Properties define what aspect to change.",
                             "Here's how to style a heading and paragraph:"
                         ],
-                        expression: "happy",
                         codeExample: {
                             title: "Basic CSS Styling",
                             code: `h1 {
@@ -471,12 +609,28 @@ p {
                     },
                     {
                         dialogue: [
-                            "CSS can make beautiful layouts too!",
+                            "Let's check your understanding!",
+                            "Which CSS property changes the text color?"
+                        ],
+                        inlineQuiz: {
+                            question: "Which CSS property is used to change the text color?",
+                            answers: [
+                                "font-color",
+                                "text-color", 
+                                "color",
+                                "background-color"
+                            ],
+                            correct: 2,
+                            explanation: "The 'color' property is used to change the text color in CSS. 'background-color' changes the background, not the text."
+                        }
+                    },
+                    {
+                        dialogue: [
+                            "Perfect! CSS can make beautiful layouts too!",
                             "We can position elements, create columns, and more.",
                             "The 'display' property is very important for layouts.",
                             "Here's how to create a simple centered container:"
                         ],
-                        expression: "thinking",
                         codeExample: {
                             title: "CSS Layout Example",
                             code: `.container {
@@ -501,12 +655,11 @@ p {
                 scenes: [
                     {
                         dialogue: [
-                            "Now for the exciting part - JavaScript!",
+                            "Excellent work with CSS! Now for the exciting part - JavaScript!",
                             "JavaScript makes websites interactive and dynamic.",
                             "It can respond to user clicks, validate forms, and much more!",
                             "JavaScript is a programming language that runs in the browser."
                         ],
-                        expression: "excited",
                         progressUpdate: {
                             quest3: 15,
                             quest3Desc: "Started learning JavaScript basics"
@@ -519,7 +672,6 @@ p {
                             "We can select HTML elements and change them!",
                             "Here's a simple example of JavaScript in action:"
                         ],
-                        expression: "happy",
                         codeExample: {
                             title: "JavaScript Basics",
                             code: `// Variables
@@ -542,12 +694,28 @@ console.log(greeting);`
                     },
                     {
                         dialogue: [
-                            "JavaScript can interact with HTML elements!",
+                            "Time for another quick check!",
+                            "How do you declare a variable in JavaScript?"
+                        ],
+                        inlineQuiz: {
+                            question: "Which keyword is used to declare a variable in modern JavaScript?",
+                            answers: [
+                                "variable",
+                                "let",
+                                "declare",
+                                "make"
+                            ],
+                            correct: 1,
+                            explanation: "The 'let' keyword is used to declare variables in modern JavaScript. You can also use 'const' for constants and 'var' (older method)."
+                        }
+                    },
+                    {
+                        dialogue: [
+                            "Great! JavaScript can interact with HTML elements!",
                             "We can change text, colors, and respond to clicks.",
                             "Event listeners let us respond to user actions.",
                             "Here's how to make a button that changes text:"
                         ],
-                        expression: "thinking",
                         codeExample: {
                             title: "JavaScript DOM Interaction",
                             code: `// Get an element by its ID
@@ -572,7 +740,6 @@ button.addEventListener('click', function() {
                             "These three technologies work together to create amazing websites.",
                             "Keep practicing and building projects to improve your skills!"
                         ],
-                        expression: "happy",
                         progressUpdate: {
                             quest1: 25,
                             quest2: 15,

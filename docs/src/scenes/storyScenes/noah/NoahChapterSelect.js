@@ -1,6 +1,14 @@
 import Phaser from 'phaser';
 import { createBackButton } from '/src/components/buttons/backbutton.js';
 import { char1 } from '/src/gameManager.js';
+import { DEFAULT_TEXT_STYLE } from '/src/game.js';
+import { 
+    getScaleInfo, 
+    scaleFontSize, 
+    scaleDimension, 
+    createResponsiveTextStyle,
+    createDebouncedClickHandler
+} from '/src/utils/mobileUtils.js';
 
 export default class NoahChapterSelect extends Phaser.Scene {
     constructor() {
@@ -17,7 +25,23 @@ export default class NoahChapterSelect extends Phaser.Scene {
     }
 
     create() {
-        const { width, height } = this.scale;
+        // Get responsive scaling info
+        let scaleInfo;
+        try {
+            scaleInfo = getScaleInfo(this);
+        } catch (error) {
+            console.warn('Mobile utils not available, using fallback scaling');
+            const { width, height } = this.scale;
+            scaleInfo = {
+                width,
+                height,
+                finalScale: Math.min(width / 1920, height / 1080),
+                isMobile: width < 768 || height < 600,
+                isPortrait: height > width
+            };
+        }
+        
+        const { width, height } = scaleInfo;
         
         // Background
         this.bg = this.add.image(width / 2, height / 2, 'classroom_bg');
@@ -27,14 +51,26 @@ export default class NoahChapterSelect extends Phaser.Scene {
         this.dimOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.4);
         this.dimOverlay.setDepth(0); // Behind everything else
         
-        // Title
-        this.add.text(width / 2, height * 0.15, "Noah's Web Development Story", {
-            fontFamily: 'Caprasimo-Regular',
-            fontSize: '36px',
+        // Sound effects
+        this.hoverSound = this.sound.add('se_select');
+        this.confirmSound = this.sound.add('se_confirm');
+        
+        // Title with main menu styling
+        const titleStyle = createResponsiveTextStyle(48, scaleInfo, {
             color: '#1e90ff',
             stroke: '#000000',
-            strokeThickness: 4
-        }).setOrigin(0.5);
+            strokeThickness: 6,
+            shadow: { 
+                offsetX: 4, 
+                offsetY: 4, 
+                color: '#000', 
+                blur: 8, 
+                fill: true 
+            }
+        });
+        
+        this.add.text(width / 2, height * 0.15, "Noah's Web Development Story", titleStyle)
+            .setOrigin(0.5);
         
         // Chapter buttons
         const chapters = [
@@ -70,109 +106,232 @@ export default class NoahChapterSelect extends Phaser.Scene {
             const isUnlocked = chapter.unlocked;
             const isCompleted = chapter.completed;
             
-            // Button background - different colors for different states
-            let buttonColor = 0x666666; // Locked (gray)
-            if (isUnlocked && isCompleted) {
-                buttonColor = 0x2e7d32; // Completed (dark green)
-            } else if (isUnlocked) {
-                buttonColor = 0x4caf50; // Available (green)
-            }
-            
-            const button = this.add.rectangle(
+            // Create main menu style button
+            this.createStoryButton(
                 width / 2, 
                 y, 
-                500, 
-                buttonHeight, 
-                buttonColor,
-                isUnlocked ? 1 : 0.5
+                chapter.title, 
+                chapter.description, 
+                isUnlocked, 
+                isCompleted,
+                () => this.startChapter(chapter.chapter),
+                scaleInfo
             );
-            button.setStrokeStyle(3, isUnlocked ? 0x2e7d32 : 0x444444);
-            
-            if (isUnlocked) {
-                button.setInteractive({ useHandCursor: true });
-                
-                // Hover effects
-                button.on('pointerover', () => {
-                    button.setFillStyle(0x66bb6a);
-                    this.sound.play('se_select');
-                });
-                
-                button.on('pointerout', () => {
-                    button.setFillStyle(0x4caf50);
-                });
-                
-                // Click handler
-                button.on('pointerdown', () => {
-                    this.sound.play('se_confirm');
-                    this.startChapter(chapter.chapter);
-                });
-            }
-            
-            // Title text
-            this.add.text(width / 2, y - 15, chapter.title, {
-                fontFamily: 'Caprasimo-Regular',
-                fontSize: '20px',
-                color: isUnlocked ? '#ffffff' : '#999999',
-                stroke: '#000000',
-                strokeThickness: 2
-            }).setOrigin(0.5);
-            
-            // Description text
-            this.add.text(width / 2, y + 15, chapter.description, {
-                fontFamily: 'Caprasimo-Regular',
-                fontSize: '14px',
-                color: isUnlocked ? '#cccccc' : '#777777'
-            }).setOrigin(0.5);
-            
-            // Lock icon for locked chapters or checkmark for completed
-            if (!isUnlocked) {
-                this.add.text(width / 2 + 220, y, '🔒', {
-                    fontSize: '32px'
-                }).setOrigin(0.5);
-            } else if (isCompleted) {
-                this.add.text(width / 2 + 220, y, '✅', {
-                    fontSize: '32px'
-                }).setOrigin(0.5);
-            }
         });
         
         // Continue Story button (if story is in progress)
         if (char1.storyProgress && char1.storyProgress.chapter < 3 && !char1.storyProgress.completed) {
-            const continueBtn = this.add.rectangle(
-                width / 2,
-                height * 0.8,
-                300,
-                50,
-                0x2196f3
-            );
-            continueBtn.setStrokeStyle(3, 0x1976d2);
-            continueBtn.setInteractive({ useHandCursor: true });
-            
-            this.add.text(width / 2, height * 0.8, 'Continue Story', {
-                fontFamily: 'Caprasimo-Regular',
-                fontSize: '20px',
-                color: '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 2
-            }).setOrigin(0.5);
-            
-            continueBtn.on('pointerover', () => {
-                continueBtn.setFillStyle(0x42a5f5);
-                this.sound.play('se_select');
-            });
-            
-            continueBtn.on('pointerout', () => {
-                continueBtn.setFillStyle(0x2196f3);
-            });
-            
-            continueBtn.on('pointerdown', () => {
-                this.sound.play('se_confirm');
-                this.scene.start('NoahStoryMode');
-            });
+            this.createContinueButton(width / 2, height * 0.8, scaleInfo);
         }
         
         // Back button
         createBackButton(this, 'Classroom');
+    }
+    
+    createStoryButton(x, y, title, description, isUnlocked, isCompleted, onClick, scaleInfo) {
+        // Calculate button dimensions
+        const btnWidth = scaleDimension(500, scaleInfo);
+        const btnHeight = scaleDimension(80, scaleInfo);
+        const corner = scaleDimension(25, scaleInfo);
+        const strokeWidth = scaleDimension(3, scaleInfo);
+        
+        // Determine button colors based on state
+        let bgColor, hoverColor, borderColor, textColor, descColor;
+        
+        if (!isUnlocked) {
+            // Locked state
+            bgColor = 0x222244;
+            hoverColor = 0x222244;
+            borderColor = 0x444444;
+            textColor = '#888888';
+            descColor = '#666666';
+        } else if (isCompleted) {
+            // Completed state
+            bgColor = 0x2e7d32;
+            hoverColor = 0x4caf50;
+            borderColor = 0x66bb6a;
+            textColor = '#ffffff';
+            descColor = '#cccccc';
+        } else {
+            // Available state
+            bgColor = 0x222244;
+            hoverColor = 0x333388;
+            borderColor = 0xffffcc;
+            textColor = '#ffff00';
+            descColor = '#ffffff';
+        }
+        
+        // Button background with main menu styling
+        const bg = this.add.graphics();
+        bg.fillStyle(bgColor, 0.92);
+        bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+        bg.lineStyle(strokeWidth, borderColor, 1);
+        bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+        
+        // Title text with main menu styling
+        const titleStyle = createResponsiveTextStyle(24, scaleInfo, {
+            color: textColor,
+            stroke: '#000000',
+            strokeThickness: scaleDimension(4, scaleInfo),
+            shadow: { 
+                offsetX: scaleDimension(2, scaleInfo), 
+                offsetY: scaleDimension(2, scaleInfo), 
+                color: '#000', 
+                blur: scaleDimension(4, scaleInfo), 
+                fill: true 
+            }
+        });
+        
+        const titleText = this.add.text(x, y - scaleDimension(15, scaleInfo), title, titleStyle)
+            .setOrigin(0.5);
+        
+        // Description text
+        const descStyle = createResponsiveTextStyle(16, scaleInfo, {
+            color: descColor,
+            stroke: '#000000',
+            strokeThickness: scaleDimension(2, scaleInfo)
+        });
+        
+        const descText = this.add.text(x, y + scaleDimension(15, scaleInfo), description, descStyle)
+            .setOrigin(0.5);
+        
+        // Status icon
+        const iconX = x + btnWidth / 2 - scaleDimension(40, scaleInfo);
+        let statusIcon = null;
+        
+        if (!isUnlocked) {
+            statusIcon = this.add.text(iconX, y, '🔒', {
+                fontSize: `${scaleDimension(32, scaleInfo)}px`
+            }).setOrigin(0.5);
+        } else if (isCompleted) {
+            statusIcon = this.add.text(iconX, y, '✅', {
+                fontSize: `${scaleDimension(32, scaleInfo)}px`
+            }).setOrigin(0.5);
+        }
+        
+        // Interactivity for unlocked buttons
+        if (isUnlocked) {
+            const hitArea = this.add.rectangle(x, y, btnWidth, btnHeight, 0x000000, 0)
+                .setInteractive({ useHandCursor: true });
+            
+            // Hover effects (only for non-mobile)
+            if (!scaleInfo.isMobile) {
+                hitArea.on('pointerover', () => {
+                    titleText.setStyle({ color: '#ffffff' });
+                    bg.clear();
+                    bg.fillStyle(hoverColor, 1);
+                    bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+                    bg.lineStyle(strokeWidth, borderColor, 1);
+                    bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+                    if (!this.hoverSound.isPlaying) this.hoverSound.play();
+                });
+                
+                hitArea.on('pointerout', () => {
+                    titleText.setStyle({ color: textColor });
+                    bg.clear();
+                    bg.fillStyle(bgColor, 0.92);
+                    bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+                    bg.lineStyle(strokeWidth, borderColor, 1);
+                    bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+                });
+            }
+            
+            // Click handler with debouncing
+            const debouncedClick = createDebouncedClickHandler(() => {
+                this.confirmSound.play();
+                onClick();
+            }, 300);
+            
+            hitArea.on('pointerdown', (pointer) => {
+                // Visual feedback
+                titleText.setScale(0.96);
+                descText.setScale(0.96);
+                
+                // Execute debounced callback
+                debouncedClick(pointer);
+                
+                // Reset scale after a short delay
+                this.time.delayedCall(100, () => {
+                    titleText.setScale(1);
+                    descText.setScale(1);
+                });
+            });
+        }
+    }
+    
+    createContinueButton(x, y, scaleInfo) {
+        const btnWidth = scaleDimension(300, scaleInfo);
+        const btnHeight = scaleDimension(50, scaleInfo);
+        const corner = scaleDimension(25, scaleInfo);
+        const strokeWidth = scaleDimension(3, scaleInfo);
+        
+        // Button background with main menu styling
+        const bg = this.add.graphics();
+        bg.fillStyle(0x2196f3, 0.92);
+        bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+        bg.lineStyle(strokeWidth, 0x64b5f6, 1);
+        bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+        
+        // Button text with main menu styling
+        const textStyle = createResponsiveTextStyle(24, scaleInfo, {
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: scaleDimension(4, scaleInfo),
+            shadow: { 
+                offsetX: scaleDimension(2, scaleInfo), 
+                offsetY: scaleDimension(2, scaleInfo), 
+                color: '#000', 
+                blur: scaleDimension(4, scaleInfo), 
+                fill: true 
+            }
+        });
+        
+        const text = this.add.text(x, y, 'Continue Story', textStyle)
+            .setOrigin(0.5);
+        
+        const hitArea = this.add.rectangle(x, y, btnWidth, btnHeight, 0x000000, 0)
+            .setInteractive({ useHandCursor: true });
+        
+        // Hover effects (only for non-mobile)
+        if (!scaleInfo.isMobile) {
+            hitArea.on('pointerover', () => {
+                text.setStyle({ color: '#ffffff' });
+                bg.clear();
+                bg.fillStyle(0x42a5f5, 1);
+                bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+                bg.lineStyle(strokeWidth, 0x64b5f6, 1);
+                bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+                if (!this.hoverSound.isPlaying) this.hoverSound.play();
+            });
+            
+            hitArea.on('pointerout', () => {
+                text.setStyle({ color: '#ffffff' });
+                bg.clear();
+                bg.fillStyle(0x2196f3, 0.92);
+                bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+                bg.lineStyle(strokeWidth, 0x64b5f6, 1);
+                bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, corner);
+            });
+        }
+        
+        // Click handler with debouncing
+        const debouncedClick = createDebouncedClickHandler(() => {
+            this.confirmSound.play();
+            this.scene.start('NoahStoryMode');
+        }, 300);
+        
+        hitArea.on('pointerdown', (pointer) => {
+            // Visual feedback
+            text.setScale(0.96);
+            
+            // Execute debounced callback
+            debouncedClick(pointer);
+            
+            // Reset scale after a short delay
+            this.time.delayedCall(100, () => {
+                text.setScale(1);
+            });
+        });
     }
     
     startChapter(chapterIndex) {

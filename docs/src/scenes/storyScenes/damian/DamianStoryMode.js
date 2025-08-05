@@ -20,10 +20,8 @@ export default class DamianStoryMode extends Phaser.Scene {
     }
 
     preload() {
-        // Load character sprites
-        this.load.image('damian_happy', 'assets/sprites/npcs/damian.png');
-        this.load.image('damian_excited', 'assets/sprites/npcs/damian.png');
-        this.load.image('damian_thinking', 'assets/sprites/npcs/damian.png');
+        // Load character sprite (using same path as carousel)
+        this.load.image('Damian', 'assets/sprites/npcs/Damian.png');
         
         // Load backgrounds
         this.load.image('classroom_bg', 'assets/img/bg/classroom_day.png');
@@ -77,7 +75,7 @@ export default class DamianStoryMode extends Phaser.Scene {
         this.dimOverlay.setDepth(0); // Behind everything else
         
         // Add character sprite - behind dialogue box (half-body size)
-        this.damian = this.add.image(width * 0.82, height * 0.72, 'damian_happy');
+        this.damian = this.add.image(width * 0.82, height * 0.72, 'Damian');
         this.damian.setScale(0.9); // Half-body appearance
         this.damian.setDepth(1); // Lower depth so dialogue appears in front
         

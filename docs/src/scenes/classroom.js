@@ -22,7 +22,7 @@ export default class Classroom extends Phaser.Scene {
         // Load classroom background
         this.load.image('classroomBG', 'assets/img/bg/classroom_day.png');
         
-        // Load character images from assets/sprites/npcs with their respective names
+        // Load character images from public/assets/sprites/npcs with their respective names
         this.load.image('Noah', 'assets/sprites/npcs/Noah.png');
         this.load.image('Lily', 'assets/sprites/npcs/Lily.png');
         this.load.image('Damian', 'assets/sprites/npcs/Damian.png');
@@ -30,6 +30,17 @@ export default class Classroom extends Phaser.Scene {
         this.load.image('Finley', 'assets/sprites/npcs/Finley.png');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
+        
+        // Add error handling for missing images
+        this.load.on('loaderror', (file) => {
+            console.error('Failed to load file:', file.src);
+        });
+        
+        this.load.on('filecomplete', (key, type, data) => {
+            if (type === 'image') {
+                console.log('Successfully loaded image:', key);
+            }
+        });
     }
 
     create() {
@@ -41,16 +52,12 @@ export default class Classroom extends Phaser.Scene {
         // Initialize modal state
         this.characterBoxOpen = false;
 
-        // Add classroom background
+        // Add classroom background with better styling
         this.bg = this.add.tileSprite(0, 0, width, height, 'classroomBG').setOrigin(0, 0);
+        this.bg.setAlpha(0.5); // Match main hub background alpha
         
-        // Add background color overlay for better visibility (reduced opacity for mobile)
-        if (scaleInfo.isMobile) {
-            // For mobile, use a lighter overlay so background is more visible
-            this.add.rectangle(width / 2, height / 2, width, height, 0xB2E2B1, 0.3);
-        } else {
-            this.cameras.main.setBackgroundColor('#B2E2B1');
-        }
+        // Set background color to match main hub styling
+        this.cameras.main.setBackgroundColor('#B2E2B1');
 
         // Sound effects
         this.se_hoverSound = this.sound.add('se_select');
@@ -121,18 +128,51 @@ export default class Classroom extends Phaser.Scene {
             }
         ];
 
-        // Create the carousel with mobile-responsive settings
+        // Ensure all character images are loaded before creating carousel
+        const allImagesLoaded = charKeys.every(key => this.textures.exists(key));
+        
+        if (!allImagesLoaded) {
+            console.warn('Some character images not loaded, creating placeholder carousel');
+            // Create placeholder colored rectangles for missing images
+            charKeys.forEach(key => {
+                if (!this.textures.exists(key)) {
+                    console.warn(`Creating placeholder for missing image: ${key}`);
+                    // Create a simple colored rectangle as placeholder
+                    const graphics = this.add.graphics();
+                    graphics.fillStyle(0x4CAF50, 1);
+                    graphics.fillRoundedRect(0, 0, 100, 100, 10);
+                    graphics.generateTexture(key, 100, 100);
+                    graphics.destroy();
+                }
+            });
+        }
+
+        // Create the carousel with main hub styling
         const carouselConfig = {
+            iconCenterY: scaleInfo.isMobile ? 
+                (scaleInfo.isPortrait ? scaleDimension(200, scaleInfo) : scaleDimension(180, scaleInfo)) : 
+                scaleDimension(220, scaleInfo),
             iconSpacing: scaleInfo.isMobile ? 
-                (scaleInfo.isPortrait ? scaleDimension(220, scaleInfo) : scaleDimension(280, scaleInfo)) : 
-                scaleDimension(340, scaleInfo),
-            smallScale: scaleInfo.isMobile ? 0.12 : 0.18, // Smaller for mobile
-            largeScale: scaleInfo.isMobile ? 0.20 : 0.28, // Smaller for mobile
+                (scaleInfo.isPortrait ? scaleDimension(180, scaleInfo) : scaleDimension(240, scaleInfo)) : 
+                scaleDimension(280, scaleInfo),
+            smallScale: scaleInfo.isMobile ? 0.12 : 0.15, // Match main hub
+            largeScale: scaleInfo.isMobile ? 0.20 : 0.3,  // Match main hub
             iconYOffset: scaleInfo.isMobile ? 
-                scaleDimension(-40, scaleInfo) : 
-                scaleDimension(-20, scaleInfo), // Move up more on mobile
-            headingStyle: { fontSize: scaleFontSize(48, scaleInfo) },
-            descStyle: { fontSize: scaleFontSize(28, scaleInfo) }
+                scaleDimension(-60, scaleInfo) : 
+                scaleDimension(-40, scaleInfo),
+            iconToTitleGap: scaleDimension(100, scaleInfo),
+            iconToDescGap: scaleDimension(50, scaleInfo),
+            headingStyle: { 
+                fontSize: scaleFontSize(56, scaleInfo),
+                fontStyle: 'bold'
+            },
+            descStyle: { 
+                fontSize: scaleFontSize(28, scaleInfo)
+            },
+            sounds: {
+                hover: 'se_select',
+                confirm: 'se_confirm'
+            }
         };
         
         this.characterCarousel = new Carousel(this, carouselConfig).create(
@@ -146,6 +186,15 @@ export default class Classroom extends Phaser.Scene {
                 this.showCharacterBox(charInfo[index], charKeys[index]);
             }
         );
+        
+        // Debug: Check if images are loaded
+        charKeys.forEach(key => {
+            if (!this.textures.exists(key)) {
+                console.error(`Image not loaded: ${key}`);
+            } else {
+                console.log(`Image loaded successfully: ${key}`);
+            }
+        });
 
         // Back button
         createBackButton(this, 'MainHub');
@@ -194,13 +243,21 @@ export default class Classroom extends Phaser.Scene {
         // Clean up modal state
         this.characterBoxOpen = false;
         
-        // Clean up carousel icons and tweens to prevent ghosting
+        // Clean up carousel properly using the carousel's destroy method
+        if (this.characterCarousel) {
+            this.characterCarousel.destroy();
+            this.characterCarousel = null;
+        }
+        
+        // Legacy cleanup for any remaining elements
         if (this.breathingTween) {
             this.breathingTween.stop();
             this.breathingTween = null;
         }
         if (this.carouselIcons) {
-            this.carouselIcons.forEach(icon => icon.destroy());
+            this.carouselIcons.forEach(icon => {
+                if (icon && icon.destroy) icon.destroy();
+            });
             this.carouselIcons = [];
         }
         if (this.carouselName) {
@@ -211,62 +268,6 @@ export default class Classroom extends Phaser.Scene {
             this.carouselDesc.destroy();
             this.carouselDesc = null;
         }
-    }
-
-    moveCarousel(direction, charInfo) {
-        const iconCount = this.carouselIcons.length;
-        let newIndex = Phaser.Math.Clamp(this.carouselIndex + direction, 0, iconCount - 1);
-        if (newIndex === this.carouselIndex) return;
-
-        this.carouselIndex = newIndex;
-        const centerX = this.scale.width / 2;
-        const centerY = this.scale.height / 2; // Use actual center instead of hardcoded offset
-        const spacing = 340;
-        const smallScale = 0.125;
-        const largeScale = 0.3;
-        const visualOffset = -20; // Adjusted to match the carousel config
-
-        this.carouselIcons.forEach((icon, i) => {
-            const x = centerX + (i - this.carouselIndex) * spacing;
-            const scale = (i === this.carouselIndex) ? largeScale : smallScale;
-            icon.setScale(scale);
-            icon.setX(x);
-            icon.setOrigin(0.5, 1);
-            icon.y = centerY + visualOffset; 
-            if (i === this.carouselIndex) {
-                icon.setTint(0xffffff);
-                icon.setAlpha(1);
-                icon.setDepth(2);
-            } else {
-                icon.setTint(0x888888);
-                icon.setAlpha(0.7);
-                icon.setDepth(1);
-            }
-        });
-
-        this.updateCarouselText(charInfo);
-        this.startBreathingEffect(this.carouselIcons[this.carouselIndex]);
-    }
-
-    updateCarouselText(charInfo) {
-        const info = charInfo[this.carouselIndex];
-        this.carouselName.setText(info.name);
-        this.carouselDesc.setText(info.desc);
-    }
-
-    startBreathingEffect(icon) {
-        if (this.breathingTween) {
-            this.breathingTween.stop();
-            icon.setScale(1.2);
-        }
-        this.breathingTween = this.tweens.add({
-            targets: icon,
-            scale: { from: 0.7, to: 0.8 }, // Subtle breathing for portrait
-            duration: 700,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
     }
 
     showCharacterBox(charData, charKey) {
