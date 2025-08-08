@@ -4,12 +4,99 @@
     <meta charset="UTF-8" />
     <title>SCI-HIGH: Playing!</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    
+    <!-- Authentication Check -->
+    <script>
+      // Check authentication before loading the game
+      function checkAuthentication() {
+        const isAuthenticated = sessionStorage.getItem('sci_high_authenticated');
+        const userType = sessionStorage.getItem('sci_high_user_type');
+        const savedUser = localStorage.getItem('sci_high_user');
+        
+        if (!isAuthenticated || !savedUser) {
+          // Redirect to login page
+          alert('Please log in to access the game.');
+          window.location.href = 'index.html';
+          return false;
+        }
+        
+        // Log user access for analytics
+        console.log(`Game accessed by ${userType} user`);
+        return true;
+      }
+      
+      // Run check immediately
+      if (!checkAuthentication()) {
+        // Stop page loading if not authenticated
+        document.documentElement.innerHTML = '<body style="background: #1a1a2e; color: white; text-align: center; padding: 50px;"><h1>Redirecting to login...</h1></body>';
+      }
+    </script>
+    
     <style>
       /* Reset everything */
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
+      }
+      
+      /* Authentication overlay */
+      #auth-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10001;
+        color: white;
+        font-family: 'Orbitron', monospace;
+        text-align: center;
+        padding: 20px;
+      }
+      
+      #auth-overlay .logo {
+        width: 120px;
+        height: 120px;
+        margin-bottom: 30px;
+        animation: pulse 2s ease-in-out infinite;
+      }
+      
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.05); }
+      }
+      
+      #auth-overlay h2 {
+        font-size: 28px;
+        margin-bottom: 15px;
+        color: #F4CE14;
+      }
+      
+      #auth-overlay p {
+        font-size: 16px;
+        opacity: 0.8;
+        margin-bottom: 30px;
+      }
+      
+      #auth-overlay button {
+        background: linear-gradient(to right, #F4CE14, #FFD700);
+        color: #1a1a2e;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-family: 'Orbitron', monospace;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+      }
+      
+      #auth-overlay button:hover {
+        transform: scale(1.05);
       }
       
       /* Orientation overlay */
@@ -154,6 +241,14 @@
     </style>
   </head>
   <body>
+    <!-- Authentication overlay -->
+    <div id="auth-overlay">
+      <img src="public/assets/img/buko_productions-logo.png" alt="SCI-HIGH Logo" class="logo" />
+      <h2>Authentication Required</h2>
+      <p>You need to be logged in to access the game</p>
+      <button onclick="window.location.href='index.html'">Go to Login</button>
+    </div>
+    
     <!-- Orientation overlay for mobile portrait mode -->
     <div id="orientation-overlay">
       <div class="rotate-icon">📱</div>

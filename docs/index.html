@@ -116,6 +116,11 @@
               <span class="relative z-10">Contact</span>
               <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
             </a>
+            <!-- Professor Tab - Hidden by default, shown only for admin/professor users -->
+            <a href="professor-dashboard.html" id="professor-nav-link" class="gaming-nav-link text-textColor hover:text-accent transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative hidden">
+              <span class="relative z-10">👨‍🏫 Professor</span>
+              <div class="absolute inset-0 bg-accent/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </a>
           </div>
         </div>
       </div>
@@ -224,6 +229,202 @@
         </div>
       </div>
     </section>
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] hidden backdrop-blur-sm">
+      <div class="neon-border bg-cardBg rounded-xl shadow-2xl max-w-4xl w-full mx-4 p-8 relative animate-bounce-in">
+        <button id="close-login-modal" class="absolute top-4 right-4 text-3xl text-gray-400 hover:text-primary transition-colors duration-300 font-gaming">&times;</button>
+        
+        <!-- User Type Selection -->
+        <div id="user-type-selection" class="text-center">
+          <h2 class="font-gaming text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">🚀 Join the Adventure</h2>
+          <p class="text-gray-300 text-lg mb-8 leading-relaxed">Choose your path to begin your programming quest!</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Professor Option -->
+            <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 cursor-pointer" id="professor-option">
+              <div class="text-5xl mb-4">👨‍🏫</div>
+              <h3 class="font-gaming text-xl text-primary mb-3">Professor</h3>
+              <p class="text-gray-300 text-sm mb-4">Manage student accounts, track progress, and access advanced analytics</p>
+              <div class="text-xs text-gray-400">
+                <span class="bg-primary/20 text-primary px-2 py-1 rounded">Admin Access</span>
+              </div>
+            </div>
+
+            <!-- Student Option -->
+            <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 cursor-pointer" id="student-option">
+              <div class="text-5xl mb-4">🎓</div>
+              <h3 class="font-gaming text-xl text-accent mb-3">Student</h3>
+              <p class="text-gray-300 text-sm mb-4">Access your courses, track progress, and compete in leaderboards</p>
+              <div class="text-xs text-gray-400">
+                <span class="bg-accent/20 text-accent px-2 py-1 rounded">School Account</span>
+              </div>
+            </div>
+
+            <!-- General User Option -->
+            <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 cursor-pointer" id="general-option">
+              <div class="text-5xl mb-4">🌟</div>
+              <h3 class="font-gaming text-xl text-cyan mb-3">General User</h3>
+              <p class="text-gray-300 text-sm mb-4">Create a personal account and learn at your own pace</p>
+              <div class="text-xs text-gray-400">
+                <span class="bg-cyan/20 text-cyan px-2 py-1 rounded">Personal Account</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Guest Option -->
+          <div class="border-t border-gray-600 pt-6">
+            <p class="text-gray-400 text-sm mb-4">Just want to try the game?</p>
+            <button id="guest-option" class="px-8 py-3 font-gaming text-lg font-bold text-textColor bg-gradient-to-r from-purple to-pink-500 rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple/50 uppercase tracking-wider">
+              🎮 Play as Guest
+            </button>
+          </div>
+        </div>
+
+        <!-- Professor Login/Register Form -->
+        <div id="professor-form" class="hidden">
+          <div class="text-center mb-6">
+            <h2 class="font-gaming text-3xl font-bold mb-2 text-primary">👨‍🏫 Professor Portal</h2>
+            <p class="text-gray-300">Access your teaching dashboard</p>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Login Form -->
+            <div class="space-y-4">
+              <h3 class="font-gaming text-xl text-primary mb-4">Login</h3>
+              <form id="professor-login-form" class="space-y-4">
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Email</label>
+                  <input type="email" name="email" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Password</label>
+                  <input type="password" name="password" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none">
+                </div>
+                <button type="submit" class="w-full px-6 py-3 font-gaming text-dark bg-gradient-to-r from-primary to-yellow-300 rounded-lg transform transition-all duration-300 hover:scale-105">
+                  Login
+                </button>
+              </form>
+            </div>
+
+            <!-- Register Form -->
+            <div class="space-y-4">
+              <h3 class="font-gaming text-xl text-primary mb-4">Register</h3>
+              <form id="professor-register-form" class="space-y-4">
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Full Name</label>
+                  <input type="text" name="fullName" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Email</label>
+                  <input type="email" name="email" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Institution</label>
+                  <input type="text" name="institution" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Password</label>
+                  <input type="password" name="password" required minlength="6" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none">
+                </div>
+                <button type="submit" class="w-full px-6 py-3 font-gaming text-dark bg-gradient-to-r from-primary to-yellow-300 rounded-lg transform transition-all duration-300 hover:scale-105">
+                  Create Account
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Student Login Form -->
+        <div id="student-form" class="hidden">
+          <div class="text-center mb-8">
+            <h2 class="font-gaming text-3xl font-bold mb-2 text-accent">🎓 Student Portal</h2>
+            <p class="text-gray-300">Login with your Student ID</p>
+          </div>
+          
+          <div class="max-w-md mx-auto">
+            <form id="student-login-form" class="space-y-6">
+              <div>
+                <label class="block text-gray-300 text-sm mb-2">Student ID</label>
+                <input type="text" name="studentId" required placeholder="e.g., 2024-CS-001234" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-gray-300 text-sm mb-2">Password</label>
+                <input type="password" name="password" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
+              </div>
+              <button type="submit" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105">
+                Login to Adventure
+              </button>
+            </form>
+            
+            <div class="text-center mt-6 pt-6 border-t border-gray-600">
+              <p class="text-gray-400 text-sm">Don't have an account? Contact your professor to get started.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- General User Form -->
+        <div id="general-form" class="hidden">
+          <div class="text-center mb-6">
+            <h2 class="font-gaming text-3xl font-bold mb-2 text-cyan">🌟 Personal Account</h2>
+            <p class="text-gray-300">Create your learning account</p>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Login Form -->
+            <div class="space-y-4">
+              <h3 class="font-gaming text-xl text-cyan mb-4">Login</h3>
+              <form id="general-login-form" class="space-y-4">
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Email</label>
+                  <input type="email" name="email" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Password</label>
+                  <input type="password" name="password" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan focus:outline-none">
+                </div>
+                <button type="submit" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-cyan to-blue-500 rounded-lg transform transition-all duration-300 hover:scale-105">
+                  Login
+                </button>
+              </form>
+            </div>
+
+            <!-- Register Form -->
+            <div class="space-y-4">
+              <h3 class="font-gaming text-xl text-cyan mb-4">Register</h3>
+              <form id="general-register-form" class="space-y-4">
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Full Name</label>
+                  <input type="text" name="fullName" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Email</label>
+                  <input type="email" name="email" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Display Name</label>
+                  <input type="text" name="displayName" required placeholder="For leaderboards" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Password</label>
+                  <input type="password" name="password" required minlength="6" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan focus:outline-none">
+                </div>
+                <button type="submit" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-cyan to-blue-500 rounded-lg transform transition-all duration-300 hover:scale-105">
+                  Create Account
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="text-center mt-8">
+          <button id="back-to-selection" class="hidden px-6 py-2 text-gray-400 hover:text-white transition-colors duration-300 font-gaming">
+            ← Back to Options
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Game Screenshots Modal -->
     <div id="screenshots-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] hidden backdrop-blur-sm">
       <div class="neon-border bg-cardBg rounded-xl shadow-2xl max-w-2xl w-full mx-4 p-8 relative animate-bounce-in">
@@ -469,6 +670,33 @@
       </div>
     </section>
 
+    <!-- DEV MODE Panel - Hidden by default -->
+    <div id="dev-panel" class="fixed bottom-4 right-4 z-[200] hidden">
+      <div class="neon-border bg-cardBg rounded-lg p-4 max-w-xs">
+        <h3 class="font-gaming text-primary text-sm mb-3">🔧 Dev Mode</h3>
+        <div class="space-y-2">
+          <button onclick="createAdminUser()" class="w-full px-3 py-1 bg-purple text-white text-xs rounded hover:bg-purple/80">
+            Admin Account
+          </button>
+          <button onclick="createSampleProfessor()" class="w-full px-3 py-1 bg-primary text-dark text-xs rounded hover:bg-yellow-300">
+            Professor Account
+          </button>
+          <button onclick="createSampleStudent()" class="w-full px-3 py-1 bg-accent text-white text-xs rounded hover:bg-green-600">
+            Student Account
+          </button>
+          <button onclick="createSampleGeneral()" class="w-full px-3 py-1 bg-cyan text-white text-xs rounded hover:bg-blue-500">
+            General Account
+          </button>
+          <button onclick="logoutUser()" class="w-full px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">
+            Logout
+          </button>
+          <button onclick="document.getElementById('dev-panel').classList.add('hidden')" class="w-full px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700">
+            Close Panel
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Gaming Footer -->
     <footer class="relative z-10 bg-gradient-to-r from-dark to-light border-t-2 border-primary/30 py-12">
       <div class="max-w-6xl mx-auto px-6 text-center">
@@ -499,6 +727,451 @@
         }
       }
 
+      // Authentication System
+      class AuthManager {
+        constructor() {
+          this.currentUser = null;
+          this.userType = null; // 'professor', 'student', 'general', 'guest'
+          this.initializeAuth();
+        }
+
+        async initializeAuth() {
+          // Initialize Firebase if not already done
+          if (typeof firebase === 'undefined') {
+            await this.loadFirebase();
+          }
+          
+          // Check if user is already logged in
+          const savedUser = localStorage.getItem('sci_high_user');
+          if (savedUser) {
+            this.currentUser = JSON.parse(savedUser);
+            this.userType = this.currentUser.type;
+          }
+
+          // Update professor tab visibility
+          this.updateProfessorTabVisibility();
+        }
+
+        async loadFirebase() {
+          return new Promise((resolve, reject) => {
+            if (typeof firebase !== 'undefined') {
+              resolve();
+              return;
+            }
+
+            const scripts = [
+              'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
+              'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js',
+              'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js'
+            ];
+
+            let loaded = 0;
+            scripts.forEach(src => {
+              const script = document.createElement('script');
+              script.src = src;
+              script.onload = () => {
+                loaded++;
+                if (loaded === scripts.length) {
+                  // Initialize Firebase
+                  const firebaseConfig = {
+                    apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
+                    authDomain: "sci-high-website.firebaseapp.com",
+                    databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+                    projectId: "sci-high-website",
+                    storageBucket: "sci-high-website.appspot.com",
+                    messagingSenderId: "451463202515",
+                    appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
+                  };
+                  
+                  if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                  }
+                  resolve();
+                }
+              };
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          });
+        }
+
+        async loginProfessor(email, password) {
+          try {
+            const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+            
+            // Check if user is actually a professor in Firestore
+            const professorDoc = await firebase.firestore().collection('professors').doc(user.uid).get();
+            if (!professorDoc.exists) {
+              throw new Error('Not registered as a professor');
+            }
+
+            const professorData = professorDoc.data();
+            this.currentUser = {
+              uid: user.uid,
+              email: user.email,
+              type: 'professor',
+              profile: professorData
+            };
+            
+            localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+            this.userType = 'professor';
+            
+            // Update professor tab visibility
+            this.updateProfessorTabVisibility();
+            
+            return { success: true, user: this.currentUser };
+          } catch (error) {
+            return { success: false, error: error.message };
+          }
+        }
+
+        async registerProfessor(formData) {
+          try {
+            const userCredential = await firebase.auth().createUserWithEmailAndPassword(formData.email, formData.password);
+            const user = userCredential.user;
+
+            // Save professor data to Firestore
+            await firebase.firestore().collection('professors').doc(user.uid).set({
+              fullName: formData.fullName,
+              email: formData.email,
+              institution: formData.institution,
+              createdAt: new Date().toISOString(),
+              isVerified: false // Require manual verification
+            });
+
+            return { success: true, message: 'Account created! Please wait for verification.' };
+          } catch (error) {
+            return { success: false, error: error.message };
+          }
+        }
+
+        async loginStudent(studentId, password) {
+          try {
+            // Check student in Firestore
+            const studentQuery = await firebase.firestore().collection('students')
+              .where('studentId', '==', studentId)
+              .limit(1)
+              .get();
+
+            if (studentQuery.empty) {
+              throw new Error('Student ID not found. Contact your professor.');
+            }
+
+            const studentDoc = studentQuery.docs[0];
+            const studentData = studentDoc.data();
+
+            // Verify password (in real implementation, use proper password hashing)
+            if (studentData.password !== password) {
+              throw new Error('Invalid password');
+            }
+
+            this.currentUser = {
+              uid: studentDoc.id,
+              studentId: studentData.studentId,
+              type: 'student',
+              profile: studentData
+            };
+
+            localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+            this.userType = 'student';
+
+            // Update professor tab visibility
+            this.updateProfessorTabVisibility();
+
+            return { success: true, user: this.currentUser };
+          } catch (error) {
+            return { success: false, error: error.message };
+          }
+        }
+
+        async loginGeneral(email, password) {
+          try {
+            const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+            
+            // Get user data from Firestore
+            const userDoc = await firebase.firestore().collection('general_users').doc(user.uid).get();
+            if (!userDoc.exists) {
+              throw new Error('User profile not found');
+            }
+
+            const userData = userDoc.data();
+            this.currentUser = {
+              uid: user.uid,
+              email: user.email,
+              type: 'general',
+              profile: userData
+            };
+            
+            localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+            this.userType = 'general';
+            
+            // Update professor tab visibility
+            this.updateProfessorTabVisibility();
+            
+            return { success: true, user: this.currentUser };
+          } catch (error) {
+            return { success: false, error: error.message };
+          }
+        }
+
+        async registerGeneral(formData) {
+          try {
+            const userCredential = await firebase.auth().createUserWithEmailAndPassword(formData.email, formData.password);
+            const user = userCredential.user;
+
+            // Save user data to Firestore
+            await firebase.firestore().collection('general_users').doc(user.uid).set({
+              fullName: formData.fullName,
+              email: formData.email,
+              displayName: formData.displayName,
+              createdAt: new Date().toISOString(),
+              gameData: {
+                totalPoints: 0,
+                achievements: [],
+                courseProgress: {}
+              }
+            });
+
+            return { success: true, message: 'Account created successfully!' };
+          } catch (error) {
+            return { success: false, error: error.message };
+          }
+        }
+
+        createGuestSession() {
+          const guestId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+          this.currentUser = {
+            uid: guestId,
+            type: 'guest',
+            profile: {
+              displayName: 'Guest Player',
+              isGuest: true
+            }
+          };
+          
+          localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+          this.userType = 'guest';
+          
+          // Update professor tab visibility
+          this.updateProfessorTabVisibility();
+          
+          return this.currentUser;
+        }
+
+        logout() {
+          if (this.userType !== 'guest') {
+            firebase.auth().signOut();
+          }
+          
+          this.currentUser = null;
+          this.userType = null;
+          localStorage.removeItem('sci_high_user');
+          
+          // Update professor tab visibility (hide it)
+          this.updateProfessorTabVisibility();
+        }
+
+        isAuthenticated() {
+          return this.currentUser !== null;
+        }
+
+        redirectToGame() {
+          // Store authentication state for game.html
+          sessionStorage.setItem('sci_high_authenticated', 'true');
+          sessionStorage.setItem('sci_high_user_type', this.userType);
+          window.location.href = 'game.html';
+        }
+
+        // Update professor tab visibility based on user type
+        updateProfessorTabVisibility() {
+          const professorTab = document.getElementById('professor-nav-link');
+          if (!professorTab) return;
+
+          // Show professor tab only for professors and admins
+          const canAccessProfessorDashboard = this.currentUser && 
+            (this.userType === 'professor' || this.userType === 'admin');
+
+          if (canAccessProfessorDashboard) {
+            professorTab.classList.remove('hidden');
+          } else {
+            professorTab.classList.add('hidden');
+          }
+        }
+
+        // DEV MODE: Create admin user for testing
+        createAdminUser() {
+          this.currentUser = {
+            uid: 'admin_' + Date.now(),
+            type: 'admin',
+            profile: {
+              fullName: 'System Administrator',
+              email: 'admin@sci-high.edu',
+              isAdmin: true
+            }
+          };
+          
+          localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+          this.userType = 'admin';
+          this.updateProfessorTabVisibility();
+          
+          return this.currentUser;
+        }
+      }
+
+      // Initialize AuthManager
+      const authManager = new AuthManager();
+
+      // Modal Management
+      const loginModal = document.getElementById('login-modal');
+      const screenshotsModal = document.getElementById('screenshots-modal');
+      const startGameBtn = document.getElementById('start-game-btn');
+
+      // User Type Selection Elements
+      const userTypeSelection = document.getElementById('user-type-selection');
+      const professorForm = document.getElementById('professor-form');
+      const studentForm = document.getElementById('student-form');
+      const generalForm = document.getElementById('general-form');
+      const backToSelection = document.getElementById('back-to-selection');
+
+      // Show Login Modal Function
+      function showLoginModal() {
+        loginModal.classList.remove('hidden');
+        showUserTypeSelection();
+      }
+
+      // Show User Type Selection
+      function showUserTypeSelection() {
+        userTypeSelection.classList.remove('hidden');
+        professorForm.classList.add('hidden');
+        studentForm.classList.add('hidden');
+        generalForm.classList.add('hidden');
+        backToSelection.classList.add('hidden');
+      }
+
+      // Show Specific Form
+      function showForm(formType) {
+        userTypeSelection.classList.add('hidden');
+        professorForm.classList.add('hidden');
+        studentForm.classList.add('hidden');
+        generalForm.classList.add('hidden');
+        backToSelection.classList.remove('hidden');
+
+        switch(formType) {
+          case 'professor':
+            professorForm.classList.remove('hidden');
+            break;
+          case 'student':
+            studentForm.classList.remove('hidden');
+            break;
+          case 'general':
+            generalForm.classList.remove('hidden');
+            break;
+        }
+      }
+
+      // Event Listeners for User Type Selection
+      document.getElementById('professor-option').addEventListener('click', () => showForm('professor'));
+      document.getElementById('student-option').addEventListener('click', () => showForm('student'));
+      document.getElementById('general-option').addEventListener('click', () => showForm('general'));
+      
+      document.getElementById('guest-option').addEventListener('click', () => {
+        authManager.createGuestSession();
+        loginModal.classList.add('hidden');
+        authManager.redirectToGame();
+      });
+
+      // Back to selection
+      backToSelection.addEventListener('click', showUserTypeSelection);
+
+      // Form Submissions
+      document.getElementById('professor-login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const result = await authManager.loginProfessor(formData.get('email'), formData.get('password'));
+        
+        if (result.success) {
+          loginModal.classList.add('hidden');
+          // Redirect to professor dashboard (create this later)
+          alert('Welcome Professor! Dashboard coming soon.');
+        } else {
+          alert('Login failed: ' + result.error);
+        }
+      });
+
+      document.getElementById('professor-register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const result = await authManager.registerProfessor({
+          fullName: formData.get('fullName'),
+          email: formData.get('email'),
+          institution: formData.get('institution'),
+          password: formData.get('password')
+        });
+        
+        if (result.success) {
+          alert(result.message);
+          e.target.reset();
+        } else {
+          alert('Registration failed: ' + result.error);
+        }
+      });
+
+      document.getElementById('student-login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const result = await authManager.loginStudent(formData.get('studentId'), formData.get('password'));
+        
+        if (result.success) {
+          loginModal.classList.add('hidden');
+          authManager.redirectToGame();
+        } else {
+          alert('Login failed: ' + result.error);
+        }
+      });
+
+      document.getElementById('general-login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const result = await authManager.loginGeneral(formData.get('email'), formData.get('password'));
+        
+        if (result.success) {
+          loginModal.classList.add('hidden');
+          authManager.redirectToGame();
+        } else {
+          alert('Login failed: ' + result.error);
+        }
+      });
+
+      document.getElementById('general-register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const result = await authManager.registerGeneral({
+          fullName: formData.get('fullName'),
+          email: formData.get('email'),
+          displayName: formData.get('displayName'),
+          password: formData.get('password')
+        });
+        
+        if (result.success) {
+          alert(result.message);
+          e.target.reset();
+        } else {
+          alert('Registration failed: ' + result.error);
+        }
+      });
+
+      // Close Modal Functions
+      document.getElementById('close-login-modal').addEventListener('click', () => {
+        loginModal.classList.add('hidden');
+      });
+
+      // Close modal on outside click
+      loginModal.addEventListener('click', (e) => {
+        if (e.target === loginModal) loginModal.classList.add('hidden');
+      });
+
       // Gaming Modal and Carousel System
       const screenshots = [
         'public/assets/classroom_day-7QRgWPJs.png',
@@ -506,8 +1179,6 @@
         'public/assets/img/mainhub/MainHubBG.png'
       ];
       
-      const modal = document.getElementById('screenshots-modal');
-      const startGameBtn = document.getElementById('start-game-btn');
       const closeModalBtn = document.getElementById('close-screenshots-modal');
       const carouselImg = document.getElementById('carousel-image');
       const prevBtn = document.getElementById('carousel-prev');
@@ -534,14 +1205,19 @@
         current = idx;
       }
 
-      // Event Listeners
+      // Updated Start Game Button Event Listener
       startGameBtn.addEventListener('click', () => {
-        modal.classList.remove('hidden');
-        showScreenshot(current);
+        // Check if user is already authenticated
+        if (authManager.isAuthenticated()) {
+          authManager.redirectToGame();
+        } else {
+          // Show login modal first
+          showLoginModal();
+        }
       });
       
       closeModalBtn.addEventListener('click', () => {
-        modal.classList.add('hidden');
+        screenshotsModal.classList.add('hidden');
       });
       
       prevBtn.addEventListener('click', () => {
@@ -559,8 +1235,8 @@
       });
       
       // Close modal on outside click
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.add('hidden');
+      screenshotsModal.addEventListener('click', (e) => {
+        if (e.target === screenshotsModal) screenshotsModal.classList.add('hidden');
       });
 
       // Smooth scrolling for navigation
@@ -609,7 +1285,12 @@
       let konamiCode = [];
       const konami = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65]; // ↑↑↓↓←→←→BA
       
+      // Dev mode activation: Press D-E-V
+      let devCode = [];
+      const devKeys = [68, 69, 86]; // D-E-V
+      
       document.addEventListener('keydown', (e) => {
+        // Konami code for visual effect
         konamiCode.push(e.keyCode);
         if (konamiCode.length > konami.length) {
           konamiCode.shift();
@@ -621,7 +1302,152 @@
           }, 3000);
           konamiCode = [];
         }
+
+        // Dev mode activation
+        devCode.push(e.keyCode);
+        if (devCode.length > devKeys.length) {
+          devCode.shift();
+        }
+        if (devCode.join(',') === devKeys.join(',')) {
+          const devPanel = document.getElementById('dev-panel');
+          devPanel.classList.toggle('hidden');
+          if (!devPanel.classList.contains('hidden')) {
+            alert('🔧 DEV MODE ACTIVATED!\nUse the panel or console commands to create test accounts.');
+          }
+          devCode = [];
+        }
       });
+
+      // DEV MODE: Console functions for testing
+      // Usage in browser console: createAdminUser()
+      window.createAdminUser = () => {
+        const admin = authManager.createAdminUser();
+        console.log('Admin user created:', admin);
+        alert('🔧 Admin user created! Professor tab should now be visible.');
+        return admin;
+      };
+
+      window.createSampleProfessor = () => {
+        const professor = {
+          uid: 'prof_' + Date.now(),
+          type: 'professor',
+          profile: {
+            fullName: 'Dr. Sample Professor',
+            email: 'professor@sci-high.edu',
+            institution: 'SCI-HIGH University',
+            isVerified: true
+          }
+        };
+        
+        authManager.currentUser = professor;
+        authManager.userType = 'professor';
+        localStorage.setItem('sci_high_user', JSON.stringify(professor));
+        authManager.updateProfessorTabVisibility();
+        
+        console.log('Sample professor created:', professor);
+        alert('👨‍🏫 Sample professor created!\nEmail: professor@sci-high.edu\nPassword: Prof123!');
+        return professor;
+      };
+
+      window.createSampleStudent = () => {
+        const student = {
+          uid: 'stud_' + Date.now(),
+          type: 'student',
+          studentId: '2024-CS-001',
+          profile: {
+            studentId: '2024-CS-001',
+            fullName: 'Juan Dela Cruz',
+            academicInfo: {
+              level: 'college',
+              course: 'BS Computer Science',
+              yearLevel: '3rd Year'
+            },
+            accountStatus: {
+              isFirstLogin: false,
+              createdBy: 'prof_sample',
+              lastLogin: new Date().toISOString()
+            },
+            gameData: {
+              totalPoints: 850,
+              courseProgress: {
+                python: { progress: 75, completed: 8, total: 12 },
+                javascript: { progress: 60, completed: 6, total: 10 },
+                java: { progress: 45, completed: 4, total: 9 }
+              }
+            }
+          }
+        };
+        
+        authManager.currentUser = student;
+        authManager.userType = 'student';
+        localStorage.setItem('sci_high_user', JSON.stringify(student));
+        authManager.updateProfessorTabVisibility();
+        
+        console.log('Sample student created:', student);
+        alert('🎓 Sample student created!\nStudent ID: 2024-CS-001\nPassword: Student123!');
+        return student;
+      };
+
+      window.createSampleGeneral = () => {
+        const generalUser = {
+          uid: 'gen_' + Date.now(),
+          type: 'general',
+          profile: {
+            fullName: 'Maria Santos',
+            email: 'maria@example.com',
+            displayName: 'CodeMaster_Maria',
+            gameData: {
+              totalPoints: 1200,
+              achievements: ['First Steps', 'Code Warrior', 'Puzzle Solver'],
+              courseProgress: {
+                python: { progress: 90, completed: 10, total: 12 },
+                webdesign: { progress: 85, completed: 9, total: 10 }
+              }
+            }
+          }
+        };
+        
+        authManager.currentUser = generalUser;
+        authManager.userType = 'general';
+        localStorage.setItem('sci_high_user', JSON.stringify(generalUser));
+        authManager.updateProfessorTabVisibility();
+        
+        console.log('Sample general user created:', generalUser);
+        alert('🌟 Sample general user created!\nEmail: maria@example.com\nPassword: General123!');
+        return generalUser;
+      };
+
+      window.logoutUser = () => {
+        authManager.logout();
+        console.log('User logged out');
+        alert('Logged out successfully. Professor tab should be hidden.');
+      };
+
+      // Helper function to show all available console commands
+      window.showDevCommands = () => {
+        console.log(`
+🔧 SCI-HIGH DEV MODE COMMANDS:
+================================
+
+1. createAdminUser()        - Create admin account (can access professor dashboard)
+2. createSampleProfessor()  - Create professor account
+3. createSampleStudent()    - Create student account  
+4. createSampleGeneral()    - Create general user account
+5. logoutUser()            - Logout current user
+6. showDevCommands()       - Show this help
+
+USAGE:
+------
+Open console (F12) and type any command, e.g.:
+createSampleProfessor()
+
+Then you can test the authentication system!
+        `);
+        alert('📋 Dev commands shown in console! Press F12 to see all available commands.');
+      };
+
+      // Auto-show dev commands on page load
+      console.log('🎮 SCI-HIGH DEV MODE ACTIVE! Type showDevCommands() for help.');
     </script>
   </body>
 </html>
