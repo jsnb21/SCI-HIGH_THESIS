@@ -1600,7 +1600,7 @@ Then you can test the authentication system!
       </button>
 
       <!-- Assistant Chat Panel with improved sizing -->
-      <div id="assistant-panel" class="fixed bottom-20 right-4 w-96 h-[500px] neon-border bg-cardBg/95 rounded-xl shadow-2xl backdrop-blur-md transform translate-x-full opacity-0 transition-all duration-300 overflow-hidden md:absolute md:bottom-20 md:right-0 md:w-[420px] md:h-[550px] max-w-[calc(100vw-2rem)]">
+      <div id="assistant-panel" class="fixed bottom-20 right-2 w-[calc(100vw-1rem)] h-[550px] neon-border bg-cardBg/95 rounded-xl shadow-2xl backdrop-blur-md transform translate-x-full opacity-0 transition-all duration-300 overflow-hidden md:absolute md:bottom-20 md:right-0 md:w-[420px] md:h-[600px] max-w-[420px]">
         <!-- Header -->
         <div class="bg-gradient-to-r from-purple to-cyan p-4 flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -1687,7 +1687,7 @@ Then you can test the authentication system!
         </div>
 
         <!-- Quick Action Buttons - Fixed Layout -->
-        <div id="quick-actions" class="p-2 border-t border-purple/30 md:p-3 overflow-visible">
+        <div id="quick-actions" class="p-3 border-t border-purple/30 md:p-4 overflow-visible min-h-[150px]">
           <!-- Enhanced Quick Action Buttons with better organization and fixed positioning -->
           <div class="grid grid-cols-2 gap-1 mb-2 md:grid-cols-3 md:gap-2 md:mb-3">
             <button class="quick-btn text-xs px-2 py-1 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-all duration-300 hover:scale-105 border border-primary/30 min-h-[32px] flex items-center justify-center" data-question="What is SCI-HIGH and how does it work?">🎮 About Game</button>
@@ -1712,16 +1712,6 @@ Then you can test the authentication system!
                 <span id="send-text">Send</span>
                 <span id="send-loading" class="hidden">●●●</span>
               </button>
-            </div>
-            
-            <!-- Enhanced Input Suggestions with improved accessibility -->
-            <div id="input-suggestions" class="grid grid-cols-1 gap-1 text-xs md:grid-cols-2">
-              <button class="suggestion-btn text-xs px-2 py-1 bg-gray-700/30 text-gray-300 rounded-lg hover:bg-gray-600/40 transition-all duration-300 hover:scale-105 min-h-[28px] flex items-center justify-start" data-text="How do I start playing the game?">💫 Getting Started</button>
-              <button class="suggestion-btn text-xs px-2 py-1 bg-gray-700/30 text-gray-300 rounded-lg hover:bg-gray-600/40 transition-all duration-300 hover:scale-105 min-h-[28px] flex items-center justify-start" data-text="What programming languages can I learn in SCI-HIGH?">💻 Languages</button>
-              <button class="suggestion-btn text-xs px-2 py-1 bg-gray-700/30 text-gray-300 rounded-lg hover:bg-gray-600/40 transition-all duration-300 hover:scale-105 min-h-[28px] flex items-center justify-start" data-text="Tell me about the thesis research methodology">📚 Research Methods</button>
-              <button class="suggestion-btn text-xs px-2 py-1 bg-gray-700/30 text-gray-300 rounded-lg hover:bg-gray-600/40 transition-all duration-300 hover:scale-105 min-h-[28px] flex items-center justify-start" data-text="What makes SCI-HIGH different from other educational games?">🎮 Unique Features</button>
-              <button class="suggestion-btn text-xs px-2 py-1 bg-gray-700/30 text-gray-300 rounded-lg hover:bg-gray-600/40 transition-all duration-300 hover:scale-105 min-h-[28px] flex items-center justify-start" data-text="How does the story mode work?">📖 Story Mode</button>
-              <button class="suggestion-btn text-xs px-2 py-1 bg-gray-700/30 text-gray-300 rounded-lg hover:bg-gray-600/40 transition-all duration-300 hover:scale-105 min-h-[28px] flex items-center justify-start" data-text="What technical stack was used to build this?">🔧 Tech Stack</button>
             </div>
             
             <!-- Input Status -->
