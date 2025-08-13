@@ -1,3 +1,9 @@
+# API Keys and Sensitive Configuration
+config/api-key.txt
+*.key
+*.secret
+.env*
+
 # Logs
 logs
 *.log

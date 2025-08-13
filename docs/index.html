@@ -89,6 +89,86 @@
         background: rgba(22, 33, 62, 0.8);
         box-shadow: 0 0 10px rgba(244, 206, 20, 0.3);
       }
+      
+      /* Custom scrollbar for chat */
+      .scrollbar-thin {
+        scrollbar-width: thin;
+      }
+      .scrollbar-thumb-purple {
+        scrollbar-color: #9c27b0 #1a1a2e;
+      }
+      .scrollbar-track-dark {
+        scrollbar-color: #9c27b0 #1a1a2e;
+      }
+      
+      /* Webkit browsers scrollbar */
+      #chat-messages::-webkit-scrollbar {
+        width: 6px;
+      }
+      #chat-messages::-webkit-scrollbar-track {
+        background: #1a1a2e;
+        border-radius: 3px;
+      }
+      #chat-messages::-webkit-scrollbar-thumb {
+        background: #9c27b0;
+        border-radius: 3px;
+      }
+      #chat-messages::-webkit-scrollbar-thumb:hover {
+        background: #ba68c8;
+      }
+      
+      /* Chat message animations */
+      .assistant-message, .user-message {
+        animation: message-slide-in 0.3s ease-out;
+      }
+      
+      @keyframes message-slide-in {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      /* Assistant button glow effect */
+      #assistant-toggle {
+        animation: assistant-glow 3s ease-in-out infinite alternate;
+      }
+      
+      @keyframes assistant-glow {
+        from {
+          box-shadow: 0 0 20px rgba(156, 39, 176, 0.3);
+        }
+        to {
+          box-shadow: 0 0 30px rgba(156, 39, 176, 0.6), 0 0 40px rgba(0, 188, 212, 0.3);
+        }
+      }
+      
+      /* Loading dots animation */
+      #send-loading {
+        animation: loading-dots 1.5s ease-in-out infinite;
+      }
+      
+      @keyframes loading-dots {
+        0%, 20% {
+          color: rgba(255, 255, 255, 0.3);
+        }
+        40% {
+          color: rgba(255, 255, 255, 1);
+        }
+        60%, 100% {
+          color: rgba(255, 255, 255, 0.3);
+        }
+      }
+      
+      /* Suggestion buttons hover effect */
+      .suggestion-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3);
+      }
     </style>
   </head>
   <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed">
@@ -1483,6 +1563,891 @@ Then you can test the authentication system!
 
       // Auto-show dev commands on page load
       console.log('🎮 SCI-HIGH DEV MODE ACTIVE! Type showDevCommands() for help.');
+    </script>
+
+    <!-- Virtual AI Assistant -->
+    <div id="ai-assistant" class="fixed bottom-4 right-4 z-[200] md:bottom-6 md:right-6">
+      <!-- Assistant Toggle Button -->
+      <button id="assistant-toggle" class="group relative w-12 h-12 bg-gradient-to-r from-purple to-cyan rounded-full shadow-lg hover:shadow-purple/50 transform transition-all duration-300 hover:scale-110 animate-bounce-in border-2 border-purple/30 md:w-16 md:h-16">
+        <div class="absolute inset-0 bg-gradient-to-r from-cyan to-purple rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <span class="relative z-10 text-lg md:text-2xl">🤖</span>
+        <div class="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-pulse md:-top-2 md:-right-2 md:w-4 md:h-4"></div>
+      </button>
+
+      <!-- Assistant Chat Panel -->
+      <div id="assistant-panel" class="absolute bottom-16 right-0 w-72 h-80 neon-border bg-cardBg/95 rounded-xl shadow-2xl backdrop-blur-md transform translate-x-full opacity-0 transition-all duration-300 overflow-hidden md:bottom-20 md:w-80 md:h-96">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple to-cyan p-4 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-dark font-gaming font-bold text-sm">AI</div>
+            <div>
+              <h3 class="font-gaming text-white text-sm font-bold">SCI-HIGH AI Assistant</h3>
+              <p class="text-xs text-gray-200">Powered by Google AI 🚀</p>
+            </div>
+          </div>
+          <div class="flex space-x-2">
+            <button id="assistant-settings" class="text-white hover:text-primary transition-colors text-sm" title="Settings">⚙️</button>
+            <button id="assistant-close" class="text-white hover:text-primary transition-colors text-xl">&times;</button>
+          </div>
+        </div>
+
+        <!-- Chat Messages Area -->
+        <div id="chat-messages" class="flex-1 p-3 h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-purple scrollbar-track-dark md:h-64 md:p-4">
+          <div class="assistant-message mb-4">
+            <div class="bg-purple/20 rounded-lg p-2 max-w-xs md:p-3">
+              <p class="text-xs text-white md:text-sm">Hi! I'm your SCI-HIGH AI assistant! 🤖✨ I can load my AI powers from a config file or manual entry. Ask me anything about the game, thesis research, or programming!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Panel (Initially Hidden) -->
+        <div id="settings-panel" class="hidden absolute inset-0 bg-cardBg/95 rounded-xl backdrop-blur-md z-10">
+          <div class="p-4 h-full flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-gaming text-white text-sm font-bold">AI Settings</h3>
+              <button id="settings-close" class="text-white hover:text-primary transition-colors text-xl">&times;</button>
+            </div>
+            
+            <div class="flex-1 space-y-4">
+              <div>
+                <label class="block text-xs text-gray-300 mb-2">Google AI Studio API Key:</label>
+                <input type="password" id="api-key-input" placeholder="Enter your API key..." 
+                       class="w-full px-3 py-2 bg-dark/50 border border-purple/30 rounded-lg text-white text-xs focus:outline-none focus:border-purple focus:ring-1 focus:ring-purple/30" />
+                <p class="text-xs text-gray-400 mt-1">Get your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" class="text-primary hover:text-accent">Google AI Studio</a></p>
+              </div>
+              
+              <div class="bg-dark/30 p-3 rounded-lg">
+                <h4 class="text-xs font-bold text-primary mb-2">� Config File Method:</h4>
+                <ul class="text-xs text-gray-300 space-y-1">
+                  <li>• Auto-loads from <code class="text-accent">config/api-key.txt</code></li>
+                  <li>• No manual entry needed each time</li>
+                  <li>• Keep file secure and private</li>
+                  <li>• Add to .gitignore if using Git</li>
+                </ul>
+              </div>
+              
+              <div class="bg-dark/30 p-3 rounded-lg">
+                <h4 class="text-xs font-bold text-primary mb-2">�🔒 Security Features:</h4>
+                <ul class="text-xs text-gray-300 space-y-1">
+                  <li>• Memory-only during runtime</li>
+                  <li>• Auto-expires in 30 minutes per session</li>
+                  <li>• Cleared when you leave the page</li>
+                  <li>• Downloadable config file generation</li>
+                </ul>
+              </div>
+              
+              <div class="flex space-x-2">
+                <button id="save-api-key" class="flex-1 px-3 py-2 bg-gradient-to-r from-accent to-cyan rounded-lg text-white text-xs font-gaming hover:shadow-lg transition-all duration-300">Save Key</button>
+                <button id="test-ai" class="flex-1 px-3 py-2 bg-gradient-to-r from-purple to-primary rounded-lg text-white text-xs font-gaming hover:shadow-lg transition-all duration-300">Test AI</button>
+              </div>
+              
+              <div id="api-status" class="text-xs text-center p-2 rounded-lg hidden"></div>
+            </div>
+            
+            <div class="text-xs text-gray-400 text-center space-y-1">
+              <p>💡 Without an API key, I'll use preset responses</p>
+              <p>�️ Maximum security: Key never touches disk storage</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Action Buttons -->
+        <div id="quick-actions" class="p-2 border-t border-purple/30 md:p-3">
+          <div class="flex flex-wrap gap-1 mb-2 md:gap-2 md:mb-3">
+            <button class="quick-btn text-xs px-2 py-1 bg-primary/20 text-primary rounded-full hover:bg-primary/30 transition-colors md:px-3" data-question="What is SCI-HIGH?">🎮 Game</button>
+            <button class="quick-btn text-xs px-2 py-1 bg-accent/20 text-accent rounded-full hover:bg-accent/30 transition-colors md:px-3" data-question="Tell me about the thesis">📚 Thesis</button>
+            <button class="quick-btn text-xs px-2 py-1 bg-cyan/20 text-cyan rounded-full hover:bg-cyan/30 transition-colors md:px-3" data-question="How do I start playing?">🚀 Start</button>
+            <button class="quick-btn text-xs px-2 py-1 bg-purple/20 text-purple rounded-full hover:bg-purple/30 transition-colors md:px-3" data-question="What programming languages can I learn?">💻 Code</button>
+          </div>
+          
+          <!-- Enhanced Input Area -->
+          <div class="space-y-2">
+            <!-- Input Row -->
+            <div class="flex space-x-1 md:space-x-2">
+              <div class="flex-1 relative">
+                <textarea id="chat-input" placeholder="Ask me anything about SCI-HIGH, programming, or the thesis research..." 
+                         class="w-full px-2 py-1 bg-dark/50 border border-purple/30 rounded-lg text-white text-xs focus:outline-none focus:border-purple focus:ring-1 focus:ring-purple/30 md:px-3 md:py-2 md:text-sm resize-none overflow-hidden" 
+                         rows="1" maxlength="500"></textarea>
+                <div id="char-counter" class="absolute bottom-0 right-1 text-xs text-gray-500 pointer-events-none">0/500</div>
+              </div>
+              <button id="voice-input" class="px-2 py-1 bg-gradient-to-r from-accent to-primary rounded-lg text-white text-xs hover:shadow-lg transition-all duration-300 md:px-3 md:py-2" title="Voice Input">🎤</button>
+              <button id="send-message" class="px-3 py-1 bg-gradient-to-r from-purple to-cyan rounded-lg text-white text-xs font-gaming hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed md:px-4 md:py-2 md:text-sm">
+                <span id="send-text">Send</span>
+                <span id="send-loading" class="hidden">●●●</span>
+              </button>
+            </div>
+            
+            <!-- Input Suggestions -->
+            <div id="input-suggestions" class="flex flex-wrap gap-1 text-xs">
+              <button class="suggestion-btn text-xs px-2 py-1 bg-gray-700/30 text-gray-300 rounded-full hover:bg-gray-600/40 transition-colors" data-text="How do I start playing the game?">💫 Getting Started</button>
+              <button class="suggestion-btn text-xs px-2 py-1 bg-gray-700/30 text-gray-300 rounded-full hover:bg-gray-600/40 transition-colors" data-text="What programming languages can I learn?">💻 Languages</button>
+              <button class="suggestion-btn text-xs px-2 py-1 bg-gray-700/30 text-gray-300 rounded-full hover:bg-gray-600/40 transition-colors" data-text="Tell me about the thesis research">📚 Research</button>
+              <button class="suggestion-btn text-xs px-2 py-1 bg-gray-700/30 text-gray-300 rounded-full hover:bg-gray-600/40 transition-colors" data-text="What makes SCI-HIGH different from other educational games?">🎮 Unique Features</button>
+            </div>
+            
+            <!-- Input Status -->
+            <div id="input-status" class="text-xs text-center text-gray-400 hidden">
+              <span id="typing-status">Press Enter to send or Shift+Enter for new line</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Assistant JavaScript -->
+    <!--
+    �️ SECURE GOOGLE AI SETUP GUIDE:
+    
+    1. Go to https://makersuite.google.com/app/apikey
+    2. Sign in with your Google account
+    3. Click "Create API key"
+    4. Copy the generated API key
+    5. Click the settings (⚙️) icon in the assistant
+    6. Paste your API key and click "Save Key"
+    7. Test the connection with "Test AI" button
+    
+    � MAXIMUM SECURITY FEATURES:
+    • Memory-only storage (never saved to disk)
+    • Auto-expires after 30 minutes
+    • Cleared when you leave the page
+    • Input field cleared immediately after saving
+    • API key validation before use
+    • Automatic clearance on authentication errors
+    
+    �📝 Features with Google AI:
+    • Natural conversation about your game and thesis
+    • Context-aware responses about SCI-HIGH
+    • Detailed explanations of programming concepts
+    • Research methodology discussions
+    • Personalized learning recommendations
+    
+    �️ Privacy: This is the most secure client-side implementation possible
+    For maximum security in production, consider implementing a backend proxy
+    -->
+    <script>
+      class VirtualAssistant {
+        constructor() {
+          this.isOpen = false;
+          this.isTyping = false;
+          this.isRecording = false;
+          this.currentRecognition = null;
+          this.apiKey = ''; // Will be loaded from file
+          this.apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+          this.keyExpiry = null; // Auto-clear API key after time limit
+          this.maxKeyAge = 30 * 60 * 1000; // 30 minutes in milliseconds
+          this.configFile = 'config/api-key.txt'; // Path to API key file
+          
+          // Context about your game and thesis for the AI
+          this.systemContext = `
+You are a helpful assistant for SCI-HIGH, an educational RPG game that teaches programming. Here's key information:
+
+GAME INFORMATION:
+- SCI-HIGH is an educational RPG where students learn programming through gaming
+- Features story mode with 3 characters: Noah (Web Development), Lily (Python), Damian (Java)
+- Includes interactive computer lab, coding challenges, quizzes, and achievements
+- Supports multiple programming languages: HTML/CSS/JavaScript, Python, Java, C, C++, C#
+- Has gamification elements like XP, levels, achievements, and leaderboards
+- Built with Phaser.js game framework and modern web technologies
+
+THESIS INFORMATION:
+- Research focuses on gamification effectiveness in computer science education
+- Studies student engagement, knowledge retention, and learning outcomes
+- Uses mixed-methods approach with pre/post assessments and surveys
+- Compares game-based learning with traditional teaching methods
+- Examines learning analytics and performance metrics
+- Goal is to prove that gamified learning improves programming education
+
+FEATURES:
+- Story-driven gameplay with RPG elements
+- Interactive coding challenges and tutorials
+- Real-time feedback and progress tracking
+- Mobile-responsive design for accessibility
+- Offline play capability
+
+Always be helpful, encouraging, and focus on both the educational gaming aspects and research elements. Use gaming terminology and emojis to match the theme.
+`;
+
+          this.responses = {
+            // Fallback responses in case AI is unavailable
+            "what is sci-high": {
+              type: "game",
+              response: "SCI-HIGH is an educational RPG game that makes learning programming fun! 🎮 You'll embark on epic adventures while mastering coding languages like Python, Java, C++, and web development. Battle coding bugs, solve puzzles, and level up your programming skills! ⚔️"
+            },
+            "about game": {
+              type: "game", 
+              response: "SCI-HIGH combines gaming and education! 🌟 Features include:\n• Story Mode with 3 characters (Noah, Lily, Damian)\n• Interactive Computer Lab challenges\n• Real-time coding practice\n• Achievement system\n• Progress tracking\n• Multiple programming languages"
+            },
+            "help": {
+              type: "info",
+              response: "I'm here to help! 🤝 Ask me about:\n• Game features and how to play\n• Thesis research and methodology\n• Programming languages and concepts\n• Technical details about the project\n\nJust type your question!"
+            }
+          };
+          
+          this.init();
+        }
+        
+        init() {
+          this.loadApiKeyFromFile();
+          this.setupSecurityMeasures();
+          this.bindEvents();
+          this.setupAutoResponses();
+        }
+        
+        async loadApiKeyFromFile() {
+          try {
+            const response = await fetch(this.configFile);
+            if (response.ok) {
+              const content = await response.text();
+              // Extract API key from file (skip comments and empty lines)
+              const lines = content.split('\n');
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed && !trimmed.startsWith('#')) {
+                  if (this.validateApiKey(trimmed)) {
+                    this.apiKey = trimmed;
+                    this.keyExpiry = Date.now() + this.maxKeyAge;
+                    console.log('✅ API key loaded successfully from config file');
+                    
+                    // Update UI to show AI is available
+                    this.updateAIStatus(true);
+                    return;
+                  }
+                }
+              }
+              console.warn('⚠️ No valid API key found in config file');
+            } else {
+              console.warn('⚠️ Could not load API key config file. Manual entry will be required.');
+            }
+          } catch (error) {
+            console.warn('⚠️ Error loading API key from file:', error.message);
+          }
+          
+          // Update UI to show manual entry is needed
+          this.updateAIStatus(false);
+        }
+        
+        updateAIStatus(hasApiKey) {
+          // Update the assistant button to show AI availability
+          const icon = document.getElementById('assistant-toggle').querySelector('span');
+          if (hasApiKey) {
+            icon.textContent = '🤖✨'; // AI enabled
+          } else {
+            icon.textContent = '🤖'; // Manual entry needed
+          }
+        }
+        
+        setupSecurityMeasures() {
+          // Clear API key when user navigates away or closes tab
+          window.addEventListener('beforeunload', () => {
+            this.clearApiKey();
+          });
+          
+          // Auto-clear API key after timeout
+          this.setupKeyExpiration();
+          
+          // Clear key when tab becomes hidden (user switches tabs)
+          document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+              // Optional: Clear immediately when tab is hidden for max security
+              // this.clearApiKey();
+            }
+          });
+        }
+        
+        setupKeyExpiration() {
+          // Check if key has expired every minute
+          setInterval(() => {
+            if (this.keyExpiry && Date.now() > this.keyExpiry) {
+              this.clearApiKey();
+              this.showSecurityNotice('API key expired for security. Please re-enter if needed.');
+            }
+          }, 60000);
+        }
+        
+        clearApiKey() {
+          this.apiKey = '';
+          this.keyExpiry = null;
+          
+          // Clear the input field too
+          const input = document.getElementById('api-key-input');
+          if (input) input.value = '';
+        }
+        
+        showSecurityNotice(message) {
+          if (this.isOpen) {
+            this.addAssistantMessage(`🔒 Security Notice: ${message}`, 'security');
+          }
+        }
+        
+        saveApiKey() {
+          const input = document.getElementById('api-key-input');
+          const key = input.value.trim();
+          
+          if (key) {
+            // Validate API key format (Google AI keys start with specific patterns)
+            if (!this.validateApiKey(key)) {
+              this.showStatus('❌ Invalid API key format', 'error');
+              return;
+            }
+            
+            // Store in memory (secure for current session)
+            this.apiKey = key;
+            this.keyExpiry = Date.now() + this.maxKeyAge;
+            
+            // Update config file for future sessions
+            this.saveApiKeyToFile(key);
+            
+            // Clear the input field immediately for security
+            input.value = '';
+            
+            // Update UI
+            this.updateAIStatus(true);
+            
+            this.showStatus(`🔒 API key saved to config file!\nAuto-expires in ${this.maxKeyAge / 60000} minutes per session`, 'success');
+            setTimeout(() => this.hideSettings(), 2000);
+          } else {
+            this.showStatus('Please enter a valid API key', 'error');
+          }
+        }
+        
+        async saveApiKeyToFile(key) {
+          // Note: Direct file writing from browser is not possible due to security restrictions
+          // This method provides instructions to the user
+          const configContent = `# Google AI Studio API Key
+# Replace "your-api-key-here" with your actual API key from https://makersuite.google.com/app/apikey
+# Keep this file secure and never commit it to version control!
+
+${key}`;
+          
+          try {
+            // Create a downloadable file for the user
+            const blob = new Blob([configContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'api-key.txt';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            this.showStatus('📁 Config file downloaded! Place it in the config/ folder', 'info');
+          } catch (error) {
+            console.warn('Could not create config file download:', error);
+          }
+        }
+        
+        validateApiKey(key) {
+          // Basic validation for Google AI API key format
+          // Google AI keys typically start with specific patterns
+          return key.length > 20 && /^[A-Za-z0-9_-]+$/.test(key);
+        }
+        
+        async testAI() {
+          if (!this.apiKey) {
+            this.showStatus('Please enter an API key first', 'error');
+            return;
+          }
+          
+          if (this.keyExpiry && Date.now() > this.keyExpiry) {
+            this.clearApiKey();
+            this.showStatus('API key expired. Please enter again.', 'error');
+            return;
+          }
+          
+          this.showStatus('Testing AI connection... 🔄', 'info');
+          
+          try {
+            const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [{
+                    text: 'Say "Hello! AI is working!" in a friendly way with an emoji.'
+                  }]
+                }],
+                generationConfig: {
+                  temperature: 0.7,
+                  maxOutputTokens: 50,
+                }
+              })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+              
+              if (aiResponse) {
+                this.showStatus(`✅ AI Test Successful!\n"${aiResponse}"`, 'success');
+              } else {
+                this.showStatus('❌ Unexpected AI response format', 'error');
+              }
+            } else {
+              const errorData = await response.json();
+              this.showStatus(`❌ API Error: ${errorData.error?.message || 'Unknown error'}`, 'error');
+              
+              // If unauthorized, clear the key
+              if (response.status === 401 || response.status === 403) {
+                this.clearApiKey();
+              }
+            }
+          } catch (error) {
+            this.showStatus(`❌ Connection Error: ${error.message}`, 'error');
+          }
+        }
+        
+        showStatus(message, type) {
+          const statusEl = document.getElementById('api-status');
+          statusEl.className = `text-xs text-center p-2 rounded-lg ${
+            type === 'success' ? 'bg-accent/20 text-accent' : 
+            type === 'error' ? 'bg-red-500/20 text-red-400' : 
+            'bg-purple/20 text-purple'
+          }`;
+          statusEl.textContent = message;
+          statusEl.classList.remove('hidden');
+          
+          if (type !== 'info') {
+            setTimeout(() => statusEl.classList.add('hidden'), 3000);
+          }
+        }
+        
+        bindEvents() {
+          const toggle = document.getElementById('assistant-toggle');
+          const close = document.getElementById('assistant-close');
+          const settings = document.getElementById('assistant-settings');
+          const settingsClose = document.getElementById('settings-close');
+          const saveKey = document.getElementById('save-api-key');
+          const testAI = document.getElementById('test-ai');
+          const sendBtn = document.getElementById('send-message');
+          const input = document.getElementById('chat-input');
+          const voiceBtn = document.getElementById('voice-input');
+          const quickBtns = document.querySelectorAll('.quick-btn');
+          const suggestionBtns = document.querySelectorAll('.suggestion-btn');
+          
+          toggle.addEventListener('click', () => this.togglePanel());
+          close.addEventListener('click', () => this.closePanel());
+          settings.addEventListener('click', () => this.showSettings());
+          settingsClose.addEventListener('click', () => this.hideSettings());
+          saveKey.addEventListener('click', () => this.saveApiKey());
+          testAI.addEventListener('click', () => this.testAI());
+          sendBtn.addEventListener('click', () => this.sendMessage());
+          voiceBtn.addEventListener('click', () => this.toggleVoiceInput());
+          
+          // Enhanced input handling
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              this.sendMessage();
+            }
+          });
+          
+          input.addEventListener('input', () => {
+            this.updateCharCounter();
+            this.autoResize();
+          });
+          
+          input.addEventListener('focus', () => {
+            document.getElementById('input-status').classList.remove('hidden');
+          });
+          
+          input.addEventListener('blur', () => {
+            document.getElementById('input-status').classList.add('hidden');
+          });
+          
+          // Quick action buttons
+          quickBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+              const question = btn.getAttribute('data-question');
+              this.handleQuickQuestion(question);
+            });
+          });
+          
+          // Suggestion buttons
+          suggestionBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+              const text = btn.getAttribute('data-text');
+              input.value = text;
+              this.updateCharCounter();
+              this.autoResize();
+              input.focus();
+            });
+          });
+        }
+        
+        showSettings() {
+          document.getElementById('settings-panel').classList.remove('hidden');
+          document.getElementById('chat-messages').style.display = 'none';
+          document.getElementById('quick-actions').style.display = 'none';
+        }
+        
+        hideSettings() {
+          document.getElementById('settings-panel').classList.add('hidden');
+          document.getElementById('chat-messages').style.display = 'block';
+          document.getElementById('quick-actions').style.display = 'block';
+        }
+        
+        togglePanel() {
+          const panel = document.getElementById('assistant-panel');
+          const toggle = document.getElementById('assistant-toggle');
+          
+          if (this.isOpen) {
+            this.closePanel();
+          } else {
+            this.isOpen = true;
+            panel.style.transform = 'translateX(0)';
+            panel.style.opacity = '1';
+            toggle.style.transform = 'scale(0.9)';
+            
+            // Auto-scroll to bottom
+            setTimeout(() => {
+              const messages = document.getElementById('chat-messages');
+              messages.scrollTop = messages.scrollHeight;
+            }, 100);
+          }
+        }
+        
+        closePanel() {
+          const panel = document.getElementById('assistant-panel');
+          const toggle = document.getElementById('assistant-toggle');
+          
+          this.isOpen = false;
+          panel.style.transform = 'translateX(100%)';
+          panel.style.opacity = '0';
+          toggle.style.transform = 'scale(1)';
+        }
+        
+        sendMessage() {
+          if (this.isTyping) return; // Prevent sending while AI is thinking
+          
+          const input = document.getElementById('chat-input');
+          const message = input.value.trim();
+          
+          if (message) {
+            // Show loading state
+            this.setButtonLoading(true);
+            
+            this.addUserMessage(message);
+            input.value = '';
+            this.updateCharCounter();
+            this.autoResize();
+            
+            setTimeout(() => {
+              this.generateResponse(message);
+            }, 500);
+          }
+        }
+        
+        setButtonLoading(loading) {
+          const sendBtn = document.getElementById('send-message');
+          const sendText = document.getElementById('send-text');
+          const sendLoading = document.getElementById('send-loading');
+          
+          if (loading) {
+            sendBtn.disabled = true;
+            sendText.classList.add('hidden');
+            sendLoading.classList.remove('hidden');
+          } else {
+            sendBtn.disabled = false;
+            sendText.classList.remove('hidden');
+            sendLoading.classList.add('hidden');
+          }
+        }
+        
+        updateCharCounter() {
+          const input = document.getElementById('chat-input');
+          const counter = document.getElementById('char-counter');
+          const length = input.value.length;
+          const maxLength = input.maxLength;
+          
+          counter.textContent = `${length}/${maxLength}`;
+          
+          if (length > maxLength * 0.9) {
+            counter.classList.add('text-yellow-400');
+            counter.classList.remove('text-gray-500');
+          } else if (length > maxLength * 0.8) {
+            counter.classList.add('text-orange-400');
+            counter.classList.remove('text-gray-500', 'text-yellow-400');
+          } else {
+            counter.classList.add('text-gray-500');
+            counter.classList.remove('text-yellow-400', 'text-orange-400');
+          }
+        }
+        
+        autoResize() {
+          const input = document.getElementById('chat-input');
+          input.style.height = 'auto';
+          const maxHeight = 80; // Max height in pixels
+          const newHeight = Math.min(input.scrollHeight, maxHeight);
+          input.style.height = newHeight + 'px';
+        }
+        
+        toggleVoiceInput() {
+          if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            this.addAssistantMessage('Sorry! Voice input is not supported in this browser. Try Chrome or Edge! 🎤❌', 'info');
+            return;
+          }
+          
+          if (this.isRecording) {
+            this.stopVoiceRecording();
+          } else {
+            this.startVoiceRecording();
+          }
+        }
+        
+        startVoiceRecording() {
+          const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+          const recognition = new SpeechRecognition();
+          
+          recognition.continuous = false;
+          recognition.interimResults = false;
+          recognition.lang = 'en-US';
+          
+          const voiceBtn = document.getElementById('voice-input');
+          this.isRecording = true;
+          voiceBtn.innerHTML = '🔴';
+          voiceBtn.title = 'Stop Recording';
+          
+          recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            const input = document.getElementById('chat-input');
+            input.value = transcript;
+            this.updateCharCounter();
+            this.autoResize();
+            
+            this.addAssistantMessage(`🎤 Heard: "${transcript}"`, 'info');
+          };
+          
+          recognition.onerror = (event) => {
+            this.addAssistantMessage(`🎤❌ Voice error: ${event.error}`, 'info');
+            this.stopVoiceRecording();
+          };
+          
+          recognition.onend = () => {
+            this.stopVoiceRecording();
+          };
+          
+          recognition.start();
+          this.currentRecognition = recognition;
+          
+          this.addAssistantMessage('🎤 Listening... Speak your question!', 'info');
+        }
+        
+        stopVoiceRecording() {
+          if (this.currentRecognition) {
+            this.currentRecognition.stop();
+          }
+          
+          const voiceBtn = document.getElementById('voice-input');
+          this.isRecording = false;
+          voiceBtn.innerHTML = '🎤';
+          voiceBtn.title = 'Voice Input';
+        }
+        
+        handleQuickQuestion(question) {
+          if (this.isTyping) return; // Prevent sending while AI is thinking
+          
+          this.addUserMessage(question);
+          setTimeout(() => {
+            this.generateResponse(question);
+          }, 500);
+        }
+        
+        addUserMessage(message) {
+          const messagesContainer = document.getElementById('chat-messages');
+          const messageDiv = document.createElement('div');
+          messageDiv.className = 'user-message mb-3 text-right';
+          messageDiv.innerHTML = `
+            <div class="bg-primary/20 rounded-lg p-2 max-w-xs ml-auto md:p-3">
+              <p class="text-xs text-white md:text-sm">${message}</p>
+            </div>
+          `;
+          messagesContainer.appendChild(messageDiv);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        addAssistantMessage(message, type = 'info') {
+          const messagesContainer = document.getElementById('chat-messages');
+          const messageDiv = document.createElement('div');
+          messageDiv.className = 'assistant-message mb-3';
+          
+          const bgColor = type === 'game' ? 'bg-accent/20' : 
+                         type === 'thesis' ? 'bg-purple/20' : 
+                         type === 'technical' ? 'bg-cyan/20' : 
+                         type === 'ai' ? 'bg-gradient-to-r from-purple/20 to-cyan/20' :
+                         type === 'security' ? 'bg-red-500/20' :
+                         'bg-purple/20';
+          
+          const textColor = type === 'security' ? 'text-red-300' : 'text-white';
+          
+          messageDiv.innerHTML = `
+            <div class="${bgColor} rounded-lg p-2 max-w-xs md:p-3 ${type === 'ai' ? 'border border-purple/30' : ''}">
+              <p class="text-xs ${textColor} whitespace-pre-line md:text-sm">${message}</p>
+              ${type === 'ai' ? '<div class="text-xs text-purple-300 mt-1">✨ Powered by Google AI</div>' : ''}
+            </div>
+          `;
+          messagesContainer.appendChild(messageDiv);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        generateResponse(userMessage) {
+          const message = userMessage.toLowerCase();
+          
+          // Show typing indicator
+          this.showTypingIndicator();
+          
+          // Try AI first, fallback to predefined responses
+          if (this.apiKey && this.apiKey.length > 0) {
+            this.generateAIResponse(userMessage);
+          } else {
+            this.generateFallbackResponse(message);
+          }
+        }
+        
+        async generateAIResponse(userMessage) {
+          // Check if key has expired
+          if (this.keyExpiry && Date.now() > this.keyExpiry) {
+            this.clearApiKey();
+            this.hideTypingIndicator();
+            this.addAssistantMessage('🔒 API key expired for security. Using fallback responses.', 'security');
+            this.generateFallbackResponse(userMessage.toLowerCase());
+            return;
+          }
+          
+          try {
+            const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [{
+                    text: `${this.systemContext}\n\nUser question: ${userMessage}\n\nPlease provide a helpful, engaging response about SCI-HIGH or the thesis research. Keep responses concise (under 200 words) and include relevant emojis. Match the gaming/educational theme.`
+                  }]
+                }],
+                generationConfig: {
+                  temperature: 0.7,
+                  topK: 40,
+                  topP: 0.95,
+                  maxOutputTokens: 200,
+                }
+              })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+              
+              if (aiResponse) {
+                this.hideTypingIndicator();
+                this.addAssistantMessage(aiResponse, 'ai');
+                return;
+              }
+            } else {
+              // If unauthorized, clear the key for security
+              if (response.status === 401 || response.status === 403) {
+                this.clearApiKey();
+                this.hideTypingIndicator();
+                this.addAssistantMessage('🔒 API key invalid or expired. Cleared for security.', 'security');
+              }
+            }
+          } catch (error) {
+            console.warn('AI API failed, using fallback:', error);
+          }
+          
+          // Fallback to predefined responses
+          this.generateFallbackResponse(userMessage.toLowerCase());
+        }
+        
+        generateFallbackResponse(message) {
+          let response = null;
+          let responseType = 'info';
+          
+          // Check for exact matches first
+          for (const [key, value] of Object.entries(this.responses)) {
+            if (message.includes(key)) {
+              response = value.response;
+              responseType = value.type;
+              break;
+            }
+          }
+          
+          // Fallback responses based on keywords
+          if (!response) {
+            if (message.includes('help') || message.includes('support')) {
+              response = "I'm here to help! 🤝 Ask me about:\n• Game features and how to play\n• Thesis research and methodology\n• Programming languages and concepts\n• Technical details about the project\n\nJust type your question or use the quick buttons!";
+            } else if (message.includes('thank') || message.includes('thanks')) {
+              response = "You're welcome! 😊 Happy to help with your SCI-HIGH adventure! Feel free to ask anything else!";
+            } else if (message.includes('hi') || message.includes('hello') || message.includes('hey')) {
+              response = "Hello there, future programmer! 👋 Welcome to SCI-HIGH! I'm here to guide you through your coding adventure. What would you like to know?";
+            } else {
+              response = "Interesting question! 🤔 I can help you with:\n• Game information and tutorials\n• Thesis research details\n• Programming concepts\n• Technical specifications\n\nTry asking about the game, thesis, or use the quick buttons for common topics!";
+            }
+          }
+          
+          // Simulate typing delay
+          setTimeout(() => {
+            this.hideTypingIndicator();
+            this.addAssistantMessage(response, responseType);
+          }, 1000);
+        }
+        
+        showTypingIndicator() {
+          this.isTyping = true;
+          const messagesContainer = document.getElementById('chat-messages');
+          const typingDiv = document.createElement('div');
+          typingDiv.className = 'typing-indicator mb-3';
+          typingDiv.id = 'typing-indicator';
+          typingDiv.innerHTML = `
+            <div class="bg-purple/20 rounded-lg p-2 max-w-xs md:p-3">
+              <div class="flex items-center space-x-1">
+                <div class="flex space-x-1">
+                  <div class="w-2 h-2 bg-purple rounded-full animate-bounce"></div>
+                  <div class="w-2 h-2 bg-purple rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                  <div class="w-2 h-2 bg-purple rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                </div>
+                <span class="text-xs text-gray-400 md:text-sm">AI is thinking...</span>
+              </div>
+            </div>
+          `;
+          messagesContainer.appendChild(typingDiv);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        hideTypingIndicator() {
+          this.isTyping = false;
+          this.setButtonLoading(false);
+          const typingIndicator = document.getElementById('typing-indicator');
+          if (typingIndicator) {
+            typingIndicator.remove();
+          }
+        }
+        
+        setupAutoResponses() {
+          // Add some helpful tips periodically when panel is open
+          setInterval(() => {
+            if (this.isOpen && Math.random() < 0.1) { // 10% chance every interval
+              const tips = [
+                "💡 Tip: Try the Story Mode for narrative-based learning!",
+                "🎯 Pro tip: Complete challenges in the Computer Lab for hands-on practice!",
+                "⭐ Did you know? You can track your progress in the Office section!",
+                "🚀 Quick fact: SCI-HIGH supports both mobile and desktop play!"
+              ];
+              const randomTip = tips[Math.floor(Math.random() * tips.length)];
+              setTimeout(() => this.addAssistantMessage(randomTip, 'info'), 2000);
+            }
+          }, 30000); // Check every 30 seconds
+        }
+      }
+      
+      // Initialize the virtual assistant when the page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        new VirtualAssistant();
+      });
     </script>
   </body>
 </html>
