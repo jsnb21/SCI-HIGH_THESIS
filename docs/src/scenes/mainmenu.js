@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { DEFAULT_TEXT_STYLE } from '../game';
 import { updateSoundVolumes, playExclusiveBGM } from '../audioUtils';
-import { getAllSaveKeys, loadGame } from '../save';
+import { getAllSaveKeys, loadGame, hasExistingSave, clearCurrentUserSave, syncSaveDataOnLogin } from '../save';
 import gameManager, { onceOnlyFlags } from '../gameManager.js';
 import LoadingScreen from '../ui/LoadingScreen';
 import { 
@@ -33,8 +33,16 @@ export default class MainMenu extends Phaser.Scene {
         this.load.image('clouds', 'assets/img/mainmenu/clouds.png');
     }
 
-    create() {
+    async create() {
         console.log('MainMenu create() called');
+        
+        // Sync save data with Firebase on scene load
+        try {
+            await syncSaveDataOnLogin();
+            console.log('MainMenu: Save data synced successfully');
+        } catch (error) {
+            console.warn('MainMenu: Failed to sync save data:', error);
+        }
         
         let scaleInfo;
         try {
@@ -154,13 +162,11 @@ export default class MainMenu extends Phaser.Scene {
                 // Top row
                 { label: 'New Game', x: leftX, y: topY, onClick: () => {
                     se_confirmSound.play();
-                    gameManager.reset();
-                    onceOnlyFlags.reset();
-                    LoadingScreen.transitionToSceneWithProgress(this, 'VNScene', 'Loading...', 1500);
+                    handleNewGameClick(this, se_hoverSound, se_confirmSound);
                 }},
                 { label: 'Continue', x: rightX, y: topY, onClick: () => {
                     se_confirmSound.play();
-                    showSaveSelectAndContinue(this, se_hoverSound, se_confirmSound);
+                    handleContinueClick(this);
                 }},
                 // Bottom row
                 { label: 'Options', x: leftX, y: bottomY, onClick: () => {
@@ -186,13 +192,11 @@ export default class MainMenu extends Phaser.Scene {
             const menuButtons = [
                 { label: 'New Game', y: startY, onClick: () => {
                     se_confirmSound.play();
-                    gameManager.reset();
-                    onceOnlyFlags.reset();
-                    LoadingScreen.transitionToSceneWithProgress(this, 'VNScene', 'Loading...', 1500);
+                    handleNewGameClick(this, se_hoverSound, se_confirmSound);
                 }},
                 { label: 'Continue', y: startY + buttonSpacing, onClick: () => {
                     se_confirmSound.play();
-                    showSaveSelectAndContinue(this, se_hoverSound, se_confirmSound);
+                    handleContinueClick(this);
                 }},
                 { label: 'Options', y: startY + (buttonSpacing * 2), onClick: () => {
                     se_confirmSound.play();
@@ -357,7 +361,7 @@ export default class MainMenu extends Phaser.Scene {
         
         // Confirmation dialog dimensions
         const dialogWidth = 480;
-        const dialogHeight = 200;
+        const dialogHeight = 220;
         const baseX = width / 2;
         const baseY = height / 2;
         
@@ -368,16 +372,28 @@ export default class MainMenu extends Phaser.Scene {
         dialogBg.strokeRoundedRect(baseX - dialogWidth / 2, baseY - dialogHeight / 2, dialogWidth, dialogHeight, 24);
         dialogBg.fillRoundedRect(baseX - dialogWidth / 2, baseY - dialogHeight / 2, dialogWidth, dialogHeight, 24);
         this.quitConfirmGroup.add(dialogBg);
-          // Confirmation text
-        const confirmText = this.add.text(baseX, baseY - 40, 'Are you sure you want to quit?', {
+        
+        // Confirmation text
+        const confirmText = this.add.text(baseX, baseY - 50, 'Logout Confirmation', {
             ...DEFAULT_TEXT_STYLE,
-            fontSize: '24px',
-            color: '#ffffff',
+            fontSize: '28px',
+            color: '#F4CE14',
             stroke: '#000',
             strokeThickness: 3,
             align: 'center'
         }).setOrigin(0.5);
         this.quitConfirmGroup.add(confirmText);
+        
+        // Message text
+        const messageText = this.add.text(baseX, baseY - 10, 'Are you sure you want to logout?\nYour progress has been saved automatically.', {
+            ...DEFAULT_TEXT_STYLE,
+            fontSize: '18px',
+            color: '#ffffff',
+            stroke: '#000',
+            strokeThickness: 2,
+            align: 'center'
+        }).setOrigin(0.5);
+        this.quitConfirmGroup.add(messageText);
         
         // Button dimensions
         const btnWidth = 140;
@@ -387,14 +403,14 @@ export default class MainMenu extends Phaser.Scene {
         // Yes button
         const yesBg = this.add.graphics();
         yesBg.fillStyle(0x662222, 0.9);
-        yesBg.fillRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+        yesBg.fillRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 50 - btnHeight / 2, btnWidth, btnHeight, 16);
         yesBg.lineStyle(2, 0xff4444, 1);
-        yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+        yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 50 - btnHeight / 2, btnWidth, btnHeight, 16);
         this.quitConfirmGroup.add(yesBg);
         
-        const yesBtn = this.add.text(baseX - btnSpacing, baseY + 30, 'Yes', {
+        const yesBtn = this.add.text(baseX - btnSpacing, baseY + 50, 'Yes, Logout', {
             ...DEFAULT_TEXT_STYLE,
-            fontSize: '28px',
+            fontSize: '24px',
             color: '#ff4444',
             stroke: '#000',
             strokeThickness: 2
@@ -404,14 +420,14 @@ export default class MainMenu extends Phaser.Scene {
         // No button
         const noBg = this.add.graphics();
         noBg.fillStyle(0x224422, 0.9);
-        noBg.fillRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+        noBg.fillRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 50 - btnHeight / 2, btnWidth, btnHeight, 16);
         noBg.lineStyle(2, 0x44ff44, 1);
-        noBg.strokeRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+        noBg.strokeRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 50 - btnHeight / 2, btnWidth, btnHeight, 16);
         this.quitConfirmGroup.add(noBg);
         
-        const noBtn = this.add.text(baseX + btnSpacing, baseY + 30, 'No', {
+        const noBtn = this.add.text(baseX + btnSpacing, baseY + 50, 'Cancel', {
             ...DEFAULT_TEXT_STYLE,
-            fontSize: '28px',
+            fontSize: '24px',
             color: '#44ff44',
             stroke: '#000',
             strokeThickness: 2
@@ -423,9 +439,9 @@ export default class MainMenu extends Phaser.Scene {
             yesBtn.setStyle({ color: '#ffffff' });
             yesBg.clear();
             yesBg.fillStyle(0x883333, 1);
-            yesBg.fillRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            yesBg.fillRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 50 - btnHeight / 2, btnWidth, btnHeight, 16);
             yesBg.lineStyle(2, 0xff4444, 1);
-            yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 50 - btnHeight / 2, btnWidth, btnHeight, 16);
             if (!hoverSound.isPlaying) hoverSound.play();
         });
         
@@ -433,14 +449,32 @@ export default class MainMenu extends Phaser.Scene {
             yesBtn.setStyle({ color: '#ff4444' });
             yesBg.clear();
             yesBg.fillStyle(0x662222, 0.9);
-            yesBg.fillRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            yesBg.fillRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 50 - btnHeight / 2, btnWidth, btnHeight, 16);
             yesBg.lineStyle(2, 0xff4444, 1);
-            yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 50 - btnHeight / 2, btnWidth, btnHeight, 16);
         });
         
         // Use debounced click handler for Yes button
         const debouncedYesClick = createDebouncedClickHandler(() => {
             confirmSound.play();
+            
+            // Clear all user data and logout
+            localStorage.removeItem('sci_high_user');
+            localStorage.removeItem('sci_high_user_type');
+            sessionStorage.removeItem('sci_high_authenticated');
+            sessionStorage.removeItem('sci_high_user_type');
+            
+            // Clear any other game-specific storage
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith('sci_high_') || key.startsWith('sciHigh'))) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+            
+            // Redirect to login page
             window.location.href = 'index.html';
         }, 300);
         
@@ -458,9 +492,9 @@ export default class MainMenu extends Phaser.Scene {
             noBtn.setStyle({ color: '#ffffff' });
             noBg.clear();
             noBg.fillStyle(0x338833, 1);
-            noBg.fillRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            noBg.fillRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 50 - btnHeight / 2, btnWidth, btnHeight, 16);
             noBg.lineStyle(2, 0x44ff44, 1);
-            noBg.strokeRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            noBg.strokeRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 50 - btnHeight / 2, btnWidth, btnHeight, 16);
             if (!hoverSound.isPlaying) hoverSound.play();
         });
         
@@ -468,9 +502,9 @@ export default class MainMenu extends Phaser.Scene {
             noBtn.setStyle({ color: '#44ff44' });
             noBg.clear();
             noBg.fillStyle(0x224422, 0.9);
-            noBg.fillRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            noBg.fillRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 50 - btnHeight / 2, btnWidth, btnHeight, 16);
             noBg.lineStyle(2, 0x44ff44, 1);
-            noBg.strokeRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 30 - btnHeight / 2, btnWidth, btnHeight, 16);
+            noBg.strokeRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 50 - btnHeight / 2, btnWidth, btnHeight, 16);
         });
         
         // Use debounced click handler for No button
@@ -648,153 +682,6 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     });
 }
 
-function showSaveSelectAndContinue(scene, hoverSound, confirmSound) {
-    const saveKeys = getAllSaveKeys();
-    if (saveKeys.length === 0) {
-        // Show modal-style "No save files found" message
-        showNoSaveFilesModal(scene);
-        return;
-    }
-
-    if (scene.saveMenuGroup) scene.saveMenuGroup.clear(true, true);
-    scene.saveMenuGroup = scene.add.group();
-
-    const slotNames = saveKeys.map(k => k.replace('sciHighSave_', ''));
-    const spacing = 56;
-    const boxWidth = 480;
-    const boxHeight = Math.max(120, 80 + spacing * (slotNames.length + 2));
-    const baseX = scene.scale.width / 2;
-    const baseY = scene.scale.height / 2 - boxHeight / 2 + 40;
-
-    // Background box
-    const graphics = scene.add.graphics();
-    graphics.fillStyle(0x222244, 0.96);
-    graphics.lineStyle(4, 0xffffcc, 1);
-    graphics.strokeRoundedRect(baseX - boxWidth / 2, baseY - 40, boxWidth, boxHeight, 24);
-    graphics.fillRoundedRect(baseX - boxWidth / 2, baseY - 40, boxWidth, boxHeight, 24);
-    scene.saveMenuGroup.add(graphics);
-
-    // Title
-    const title = scene.add.text(baseX, baseY - 20, 'Select Save Slot:', {
-        ...DEFAULT_TEXT_STYLE,
-        fontSize: '36px',
-        color: '#ffff00',
-        stroke: '#000',
-        strokeThickness: 4
-    }).setOrigin(0.5);
-    scene.saveMenuGroup.add(title);
-
-    // Save slot buttons
-    slotNames.forEach((slot, i) => {
-        const slotY = baseY + spacing * i + 20;
-        const btnWidth = 320;
-        const btnHeight = 44;
-        const corner = 14;
-
-        // Slot background
-        const slotBg = scene.add.graphics();
-        slotBg.fillStyle(0x333366, 0.85);
-        slotBg.fillRoundedRect(baseX - btnWidth / 2, slotY - btnHeight / 2, btnWidth, btnHeight, corner);
-        slotBg.setAlpha(0.95);
-
-        // Slot text
-        const btn = scene.add.text(baseX, slotY, slot, {
-            ...DEFAULT_TEXT_STYLE,
-            fontSize: '28px',
-            color: '#ffffff',
-            stroke: '#000',
-            strokeThickness: 3
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-        btn.on('pointerover', () => {
-            btn.setStyle({ color: '#ffff00' });
-            slotBg.clear();
-            slotBg.fillStyle(0x444488, 1);
-            slotBg.fillRoundedRect(baseX - btnWidth / 2, slotY - btnHeight / 2, btnWidth, btnHeight, corner);
-            if (!hoverSound.isPlaying) hoverSound.play();
-        });
-        btn.on('pointerout', () => {
-            btn.setStyle({ color: '#ffffff' });
-            slotBg.clear();
-            slotBg.fillStyle(0x333366, 0.85);
-            slotBg.fillRoundedRect(baseX - btnWidth / 2, slotY - btnHeight / 2, btnWidth, btnHeight, corner);
-        });
-        
-        // Use debounced click handler for save slot selection
-        const debouncedSaveClick = createDebouncedClickHandler(() => {
-            const saveData = loadGame(slot);
-            if (!saveData) {
-                btn.setStyle({ color: '#ff4444' });
-                return;
-            }
-            window.__SCI_HIGH_SAVE_DATA__ = saveData;
-            scene.saveMenuGroup.clear(true, true);
-            scene.scene.start('MainHub');
-        }, 300);
-        
-        btn.on('pointerdown', (pointer) => {
-            btn.setScale(0.97);
-            debouncedSaveClick(pointer);
-            
-            scene.time.delayedCall(100, () => {
-                btn.setScale(1);
-            });
-        });
-
-        scene.saveMenuGroup.add(slotBg);
-        scene.saveMenuGroup.add(btn);
-    });
-
-    // Cancel button
-    const cancelY = baseY + spacing * (slotNames.length) + 40;
-    const cancelBtnWidth = 220;
-    const cancelBtnHeight = 44;
-    const cancelCorner = 14;
-
-    const cancelBg = scene.add.graphics();
-    cancelBg.fillStyle(0x442222, 0.85);
-    cancelBg.fillRoundedRect(baseX - cancelBtnWidth / 2, cancelY - cancelBtnHeight / 2, cancelBtnWidth, cancelBtnHeight, cancelCorner);
-
-    const cancelBtn = scene.add.text(baseX, cancelY, 'Cancel', {
-        ...DEFAULT_TEXT_STYLE,
-        fontSize: '28px',
-        color: '#ff4444',
-        stroke: '#000',
-        strokeThickness: 3
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-    cancelBtn.on('pointerover', () => {
-        cancelBtn.setStyle({ color: '#ffffff' });
-        cancelBg.clear();
-        cancelBg.fillStyle(0x883333, 1);
-        cancelBg.fillRoundedRect(baseX - cancelBtnWidth / 2, cancelY - cancelBtnHeight / 2, cancelBtnWidth, cancelBtnHeight, cancelCorner);
-        if (!hoverSound.isPlaying) hoverSound.play();
-    });
-    cancelBtn.on('pointerout', () => {
-        cancelBtn.setStyle({ color: '#ff4444' });
-        cancelBg.clear();
-        cancelBg.fillStyle(0x442222, 0.85);
-        cancelBg.fillRoundedRect(baseX - cancelBtnWidth / 2, cancelY - cancelBtnHeight / 2, cancelBtnWidth, cancelBtnHeight, cancelCorner);
-    });
-    
-    // Use debounced click handler for cancel button
-    const debouncedCancelClick = createDebouncedClickHandler(() => {
-        scene.saveMenuGroup.clear(true, true);
-    }, 300);
-    
-    cancelBtn.on('pointerdown', (pointer) => {
-        cancelBtn.setScale(0.97);
-        debouncedCancelClick(pointer);
-        
-        scene.time.delayedCall(100, () => {
-            cancelBtn.setScale(1);
-        });
-    });
-
-    scene.saveMenuGroup.add(cancelBg);
-    scene.saveMenuGroup.add(cancelBtn);
-}
-
 function showNoSaveFilesModal(scene) {
     const { width, height } = scene.scale;
     
@@ -863,6 +750,297 @@ function showNoSaveFilesModal(scene) {
             ease: 'Quad.easeIn',
             onComplete: () => {
                 scene.noSaveModal.clear(true, true);
+            }
+        });
+    });
+}
+
+// Start a new game (clear existing save and start fresh)
+async function startNewGame(scene) {
+    try {
+        await clearCurrentUserSave(); // Clear any existing save for this user (async)
+    } catch (error) {
+        console.error('Error clearing save data:', error);
+    }
+    
+    gameManager.reset();
+    onceOnlyFlags.reset();
+    window.__SCI_HIGH_SAVE_DATA__ = null;
+    LoadingScreen.transitionToSceneWithProgress(scene, 'VNScene', 'Loading...', 1500);
+}
+
+// Continue existing game
+async function continueGame(scene) {
+    try {
+        const saveData = await loadGame(); // Load is now async
+        if (saveData) {
+            window.__SCI_HIGH_SAVE_DATA__ = saveData;
+            scene.scene.start('MainHub');
+        } else {
+            showNoSaveDataModal(scene);
+        }
+    } catch (error) {
+        console.error('Error loading save data:', error);
+        showNoSaveDataModal(scene);
+    }
+}
+
+// Handle New Game button click (async wrapper)
+async function handleNewGameClick(scene, hoverSound, confirmSound) {
+    try {
+        const hasExisting = await hasExistingSave(); // Now async
+        if (hasExisting) {
+            showNewGameConfirmation(scene, hoverSound, confirmSound);
+        } else {
+            await startNewGame(scene);
+        }
+    } catch (error) {
+        console.error('Error handling new game click:', error);
+        // Fallback to starting new game
+        await startNewGame(scene);
+    }
+}
+
+// Handle Continue button click (async wrapper)  
+async function handleContinueClick(scene) {
+    try {
+        const hasExisting = await hasExistingSave(); // Now async
+        if (hasExisting) {
+            await continueGame(scene);
+        } else {
+            showNoSaveDataModal(scene);
+        }
+    } catch (error) {
+        console.error('Error handling continue click:', error);
+        showNoSaveDataModal(scene);
+    }
+}
+
+// Show confirmation when starting new game with existing save data
+function showNewGameConfirmation(scene, hoverSound, confirmSound) {
+    const { width, height } = scene.scale;
+    
+    // Clear any existing confirmation
+    if (scene.newGameConfirmGroup) {
+        scene.newGameConfirmGroup.clear(true, true);
+    }
+    
+    scene.newGameConfirmGroup = scene.add.group();
+    
+    // Semi-transparent overlay
+    const overlay = scene.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7);
+    scene.newGameConfirmGroup.add(overlay);
+    
+    // Confirmation dialog dimensions
+    const dialogWidth = 520;
+    const dialogHeight = 240;
+    const baseX = width / 2;
+    const baseY = height / 2;
+    
+    // Dialog background
+    const dialogBg = scene.add.graphics();
+    dialogBg.fillStyle(0x222244, 0.96);
+    dialogBg.lineStyle(4, 0xffffcc, 1);
+    dialogBg.strokeRoundedRect(baseX - dialogWidth / 2, baseY - dialogHeight / 2, dialogWidth, dialogHeight, 24);
+    dialogBg.fillRoundedRect(baseX - dialogWidth / 2, baseY - dialogHeight / 2, dialogWidth, dialogHeight, 24);
+    scene.newGameConfirmGroup.add(dialogBg);
+    
+    // Title text
+    const titleText = scene.add.text(baseX, baseY - 60, 'New Game Confirmation', {
+        ...DEFAULT_TEXT_STYLE,
+        fontSize: '28px',
+        color: '#F4CE14',
+        stroke: '#000',
+        strokeThickness: 3,
+        align: 'center'
+    }).setOrigin(0.5);
+    scene.newGameConfirmGroup.add(titleText);
+    
+    // Warning text
+    const warningText = scene.add.text(baseX, baseY - 20, 'You already have saved progress.\nStarting a new game will delete your current save.\nAre you sure you want to continue?', {
+        ...DEFAULT_TEXT_STYLE,
+        fontSize: '18px',
+        color: '#ffffff',
+        stroke: '#000',
+        strokeThickness: 2,
+        align: 'center'
+    }).setOrigin(0.5);
+    scene.newGameConfirmGroup.add(warningText);
+    
+    // Button dimensions
+    const btnWidth = 160;
+    const btnHeight = 50;
+    const btnSpacing = 100;
+    
+    // Yes button
+    const yesBg = scene.add.graphics();
+    yesBg.fillStyle(0x662222, 0.9);
+    yesBg.fillRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 60 - btnHeight / 2, btnWidth, btnHeight, 16);
+    yesBg.lineStyle(2, 0xff4444, 1);
+    yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 60 - btnHeight / 2, btnWidth, btnHeight, 16);
+    scene.newGameConfirmGroup.add(yesBg);
+    
+    const yesBtn = scene.add.text(baseX - btnSpacing, baseY + 60, 'Yes, Delete Save', {
+        ...DEFAULT_TEXT_STYLE,
+        fontSize: '20px',
+        color: '#ff4444',
+        stroke: '#000',
+        strokeThickness: 2
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    scene.newGameConfirmGroup.add(yesBtn);
+    
+    // No button
+    const noBg = scene.add.graphics();
+    noBg.fillStyle(0x224422, 0.9);
+    noBg.fillRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 60 - btnHeight / 2, btnWidth, btnHeight, 16);
+    noBg.lineStyle(2, 0x44ff44, 1);
+    noBg.strokeRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 60 - btnHeight / 2, btnWidth, btnHeight, 16);
+    scene.newGameConfirmGroup.add(noBg);
+    
+    const noBtn = scene.add.text(baseX + btnSpacing, baseY + 60, 'Cancel', {
+        ...DEFAULT_TEXT_STYLE,
+        fontSize: '24px',
+        color: '#44ff44',
+        stroke: '#000',
+        strokeThickness: 2
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    scene.newGameConfirmGroup.add(noBtn);
+    
+    // Button interactions
+    yesBtn.on('pointerover', () => {
+        yesBtn.setStyle({ color: '#ffffff' });
+        yesBg.clear();
+        yesBg.fillStyle(0x883333, 1);
+        yesBg.fillRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 60 - btnHeight / 2, btnWidth, btnHeight, 16);
+        yesBg.lineStyle(2, 0xff4444, 1);
+        yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 60 - btnHeight / 2, btnWidth, btnHeight, 16);
+        if (!hoverSound.isPlaying) hoverSound.play();
+    });
+    
+    yesBtn.on('pointerout', () => {
+        yesBtn.setStyle({ color: '#ff4444' });
+        yesBg.clear();
+        yesBg.fillStyle(0x662222, 0.9);
+        yesBg.fillRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 60 - btnHeight / 2, btnWidth, btnHeight, 16);
+        yesBg.lineStyle(2, 0xff4444, 1);
+        yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 60 - btnHeight / 2, btnWidth, btnHeight, 16);
+    });
+    
+    yesBtn.on('pointerdown', async () => {
+        yesBtn.setScale(0.95);
+        confirmSound.play();
+        scene.newGameConfirmGroup.clear(true, true);
+        await startNewGame(scene); // Make it async
+        
+        scene.time.delayedCall(100, () => {
+            yesBtn.setScale(1);
+        });
+    });
+    
+    noBtn.on('pointerover', () => {
+        noBtn.setStyle({ color: '#ffffff' });
+        noBg.clear();
+        noBg.fillStyle(0x338833, 1);
+        noBg.fillRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 60 - btnHeight / 2, btnWidth, btnHeight, 16);
+        noBg.lineStyle(2, 0x44ff44, 1);
+        noBg.strokeRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 60 - btnHeight / 2, btnWidth, btnHeight, 16);
+        if (!hoverSound.isPlaying) hoverSound.play();
+    });
+    
+    noBtn.on('pointerout', () => {
+        noBtn.setStyle({ color: '#44ff44' });
+        noBg.clear();
+        noBg.fillStyle(0x224422, 0.9);
+        noBg.fillRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 60 - btnHeight / 2, btnWidth, btnHeight, 16);
+        noBg.lineStyle(2, 0x44ff44, 1);
+        noBg.strokeRoundedRect(baseX + btnSpacing - btnWidth / 2, baseY + 60 - btnHeight / 2, btnWidth, btnHeight, 16);
+    });
+    
+    noBtn.on('pointerdown', () => {
+        noBtn.setScale(0.95);
+        confirmSound.play();
+        scene.newGameConfirmGroup.clear(true, true);
+        
+        scene.time.delayedCall(100, () => {
+            noBtn.setScale(1);
+        });
+    });
+    
+    // Add fade-in animation
+    scene.newGameConfirmGroup.children.entries.forEach((element, index) => {
+        element.setAlpha(0);
+        scene.tweens.add({
+            targets: element,
+            alpha: element === overlay ? 0.7 : 1,
+            duration: 300,
+            delay: index * 50,
+            ease: 'Quad.easeOut'
+        });
+    });
+}
+
+// Show modal when no save data exists for continue
+function showNoSaveDataModal(scene) {
+    const { width, height } = scene.scale;
+    
+    if (scene.noSaveDataModal) scene.noSaveDataModal.clear(true, true);
+    scene.noSaveDataModal = scene.add.group();
+    
+    // Background overlay
+    const overlay = scene.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6);
+    scene.noSaveDataModal.add(overlay);
+    
+    // Modal background
+    const modalWidth = 400;
+    const modalHeight = 160;
+    const modalBg = scene.add.graphics();
+    modalBg.fillStyle(0x222244, 0.95);
+    modalBg.lineStyle(3, 0xffffcc, 1);
+    modalBg.strokeRoundedRect(width / 2 - modalWidth / 2, height / 2 - modalHeight / 2, modalWidth, modalHeight, 20);
+    modalBg.fillRoundedRect(width / 2 - modalWidth / 2, height / 2 - modalHeight / 2, modalWidth, modalHeight, 20);
+    scene.noSaveDataModal.add(modalBg);
+    
+    // Title text
+    const titleText = scene.add.text(width / 2, height / 2 - 30, 'No Save Data Found', {
+        ...DEFAULT_TEXT_STYLE,
+        fontSize: '24px',
+        color: '#ff6666',
+        stroke: '#000',
+        strokeThickness: 3
+    }).setOrigin(0.5);
+    scene.noSaveDataModal.add(titleText);
+    
+    // Message text
+    const messageText = scene.add.text(width / 2, height / 2 + 10, 'Please start a new game first.', {
+        ...DEFAULT_TEXT_STYLE,
+        fontSize: '18px',
+        color: '#ffffff',
+        stroke: '#000',
+        strokeThickness: 2
+    }).setOrigin(0.5);
+    scene.noSaveDataModal.add(messageText);
+    
+    // Fade in animation
+    scene.noSaveDataModal.children.entries.forEach((element, index) => {
+        element.setAlpha(0);
+        scene.tweens.add({
+            targets: element,
+            alpha: element === overlay ? 0.6 : 1,
+            duration: 400,
+            delay: index * 100,
+            ease: 'Quad.easeOut'
+        });
+    });
+    
+    // Auto fade out after 2 seconds
+    scene.time.delayedCall(2000, () => {
+        scene.tweens.add({
+            targets: scene.noSaveDataModal.children.entries,
+            alpha: 0,
+            duration: 500,
+            ease: 'Quad.easeIn',
+            onComplete: () => {
+                scene.noSaveDataModal.clear(true, true);
             }
         });
     });

@@ -228,11 +228,11 @@ class AuthService {
     }
 
     // Student Authentication Methods
-    async loginStudent(studentId, password) {
+    async loginStudent(studentId, password = null) {
         const isInitialized = await this.ensureFirebaseInitialized();
         if (!isInitialized) {
             // Fallback to local storage for offline mode
-            return this.loginStudentOffline(studentId, password);
+            return this.loginStudentOffline(studentId);
         }
 
         try {
@@ -243,17 +243,28 @@ class AuthService {
                 .get();
 
             if (studentQuery.empty) {
-                throw new Error('Student ID not found. Please contact your professor.');
+                // Student doesn't exist, create a new account
+                const newStudent = await this.createStudentAccount(studentId);
+                if (newStudent.success) {
+                    this.currentUser = {
+                        uid: newStudent.docId,
+                        studentId: studentId,
+                        type: 'student',
+                        profile: newStudent.studentData
+                    };
+                    this.userType = 'student';
+                    this.saveUserSession();
+                    return { success: true, user: this.currentUser, isNewAccount: true };
+                } else {
+                    throw new Error(newStudent.error);
+                }
             }
 
             const studentDoc = studentQuery.docs[0];
             const studentData = studentDoc.data();
 
-            // Verify password (in production, use proper password hashing)
-            if (studentData.password !== password) {
-                throw new Error('Invalid password');
-            }
-
+            // No password verification needed - just student ID
+            
             // Check if account is active
             if (!studentData.accountStatus || !studentData.accountStatus.isActive) {
                 throw new Error('Account is inactive. Please contact your professor.');
@@ -279,13 +290,27 @@ class AuthService {
         }
     }
 
-    loginStudentOffline(studentId, password) {
+    loginStudentOffline(studentId) {
         // Fallback for offline mode
         const offlineStudents = JSON.parse(localStorage.getItem('sci_high_offline_students') || '[]');
-        const student = offlineStudents.find(s => s.studentId === studentId && s.password === password);
+        const student = offlineStudents.find(s => s.studentId === studentId);
         
         if (!student) {
-            return { success: false, error: 'Student not found or invalid password' };
+            // Create new offline student if not found
+            const newOfflineStudent = this.createOfflineStudent(studentId);
+            const updatedStudents = [...offlineStudents, newOfflineStudent];
+            localStorage.setItem('sci_high_offline_students', JSON.stringify(updatedStudents));
+            
+            this.currentUser = {
+                uid: 'offline_' + studentId,
+                studentId: newOfflineStudent.studentId,
+                type: 'student',
+                profile: newOfflineStudent
+            };
+            this.userType = 'student';
+            this.saveUserSession();
+            
+            return { success: true, user: this.currentUser, isNewAccount: true };
         }
 
         this.currentUser = {
@@ -298,6 +323,86 @@ class AuthService {
         this.saveUserSession();
         
         return { success: true, user: this.currentUser };
+    }
+
+    // Create a new student account automatically
+    async createStudentAccount(studentId) {
+        try {
+            const studentData = {
+                studentId,
+                fullName: `Student ${studentId}`, // Default name, can be updated later
+                academicInfo: {
+                    level: 'unknown', // Can be updated by professor later
+                    course: null,
+                    yearLevel: null,
+                    strand: null
+                },
+                accountStatus: {
+                    isActive: true,
+                    isFirstLogin: true,
+                    createdBy: 'auto-created', // Mark as auto-created
+                    createdAt: new Date().toISOString(),
+                    lastLogin: new Date().toISOString()
+                },
+                gameData: {
+                    totalPoints: 0,
+                    achievements: [],
+                    courseProgress: {
+                        'Web_Design': { unlocked: true, completed: false, progress: 0 },
+                        'Python': { unlocked: true, completed: false, progress: 0 },
+                        'Java': { unlocked: false, completed: false, progress: 0 },
+                        'C': { unlocked: false, completed: false, progress: 0 },
+                        'C++': { unlocked: false, completed: false, progress: 0 },
+                        'C#': { unlocked: false, completed: false, progress: 0 }
+                    }
+                }
+            };
+
+            // Save to Firestore
+            const docRef = await this.firestore.collection('students').add(studentData);
+            
+            return { 
+                success: true, 
+                docId: docRef.id,
+                studentData: studentData
+            };
+        } catch (error) {
+            console.error('Error creating student account:', error);
+            return { success: false, error: 'Failed to create student account: ' + error.message };
+        }
+    }
+
+    // Create offline student for local storage
+    createOfflineStudent(studentId) {
+        return {
+            studentId,
+            fullName: `Student ${studentId}`,
+            academicInfo: {
+                level: 'unknown',
+                course: null,
+                yearLevel: null,
+                strand: null
+            },
+            accountStatus: {
+                isActive: true,
+                isFirstLogin: true,
+                createdBy: 'auto-created-offline',
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+            },
+            gameData: {
+                totalPoints: 0,
+                achievements: [],
+                courseProgress: {
+                    'Web_Design': { unlocked: true, completed: false, progress: 0 },
+                    'Python': { unlocked: true, completed: false, progress: 0 },
+                    'Java': { unlocked: false, completed: false, progress: 0 },
+                    'C': { unlocked: false, completed: false, progress: 0 },
+                    'C++': { unlocked: false, completed: false, progress: 0 },
+                    'C#': { unlocked: false, completed: false, progress: 0 }
+                }
+            }
+        };
     }
 
     // General User Authentication Methods
@@ -415,6 +520,20 @@ class AuthService {
     saveUserSession() {
         localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
         localStorage.setItem('sci_high_user_type', this.userType);
+        
+        // Trigger save data sync after successful login (async, don't block)
+        this.syncSaveDataAfterLogin();
+    }
+    
+    async syncSaveDataAfterLogin() {
+        try {
+            // Dynamic import to avoid circular dependencies
+            const { syncSaveDataOnLogin } = await import('../save.js');
+            await syncSaveDataOnLogin();
+            console.log('AuthService: Save data synced after login');
+        } catch (error) {
+            console.warn('AuthService: Failed to sync save data after login:', error);
+        }
     }
 
     loadUserSession() {

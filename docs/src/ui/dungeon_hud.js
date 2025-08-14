@@ -564,7 +564,8 @@ export class DungeonMenu {
 
         const options = [
             { label: 'Continue Adventure', action: () => this.closeMenuBox() },
-            { label: 'Game Options', action: () => { this.scene.scene.switch('OptionsScene', { prevScene: this.scene.key }); } },            { 
+            { label: 'Game Options', action: () => { this.scene.scene.switch('OptionsScene', { prevScene: this.scene.key }); } },
+            { 
                 label: 'Return to Hub', 
                 action: () => {
                     this.closeMenuBox();
@@ -690,7 +691,9 @@ export class DungeonMenu {
             this.menuBoxGroup = null;
         }
         this.scene.menuOpen = false;
-    }    shutdown() {
+    }
+    
+    shutdown() {
         if (this.menuBoxGroup && this.menuBoxGroup.children) {
             this.menuBoxGroup.clear(true, true);
             this.menuBoxGroup = null;

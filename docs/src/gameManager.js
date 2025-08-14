@@ -1,4 +1,5 @@
 // Global Game Manager Singleton
+import { saveGame } from './save.js';
 
 class GameManager {
     constructor() {
@@ -421,6 +422,12 @@ class GameManager {
     // Game Progress
     setGameProgress(progress) {
         this.gameProgress = progress;
+        // Auto-save when progress is updated
+        try {
+            saveGame();
+        } catch (error) {
+            console.warn('Failed to auto-save game progress:', error);
+        }
     }
     getGameProgress() {
         return this.gameProgress;
@@ -475,6 +482,13 @@ class GameManager {
                 this.courseProgress[courseKey].completed = true;
                 this.checkForUnlocks();
             }
+            
+            // Auto-save when course progress is updated
+            try {
+                saveGame();
+            } catch (error) {
+                console.warn('Failed to auto-save course progress:', error);
+            }
         }
     }
     
@@ -485,6 +499,13 @@ class GameManager {
                 this.courseProgress[courseKey].progress = 100;
                 this.checkForUnlocks();
             }
+            
+            // Auto-save when course completion is updated
+            try {
+                saveGame();
+            } catch (error) {
+                console.warn('Failed to auto-save course completion:', error);
+            }
         }
     }
     
@@ -492,24 +513,39 @@ class GameManager {
         const webDesignCompleted = this.courseProgress['Web_Design'].completed;
         const pythonCompleted = this.courseProgress['Python'].completed;
         
+        let unlocked = false;
+        
         // Unlock Java when Web Design is completed
         if (webDesignCompleted && !this.courseProgress['Java'].unlocked) {
             this.courseProgress['Java'].unlocked = true;
+            unlocked = true;
         }
         
         // Unlock C when Python is completed
         if (pythonCompleted && !this.courseProgress['C'].unlocked) {
             this.courseProgress['C'].unlocked = true;
+            unlocked = true;
         }
         
         // Unlock C++ when both Web Design and Python are completed
         if (webDesignCompleted && pythonCompleted && !this.courseProgress['C++'].unlocked) {
             this.courseProgress['C++'].unlocked = true;
+            unlocked = true;
         }
         
         // Unlock C# when Java and C are completed
         if (this.courseProgress['Java'].completed && this.courseProgress['C'].completed && !this.courseProgress['C#'].unlocked) {
             this.courseProgress['C#'].unlocked = true;
+            unlocked = true;
+        }
+        
+        // Auto-save when new courses are unlocked
+        if (unlocked) {
+            try {
+                saveGame();
+            } catch (error) {
+                console.warn('Failed to auto-save course unlocks:', error);
+            }
         }
     }
     

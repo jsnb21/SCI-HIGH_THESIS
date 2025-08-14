@@ -425,34 +425,32 @@
         <div id="student-form" class="hidden">
           <div class="text-center mb-8">
             <h2 class="font-gaming text-3xl font-bold mb-2 text-accent">🎓 Student Portal</h2>
-            <p class="text-gray-300">Login with your Student ID</p>
+            <p class="text-gray-300">Enter your Student ID to begin your adventure</p>
+            <p class="text-sm text-gray-400 mt-2">New student? An account will be created automatically for you!</p>
           </div>
           
           <div class="max-w-md mx-auto">
             <form id="student-login-form" class="space-y-6">
               <div>
                 <label class="block text-gray-300 text-sm mb-2">Student ID</label>
-                <input type="text" name="studentId" required placeholder="e.g., 2024-CS-001234" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
-              </div>
-              <div>
-                <label class="block text-gray-300 text-sm mb-2">Password</label>
-                <input type="password" name="password" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
+                <input type="text" name="studentId" required placeholder="e.g., 2024-CS-001234" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none text-center font-gaming">
               </div>
               <button type="submit" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105">
-                Login to Adventure
+                Enter Adventure
               </button>
             </form>
             
             <div class="text-center mt-6 pt-6 border-t border-gray-600">
-              <p class="text-gray-400 text-sm">Don't have an account? Contact your professor to get started.</p>
+              <p class="text-gray-400 text-sm">Just enter your Student ID - no password needed!</p>
               <div class="mt-4 p-3 bg-dark/30 rounded-lg">
                 <p class="text-xs text-gray-500 mb-2">🔧 Dev Mode Test Accounts:</p>
                 <div class="text-xs text-accent space-y-1">
                   <p>ID: 2024-CS-001 (Juan - BS CS)</p>
                   <p>ID: 2024-CS-002 (Maria - BS IT)</p>
                   <p>ID: 2024-STEM-001 (Pedro - SHS STEM)</p>
-                  <p>Password: Student123!</p>
                 </div>
+                <hr class="my-2 border-gray-600">
+                <p class="text-cyan text-xs">💡 Or try any Student ID to create a new account!</p>
               </div>
             </div>
           </div>
@@ -952,12 +950,11 @@
           }
         }
 
-        async loginStudent(studentId, password) {
+        async loginStudent(studentId, password = null) {
           try {
             // Sample student accounts for development
             const sampleStudents = {
               '2024-CS-001': {
-                password: 'Student123!',
                 profile: {
                   studentId: '2024-CS-001',
                   fullName: 'Juan Dela Cruz',
@@ -967,7 +964,6 @@
                 }
               },
               '2024-CS-002': {
-                password: 'Student123!',
                 profile: {
                   studentId: '2024-CS-002',
                   fullName: 'Maria Santos',
@@ -977,7 +973,6 @@
                 }
               },
               '2024-STEM-001': {
-                password: 'Student123!',
                 profile: {
                   studentId: '2024-STEM-001',
                   fullName: 'Pedro Garcia',
@@ -988,8 +983,8 @@
               }
             };
 
-            // Check sample accounts first
-            if (sampleStudents[studentId] && sampleStudents[studentId].password === password) {
+            // Check sample accounts first (no password needed)
+            if (sampleStudents[studentId]) {
               this.currentUser = {
                 uid: 'stud_' + studentId.replace(/-/g, '_'),
                 studentId: studentId,
@@ -1012,16 +1007,30 @@
                 .get();
 
               if (studentQuery.empty) {
-                throw new Error('Student ID not found. Contact your professor.');
+                // Student doesn't exist, create a new account
+                const newStudent = await this.createStudentAccount(studentId);
+                if (newStudent.success) {
+                  this.currentUser = {
+                    uid: newStudent.docId,
+                    studentId: studentId,
+                    type: 'student',
+                    profile: newStudent.studentData
+                  };
+
+                  localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+                  this.userType = 'student';
+                  this.updateProfessorTabVisibility();
+
+                  return { success: true, user: this.currentUser, isNewAccount: true };
+                } else {
+                  throw new Error(newStudent.error);
+                }
               }
 
               const studentDoc = studentQuery.docs[0];
               const studentData = studentDoc.data();
 
-              // Verify password
-              if (studentData.password !== password) {
-                throw new Error('Invalid password');
-              }
+              // No password verification needed - just student ID
 
               this.currentUser = {
                 uid: studentDoc.id,
@@ -1036,11 +1045,125 @@
 
               return { success: true, user: this.currentUser };
             } else {
-              throw new Error('Invalid student credentials');
+              // Fallback: Create account locally if Firebase not available
+              const localStudents = JSON.parse(localStorage.getItem('sci_high_local_students') || '{}');
+              
+              if (!localStudents[studentId]) {
+                // Create new local account
+                localStudents[studentId] = this.createLocalStudentAccount(studentId);
+                localStorage.setItem('sci_high_local_students', JSON.stringify(localStudents));
+                
+                this.currentUser = {
+                  uid: 'local_' + studentId.replace(/-/g, '_'),
+                  studentId: studentId,
+                  type: 'student',
+                  profile: localStudents[studentId]
+                };
+
+                localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+                this.userType = 'student';
+                this.updateProfessorTabVisibility();
+
+                return { success: true, user: this.currentUser, isNewAccount: true };
+              } else {
+                // Login with existing local account
+                this.currentUser = {
+                  uid: 'local_' + studentId.replace(/-/g, '_'),
+                  studentId: studentId,
+                  type: 'student',
+                  profile: localStudents[studentId]
+                };
+
+                localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+                this.userType = 'student';
+                this.updateProfessorTabVisibility();
+
+                return { success: true, user: this.currentUser };
+              }
             }
           } catch (error) {
             return { success: false, error: error.message };
           }
+        }
+
+        // Create a new student account in Firebase
+        async createStudentAccount(studentId) {
+          try {
+            const studentData = {
+              studentId,
+              fullName: `Student ${studentId}`,
+              academicInfo: {
+                level: 'unknown',
+                course: null,
+                yearLevel: null,
+                strand: null
+              },
+              accountStatus: {
+                isActive: true,
+                isFirstLogin: true,
+                createdBy: 'auto-created',
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+              },
+              gameData: {
+                totalPoints: 0,
+                achievements: [],
+                courseProgress: {
+                  'Web_Design': { unlocked: true, completed: false, progress: 0 },
+                  'Python': { unlocked: true, completed: false, progress: 0 },
+                  'Java': { unlocked: false, completed: false, progress: 0 },
+                  'C': { unlocked: false, completed: false, progress: 0 },
+                  'C++': { unlocked: false, completed: false, progress: 0 },
+                  'C#': { unlocked: false, completed: false, progress: 0 }
+                }
+              }
+            };
+
+            // Save to Firestore
+            const docRef = await firebase.firestore().collection('students').add(studentData);
+            
+            return { 
+              success: true, 
+              docId: docRef.id,
+              studentData: studentData
+            };
+          } catch (error) {
+            console.error('Error creating student account:', error);
+            return { success: false, error: 'Failed to create student account: ' + error.message };
+          }
+        }
+
+        // Create local student account for offline mode
+        createLocalStudentAccount(studentId) {
+          return {
+            studentId,
+            fullName: `Student ${studentId}`,
+            academicInfo: {
+              level: 'unknown',
+              course: null,
+              yearLevel: null,
+              strand: null
+            },
+            accountStatus: {
+              isActive: true,
+              isFirstLogin: true,
+              createdBy: 'auto-created-local',
+              createdAt: new Date().toISOString(),
+              lastLogin: new Date().toISOString()
+            },
+            gameData: {
+              totalPoints: 0,
+              achievements: [],
+              courseProgress: {
+                'Web_Design': { unlocked: true, completed: false, progress: 0 },
+                'Python': { unlocked: true, completed: false, progress: 0 },
+                'Java': { unlocked: false, completed: false, progress: 0 },
+                'C': { unlocked: false, completed: false, progress: 0 },
+                'C++': { unlocked: false, completed: false, progress: 0 },
+                'C#': { unlocked: false, completed: false, progress: 0 }
+              }
+            }
+          };
         }
 
         async loginGeneral(email, password) {
@@ -1261,9 +1384,12 @@
       document.getElementById('student-login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        const result = await authManager.loginStudent(formData.get('studentId'), formData.get('password'));
+        const result = await authManager.loginStudent(formData.get('studentId'));
         
         if (result.success) {
+          if (result.isNewAccount) {
+            alert('Welcome! A new account has been created for you. Your progress will be saved automatically.');
+          }
           loginModal.classList.add('hidden');
           authManager.redirectToGame();
         } else {
