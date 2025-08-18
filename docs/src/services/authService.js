@@ -231,24 +231,37 @@ class AuthService {
     async loginStudent(studentId, password = null) {
         const isInitialized = await this.ensureFirebaseInitialized();
         if (!isInitialized) {
+            console.log('AuthService: Firebase not available, using offline mode');
             // Fallback to local storage for offline mode
             return this.loginStudentOffline(studentId);
         }
 
         try {
+            console.log('AuthService: Attempting to login student with ID:', studentId);
+            
+            // Validate student ID
+            if (!studentId || typeof studentId !== 'string' || studentId.trim() === '') {
+                throw new Error('Invalid student ID provided');
+            }
+
             // Query student by student ID
+            console.log('AuthService: Querying Firestore for student...');
             const studentQuery = await this.firestore.collection('students')
-                .where('studentId', '==', studentId)
+                .where('studentId', '==', studentId.trim())
                 .limit(1)
                 .get();
 
+            console.log('AuthService: Query completed - empty:', studentQuery.empty, 'size:', studentQuery.size);
+
             if (studentQuery.empty) {
+                console.log('AuthService: Student not found, creating new account');
                 // Student doesn't exist, create a new account
-                const newStudent = await this.createStudentAccount(studentId);
+                const newStudent = await this.createStudentAccount(studentId.trim());
                 if (newStudent.success) {
+                    console.log('AuthService: New student account created successfully');
                     this.currentUser = {
                         uid: newStudent.docId,
-                        studentId: studentId,
+                        studentId: studentId.trim(),
                         type: 'student',
                         profile: newStudent.studentData
                     };
@@ -256,12 +269,29 @@ class AuthService {
                     this.saveUserSession();
                     return { success: true, user: this.currentUser, isNewAccount: true };
                 } else {
+                    console.error('AuthService: Failed to create new student account:', newStudent.error);
                     throw new Error(newStudent.error);
                 }
             }
 
+            console.log('AuthService: Found existing student, loading data...');
+            
+            // Ensure we have valid query results
+            if (!studentQuery.docs || studentQuery.docs.length === 0) {
+                throw new Error('No student documents found in query result');
+            }
+
             const studentDoc = studentQuery.docs[0];
+            if (!studentDoc || !studentDoc.exists) {
+                throw new Error('Student document does not exist or is inaccessible');
+            }
+
             const studentData = studentDoc.data();
+            if (!studentData) {
+                throw new Error('Student data is corrupted or inaccessible');
+            }
+
+            console.log('AuthService: Student data loaded successfully for:', studentData.studentId);
 
             // No password verification needed - just student ID
             
@@ -279,13 +309,32 @@ class AuthService {
             this.userType = 'student';
 
             // Update last login
-            await this.firestore.collection('students').doc(studentDoc.id).update({
-                'accountStatus.lastLogin': new Date().toISOString()
-            });
+            console.log('AuthService: Updating last login timestamp...');
+            try {
+                await this.firestore.collection('students').doc(studentDoc.id).update({
+                    'accountStatus.lastLogin': new Date().toISOString()
+                });
+                console.log('AuthService: Last login timestamp updated');
+            } catch (updateError) {
+                console.warn('AuthService: Failed to update last login timestamp:', updateError);
+                // Don't fail login just because timestamp update failed
+            }
 
             this.saveUserSession();
+            console.log('AuthService: Student login successful');
             return { success: true, user: this.currentUser };
         } catch (error) {
+            console.error('AuthService: Student login error:', error);
+            console.error('AuthService: Error stack:', error.stack);
+            
+            // If Firebase is having issues, fallback to offline mode
+            if (error.message.includes('permission-denied') || 
+                error.message.includes('unavailable') || 
+                error.message.includes('network')) {
+                console.log('AuthService: Firebase error detected, falling back to offline mode');
+                return this.loginStudentOffline(studentId);
+            }
+            
             return { success: false, error: error.message };
         }
     }

@@ -1124,7 +1124,7 @@
 
               // No password verification needed - just student ID
               this.currentUser = {
-                uid: studentDoc.id,
+                uid: studentKey,
                 studentId: studentData.studentId,
                 type: 'student',
                 profile: studentData
@@ -1581,8 +1581,35 @@
       // Initialize AuthManager
       const authManager = new AuthManager();
 
-      // Modal Management
-      const loginModal = document.getElementById('login-modal');
+      // Global Modal Functions (defined early for onclick access)
+      function showLoginModal() {
+        const loginModal = document.getElementById('login-modal');
+        if (loginModal) {
+          loginModal.classList.remove('hidden');
+          showUserTypeSelection();
+        }
+      }
+
+      function showUserTypeSelection() {
+        const userTypeSelection = document.getElementById('user-type-selection');
+        const professorForm = document.getElementById('professor-form');
+        const studentForm = document.getElementById('student-form');
+        const generalForm = document.getElementById('general-form');
+        
+        if (userTypeSelection) userTypeSelection.classList.remove('hidden');
+        if (professorForm) professorForm.classList.add('hidden');
+        if (studentForm) studentForm.classList.add('hidden');
+        if (generalForm) generalForm.classList.add('hidden');
+      }
+
+      // Make functions globally accessible for onclick handlers
+      window.showLoginModal = showLoginModal;
+      window.showUserTypeSelection = showUserTypeSelection;
+
+      // DOM-dependent initialization (run after DOM loads)
+      document.addEventListener('DOMContentLoaded', function() {
+        // Modal Management
+        const loginModal = document.getElementById('login-modal');
       const screenshotsModal = document.getElementById('screenshots-modal');
       const startGameBtn = document.getElementById('start-game-btn');
 
@@ -1592,24 +1619,6 @@
       const studentForm = document.getElementById('student-form');
       const generalForm = document.getElementById('general-form');
       const backToSelection = document.getElementById('back-to-selection');
-
-      // Show Login Modal Function
-      function showLoginModal() {
-        loginModal.classList.remove('hidden');
-        showUserTypeSelection();
-      }
-
-      // Make showLoginModal global for onclick access
-      window.showLoginModal = showLoginModal;
-
-      // Show User Type Selection
-      function showUserTypeSelection() {
-        userTypeSelection.classList.remove('hidden');
-        professorForm.classList.add('hidden');
-        studentForm.classList.add('hidden');
-        generalForm.classList.add('hidden');
-        backToSelection.classList.add('hidden');
-      }
 
       // Show Specific Form
       function showForm(formType) {
@@ -1650,7 +1659,10 @@
       document.getElementById('professor-login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        const result = await authManager.loginProfessor(formData.get('email'), formData.get('password'));
+        
+        // Use the proper AuthService instead of the old authManager
+        const authService = (await import('./src/services/authService.js')).default;
+        const result = await authService.loginProfessor(formData.get('email'), formData.get('password'));
         
         if (result.success) {
           loginModal.classList.add('hidden');
@@ -1664,7 +1676,10 @@
       document.getElementById('student-login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        const result = await authManager.loginStudent(formData.get('studentId'));
+        
+        // Use the proper AuthService instead of the old authManager
+        const authService = (await import('./src/services/authService.js')).default;
+        const result = await authService.loginStudent(formData.get('studentId'));
         
         if (result.success) {
           if (result.isNewAccount) {
@@ -1680,7 +1695,10 @@
       document.getElementById('general-login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        const result = await authManager.loginGeneral(formData.get('email'), formData.get('password'));
+        
+        // Use the proper AuthService instead of the old authManager
+        const authService = (await import('./src/services/authService.js')).default;
+        const result = await authService.loginGeneral(formData.get('email'), formData.get('password'));
         
         if (result.success) {
           loginModal.classList.add('hidden');
@@ -1693,7 +1711,10 @@
       document.getElementById('general-register-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        const result = await authManager.registerGeneral({
+        
+        // Use the proper AuthService instead of the old authManager
+        const authService = (await import('./src/services/authService.js')).default;
+        const result = await authService.registerGeneral({
           fullName: formData.get('fullName'),
           email: formData.get('email'),
           displayName: formData.get('displayName'),
@@ -2162,6 +2183,8 @@ service cloud.firestore {
       // Auto-show dev commands on page load
       console.log('🎮 SCI-HIGH DEV MODE ACTIVE! Type showDevCommands() for help.');
       console.log('🛠️ Developer Tools: Type openDeveloperTools() to access advanced tools.');
+      
+      }); // Close DOMContentLoaded event listener
     </script>
 
     <!-- Virtual AI Assistant with improved positioning -->
