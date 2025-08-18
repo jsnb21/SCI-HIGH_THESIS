@@ -942,6 +942,13 @@
               }
 
               const professorData = professorDoc.data();
+              
+              // Update last login timestamp
+              await firebase.firestore().collection('professors').doc(user.uid).update({
+                lastLogin: new Date().toISOString(),
+                lastLoginIP: 'unknown' // You can implement IP detection if needed
+              });
+
               this.currentUser = {
                 uid: user.uid,
                 email: user.email,
@@ -1045,8 +1052,12 @@
               const studentDoc = studentQuery.docs[0];
               const studentData = studentDoc.data();
 
-              // No password verification needed - just student ID
+              // Update last login timestamp
+              await firebase.firestore().collection('students').doc(studentDoc.id).update({
+                'accountInfo.lastLogin': new Date().toISOString()
+              });
 
+              // No password verification needed - just student ID
               this.currentUser = {
                 uid: studentDoc.id,
                 studentId: studentData.studentId,
@@ -1195,6 +1206,12 @@
             }
 
             const userData = userDoc.data();
+            
+            // Update last login timestamp
+            await firebase.firestore().collection('general_users').doc(user.uid).update({
+              lastLogin: new Date().toISOString()
+            });
+
             this.currentUser = {
               uid: user.uid,
               email: user.email,
@@ -1263,6 +1280,12 @@
         }
 
         logout() {
+          // Show confirmation dialog
+          const confirmLogout = confirm('Are you sure you want to logout?');
+          if (!confirmLogout) {
+            return; // User cancelled logout
+          }
+
           if (this.userType !== 'guest') {
             firebase.auth().signOut();
           }
@@ -1275,6 +1298,9 @@
           this.updateProfessorTabVisibility();
           // Update user interface (hide greeting and logout button)
           this.updateUserInterface();
+          
+          // Show success message
+          alert('You have been logged out successfully!');
         }
 
         isAuthenticated() {
@@ -1337,22 +1363,106 @@
         }
 
         // DEV MODE: Create admin user for testing
-        createAdminUser() {
-          this.currentUser = {
-            uid: 'admin_' + Date.now(),
-            type: 'admin',
-            profile: {
+        async createAdminUser() {
+          try {
+            const adminData = {
               fullName: 'System Administrator',
               email: 'admin@sci-high.edu',
-              isAdmin: true
+              isAdmin: true,
+              type: 'admin',
+              createdAt: new Date().toISOString(),
+              lastLogin: new Date().toISOString(),
+              permissions: ['read', 'write', 'delete', 'admin']
+            };
+
+            // Save to Firebase if available
+            if (typeof firebase !== 'undefined' && firebase.firestore) {
+              const adminRef = firebase.firestore().collection('professors').doc('admin_system');
+              await adminRef.set(adminData);
+              console.log('Admin user saved to Firebase');
             }
-          };
-          
-          localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
-          this.userType = 'admin';
-          this.updateProfessorTabVisibility();
-          
-          return this.currentUser;
+
+            this.currentUser = {
+              uid: 'admin_system',
+              type: 'admin',
+              profile: adminData
+            };
+            
+            localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+            this.userType = 'admin';
+            this.updateProfessorTabVisibility();
+            this.updateUserInterface();
+            
+            return this.currentUser;
+          } catch (error) {
+            console.error('Error creating admin user:', error);
+            // Fallback to local storage only
+            this.currentUser = {
+              uid: 'admin_' + Date.now(),
+              type: 'admin',
+              profile: {
+                fullName: 'System Administrator',
+                email: 'admin@sci-high.edu',
+                isAdmin: true
+              }
+            };
+            
+            localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+            this.userType = 'admin';
+            this.updateProfessorTabVisibility();
+            this.updateUserInterface();
+            
+            return this.currentUser;
+          }
+        }
+
+        // DEV MODE: Create professor user in Firebase
+        async createProfessorUser(email, password, fullName, institution = 'SCI-HIGH University') {
+          try {
+            if (typeof firebase === 'undefined' || !firebase.auth) {
+              throw new Error('Firebase not available');
+            }
+
+            // Create Firebase Auth user
+            const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+
+            // Create professor profile in Firestore
+            const professorData = {
+              fullName: fullName,
+              email: email,
+              institution: institution,
+              isVerified: true,
+              type: 'professor',
+              createdAt: new Date().toISOString(),
+              lastLogin: new Date().toISOString(),
+              permissions: ['read', 'write'],
+              classes: [],
+              students: []
+            };
+
+            await firebase.firestore().collection('professors').doc(user.uid).set(professorData);
+
+            console.log('Professor user created successfully:', {
+              uid: user.uid,
+              email: email,
+              fullName: fullName
+            });
+
+            return {
+              success: true,
+              uid: user.uid,
+              email: email,
+              profile: professorData
+            };
+
+          } catch (error) {
+            console.error('Error creating professor user:', error);
+            return {
+              success: false,
+              error: error.message
+            };
+          }
         }
       }
 
@@ -1641,11 +1751,29 @@
 
       // DEV MODE: Console functions for testing
       // Usage in browser console: createAdminUser()
-      window.createAdminUser = () => {
-        const admin = authManager.createAdminUser();
+      window.createAdminUser = async () => {
+        const admin = await authManager.createAdminUser();
         console.log('Admin user created:', admin);
         alert('🔧 Admin user created! Professor tab should now be visible.');
         return admin;
+      };
+
+      // Create professor user with Firebase integration
+      window.createProfessorUser = async (email, password, fullName, institution) => {
+        if (!email || !password || !fullName) {
+          alert('Usage: createProfessorUser("email@domain.com", "password", "Full Name", "Institution (optional)")');
+          return;
+        }
+        
+        const result = await authManager.createProfessorUser(email, password, fullName, institution);
+        if (result.success) {
+          console.log('Professor user created successfully:', result);
+          alert(`✅ Professor user created!\nEmail: ${email}\nUID: ${result.uid}\nThe professor can now login with their email and password.`);
+        } else {
+          console.error('Failed to create professor user:', result.error);
+          alert(`❌ Failed to create professor user: ${result.error}`);
+        }
+        return result;
       };
 
       window.createSampleProfessor = () => {
@@ -1664,6 +1792,7 @@
         authManager.userType = 'professor';
         localStorage.setItem('sci_high_user', JSON.stringify(professor));
         authManager.updateProfessorTabVisibility();
+        authManager.updateUserInterface();
         
         console.log('Sample professor created:', professor);
         alert('👨‍🏫 Sample professor created!\nEmail: professor@sci-high.edu\nPassword: Prof123!');
@@ -1703,6 +1832,7 @@
         authManager.userType = 'student';
         localStorage.setItem('sci_high_user', JSON.stringify(student));
         authManager.updateProfessorTabVisibility();
+        authManager.updateUserInterface();
         
         console.log('Sample student created:', student);
         alert('🎓 Sample student created!\nStudent ID: 2024-CS-001\nPassword: Student123!\n\nOther test accounts:\n- 2024-CS-002 (Maria Santos)\n- 2024-STEM-001 (Pedro Garcia)');
@@ -1732,6 +1862,7 @@
         authManager.userType = 'general';
         localStorage.setItem('sci_high_user', JSON.stringify(generalUser));
         authManager.updateProfessorTabVisibility();
+        authManager.updateUserInterface();
         
         console.log('Sample general user created:', generalUser);
         alert('🌟 Sample general user created!\nEmail: maria@example.com\nPassword: General123!');
@@ -1740,8 +1871,6 @@
 
       window.logoutUser = () => {
         authManager.logout();
-        console.log('User logged out');
-        alert('Logged out successfully. Professor tab should be hidden.');
       };
 
       // Helper function to show all available console commands
@@ -1750,25 +1879,40 @@
 🔧 SCI-HIGH DEV MODE COMMANDS:
 ================================
 
-1. createAdminUser()        - Create admin account (can access professor dashboard)
-2. createSampleProfessor()  - Create professor account
-3. createSampleStudent()    - Create student account  
-4. createSampleGeneral()    - Create general user account
-5. logoutUser()            - Logout current user
-6. showDevCommands()       - Show this help
+1. createAdminUser()                    - Create admin account (can access professor dashboard)
+2. createProfessorUser(email, password, fullName, institution) - Create professor in Firebase
+3. createSampleProfessor()              - Create local professor account  
+4. createSampleStudent()                - Create student account  
+5. createSampleGeneral()                - Create general user account
+6. logoutUser()                        - Logout current user
+7. openDeveloperTools()                - Open advanced developer tools page
+8. showDevCommands()                   - Show this help
 
 USAGE:
 ------
 Open console (F12) and type any command, e.g.:
-createSampleProfessor()
+createProfessorUser("prof@example.com", "Password123!", "Dr. John Smith", "SCI-HIGH University")
+
+For advanced tools: openDeveloperTools()
 
 Then you can test the authentication system!
         `);
         alert('📋 Dev commands shown in console! Press F12 to see all available commands.');
       };
 
+      // Developer page access
+      window.openDeveloperTools = () => {
+        const isAuthorized = prompt('🔐 Enter developer access key:');
+        if (isAuthorized === 'sci-high-dev-2025') {
+          window.open('developer.html', '_blank');
+        } else {
+          alert('❌ Invalid access key. Developer tools access denied.');
+        }
+      };
+
       // Auto-show dev commands on page load
       console.log('🎮 SCI-HIGH DEV MODE ACTIVE! Type showDevCommands() for help.');
+      console.log('🛠️ Developer Tools: Type openDeveloperTools() to access advanced tools.');
     </script>
 
     <!-- Virtual AI Assistant with improved positioning -->
