@@ -1879,23 +1879,27 @@
 🔧 SCI-HIGH DEV MODE COMMANDS:
 ================================
 
+USER MANAGEMENT:
 1. createAdminUser()                    - Create admin account (can access professor dashboard)
 2. createProfessorUser(email, password, fullName, institution) - Create professor in Firebase
 3. createSampleProfessor()              - Create local professor account  
 4. createSampleStudent()                - Create student account  
 5. createSampleGeneral()                - Create general user account
 6. logoutUser()                        - Logout current user
-7. openDeveloperTools()                - Open advanced developer tools page
-8. showDevCommands()                   - Show this help
+
+DEBUGGING & TOOLS:
+7. debugFirebaseConnection()           - Check Firebase connection and data storage
+8. createRealFirebaseStudent(id)       - Force create student in Firebase (bypasses samples)
+9. openDeveloperTools()                - Open advanced developer tools page
+10. showDevCommands()                  - Show this help
 
 USAGE:
 ------
 Open console (F12) and type any command, e.g.:
-createProfessorUser("prof@example.com", "Password123!", "Dr. John Smith", "SCI-HIGH University")
+debugFirebaseConnection()              // Check why data isn't in Firebase
+createRealFirebaseStudent("2024-YOUR-001")  // Create real Firebase student
 
 For advanced tools: openDeveloperTools()
-
-Then you can test the authentication system!
         `);
         alert('📋 Dev commands shown in console! Press F12 to see all available commands.');
       };
@@ -1907,6 +1911,87 @@ Then you can test the authentication system!
           window.open('developer.html', '_blank');
         } else {
           alert('❌ Invalid access key. Developer tools access denied.');
+        }
+      };
+
+      // Debug Firebase connection and data storage
+      window.debugFirebaseConnection = async () => {
+        console.log('🔍 FIREBASE DEBUG REPORT');
+        console.log('========================');
+        
+        // Check if Firebase is loaded
+        if (typeof firebase === 'undefined') {
+          console.log('❌ Firebase SDK not loaded');
+          return;
+        }
+        console.log('✅ Firebase SDK loaded');
+        
+        // Check if Firebase is initialized
+        if (!firebase.apps.length) {
+          console.log('❌ Firebase not initialized');
+          return;
+        }
+        console.log('✅ Firebase initialized');
+        console.log('📊 Project ID:', firebase.app().options.projectId);
+        console.log('📊 Auth Domain:', firebase.app().options.authDomain);
+        
+        // Check authentication
+        const user = firebase.auth().currentUser;
+        console.log('👤 Current Auth User:', user ? user.uid : 'None');
+        
+        // Test Firestore connection
+        try {
+          console.log('🔗 Testing Firestore connection...');
+          const testDoc = await firebase.firestore().collection('test').limit(1).get();
+          console.log('✅ Firestore connection successful');
+          
+          // Check existing data
+          console.log('📋 Checking existing collections...');
+          
+          const professors = await firebase.firestore().collection('professors').get();
+          console.log(`👨‍🏫 Professors: ${professors.size} documents`);
+          
+          const students = await firebase.firestore().collection('students').get();
+          console.log(`🎓 Students: ${students.size} documents`);
+          
+          const generalUsers = await firebase.firestore().collection('general_users').get();
+          console.log(`👤 General Users: ${generalUsers.size} documents`);
+          
+        } catch (error) {
+          console.log('❌ Firestore error:', error.message);
+          console.log('💡 This might be due to Firestore security rules');
+        }
+        
+        // Check local storage
+        console.log('💾 Local Storage Data:');
+        const localUser = localStorage.getItem('sci_high_user');
+        const localStudents = localStorage.getItem('sci_high_local_students');
+        console.log('Current User:', localUser ? JSON.parse(localUser) : 'None');
+        console.log('Local Students:', localStudents ? Object.keys(JSON.parse(localStudents)) : 'None');
+        
+        console.log('========================');
+        console.log('🎯 Use this info to identify where your data is being stored!');
+      };
+
+      // Force create real Firebase student (bypasses sample data)
+      window.createRealFirebaseStudent = async (studentId) => {
+        if (!studentId) {
+          console.log('Usage: createRealFirebaseStudent("YOUR-STUDENT-ID")');
+          return;
+        }
+        
+        try {
+          console.log(`🔥 Creating real Firebase student: ${studentId}`);
+          const result = await authManager.createStudentAccount(studentId);
+          if (result.success) {
+            console.log('✅ Student created in Firebase!');
+            console.log('Document ID:', result.docId);
+            console.log('Data:', result.studentData);
+          } else {
+            console.log('❌ Failed:', result.error);
+          }
+        } catch (error) {
+          console.log('❌ Error:', error.message);
         }
       };
 
