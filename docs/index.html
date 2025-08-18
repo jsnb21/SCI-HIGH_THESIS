@@ -226,6 +226,15 @@
               <span class="relative z-10">👨‍🏫 Professor</span>
               <div class="absolute inset-0 bg-accent/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
             </a>
+            <!-- User Greeting - Hidden by default, shown for logged-in users -->
+            <span id="user-greeting" class="text-textColor font-gaming text-sm uppercase tracking-wider hidden">
+              <span id="greeting-text">Hello, User!</span>
+            </span>
+            <!-- Logout Button - Hidden by default, shown for logged-in users (except guests) -->
+            <button id="logout-btn" class="gaming-nav-link text-textColor hover:text-red-400 transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative hidden" onclick="logoutUser()">
+              <span class="relative z-10">🚪 Logout</span>
+              <div class="absolute inset-0 bg-red-500/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </button>
           </div>
         </div>
       </div>
@@ -844,6 +853,8 @@
 
           // Update professor tab visibility
           this.updateProfessorTabVisibility();
+          // Update user interface
+          this.updateUserInterface();
         }
 
         async loadFirebase() {
@@ -914,6 +925,7 @@
               localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
               this.userType = 'professor';
               this.updateProfessorTabVisibility();
+              this.updateUserInterface();
               
               return { success: true, user: this.currentUser };
             }
@@ -940,6 +952,7 @@
               localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
               this.userType = 'professor';
               this.updateProfessorTabVisibility();
+              this.updateUserInterface();
               
               return { success: true, user: this.currentUser };
             } else {
@@ -995,6 +1008,7 @@
               localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
               this.userType = 'student';
               this.updateProfessorTabVisibility();
+              this.updateUserInterface();
 
               return { success: true, user: this.currentUser };
             }
@@ -1020,6 +1034,7 @@
                   localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
                   this.userType = 'student';
                   this.updateProfessorTabVisibility();
+                  this.updateUserInterface();
 
                   return { success: true, user: this.currentUser, isNewAccount: true };
                 } else {
@@ -1042,6 +1057,7 @@
               localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
               this.userType = 'student';
               this.updateProfessorTabVisibility();
+              this.updateUserInterface();
 
               return { success: true, user: this.currentUser };
             } else {
@@ -1063,6 +1079,7 @@
                 localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
                 this.userType = 'student';
                 this.updateProfessorTabVisibility();
+                this.updateUserInterface();
 
                 return { success: true, user: this.currentUser, isNewAccount: true };
               } else {
@@ -1190,6 +1207,8 @@
             
             // Update professor tab visibility
             this.updateProfessorTabVisibility();
+            // Update user interface
+            this.updateUserInterface();
             
             return { success: true, user: this.currentUser };
           } catch (error) {
@@ -1237,6 +1256,8 @@
           
           // Update professor tab visibility
           this.updateProfessorTabVisibility();
+          // Update user interface (guest won't show logout button)
+          this.updateUserInterface();
           
           return this.currentUser;
         }
@@ -1252,6 +1273,8 @@
           
           // Update professor tab visibility (hide it)
           this.updateProfessorTabVisibility();
+          // Update user interface (hide greeting and logout button)
+          this.updateUserInterface();
         }
 
         isAuthenticated() {
@@ -1278,6 +1301,38 @@
             professorTab.classList.remove('hidden');
           } else {
             professorTab.classList.add('hidden');
+          }
+        }
+
+        // Update user greeting and logout button visibility
+        updateUserInterface() {
+          const userGreeting = document.getElementById('user-greeting');
+          const greetingText = document.getElementById('greeting-text');
+          const logoutBtn = document.getElementById('logout-btn');
+
+          if (!userGreeting || !greetingText || !logoutBtn) return;
+
+          if (this.currentUser && this.userType !== 'guest') {
+            // Show user greeting and logout button for logged-in users (except guests)
+            userGreeting.classList.remove('hidden');
+            logoutBtn.classList.remove('hidden');
+
+            // Set personalized greeting based on user type
+            let greetingMessage = '';
+            if (this.userType === 'student') {
+              greetingMessage = `Hello, ${this.currentUser.name || 'Student'}!`;
+            } else if (this.userType === 'professor') {
+              greetingMessage = `Hello, Prof. ${this.currentUser.name || 'Professor'}!`;
+            } else if (this.userType === 'admin') {
+              greetingMessage = `Hello, Admin ${this.currentUser.name || 'Admin'}!`;
+            } else {
+              greetingMessage = `Hello, ${this.currentUser.name || 'User'}!`;
+            }
+            greetingText.textContent = greetingMessage;
+          } else {
+            // Hide user greeting and logout button for guests or non-logged-in users
+            userGreeting.classList.add('hidden');
+            logoutBtn.classList.add('hidden');
           }
         }
 
