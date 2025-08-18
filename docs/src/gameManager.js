@@ -22,8 +22,8 @@ class GameManager {
             'Python': 0,
             'Java': 0,
             'C': 0,
-            'C++': 0,
-            'C#': 0
+            'CPlusPlus': 0,
+            'CSharp': 0
         };
         this.pointsHistory = []; // Track point transactions
         this.achievements = new Set(); // Track earned achievements
@@ -46,8 +46,8 @@ class GameManager {
             'Python': { unlocked: true, completed: false, progress: 0 },
             'Java': { unlocked: false, completed: false, progress: 0 },
             'C': { unlocked: false, completed: false, progress: 0 },
-            'C++': { unlocked: false, completed: false, progress: 0 },
-            'C#': { unlocked: false, completed: false, progress: 0 }
+            'CPlusPlus': { unlocked: false, completed: false, progress: 0 },
+            'CSharp': { unlocked: false, completed: false, progress: 0 }
         };
     }
 
@@ -266,8 +266,8 @@ class GameManager {
             'Python': 0,
             'Java': 0,
             'C': 0,
-            'C++': 0,
-            'C#': 0
+            'CPlusPlus': 0,
+            'CSharp': 0
         };
         this.pointsHistory = [];
         this.achievements.clear();
@@ -459,8 +459,8 @@ class GameManager {
             'Python': { unlocked: true, completed: false, progress: 0 },
             'Java': { unlocked: false, completed: false, progress: 0 },
             'C': { unlocked: false, completed: false, progress: 0 },
-            'C++': { unlocked: false, completed: false, progress: 0 },
-            'C#': { unlocked: false, completed: false, progress: 0 }
+            'CPlusPlus': { unlocked: false, completed: false, progress: 0 },
+            'CSharp': { unlocked: false, completed: false, progress: 0 }
         };
     }
 
@@ -528,14 +528,14 @@ class GameManager {
         }
         
         // Unlock C++ when both Web Design and Python are completed
-        if (webDesignCompleted && pythonCompleted && !this.courseProgress['C++'].unlocked) {
-            this.courseProgress['C++'].unlocked = true;
+        if (webDesignCompleted && pythonCompleted && !this.courseProgress['CPlusPlus'].unlocked) {
+            this.courseProgress['CPlusPlus'].unlocked = true;
             unlocked = true;
         }
         
         // Unlock C# when Java and C are completed
-        if (this.courseProgress['Java'].completed && this.courseProgress['C'].completed && !this.courseProgress['C#'].unlocked) {
-            this.courseProgress['C#'].unlocked = true;
+        if (this.courseProgress['Java'].completed && this.courseProgress['C'].completed && !this.courseProgress['CSharp'].unlocked) {
+            this.courseProgress['CSharp'].unlocked = true;
             unlocked = true;
         }
         
@@ -561,8 +561,8 @@ class GameManager {
             'Python': { unlocked: true, completed: false, progress: 0 },
             'Java': { unlocked: false, completed: false, progress: 0 },
             'C': { unlocked: false, completed: false, progress: 0 },
-            'C++': { unlocked: false, completed: false, progress: 0 },
-            'C#': { unlocked: false, completed: false, progress: 0 }
+            'CPlusPlus': { unlocked: false, completed: false, progress: 0 },
+            'CSharp': { unlocked: false, completed: false, progress: 0 }
         };
     }
     

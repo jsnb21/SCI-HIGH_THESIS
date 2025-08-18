@@ -56,17 +56,23 @@ function getCurrentUserData() {
     }
 }
 
-// Get user ID based on user type
+// Get user ID based on user type and sanitize for Firebase
 function getUserId(user, userType) {
+    let rawId;
     if (userType === 'student') {
-        return user.studentId || user.id || 'unknown_student';
+        rawId = user.studentId || user.id || 'unknown_student';
     } else if (userType === 'teacher') {
-        return user.teacherId || user.id || 'unknown_teacher';  
+        rawId = user.teacherId || user.id || 'unknown_teacher';  
     } else if (userType === 'admin') {
-        return user.adminId || user.id || 'unknown_admin';
+        rawId = user.adminId || user.id || 'unknown_admin';
     } else {
-        return 'unknown_user';
+        rawId = 'unknown_user';
     }
+    
+    // Sanitize Firebase document ID - replace invalid characters
+    // Firebase doesn't allow: . # $ / [ ] 
+    // Replace dashes with underscores to be safe
+    return rawId.replace(/[.#$\/\[\]]/g, '_').replace(/-/g, '_');
 }
 
 // Get current user identifier for save system (localStorage key)
