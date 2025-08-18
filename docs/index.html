@@ -857,6 +857,47 @@
           this.updateUserInterface();
         }
 
+        // Debug function to test Firebase connectivity
+        async testFirebaseConnection() {
+          try {
+            console.log('Testing Firebase connection...');
+            
+            if (typeof firebase === 'undefined') {
+              throw new Error('Firebase not loaded');
+            }
+            
+            if (!firebase.auth) {
+              throw new Error('Firebase Auth not available');
+            }
+            
+            if (!firebase.firestore) {
+              throw new Error('Firebase Firestore not available');
+            }
+            
+            // Test Firestore read
+            const testDoc = await firebase.firestore().collection('test').doc('connection').get();
+            console.log('Firestore read test successful');
+            
+            // Test Firestore write (this might fail due to security rules)
+            try {
+              await firebase.firestore().collection('test').doc('connection').set({
+                timestamp: new Date().toISOString(),
+                test: true
+              });
+              console.log('Firestore write test successful');
+            } catch (writeError) {
+              console.warn('Firestore write test failed (likely security rules):', writeError);
+            }
+            
+            console.log('Firebase connection test completed');
+            return { success: true };
+            
+          } catch (error) {
+            console.error('Firebase connection test failed:', error);
+            return { success: false, error: error.message };
+          }
+        }
+
         async loadFirebase() {
           return new Promise((resolve, reject) => {
             if (typeof firebase !== 'undefined') {
@@ -1419,13 +1460,22 @@
         // DEV MODE: Create professor user in Firebase
         async createProfessorUser(email, password, fullName, institution = 'SCI-HIGH University') {
           try {
-            if (typeof firebase === 'undefined' || !firebase.auth) {
-              throw new Error('Firebase not available');
+            // Ensure Firebase is loaded and initialized
+            if (typeof firebase === 'undefined') {
+              await this.loadFirebase();
             }
+            
+            if (!firebase.auth || !firebase.firestore) {
+              throw new Error('Firebase services not available');
+            }
+
+            console.log('Creating professor user:', { email, fullName, institution });
 
             // Create Firebase Auth user
             const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
+            
+            console.log('Firebase Auth user created:', user.uid);
 
             // Create professor profile in Firestore
             const professorData = {
@@ -1441,7 +1491,25 @@
               students: []
             };
 
-            await firebase.firestore().collection('professors').doc(user.uid).set(professorData);
+            console.log('Saving professor data to Firestore...');
+            
+            // Add retry logic for Firestore write
+            let retries = 3;
+            while (retries > 0) {
+              try {
+                await firebase.firestore().collection('professors').doc(user.uid).set(professorData);
+                console.log('Professor data saved successfully');
+                break;
+              } catch (firestoreError) {
+                console.error(`Firestore write attempt failed (${4-retries}/3):`, firestoreError);
+                retries--;
+                if (retries === 0) {
+                  throw firestoreError;
+                }
+                // Wait 1 second before retry
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
+            }
 
             console.log('Professor user created successfully:', {
               uid: user.uid,
@@ -1458,9 +1526,19 @@
 
           } catch (error) {
             console.error('Error creating professor user:', error);
+            
+            // Enhanced error information
+            if (error.code) {
+              console.error('Firebase error code:', error.code);
+            }
+            if (error.message) {
+              console.error('Firebase error message:', error.message);
+            }
+            
             return {
               success: false,
-              error: error.message
+              error: error.message,
+              code: error.code || 'unknown'
             };
           }
         }
@@ -1776,6 +1854,19 @@
         return result;
       };
 
+      // Debug function to test Firebase connectivity
+      window.testFirebase = async () => {
+        const result = await authManager.testFirebaseConnection();
+        if (result.success) {
+          console.log('✅ Firebase connection test passed');
+          alert('✅ Firebase connection test passed! Check console for details.');
+        } else {
+          console.error('❌ Firebase connection test failed:', result.error);
+          alert(`❌ Firebase connection test failed: ${result.error}`);
+        }
+        return result;
+      };
+
       window.createSampleProfessor = () => {
         const professor = {
           uid: 'prof_' + Date.now(),
@@ -1886,6 +1977,9 @@ USER MANAGEMENT:
 4. createSampleStudent()                - Create student account  
 5. createSampleGeneral()                - Create general user account
 6. logoutUser()                        - Logout current user
+
+DEBUGGING:
+7. testFirebase()                      - Test Firebase connectivity and permissions
 
 DEBUGGING & TOOLS:
 7. debugFirebaseConnection()           - Check Firebase connection and data storage
