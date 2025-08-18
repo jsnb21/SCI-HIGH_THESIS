@@ -164,6 +164,111 @@
           </div>
         </div>
 
+        <!-- Student Management -->
+        <div class="dev-card">
+          <h3 class="font-gaming text-xl text-primary mb-4">🎓 Student Management</h3>
+          
+          <!-- Create Student -->
+          <div class="mb-6">
+            <h4 class="text-lg text-accent mb-2">Create New Student</h4>
+            <p class="text-gray-400 text-sm mb-3">Create a student account with academic information</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+              <input type="text" id="student-id" placeholder="Student ID (e.g., 2024-CS-001)" class="px-3 py-2 bg-dark/50 border border-gray-600 rounded text-white">
+              <input type="text" id="student-name" placeholder="Full Name" class="px-3 py-2 bg-dark/50 border border-gray-600 rounded text-white">
+              <select id="student-level" class="px-3 py-2 bg-dark/50 border border-gray-600 rounded text-white">
+                <option value="">Select Academic Level</option>
+                <option value="college">College</option>
+                <option value="shs">Senior High School</option>
+              </select>
+              <input type="text" id="student-course" placeholder="Course (for college)" class="px-3 py-2 bg-dark/50 border border-gray-600 rounded text-white">
+              <input type="text" id="student-year" placeholder="Year Level" class="px-3 py-2 bg-dark/50 border border-gray-600 rounded text-white">
+              <select id="student-strand" class="px-3 py-2 bg-dark/50 border border-gray-600 rounded text-white">
+                <option value="">Select Strand (for SHS)</option>
+                <option value="STEM">STEM</option>
+                <option value="ABM">ABM</option>
+                <option value="HUMSS">HUMSS</option>
+                <option value="GAS">GAS</option>
+                <option value="TVL">TVL</option>
+              </select>
+            </div>
+            <button onclick="createStudentFromForm()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all">
+              ➕ Create Student
+            </button>
+          </div>
+
+          <!-- Student Search & Management -->
+          <div class="mb-6">
+            <h4 class="text-lg text-accent mb-2">Search & Manage Students</h4>
+            <div class="mb-3">
+              <input type="text" id="search-student" placeholder="Search by Student ID or Name" class="px-3 py-2 bg-dark/50 border border-gray-600 rounded text-white w-full md:w-1/2">
+              <button onclick="searchStudents()" class="ml-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                🔍 Search
+              </button>
+              <button onclick="loadAllStudents()" class="ml-2 px-4 py-2 bg-purple text-white rounded hover:bg-purple/80">
+                📋 Load All
+              </button>
+            </div>
+            
+            <!-- Student Results Table -->
+            <div id="student-results" class="hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm border border-gray-600 rounded">
+                  <thead class="bg-dark/50">
+                    <tr>
+                      <th class="px-3 py-2 text-left text-accent">Student ID</th>
+                      <th class="px-3 py-2 text-left text-accent">Name</th>
+                      <th class="px-3 py-2 text-left text-accent">Level</th>
+                      <th class="px-3 py-2 text-left text-accent">Course/Strand</th>
+                      <th class="px-3 py-2 text-left text-accent">Progress</th>
+                      <th class="px-3 py-2 text-left text-accent">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="student-table-body" class="divide-y divide-gray-600">
+                    <!-- Student rows will be populated here -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bulk Operations -->
+          <div class="mb-6">
+            <h4 class="text-lg text-accent mb-2">Bulk Operations</h4>
+            <p class="text-gray-400 text-sm mb-3">Perform operations on multiple students</p>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="exportStudentData()" class="px-3 py-1 bg-cyan text-white text-sm rounded hover:bg-cyan/80">
+                📥 Export CSV
+              </button>
+              <button onclick="importStudentData()" class="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700">
+                📤 Import CSV
+              </button>
+              <button onclick="resetAllProgress()" class="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700">
+                🔄 Reset All Progress
+              </button>
+            </div>
+            <input type="file" id="csv-import" accept=".csv" class="hidden">
+          </div>
+
+          <!-- Student Analytics -->
+          <div class="mb-6">
+            <h4 class="text-lg text-accent mb-2">Student Analytics</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="bg-dark/50 p-4 rounded border border-gray-600 text-center">
+                <div class="text-2xl font-bold text-primary" id="total-students">0</div>
+                <div class="text-sm text-gray-400">Total Students</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded border border-gray-600 text-center">
+                <div class="text-2xl font-bold text-green-400" id="active-students">0</div>
+                <div class="text-sm text-gray-400">Active Students</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded border border-gray-600 text-center">
+                <div class="text-2xl font-bold text-cyan" id="avg-progress">0%</div>
+                <div class="text-sm text-gray-400">Average Progress</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Database Management -->
         <div class="dev-card">
           <h3 class="font-gaming text-xl text-primary mb-4">🗄️ Database Management</h3>
@@ -608,17 +713,391 @@ Error: ${error.message}
         devAuthManager.logout();
       }
 
+      // Student Management Functions
+      async function createStudentFromForm() {
+        const studentId = document.getElementById('student-id').value.trim();
+        const name = document.getElementById('student-name').value.trim();
+        const level = document.getElementById('student-level').value;
+        const course = document.getElementById('student-course').value.trim();
+        const year = document.getElementById('student-year').value.trim();
+        const strand = document.getElementById('student-strand').value;
+
+        if (!studentId || !name || !level) {
+          alert('Please fill in Student ID, Name, and Academic Level');
+          return;
+        }
+
+        try {
+          const studentData = {
+            studentId: studentId,
+            name: name,
+            level: level,
+            course: level === 'college' ? course : '',
+            strand: level === 'shs' ? strand : '',
+            year: year,
+            progress: {
+              completedQuizzes: [],
+              completedStories: [],
+              totalScore: 0,
+              lastActivity: new Date().toISOString()
+            },
+            createdAt: new Date().toISOString(),
+            isActive: true
+          };
+
+          const { ref } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+          const studentRef = ref(devAuthManager.database, 'students/' + studentId);
+          await devAuthManager.setData(studentRef, studentData);
+          
+          devAuthManager.log(`Student created: ${name} (${studentId})`);
+          clearStudentForm();
+          updateStudentAnalytics();
+          alert('Student created successfully!');
+        } catch (error) {
+          devAuthManager.log('Error creating student: ' + error.message);
+          alert('Error creating student: ' + error.message);
+        }
+      }
+
+      function clearStudentForm() {
+        document.getElementById('student-id').value = '';
+        document.getElementById('student-name').value = '';
+        document.getElementById('student-level').value = '';
+        document.getElementById('student-course').value = '';
+        document.getElementById('student-year').value = '';
+        document.getElementById('student-strand').value = '';
+      }
+
+      async function searchStudents() {
+        const searchTerm = document.getElementById('search-student').value.trim().toLowerCase();
+        if (!searchTerm) {
+          alert('Please enter a search term');
+          return;
+        }
+
+        try {
+          const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+          const studentsRef = ref(devAuthManager.database, 'students');
+          const snapshot = await get(studentsRef);
+          
+          if (snapshot.exists()) {
+            const students = snapshot.val();
+            const filteredStudents = Object.values(students).filter(student => 
+              student.studentId.toLowerCase().includes(searchTerm) ||
+              student.name.toLowerCase().includes(searchTerm)
+            );
+            displayStudents(filteredStudents);
+          } else {
+            displayStudents([]);
+          }
+        } catch (error) {
+          devAuthManager.log('Error searching students: ' + error.message);
+          alert('Error searching students: ' + error.message);
+        }
+      }
+
+      async function loadAllStudents() {
+        try {
+          const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+          const studentsRef = ref(devAuthManager.database, 'students');
+          const snapshot = await get(studentsRef);
+          
+          if (snapshot.exists()) {
+            const students = Object.values(snapshot.val());
+            displayStudents(students);
+          } else {
+            displayStudents([]);
+          }
+        } catch (error) {
+          devAuthManager.log('Error loading students: ' + error.message);
+          alert('Error loading students: ' + error.message);
+        }
+      }
+
+      function displayStudents(students) {
+        const resultsDiv = document.getElementById('student-results');
+        const tableBody = document.getElementById('student-table-body');
+        
+        tableBody.innerHTML = '';
+        
+        if (students.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="6" class="px-3 py-2 text-center text-gray-400">No students found</td></tr>';
+        } else {
+          students.forEach(student => {
+            const progressPercent = calculateProgressPercent(student.progress);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td class="px-3 py-2 text-white">${student.studentId}</td>
+              <td class="px-3 py-2 text-white">${student.name}</td>
+              <td class="px-3 py-2 text-white">${student.level.toUpperCase()}</td>
+              <td class="px-3 py-2 text-white">${student.course || student.strand || 'N/A'}</td>
+              <td class="px-3 py-2">
+                <div class="flex items-center">
+                  <div class="w-16 bg-gray-600 rounded-full h-2 mr-2">
+                    <div class="bg-green-400 h-2 rounded-full" style="width: ${progressPercent}%"></div>
+                  </div>
+                  <span class="text-sm text-white">${progressPercent}%</span>
+                </div>
+              </td>
+              <td class="px-3 py-2">
+                <button onclick="editStudent('${student.studentId}')" class="px-2 py-1 bg-blue-600 text-white text-xs rounded mr-1 hover:bg-blue-700">
+                  ✏️ Edit
+                </button>
+                <button onclick="deleteStudent('${student.studentId}')" class="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">
+                  🗑️ Delete
+                </button>
+              </td>
+            `;
+            tableBody.appendChild(row);
+          });
+        }
+        
+        resultsDiv.classList.remove('hidden');
+      }
+
+      function calculateProgressPercent(progress) {
+        if (!progress) return 0;
+        const totalQuizzes = 6; // Assuming 6 programming language quizzes
+        const totalStories = 3; // Assuming 3 story characters
+        const completedQuizzes = progress.completedQuizzes ? progress.completedQuizzes.length : 0;
+        const completedStories = progress.completedStories ? progress.completedStories.length : 0;
+        
+        return Math.round(((completedQuizzes + completedStories) / (totalQuizzes + totalStories)) * 100);
+      }
+
+      async function editStudent(studentId) {
+        try {
+          const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+          const studentRef = ref(devAuthManager.database, 'students/' + studentId);
+          const snapshot = await get(studentRef);
+          
+          if (snapshot.exists()) {
+            const student = snapshot.val();
+            
+            // Fill form with current data
+            document.getElementById('student-id').value = student.studentId;
+            document.getElementById('student-name').value = student.name;
+            document.getElementById('student-level').value = student.level;
+            document.getElementById('student-course').value = student.course || '';
+            document.getElementById('student-year').value = student.year;
+            document.getElementById('student-strand').value = student.strand || '';
+            
+            // Scroll to form
+            document.getElementById('student-id').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('student-name').focus();
+          }
+        } catch (error) {
+          devAuthManager.log('Error loading student for edit: ' + error.message);
+          alert('Error loading student data');
+        }
+      }
+
+      async function deleteStudent(studentId) {
+        if (!confirm(`Are you sure you want to delete student ${studentId}? This action cannot be undone.`)) {
+          return;
+        }
+
+        try {
+          const { ref, remove } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+          const studentRef = ref(devAuthManager.database, 'students/' + studentId);
+          await remove(studentRef);
+          
+          devAuthManager.log(`Student deleted: ${studentId}`);
+          loadAllStudents(); // Refresh the list
+          updateStudentAnalytics();
+          alert('Student deleted successfully');
+        } catch (error) {
+          devAuthManager.log('Error deleting student: ' + error.message);
+          alert('Error deleting student: ' + error.message);
+        }
+      }
+
+      async function updateStudentAnalytics() {
+        try {
+          const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+          const studentsRef = ref(devAuthManager.database, 'students');
+          const snapshot = await get(studentsRef);
+          
+          if (snapshot.exists()) {
+            const students = Object.values(snapshot.val());
+            const totalStudents = students.length;
+            const activeStudents = students.filter(s => s.isActive).length;
+            const avgProgress = students.reduce((sum, s) => sum + calculateProgressPercent(s.progress), 0) / totalStudents;
+            
+            document.getElementById('total-students').textContent = totalStudents;
+            document.getElementById('active-students').textContent = activeStudents;
+            document.getElementById('avg-progress').textContent = Math.round(avgProgress) + '%';
+          } else {
+            document.getElementById('total-students').textContent = '0';
+            document.getElementById('active-students').textContent = '0';
+            document.getElementById('avg-progress').textContent = '0%';
+          }
+        } catch (error) {
+          devAuthManager.log('Error updating analytics: ' + error.message);
+        }
+      }
+
+      async function exportStudentData() {
+        try {
+          const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+          const studentsRef = ref(devAuthManager.database, 'students');
+          const snapshot = await get(studentsRef);
+          
+          if (snapshot.exists()) {
+            const students = Object.values(snapshot.val());
+            const csvContent = generateCSV(students);
+            downloadCSV(csvContent, `students-export-${new Date().toISOString().split('T')[0]}.csv`);
+          } else {
+            alert('No student data to export');
+          }
+        } catch (error) {
+          devAuthManager.log('Error exporting student data: ' + error.message);
+          alert('Error exporting data');
+        }
+      }
+
+      function generateCSV(students) {
+        const headers = ['Student ID', 'Name', 'Level', 'Course', 'Strand', 'Year', 'Progress %', 'Total Score', 'Created At', 'Is Active'];
+        const rows = students.map(student => [
+          student.studentId,
+          student.name,
+          student.level,
+          student.course || '',
+          student.strand || '',
+          student.year,
+          calculateProgressPercent(student.progress),
+          student.progress?.totalScore || 0,
+          student.createdAt,
+          student.isActive
+        ]);
+        
+        return [headers, ...rows].map(row => row.join(',')).join('\n');
+      }
+
+      function downloadCSV(content, filename) {
+        const blob = new Blob([content], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function importStudentData() {
+        document.getElementById('csv-import').click();
+      }
+
+      async function resetAllProgress() {
+        if (!confirm('Are you sure you want to reset ALL student progress? This action cannot be undone.')) {
+          return;
+        }
+
+        try {
+          const { ref, get, update } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+          const studentsRef = ref(devAuthManager.database, 'students');
+          const snapshot = await get(studentsRef);
+          
+          if (snapshot.exists()) {
+            const updates = {};
+            Object.keys(snapshot.val()).forEach(studentId => {
+              updates[`students/${studentId}/progress`] = {
+                completedQuizzes: [],
+                completedStories: [],
+                totalScore: 0,
+                lastActivity: new Date().toISOString()
+              };
+            });
+            
+            await update(ref(devAuthManager.database), updates);
+            devAuthManager.log('All student progress reset');
+            loadAllStudents();
+            updateStudentAnalytics();
+            alert('All student progress has been reset');
+          }
+        } catch (error) {
+          devAuthManager.log('Error resetting progress: ' + error.message);
+          alert('Error resetting progress');
+        }
+      }
+
+      // Handle CSV import
+      document.getElementById('csv-import').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+          try {
+            const csv = event.target.result;
+            const lines = csv.split('\n');
+            const headers = lines[0].split(',');
+            
+            for (let i = 1; i < lines.length; i++) {
+              const values = lines[i].split(',');
+              if (values.length >= 6) {
+                const studentData = {
+                  studentId: values[0].trim(),
+                  name: values[1].trim(),
+                  level: values[2].trim(),
+                  course: values[3].trim(),
+                  strand: values[4].trim(),
+                  year: values[5].trim(),
+                  progress: {
+                    completedQuizzes: [],
+                    completedStories: [],
+                    totalScore: parseInt(values[7]) || 0,
+                    lastActivity: new Date().toISOString()
+                  },
+                  createdAt: values[8] || new Date().toISOString(),
+                  isActive: values[9] !== 'false'
+                };
+
+                const { ref } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+                const studentRef = ref(devAuthManager.database, 'students/' + studentData.studentId);
+                await devAuthManager.setData(studentRef, studentData);
+              }
+            }
+            
+            devAuthManager.log(`Imported ${lines.length - 1} students from CSV`);
+            loadAllStudents();
+            updateStudentAnalytics();
+            alert('Students imported successfully!');
+          } catch (error) {
+            devAuthManager.log('Error importing CSV: ' + error.message);
+            alert('Error importing CSV file');
+          }
+        };
+        reader.readAsText(file);
+      });
+
       // Make functions available globally
       window.createAdminUser = createAdminUser;
       window.createProfessorUser = createProfessorUser;
+      window.createStudentFromForm = createStudentFromForm;
+      window.searchStudents = searchStudents;
+      window.loadAllStudents = loadAllStudents;
+      window.editStudent = editStudent;
+      window.deleteStudent = deleteStudent;
+      window.exportStudentData = exportStudentData;
+      window.importStudentData = importStudentData;
+      window.resetAllProgress = resetAllProgress;
       window.logoutUser = logoutUser;
 
-      // Auto-update system info every 30 seconds
+      // Auto-update system info and analytics every 30 seconds
       setInterval(() => {
         if (isDeveloperAuthenticated) {
           devAuthManager.updateSystemInfo();
+          updateStudentAnalytics();
         }
       }, 30000);
+
+      // Initialize analytics on page load
+      setTimeout(() => {
+        if (isDeveloperAuthenticated) {
+          updateStudentAnalytics();
+        }
+      }, 2000);
 
       devAuthManager.log('Developer tools initialized');
     </script>
