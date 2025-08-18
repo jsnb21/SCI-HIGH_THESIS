@@ -870,23 +870,40 @@
               throw new Error('Firebase Auth not available');
             }
             
-            if (!firebase.firestore) {
-              throw new Error('Firebase Firestore not available');
+            // Test Realtime Database
+            if (firebase.database) {
+              try {
+                await firebase.database().ref('test/connection').set({
+                  timestamp: new Date().toISOString(),
+                  test: true
+                });
+                console.log('✅ Realtime Database write test successful');
+                
+                const snapshot = await firebase.database().ref('test/connection').once('value');
+                console.log('✅ Realtime Database read test successful:', snapshot.val());
+              } catch (dbError) {
+                console.warn('❌ Realtime Database test failed:', dbError);
+              }
+            } else {
+              console.warn('Realtime Database not available');
             }
             
-            // Test Firestore read
-            const testDoc = await firebase.firestore().collection('test').doc('connection').get();
-            console.log('Firestore read test successful');
-            
-            // Test Firestore write (this might fail due to security rules)
-            try {
-              await firebase.firestore().collection('test').doc('connection').set({
-                timestamp: new Date().toISOString(),
-                test: true
-              });
-              console.log('Firestore write test successful');
-            } catch (writeError) {
-              console.warn('Firestore write test failed (likely security rules):', writeError);
+            // Test Firestore (optional)
+            if (firebase.firestore) {
+              try {
+                const testDoc = await firebase.firestore().collection('test').doc('connection').get();
+                console.log('✅ Firestore read test successful');
+                
+                await firebase.firestore().collection('test').doc('connection').set({
+                  timestamp: new Date().toISOString(),
+                  test: true
+                });
+                console.log('✅ Firestore write test successful');
+              } catch (firestoreError) {
+                console.warn('❌ Firestore test failed (likely security rules):', firestoreError);
+              }
+            } else {
+              console.warn('Firestore not available');
             }
             
             console.log('Firebase connection test completed');
@@ -908,6 +925,7 @@
             const scripts = [
               'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
               'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js',
+              'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js',
               'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js'
             ];
 
@@ -1416,11 +1434,15 @@
               permissions: ['read', 'write', 'delete', 'admin']
             };
 
-            // Save to Firebase if available
-            if (typeof firebase !== 'undefined' && firebase.firestore) {
+            // Save to Firebase if available (using Realtime Database)
+            if (typeof firebase !== 'undefined' && firebase.database) {
+              const adminRef = firebase.database().ref('professors').child('admin_system');
+              await adminRef.set(adminData);
+              console.log('Admin user saved to Realtime Database');
+            } else if (typeof firebase !== 'undefined' && firebase.firestore) {
               const adminRef = firebase.firestore().collection('professors').doc('admin_system');
               await adminRef.set(adminData);
-              console.log('Admin user saved to Firebase');
+              console.log('Admin user saved to Firestore (fallback)');
             }
 
             this.currentUser = {
@@ -1457,7 +1479,7 @@
           }
         }
 
-        // DEV MODE: Create professor user in Firebase
+        // DEV MODE: Create professor user in Firebase (Realtime Database version)
         async createProfessorUser(email, password, fullName, institution = 'SCI-HIGH University') {
           try {
             // Ensure Firebase is loaded and initialized
@@ -1465,7 +1487,7 @@
               await this.loadFirebase();
             }
             
-            if (!firebase.auth || !firebase.firestore) {
+            if (!firebase.auth || !firebase.database) {
               throw new Error('Firebase services not available');
             }
 
@@ -1477,7 +1499,7 @@
             
             console.log('Firebase Auth user created:', user.uid);
 
-            // Create professor profile in Firestore
+            // Create professor profile in Realtime Database
             const professorData = {
               fullName: fullName,
               email: email,
@@ -1491,20 +1513,20 @@
               students: []
             };
 
-            console.log('Saving professor data to Firestore...');
+            console.log('Saving professor data to Realtime Database...');
             
-            // Add retry logic for Firestore write
+            // Add retry logic for Database write
             let retries = 3;
             while (retries > 0) {
               try {
-                await firebase.firestore().collection('professors').doc(user.uid).set(professorData);
+                await firebase.database().ref('professors').child(user.uid).set(professorData);
                 console.log('Professor data saved successfully');
                 break;
-              } catch (firestoreError) {
-                console.error(`Firestore write attempt failed (${4-retries}/3):`, firestoreError);
+              } catch (databaseError) {
+                console.error(`Database write attempt failed (${4-retries}/3):`, databaseError);
                 retries--;
                 if (retries === 0) {
-                  throw firestoreError;
+                  throw databaseError;
                 }
                 // Wait 1 second before retry
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1978,8 +2000,6 @@ USER MANAGEMENT:
 5. createSampleGeneral()                - Create general user account
 6. logoutUser()                        - Logout current user
 
-DEBUGGING:
-7. testFirebase()                      - Test Firebase connectivity and permissions
 
 DEBUGGING & TOOLS:
 7. debugFirebaseConnection()           - Check Firebase connection and data storage
