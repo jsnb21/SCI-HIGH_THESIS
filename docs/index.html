@@ -221,6 +221,11 @@
               <span class="relative z-10">Contact</span>
               <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
             </a>
+            <!-- Login Button - Hidden when user is logged in -->
+            <button id="login-btn" class="gaming-nav-link text-textColor hover:text-accent transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative" onclick="showLoginModal()">
+              <span class="relative z-10">🔐 Login</span>
+              <div class="absolute inset-0 bg-accent/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </button>
             <!-- Professor Tab - Hidden by default, shown only for admin/professor users -->
             <a href="professor-dashboard.html" id="professor-nav-link" class="gaming-nav-link text-textColor hover:text-accent transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative hidden">
               <span class="relative z-10">👨‍🏫 Professor</span>
@@ -925,8 +930,9 @@
             const scripts = [
               'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
               'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js',
-              'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js',
-              'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js'
+              'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js'
+              // Temporarily disable Firestore to avoid connection errors
+              // 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js'
             ];
 
             let loaded = 0;
@@ -989,21 +995,22 @@
               return { success: true, user: this.currentUser };
             }
 
-            // Production Firebase login (when Firebase is properly configured)
+            // Production Firebase login (using Realtime Database)
             if (typeof firebase !== 'undefined' && firebase.auth) {
               const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
               const user = userCredential.user;
               
-              // Check if user is actually a professor in Firestore
-              const professorDoc = await firebase.firestore().collection('professors').doc(user.uid).get();
-              if (!professorDoc.exists) {
+              // Check if user is actually a professor in Realtime Database
+              const professorSnapshot = await firebase.database().ref('professors').child(user.uid).once('value');
+              if (!professorSnapshot.exists()) {
+                await firebase.auth().signOut();
                 throw new Error('Not registered as a professor');
               }
 
-              const professorData = professorDoc.data();
+              const professorData = professorSnapshot.val();
               
               // Update last login timestamp
-              await firebase.firestore().collection('professors').doc(user.uid).update({
+              await firebase.database().ref('professors').child(user.uid).update({
                 lastLogin: new Date().toISOString(),
                 lastLoginIP: 'unknown' // You can implement IP detection if needed
               });
@@ -1079,14 +1086,12 @@
               return { success: true, user: this.currentUser };
             }
 
-            // Production Firebase login (when Firebase is properly configured)
-            if (typeof firebase !== 'undefined' && firebase.firestore) {
-              const studentQuery = await firebase.firestore().collection('students')
-                .where('studentId', '==', studentId)
-                .limit(1)
-                .get();
-
-              if (studentQuery.empty) {
+            // Production Firebase login (using Realtime Database when available)
+            if (typeof firebase !== 'undefined' && firebase.database) {
+              // Query student by student ID in Realtime Database
+              const studentsSnapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
+              
+              if (!studentsSnapshot.exists()) {
                 // Student doesn't exist, create a new account
                 const newStudent = await this.createStudentAccount(studentId);
                 if (newStudent.success) {
@@ -1108,12 +1113,13 @@
                 }
               }
 
-              const studentDoc = studentQuery.docs[0];
-              const studentData = studentDoc.data();
+              // Get the first (and should be only) student with this ID
+              const studentData = Object.values(studentsSnapshot.val())[0];
+              const studentKey = Object.keys(studentsSnapshot.val())[0];
 
               // Update last login timestamp
-              await firebase.firestore().collection('students').doc(studentDoc.id).update({
-                'accountInfo.lastLogin': new Date().toISOString()
+              await firebase.database().ref('students').child(studentKey).update({
+                'accountStatus/lastLogin': new Date().toISOString()
               });
 
               // No password verification needed - just student ID
@@ -1206,12 +1212,13 @@
               }
             };
 
-            // Save to Firestore
-            const docRef = await firebase.firestore().collection('students').add(studentData);
+            // Save to Realtime Database
+            const newStudentRef = firebase.database().ref('students').push();
+            await newStudentRef.set(studentData);
             
             return { 
               success: true, 
-              docId: docRef.id,
+              docId: newStudentRef.key,
               studentData: studentData
             };
           } catch (error) {
@@ -1258,16 +1265,16 @@
             const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
             const user = userCredential.user;
             
-            // Get user data from Firestore
-            const userDoc = await firebase.firestore().collection('general_users').doc(user.uid).get();
-            if (!userDoc.exists) {
+            // Get user data from Realtime Database
+            const userSnapshot = await firebase.database().ref('general_users').child(user.uid).once('value');
+            if (!userSnapshot.exists()) {
               throw new Error('User profile not found');
             }
 
-            const userData = userDoc.data();
+            const userData = userSnapshot.val();
             
             // Update last login timestamp
-            await firebase.firestore().collection('general_users').doc(user.uid).update({
+            await firebase.database().ref('general_users').child(user.uid).update({
               lastLogin: new Date().toISOString()
             });
 
@@ -1297,8 +1304,8 @@
             const userCredential = await firebase.auth().createUserWithEmailAndPassword(formData.email, formData.password);
             const user = userCredential.user;
 
-            // Save user data to Firestore
-            await firebase.firestore().collection('general_users').doc(user.uid).set({
+            // Save user data to Realtime Database
+            await firebase.database().ref('general_users').child(user.uid).set({
               fullName: formData.fullName,
               email: formData.email,
               displayName: formData.displayName,
@@ -1394,30 +1401,35 @@
           const userGreeting = document.getElementById('user-greeting');
           const greetingText = document.getElementById('greeting-text');
           const logoutBtn = document.getElementById('logout-btn');
+          const loginBtn = document.getElementById('login-btn');
 
-          if (!userGreeting || !greetingText || !logoutBtn) return;
+          if (!userGreeting || !greetingText || !logoutBtn || !loginBtn) return;
 
           if (this.currentUser && this.userType !== 'guest') {
             // Show user greeting and logout button for logged-in users (except guests)
             userGreeting.classList.remove('hidden');
             logoutBtn.classList.remove('hidden');
+            // Hide login button when user is logged in
+            loginBtn.classList.add('hidden');
 
             // Set personalized greeting based on user type
             let greetingMessage = '';
             if (this.userType === 'student') {
-              greetingMessage = `Hello, ${this.currentUser.name || 'Student'}!`;
+              greetingMessage = `Hello, ${this.currentUser.profile?.fullName || this.currentUser.name || 'Student'}!`;
             } else if (this.userType === 'professor') {
-              greetingMessage = `Hello, Prof. ${this.currentUser.name || 'Professor'}!`;
+              greetingMessage = `Hello, Prof. ${this.currentUser.profile?.fullName || this.currentUser.name || 'Professor'}!`;
             } else if (this.userType === 'admin') {
-              greetingMessage = `Hello, Admin ${this.currentUser.name || 'Admin'}!`;
+              greetingMessage = `Hello, Admin ${this.currentUser.profile?.fullName || this.currentUser.name || 'Admin'}!`;
             } else {
-              greetingMessage = `Hello, ${this.currentUser.name || 'User'}!`;
+              greetingMessage = `Hello, ${this.currentUser.profile?.fullName || this.currentUser.name || 'User'}!`;
             }
             greetingText.textContent = greetingMessage;
           } else {
             // Hide user greeting and logout button for guests or non-logged-in users
             userGreeting.classList.add('hidden');
             logoutBtn.classList.add('hidden');
+            // Show login button when user is not logged in
+            loginBtn.classList.remove('hidden');
           }
         }
 
@@ -1586,6 +1598,9 @@
         loginModal.classList.remove('hidden');
         showUserTypeSelection();
       }
+
+      // Make showLoginModal global for onclick access
+      window.showLoginModal = showLoginModal;
 
       // Show User Type Selection
       function showUserTypeSelection() {
