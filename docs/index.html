@@ -9,6 +9,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts for Gaming Feel -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
     <script>
       tailwind.config = {
         theme: {
@@ -88,6 +94,23 @@
         border: 2px solid #F4CE14;
         background: rgba(22, 33, 62, 0.8);
         box-shadow: 0 0 10px rgba(244, 206, 20, 0.3);
+      }
+      
+      /* Student Info Form Styling */
+      #student-info-form input:focus,
+      #student-info-form select:focus,
+      #student-info-form textarea:focus {
+        border-color: #F4CE14;
+        box-shadow: 0 0 0 2px rgba(244, 206, 20, 0.2);
+      }
+      
+      #student-info-form input:invalid,
+      #student-info-form select:invalid {
+        border-color: #ef4444;
+      }
+      
+      #student-info-form .hidden {
+        display: none !important;
       }
       
       /* Custom scrollbar for chat */
@@ -529,6 +552,165 @@
           <button id="back-to-selection" class="hidden px-6 py-2 text-gray-400 hover:text-white transition-colors duration-300 font-gaming">
             ← Back to Options
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Information Collection Modal -->
+    <div id="student-info-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] hidden backdrop-blur-sm">
+      <div class="neon-border bg-cardBg rounded-xl shadow-2xl max-w-2xl w-full mx-4 p-8 relative animate-bounce-in">
+        <button id="close-student-info-modal" class="absolute top-4 right-4 text-3xl text-gray-400 hover:text-primary transition-colors duration-300 font-gaming">&times;</button>
+        
+        <div class="text-center mb-8">
+          <h2 class="font-gaming text-3xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">🎓 Complete Your Profile</h2>
+          <p class="text-gray-300 text-lg max-w-lg mx-auto leading-relaxed">
+            Welcome to SCI-HIGH! Please provide some basic information to personalize your learning experience.
+          </p>
+        </div>
+        
+        <form id="student-info-form" class="space-y-6">
+          <!-- Full Name -->
+          <div>
+            <label class="block text-gray-300 text-sm mb-2 font-gaming">
+              <span class="text-primary">*</span> Full Name
+            </label>
+            <input 
+              type="text" 
+              name="fullName" 
+              required 
+              placeholder="Enter your full name"
+              class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none transition-colors duration-300"
+            >
+          </div>
+
+          <!-- Academic Level -->
+          <div>
+            <label class="block text-gray-300 text-sm mb-2 font-gaming">
+              <span class="text-primary">*</span> Academic Level
+            </label>
+            <select 
+              name="level" 
+              required 
+              class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-primary focus:outline-none transition-colors duration-300"
+              onchange="handleLevelChange(this.value)"
+            >
+              <option value="">Select your academic level</option>
+              <option value="college">College</option>
+              <option value="shs">Senior High School</option>
+              <option value="jhs">Junior High School</option>
+            </select>
+          </div>
+
+          <!-- College Course (shown when College is selected) -->
+          <div id="college-course-section" class="hidden">
+            <label class="block text-gray-300 text-sm mb-2 font-gaming">
+              <span class="text-primary">*</span> Course/Program
+            </label>
+            <select 
+              name="course" 
+              class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-primary focus:outline-none transition-colors duration-300"
+            >
+              <option value="">Select your course</option>
+              <option value="BS Computer Science">BS Computer Science</option>
+              <option value="BS Information Technology">BS Information Technology</option>
+              <option value="BS Software Engineering">BS Software Engineering</option>
+              <option value="BS Data Science">BS Data Science</option>
+              <option value="BS Cybersecurity">BS Cybersecurity</option>
+              <option value="BS Game Development">BS Game Development</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <!-- SHS Strand (shown when Senior High is selected) -->
+          <div id="shs-strand-section" class="hidden">
+            <label class="block text-gray-300 text-sm mb-2 font-gaming">
+              <span class="text-primary">*</span> Strand
+            </label>
+            <select 
+              name="strand" 
+              class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-primary focus:outline-none transition-colors duration-300"
+            >
+              <option value="">Select your strand</option>
+              <option value="STEM">STEM (Science, Technology, Engineering, Mathematics)</option>
+              <option value="ABM">ABM (Accountancy, Business, Management)</option>
+              <option value="HUMSS">HUMSS (Humanities and Social Sciences)</option>
+              <option value="GAS">GAS (General Academic Strand)</option>
+              <option value="ICT">ICT (Information and Communications Technology)</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <!-- Year Level -->
+          <div>
+            <label class="block text-gray-300 text-sm mb-2 font-gaming">
+              <span class="text-primary">*</span> Year Level
+            </label>
+            <select 
+              name="year" 
+              required 
+              class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-primary focus:outline-none transition-colors duration-300"
+            >
+              <option value="">Select your year level</option>
+              <option value="1">1st Year</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+              <option value="5">5th Year</option>
+            </select>
+          </div>
+
+          <!-- Programming Experience (Optional) -->
+          <div>
+            <label class="block text-gray-300 text-sm mb-2 font-gaming">
+              Programming Experience (Optional)
+            </label>
+            <select 
+              name="experience" 
+              class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-primary focus:outline-none transition-colors duration-300"
+            >
+              <option value="">Select your experience level</option>
+              <option value="beginner">Beginner (Just starting out)</option>
+              <option value="intermediate">Intermediate (Some experience)</option>
+              <option value="advanced">Advanced (Experienced programmer)</option>
+            </select>
+          </div>
+
+          <!-- Learning Goals (Optional) -->
+          <div>
+            <label class="block text-gray-300 text-sm mb-2 font-gaming">
+              Learning Goals (Optional)
+            </label>
+            <textarea 
+              name="goals" 
+              placeholder="What do you hope to learn or achieve? (Optional)"
+              rows="3"
+              class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none transition-colors duration-300 resize-none"
+            ></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="flex gap-4 pt-4">
+            <button 
+              type="button" 
+              id="skip-info-btn"
+              class="flex-1 px-6 py-3 font-gaming text-gray-400 border border-gray-600 rounded-lg transform transition-all duration-300 hover:border-gray-400 hover:text-white"
+            >
+              Skip for Now
+            </button>
+            <button 
+              type="submit" 
+              class="flex-1 px-6 py-3 font-gaming text-dark bg-gradient-to-r from-primary to-yellow-300 rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50"
+            >
+              Complete Profile
+            </button>
+          </div>
+        </form>
+
+        <!-- Progress indicator -->
+        <div class="mt-6 text-center">
+          <div class="text-xs text-gray-400 font-gaming">
+            This information helps us customize your learning experience
+          </div>
         </div>
       </div>
     </div>
@@ -1641,6 +1823,83 @@
         }
       }
 
+      // Student Information Collection Functions
+      function showStudentInfoModal() {
+        document.getElementById('student-info-modal').classList.remove('hidden');
+      }
+
+      function hideStudentInfoModal() {
+        document.getElementById('student-info-modal').classList.add('hidden');
+      }
+
+      function handleLevelChange(level) {
+        const collegeSection = document.getElementById('college-course-section');
+        const shsSection = document.getElementById('shs-strand-section');
+        
+        // Hide all sections first
+        collegeSection.classList.add('hidden');
+        shsSection.classList.add('hidden');
+        
+        // Clear required attributes
+        collegeSection.querySelector('select').removeAttribute('required');
+        shsSection.querySelector('select').removeAttribute('required');
+        
+        // Show appropriate section based on level
+        if (level === 'college') {
+          collegeSection.classList.remove('hidden');
+          collegeSection.querySelector('select').setAttribute('required', 'required');
+        } else if (level === 'shs') {
+          shsSection.classList.remove('hidden');
+          shsSection.querySelector('select').setAttribute('required', 'required');
+        }
+      }
+
+      async function updateStudentInformation(studentData) {
+        try {
+          if (!authManager.currentUser) {
+            throw new Error('No current user found');
+          }
+
+          const userId = authManager.currentUser.uid;
+          const studentId = authManager.currentUser.studentId;
+
+          // Prepare updated student data
+          const updatedData = {
+            name: studentData.fullName,
+            fullName: studentData.fullName,
+            level: studentData.level,
+            course: studentData.course || null,
+            strand: studentData.strand || null,
+            year: parseInt(studentData.year),
+            experience: studentData.experience || null,
+            goals: studentData.goals || null,
+            'accountStatus/isFirstLogin': false,
+            'accountStatus/profileCompleted': true,
+            'accountStatus/lastProfileUpdate': new Date().toISOString()
+          };
+
+          // Update in Firebase if available
+          if (typeof firebase !== 'undefined' && firebase.database) {
+            await firebase.database().ref('students').child(userId).update(updatedData);
+            console.log('Student information updated in Firebase');
+          }
+
+          // Update current user profile
+          authManager.currentUser.profile = {
+            ...authManager.currentUser.profile,
+            ...updatedData
+          };
+
+          // Save to local storage
+          localStorage.setItem('sci_high_user', JSON.stringify(authManager.currentUser));
+
+          return { success: true };
+        } catch (error) {
+          console.error('Error updating student information:', error);
+          return { success: false, error: error.message };
+        }
+      }
+
       // Event Listeners for User Type Selection
       document.getElementById('professor-option').addEventListener('click', () => showForm('professor'));
       document.getElementById('student-option').addEventListener('click', () => showForm('student'));
@@ -1680,11 +1939,20 @@
         const result = await authManager.loginStudent(formData.get('studentId'));
         
         if (result.success) {
-          if (result.isNewAccount) {
-            alert('Welcome! A new account has been created for you. Your progress will be saved automatically.');
-          }
           loginModal.classList.add('hidden');
-          authManager.redirectToGame();
+          
+          if (result.isNewAccount) {
+            // Show student information collection modal for new accounts
+            showStudentInfoModal();
+          } else {
+            // Check if profile is incomplete for existing accounts
+            const profile = authManager.currentUser.profile;
+            if (!profile.name || profile.name.startsWith('Student ') || profile.level === 'unknown') {
+              showStudentInfoModal();
+            } else {
+              authManager.redirectToGame();
+            }
+          }
         } else {
           alert('Login failed: ' + result.error);
         }
@@ -1725,14 +1993,88 @@
         }
       });
 
+      // Student Information Form Event Listeners
+      document.getElementById('student-info-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        
+        const studentData = {
+          fullName: formData.get('fullName'),
+          level: formData.get('level'),
+          course: formData.get('course'),
+          strand: formData.get('strand'),
+          year: formData.get('year'),
+          experience: formData.get('experience'),
+          goals: formData.get('goals')
+        };
+
+        // Show loading state
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Saving...';
+        submitBtn.disabled = true;
+
+        try {
+          const result = await updateStudentInformation(studentData);
+          
+          if (result.success) {
+            hideStudentInfoModal();
+            
+            // Show success message
+            const welcomeMsg = `Welcome, ${studentData.fullName}! Your profile has been completed. Let's start your programming adventure!`;
+            alert(welcomeMsg);
+            
+            // Redirect to game
+            authManager.redirectToGame();
+          } else {
+            alert('Failed to save information: ' + result.error);
+          }
+        } catch (error) {
+          alert('Error saving information: ' + error.message);
+        } finally {
+          // Restore button state
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+        }
+      });
+
+      document.getElementById('skip-info-btn').addEventListener('click', () => {
+        const confirmSkip = confirm('Are you sure you want to skip this step? You can complete your profile later from the game settings.');
+        if (confirmSkip) {
+          hideStudentInfoModal();
+          authManager.redirectToGame();
+        }
+      });
+
+      // Make handleLevelChange globally accessible for HTML onchange
+      window.handleLevelChange = handleLevelChange;
+
       // Close Modal Functions
       document.getElementById('close-login-modal').addEventListener('click', () => {
         loginModal.classList.add('hidden');
       });
 
-      // Close modal on outside click
+      document.getElementById('close-student-info-modal').addEventListener('click', () => {
+        const confirmClose = confirm('Are you sure you want to close without completing your profile? You can complete it later from the game settings.');
+        if (confirmClose) {
+          hideStudentInfoModal();
+          authManager.redirectToGame();
+        }
+      });
+
+      // Close modals on outside click
       loginModal.addEventListener('click', (e) => {
         if (e.target === loginModal) loginModal.classList.add('hidden');
+      });
+
+      document.getElementById('student-info-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('student-info-modal')) {
+          const confirmClose = confirm('Are you sure you want to close without completing your profile? You can complete it later from the game settings.');
+          if (confirmClose) {
+            hideStudentInfoModal();
+            authManager.redirectToGame();
+          }
+        }
       });
 
       // Gaming Modal and Carousel System
@@ -3383,8 +3725,71 @@ Please provide a helpful, engaging response about SCI-HIGH or the thesis researc
       
       // Initialize the virtual assistant when the page loads
       document.addEventListener('DOMContentLoaded', () => {
+        // Initialize Firebase
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+          const firebaseConfig = {
+            apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
+            authDomain: "sci-high-website.firebaseapp.com",
+            databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "sci-high-website",
+            storageBucket: "sci-high-website.appspot.com",
+            messagingSenderId: "451463202515",
+            appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
+          };
+          firebase.initializeApp(firebaseConfig);
+          console.log('Firebase initialized');
+        }
+        
         new VirtualAssistant();
       });
+
+      // Developer Test Functions - Available in console
+      window.testStudentInfoSystem = {
+        // Test showing the student info modal
+        showModal: () => {
+          showStudentInfoModal();
+        },
+        
+        // Test with sample data
+        testFormSubmission: async () => {
+          const sampleData = {
+            fullName: 'Test Student',
+            level: 'college',
+            course: 'BS Computer Science',
+            year: '2',
+            experience: 'intermediate',
+            goals: 'Learn web development and mobile app development'
+          };
+          
+          // Simulate having a current user
+          if (!authManager.currentUser) {
+            authManager.currentUser = {
+              uid: 'test_user_123',
+              studentId: 'TEST-2025-001',
+              type: 'student',
+              profile: { name: 'Test Student', level: 'unknown' }
+            };
+          }
+          
+          const result = await updateStudentInformation(sampleData);
+          console.log('Test result:', result);
+          return result;
+        },
+        
+        // Test student login with new account
+        testNewStudentLogin: async () => {
+          const testStudentId = 'TEST-' + Date.now();
+          const result = await authManager.loginStudent(testStudentId);
+          console.log('New student login result:', result);
+          return result;
+        }
+      };
+
+      // Log test functions availability
+      console.log('Student Info System Test Functions Available:');
+      console.log('- testStudentInfoSystem.showModal() - Show the student info modal');
+      console.log('- testStudentInfoSystem.testFormSubmission() - Test form submission with sample data');
+      console.log('- testStudentInfoSystem.testNewStudentLogin() - Test new student login flow');
     </script>
   </body>
 </html>
