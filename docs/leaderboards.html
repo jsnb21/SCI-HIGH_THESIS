@@ -185,6 +185,14 @@
               <span class="relative z-10">🎒 Junior High</span>
             </button>
           </div>
+          
+          <!-- Students Only Notice -->
+          <div class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-400/50 rounded-lg p-4 mb-8 text-center">
+            <p class="text-blue-300 font-gaming">
+              <span class="text-yellow-300">🎓</span> Student Leaderboard <span class="text-yellow-300">🎓</span>
+            </p>
+            <p class="text-gray-300 text-sm mt-1">Only registered students appear on the leaderboards. Scores are linked to official student records.</p>
+          </div>
         </div>
       </section>
 
@@ -580,13 +588,21 @@
         container.innerHTML = html;
       }
 
-      function addScore(userId, name, score, department) {
-        return new Promise((resolve, reject) => {
+      async function addScore(userId, name, score, department) {
+        try {
           // Validate input
           if (!userId || !name || score < 0) {
-            reject(new Error('Invalid score data'));
-            return;
+            throw new Error('Invalid score data');
           }
+          
+          // First verify the user is a valid student
+          const studentsSnapshot = await db.ref('students').orderByChild('studentId').equalTo(userId).once('value');
+          
+          if (!studentsSnapshot.exists()) {
+            throw new Error('Only registered students can submit scores to the leaderboard');
+          }
+          
+          const studentData = Object.values(studentsSnapshot.val())[0];
           
           // Create sample gameData for testing
           const gameData = {
@@ -611,53 +627,73 @@
             }
           };
           
-          db.ref('leaderboards/' + userId).set({
-            name: name,
+          const scoreData = {
+            studentId: userId, // Store student ID for reference
+            name: studentData.name, // Use the official name from student record
             score: score,
-            department: department,
+            department: studentData.level === 'college' ? `College - ${studentData.course}` : 
+                       studentData.level === 'shs' ? `Senior High - ${studentData.strand}` : 
+                       studentData.level || 'Unknown',
             timestamp: Date.now(),
             submissionDate: new Date().toISOString(),
-            gameData: gameData
-          }).then(() => {
-            console.log('Score submitted successfully');
-            resolve();
-          }).catch((error) => {
-            console.error('Error submitting score:', error);
-            reject(error);
-          });
-        });
+            gameData: gameData,
+            studentInfo: {
+              level: studentData.level,
+              course: studentData.course,
+              strand: studentData.strand,
+              year: studentData.year
+            }
+          };
+
+          await db.ref('leaderboards/' + userId).set(scoreData);
+          console.log('Score submitted successfully for student:', studentData.name);
+          return Promise.resolve();
+        } catch (error) {
+          console.error('Error submitting score:', error);
+          return Promise.reject(error);
+        }
       }
 
       // Enhanced function to update existing score if it's higher
-      function updateBestScore(userId, name, score, department) {
-        return new Promise((resolve, reject) => {
-          db.ref('leaderboards/' + userId).once('value').then((snapshot) => {
-            const existingData = snapshot.val();
-            
-            if (!existingData || score > existingData.score) {
-              // Add new score or update if higher
-              addScore(userId, name, score, department)
-                .then(() => {
-                  console.log('New best score saved!');
-                  resolve(true); // Indicates new best score
-                })
-                .catch(reject);
-            } else {
-              console.log('Score not high enough to update leaderboard');
-              resolve(false); // Indicates score wasn't updated
-            }
-          }).catch(reject);
-        });
+      async function updateBestScore(userId, name, score, department) {
+        try {
+          // First verify the user is a valid student
+          const studentsSnapshot = await db.ref('students').orderByChild('studentId').equalTo(userId).once('value');
+          
+          if (!studentsSnapshot.exists()) {
+            console.log('User is not a registered student');
+            return Promise.reject(new Error('Only registered students can submit scores to the leaderboard'));
+          }
+          
+          const leaderboardRef = db.ref('leaderboards/' + userId);
+          const snapshot = await leaderboardRef.once('value');
+          const existingData = snapshot.val();
+          
+          if (!existingData || score > existingData.score) {
+            // Add new score or update if higher
+            const result = await addScore(userId, name, score, department);
+            console.log('New best score saved!');
+            return true; // Indicates new best score
+          } else {
+            console.log('Score not high enough to update leaderboard');
+            return false; // Indicates score wasn't updated
+          }
+        } catch (error) {
+          console.error('Error updating best score:', error);
+          return Promise.reject(error);
+        }
       }
 
       // Function to get a player's current best score
-      function getPlayerBestScore(userId) {
-        return new Promise((resolve, reject) => {
-          db.ref('leaderboards/' + userId).once('value').then((snapshot) => {
-            const data = snapshot.val();
-            resolve(data ? data.score : 0);
-          }).catch(reject);
-        });
+      async function getPlayerBestScore(userId) {
+        try {
+          const snapshot = await db.ref('leaderboards/' + userId).once('value');
+          const data = snapshot.val();
+          return data ? data.score : 0;
+        } catch (error) {
+          console.error('Error getting player best score:', error);
+          return 0;
+        }
       }
 
       // Render Top 3 Player Cards
@@ -750,29 +786,72 @@
         container.innerHTML = cardsHtml;
       }
 
-      function fetchLeaderboard(filter) {
-        db.ref('leaderboards').orderByChild('score').limitToLast(100).once('value', snapshot => {
+      async function fetchLeaderboard(filter) {
+        try {
+          // First, get all students from the students table
+          const studentsSnapshot = await db.ref('students').once('value');
+          const studentsData = studentsSnapshot.val() || {};
+          
+          // Then get leaderboard scores
+          const leaderboardSnapshot = await db.ref('leaderboards').orderByChild('score').limitToLast(100).once('value');
           const arr = [];
-          snapshot.forEach(child => {
-            const data = child.val();
-            data.userId = child.key; // Add the Firebase key as userId
-            arr.push(data);
+          
+          leaderboardSnapshot.forEach(child => {
+            const scoreData = child.val();
+            const studentId = scoreData.studentId || child.key;
+            
+            // Find corresponding student data
+            const studentKey = Object.keys(studentsData).find(key => 
+              studentsData[key].studentId === studentId
+            );
+            
+            if (studentKey) {
+              const studentInfo = studentsData[studentKey];
+              const combinedData = {
+                ...scoreData,
+                userId: child.key,
+                studentId: studentId,
+                name: studentInfo.name,
+                level: studentInfo.level,
+                course: studentInfo.course,
+                strand: studentInfo.strand,
+                year: studentInfo.year,
+                department: studentInfo.level === 'college' ? `College - ${studentInfo.course}` : 
+                           studentInfo.level === 'shs' ? `Senior High - ${studentInfo.strand}` : 
+                           studentInfo.level || 'Unknown'
+              };
+              arr.push(combinedData);
+            }
           });
-          // Sort descending
+          
+          // Sort descending by score
           arr.sort((a, b) => b.score - a.score);
+          
+          // Apply filters
           let filtered = arr;
           if (filter === 'college') {
-            filtered = arr.filter(e => (e.department || '').toLowerCase().includes('college'));
+            filtered = arr.filter(e => e.level === 'college');
           } else if (filter === 'seniorhigh') {
-            filtered = arr.filter(e => (e.department || '').toLowerCase().includes('senior'));
+            filtered = arr.filter(e => e.level === 'shs');
           } else if (filter === 'juniorhigh') {
-            filtered = arr.filter(e => (e.department || '').toLowerCase().includes('junior'));
+            // Note: Add juniorhigh level to students table if needed
+            filtered = arr.filter(e => e.level === 'jhs');
           }
           
           // Render top 3 player cards and leaderboard table
-          renderPlayerCards(arr); // Always show global top 3 for featured section
+          renderPlayerCards(arr.slice(0, 3)); // Show top 3 for featured section
           renderLeaderboard(filtered);
-        });
+        } catch (error) {
+          console.error('Error fetching leaderboard:', error);
+          // Show error message to user
+          document.getElementById('leaderboard-body').innerHTML = `
+            <tr>
+              <td colspan="5" class="text-center py-8 text-red-400">
+                ⚠️ Failed to load leaderboard data. Please try again.
+              </td>
+            </tr>
+          `;
+        }
       }
 
       // Filter button logic
@@ -796,7 +875,7 @@
       };
 
       // Player Profile Functions
-      function showPlayerProfile(userId) {
+      async function showPlayerProfile(userId) {
         console.log('Loading profile for user:', userId);
         
         // Show modal with animation
@@ -819,28 +898,46 @@
           </div>
         `;
         
-        // Fetch player data
-        db.ref('leaderboards/' + userId).once('value').then(snapshot => {
-          const playerData = snapshot.val();
-          if (playerData) {
-            renderPlayerProfile(playerData);
+        try {
+          // Fetch student data first
+          const studentsSnapshot = await db.ref('students').orderByChild('studentId').equalTo(userId).once('value');
+          let studentInfo = null;
+          
+          if (studentsSnapshot.exists()) {
+            studentInfo = Object.values(studentsSnapshot.val())[0];
+          }
+          
+          // Fetch leaderboard data
+          const leaderboardSnapshot = await db.ref('leaderboards/' + userId).once('value');
+          const leaderboardData = leaderboardSnapshot.val();
+          
+          if (leaderboardData && studentInfo) {
+            // Combine student info with leaderboard data
+            const combinedData = {
+              ...leaderboardData,
+              ...studentInfo,
+              department: studentInfo.level === 'college' ? `College - ${studentInfo.course}` : 
+                         studentInfo.level === 'shs' ? `Senior High - ${studentInfo.strand}` : 
+                         studentInfo.level || 'Unknown'
+            };
+            renderPlayerProfile(combinedData);
           } else {
             document.getElementById('profile-content').innerHTML = `
               <div class="text-center py-8">
-                <div class="text-red-400 font-gaming text-lg">⚠️ Warrior profile not found</div>
-                <p class="text-gray-400 mt-2">This player might not exist in our records.</p>
+                <div class="text-red-400 font-gaming text-lg">⚠️ Student profile not found</div>
+                <p class="text-gray-400 mt-2">This student might not be registered or have no leaderboard data.</p>
               </div>
             `;
           }
-        }).catch(error => {
+        } catch (error) {
           console.error('Error loading player profile:', error);
           document.getElementById('profile-content').innerHTML = `
             <div class="text-center py-8">
               <div class="text-red-400 font-gaming text-lg">🚫 Error loading profile</div>
-              <p class="text-gray-400 mt-2">Failed to fetch warrior data. Please try again.</p>
+              <p class="text-gray-400 mt-2">Failed to fetch student data. Please try again.</p>
             </div>
           `;
-        });
+        }
       }
 
       function closePlayerProfile() {
@@ -1588,6 +1685,33 @@
             alert('Integration Error: ' + error.message);
           });
       }
+
+      // Function to test student score submission (for development)
+      async function testStudentScore(studentId, score) {
+        try {
+          // Check if student exists first
+          const studentsSnapshot = await db.ref('students').orderByChild('studentId').equalTo(studentId).once('value');
+          
+          if (!studentsSnapshot.exists()) {
+            console.error('Student not found:', studentId);
+            alert(`Student ${studentId} not found in the database. Please create the student first using developer tools.`);
+            return;
+          }
+          
+          const studentData = Object.values(studentsSnapshot.val())[0];
+          
+          await addScore(studentId, studentData.name, score, 'Test Department');
+          console.log(`Score ${score} submitted for student ${studentId}`);
+          alert(`Score submitted successfully for ${studentData.name}!`);
+          fetchLeaderboard('overall');
+        } catch (error) {
+          console.error('Error testing student score:', error);
+          alert('Error: ' + error.message);
+        }
+      }
+
+      // Make test function available globally
+      window.testStudentScore = testStudentScore;
     </script>
   </body>
 </html>
