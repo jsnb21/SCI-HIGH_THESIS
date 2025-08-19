@@ -1660,9 +1660,8 @@
         e.preventDefault();
         const formData = new FormData(e.target);
         
-        // Use the proper AuthService instead of the old authManager
-        const authService = (await import('./src/services/authService.js')).default;
-        const result = await authService.loginProfessor(formData.get('email'), formData.get('password'));
+        // Use the main AuthManager
+        const result = await authManager.loginProfessor(formData.get('email'), formData.get('password'));
         
         if (result.success) {
           loginModal.classList.add('hidden');
@@ -1677,9 +1676,8 @@
         e.preventDefault();
         const formData = new FormData(e.target);
         
-        // Use the proper AuthService instead of the old authManager
-        const authService = (await import('./src/services/authService.js')).default;
-        const result = await authService.loginStudent(formData.get('studentId'));
+        // Use the main AuthManager instead of the separate authService
+        const result = await authManager.loginStudent(formData.get('studentId'));
         
         if (result.success) {
           if (result.isNewAccount) {
@@ -1696,9 +1694,8 @@
         e.preventDefault();
         const formData = new FormData(e.target);
         
-        // Use the proper AuthService instead of the old authManager
-        const authService = (await import('./src/services/authService.js')).default;
-        const result = await authService.loginGeneral(formData.get('email'), formData.get('password'));
+        // Use the main AuthManager
+        const result = await authManager.loginGeneral(formData.get('email'), formData.get('password'));
         
         if (result.success) {
           loginModal.classList.add('hidden');
@@ -1712,9 +1709,8 @@
         e.preventDefault();
         const formData = new FormData(e.target);
         
-        // Use the proper AuthService instead of the old authManager
-        const authService = (await import('./src/services/authService.js')).default;
-        const result = await authService.registerGeneral({
+        // Use the main AuthManager
+        const result = await authManager.registerGeneral({
           fullName: formData.get('fullName'),
           email: formData.get('email'),
           displayName: formData.get('displayName'),

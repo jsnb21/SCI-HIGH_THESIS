@@ -15,7 +15,7 @@ class AuthService {
         
         this.isFirebaseInitialized = false;
         this.auth = null;
-        this.firestore = null;
+        this.database = null; // Changed from firestore to database
         this.currentUser = null;
         this.userType = null;
         this.initializationPromise = null;
@@ -54,7 +54,7 @@ class AuthService {
             }
             
             this.auth = window.firebase.auth();
-            this.firestore = window.firebase.firestore();
+            this.database = window.firebase.database(); // Changed from firestore to database
             
             // Set up auth state listener
             this.auth.onAuthStateChanged((user) => {
@@ -85,7 +85,7 @@ class AuthService {
             const scripts = [
                 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
                 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js',
-                'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js'
+                'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js' // Changed from firestore to database
             ];
             
             let loaded = 0;
@@ -244,16 +244,15 @@ class AuthService {
                 throw new Error('Invalid student ID provided');
             }
 
-            // Query student by student ID
-            console.log('AuthService: Querying Firestore for student...');
-            const studentQuery = await this.firestore.collection('students')
-                .where('studentId', '==', studentId.trim())
-                .limit(1)
-                .get();
+            // Query student by student ID using Realtime Database
+            console.log('AuthService: Querying Realtime Database for student...');
+            const studentsRef = this.database.ref('students');
+            const studentQuery = await studentsRef.orderByChild('studentId').equalTo(studentId.trim()).once('value');
+            const studentsData = studentQuery.val();
 
-            console.log('AuthService: Query completed - empty:', studentQuery.empty, 'size:', studentQuery.size);
+            console.log('AuthService: Query completed - data:', studentsData);
 
-            if (studentQuery.empty) {
+            if (!studentsData) {
                 console.log('AuthService: Student not found, creating new account');
                 // Student doesn't exist, create a new account
                 const newStudent = await this.createStudentAccount(studentId.trim());
@@ -276,17 +275,10 @@ class AuthService {
 
             console.log('AuthService: Found existing student, loading data...');
             
-            // Ensure we have valid query results
-            if (!studentQuery.docs || studentQuery.docs.length === 0) {
-                throw new Error('No student documents found in query result');
-            }
+            // Get the first (and should be only) student record
+            const studentKey = Object.keys(studentsData)[0];
+            const studentData = studentsData[studentKey];
 
-            const studentDoc = studentQuery.docs[0];
-            if (!studentDoc || !studentDoc.exists) {
-                throw new Error('Student document does not exist or is inaccessible');
-            }
-
-            const studentData = studentDoc.data();
             if (!studentData) {
                 throw new Error('Student data is corrupted or inaccessible');
             }
@@ -296,12 +288,12 @@ class AuthService {
             // No password verification needed - just student ID
             
             // Check if account is active
-            if (!studentData.accountStatus || !studentData.accountStatus.isActive) {
+            if (!studentData.isActive) {
                 throw new Error('Account is inactive. Please contact your professor.');
             }
 
             this.currentUser = {
-                uid: studentDoc.id,
+                uid: studentKey,
                 studentId: studentData.studentId,
                 type: 'student',
                 profile: studentData
@@ -311,8 +303,8 @@ class AuthService {
             // Update last login
             console.log('AuthService: Updating last login timestamp...');
             try {
-                await this.firestore.collection('students').doc(studentDoc.id).update({
-                    'accountStatus.lastLogin': new Date().toISOString()
+                await studentsRef.child(studentKey).update({
+                    lastLogin: new Date().toISOString()
                 });
                 console.log('AuthService: Last login timestamp updated');
             } catch (updateError) {
@@ -379,40 +371,31 @@ class AuthService {
         try {
             const studentData = {
                 studentId,
-                fullName: `Student ${studentId}`, // Default name, can be updated later
-                academicInfo: {
-                    level: 'unknown', // Can be updated by professor later
-                    course: null,
-                    yearLevel: null,
-                    strand: null
+                name: `Student ${studentId}`, // Default name, can be updated later
+                level: 'unknown', // Will be set by administrator
+                course: '',
+                strand: '',
+                year: '',
+                progress: {
+                    completedQuizzes: [],
+                    completedStories: [],
+                    totalScore: 0,
+                    lastActivity: new Date().toISOString()
                 },
-                accountStatus: {
-                    isActive: true,
-                    isFirstLogin: true,
-                    createdBy: 'auto-created', // Mark as auto-created
-                    createdAt: new Date().toISOString(),
-                    lastLogin: new Date().toISOString()
-                },
-                gameData: {
-                    totalPoints: 0,
-                    achievements: [],
-                    courseProgress: {
-                        'Web_Design': { unlocked: true, completed: false, progress: 0 },
-                        'Python': { unlocked: true, completed: false, progress: 0 },
-                        'Java': { unlocked: false, completed: false, progress: 0 },
-                        'C': { unlocked: false, completed: false, progress: 0 },
-                        'CPlusPlus': { unlocked: false, completed: false, progress: 0 },
-                        'CSharp': { unlocked: false, completed: false, progress: 0 }
-                    }
-                }
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString(),
+                isActive: true,
+                createdBy: 'auto-created'
             };
 
-            // Save to Firestore
-            const docRef = await this.firestore.collection('students').add(studentData);
+            // Save to Realtime Database
+            const studentsRef = this.database.ref('students');
+            const newStudentRef = studentsRef.push();
+            await newStudentRef.set(studentData);
             
             return { 
                 success: true, 
-                docId: docRef.id,
+                docId: newStudentRef.key,
                 studentData: studentData
             };
         } catch (error) {
