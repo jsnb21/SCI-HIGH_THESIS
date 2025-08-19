@@ -3,19 +3,1442 @@
     {
       "type": "multiple-choice",
       "question": "What does HTML stand for?",
-      "options": ["Hyper Text Markup Language", "High Tech Modern Language", "Home Tool Markup Language", "Hyperlink and Text Markup Language"],
+      "options": ["Hyper Text Markup Language", "High Tech Machine Learning", "Hyperlinks and Text Markup Language", "Home Tool Markup Language"],
       "correctIndex": 0
     },
     {
-      "type": "fill-in-the-blank",
-      "question": "The CSS property used to change the text color of an element is _____.",
-      "correctAnswers": ["color"]
+      "type": "multiple-choice",
+      "question": "Which HTML tag is used to create a hyperlink?",
+      "options": ["<link>", "<a>", "<href>", "<hyper>"],
+      "correctIndex": 1
     },
     {
       "type": "multiple-choice",
-      "question": "What is the correct HTML element for the largest heading?",
-      "options": ["<heading>", "<h6>", "<h1>", "<header>"],
+      "question": "Which tag is used for inserting an image?",
+      "options": ["<img>", "<picture>", "<src>", "<graphic>"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What attribute specifies the URL of an image in HTML?",
+      "options": ["alt", "src", "href", "url"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which HTML element is used to define a table row?",
+      "options": ["<td>", "<tr>", "<th>", "<row>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which of the following is a block-level element?",
+      "options": ["<span>", "<div>", "<b>", "<i>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which HTML tag is used to define the largest heading?",
+      "options": ["<h6>", "<h1>", "<head>", "<title>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which attribute is used to provide alternative text for an image?",
+      "options": ["src", "alt", "title", "name"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What is the correct HTML for creating a numbered list?",
+      "options": ["<ul>", "<ol>", "<list>", "<number>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which element is used to insert a line break?",
+      "options": ["<lb>", "<br>", "<break>", "<newline>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which HTML tag defines a checkbox?",
+      "options": ["<input type=\"checkbox\">", "<checkbox>", "<input=\"check\">", "<input checkbox>"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which element is used to define emphasized text?",
+      "options": ["<i>", "<em>", "<b>", "<strong>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which HTML tag is used to play video files?",
+      "options": ["<media>", "<movie>", "<video>", "<play>"],
       "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What does the <title> element define?",
+      "options": ["The page's heading", "The browser tab title", "The largest text on page", "A tooltip"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which attribute specifies where to open a linked document?",
+      "options": ["src", "target", "href", "open"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which HTML element is used to define a footer?",
+      "options": ["<bottom>", "<footer>", "<foot>", "<end>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What does the <th> element represent in a table?",
+      "options": ["Table row", "Table header cell", "Table data cell", "Table head"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which HTML5 element is used to draw graphics?",
+      "options": ["<graphics>", "<canvas>", "<draw>", "<svg>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which element is used for inline styling of text?",
+      "options": ["<style>", "<span>", "<div>", "<font>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which attribute makes a form field mandatory?",
+      "options": ["required", "validate", "mustfill", "needed"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which element is used to define navigation links?",
+      "options": ["<menu>", "<nav>", "<links>", "<navbar>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which HTML attribute is used to uniquely identify an element?",
+      "options": ["class", "id", "name", "key"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which tag is used to display preformatted text?",
+      "options": ["<text>", "<pre>", "<code>", "<p>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which input type is used to define a slider control?",
+      "options": ["range", "slider", "scroll", "input-slide"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which tag defines the document body?",
+      "options": ["<body>", "<main>", "<html>", "<content>"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which HTML tag defines a dropdown list?",
+      "options": ["<list>", "<dropdown>", "<select>", "<option>"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which HTML tag is used for inline frames?",
+      "options": ["<frame>", "<iframe>", "<window>", "<embed>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What does the <meta charset=\"UTF-8\"> tag do?",
+      "options": ["Defines the website language", "Specifies character encoding", "Adds metadata description", "Links a CSS file"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which HTML element defines the main content of a document?",
+      "options": ["<main>", "<section>", "<article>", "<content>"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which input type is used for selecting a date?",
+      "options": ["<input type=\"datetime\">", "<input type=\"calendar\">", "<input type=\"date\">", "<input type=\"time\">"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property is used to change the text color of an element?",
+      "options": ["font-color", "color", "text-style", "text-color"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property controls the size of text?",
+      "options": ["font-size", "text-size", "font-style", "size"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "How do you select an element with the id \"header\"?",
+      "options": [".header", "header", "#header", "*header"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property is used to change the background color?",
+      "options": ["bgcolor", "background-color", "color-background", "back-color"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property is used to control the space between elements' borders and their content?",
+      "options": ["margin", "padding", "spacing", "border-gap"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What is the correct syntax to link an external CSS file?",
+      "options": ["<style src=\"style.css\">", "<link rel=\"stylesheet\" href=\"style.css\">", "<css link=\"style.css\">", "<stylesheet>style.css</stylesheet>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property is used to make text bold?",
+      "options": ["text-weight", "font-bold", "font-weight", "bold"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS value makes an element completely hidden, but still takes up space?",
+      "options": ["display: none", "visibility: hidden", "opacity: 0", "hidden: true"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property sets the space outside the border of an element?",
+      "options": ["padding", "spacing", "margin", "outline"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "How do you select all <p> elements inside a <div>?",
+      "options": ["p.div", "div p", "div+p", "div.p"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property changes the shape of the mouse pointer?",
+      "options": ["mouse", "cursor", "pointer", "icon"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property controls the underline of text?",
+      "options": ["font-decoration", "text-decoration", "decoration", "text-style"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which position value places an element relative to its first positioned ancestor?",
+      "options": ["absolute", "fixed", "relative", "static"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS unit is relative to the size of the root element?",
+      "options": ["%", "em", "rem", "px"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What does z-index control?",
+      "options": ["Element size", "Element transparency", "Element stacking order", "Element alignment"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS function is used to apply multiple background images?",
+      "options": ["bg()", "background()", "background-image()", "background-image with comma"],
+      "correctIndex": 3
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which property sets the transparency of an element?",
+      "options": ["opacity", "transparency", "alpha", "visible"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property makes text uppercase?",
+      "options": ["text-transform", "font-style", "text-uppercase", "capitalize"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which pseudo-class is used to style an element when a user hovers over it?",
+      "options": [":focus", ":hover", ":active", ":visited"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property is used to create rounded corners?",
+      "options": ["border-style", "border-round", "border-radius", "round-corner"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which display value makes an element inline but allows block-level properties?",
+      "options": ["block", "inline", "inline-block", "flex"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property is used to align text horizontally?",
+      "options": ["align-text", "text-align", "horizontal-align", "align"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property defines the thickness of text?",
+      "options": ["font-style", "text-weight", "font-weight", "boldness"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS rule ensures styles adapt to different screen sizes?",
+      "options": ["@resize", "@responsive", "@media", "@query"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which value of position keeps an element fixed relative to the viewport?",
+      "options": ["static", "absolute", "relative", "fixed"],
+      "correctIndex": 3
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property sets the order of flex items?",
+      "options": ["flex-order", "item-order", "order", "align-order"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property sets the grid layout template columns?",
+      "options": ["grid-template-columns", "grid-columns", "columns-template", "grid-structure"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS property makes an element a flex container?",
+      "options": ["flex-container", "display: flex", "flex: container", "container: flex"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS function is used to apply transformations (rotate, scale, etc.)?",
+      "options": ["transform()", "translate()", "effect()", "modify()"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which CSS function is used to apply transitions smoothly?",
+      "options": ["animate", "transition", "ease", "timing"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Where is the correct place to link an external JavaScript file in HTML?",
+      "options": ["Inside the <head> tag", "At the bottom of the <body>", "Inside the <title> tag", "Before <!DOCTYPE html>"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which symbol is used for single-line comments in JavaScript?",
+      "options": ["<!-- -->", "#", "//", "/**/"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What will console.log(\"Hello\"); do?",
+      "options": ["Display an alert box with \"Hello\"", "Print \"Hello\" in the browser's console", "Write \"Hello\" in the HTML document", "Throw an error"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which keyword is used to declare a block-scoped variable in JavaScript?",
+      "options": ["var", "let", "const", "define"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What is the result of typeof \"123\"?",
+      "options": ["number", "string", "integer", "undefined"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which keyword is used to declare a constant?",
+      "options": ["let", "var", "const", "static"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which operator is used to compare both value and type?",
+      "options": ["==", "===", "=", "!="],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What is the result of 5 + \"5\"?",
+      "options": ["10", "55", "NaN", "Error"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which operator has the highest precedence?",
+      "options": ["+", "*", "=", "&&"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What does the else block do in an if-else statement?",
+      "options": ["Executes when condition is true", "Executes when condition is false", "Repeats a loop", "Exits the function"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which loop will execute at least once, even if the condition is false?",
+      "options": ["for", "while", "do…while", "foreach"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which statement is used for multiple conditional branches?",
+      "options": ["if", "else", "switch", "case"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which keyword is used to return a value from a function?",
+      "options": ["output", "return", "yield", "end"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What is the correct syntax for an arrow function?",
+      "options": ["function => { }", "() => { }", "=> function { }", "function() -> { }"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What will myFunc(2,3) return if defined as function myFunc(a,b){ return a+b; }?",
+      "options": ["23", "6", "NaN", "undefined"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "How do you access the property name of an object person?",
+      "options": ["person[\"name\"]", "person->name", "person(name)", "person::name"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which method adds an element to the end of an array?",
+      "options": ["shift()", "pop()", "push()", "unshift()"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What does arr.length return?",
+      "options": ["The total array capacity", "The last element of array", "The number of elements", "undefined"],
+      "correctIndex": 2
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which method selects an element by its ID?",
+      "options": ["document.getElementById()", "document.querySelectorAll()", "document.getElementsByClassName()", "document.getElementByName()"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which event occurs when a user clicks on an element?",
+      "options": ["onhover", "onclick", "onmouseover", "onchange"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which property changes the text of an element?",
+      "options": ["innerHTML", "textChange", "textContent()", "value()"],
+      "correctIndex": 0
+    },
+    {
+      "type": "multiple-choice",
+      "question": "A function inside another function that remembers its scope is called?",
+      "options": ["Callback", "Closure", "Promise", "Method"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which keyword is used with asynchronous functions?",
+      "options": ["defer", "await", "sync", "yield"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which object represents a task that will finish in the future?",
+      "options": ["Closure", "Promise", "Array", "Function"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which block is used to catch errors?",
+      "options": ["error{}", "catch{}", "throw{}", "debug{}"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "What keyword is used to manually create an error?",
+      "options": ["error", "throw", "catch", "break"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which console method shows errors?",
+      "options": ["console.write()", "console.error()", "console.log()", "console.warn()"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which method runs code after a given delay?",
+      "options": ["setInterval()", "setTimeout()", "sleep()", "delay()"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which storage method clears after closing the browser?",
+      "options": ["localStorage", "sessionStorage", "cache", "cookies"],
+      "correctIndex": 1
+    },
+    {
+      "type": "multiple-choice",
+      "question": "Which object represents the browser window?",
+      "options": ["document", "screen", "window", "console"],
+      "correctIndex": 2
+    },
+    {
+      "type": "true-false",
+      "question": "The <title> tag is required in every HTML document.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The <br> tag creates a line break in HTML.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The <div> tag is used to display bold text by default.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "Every HTML document must start with <!DOCTYPE html>.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The <head> tag is visible to users in the browser window.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The <img> tag requires the src attribute to display an image.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "HTML is case-sensitive, so <BODY> is invalid compared to <body>.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The <p> tag is used to create a paragraph.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "An <a> tag without an href will still create a clickable link.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The <ul> tag creates an ordered (numbered) list.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The alt attribute in <img> provides alternative text for images.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The <ol> tag creates a list with bullet points.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "Inline elements normally start on a new line.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The <h1> to <h6> tags define headings in descending order of importance.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The <table> element is used to create lists.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The action attribute in a <form> specifies where to send form data.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "HTML comments are written using <!-- comment -->.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The <link> tag is used inside <body> to create hyperlinks.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The <span> tag is commonly used to style text inline.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "Every <tr> tag must contain at least one <td> or <th> tag.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The <iframe> element allows embedding another webpage inside the current page.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The <strong> tag is purely for styling and has no semantic meaning.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The <meta charset=\"UTF-8\"> declaration ensures proper text encoding.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The <hr> tag is used to create a horizontal line across the page.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "HTML5 introduced the <section>, <article>, and <footer> semantic tags.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The <b> tag is the only way to make text bold in HTML.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "HTML attributes are always written inside the start tag.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The <caption> tag provides a title or explanation for a table.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The <form> tag can exist without any input elements.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The <marquee> tag is a standard HTML5 element for scrolling text.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "CSS stands for Cascading Style Sheets.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "Inline CSS has higher priority than external CSS.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "You cannot use more than one external stylesheet in an HTML document.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The <style> tag must always be placed inside the <head> section.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "CSS comments are written using <!-- comment -->.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "Hexadecimal color values in CSS always start with a #.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The background-color property can only accept named colors, not hex or RGB values.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The shorthand background property can set multiple background values at once.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "In CSS, rgba() allows transparency control using the alpha channel.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The background-image property can only take one image at a time.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The font-family property can contain multiple fallback fonts.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "font-style: italic; makes text bold.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The text-align property can only be applied to block-level elements.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The line-height property controls the spacing between lines of text.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "Google Fonts can be imported into CSS using the @import rule.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The CSS box model consists of content, padding, border, and margin.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "Padding adds space outside the element's border.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "Margins can collapse when two vertical margins meet.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "Setting border: none; removes the border from an element.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "Negative values are allowed for padding in CSS.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The default value of the position property is static.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The absolute positioning moves an element relative to its parent if the parent has position: relative;.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "float: left; is commonly used to align elements horizontally.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The z-index property only works on elements with a position value other than static.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "CSS Grid and Flexbox are both layout systems.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "An ID selector has higher specificity than a class selector.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The universal selector * applies to all elements on the page.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "A pseudo-class like :hover targets the element state.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "A pseudo-element like ::after inserts content into the DOM.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "Inline styles have the highest specificity in CSS.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "If a <script> tag is placed at the bottom of the <body>, the page loads faster because the HTML is parsed before the script runs.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "Using // for comments will throw an error if placed after a line of code.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "console.log(document.querySelector(\"h1\")); can be used to display the first <h1> element in the console.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "A variable declared with let is accessible only within the block where it is defined.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The string \"123\" and the number 123 are treated as the same type when using ===.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "A const variable that holds an object can have its properties changed.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The expression 0 == false evaluates to true, but 0 === false evaluates to false.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "NaN === NaN returns true.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "true && \"Hello\" evaluates to \"Hello\".",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "A do…while loop may execute infinitely if the condition is never updated inside the loop.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "A for loop is only usable when the number of iterations is unknown.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "The if statement in JavaScript can only compare numeric values, not strings.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "A function without a return statement automatically returns undefined.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "Arrow functions do not have their own this context.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "A variable declared inside a function cannot be accessed outside of it.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "[1, \"apple\", true] is a valid array in JavaScript.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "Accessing a non-existent object property returns undefined.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The method push() is used to remove elements from the beginning of an array.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "document.querySelectorAll(\"p\") returns a list of all <p> elements.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "document.getElementById(\"main\") returns null if no element has that ID.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The DOM can only be modified by inline HTML attributes, not by JavaScript.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "A closure allows inner functions to \"remember\" variables from their outer function even after the outer function finishes execution.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "Promises can be in one of three states: pending, fulfilled, or rejected.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "await can be used in any function, not just async functions.",
+      "correctAnswer": false
+    },
+    {
+      "type": "true-false",
+      "question": "A try…catch block can prevent code execution from stopping when an error occurs.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "throw new Error(\"Something went wrong\") is valid syntax for raising a custom error.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "Browser developer tools allow breakpoints and step-by-step debugging, making alert() unnecessary for debugging.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "setInterval(() => console.log(\"Hi\"), 1000); prints \"Hi\" every second.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "sessionStorage clears data when the browser is closed, but localStorage persists.",
+      "correctAnswer": true
+    },
+    {
+      "type": "true-false",
+      "question": "The window object must be imported before it can be used.",
+      "correctAnswer": false
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The <!DOCTYPE html> declaration is placed at the ______ of an HTML document.",
+      "correctAnswers": ["top"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The <title> tag is written inside the ______ section of an HTML page.",
+      "correctAnswers": ["<head>", "head"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To create a hyperlink, you use the <a> tag with the ______ attribute.",
+      "correctAnswers": ["href"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The <img> tag uses the ______ attribute to specify the image file path.",
+      "correctAnswers": ["src"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The <img> tag uses the ______ attribute to display alternative text.",
+      "correctAnswers": ["alt"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "An ordered list is created with the ______ tag.",
+      "correctAnswers": ["<ol>", "ol"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "An unordered list is created with the ______ tag.",
+      "correctAnswers": ["<ul>", "ul"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "A table row in HTML is created using the ______ tag.",
+      "correctAnswers": ["<tr>", "tr"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "A table data cell in HTML is created using the ______ tag.",
+      "correctAnswers": ["<td>", "td"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The table header cell is represented by the ______ tag.",
+      "correctAnswers": ["<th>", "th"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The <form> element often uses the ______ attribute to specify where form data is sent.",
+      "correctAnswers": ["action"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The <form> tag also uses the ______ attribute to define the method (GET or POST).",
+      "correctAnswers": ["method"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "A line break in HTML is inserted using the ______ tag.",
+      "correctAnswers": ["<br>", "br"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To insert a horizontal line, use the ______ tag.",
+      "correctAnswers": ["<hr>", "hr"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The semantic tag used to represent navigation links is ______.",
+      "correctAnswers": ["<nav>", "nav"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The semantic tag used to represent independent content like a news story is ______.",
+      "correctAnswers": ["<article>", "article"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The semantic tag used to represent the footer section of a page is ______.",
+      "correctAnswers": ["<footer>", "footer"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The semantic tag used to represent the main content of the document is ______.",
+      "correctAnswers": ["<main>", "main"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To add CSS to an HTML file, the ______ tag is used in the <head>.",
+      "correctAnswers": ["<link>", "link"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The <link> tag requires the ______ attribute to specify the stylesheet file.",
+      "correctAnswers": ["href"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To add JavaScript to a webpage, the ______ tag is used.",
+      "correctAnswers": ["<script>", "script"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To display a checkbox in a form, you use <input type=\"______\">.",
+      "correctAnswers": ["checkbox"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To display a radio button in a form, you use <input type=\"______\">.",
+      "correctAnswers": ["radio"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To accept email input in a form, use <input type=\"______\">.",
+      "correctAnswers": ["email"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The placeholder text inside a text box is set using the ______ attribute.",
+      "correctAnswers": ["placeholder"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The <meta> tag with the attribute ______ specifies character encoding.",
+      "correctAnswers": ["charset"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To merge cells horizontally in a table, you use the ______ attribute.",
+      "correctAnswers": ["colspan"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To merge cells vertically in a table, you use the ______ attribute.",
+      "correctAnswers": ["rowspan"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To open a link in a new tab, you add target=\"______\" to the <a> tag.",
+      "correctAnswers": ["_blank"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The root element of every HTML document is the ______ tag.",
+      "correctAnswers": ["<html>", "html"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "CSS stands for ______.",
+      "correctAnswers": ["Cascading Style Sheets"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "Inline CSS is written inside the ______ attribute of an HTML element.",
+      "correctAnswers": ["style"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "An external stylesheet is linked to HTML using the ______ tag.",
+      "correctAnswers": ["<link>", "link"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The property used to change text color in CSS is ______.",
+      "correctAnswers": ["color"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The ______ property is used to apply styles to multiple selectors at once, separated by commas.",
+      "correctAnswers": ["grouping selectors"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The color value #000000 represents the color ______.",
+      "correctAnswers": ["black"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The function used for defining colors with transparency is ______.",
+      "correctAnswers": ["rgba"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The CSS property to set a background image is ______.",
+      "correctAnswers": ["background-image"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To prevent a background image from repeating, we use ______.",
+      "correctAnswers": ["background-repeat: no-repeat", "no-repeat"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The shorthand property ______ can set color, image, position, and repeat in one line.",
+      "correctAnswers": ["background"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The CSS property to change the font size is ______.",
+      "correctAnswers": ["font-size"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To apply bold text, we use the ______ property.",
+      "correctAnswers": ["font-weight"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The CSS property to underline text is ______.",
+      "correctAnswers": ["text-decoration"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The vertical spacing between lines of text is controlled with ______.",
+      "correctAnswers": ["line-height"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "A set of fonts provided in case one fails to load is called a ______.",
+      "correctAnswers": ["fallback font", "font stack"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The space between the element's content and its border is called ______.",
+      "correctAnswers": ["padding"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The space between the element's border and other elements is called ______.",
+      "correctAnswers": ["margin"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The CSS property used to round the corners of a box is ______.",
+      "correctAnswers": ["border-radius"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To create space inside a box without affecting other elements, you use ______.",
+      "correctAnswers": ["padding"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The box model includes content, padding, border, and ______.",
+      "correctAnswers": ["margin"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The default position of elements in CSS is ______.",
+      "correctAnswers": ["static"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The property used to change an element's stacking order is ______.",
+      "correctAnswers": ["z-index"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The property used to align elements side by side with flexible adjustment is ______.",
+      "correctAnswers": ["flexbox", "display: flex"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To place an element relative to its nearest positioned ancestor, we use ______.",
+      "correctAnswers": ["position: absolute", "absolute"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "A two-dimensional grid-based layout system in CSS is called ______.",
+      "correctAnswers": ["CSS Grid"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The selector ______ is used to target all elements on a page.",
+      "correctAnswers": ["*"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The selector p.intro targets a ______ with the class \"intro\".",
+      "correctAnswers": ["paragraph"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The selector #header targets an element by its ______.",
+      "correctAnswers": ["ID"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The pseudo-class used to style a link when the mouse hovers is ______.",
+      "correctAnswers": [":hover"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The pseudo-element ______ is used to add content after an element.",
+      "correctAnswers": ["::after"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "JavaScript code can be included in an HTML document using the ______ tag.",
+      "correctAnswers": ["<script>", "script"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The // symbols are used to write a ______ comment.",
+      "correctAnswers": ["single-line"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The console.______(\"Hello\") method prints text to the browser console.",
+      "correctAnswers": ["log"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The keyword used to declare a block-scoped variable is ______.",
+      "correctAnswers": ["let"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "A variable declared with ______ cannot be reassigned.",
+      "correctAnswers": ["const"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The typeof operator returns the ______ of a variable.",
+      "correctAnswers": ["type"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The operator that checks for both value and type equality is ______.",
+      "correctAnswers": ["==="]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The operator used to combine two conditions with \"AND\" is ______.",
+      "correctAnswers": ["&&"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The operator used for string concatenation is the ______ operator.",
+      "correctAnswers": ["+"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "A loop that will always run at least once is the ______ loop.",
+      "correctAnswers": ["do…while", "do-while"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The switch statement uses ______ to match specific cases.",
+      "correctAnswers": ["case"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The keyword ______ is used to exit a loop early.",
+      "correctAnswers": ["break"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "A function in JavaScript is declared using the keyword ______.",
+      "correctAnswers": ["function"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The keyword used to send a value back from a function is ______.",
+      "correctAnswers": ["return"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "Arrow functions use the syntax ______ to define them.",
+      "correctAnswers": ["() => { }"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "An object stores data in ______ pairs.",
+      "correctAnswers": ["key-value"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The method ______ adds an element to the end of an array.",
+      "correctAnswers": ["push"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The property used to get the number of elements in an array is ______.",
+      "correctAnswers": ["length"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To select an element by ID, we use document.______(\"id\").",
+      "correctAnswers": ["getElementById"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The property used to change the content of an HTML element is ______.",
+      "correctAnswers": ["innerHTML"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "An event listener is added to an element using the method ______.",
+      "correctAnswers": ["addEventListener"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "A function that remembers its scope is called a ______.",
+      "correctAnswers": ["closure"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The keyword used to pause execution until a Promise resolves is ______.",
+      "correctAnswers": ["await"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "An object used to represent a future value in JavaScript is called a ______.",
+      "correctAnswers": ["Promise"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The keyword used to handle errors is ______.",
+      "correctAnswers": ["try"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The keyword used to define the block that executes if an error occurs is ______.",
+      "correctAnswers": ["catch"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "To throw a custom error, we use the keyword ______.",
+      "correctAnswers": ["throw"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The method ______ is used to execute code after a delay.",
+      "correctAnswers": ["setTimeout"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The storage object that clears data when the browser closes is ______.",
+      "correctAnswers": ["sessionStorage"]
+    },
+    {
+      "type": "fill-in-the-blank",
+      "question": "The global object representing the browser window is ______.",
+      "correctAnswers": ["window"]
     },
     {
       "type": "drag-and-drop",
@@ -36,17 +1459,6 @@
       }
     },
     {
-      "type": "fill-in-the-blank",
-      "question": "The correct HTML for creating a hyperlink is <a _____='http://example.com'>Example</a>.",
-      "correctAnswers": ["href"]
-    },
-    {
-      "type": "multiple-choice",
-      "question": "Which event occurs when the user clicks on an HTML element?",
-      "options": ["onchange", "onclick", "onmouseclick", "onmouseover"],
-      "correctIndex": 1
-    },
-    {
       "type": "drag-and-drop",
       "question": "Drag the correct CSS property to its effect:",
       "options": {
@@ -65,66 +1477,6 @@
       }
     },
     {
-      "type": "fill-in-the-blank",
-      "question": "The correct way to write a CSS comment is _____ this is a comment */.",
-      "correctAnswers": ["/*"]
-    },
-    {
-      "type": "multiple-choice",
-      "question": "What does the 'typeof' operator in JavaScript return?",
-      "options": ["The value of a variable", "The data type of a variable", "The memory address", "The variable name"],
-      "correctIndex": 1
-    },
-    {
-      "type": "fill-in-the-blank",
-      "question": "The HTML element used to create an unordered list is _____.",
-      "correctAnswers": ["<ul>"]
-    },
-    {
-      "type": "multiple-choice",
-      "question": "Which tag is used to define an image in HTML?",
-      "options": ["<img>", "<image>", "<pic>", "<src>"],
-      "correctIndex": 0
-    },
-    {
-      "type": "fill-in-the-blank",
-      "question": "In JavaScript, you declare a variable using the keyword _____.",
-      "correctAnswers": ["var", "let", "const"]
-    },
-    {
-      "type": "multiple-choice",
-      "question": "Which CSS property controls the spacing between elements?",
-      "options": ["margin", "padding", "border", "spacing"],
-      "correctIndex": 0
-    },
-    {
-      "type": "fill-in-the-blank",
-      "question": "The default value of the position property in CSS is _____.",
-      "correctAnswers": ["static"]
-    },
-    {
-      "type": "multiple-choice",
-      "question": "Which of the following is not a JavaScript data type?",
-      "options": ["Boolean", "Number", "Character", "Object"],
-      "correctIndex": 2
-    },
-    {
-      "type": "fill-in-the-blank",
-      "question": "HTML documents are saved with the file extension _____.",
-      "correctAnswers": [".html", ".htm"]
-    },
-    {
-      "type": "multiple-choice",
-      "question": "Which property is used in CSS to align text?",
-      "options": ["text-align", "align", "text", "font-align"],
-      "correctIndex": 0
-    },
-    {
-      "type": "fill-in-the-blank",
-      "question": "To make a website mobile responsive, we use the _____ meta tag.",
-      "correctAnswers": ["viewport"]
-    },
-    {
       "type": "drag-and-drop",
       "question": "Match the CSS units with what they represent:",
       "options": {
@@ -141,12 +1493,6 @@
           { "id": "zone4", "label": "Percentage of parent element", "correctItemId": "percent" }
         ]
       }
-    },
-    {
-      "type": "multiple-choice",
-      "question": "Which method is used to output data in JavaScript?",
-      "options": ["print()", "log()", "console.log()", "write()"],
-      "correctIndex": 2
     }
   ]
 }
