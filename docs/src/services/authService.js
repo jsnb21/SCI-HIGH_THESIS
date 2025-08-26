@@ -155,21 +155,35 @@ class AuthService {
         }
 
         try {
+            console.log('AuthService: Attempting professor login with email:', email);
+            
+            // Validate input
+            if (!email || !password) {
+                throw new Error('Email and password are required');
+            }
+
             const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
             const user = userCredential.user;
             
-            // Verify user is actually a professor
-            const professorDoc = await this.firestore.collection('professors').doc(user.uid).get();
-            if (!professorDoc.exists) {
+            console.log('AuthService: Firebase auth successful, verifying professor status...');
+            
+            // Check if professor exists in Realtime Database (updated to use realtime DB)
+            const professorSnapshot = await this.database.ref('professors').child(user.uid).once('value');
+            if (!professorSnapshot.exists()) {
                 await this.auth.signOut();
-                throw new Error('Not registered as a professor');
+                throw new Error('Not registered as a professor. Contact system administrator.');
             }
 
-            const professorData = professorDoc.data();
+            const professorData = professorSnapshot.val();
             if (!professorData.isVerified) {
                 await this.auth.signOut();
                 throw new Error('Account pending verification. Contact system administrator.');
             }
+
+            // Update last login timestamp
+            await this.database.ref('professors').child(user.uid).update({
+                lastLogin: new Date().toISOString()
+            });
 
             this.currentUser = {
                 uid: user.uid,
@@ -369,10 +383,12 @@ class AuthService {
     // Create a new student account automatically
     async createStudentAccount(studentId) {
         try {
+            console.log('AuthService: Creating new student account for ID:', studentId);
+            
             const studentData = {
                 studentId,
-                name: `Student ${studentId}`, // Default name, can be updated later
-                level: 'unknown', // Will be set by administrator
+                fullName: `Student ${studentId}`, // Default name, can be updated later  
+                level: 'unknown', // Will be set by student or administrator later
                 course: '',
                 strand: '',
                 year: '',
@@ -380,12 +396,20 @@ class AuthService {
                     completedQuizzes: [],
                     completedStories: [],
                     totalScore: 0,
-                    lastActivity: new Date().toISOString()
+                    lastActivity: new Date().toISOString(),
+                    gameData: {
+                        currentLevel: 1,
+                        totalPoints: 0,
+                        achievements: [],
+                        courseProgress: {}
+                    }
                 },
                 createdAt: new Date().toISOString(),
                 lastLogin: new Date().toISOString(),
                 isActive: true,
-                createdBy: 'auto-created'
+                createdBy: 'auto-created',
+                needsProfileCompletion: true, // Flag to show profile completion modal
+                accountType: 'student'
             };
 
             // Save to Realtime Database
@@ -393,14 +417,19 @@ class AuthService {
             const newStudentRef = studentsRef.push();
             await newStudentRef.set(studentData);
             
+            console.log('AuthService: Student account created successfully with ID:', newStudentRef.key);
+            
             return { 
                 success: true, 
                 docId: newStudentRef.key,
                 studentData: studentData
             };
         } catch (error) {
-            console.error('Error creating student account:', error);
-            return { success: false, error: 'Failed to create student account: ' + error.message };
+            console.error('AuthService: Error creating student account:', error);
+            return { 
+                success: false, 
+                error: 'Failed to create student account: ' + error.message 
+            };
         }
     }
 

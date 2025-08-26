@@ -68,26 +68,22 @@
       <!-- Dashboard Header -->
       <div class="mb-8">
         <h1 class="font-gaming text-4xl font-bold text-primary mb-2">Student Management</h1>
-        <p class="text-gray-300">Manage your students and track their progress</p>
+        <p class="text-gray-300">View and manage your students' progress</p>
       </div>
 
       <!-- Quick Actions -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <button id="add-student-btn" class="neon-border bg-cardBg rounded-lg p-4 hover:scale-105 transition-transform">
-          <div class="text-2xl mb-2">👨‍🎓</div>
-          <div class="font-gaming text-primary">Add Student</div>
-        </button>
-        <button id="bulk-import-btn" class="neon-border bg-cardBg rounded-lg p-4 hover:scale-105 transition-transform">
-          <div class="text-2xl mb-2">📊</div>
-          <div class="font-gaming text-accent">Bulk Import</div>
-        </button>
-        <button id="reset-passwords-btn" class="neon-border bg-cardBg rounded-lg p-4 hover:scale-105 transition-transform">
-          <div class="text-2xl mb-2">🔄</div>
-          <div class="font-gaming text-cyan">Reset Passwords</div>
-        </button>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <button id="view-analytics-btn" class="neon-border bg-cardBg rounded-lg p-4 hover:scale-105 transition-transform">
-          <div class="text-2xl mb-2">📈</div>
-          <div class="font-gaming text-purple">Analytics</div>
+          <div class="text-2xl mb-2">�</div>
+          <div class="font-gaming text-primary">Analytics</div>
+        </button>
+        <button id="export-data-btn" class="neon-border bg-cardBg rounded-lg p-4 hover:scale-105 transition-transform">
+          <div class="text-2xl mb-2">�</div>
+          <div class="font-gaming text-accent">Export Data</div>
+        </button>
+        <button id="refresh-students-btn" class="neon-border bg-cardBg rounded-lg p-4 hover:scale-105 transition-transform">
+          <div class="text-2xl mb-2">🔄</div>
+          <div class="font-gaming text-cyan">Refresh</div>
         </button>
       </div>
 
@@ -132,123 +128,23 @@
       </div>
     </div>
 
-    <!-- Add Student Modal -->
-    <div id="add-student-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
-      <div class="neon-border bg-cardBg rounded-xl p-8 max-w-md w-full mx-4">
-        <h3 class="font-gaming text-2xl text-primary mb-6">Add New Student</h3>
-        
-        <form id="add-student-form" class="space-y-4">
-          <div>
-            <label class="block text-gray-300 text-sm mb-2">Student ID</label>
-            <input type="text" name="studentId" required placeholder="Enter Student ID"
-                   class="w-full px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white placeholder-gray-400">
-          </div>
-          
-          <div>
-            <label class="block text-gray-300 text-sm mb-2">Full Name</label>
-            <input type="text" name="fullName" required
-                   class="w-full px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white placeholder-gray-400">
-          </div>
-          
-          <div>
-            <label class="block text-gray-300 text-sm mb-2">Academic Level</label>
-            <select name="academicLevel" required id="academic-level-select"
-                    class="w-full px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white">
-              <option value="">Select Level</option>
-              <option value="college">College</option>
-              <option value="shs">Senior High School</option>
-            </select>
-          </div>
-          
-          <!-- College Fields -->
-          <div id="college-fields" class="hidden space-y-4">
-            <div>
-              <label class="block text-gray-300 text-sm mb-2">Course</label>
-              <input type="text" name="course" placeholder="e.g., BS Computer Science"
-                     class="w-full px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white placeholder-gray-400">
-            </div>
-            <div>
-              <label class="block text-gray-300 text-sm mb-2">Year Level</label>
-              <select name="yearLevel"
-                      class="w-full px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white">
-                <option value="">Select Year</option>
-                <option value="1st Year">1st Year</option>
-                <option value="2nd Year">2nd Year</option>
-                <option value="3rd Year">3rd Year</option>
-                <option value="4th Year">4th Year</option>
-              </select>
-            </div>
-          </div>
-          
-          <!-- SHS Fields -->
-          <div id="shs-fields" class="hidden space-y-4">
-            <div>
-              <label class="block text-gray-300 text-sm mb-2">Strand</label>
-              <select name="strand"
-                      class="w-full px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white">
-                <option value="">Select Strand</option>
-                <option value="STEM">STEM</option>
-                <option value="HUMSS">HUMSS</option>
-                <option value="ABM">ABM</option>
-                <option value="ICT">ICT</option>
-                <option value="Arts and Design">Arts and Design</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-gray-300 text-sm mb-2">Grade Level</label>
-              <select name="yearLevel"
-                      class="w-full px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white">
-                <option value="">Select Grade</option>
-                <option value="Grade 11">Grade 11</option>
-                <option value="Grade 12">Grade 12</option>
-              </select>
-            </div>
-          </div>
-          
-          <div class="flex space-x-4 pt-4">
-            <button type="submit" class="flex-1 px-4 py-2 bg-primary text-dark font-gaming rounded-lg hover:bg-yellow-300 transition-colors">
-              Create Student
-            </button>
-            <button type="button" id="cancel-add-student" class="flex-1 px-4 py-2 bg-gray-600 text-white font-gaming rounded-lg hover:bg-gray-700 transition-colors">
-              Cancel
-            </button>
-          </div>
-        </form>
+    <!-- Information Panel -->
+    <div class="mb-8 neon-border bg-cardBg rounded-xl p-6">
+      <div class="text-center">
+        <div class="text-4xl mb-4">📋</div>
+        <h3 class="font-gaming text-lg text-accent mb-3">How Student Accounts Work</h3>
+        <p class="text-gray-300 text-sm mb-4">
+          Students create their own accounts automatically by entering their Student ID. 
+          You can view and manage existing students below.
+        </p>
+        <div class="text-xs text-gray-400 bg-dark/50 rounded-lg p-3 max-w-md mx-auto">
+          <p class="mb-2">ℹ️ <strong>How it works:</strong></p>
+          <p>• Students enter their ID on the login page</p>
+          <p>• New accounts are created automatically</p>
+          <p>• Students can continue their progress seamlessly</p>
+        </div>
       </div>
     </div>
-
-    <!-- Bulk Import Modal -->
-    <div id="bulk-import-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
-      <div class="neon-border bg-cardBg rounded-xl p-8 max-w-2xl w-full mx-4">
-        <h3 class="font-gaming text-2xl text-primary mb-6">Bulk Import Students</h3>
-        
-        <div class="space-y-6">
-          <div>
-            <label class="block text-gray-300 text-sm mb-2">CSV File</label>
-            <input type="file" id="csv-file-input" accept=".csv,.xlsx,.xls"
-                   class="w-full px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white">
-            <p class="text-gray-400 text-xs mt-2">
-              CSV format: Student ID, Full Name, Course/Strand, Year Level, Academic Level
-            </p>
-          </div>
-          
-          <div class="bg-dark/30 p-4 rounded-lg">
-            <h4 class="font-gaming text-accent mb-2">Sample CSV Format:</h4>
-            <pre class="text-xs text-gray-300">
-Student ID,Full Name,Course/Strand,Year Level,Academic Level
-2024-CS-001,Juan Dela Cruz,BS Computer Science,3rd Year,college
-2024-CS-002,Maria Santos,BS Information Technology,2nd Year,college
-2024-STEM-001,Pedro Garcia,STEM,Grade 12,shs
-            </pre>
-          </div>
-          
-          <div class="flex space-x-4">
-            <button id="import-csv-btn" class="flex-1 px-4 py-2 bg-accent text-white font-gaming rounded-lg hover:bg-green-600 transition-colors">
-              Import Students
-            </button>
-            <button id="cancel-bulk-import" class="flex-1 px-4 py-2 bg-gray-600 text-white font-gaming rounded-lg hover:bg-gray-700 transition-colors">
-              Cancel
-            </button>
           </div>
         </div>
       </div>
@@ -295,45 +191,18 @@ Student ID,Full Name,Course/Strand,Year Level,Academic Level
             window.location.href = 'index.html';
           });
 
-          // Add student modal
-          document.getElementById('add-student-btn').addEventListener('click', () => {
-            document.getElementById('add-student-modal').classList.remove('hidden');
+          // Quick action buttons  
+          document.getElementById('view-analytics-btn').addEventListener('click', () => {
+            this.showInfo('Analytics dashboard coming soon!');
           });
 
-          document.getElementById('cancel-add-student').addEventListener('click', () => {
-            document.getElementById('add-student-modal').classList.add('hidden');
+          document.getElementById('export-data-btn').addEventListener('click', () => {
+            this.showInfo('Data export feature coming soon!');
           });
 
-          // Academic level change
-          document.getElementById('academic-level-select').addEventListener('change', (e) => {
-            const collegeFields = document.getElementById('college-fields');
-            const shsFields = document.getElementById('shs-fields');
-            
-            if (e.target.value === 'college') {
-              collegeFields.classList.remove('hidden');
-              shsFields.classList.add('hidden');
-            } else if (e.target.value === 'shs') {
-              shsFields.classList.remove('hidden');
-              collegeFields.classList.add('hidden');
-            } else {
-              collegeFields.classList.add('hidden');
-              shsFields.classList.add('hidden');
-            }
-          });
-
-          // Add student form
-          document.getElementById('add-student-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await this.handleAddStudent(e);
-          });
-
-          // Bulk import modal
-          document.getElementById('bulk-import-btn').addEventListener('click', () => {
-            document.getElementById('bulk-import-modal').classList.remove('hidden');
-          });
-
-          document.getElementById('cancel-bulk-import').addEventListener('click', () => {
-            document.getElementById('bulk-import-modal').classList.add('hidden');
+          document.getElementById('refresh-students-btn').addEventListener('click', () => {
+            this.loadStudents();
+            this.showSuccess('Student list refreshed!');
           });
 
           // Search and filter
@@ -344,19 +213,6 @@ Student ID,Full Name,Course/Strand,Year Level,Academic Level
           document.getElementById('filter-course').addEventListener('change', (e) => {
             this.filterStudents();
           });
-
-          // Quick actions
-          document.getElementById('bulk-import-btn').addEventListener('click', () => {
-            this.showInfo('Bulk import feature coming soon!');
-          });
-
-          document.getElementById('reset-passwords-btn').addEventListener('click', () => {
-            this.showInfo('Bulk password reset feature coming soon!');
-          });
-
-          document.getElementById('view-analytics-btn').addEventListener('click', () => {
-            this.showInfo('Analytics dashboard coming soon!');
-          });
         }
 
         async loadStudents() {
@@ -366,7 +222,7 @@ Student ID,Full Name,Course/Strand,Year Level,Academic Level
             this.students = [
               {
                 id: 'stud_sample_001',
-                studentId: '2024-CS-001',
+                studentId: '24-2024-001',
                 fullName: 'Juan Dela Cruz',
                 academicInfo: {
                   level: 'college',
@@ -388,7 +244,7 @@ Student ID,Full Name,Course/Strand,Year Level,Academic Level
               },
               {
                 id: 'stud_sample_002',
-                studentId: '2024-CS-002',
+                studentId: '24-2024-002',
                 fullName: 'Maria Santos',
                 academicInfo: {
                   level: 'college',
@@ -410,7 +266,7 @@ Student ID,Full Name,Course/Strand,Year Level,Academic Level
               },
               {
                 id: 'stud_sample_003',
-                studentId: '2024-STEM-001',
+                studentId: '24-2024-003',
                 fullName: 'Pedro Garcia',
                 academicInfo: {
                   level: 'shs',
@@ -439,57 +295,7 @@ Student ID,Full Name,Course/Strand,Year Level,Academic Level
           }
         }
 
-        async handleAddStudent(e) {
-          const formData = new FormData(e.target);
-          const studentData = {
-            studentId: formData.get('studentId'),
-            fullName: formData.get('fullName'),
-            academicLevel: formData.get('academicLevel'),
-            course: formData.get('course'),
-            yearLevel: formData.get('yearLevel'),
-            strand: formData.get('strand')
-          };
-
-          try {
-            // For development: Generate a temporary password
-            const tempPassword = 'Student123!';
-            
-            // In production, this would save to Firebase
-            console.log('Creating student:', studentData);
-            
-            this.showSuccess(`Student created! Temporary password: ${tempPassword}`);
-            document.getElementById('add-student-modal').classList.add('hidden');
-            e.target.reset();
-            
-            // Add to local students array for now
-            const newStudent = {
-              id: 'stud_' + Date.now(),
-              studentId: studentData.studentId,
-              fullName: studentData.fullName,
-              academicInfo: {
-                level: studentData.academicLevel,
-                course: studentData.course,
-                strand: studentData.strand,
-                yearLevel: studentData.yearLevel
-              },
-              accountStatus: {
-                createdBy: this.currentUser.uid,
-                lastLogin: null,
-                isFirstLogin: true
-              },
-              gameData: {
-                totalPoints: 0,
-                courseProgress: {}
-              }
-            };
-            
-            this.students.push(newStudent);
-            this.filterStudents();
-          } catch (error) {
-            this.showError('Failed to create student: ' + error.message);
-          }
-        }
-
+        // Methods for student management
         filterStudents() {
           const searchTerm = document.getElementById('search-students').value.toLowerCase();
           const courseFilter = document.getElementById('filter-course').value;

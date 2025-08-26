@@ -147,11 +147,8 @@ export default class Classroom extends Phaser.Scene {
             });
         }
 
-        // Create the carousel with main hub styling
+        // Create the carousel with main hub styling - centered horizontally
         const carouselConfig = {
-            iconCenterY: scaleInfo.isMobile ? 
-                (scaleInfo.isPortrait ? scaleDimension(200, scaleInfo) : scaleDimension(180, scaleInfo)) : 
-                scaleDimension(220, scaleInfo),
             iconSpacing: scaleInfo.isMobile ? 
                 (scaleInfo.isPortrait ? scaleDimension(180, scaleInfo) : scaleDimension(240, scaleInfo)) : 
                 scaleDimension(280, scaleInfo),
