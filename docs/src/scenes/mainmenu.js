@@ -160,13 +160,13 @@ export default class MainMenu extends Phaser.Scene {
             // Menu button data for mobile 2x2 grid
             const menuButtons = [
                 // Top row
-                { label: 'New Game', x: leftX, y: topY, onClick: () => {
+                { label: 'Start Adventure', x: leftX, y: topY, onClick: () => {
                     se_confirmSound.play();
-                    handleNewGameClick(this, se_hoverSound, se_confirmSound);
+                    this.handleAdventureStart();
                 }},
-                { label: 'Continue', x: rightX, y: topY, onClick: () => {
+                { label: 'View Progress', x: rightX, y: topY, onClick: () => {
                     se_confirmSound.play();
-                    handleContinueClick(this);
+                    this.showProgressSummary();
                 }},
                 // Bottom row
                 { label: 'Options', x: leftX, y: bottomY, onClick: () => {
@@ -190,13 +190,13 @@ export default class MainMenu extends Phaser.Scene {
 
             // Menu button data with responsive positioning
             const menuButtons = [
-                { label: 'New Game', y: startY, onClick: () => {
+                { label: 'Start Adventure', y: startY, onClick: () => {
                     se_confirmSound.play();
-                    handleNewGameClick(this, se_hoverSound, se_confirmSound);
+                    this.handleAdventureStart();
                 }},
-                { label: 'Continue', y: startY + buttonSpacing, onClick: () => {
+                { label: 'View Progress', y: startY + buttonSpacing, onClick: () => {
                     se_confirmSound.play();
-                    handleContinueClick(this);
+                    this.showProgressSummary();
                 }},
                 { label: 'Options', y: startY + (buttonSpacing * 2), onClick: () => {
                     se_confirmSound.play();
@@ -213,6 +213,9 @@ export default class MainMenu extends Phaser.Scene {
                 createMenuButton(this, width / 2, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo, menuButtons);
             });
         }
+        
+        // Auto-load student progress after creating UI
+        this.autoLoadStudentProgress();
     }
 
     createScrollingClouds() {
@@ -533,6 +536,249 @@ export default class MainMenu extends Phaser.Scene {
                 ease: 'Quad.easeOut'
             });
         });
+    }
+
+    autoLoadStudentProgress() {
+        // Check if user is authenticated as a student
+        const userType = sessionStorage.getItem('sci_high_user_type') || localStorage.getItem('sci_high_user_type');
+        
+        if (userType === 'student') {
+            console.log('Auto-loading student progress...');
+            
+            // Sync save data on login
+            syncSaveDataOnLogin()
+                .then(() => {
+                    console.log('Student progress synced successfully');
+                })
+                .catch(error => {
+                    console.error('Failed to sync student progress:', error);
+                });
+        }
+    }
+
+    showProgressSummary() {
+        console.log('Showing progress summary...');
+        
+        // Get current save data
+        const saveData = JSON.parse(localStorage.getItem('sci_high_save_data') || '{}');
+        
+        if (!saveData || Object.keys(saveData).length === 0) {
+            // No progress found
+            this.showNoProgressModal();
+            return;
+        }
+        
+        // Show progress modal with current stats
+        this.showProgressModal(saveData);
+    }
+
+    showNoProgressModal() {
+        const { width, height } = this.scale;
+        
+        // Clear any existing modal
+        if (this.progressModal) {
+            this.progressModal.clear(true, true);
+        }
+        
+        this.progressModal = this.add.group();
+        
+        // Full-screen dimmed overlay
+        const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6);
+        this.progressModal.add(overlay);
+        
+        // Modal dialog
+        const dialogWidth = 480;
+        const dialogHeight = 200;
+        const baseX = width / 2;
+        const baseY = height / 2;
+        
+        // Dialog background
+        const dialogBg = this.add.graphics();
+        dialogBg.fillStyle(0x222244, 0.96);
+        dialogBg.lineStyle(4, 0xffffcc, 1);
+        dialogBg.strokeRoundedRect(baseX - dialogWidth / 2, baseY - dialogHeight / 2, dialogWidth, dialogHeight, 24);
+        dialogBg.fillRoundedRect(baseX - dialogWidth / 2, baseY - dialogHeight / 2, dialogWidth, dialogHeight, 24);
+        this.progressModal.add(dialogBg);
+        
+        // Title
+        const titleText = this.add.text(baseX, baseY - 40, 'No Progress Found', {
+            fontSize: '32px',
+            color: '#ffff00',
+            fontFamily: 'Arial',
+            stroke: '#000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+        this.progressModal.add(titleText);
+        
+        // Message
+        const messageText = this.add.text(baseX, baseY + 10, 'Start your adventure to begin tracking progress!', {
+            fontSize: '24px',
+            color: '#ffffff',
+            fontFamily: 'Arial',
+            align: 'center'
+        }).setOrigin(0.5);
+        this.progressModal.add(messageText);
+        
+        // Close button
+        const closeBtn = this.add.text(baseX, baseY + 60, 'OK', {
+            fontSize: '28px',
+            color: '#44ff44',
+            fontFamily: 'Arial',
+            stroke: '#000',
+            strokeThickness: 3
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        
+        closeBtn.on('pointerdown', () => {
+            this.progressModal.clear(true, true);
+        });
+        
+        this.progressModal.add(closeBtn);
+        
+        // Fade in animation
+        this.progressModal.children.entries.forEach((element, index) => {
+            element.setAlpha(0);
+            this.tweens.add({
+                targets: element,
+                alpha: element === overlay ? 0.6 : 1,
+                duration: 300,
+                delay: index * 50,
+                ease: 'Quad.easeOut'
+            });
+        });
+    }
+
+    showProgressModal(saveData) {
+        const { width, height } = this.scale;
+        
+        // Clear any existing modal
+        if (this.progressModal) {
+            this.progressModal.clear(true, true);
+        }
+        
+        this.progressModal = this.add.group();
+        
+        // Full-screen dimmed overlay
+        const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6);
+        this.progressModal.add(overlay);
+        
+        // Modal dialog
+        const dialogWidth = 600;
+        const dialogHeight = 400;
+        const baseX = width / 2;
+        const baseY = height / 2;
+        
+        // Dialog background
+        const dialogBg = this.add.graphics();
+        dialogBg.fillStyle(0x222244, 0.96);
+        dialogBg.lineStyle(4, 0xffffcc, 1);
+        dialogBg.strokeRoundedRect(baseX - dialogWidth / 2, baseY - dialogHeight / 2, dialogWidth, dialogHeight, 24);
+        dialogBg.fillRoundedRect(baseX - dialogWidth / 2, baseY - dialogHeight / 2, dialogWidth, dialogHeight, 24);
+        this.progressModal.add(dialogBg);
+        
+        // Title
+        const titleText = this.add.text(baseX, baseY - 150, 'Your Progress', {
+            fontSize: '32px',
+            color: '#ffff00',
+            fontFamily: 'Arial',
+            stroke: '#000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+        this.progressModal.add(titleText);
+        
+        // Progress details
+        let yOffset = -100;
+        const lineHeight = 35;
+        
+        // Last played
+        if (saveData.lastActivity) {
+            const lastPlayed = new Date(saveData.lastActivity).toLocaleDateString();
+            const lastPlayedText = this.add.text(baseX, baseY + yOffset, `Last Played: ${lastPlayed}`, {
+                fontSize: '20px',
+                color: '#ffffff',
+                fontFamily: 'Arial'
+            }).setOrigin(0.5);
+            this.progressModal.add(lastPlayedText);
+            yOffset += lineHeight;
+        }
+        
+        // Current scene/location
+        if (saveData.currentScene) {
+            const locationText = this.add.text(baseX, baseY + yOffset, `Current Location: ${saveData.currentScene}`, {
+                fontSize: '20px',
+                color: '#ffffff',
+                fontFamily: 'Arial'
+            }).setOrigin(0.5);
+            this.progressModal.add(locationText);
+            yOffset += lineHeight;
+        }
+        
+        // Progress stats
+        if (saveData.progress) {
+            if (saveData.progress.level) {
+                const levelText = this.add.text(baseX, baseY + yOffset, `Level: ${saveData.progress.level}`, {
+                    fontSize: '20px',
+                    color: '#ffffff',
+                    fontFamily: 'Arial'
+                }).setOrigin(0.5);
+                this.progressModal.add(levelText);
+                yOffset += lineHeight;
+            }
+            
+            if (saveData.progress.completedQuizzes) {
+                const quizCount = Object.keys(saveData.progress.completedQuizzes).length;
+                const quizText = this.add.text(baseX, baseY + yOffset, `Quizzes Completed: ${quizCount}`, {
+                    fontSize: '20px',
+                    color: '#ffffff',
+                    fontFamily: 'Arial'
+                }).setOrigin(0.5);
+                this.progressModal.add(quizText);
+                yOffset += lineHeight;
+            }
+        }
+        
+        // Close button
+        const closeBtn = this.add.text(baseX, baseY + 120, 'Close', {
+            fontSize: '28px',
+            color: '#44ff44',
+            fontFamily: 'Arial',
+            stroke: '#000',
+            strokeThickness: 3
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        
+        closeBtn.on('pointerdown', () => {
+            this.progressModal.clear(true, true);
+        });
+        
+        this.progressModal.add(closeBtn);
+        
+        // Fade in animation
+        this.progressModal.children.entries.forEach((element, index) => {
+            element.setAlpha(0);
+            this.tweens.add({
+                targets: element,
+                alpha: element === overlay ? 0.6 : 1,
+                duration: 300,
+                delay: index * 50,
+                ease: 'Quad.easeOut'
+            });
+        });
+    }
+
+    handleAdventureStart() {
+        console.log('Starting adventure...');
+        
+        // Get save data to determine where to start
+        const saveData = JSON.parse(localStorage.getItem('sci_high_save_data') || '{}');
+        
+        if (saveData && saveData.currentScene && saveData.currentScene !== 'MainMenu') {
+            // Player has existing progress, continue from where they left off
+            console.log(`Continuing from ${saveData.currentScene}`);
+            LoadingScreen.transitionToScene(this, saveData.currentScene, 'Loading...', 800);
+        } else {
+            // New player or starting fresh, go to intro/startup
+            console.log('Starting new adventure');
+            LoadingScreen.transitionToScene(this, 'StartupScene', 'Loading...', 800);
+        }
     }
 
     // ...existing code...
