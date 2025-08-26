@@ -770,15 +770,69 @@ export default class MainMenu extends Phaser.Scene {
         // Get save data to determine where to start
         const saveData = JSON.parse(localStorage.getItem('sci_high_save_data') || '{}');
         
-        if (saveData && saveData.currentScene && saveData.currentScene !== 'MainMenu') {
-            // Player has existing progress, continue from where they left off
-            console.log(`Continuing from ${saveData.currentScene}`);
-            LoadingScreen.transitionToScene(this, saveData.currentScene, 'Loading...', 800);
+        // Check if player has meaningful progress
+        const hasProgress = this.checkForMeaningfulProgress(saveData);
+        
+        if (hasProgress) {
+            // Player has existing progress, continue from main hub
+            console.log('Player has progress, continuing to MainHub');
+            // Load the save data into gameManager before transitioning
+            if (saveData.courseProgress) {
+                gameManager.courseProgress = { ...saveData.courseProgress };
+            }
+            if (saveData.totalPoints) {
+                gameManager.setTotalPoints(saveData.totalPoints);
+            }
+            if (saveData.gameProgress) {
+                gameManager.setGameProgress(saveData.gameProgress);
+            }
+            LoadingScreen.transitionToScene(this, 'MainHub', 'Loading your progress...', 800);
         } else {
-            // New player or starting fresh, go to intro/startup
-            console.log('Starting new adventure');
-            LoadingScreen.transitionToScene(this, 'StartupScene', 'Loading...', 800);
+            // New player or no meaningful progress, start with intro
+            console.log('Starting new adventure from intro');
+            LoadingScreen.transitionToScene(this, 'VNScene', 'Starting your journey...', 800);
         }
+    }
+
+    checkForMeaningfulProgress(saveData) {
+        if (!saveData) return false;
+        
+        // Check various indicators of meaningful progress
+        const progressIndicators = [
+            // Has completed any course
+            saveData.courseProgress && Object.values(saveData.courseProgress).some(course => course.completed),
+            
+            // Has significant progress in any course (>10%)
+            saveData.courseProgress && Object.values(saveData.courseProgress).some(course => course.progress > 10),
+            
+            // Has earned points
+            saveData.totalPoints && saveData.totalPoints > 0,
+            
+            // Has overall game progress beyond the intro
+            saveData.gameProgress && saveData.gameProgress > 5,
+            
+            // Has play time (spent time in the game)
+            saveData.playTime && saveData.playTime > 300, // 5 minutes
+            
+            // Has unlocked additional courses beyond the defaults
+            saveData.courseProgress && Object.values(saveData.courseProgress).some(course => 
+                course.unlocked && !['Web_Design', 'Python'].includes(course.name)
+            ),
+            
+            // Has topic-specific points
+            saveData.topicPoints && Object.values(saveData.topicPoints || {}).some(points => points > 0)
+        ];
+        
+        // Return true if any meaningful progress indicator is found
+        const hasProgress = progressIndicators.some(indicator => indicator === true);
+        
+        console.log('Progress check results:', {
+            saveData,
+            progressIndicators,
+            hasProgress
+        });
+        
+        return hasProgress;
     }
 
     // ...existing code...

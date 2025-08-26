@@ -48,6 +48,22 @@ export default class DungeonScene extends Phaser.Scene {
             comboScore: 0
         };
 
+        // Special tile events system
+        this.specialTiles = [];
+        this.specialTileSprites = [];
+        this.tileEventTypes = [
+            'treasure', 'trap', 'powerup', 'heal', 'mystery', 'teleport', 'bonus_xp'
+        ];
+        
+        // Random events system
+        this.randomEvents = [];
+        this.lastRandomEventTime = 0;
+        this.randomEventCooldown = 30000; // 30 seconds between random events
+        
+        // Combo system for special tiles
+        this.tileComboCount = 0;
+        this.lastTileType = null;
+
         // Initialize tutorial system
         this.tutorialManager = null;
         this.tutorialFlags = {
@@ -71,6 +87,14 @@ export default class DungeonScene extends Phaser.Scene {
         this.load.image('quizbox', 'assets/sprites/enemies/box.png');
         this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
         this.load.image('bigSlime', 'assets/sprites/enemies/big_slime.png');
+        
+        // Load special tile sound effects (if they exist)
+        this.load.audio('treasure_sound', 'assets/audio/se/treasure.mp3');
+        this.load.audio('trap_sound', 'assets/audio/se/trap.mp3');
+        this.load.audio('powerup_sound', 'assets/audio/se/powerup.mp3');
+        this.load.audio('heal_sound', 'assets/audio/se/heal.mp3');
+        this.load.audio('mystery_sound', 'assets/audio/se/mystery.mp3');
+        this.load.audio('teleport_sound', 'assets/audio/se/teleport.mp3');
     }
 
     create() {
@@ -88,6 +112,8 @@ export default class DungeonScene extends Phaser.Scene {
         this.particles = null;
         this.lightingOverlay = null;
         this.playerSprite = null;
+        this.specialTiles = [];
+        this.specialTileSprites = [];
           // Initialize progression variables
         this.enemiesDefeated = 0;
         this.maxIntensity = 3;
@@ -167,6 +193,9 @@ export default class DungeonScene extends Phaser.Scene {
         this.quizBoxes = this.placeQuizBoxes(boxCount);
         console.log('Quiz boxes placed:', this.quizBoxes);
         
+        // Place special tiles for more fun gameplay
+        this.placeSpecialTiles();
+        
         // Validate quiz box positions
         if (!this.quizBoxes || this.quizBoxes.length === 0) {
             console.error('Quiz box placement failed');
@@ -205,6 +234,9 @@ export default class DungeonScene extends Phaser.Scene {
                 this.checkAndShowTutorial();
             }
         });
+        
+        // Start random events timer
+        this.startRandomEventTimer();
         
         // Expose debug methods for testing
         if (typeof window !== 'undefined') {
@@ -407,6 +439,15 @@ export default class DungeonScene extends Phaser.Scene {
                 return;
             }
 
+            // Check for special tile interactions
+            const specialTileIndex = this.specialTiles.findIndex(
+                tile => tile.x === targetX && tile.y === targetY && !tile.triggered
+            );
+            
+            if (specialTileIndex !== -1) {
+                this.triggerSpecialTile(specialTileIndex);
+            }
+
             // Check for boss encounter tutorial trigger
             if (this.intensity > this.maxIntensity && !this.tutorialFlags.bossEncounterShown) {
                 this.checkAndShowTutorial();
@@ -500,6 +541,17 @@ export default class DungeonScene extends Phaser.Scene {
             });
             this.quizBoxSprites = [];
         }
+        
+        // Clear special tile sprites
+        if (this.specialTileSprites && this.specialTileSprites.length) {
+            this.specialTileSprites.forEach(sprite => {
+                if (sprite && sprite.destroy) {
+                    sprite.destroy();
+                }
+            });
+            this.specialTileSprites = [];
+        }
+        
         if (this.playerSprite) {
             this.playerSprite.destroy();
             this.playerSprite = null;
@@ -587,6 +639,38 @@ export default class DungeonScene extends Phaser.Scene {
                 sprite.setVisible(true);
                     
                 this.quizBoxSprites.push(sprite);
+            } else {
+                // Check for special tiles at this position
+                const specialTile = this.specialTiles.find(tile => tile.x === x && tile.y === y);
+                if (specialTile && !specialTile.triggered) {
+                    // Draw special tile background with unique colors
+                    this.gridGraphics.fillStyle(specialTile.color, 0.8);
+                    this.gridGraphics.fillRoundedRect(cellX, cellY, cellWidth, cellHeight, 12 * this.scaleFactor);
+                    
+                    // Add pulsing border for special tiles
+                    this.gridGraphics.lineStyle(borderWidth * 2, specialTile.color, 1);
+                    this.gridGraphics.strokeRoundedRect(cellX - 2, cellY - 2, cellWidth + 4, cellHeight + 4, 14 * this.scaleFactor);
+                    
+                    // Add glowing effect
+                    this.gridGraphics.lineStyle(borderWidth * 1.5, 0xFFFFFF, 0.4);
+                    this.gridGraphics.strokeRoundedRect(cellX - 4, cellY - 4, cellWidth + 8, cellHeight + 8, 16 * this.scaleFactor);
+                    
+                    // Create special tile icon/text
+                    const tileText = this.add.text(
+                        cellX + cellWidth / 2,
+                        cellY + cellHeight / 2,
+                        specialTile.icon,
+                        {
+                            fontSize: `${Math.round(cellWidth * 0.4)}px`,
+                            fontFamily: 'Arial',
+                            align: 'center'
+                        }
+                    ).setOrigin(0.5).setDepth(12);
+                    
+                    this.specialTileSprites.push(tileText);
+                    
+                    // Add enhanced animations based on tile type
+                    this.addSpecialTileAnimation(tileText, specialTile.type, specialTile.color);
                 } else {
                     // Regular cell with enhanced gradients
                     this.gridGraphics.fillStyle(fillColor, fillAlpha);
@@ -599,7 +683,10 @@ export default class DungeonScene extends Phaser.Scene {
                     }
                     
                     this.gridGraphics.lineStyle(borderWidth, borderColor, borderAlpha);
-                    this.gridGraphics.strokeRoundedRect(cellX, cellY, cellWidth, cellHeight, 8 * this.scaleFactor);                // Enhanced inner highlights for visited cells
+                    this.gridGraphics.strokeRoundedRect(cellX, cellY, cellWidth, cellHeight, 8 * this.scaleFactor);
+                }
+                
+                // Enhanced inner highlights for visited cells
                 if (this.grid[y][x].visited) {
                     this.gridGraphics.fillStyle(0x22d3ee, 0.3); // Bright cyan overlay
                     this.gridGraphics.fillRoundedRect(cellX + 2, cellY + 2, cellWidth - 4, cellHeight - 4, 6 * this.scaleFactor);
@@ -702,6 +789,754 @@ export default class DungeonScene extends Phaser.Scene {
         }
         
         return positions;
+    }
+
+    placeSpecialTiles() {
+        // Place special event tiles across the dungeon for more engaging gameplay
+        const specialTileCount = Math.min(4 + this.intensity, 8); // More tiles at higher intensity
+        const positions = [];
+        
+        // Define special tile types with their probabilities
+        const tileTypes = [
+            { type: 'treasure', weight: 25, color: 0xFFD700, icon: '💰' },
+            { type: 'trap', weight: 20, color: 0xFF4444, icon: '⚠️' },
+            { type: 'powerup', weight: 20, color: 0x44FF44, icon: '⚡' },
+            { type: 'heal', weight: 15, color: 0xFF69B4, icon: '❤️' },
+            { type: 'mystery', weight: 10, color: 0x9966FF, icon: '❓' },
+            { type: 'teleport', weight: 5, color: 0x00FFFF, icon: '🌀' },
+            { type: 'bonus_xp', weight: 5, color: 0xFFA500, icon: '📚' }
+        ];
+        
+        // Create weighted selection array
+        const weightedTypes = [];
+        tileTypes.forEach(tile => {
+            for (let i = 0; i < tile.weight; i++) {
+                weightedTypes.push(tile);
+            }
+        });
+
+        while (positions.length < specialTileCount) {
+            const x = Phaser.Math.Between(0, GRID_WIDTH - 1);
+            const y = Phaser.Math.Between(0, GRID_HEIGHT - 2); // avoid starting row
+            
+            // Avoid player start, quiz boxes, duplicates, and ensure walkable
+            const isOccupied = (x === this.player.x && y === this.player.y) ||
+                              this.quizBoxes.some(box => box.x === x && box.y === y) ||
+                              positions.some(pos => pos.x === x && pos.y === y);
+                              
+            if (!isOccupied && this.grid[y][x].walkable) {
+                const selectedTile = Phaser.Utils.Array.GetRandom(weightedTypes);
+                const newTile = { 
+                    x, 
+                    y, 
+                    type: selectedTile.type,
+                    color: selectedTile.color,
+                    icon: selectedTile.icon,
+                    triggered: false
+                };
+                console.log(`Created special tile '${selectedTile.type}' at (${x}, ${y})`);
+                positions.push(newTile);
+            }
+        }
+        
+        this.specialTiles = positions;
+        return positions;
+    }
+
+    triggerSpecialTile(tileIndex) {
+        const tile = this.specialTiles[tileIndex];
+        if (!tile || tile.triggered) return;
+        
+        tile.triggered = true;
+        
+        // Check for tile combos
+        this.checkTileCombo(tile.type);
+        
+        // Create visual effect for tile activation
+        this.createTileActivationEffect(tile.x, tile.y, tile.color);
+        
+        // Play appropriate sound effect
+        this.playTileSound(tile.type);
+        
+        // Handle different tile types
+        switch (tile.type) {
+            case 'treasure':
+                this.handleTreasureTile(tile);
+                break;
+            case 'trap':
+                this.handleTrapTile(tile);
+                break;
+            case 'powerup':
+                this.handlePowerupTile(tile);
+                break;
+            case 'heal':
+                this.handleHealTile(tile);
+                break;
+            case 'mystery':
+                this.handleMysteryTile(tile);
+                break;
+            case 'teleport':
+                this.handleTeleportTile(tile);
+                break;
+            case 'bonus_xp':
+                this.handleBonusXPTile(tile);
+                break;
+        }
+        
+        // Redraw grid to remove triggered tile
+        this.drawGrid();
+        this.updateLightingEffects();
+        if (this.dungeonHUD) this.dungeonHUD.drawHUD();
+    }
+
+    checkTileCombo(tileType) {
+        if (this.lastTileType === tileType) {
+            this.tileComboCount++;
+            if (this.tileComboCount >= 2) {
+                this.triggerComboBonus(tileType);
+            }
+        } else {
+            this.tileComboCount = 1;
+        }
+        this.lastTileType = tileType;
+    }
+
+    triggerComboBonus(tileType) {
+        const comboMultiplier = Math.min(this.tileComboCount, 5); // Cap at 5x
+        this.showTileMessage(
+            `🔥 ${this.tileComboCount}x COMBO! 🔥`,
+            `${tileType.toUpperCase()} combo activated! Bonus effects!`,
+            0xFF6B00
+        );
+        
+        // Apply combo-specific bonuses
+        switch (tileType) {
+            case 'treasure':
+                const comboGold = 50 * comboMultiplier;
+                this.courseStats.totalScore += comboGold;
+                break;
+            case 'powerup':
+                // Add additional random powerup
+                this.handlePowerupTile(null);
+                break;
+            case 'heal':
+                const comboHeal = 10 * comboMultiplier;
+                const maxHP = gameManager.maxPlayerHP || 100;
+                this.player.hp = Math.min(maxHP, this.player.hp + comboHeal);
+                gameManager.setPlayerHP(this.player.hp);
+                break;
+        }
+    }
+
+    playTileSound(tileType) {
+        const soundKey = `${tileType}_sound`;
+        if (this.sound.get(soundKey)) {
+            this.sound.play(soundKey, { volume: 0.3 });
+        }
+    }
+
+    createTileActivationEffect(x, y, color) {
+        const cellSize = this.getCellSize();
+        const centerX = this.offsetX + x * cellSize + cellSize / 2;
+        const centerY = this.offsetY + y * cellSize + cellSize / 2;
+        
+        // Create explosion-like particle effect
+        for (let i = 0; i < 12; i++) {
+            const particle = this.add.circle(centerX, centerY, 4, color, 0.8);
+            particle.setDepth(15);
+            
+            const angle = (i / 12) * Math.PI * 2;
+            const distance = 40 + Math.random() * 20;
+            const targetX = centerX + Math.cos(angle) * distance;
+            const targetY = centerY + Math.sin(angle) * distance;
+            
+            this.tweens.add({
+                targets: particle,
+                x: targetX,
+                y: targetY,
+                alpha: 0,
+                scale: 0.2,
+                duration: 600,
+                ease: 'Power2',
+                onComplete: () => particle.destroy()
+            });
+        }
+    }
+
+    handleTreasureTile(tile) {
+        const bonusScore = 100 + (this.intensity * 50);
+        this.courseStats.totalScore += bonusScore;
+        
+        this.showTileMessage(`💰 Treasure Found!`, `You found ${bonusScore} bonus points!`, 0xFFD700);
+        
+        // Play treasure sound effect if available
+        if (this.sound.get('treasure_sound')) {
+            this.sound.play('treasure_sound', { volume: 0.3 });
+        }
+    }
+
+    handleTrapTile(tile) {
+        const damage = 10 + (this.intensity * 5);
+        this.player.hp = Math.max(0, this.player.hp - damage);
+        gameManager.setPlayerHP(this.player.hp);
+        
+        this.showTileMessage(`⚠️ Trap Triggered!`, `You lost ${damage} health! Be careful!`, 0xFF4444);
+        
+        if (this.player.hp <= 0) {
+            this.showGameOverScreen();
+            return;
+        }
+    }
+
+    handlePowerupTile(tile) {
+        const powerupTypes = [
+            { name: 'Double Damage', effect: 'double_damage', duration: 3 },
+            { name: 'Score Boost', effect: 'score_boost', multiplier: 1.5 },
+            { name: 'Health Regen', effect: 'health_regen', amount: 5 }
+        ];
+        
+        const powerup = Phaser.Utils.Array.GetRandom(powerupTypes);
+        
+        // Add buff to player
+        this.player.buffs = this.player.buffs || [];
+        this.player.buffs.push(powerup);
+        
+        this.showTileMessage(`⚡ Power-Up!`, `Gained: ${powerup.name}`, 0x44FF44);
+    }
+
+    handleHealTile(tile) {
+        const healAmount = 20 + (this.intensity * 5);
+        const maxHP = gameManager.maxPlayerHP || 100;
+        this.player.hp = Math.min(maxHP, this.player.hp + healAmount);
+        gameManager.setPlayerHP(this.player.hp);
+        
+        this.showTileMessage(`❤️ Healing Spring!`, `Restored ${healAmount} health!`, 0xFF69B4);
+    }
+
+    handleMysteryTile(tile) {
+        const mysteries = [
+            () => this.handleTreasureTile(tile),
+            () => this.handlePowerupTile(tile),
+            () => this.handleHealTile(tile),
+            () => this.teleportToRandomLocation(),
+            () => this.spawnBonusEnemy(),
+            () => this.createTileExplosion(tile),
+            () => this.duplicateNearbyTiles(tile),
+            () => this.createTileChain(tile)
+        ];
+        
+        const mysteryEffect = Phaser.Utils.Array.GetRandom(mysteries);
+        this.showTileMessage(`❓ Mystery Effect!`, `Something magical happens...`, 0x9966FF);
+        
+        // Delay the effect for dramatic tension
+        this.time.delayedCall(1000, () => {
+            mysteryEffect();
+        });
+    }
+
+    createTileExplosion(centerTile) {
+        // Create an explosion that affects nearby tiles
+        const explosionRadius = 2;
+        const affectedTiles = [];
+        
+        for (let dy = -explosionRadius; dy <= explosionRadius; dy++) {
+            for (let dx = -explosionRadius; dx <= explosionRadius; dx++) {
+                const x = centerTile.x + dx;
+                const y = centerTile.y + dy;
+                
+                if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT && 
+                    Math.abs(dx) + Math.abs(dy) <= explosionRadius) {
+                    affectedTiles.push({ x, y });
+                }
+            }
+        }
+        
+        // Create explosion visual effect
+        affectedTiles.forEach((pos, index) => {
+            this.time.delayedCall(index * 100, () => {
+                this.createTileActivationEffect(pos.x, pos.y, 0xFF6600);
+            });
+        });
+        
+        this.showTileMessage(`💥 Tile Explosion!`, `Chain reaction activated!`, 0xFF6600);
+    }
+
+    duplicateNearbyTiles(centerTile) {
+        // Find special tiles near the center and duplicate their effects
+        const nearbySpecialTiles = this.specialTiles.filter(tile => 
+            !tile.triggered && 
+            Math.abs(tile.x - centerTile.x) <= 1 && 
+            Math.abs(tile.y - centerTile.y) <= 1 &&
+            tile !== centerTile
+        );
+        
+        if (nearbySpecialTiles.length > 0) {
+            const tileToClone = Phaser.Utils.Array.GetRandom(nearbySpecialTiles);
+            this.triggerSpecialTileEffect(tileToClone, false); // Don't mark as triggered
+            this.showTileMessage(`🔄 Tile Duplication!`, `Nearby ${tileToClone.type} effect copied!`, 0x9966FF);
+        } else {
+            // Fallback to creating a random beneficial effect
+            this.handleTreasureTile(centerTile);
+        }
+    }
+
+    createTileChain(startTile) {
+        // Create a chain reaction through random walkable tiles
+        const chainLength = 3 + Math.floor(Math.random() * 3);
+        const chainTiles = [{ x: startTile.x, y: startTile.y }];
+        
+        // Find connected walkable tiles for the chain
+        for (let i = 1; i < chainLength; i++) {
+            const lastTile = chainTiles[i - 1];
+            const adjacent = this.getAdjacentCells(lastTile.x, lastTile.y);
+            const validNext = adjacent.filter(pos => 
+                !chainTiles.some(chain => chain.x === pos.x && chain.y === pos.y)
+            );
+            
+            if (validNext.length > 0) {
+                chainTiles.push(Phaser.Utils.Array.GetRandom(validNext));
+            }
+        }
+        
+        // Execute chain effects with delays
+        chainTiles.forEach((tile, index) => {
+            this.time.delayedCall(index * 500, () => {
+                this.createTileActivationEffect(tile.x, tile.y, 0x00FFFF);
+                if (index === chainTiles.length - 1) {
+                    // Final chain effect
+                    const bonusScore = 50 * chainTiles.length;
+                    this.courseStats.totalScore += bonusScore;
+                }
+            });
+        });
+        
+        this.showTileMessage(`⚡ Chain Reaction!`, `${chainTiles.length} tiles connected!`, 0x00FFFF);
+    }
+
+    triggerSpecialTileEffect(tile, markTriggered = true) {
+        // Helper method to trigger tile effects without marking as triggered
+        if (markTriggered) {
+            tile.triggered = true;
+        }
+        
+        switch (tile.type) {
+            case 'treasure':
+                this.handleTreasureTile(tile);
+                break;
+            case 'powerup':
+                this.handlePowerupTile(tile);
+                break;
+            case 'heal':
+                this.handleHealTile(tile);
+                break;
+            case 'bonus_xp':
+                this.handleBonusXPTile(tile);
+                break;
+        }
+    }
+
+    handleTeleportTile(tile) {
+        // Find all walkable tiles
+        const walkableTiles = [];
+        for (let y = 0; y < GRID_HEIGHT; y++) {
+            for (let x = 0; x < GRID_WIDTH; x++) {
+                if (this.grid[y][x].walkable && 
+                    !(x === this.player.x && y === this.player.y) &&
+                    !this.quizBoxes.some(box => box.x === x && box.y === y) &&
+                    !this.specialTiles.some(tile => tile.x === x && tile.y === y && !tile.triggered)) {
+                    walkableTiles.push({ x, y });
+                }
+            }
+        }
+        
+        if (walkableTiles.length > 0) {
+            const newPos = Phaser.Utils.Array.GetRandom(walkableTiles);
+            this.player.x = newPos.x;
+            this.player.y = newPos.y;
+            this.grid[this.player.y][this.player.x].visited = true;
+            this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
+            
+            this.showTileMessage(`🌀 Teleported!`, `Warped to a new location!`, 0x00FFFF);
+        }
+    }
+
+    handleBonusXPTile(tile) {
+        const xpBonus = 50 + (this.intensity * 25);
+        this.courseStats.comboScore += xpBonus;
+        
+        this.showTileMessage(`📚 Knowledge Bonus!`, `Gained ${xpBonus} experience points!`, 0xFFA500);
+    }
+
+    showTileMessage(title, description, color) {
+        // Create floating message box
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
+        
+        const messageBox = this.add.container(centerX, centerY);
+        messageBox.setDepth(20);
+        
+        // Background
+        const bg = this.add.rectangle(0, 0, 400, 120, 0x000000, 0.8);
+        bg.setStroke(color, 3);
+        messageBox.add(bg);
+        
+        // Title
+        const titleText = this.add.text(0, -20, title, {
+            fontSize: '20px',
+            fontFamily: 'Caprasimo-Regular',
+            fill: `#${color.toString(16).padStart(6, '0')}`,
+            align: 'center'
+        }).setOrigin(0.5);
+        messageBox.add(titleText);
+        
+        // Description
+        const descText = this.add.text(0, 15, description, {
+            fontSize: '14px',
+            fontFamily: 'Arial',
+            fill: '#ffffff',
+            align: 'center'
+        }).setOrigin(0.5);
+        messageBox.add(descText);
+        
+        // Animate in
+        messageBox.setAlpha(0);
+        this.tweens.add({
+            targets: messageBox,
+            alpha: 1,
+            duration: 300,
+            ease: 'Power2'
+        });
+        
+        // Auto-close after 2 seconds
+        this.time.delayedCall(2000, () => {
+            this.tweens.add({
+                targets: messageBox,
+                alpha: 0,
+                duration: 300,
+                ease: 'Power2',
+                onComplete: () => messageBox.destroy()
+            });
+        });
+    }
+
+    teleportToRandomLocation() {
+        this.handleTeleportTile(null);
+    }
+
+    spawnBonusEnemy() {
+        // Add a bonus enemy with extra rewards
+        const walkableTiles = [];
+        for (let y = 0; y < GRID_HEIGHT; y++) {
+            for (let x = 0; x < GRID_WIDTH; x++) {
+                if (this.grid[y][x].walkable && 
+                    !(x === this.player.x && y === this.player.y) &&
+                    !this.quizBoxes.some(box => box.x === x && box.y === y)) {
+                    walkableTiles.push({ x, y });
+                }
+            }
+        }
+        
+        if (walkableTiles.length > 0) {
+            const pos = Phaser.Utils.Array.GetRandom(walkableTiles);
+            const bonusEnemy = {
+                x: pos.x,
+                y: pos.y,
+                difficulty: 'bonus',
+                sprite: this.getRandomEnemySprite(),
+                isBoss: false,
+                isBonus: true
+            };
+            
+            this.quizBoxes.push(bonusEnemy);
+            this.showTileMessage(`🎁 Bonus Enemy!`, `A special enemy appeared with extra rewards!`, 0xFFD700);
+        }
+    }
+
+    startRandomEventTimer() {
+        // Schedule random events to occur periodically
+        this.time.addEvent({
+            delay: this.randomEventCooldown,
+            callback: this.triggerRandomEvent,
+            callbackScope: this,
+            loop: true
+        });
+    }
+
+    triggerRandomEvent() {
+        // Only trigger if player has been active (moved recently)
+        if (Date.now() - this.lastRandomEventTime < this.randomEventCooldown) {
+            return;
+        }
+        
+        const events = [
+            'meteor_shower',
+            'treasure_rain',
+            'magic_storm',
+            'time_warp',
+            'dungeon_shift',
+            'enemy_weakness',
+            'double_rewards'
+        ];
+        
+        const eventType = Phaser.Utils.Array.GetRandom(events);
+        this.executeRandomEvent(eventType);
+        this.lastRandomEventTime = Date.now();
+    }
+
+    executeRandomEvent(eventType) {
+        switch (eventType) {
+            case 'meteor_shower':
+                this.meteorShowerEvent();
+                break;
+            case 'treasure_rain':
+                this.treasureRainEvent();
+                break;
+            case 'magic_storm':
+                this.magicStormEvent();
+                break;
+            case 'time_warp':
+                this.timeWarpEvent();
+                break;
+            case 'dungeon_shift':
+                this.dungeonShiftEvent();
+                break;
+            case 'enemy_weakness':
+                this.enemyWeaknessEvent();
+                break;
+            case 'double_rewards':
+                this.doubleRewardsEvent();
+                break;
+        }
+    }
+
+    meteorShowerEvent() {
+        this.showRandomEventMessage('☄️ Meteor Shower!', 'Random damage to all enemies!');
+        
+        // Damage all enemies
+        this.quizBoxes.forEach(enemy => {
+            if (!enemy.isBoss) {
+                // Visual meteor effect on each enemy
+                this.createMeteorEffect(enemy.x, enemy.y);
+            }
+        });
+    }
+
+    treasureRainEvent() {
+        this.showRandomEventMessage('💰 Treasure Rain!', 'Gold coins fall from the sky!');
+        
+        const bonusGold = 200 + (this.intensity * 100);
+        this.courseStats.totalScore += bonusGold;
+        
+        // Create falling coin effects
+        this.createTreasureRainEffect();
+    }
+
+    magicStormEvent() {
+        this.showRandomEventMessage('⚡ Magic Storm!', 'All special tiles regenerate!');
+        
+        // Remove triggered tiles and regenerate
+        this.specialTiles = this.specialTiles.filter(tile => !tile.triggered);
+        this.placeSpecialTiles();
+        this.drawGrid();
+        this.updateLightingEffects();
+    }
+
+    timeWarpEvent() {
+        this.showRandomEventMessage('🌀 Time Warp!', 'Movement cooldowns reduced!');
+        
+        // Temporarily increase movement speed
+        this.touchSensitivity = Math.max(50, this.touchSensitivity / 2);
+        
+        // Reset after 30 seconds
+        this.time.delayedCall(30000, () => {
+            this.touchSensitivity = 200;
+        });
+    }
+
+    dungeonShiftEvent() {
+        this.showRandomEventMessage('🔄 Dungeon Shift!', 'The layout changes!');
+        
+        // Regenerate the grid layout
+        this.grid = this.createGrid(GRID_WIDTH, GRID_HEIGHT);
+        this.ensurePathToQuizBoxes();
+        this.drawGrid();
+        this.updateLightingEffects();
+    }
+
+    enemyWeaknessEvent() {
+        this.showRandomEventMessage('🗡️ Enemy Weakness!', 'Your next battle deals double damage!');
+        
+        // Add temporary double damage buff
+        this.player.buffs = this.player.buffs || [];
+        this.player.buffs.push({
+            name: 'Double Damage',
+            effect: 'double_damage',
+            duration: 1,
+            temporary: true
+        });
+    }
+
+    doubleRewardsEvent() {
+        this.showRandomEventMessage('🎁 Double Rewards!', 'Next quiz victory gives double points!');
+        
+        // Add temporary double rewards buff
+        this.player.buffs = this.player.buffs || [];
+        this.player.buffs.push({
+            name: 'Double Rewards',
+            effect: 'double_rewards',
+            duration: 1,
+            temporary: true
+        });
+    }
+
+    createMeteorEffect(x, y) {
+        const cellSize = this.getCellSize();
+        const centerX = this.offsetX + x * cellSize + cellSize / 2;
+        const centerY = this.offsetY + y * cellSize + cellSize / 2;
+        
+        // Create meteor particle falling from top
+        const meteor = this.add.circle(centerX, -50, 8, 0xFF4500, 0.9);
+        meteor.setDepth(20);
+        
+        this.tweens.add({
+            targets: meteor,
+            y: centerY,
+            duration: 800,
+            ease: 'Power2',
+            onComplete: () => {
+                // Explosion effect
+                this.createTileActivationEffect(x, y, 0xFF4500);
+                meteor.destroy();
+            }
+        });
+    }
+
+    createTreasureRainEffect() {
+        // Create multiple falling coins
+        for (let i = 0; i < 10; i++) {
+            const coin = this.add.circle(
+                Phaser.Math.Between(50, this.scale.width - 50),
+                -20,
+                6,
+                0xFFD700,
+                0.8
+            );
+            coin.setDepth(20);
+            
+            this.tweens.add({
+                targets: coin,
+                y: this.scale.height + 50,
+                duration: Phaser.Math.Between(1500, 3000),
+                delay: i * 200,
+                ease: 'Linear',
+                onComplete: () => coin.destroy()
+            });
+        }
+    }
+
+    showRandomEventMessage(title, description) {
+        this.showTileMessage(title, description, 0xFF6B00);
+    }
+
+    addSpecialTileAnimation(sprite, tileType, color) {
+        switch (tileType) {
+            case 'treasure':
+                // Pulsing gold effect
+                this.tweens.add({
+                    targets: sprite,
+                    scale: 1.2,
+                    duration: 800,
+                    ease: 'Sine.easeInOut',
+                    yoyo: true,
+                    repeat: -1
+                });
+                break;
+                
+            case 'trap':
+                // Warning flash
+                this.tweens.add({
+                    targets: sprite,
+                    alpha: 0.3,
+                    duration: 300,
+                    ease: 'Power2',
+                    yoyo: true,
+                    repeat: -1
+                });
+                break;
+                
+            case 'powerup':
+                // Energetic bounce
+                this.tweens.add({
+                    targets: sprite,
+                    y: sprite.y - 5,
+                    duration: 400,
+                    ease: 'Bounce.easeOut',
+                    yoyo: true,
+                    repeat: -1
+                });
+                break;
+                
+            case 'heal':
+                // Gentle healing pulse
+                this.tweens.add({
+                    targets: sprite,
+                    scale: 1.1,
+                    alpha: 0.8,
+                    duration: 1200,
+                    ease: 'Sine.easeInOut',
+                    yoyo: true,
+                    repeat: -1
+                });
+                break;
+                
+            case 'mystery':
+                // Mysterious rotation
+                this.tweens.add({
+                    targets: sprite,
+                    rotation: Math.PI * 2,
+                    duration: 2000,
+                    ease: 'Linear',
+                    repeat: -1
+                });
+                break;
+                
+            case 'teleport':
+                // Swirling effect
+                this.tweens.add({
+                    targets: sprite,
+                    rotation: Math.PI * 2,
+                    scale: 0.8,
+                    duration: 1000,
+                    ease: 'Sine.easeInOut',
+                    yoyo: true,
+                    repeat: -1
+                });
+                break;
+                
+            case 'bonus_xp':
+                // Knowledge glow
+                this.tweens.add({
+                    targets: sprite,
+                    y: sprite.y - 3,
+                    scale: 1.15,
+                    duration: 1500,
+                    ease: 'Sine.easeInOut',
+                    yoyo: true,
+                    repeat: -1
+                });
+                break;
+                
+            default:
+                // Default floating animation
+                this.tweens.add({
+                    targets: sprite,
+                    y: sprite.y - 3,
+                    duration: 1000,
+                    ease: 'Sine.easeInOut',
+                    yoyo: true,
+                    repeat: -1
+                });
+        }
     }
 
     getRandomDifficulty() {
@@ -1161,7 +1996,10 @@ export default class DungeonScene extends Phaser.Scene {
         
         this.quizBoxes = newBoxes; // Replace instead of push to avoid accumulation
         
-        // Immediately redraw grid to show new boxes
+        // Regenerate special tiles for the new intensity level
+        this.placeSpecialTiles();
+        
+        // Immediately redraw grid to show new boxes and special tiles
         this.drawGrid();
         this.updateLightingEffects();
     }
