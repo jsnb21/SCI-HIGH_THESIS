@@ -94,7 +94,7 @@ export default class DungeonScene extends Phaser.Scene {
         this.load.audio('powerup_sound', 'assets/audio/se/powerup.mp3');
         this.load.audio('heal_sound', 'assets/audio/se/heal.mp3');
         this.load.audio('mystery_sound', 'assets/audio/se/mystery.mp3');
-        this.load.audio('teleport_sound', 'assets/audio/se/teleport.mp3');
+        // teleport_sound removed - teleportation disabled
     }
 
     create() {
@@ -449,6 +449,22 @@ export default class DungeonScene extends Phaser.Scene {
                     playerDamage: this.playerDamage
                 });
                 return;
+            }
+
+            // Check for special tile collision immediately and show message
+            const immediateSpecialTileIndex = this.specialTiles.findIndex(
+                tile => tile.x === targetX && tile.y === targetY && !tile.triggered
+            );
+            
+            if (immediateSpecialTileIndex !== -1) {
+                const tile = this.specialTiles[immediateSpecialTileIndex];
+                // Show message immediately upon stepping on tile
+                this.showTileMessageForType(tile.type);
+                
+                // Play se_powerup sound effect
+                if (this.sound.get('se_powerup')) {
+                    this.sound.play('se_powerup', { volume: 0.5 });
+                }
             }
 
             // First redraw to show player on the tile
@@ -817,15 +833,13 @@ export default class DungeonScene extends Phaser.Scene {
         const specialTileCount = Math.min(4 + this.intensity, 8); // More tiles at higher intensity
         const positions = [];
         
-        // Define special tile types with their probabilities
+        // Define special tile types with their probabilities (excluding teleport)
         const tileTypes = [
-            { type: 'treasure', weight: 25, color: 0xFFD700, icon: '💰' },
-            { type: 'trap', weight: 20, color: 0xFF4444, icon: '⚠️' },
-            { type: 'powerup', weight: 20, color: 0x44FF44, icon: '⚡' },
-            { type: 'heal', weight: 15, color: 0xFF69B4, icon: '❤️' },
-            { type: 'mystery', weight: 10, color: 0x9966FF, icon: '❓' },
-            { type: 'teleport', weight: 5, color: 0x00FFFF, icon: '🌀' },
-            { type: 'bonus_xp', weight: 5, color: 0xFFA500, icon: '📚' }
+            { type: 'treasure', weight: 30 },
+            { type: 'trap', weight: 25 },
+            { type: 'powerup', weight: 20 },
+            { type: 'heal', weight: 15 },
+            { type: 'bonus_xp', weight: 10 }
         ];
         
         // Create weighted selection array
@@ -850,12 +864,12 @@ export default class DungeonScene extends Phaser.Scene {
                 const newTile = { 
                     x, 
                     y, 
-                    type: selectedTile.type,
-                    color: selectedTile.color,
-                    icon: selectedTile.icon,
+                    type: selectedTile.type, // The actual hidden effect
+                    color: 0x9966FF, // All tiles appear as mystery tiles (purple)
+                    icon: '❓', // All tiles show question mark
                     triggered: false
                 };
-                console.log(`Created special tile '${selectedTile.type}' at (${x}, ${y})`);
+                console.log(`Created mystery tile with hidden '${selectedTile.type}' effect at (${x}, ${y})`);
                 positions.push(newTile);
             }
         }
@@ -895,9 +909,6 @@ export default class DungeonScene extends Phaser.Scene {
                 break;
             case 'mystery':
                 this.handleMysteryTile(tile);
-                break;
-            case 'teleport':
-                this.handleTeleportTile(tile);
                 break;
             case 'bonus_xp':
                 this.handleBonusXPTile(tile);
@@ -996,7 +1007,7 @@ export default class DungeonScene extends Phaser.Scene {
         const bonusScore = 100 + (this.intensity * 50);
         this.courseStats.totalScore += bonusScore;
         
-        this.showTileMessage(`💰 Treasure Found!`, `You found ${bonusScore} bonus points!`, 0xFFD700);
+        // Message already shown on collision - just apply the effect
         
         // Play treasure sound effect if available
         if (this.sound.get('treasure_sound')) {
@@ -1030,7 +1041,7 @@ export default class DungeonScene extends Phaser.Scene {
         this.player.buffs = this.player.buffs || [];
         this.player.buffs.push(powerup);
         
-        this.showTileMessage(`⚡ Power-Up!`, `Gained: ${powerup.name}`, 0x44FF44);
+        // Message already shown on collision - just apply the effect
     }
 
     handleHealTile(tile) {
@@ -1039,7 +1050,7 @@ export default class DungeonScene extends Phaser.Scene {
         this.player.hp = Math.min(maxHP, this.player.hp + healAmount);
         gameManager.setPlayerHP(this.player.hp);
         
-        this.showTileMessage(`❤️ Healing Spring!`, `Restored ${healAmount} health!`, 0xFF69B4);
+        // Message already shown on collision - just apply the effect
     }
 
     handleMysteryTile(tile) {
@@ -1047,7 +1058,6 @@ export default class DungeonScene extends Phaser.Scene {
             () => this.handleTreasureTile(tile),
             () => this.handlePowerupTile(tile),
             () => this.handleHealTile(tile),
-            () => this.teleportToRandomLocation(),
             () => this.spawnBonusEnemy(),
             () => this.createTileExplosion(tile),
             () => this.duplicateNearbyTiles(tile),
@@ -1164,6 +1174,8 @@ export default class DungeonScene extends Phaser.Scene {
         }
     }
 
+    // handleTeleportTile method removed - teleportation disabled
+    /*
     handleTeleportTile(tile) {
         // Find all walkable tiles
         const walkableTiles = [];
@@ -1188,6 +1200,7 @@ export default class DungeonScene extends Phaser.Scene {
             this.showTileMessage(`🌀 Teleported!`, `Warped to a new location!`, 0x00FFFF);
         }
     }
+    */
 
     handleBonusXPTile(tile) {
         const xpBonus = 50 + (this.intensity * 25);
@@ -1198,7 +1211,7 @@ export default class DungeonScene extends Phaser.Scene {
 
     showTileMessage(title, description, color) {
         // Get proper screen dimensions
-        const { width, height } = this.scene.scale;
+        const { width, height } = this.scale;
         const scaleFactor = Math.min(width / 816, height / 624);
         
         // Position at the top of the screen
@@ -1286,9 +1299,38 @@ export default class DungeonScene extends Phaser.Scene {
         });
     }
 
+    showTileMessageForType(tileType) {
+        switch (tileType) {
+            case 'treasure':
+                this.showTileMessage(`💰 Treasure Found!`, `You found bonus points!`, 0xFFD700);
+                break;
+            case 'trap':
+                this.showTileMessage(`⚠️ Trap Triggered!`, `You lost health! Be careful!`, 0xFF4444);
+                break;
+            case 'powerup':
+                this.showTileMessage(`⚡ Power-Up!`, `You gained a special ability!`, 0x44FF44);
+                break;
+            case 'heal':
+                this.showTileMessage(`❤️ Healing Spring!`, `You restored health!`, 0xFF69B4);
+                break;
+            case 'mystery':
+                this.showTileMessage(`❓ Mystery Effect!`, `Something magical happens...`, 0x9966FF);
+                break;
+            case 'bonus_xp':
+                this.showTileMessage(`📚 Knowledge Bonus!`, `You gained experience points!`, 0xFFA500);
+                break;
+            default:
+                this.showTileMessage(`✨ Special Tile!`, `Something special happened!`, 0xFFFFFF);
+                break;
+        }
+    }
+
+    // teleportToRandomLocation method removed - teleportation disabled
+    /*
     teleportToRandomLocation() {
         this.handleTeleportTile(null);
     }
+    */
 
     spawnBonusEnemy() {
         // Add a bonus enemy with extra rewards
@@ -1563,19 +1605,6 @@ export default class DungeonScene extends Phaser.Scene {
                     rotation: Math.PI * 2,
                     duration: 2000,
                     ease: 'Linear',
-                    repeat: -1
-                });
-                break;
-                
-            case 'teleport':
-                // Swirling effect
-                this.tweens.add({
-                    targets: sprite,
-                    rotation: Math.PI * 2,
-                    scale: 0.8,
-                    duration: 1000,
-                    ease: 'Sine.easeInOut',
-                    yoyo: true,
                     repeat: -1
                 });
                 break;

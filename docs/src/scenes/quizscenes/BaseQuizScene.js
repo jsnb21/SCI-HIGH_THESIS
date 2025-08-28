@@ -23,12 +23,28 @@ function shuffleArray(array) {
 
 // Function to randomize multiple choice options and update correct index
 function randomizeOptions(question) {
-    if (question.type === 'fill-in-the-blank' || question.type === 'drag-and-drop' || !question.options) {
-        return question; // No randomization needed for fill-in-the-blank or drag-and-drop
+    // Handle both "options" and "choices" property names
+    const questionOptions = question.options || question.choices;
+    
+    if (question.type === 'fill-in-the-blank' || question.type === 'drag-and-drop' || !questionOptions || !Array.isArray(questionOptions)) {
+        return question; // No randomization needed for fill-in-the-blank, drag-and-drop, or when options are invalid
     }
 
-    const originalOptions = [...question.options];
+    // Ensure we have at least some options to work with
+    if (questionOptions.length === 0) {
+        console.warn('Question has empty options array:', question);
+        return question;
+    }
+
+    const originalOptions = [...questionOptions];
     const originalCorrectIndex = question.correctIndex;
+    
+    // Validate correctIndex
+    if (originalCorrectIndex < 0 || originalCorrectIndex >= originalOptions.length) {
+        console.warn('Invalid correctIndex for question:', question);
+        return question;
+    }
+    
     const correctAnswer = originalOptions[originalCorrectIndex];
 
     // Create shuffled options
@@ -39,7 +55,8 @@ function randomizeOptions(question) {
 
     return {
         ...question,
-        options: shuffledOptions,
+        options: shuffledOptions, // Always use "options" as the output property
+        choices: shuffledOptions, // Keep backward compatibility
         correctIndex: newCorrectIndex
     };
 }
@@ -96,6 +113,8 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.score = 0;
         this.correctAnswers = 0; // Initialize correct answers counter        this.questions = [];
         this.isQuizStarted = false;
+        this.isAnswering = false; // Reset answering state
+        this.gameOverState = false; // Reset game over state - IMPORTANT for restarting quiz
         this.courseTopic = data.topic || null; // Store course topic for completion tracking
         this.enemyDefeated = false; // Track if enemy was defeated
         this.playerDamage = data.playerDamage || 10; // Player damage per correct answer
@@ -260,7 +279,40 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             return;
         }
         const currentQuestion = this.questions[this.currentQuestionIndex];
-        const { question, options, type = 'multiple-choice' } = currentQuestion;
+        console.log('Current question data:', currentQuestion);
+        
+        // Handle both "options" and "choices" property names
+        let { question, options, choices, type = 'multiple-choice' } = currentQuestion;
+        
+        // Use choices if options is not available (for backward compatibility)
+        if (!options && choices) {
+            options = choices;
+            console.log('Using "choices" property as options:', options);
+        }
+        
+        console.log('Destructured values - question:', question, 'options:', options, 'type:', type);
+        
+        // Validate question structure
+        if (!question) {
+            console.error('Invalid question structure - missing question text:', currentQuestion);
+            return;
+        }
+        
+        // Validate and fix options for multiple choice questions
+        if (type === 'multiple-choice') {
+            if (!options || !Array.isArray(options) || options.length === 0) {
+                console.error('Invalid options for multiple choice question. Original options:', options);
+                console.log('Creating fallback options for question');
+                options = ['Option A', 'Option B', 'Option C', 'Option D'];
+                // Update the current question with fallback options
+                currentQuestion.options = options;
+                currentQuestion.correctIndex = 0; // Default to first option
+                console.log('Assigned fallback options:', options);
+            }
+        }
+        
+        console.log('Final options being passed:', options);
+        
         this.cleanupQuestionElements();// Layout
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2 + 100 * sf; // Move box further down (80 + 20)
@@ -291,6 +343,12 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             type,
             (index, answer) => this.checkAnswer(index, answer)
         );
+        
+        // Safety check for questionContainer creation
+        if (!questionContainer) {
+            console.error('Failed to create question container - scene may not be properly initialized');
+            return;
+        }
         
         // Store references for tutorial system
         this.currentQuestionContainer = questionContainer;
@@ -966,6 +1024,8 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
      * Override checkAnswer to respect tutorial state
      */
     checkAnswer(selectedIndex, userAnswer = null) {
+        console.log('checkAnswer called with:', { selectedIndex, userAnswer, gameOverState: this.gameOverState, isTutorialBlocking: this.isTutorialBlocking() });
+        
         // Block answer processing during tutorial
         if (this.isTutorialBlocking()) {
             console.log('Answer blocked: Tutorial is active');
@@ -978,6 +1038,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             return;
         }
         
+        console.log('Processing answer...');
         // Continue with normal answer processing
         return super.checkAnswer ? super.checkAnswer(selectedIndex, userAnswer) : this.processAnswerLogic(selectedIndex, userAnswer);
     }

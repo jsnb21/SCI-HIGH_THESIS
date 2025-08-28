@@ -3,6 +3,14 @@ import { createMultipleChoiceOptions } from './multipleChoiceUI.js';
 import { createDragAndDropOptions } from './dragAndDropUI.js';
 
 export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxHeight, questionIndex, question, options, sf, questionType = 'multiple-choice', onSelect) {
+    // Safety check to ensure scene is properly initialized
+    if (!scene || !scene.add) {
+        console.error('Scene is not properly initialized in createQuestionAndOptions');
+        return null;
+    }
+    
+    console.log('createQuestionAndOptions called with options:', options, 'questionType:', questionType);
+    
     // Container for question and options
     const container = scene.add.container(0, 0).setDepth(121);
 
@@ -48,6 +56,12 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
         createDragAndDropOptions(scene, container, centerX, centerY, boxWidth, boxHeight, questionTextY, options.dragItems, options.dropZones, sf, onSelect);
     } else {
         // Default: multiple choice
+        // Additional safety check for options before passing to createMultipleChoiceOptions
+        if (!options || !Array.isArray(options)) {
+            console.warn('Invalid options in questionUI, creating fallback:', options);
+            options = ['Option A', 'Option B', 'Option C', 'Option D'];
+        }
+        console.log('Calling createMultipleChoiceOptions with options:', options);
         createMultipleChoiceOptions(scene, container, centerX, centerY, boxWidth, boxHeight, questionTextY, options, sf, onSelect);
     }
 

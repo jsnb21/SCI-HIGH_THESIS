@@ -1,23 +1,56 @@
 export function createMultipleChoiceOptions(scene, container, centerX, centerY, boxWidth, boxHeight, questionTextY, options, sf, onSelect) {
-    // Enhanced options styling - 2x2 grid layout
-    const optionWidth = (boxWidth - 120 * sf) / 2; // Divide available width for 2 columns
+    // Safety check to ensure scene is properly initialized
+    if (!scene || !scene.add) {
+        console.error('Scene is not properly initialized in createMultipleChoiceOptions');
+        return;
+    }
+    
+    // Validate options parameter
+    if (!options || !Array.isArray(options) || options.length === 0) {
+        console.error('Invalid options provided to createMultipleChoiceOptions:', options);
+        return;
+    }
+    
+    // Enhanced options styling - dynamic grid layout based on number of options
+    const numOptions = options.length;
+    const optionWidth = numOptions <= 2 ? (boxWidth - 80 * sf) : (boxWidth - 120 * sf) / 2; // Full width for ≤2 options, half width for >2
     const optionHeight = 48 * sf;
     const optionSpacingX = 20 * sf; // Horizontal spacing between columns
     const optionSpacingY = 16 * sf; // Vertical spacing between rows
     const optionsStartY = questionTextY + 70 * sf; // Increased from 50 to 70 for more gap below question
-    const optionsStartX = centerX - optionWidth / 2 - optionSpacingX / 2; // Left column center
-    const optionsEndX = centerX + optionWidth / 2 + optionSpacingX / 2; // Right column center
+    
+    // Calculate positions based on number of options
+    let optionsStartX, optionsEndX;
+    if (numOptions <= 2) {
+        // Single column layout for 1-2 options
+        optionsStartX = centerX;
+        optionsEndX = centerX;
+    } else {
+        // 2-column layout for 3+ options
+        optionsStartX = centerX - optionWidth / 2 - optionSpacingX / 2; // Left column center
+        optionsEndX = centerX + optionWidth / 2 + optionSpacingX / 2; // Right column center
+    }
 
     // Store option backgrounds for later coloring
     scene._quizOptionBgs = [];
 
     options.forEach((option, i) => {
-        // Calculate position in 2x2 grid
-        const row = Math.floor(i / 2); // 0 for first row, 1 for second row
-        const col = i % 2; // 0 for left column, 1 for right column
+        // Calculate position based on layout
+        let row, col, x, y;
         
-        const x = col === 0 ? optionsStartX : optionsEndX;
-        const y = optionsStartY + row * (optionHeight + optionSpacingY);
+        if (numOptions <= 2) {
+            // Vertical stack for 1-2 options
+            row = i;
+            col = 0;
+            x = centerX;
+            y = optionsStartY + row * (optionHeight + optionSpacingY);
+        } else {
+            // 2x2+ grid for 3+ options
+            row = Math.floor(i / 2); // 0 for first row, 1 for second row, etc.
+            col = i % 2; // 0 for left column, 1 for right column
+            x = col === 0 ? optionsStartX : optionsEndX;
+            y = optionsStartY + row * (optionHeight + optionSpacingY);
+        }
 
         // Enhanced option background with gradient
         const optionBg = scene.add.graphics().setDepth(121);
