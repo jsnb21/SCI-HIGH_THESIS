@@ -57,6 +57,16 @@
         },
         {
           "id": 3,
+          "title": "Exceptions in Java: Basics, advanced concepts, and real API examples",
+          "author": "Lumi, Nik",
+          "status": "available",
+          "description": "Master Java exception handling with practical examples and advanced concepts.",
+          "pages": 280,
+          "difficulty": "intermediate",
+          "link": "https://annas-archive.org/md5/d9e051c314c0333fd580a1fc906bb618"
+        },
+        {
+          "id": 4,
           "title": "Python for Beginners",
           "author": "Alice Brown",
           "status": "available",
@@ -65,7 +75,7 @@
           "difficulty": "beginner"
         },
         {
-          "id": 4,
+          "id": 5,
           "title": "C++ Advanced Techniques",
           "author": "Michael Davis",
           "status": "available",
@@ -79,7 +89,7 @@
       "name": "Data Science",
       "books": [
         {
-          "id": 5,
+          "id": 6,
           "title": "Data Analysis with Python",
           "author": "Sarah Wilson",
           "status": "available",
@@ -88,7 +98,7 @@
           "difficulty": "intermediate"
         },
         {
-          "id": 6,
+          "id": 7,
           "title": "Machine Learning Fundamentals",
           "author": "David Lee",
           "status": "available",
@@ -102,7 +112,7 @@
       "name": "Web Development",
       "books": [
         {
-          "id": 7,
+          "id": 8,
           "title": "React Development Guide",
           "author": "Emily Chen",
           "status": "available",
@@ -111,7 +121,7 @@
           "difficulty": "intermediate"
         },
         {
-          "id": 8,
+          "id": 9,
           "title": "Node.js Backend Development",
           "author": "Kevin Rodriguez",
           "status": "available",

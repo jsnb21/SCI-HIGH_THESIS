@@ -227,15 +227,7 @@ export class DungeonHUD {
 
             this.hudElements.push(buff);
 
-            // Add floating animation
-            this.scene.tweens.add({
-                targets: [buffGlow, buff],
-                y: buffY - 3 * scaleFactor,
-                duration: 1000 + i * 200,
-                ease: 'Sine.easeInOut',
-                yoyo: true,
-                repeat: -1
-            });
+            // Removed floating animation to keep buff icons static
         }
     }
 
@@ -707,5 +699,49 @@ export class DungeonMenu {
             this.menuButtonText = null;
         }
         this.scene.scale.off('resize', this.resizeHandler);
+    }
+
+    // Method to update HUD content without recreating elements (preserves animations)
+    updateHUD() {
+        if (!this.hudElements.length) {
+            // If HUD doesn't exist, create it
+            this.drawHUD();
+            return;
+        }
+
+        // Check if health changed - if so, need to redraw health display
+        const currentHP = this.scene.player.hp;
+        const currentHearts = Math.ceil(currentHP / 20);
+        
+        // Count existing heart sprites to see if health changed
+        const existingHearts = this.hudElements.filter(el => 
+            el.texture && el.texture.key === 'heart' && el.tint === 0xff4757
+        ).length;
+        
+        // If health changed significantly, redraw the HUD
+        if (Math.abs(currentHearts - existingHearts) > 0) {
+            this.drawHUD();
+            return;
+        }
+
+        // Find and update intensity text
+        const intensityText = this.hudElements.find(el => 
+            el.text && typeof el.text === 'string' && 
+            !isNaN(parseInt(el.text)) && parseInt(el.text) > 0
+        );
+        if (intensityText && intensityText.setText) {
+            intensityText.setText(`${this.scene.intensity}`);
+        }
+        
+        // For buffs, check if buff count changed
+        const currentBuffCount = this.scene.player.buffs ? this.scene.player.buffs.length : 0;
+        const displayedBuffs = this.hudElements.filter(el => 
+            el.fillColor !== undefined && el.radius !== undefined
+        ).length / 2; // Each buff has 2 elements (glow + icon)
+        
+        // If buff count changed significantly, redraw HUD
+        if (Math.abs(currentBuffCount - displayedBuffs) > 1) {
+            this.drawHUD();
+        }
     }
 }

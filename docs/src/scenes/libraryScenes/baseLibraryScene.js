@@ -31,10 +31,10 @@ class BaseLibraryScene extends Phaser.Scene {
         this.load.image('libraryBg', 'assets/img/bg/libraryBG.png');
         
         // Load JSON data files
-        this.load.json('libraryData', `/library/library.json`);
-        this.load.json('booksData', `/library/books.json`);
-        this.load.json('progressData', `/library/progress.json`);
-        this.load.json('notesData', `/library/notes.json`);
+        this.load.json('libraryData', `public/library/library.json`);
+        this.load.json('booksData', `public/library/books.json`);
+        this.load.json('progressData', `public/library/progress.json`);
+        this.load.json('notesData', `public/library/notes.json`);
         
         // Optional: Load audio and other assets
         // this.load.audio('pageFlip', 'assets/library/page-flip.wav');
@@ -113,6 +113,12 @@ class BaseLibraryScene extends Phaser.Scene {
             progress: this.cache.json.get('progressData'),
             notes: this.cache.json.get('notesData')
         };
+        
+        // Debug logging
+        console.log('Loaded libraryData.main:', this.libraryData.main);
+        console.log('Loaded libraryData.books:', this.libraryData.books);
+        console.log('Loaded libraryData.progress:', this.libraryData.progress);
+        console.log('Loaded libraryData.notes:', this.libraryData.notes);
     }
 
     validateJsonData() {
@@ -403,41 +409,38 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     showAddNoteDialog() {
-        // Enhanced dialog with white and yellow colors
+        // Enhanced dialog with main menu theme colors
         const dialogBg = this.add.graphics();
         
-        // White to yellow gradient background
-        dialogBg.fillGradientStyle(0xffffff, 0xffffff, 0xF5F7F8, 0xF4CE14, 0.95);
+        // Dark blue background consistent with main menu
+        dialogBg.fillStyle(0x222244, 0.92);
         dialogBg.fillRoundedRect(this.cameras.main.width/2 - 220, this.cameras.main.height/2 - 120, 440, 240, 20);
         
-        // Golden border
-        dialogBg.lineStyle(4, 0xF4CE14, 1);
+        // Light yellow border
+        dialogBg.lineStyle(4, 0xffffcc, 1);
         dialogBg.strokeRoundedRect(this.cameras.main.width/2 - 220, this.cameras.main.height/2 - 120, 440, 240, 20);
-        
-        dialogBg.lineStyle(2, 0xffffff, 0.8);
-        dialogBg.strokeRoundedRect(this.cameras.main.width/2 - 216, this.cameras.main.height/2 - 116, 432, 232, 16);
         
         dialogBg.setDepth(1000);
         
-        // Enhanced title with yellow theme
+        // Enhanced title with bright yellow theme
         const dialogTitle = this.add.text(this.cameras.main.width/2, this.cameras.main.height/2 - 80, '✨ Add New Note ✨', {
             fontSize: '22px',
-            color: '#45474B', // Dark gray from index.html
+            color: '#ffff00', // Bright yellow like main menu
             fontFamily: 'Arial',
             fontStyle: 'bold',
-            stroke: '#F4CE14',
-            strokeThickness: 2,
+            stroke: '#000000', // Black stroke for readability
+            strokeThickness: 3,
             shadow: {
                 offsetX: 2,
                 offsetY: 2,
-                color: '#ffffff',
+                color: '#000000',
                 blur: 3,
                 stroke: false,
                 fill: true
             }
         }).setOrigin(0.5).setDepth(1001);
         
-        // Enhanced input styling with white/yellow theme
+        // Enhanced input styling with main menu theme
         const inputElement = document.createElement('textarea');
         inputElement.style.position = 'absolute';
         inputElement.style.left = (this.cameras.main.width/2 - 180) + 'px';
@@ -446,50 +449,51 @@ class BaseLibraryScene extends Phaser.Scene {
         inputElement.style.height = '80px';
         inputElement.style.zIndex = '1002';
         inputElement.style.borderRadius = '12px';
-        inputElement.style.border = '3px solid #F4CE14';
-        inputElement.style.background = 'linear-gradient(135deg, #ffffff, #F5F7F8)';
+        inputElement.style.border = '3px solid #ffffcc'; // Light yellow border
+        inputElement.style.background = '#222244'; // Dark blue background
+        inputElement.style.color = '#ffffff'; // White text
         inputElement.style.padding = '12px';
         inputElement.style.fontSize = '16px';
         inputElement.style.fontFamily = 'Arial, sans-serif';
-        inputElement.style.color = '#45474B';
-        inputElement.style.boxShadow = '0 4px 15px rgba(244, 206, 20, 0.3)';
+        inputElement.style.color = '#ffffff'; // White text
+        inputElement.style.boxShadow = '0 4px 15px rgba(255, 255, 204, 0.3)'; // Light yellow shadow
         inputElement.placeholder = '🖊️ Enter your brilliant note here...';
         document.body.appendChild(inputElement);
         
-        // Enhanced save button with yellow theme
+        // Enhanced save button with main menu theme
         const saveBtn = this.add.graphics();
-        saveBtn.fillGradientStyle(0xF4CE14, 0xF4CE14, 0xfde047, 0xfbbf24, 1);
+        saveBtn.fillStyle(0x333388, 1); // Main menu hover color
         saveBtn.fillRoundedRect(this.cameras.main.width/2 - 80, this.cameras.main.height/2 + 70, 100, 40, 20);
-        saveBtn.lineStyle(2, 0xfbbf24, 1);
+        saveBtn.lineStyle(2, 0xffffcc, 1); // Light yellow border
         saveBtn.strokeRoundedRect(this.cameras.main.width/2 - 80, this.cameras.main.height/2 + 70, 100, 40, 20);
         saveBtn.setInteractive(new Phaser.Geom.Rectangle(this.cameras.main.width/2 - 80, this.cameras.main.height/2 + 70, 100, 40), Phaser.Geom.Rectangle.Contains);
         saveBtn.setDepth(1001);
         
         const saveText = this.add.text(this.cameras.main.width/2 - 30, this.cameras.main.height/2 + 90, '💾 Save', {
             fontSize: '16px',
-            color: '#45474B',
+            color: '#ffff00', // Bright yellow text
             fontFamily: 'Arial',
             fontStyle: 'bold',
-            stroke: '#ffffff',
-            strokeThickness: 1
+            stroke: '#000000', // Black stroke
+            strokeThickness: 2
         }).setOrigin(0.5).setDepth(1001);
         
-        // Enhanced cancel button with light theme
+        // Enhanced cancel button with main menu theme
         const cancelBtn = this.add.graphics();
-        cancelBtn.fillGradientStyle(0xF5F7F8, 0xF5F7F8, 0xe5e7eb, 0xd1d5db, 1);
+        cancelBtn.fillStyle(0x222244, 0.8); // Main menu background color
         cancelBtn.fillRoundedRect(this.cameras.main.width/2 + 20, this.cameras.main.height/2 + 70, 100, 40, 20);
-        cancelBtn.lineStyle(2, 0x9ca3af, 1);
+        cancelBtn.lineStyle(2, 0xffffcc, 1); // Light yellow border
         cancelBtn.strokeRoundedRect(this.cameras.main.width/2 + 20, this.cameras.main.height/2 + 70, 100, 40, 20);
         cancelBtn.setInteractive(new Phaser.Geom.Rectangle(this.cameras.main.width/2 + 20, this.cameras.main.height/2 + 70, 100, 40), Phaser.Geom.Rectangle.Contains);
         cancelBtn.setDepth(1001);
         
         const cancelText = this.add.text(this.cameras.main.width/2 + 70, this.cameras.main.height/2 + 90, '❌ Cancel', {
             fontSize: '16px',
-            color: '#45474B',
+            color: '#ffff00', // Bright yellow text
             fontFamily: 'Arial',
             fontStyle: 'bold',
-            stroke: '#ffffff',
-            strokeThickness: 1
+            stroke: '#000000', // Black stroke
+            strokeThickness: 2
         }).setOrigin(0.5).setDepth(1001);
         
         const dialogElements = [dialogBg, dialogTitle, saveBtn, saveText, cancelBtn, cancelText];
@@ -586,16 +590,26 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     showEditNoteDialog(note, categoryName) {
-        // Similar to add dialog but pre-filled with existing note content
-        const dialogBg = this.add.rectangle(this.cameras.main.width/2, this.cameras.main.height/2, 400, 200, 0xFFFFFF);
-        dialogBg.setStrokeStyle(3, 0x34495E);
+        // Enhanced edit dialog with main menu theme
+        const dialogBg = this.add.graphics();
+        
+        // Dark blue background consistent with main menu
+        dialogBg.fillStyle(0x222244, 0.92);
+        dialogBg.fillRoundedRect(this.cameras.main.width/2 - 200, this.cameras.main.height/2 - 100, 400, 200, 20);
+        
+        // Light yellow border
+        dialogBg.lineStyle(3, 0xffffcc, 1);
+        dialogBg.strokeRoundedRect(this.cameras.main.width/2 - 200, this.cameras.main.height/2 - 100, 400, 200, 20);
+        
         dialogBg.setDepth(1000);
         
-        const dialogTitle = this.add.text(this.cameras.main.width/2, this.cameras.main.height/2 - 60, 'Edit Note', {
+        const dialogTitle = this.add.text(this.cameras.main.width/2, this.cameras.main.height/2 - 60, '✏️ Edit Note', {
             fontSize: '18px',
-            color: '#2C3E50',
+            color: '#ffff00', // Bright yellow like main menu
             fontFamily: 'Arial',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 2
         }).setOrigin(0.5).setDepth(1001);
         
         const inputElement = document.createElement('textarea');
@@ -605,29 +619,44 @@ class BaseLibraryScene extends Phaser.Scene {
         inputElement.style.width = '300px';
         inputElement.style.height = '60px';
         inputElement.style.zIndex = '1002';
+        inputElement.style.borderRadius = '8px';
+        inputElement.style.border = '2px solid #ffffcc';
+        inputElement.style.background = '#222244';
+        inputElement.style.color = '#ffffff';
+        inputElement.style.fontFamily = 'Arial, sans-serif';
         inputElement.value = note.content || note;
         document.body.appendChild(inputElement);
         
-        const saveBtn = this.add.rectangle(this.cameras.main.width/2 - 50, this.cameras.main.height/2 + 60, 80, 30, 0x17A2B8);
-        saveBtn.setStrokeStyle(1, 0x138496);
-        saveBtn.setInteractive();
+        const saveBtn = this.add.graphics();
+        saveBtn.fillStyle(0x333388, 1);
+        saveBtn.fillRoundedRect(this.cameras.main.width/2 - 90, this.cameras.main.height/2 + 50, 80, 30, 15);
+        saveBtn.lineStyle(2, 0xffffcc, 1);
+        saveBtn.strokeRoundedRect(this.cameras.main.width/2 - 90, this.cameras.main.height/2 + 50, 80, 30, 15);
+        saveBtn.setInteractive(new Phaser.Geom.Rectangle(this.cameras.main.width/2 - 90, this.cameras.main.height/2 + 50, 80, 30), Phaser.Geom.Rectangle.Contains);
         saveBtn.setDepth(1001);
         
-        const saveText = this.add.text(this.cameras.main.width/2 - 50, this.cameras.main.height/2 + 60, 'Update', {
+        const saveText = this.add.text(this.cameras.main.width/2 - 50, this.cameras.main.height/2 + 65, 'Update', {
             fontSize: '14px',
-            color: '#FFFFFF',
-            fontFamily: 'Arial'
+            color: '#ffff00',
+            fontFamily: 'Arial',
+            stroke: '#000000',
+            strokeThickness: 1
         }).setOrigin(0.5).setDepth(1001);
         
-        const cancelBtn = this.add.rectangle(this.cameras.main.width/2 + 50, this.cameras.main.height/2 + 60, 80, 30, 0x6C757D);
-        cancelBtn.setStrokeStyle(1, 0x495057);
-        cancelBtn.setInteractive();
+        const cancelBtn = this.add.graphics();
+        cancelBtn.fillStyle(0x222244, 0.8);
+        cancelBtn.fillRoundedRect(this.cameras.main.width/2 + 10, this.cameras.main.height/2 + 50, 80, 30, 15);
+        cancelBtn.lineStyle(2, 0xffffcc, 1);
+        cancelBtn.strokeRoundedRect(this.cameras.main.width/2 + 10, this.cameras.main.height/2 + 50, 80, 30, 15);
+        cancelBtn.setInteractive(new Phaser.Geom.Rectangle(this.cameras.main.width/2 + 10, this.cameras.main.height/2 + 50, 80, 30), Phaser.Geom.Rectangle.Contains);
         cancelBtn.setDepth(1001);
         
-        const cancelText = this.add.text(this.cameras.main.width/2 + 50, this.cameras.main.height/2 + 60, 'Cancel', {
+        const cancelText = this.add.text(this.cameras.main.width/2 + 50, this.cameras.main.height/2 + 65, 'Cancel', {
             fontSize: '14px',
-            color: '#FFFFFF',
-            fontFamily: 'Arial'
+            color: '#ffff00',
+            fontFamily: 'Arial',
+            stroke: '#000000',
+            strokeThickness: 1
         }).setOrigin(0.5).setDepth(1001);
         
         const dialogElements = [dialogBg, dialogTitle, saveBtn, saveText, cancelBtn, cancelText];
@@ -732,6 +761,16 @@ class BaseLibraryScene extends Phaser.Scene {
     
     handleBookAction(book) {
         console.log(`Reading book: ${book.title}`);
+        
+        // Check if book has an external link
+        if (book.link) {
+            console.log(`Opening external link for book: ${book.title}`);
+            // Open link in new tab
+            window.open(book.link, '_blank');
+            return;
+        }
+        
+        // For books without external links, use the reading scene
         book.status = 'reading';
 
         // Transition to reading scene

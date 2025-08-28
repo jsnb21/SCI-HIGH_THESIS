@@ -254,7 +254,13 @@ export default class DungeonScene extends Phaser.Scene {
             this.adjacentCells = this.getAdjacentCells(this.player.x, this.player.y);
             this.drawGrid();
             this.updateLightingEffects();
-            if (this.dungeonHUD && this.dungeonHUD.drawHUD) this.dungeonHUD.drawHUD();
+            if (this.dungeonHUD && this.dungeonHUD.drawHUD) {
+                if (this.dungeonHUD.updateHUD) {
+                    this.dungeonHUD.updateHUD();
+                } else {
+                    this.dungeonHUD.drawHUD();
+                }
+            }
             if (this.dungeonMenu && this.dungeonMenu.createMenuButton) this.dungeonMenu.createMenuButton();
             return;
         }
@@ -316,7 +322,13 @@ export default class DungeonScene extends Phaser.Scene {
         // Redraw grid and HUD when scene is resumed
         this.drawGrid();
         this.updateLightingEffects();
-        if (this.dungeonHUD && this.dungeonHUD.drawHUD) this.dungeonHUD.drawHUD();
+        if (this.dungeonHUD && this.dungeonHUD.drawHUD) {
+            if (this.dungeonHUD.updateHUD) {
+                this.dungeonHUD.updateHUD();
+            } else {
+                this.dungeonHUD.drawHUD();
+            }
+        }
         if (this.dungeonMenu && this.dungeonMenu.createMenuButton) this.dungeonMenu.createMenuButton();
     }
     
@@ -439,23 +451,32 @@ export default class DungeonScene extends Phaser.Scene {
                 return;
             }
 
-            // Check for special tile interactions
-            const specialTileIndex = this.specialTiles.findIndex(
-                tile => tile.x === targetX && tile.y === targetY && !tile.triggered
-            );
-            
-            if (specialTileIndex !== -1) {
-                this.triggerSpecialTile(specialTileIndex);
+            // First redraw to show player on the tile
+            this.drawGrid();
+            this.updateLightingEffects();
+            if (this.dungeonHUD) {
+                if (this.dungeonHUD.updateHUD) {
+                    this.dungeonHUD.updateHUD();
+                } else {
+                    this.dungeonHUD.drawHUD();
+                }
             }
+
+            // Check for special tile interactions with a small delay for visual feedback
+            this.time.delayedCall(200, () => {
+                const specialTileIndex = this.specialTiles.findIndex(
+                    tile => tile.x === targetX && tile.y === targetY && !tile.triggered
+                );
+                
+                if (specialTileIndex !== -1) {
+                    this.triggerSpecialTile(specialTileIndex);
+                }
+            });
 
             // Check for boss encounter tutorial trigger
             if (this.intensity > this.maxIntensity && !this.tutorialFlags.bossEncounterShown) {
                 this.checkAndShowTutorial();
             }
-
-            this.drawGrid();
-            this.updateLightingEffects();
-            if (this.dungeonHUD) this.dungeonHUD.drawHUD();
         }
     }
 
@@ -724,7 +745,7 @@ export default class DungeonScene extends Phaser.Scene {
         this.playerSprite = this.add.image(playerCellX, playerCellY, 'goblinNerd');
         const spriteSize = this.isMobile ? cellSize * 0.8 : cellSize * 0.7; // Slightly larger on mobile
         this.playerSprite.setDisplaySize(spriteSize, spriteSize);
-        this.playerSprite.setDepth(3);
+        this.playerSprite.setDepth(15); // Higher than special tiles (depth 12)
         this.playerSprite.setTint(0x22d3ee); // Bright cyan tint
 
         // Update lighting effects
@@ -883,10 +904,18 @@ export default class DungeonScene extends Phaser.Scene {
                 break;
         }
         
-        // Redraw grid to remove triggered tile
-        this.drawGrid();
-        this.updateLightingEffects();
-        if (this.dungeonHUD) this.dungeonHUD.drawHUD();
+        // Wait a moment for the activation effect, then redraw grid to remove triggered tile
+        this.time.delayedCall(300, () => {
+            this.drawGrid();
+            this.updateLightingEffects();
+            if (this.dungeonHUD) {
+                if (this.dungeonHUD.updateHUD) {
+                    this.dungeonHUD.updateHUD();
+                } else {
+                    this.dungeonHUD.drawHUD();
+                }
+            }
+        });
     }
 
     checkTileCombo(tileType) {
@@ -1168,52 +1197,90 @@ export default class DungeonScene extends Phaser.Scene {
     }
 
     showTileMessage(title, description, color) {
-        // Create floating message box
-        const centerX = this.scale.width / 2;
-        const centerY = this.scale.height / 2;
+        // Get proper screen dimensions
+        const { width, height } = this.scene.scale;
+        const scaleFactor = Math.min(width / 816, height / 624);
         
-        const messageBox = this.add.container(centerX, centerY);
-        messageBox.setDepth(20);
+        // Position at the top of the screen
+        const centerX = width / 2;
+        const topY = 80 * scaleFactor; // Position near the top with some margin
         
-        // Background
-        const bg = this.add.rectangle(0, 0, 400, 120, 0x000000, 0.8);
-        bg.setStroke(color, 3);
+        const messageBox = this.add.container(centerX, topY);
+        messageBox.setDepth(1000);
+        messageBox.setScrollFactor(0);
+        
+        // Create background matching dungeon HUD style
+        const panelWidth = 400 * scaleFactor;
+        const panelHeight = 120 * scaleFactor;
+        
+        const bg = this.add.graphics();
+        
+        // Dark blue-purple background matching HUD
+        bg.fillStyle(0x222244, 0.92);
+        bg.fillRoundedRect(-panelWidth/2, -panelHeight/2, panelWidth, panelHeight, 12 * scaleFactor);
+        
+        // Yellow border matching HUD style
+        bg.lineStyle(3 * scaleFactor, 0xffffcc, 0.9);
+        bg.strokeRoundedRect(-panelWidth/2, -panelHeight/2, panelWidth, panelHeight, 12 * scaleFactor);
+        
+        // Inner yellow accent line
+        bg.lineStyle(1 * scaleFactor, 0xffff00, 0.6);
+        bg.strokeRoundedRect(-panelWidth/2 + 4*scaleFactor, -panelHeight/2 + 4*scaleFactor, 
+                           panelWidth - 8*scaleFactor, panelHeight - 8*scaleFactor, 8 * scaleFactor);
+        
         messageBox.add(bg);
         
-        // Title
-        const titleText = this.add.text(0, -20, title, {
-            fontSize: '20px',
+        // Title with shadow effect matching HUD style
+        const titleShadow = this.add.text(0, -15 * scaleFactor + 2, title, {
             fontFamily: 'Caprasimo-Regular',
-            fill: `#${color.toString(16).padStart(6, '0')}`,
+            fontSize: `${Math.round(20 * scaleFactor)}px`,
+            color: '#000000',
+            align: 'center',
+            alpha: 0.5
+        }).setOrigin(0.5);
+        messageBox.add(titleShadow);
+        
+        const titleText = this.add.text(0, -15 * scaleFactor, title, {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: `${Math.round(20 * scaleFactor)}px`,
+            color: '#ffff00',
+            stroke: '#000000',
+            strokeThickness: 2 * scaleFactor,
             align: 'center'
         }).setOrigin(0.5);
         messageBox.add(titleText);
         
-        // Description
-        const descText = this.add.text(0, 15, description, {
-            fontSize: '14px',
+        // Description text matching HUD style
+        const descText = this.add.text(0, 15 * scaleFactor, description, {
             fontFamily: 'Arial',
-            fill: '#ffffff',
-            align: 'center'
+            fontSize: `${Math.round(14 * scaleFactor)}px`,
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 1 * scaleFactor,
+            align: 'center',
+            wordWrap: { width: panelWidth - 40 * scaleFactor }
         }).setOrigin(0.5);
         messageBox.add(descText);
         
-        // Animate in
+        // Animate in from top with slide-down effect
         messageBox.setAlpha(0);
+        messageBox.y = topY - 50 * scaleFactor; // Start above the final position
         this.tweens.add({
             targets: messageBox,
             alpha: 1,
-            duration: 300,
-            ease: 'Power2'
+            y: topY,
+            duration: 400,
+            ease: 'Back.easeOut'
         });
         
-        // Auto-close after 2 seconds
-        this.time.delayedCall(2000, () => {
+        // Auto-close after 2.5 seconds with slide-up effect
+        this.time.delayedCall(2500, () => {
             this.tweens.add({
                 targets: messageBox,
                 alpha: 0,
+                y: topY - 50 * scaleFactor,
                 duration: 300,
-                ease: 'Power2',
+                ease: 'Back.easeIn',
                 onComplete: () => messageBox.destroy()
             });
         });

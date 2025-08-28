@@ -13,17 +13,25 @@ export default class LibraryUI {
         const menuX = Math.min(200 * sf, screenWidth * 0.25);
         scene.mainMenuContainer = scene.add.container(menuX, centerY);
         
-        // Main menu panel with game's design style
+        // Main menu panel with game's design style - improved sizing
         const panelWidth = Math.min(320 * sf, screenWidth * 0.8);
         const itemCount = scene.libraryData.main.menuItems.length;
-        const minHeight = 200 + (itemCount * 10);
-        const panelHeight = Math.min(minHeight * sf, screenHeight * 0.7);
         
-        // Create background with white and yellow gradient
+        // Calculate required space for all elements
+        const titleSpace = 80 * sf; // Space for title
+        const buttonHeight = Math.min(48 * sf, 40); // Reduced button height
+        const buttonSpacing = Math.min(55 * sf, 50); // Reduced spacing
+        const topBottomPadding = 30 * sf; // Reduced padding
+        
+        // Calculate minimum height needed
+        const requiredHeight = titleSpace + (itemCount * buttonHeight) + ((itemCount - 1) * (buttonSpacing - buttonHeight)) + topBottomPadding;
+        const panelHeight = Math.max(requiredHeight, Math.min(requiredHeight * 1.05, screenHeight * 0.85)); // Allow more screen height
+        
+        // Create background consistent with main menu theme
         const menuBg = scene.add.graphics();
         
-        // Outer glow effect with yellow
-        menuBg.fillStyle(0xF4CE14, 0.3);
+        // Outer glow effect with light yellow
+        menuBg.fillStyle(0xffffcc, 0.2);
         menuBg.fillRoundedRect(
             -panelWidth/2 - 8 * sf,
             -panelHeight/2 - 8 * sf,
@@ -32,8 +40,8 @@ export default class LibraryUI {
             20 * sf
         );
         
-        // Main panel with white to yellow gradient
-        menuBg.fillGradientStyle(0xffffff, 0xffffff, 0xF5F7F8, 0xF4CE14, 0.95);
+        // Main panel with dark blue background (consistent with main menu)
+        menuBg.fillStyle(0x222244, 0.92);
         menuBg.fillRoundedRect(
             -panelWidth/2,
             -panelHeight/2,
@@ -42,8 +50,8 @@ export default class LibraryUI {
             16 * sf
         );
         
-        // Golden border
-        menuBg.lineStyle(3 * sf, 0xF4CE14, 0.8);
+        // Light yellow border (consistent with main menu)
+        menuBg.lineStyle(3 * sf, 0xffffcc, 1);
         menuBg.strokeRoundedRect(
             -panelWidth/2,
             -panelHeight/2,
@@ -55,30 +63,32 @@ export default class LibraryUI {
         menuBg.setDepth(10); // Higher depth to appear above background
         scene.mainMenuContainer.add(menuBg);
         
-        // Title with yellow and dark styling
-        const title = scene.add.text(0, -panelHeight/2 + 50 * sf, scene.libraryData.main.title, {
+        // Title with bright yellow text (consistent with main menu)
+        const title = scene.add.text(0, -panelHeight/2 + (titleSpace / 2), scene.libraryData.main.title, {
             fontSize: `${Math.min(32 * sf, 28)}px`,
-            color: '#45474B', // Dark gray from index.html
+            color: '#ffff00', // Bright yellow like main menu
             fontFamily: 'Caprasimo-Regular',
-            stroke: '#F4CE14',
-            strokeThickness: 2 * sf
+            stroke: '#000000', // Black stroke for better readability
+            strokeThickness: 4 * sf
         }).setOrigin(0.5);
         title.setDepth(15); // High depth for title
         scene.mainMenuContainer.add(title);
         
-        // Menu items with reduced spacing
-        const startY = -panelHeight/2 + 100 * sf;
-        const buttonSpacing = Math.min(60 * sf, Math.max(50 * sf, (panelHeight - 160 * sf) / scene.libraryData.main.menuItems.length));
+        // Menu items with improved spacing calculation
+        const startY = -panelHeight/2 + titleSpace;
+        const availableHeight = panelHeight - titleSpace - topBottomPadding;
+        const totalButtonHeight = itemCount * buttonHeight;
+        const totalSpacingNeeded = availableHeight - totalButtonHeight;
+        const spaceBetweenButtons = totalSpacingNeeded / (itemCount + 1); // +1 for spacing before first and after last
         
         scene.libraryData.main.menuItems.forEach((item, index) => {
-            const y = startY + (index * buttonSpacing);
+            const y = startY + spaceBetweenButtons + (index * (buttonHeight + spaceBetweenButtons)) + (buttonHeight / 2);
             const buttonWidth = panelWidth * 0.8;
-            const buttonHeight = Math.min(54 * sf, 45);
             
-            // Button background with white and yellow styling
+            // Button background consistent with main menu theme
             const btnBg = scene.add.graphics();
             
-            btnBg.fillGradientStyle(0xffffff, 0xffffff, 0xF5F7F8, 0xF5F7F8, 1);
+            btnBg.fillStyle(0x222244, 0.92);
             btnBg.fillRoundedRect(
                 -buttonWidth/2,
                 y - buttonHeight/2,
@@ -87,7 +97,7 @@ export default class LibraryUI {
                 8 * sf
             );
             
-            btnBg.lineStyle(2 * sf, 0xF4CE14, 0.8);
+            btnBg.lineStyle(2 * sf, 0xffffcc, 1);
             btnBg.strokeRoundedRect(
                 -buttonWidth/2,
                 y - buttonHeight/2,
@@ -99,35 +109,35 @@ export default class LibraryUI {
             btnBg.setDepth(12); // Higher depth for buttons
             btnBg.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
             
-            // Icon and text with dark styling
+            // Icon and text with bright yellow styling (consistent with main menu)
             const icon = item.icon ? item.icon : ['📚','📊','📝','⚙️'][index] || '';
             const btnText = scene.add.text(0, y, `${icon}  ${item.name}`, {
                 fontSize: `${Math.min(18 * sf, 16)}px`,
-                color: '#45474B', // Dark gray from index.html
+                color: '#ffff00', // Bright yellow like main menu
                 fontFamily: 'Caprasimo-Regular',
-                stroke: '#ffffff',
-                strokeThickness: 1 * sf
+                stroke: '#000000', // Black stroke for readability
+                strokeThickness: 3 * sf
             }).setOrigin(0.5);
             btnText.setDepth(15); // High depth for text
             
-            // Interactive effects with yellow hover
+            // Interactive effects consistent with main menu hover style
             btnBg.on('pointerover', () => {
                 btnBg.clear();
-                btnBg.fillGradientStyle(0xF4CE14, 0xF4CE14, 0xfde047, 0xfde047, 0.9);
+                btnBg.fillStyle(0x333388, 1); // Lighter blue on hover like main menu
                 btnBg.fillRoundedRect(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight, 8 * sf);
-                btnBg.lineStyle(2 * sf, 0xfbbf24, 1);
+                btnBg.lineStyle(2 * sf, 0xffffcc, 1);
                 btnBg.strokeRoundedRect(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight, 8 * sf);
-                btnText.setColor('#ffffff');
+                btnText.setStyle({ color: '#ffffff' }); // White text on hover
                 btnText.setScale(1.05);
             });
             
             btnBg.on('pointerout', () => {
                 btnBg.clear();
-                btnBg.fillGradientStyle(0xffffff, 0xffffff, 0xF5F7F8, 0xF5F7F8, 1);
+                btnBg.fillStyle(0x222244, 0.92); // Back to dark blue
                 btnBg.fillRoundedRect(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight, 8 * sf);
-                btnBg.lineStyle(2 * sf, 0xF4CE14, 0.8);
+                btnBg.lineStyle(2 * sf, 0xffffcc, 1);
                 btnBg.strokeRoundedRect(-buttonWidth/2, y - buttonHeight/2, buttonWidth, buttonHeight, 8 * sf);
-                btnText.setColor('#45474B');
+                btnText.setStyle({ color: '#ffff00' }); // Back to yellow
                 btnText.setScale(1);
             });
             
@@ -153,22 +163,22 @@ export default class LibraryUI {
         const screenWidth = scene.scale.width;
         const screenHeight = scene.scale.height;
         
-        // Position popup more to the left and expand to full browser height
+        // Make popup much wider and auto-fit content height
         const isSmallScreen = screenWidth < 768;
-        const popupWidth = isSmallScreen ? screenWidth * 0.5 : Math.min(screenWidth * 0.45, 500 * sf);
-        const popupHeight = screenHeight; // Full browser height
-        const popupX = screenWidth * 0.55; // Moved more to the left (was 0.65)
+        const popupWidth = isSmallScreen ? screenWidth * 0.8 : Math.min(screenWidth * 0.75, 900 * sf);
+        const popupHeight = screenHeight * 0.9; // Allow some margin but use most of screen
+        const popupX = screenWidth * 0.58; // Better centered
         const popupY = screenHeight / 2;
         
         scene.popupContainer = scene.add.container(popupX, popupY);
         
         // No overlay - popup appears directly without background
         
-        // Popup background with white and yellow styling
+        // Popup background consistent with main menu theme
         scene.popupBg = scene.add.graphics();
         
-        // Main background with white to yellow gradient
-        scene.popupBg.fillGradientStyle(0xffffff, 0xffffff, 0xF5F7F8, 0xF4CE14, 0.95);
+        // Main background with dark blue (consistent with main menu)
+        scene.popupBg.fillStyle(0x222244, 0.92);
         scene.popupBg.fillRoundedRect(
             -popupWidth/2,
             -popupHeight/2,
@@ -177,8 +187,8 @@ export default class LibraryUI {
             16 * sf
         );
         
-        // Golden border
-        scene.popupBg.lineStyle(4 * sf, 0xF4CE14, 0.8);
+        // Light yellow border (consistent with main menu)
+        scene.popupBg.lineStyle(4 * sf, 0xffffcc, 1);
         scene.popupBg.strokeRoundedRect(
             -popupWidth/2,
             -popupHeight/2,
@@ -193,9 +203,9 @@ export default class LibraryUI {
         const headerHeight = Math.min(50 * sf, 45);
         const headerY = -popupHeight/2 + headerHeight/2;
         
-        // Header background with white and yellow styling
+        // Header background consistent with main menu theme
         const headerBg = scene.add.graphics();
-        headerBg.fillGradientStyle(0xF4CE14, 0xF4CE14, 0xfde047, 0xfde047, 1);
+        headerBg.fillStyle(0x333388, 1); // Slightly lighter blue for header
         headerBg.fillRoundedRect(
             -popupWidth/2 + 10 * sf,
             -popupHeight/2 + 10 * sf,
@@ -211,13 +221,13 @@ export default class LibraryUI {
             fontFamily: 'Arial'
         }).setOrigin(0.5).setDepth(3);
         
-        // Title with dark styling
+        // Title with bright yellow styling (consistent with main menu)
         scene.popupTitle = scene.add.text(0, headerY, 'LIBRARY', {
             fontSize: `${Math.min(28 * sf, 24)}px`,
             fontFamily: 'Caprasimo-Regular',
-            color: '#45474B', // Dark gray from index.html
-            stroke: '#ffffff',
-            strokeThickness: 2 * sf
+            color: '#ffff00', // Bright yellow like main menu
+            stroke: '#000000', // Black stroke for readability
+            strokeThickness: 3 * sf
         }).setOrigin(0.5).setDepth(3);
         
         // Close button with game's style
@@ -254,30 +264,40 @@ export default class LibraryUI {
         
         scene.closeBtn.on('pointerdown', () => { scene.hidePopup(); });
         
-        // Content container for scrolling - positioned below header
-        // Calculate position relative to popup container coordinates
-        const contentStartY = -popupHeight/2 + headerHeight + 20; // Start below header with some margin
+        // Content container - positioned below header with proper masking
+        const contentStartY = -popupHeight/2 + headerHeight + 20;
         scene.popupContent = scene.add.container(0, contentStartY);
-        scene.popupScrollY = 0;
-        scene.popupContentStartY = contentStartY; // Store initial Y position
         
-        // Store mask bounds for scroll calculations (but don't create actual mask yet)
+        // Create mask for content area to prevent overflow
+        scene.popupMask = scene.add.graphics();
+        const maskX = popupX - popupWidth/2 + 10;
+        const maskY = popupY - popupHeight/2 + headerHeight + 10;
+        const maskWidth = popupWidth - 20;
+        const maskHeight = popupHeight - headerHeight - 30;
+        
+        scene.popupMask.fillStyle(0xffffff);
+        scene.popupMask.fillRect(maskX, maskY, maskWidth, maskHeight);
+        scene.popupContent.setMask(scene.popupMask.createGeometryMask());
+        
+        // Store scroll properties
+        scene.popupScrollY = 0;
+        scene.popupContentStartY = contentStartY;
         scene.popupMaskBounds = { 
-            x: -popupWidth/2 + 10, 
-            y: -popupHeight/2 + headerHeight, 
-            width: popupWidth - 20, 
-            height: popupHeight - headerHeight - 20 
+            x: maskX, 
+            y: maskY, 
+            width: maskWidth, 
+            height: maskHeight 
         };
         
-        // Store dimensions for later use
-        scene.popupDimensions = { width: popupWidth, height: popupHeight, headerHeight };
-        
-        // Mouse wheel scrolling
+        // Add mouse wheel scrolling
         scene.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
             if (scene.isPopupOpen) {
                 scene.scrollPopupContent(deltaY);
             }
         });
+        
+        // Store dimensions for later use
+        scene.popupDimensions = { width: popupWidth, height: popupHeight, headerHeight };
         
         scene.popupContainer.add([
             scene.popupBg,
@@ -293,7 +313,7 @@ export default class LibraryUI {
     }
 
     static createPopupMask(scene) {
-        // Only create mask if it doesn't exist
+        // Update the existing mask if it exists
         if (scene.popupMask) {
             scene.popupMask.destroy();
         }
@@ -309,9 +329,9 @@ export default class LibraryUI {
         
         // Calculate mask area in world coordinates
         const maskX = popupX - popupWidth/2 + 10;
-        const maskY = popupY - popupHeight/2 + headerHeight;
+        const maskY = popupY - popupHeight/2 + headerHeight + 10;
         const maskWidth = popupWidth - 20;
-        const maskHeight = popupHeight - headerHeight - 20;
+        const maskHeight = popupHeight - headerHeight - 30;
         
         scene.popupMask.fillStyle(0xffffff);
         scene.popupMask.fillRect(maskX, maskY, maskWidth, maskHeight);
@@ -320,7 +340,12 @@ export default class LibraryUI {
         scene.popupContent.setMask(scene.popupMask.createGeometryMask());
         
         // Update mask bounds for scroll calculations
-        scene.popupMaskBounds.height = maskHeight;
+        scene.popupMaskBounds = {
+            x: maskX,
+            y: maskY,
+            width: maskWidth,
+            height: maskHeight
+        };
     }
 
     static createBooksContent(scene) {
@@ -328,181 +353,219 @@ export default class LibraryUI {
         const { width: popupWidth, height: popupHeight, headerHeight } = scene.popupDimensions;
         const isSmallScreen = scene.scale.width < 768;
         
-        // Since content container now starts below header, start from 0 with some margin
-        const startY = 20 * sf; // Small margin from top of content area
-        let yOffset = startY;
+        // Clear any existing content
+        scene.popupContent.removeAll(true);
         
         scene._libraryBookElements = [];
         scene._libraryCategoryHeaders = [];
         
+        console.log('Books data structure:', scene.libraryData.books);
+        console.log('Categories found:', scene.libraryData.books.categories.length);
+        
+        // Calculate improved grid layout with better spacing
+        const booksPerRow = isSmallScreen ? 2 : 3;
+        const cardPadding = 15 * sf; // Reduced padding to fit better
+        const cardWidth = (popupWidth - (cardPadding * (booksPerRow + 1))) / booksPerRow;
+        const cardHeight = isSmallScreen ? 120 * sf : 110 * sf; // Reduced height to fit more
+        const startX = -(popupWidth/2) + cardPadding + (cardWidth/2);
+        const startY = 15 * sf; // Reduced start margin
+        
+        let globalY = startY; // Track global Y position across all categories
+        
         scene.libraryData.books.categories.forEach((category, categoryIndex) => {
-            // Category header with much better spacing to prevent overlap
-            const headerY = yOffset;
+            console.log(`Category ${categoryIndex}: ${category.name}, Books: ${category.books.length}`);
+            
+            // Category header positioned ABOVE the books
             const categoryHeaderBg = scene.add.graphics();
+            const headerWidth = popupWidth * 0.95;
+            const headerHeight = 35 * sf; // Reduced header height
             
-            const headerWidth = popupWidth * 0.85; // Slightly smaller width
-            const headerHeightVal = Math.min(45 * sf, 40); // Increased height
-            
-            categoryHeaderBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 0.8);
+            // Draw category header background
+            categoryHeaderBg.fillStyle(0x333388, 0.9);
             categoryHeaderBg.fillRoundedRect(
                 -headerWidth/2,
-                headerY - headerHeightVal/2,
+                globalY - headerHeight/2,
                 headerWidth,
-                headerHeightVal,
-                8 * sf
+                headerHeight,
+                10 * sf
             );
             
-            categoryHeaderBg.lineStyle(2 * sf, 0x63b3ed, 0.6);
+            categoryHeaderBg.lineStyle(3 * sf, 0xffffcc, 0.9);
             categoryHeaderBg.strokeRoundedRect(
                 -headerWidth/2,
-                headerY - headerHeightVal/2,
+                globalY - headerHeight/2,
                 headerWidth,
-                headerHeightVal,
-                8 * sf
+                headerHeight,
+                10 * sf
             );
             
-            const categoryHeader = scene.add.text(0, headerY, category.name, {
-                fontSize: `${Math.min(22 * sf, 20)}px`,
-                color: '#ffd700',
+            // Category header text
+            const categoryHeader = scene.add.text(0, globalY, category.name, {
+                fontSize: `${Math.min(22 * sf, 18)}px`, // Slightly smaller font
+                color: '#ffff00',
                 fontFamily: 'Caprasimo-Regular',
-                stroke: '#1a1a2e',
-                strokeThickness: 1 * sf
+                stroke: '#000000',
+                strokeThickness: 2 * sf
             }).setOrigin(0.5);
             
             scene.popupContent.add([categoryHeaderBg, categoryHeader]);
             scene._libraryCategoryHeaders.push(categoryHeader);
             
-            yOffset += 80 * sf; // Much more spacing between header and first book
+            // Move down for books section
+            globalY += 50 * sf; // Reduced spacing
             
+            // Calculate how many rows we need for this category
+            const rowsNeeded = Math.ceil(category.books.length / booksPerRow);
+            
+            // Display books in organized grid
             category.books.forEach((book, bookIndex) => {
-                // Book card with much better spacing to prevent overlapping
-                const cardWidth = popupWidth * 0.8; // Slightly smaller cards
-                const cardHeight = isSmallScreen ? 130 * sf : 110 * sf; // More height for content
+                console.log(`Processing book ${bookIndex + 1}: ${book.title} by ${book.author}`);
                 
+                const currentRow = Math.floor(bookIndex / booksPerRow);
+                const currentCol = bookIndex % booksPerRow;
+                
+                const x = startX + (currentCol * (cardWidth + cardPadding));
+                const y = globalY + (currentRow * (cardHeight + cardPadding));
+                
+                // Book card background with better styling
                 const bookBg = scene.add.graphics();
-                
-                // Card background
-                bookBg.fillGradientStyle(0x2d3748, 0x2d3748, 0x1a1a2e, 0x1a1a2e, 0.9);
+                bookBg.fillStyle(0x1a1a33, 0.95); // Darker background for better contrast
                 bookBg.fillRoundedRect(
-                    -cardWidth/2,
-                    yOffset - cardHeight/2,
+                    x - cardWidth/2,
+                    y - cardHeight/2,
                     cardWidth,
                     cardHeight,
-                    12 * sf
+                    15 * sf
                 );
                 
-                bookBg.lineStyle(2 * sf, 0x63b3ed, 0.4);
+                bookBg.lineStyle(3 * sf, 0xffffcc, 0.7);
                 bookBg.strokeRoundedRect(
-                    -cardWidth/2,
-                    yOffset - cardHeight/2,
+                    x - cardWidth/2,
+                    y - cardHeight/2,
                     cardWidth,
                     cardHeight,
-                    12 * sf
+                    15 * sf
                 );
                 
-                // Book info with responsive layout
-                const leftX = -cardWidth/2 + 20 * sf;
-                const rightX = cardWidth/2 - 20 * sf;
+                // Make the entire card interactive
+                bookBg.setInteractive(new Phaser.Geom.Rectangle(
+                    x - cardWidth/2,
+                    y - cardHeight/2,
+                    cardWidth,
+                    cardHeight
+                ), Phaser.Geom.Rectangle.Contains);
                 
-                const bookTitle = scene.add.text(leftX, yOffset - 25 * sf, book.title, {
-                    fontSize: `${Math.min(18 * sf, 16)}px`,
+                // Book title with better positioning and sizing
+                const bookTitle = scene.add.text(x, y - 25 * sf, book.title, {
+                    fontSize: `${Math.min(13 * sf, 11)}px`, // Smaller font
                     color: '#ffffff',
                     fontFamily: 'Caprasimo-Regular',
-                    stroke: '#1a1a2e',
+                    stroke: '#000000',
                     strokeThickness: 1 * sf,
-                    wordWrap: { width: cardWidth * 0.6 }
-                }).setOrigin(0, 0.5).setDepth(5);
+                    wordWrap: { width: cardWidth * 0.9 },
+                    align: 'center'
+                }).setOrigin(0.5).setDepth(5);
                 
-                const bookAuthor = scene.add.text(leftX, yOffset, `by ${book.author}`, {
-                    fontSize: `${Math.min(14 * sf, 12)}px`,
-                    color: '#63b3ed',
+                // Book author
+                const bookAuthor = scene.add.text(x, y - 5 * sf, `by ${book.author}`, {
+                    fontSize: `${Math.min(10 * sf, 9)}px`, // Smaller font
+                    color: '#ffffcc',
                     fontFamily: 'Arial',
-                    wordWrap: { width: cardWidth * 0.6 }
-                }).setOrigin(0, 0.5).setDepth(5);
+                    wordWrap: { width: cardWidth * 0.9 },
+                    align: 'center'
+                }).setOrigin(0.5).setDepth(5);
                 
-                const bookPages = scene.add.text(leftX, yOffset + 20 * sf, `${book.pages} pages • ${book.difficulty}`, {
-                    fontSize: `${Math.min(12 * sf, 10)}px`,
-                    color: '#95A5A6',
+                // Book info (pages and difficulty)
+                const bookInfo = scene.add.text(x, y + 12 * sf, `${book.pages} pages • ${book.difficulty}`, {
+                    fontSize: `${Math.min(9 * sf, 8)}px`,
+                    color: '#cccccc',
                     fontFamily: 'Arial',
-                    wordWrap: { width: cardWidth * 0.6 }
-                }).setOrigin(0, 0.5).setDepth(5);
+                    align: 'center'
+                }).setOrigin(0.5).setDepth(5);
                 
-                // Status badge
+                // Status badge with improved positioning
                 const statusColor = scene.getBookStatusColor(book.status);
                 const statusText = book.status.toUpperCase();
                 
                 const statusBadge = scene.add.graphics();
-                const badgeWidth = Math.min(80 * sf, 70);
-                const badgeHeight = Math.min(25 * sf, 22);
+                const badgeWidth = Math.min(70 * sf, 60);
+                const badgeHeight = Math.min(18 * sf, 16);
                 
-                statusBadge.fillStyle(statusColor, 0.8);
+                statusBadge.fillStyle(statusColor, 0.9);
                 statusBadge.fillRoundedRect(
-                    rightX - badgeWidth,
-                    yOffset - 25 * sf - badgeHeight/2,
+                    x - badgeWidth/2,
+                    y + 30 * sf, // Adjusted position
                     badgeWidth,
                     badgeHeight,
-                    12 * sf
+                    8 * sf
                 );
                 
-                const statusTextObj = scene.add.text(rightX - badgeWidth/2, yOffset - 25 * sf, statusText, {
-                    fontSize: `${Math.min(12 * sf, 10)}px`,
+                const statusTextObj = scene.add.text(x, y + 30 * sf + badgeHeight/2, statusText, {
+                    fontSize: `${Math.min(9 * sf, 8)}px`,
                     color: '#ffffff',
                     fontFamily: 'Arial Black'
                 }).setOrigin(0.5, 0.5).setDepth(5);
                 
-                // Action button
-                const actionBtn = scene.add.graphics();
-                const btnWidth = Math.min(60 * sf, 55);
-                const btnHeight = Math.min(30 * sf, 25);
-                
-                // Store original coordinates for reuse
-                const btnX = rightX - btnWidth;
-                const btnY = yOffset + 10 * sf - btnHeight/2;
-                
-                // Draw initial state
-                actionBtn.fillGradientStyle(0x63b3ed, 0x63b3ed, 0x3498db, 0x3498db, 1);
-                actionBtn.fillRoundedRect(btnX, btnY, btnWidth, btnHeight, 8 * sf);
-                
-                actionBtn.setInteractive(new Phaser.Geom.Rectangle(btnX, btnY, btnWidth, btnHeight), Phaser.Geom.Rectangle.Contains);
-                
-                const actionText = scene.add.text(rightX - btnWidth/2, yOffset + 10 * sf, 'READ', {
-                    fontSize: `${Math.min(14 * sf, 12)}px`,
-                    color: '#ffffff',
-                    fontFamily: 'Arial Black'
-                }).setOrigin(0.5, 0.5).setDepth(5);
-                
-                actionBtn.on('pointerover', () => {
-                    actionBtn.clear();
-                    actionBtn.fillGradientStyle(0xffd700, 0xffd700, 0xff8c42, 0xff8c42, 1);
-                    actionBtn.fillRoundedRect(btnX, btnY, btnWidth, btnHeight, 8 * sf);
-                    actionText.setScale(1.05);
+                // Enhanced hover effects
+                bookBg.on('pointerover', () => {
+                    bookBg.clear();
+                    bookBg.fillStyle(0x2a2a55, 1); // Lighter on hover
+                    bookBg.fillRoundedRect(
+                        x - cardWidth/2,
+                        y - cardHeight/2,
+                        cardWidth,
+                        cardHeight,
+                        15 * sf
+                    );
+                    bookBg.lineStyle(4 * sf, 0xffffff, 1);
+                    bookBg.strokeRoundedRect(
+                        x - cardWidth/2,
+                        y - cardHeight/2,
+                        cardWidth,
+                        cardHeight,
+                        15 * sf
+                    );
+                    bookTitle.setScale(1.05);
+                    bookAuthor.setScale(1.05);
                 });
                 
-                actionBtn.on('pointerout', () => {
-                    actionBtn.clear();
-                    actionBtn.fillGradientStyle(0x63b3ed, 0x63b3ed, 0x3498db, 0x3498db, 1);
-                    actionBtn.fillRoundedRect(btnX, btnY, btnWidth, btnHeight, 8 * sf);
-                    actionText.setScale(1);
+                bookBg.on('pointerout', () => {
+                    bookBg.clear();
+                    bookBg.fillStyle(0x1a1a33, 0.95);
+                    bookBg.fillRoundedRect(
+                        x - cardWidth/2,
+                        y - cardHeight/2,
+                        cardWidth,
+                        cardHeight,
+                        15 * sf
+                    );
+                    bookBg.lineStyle(3 * sf, 0xffffcc, 0.7);
+                    bookBg.strokeRoundedRect(
+                        x - cardWidth/2,
+                        y - cardHeight/2,
+                        cardWidth,
+                        cardHeight,
+                        15 * sf
+                    );
+                    bookTitle.setScale(1);
+                    bookAuthor.setScale(1);
                 });
                 
-                actionBtn.on('pointerdown', () => { scene.handleBookAction(book); });
+                bookBg.on('pointerdown', () => { scene.handleBookAction(book); });
                 
-                scene.popupContent.add([
-                    bookBg, bookTitle, bookAuthor, bookPages,
-                    statusBadge, statusTextObj, actionBtn, actionText
-                ]);
+                const bookElements = [
+                    bookBg, bookTitle, bookAuthor, bookInfo,
+                    statusBadge, statusTextObj
+                ];
                 
-                scene._libraryBookElements.push([
-                    bookBg, bookTitle, bookAuthor, bookPages, statusBadge, statusTextObj, actionBtn, actionText
-                ]);
-                
-                yOffset += (cardHeight + 25 * sf); // Increased spacing between books
+                scene.popupContent.add(bookElements);
+                scene._libraryBookElements.push(bookElements);
             });
             
-            yOffset += 40 * sf; // Increased spacing between categories
+            // Move global Y position down for next category
+            // Add space for all rows of this category plus extra spacing between categories
+            globalY += (rowsNeeded * (cardHeight + cardPadding)) + 30 * sf; // Reduced spacing
         });
-        
-        // Initial visibility will be handled by the base scene
     }
 
     static createProgressContent(scene) {
@@ -519,25 +582,27 @@ export default class LibraryUI {
             const barWidth = popupWidth * 0.7;
             const barHeight = 20 * sf;
             
-            // Label
+            // Label with bright yellow styling (consistent with main menu)
             const label = scene.add.text(-popupWidth/2 + 40 * sf, yOffset, stat.label, {
                 fontSize: `${Math.min(18 * sf, 16)}px`,
-                color: '#ffffff',
-                fontFamily: 'Caprasimo-Regular'
+                color: '#ffff00', // Bright yellow like main menu
+                fontFamily: 'Caprasimo-Regular',
+                stroke: '#000000',
+                strokeThickness: 2 * sf
             }).setOrigin(0, 0.5).setDepth(5);
             
-            // Progress value text
+            // Progress value text with light yellow
             const valueText = scene.add.text(popupWidth/2 - 40 * sf, yOffset, `${stat.value}/${stat.max}`, {
                 fontSize: `${Math.min(16 * sf, 14)}px`,
-                color: '#63b3ed',
+                color: '#ffffcc', // Light yellow for secondary text
                 fontFamily: 'Arial'
             }).setOrigin(1, 0.5).setDepth(5);
             
             yOffset += 30 * sf;
             
-            // Progress bar background
+            // Progress bar background consistent with main menu theme
             const progressBg = scene.add.graphics();
-            progressBg.fillStyle(0x2d3748, 0.8);
+            progressBg.fillStyle(0x222244, 0.8);
             progressBg.fillRoundedRect(-barWidth/2, yOffset - barHeight/2, barWidth, barHeight, 10 * sf);
             
             // Progress bar fill
@@ -557,8 +622,10 @@ export default class LibraryUI {
             
             const achievementsHeader = scene.add.text(0, yOffset, 'ACHIEVEMENTS', {
                 fontSize: `${Math.min(20 * sf, 18)}px`,
-                color: '#ffd700',
-                fontFamily: 'Caprasimo-Regular'
+                color: '#ffff00', // Bright yellow like main menu
+                fontFamily: 'Caprasimo-Regular',
+                stroke: '#000000',
+                strokeThickness: 2 * sf
             }).setOrigin(0.5, 0.5).setDepth(5);
             
             scene.popupContent.add(achievementsHeader);
@@ -566,12 +633,12 @@ export default class LibraryUI {
             
             scene.libraryData.progress.achievements.forEach((achievement, index) => {
                 const achBg = scene.add.graphics();
-                achBg.fillStyle(0x2d3748, 0.6);
+                achBg.fillStyle(0x222244, 0.6);
                 achBg.fillRoundedRect(-popupWidth/2 + 20 * sf, yOffset - 20 * sf, popupWidth - 40 * sf, 40 * sf, 8 * sf);
                 
                 const achText = scene.add.text(0, yOffset, achievement.name || achievement, {
                     fontSize: `${Math.min(16 * sf, 14)}px`,
-                    color: '#ffffff',
+                    color: '#ffffcc', // Light yellow for achievement text
                     fontFamily: 'Arial'
                 }).setOrigin(0.5, 0.5).setDepth(5);
                 
@@ -594,14 +661,17 @@ export default class LibraryUI {
         const btnWidth = popupWidth * 0.6;
         const btnHeight = 40 * sf;
         
-        addBtn.fillStyle(0x27AE60, 0.8);
+        // Add Note button with main menu styling
+        addBtn.fillStyle(0x333388, 0.8); // Using main menu hover color
         addBtn.fillRoundedRect(-btnWidth/2, yOffset - btnHeight/2, btnWidth, btnHeight, 8 * sf);
         addBtn.setInteractive(new Phaser.Geom.Rectangle(-btnWidth/2, yOffset - btnHeight/2, btnWidth, btnHeight), Phaser.Geom.Rectangle.Contains);
         
         const addText = scene.add.text(0, yOffset, '+ Add New Note', {
             fontSize: `${Math.min(18 * sf, 16)}px`,
-            color: '#ffffff',
-            fontFamily: 'Caprasimo-Regular'
+            color: '#ffff00', // Bright yellow like main menu
+            fontFamily: 'Caprasimo-Regular',
+            stroke: '#000000',
+            strokeThickness: 2 * sf
         }).setOrigin(0.5, 0.5).setDepth(5);
         
         addBtn.on('pointerdown', () => { scene.showAddNoteDialog(); });
@@ -611,11 +681,13 @@ export default class LibraryUI {
         
         // Notes categories
         scene.libraryData.notes.categories.forEach((category, categoryIndex) => {
-            // Category header
+            // Category header with main menu styling
             const categoryHeader = scene.add.text(0, yOffset, category.name, {
                 fontSize: `${Math.min(20 * sf, 18)}px`,
-                color: '#ffd700',
-                fontFamily: 'Caprasimo-Regular'
+                color: '#ffff00', // Bright yellow like main menu
+                fontFamily: 'Caprasimo-Regular',
+                stroke: '#000000',
+                strokeThickness: 2 * sf
             }).setOrigin(0.5, 0.5).setDepth(5);
             
             scene.popupContent.add(categoryHeader);
@@ -625,7 +697,7 @@ export default class LibraryUI {
             if (category.notes.length === 0) {
                 const emptyText = scene.add.text(0, yOffset, 'No notes yet', {
                     fontSize: `${Math.min(16 * sf, 14)}px`,
-                    color: '#95a5a6',
+                    color: '#ffffcc', // Light yellow for secondary text
                     fontFamily: 'Arial',
                     fontStyle: 'italic'
                 }).setOrigin(0.5, 0.5).setDepth(5);
@@ -637,26 +709,26 @@ export default class LibraryUI {
                     const noteContent = note.content || note;
                     const noteDate = note.date || 'No date';
                     
-                    // Note background
+                    // Note background with main menu styling
                     const noteBg = scene.add.graphics();
                     const noteHeight = 60 * sf;
                     
-                    noteBg.fillStyle(0x2d3748, 0.6);
+                    noteBg.fillStyle(0x222244, 0.6);
                     noteBg.fillRoundedRect(-popupWidth/2 + 20 * sf, yOffset - noteHeight/2, popupWidth - 40 * sf, noteHeight, 8 * sf);
                     noteBg.setInteractive(new Phaser.Geom.Rectangle(-popupWidth/2 + 20 * sf, yOffset - noteHeight/2, popupWidth - 40 * sf, noteHeight), Phaser.Geom.Rectangle.Contains);
                     
-                    // Note text
+                    // Note text with bright text color
                     const noteText = scene.add.text(-popupWidth/2 + 40 * sf, yOffset - 10 * sf, noteContent, {
                         fontSize: `${Math.min(14 * sf, 12)}px`,
-                        color: '#ffffff',
+                        color: '#ffffff', // Keep white for readability
                         fontFamily: 'Arial',
                         wordWrap: { width: popupWidth - 100 * sf }
                     }).setOrigin(0, 0.5).setDepth(5);
                     
-                    // Note date
+                    // Note date with light yellow color
                     const dateText = scene.add.text(-popupWidth/2 + 40 * sf, yOffset + 15 * sf, noteDate, {
                         fontSize: `${Math.min(12 * sf, 10)}px`,
-                        color: '#95a5a6',
+                        color: '#ffffcc', // Light yellow for secondary text
                         fontFamily: 'Arial'
                     }).setOrigin(0, 0.5).setDepth(5);
                     
