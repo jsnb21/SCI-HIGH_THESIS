@@ -23,6 +23,16 @@ function shuffleArray(array) {
 
 // Function to randomize multiple choice options and update correct index
 function randomizeOptions(question) {
+    // Handle true/false questions - don't randomize, always keep True/False order
+    if (question.type === 'true-false') {
+        question.options = ['True', 'False'];
+        // Convert correctAnswer boolean to correctIndex if needed
+        if (typeof question.correctAnswer === 'boolean') {
+            question.correctIndex = question.correctAnswer ? 0 : 1; // True = 0, False = 1
+        }
+        return question;
+    }
+    
     // Handle both "options" and "choices" property names
     const questionOptions = question.options || question.choices;
     
@@ -284,10 +294,20 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         // Handle both "options" and "choices" property names
         let { question, options, choices, type = 'multiple-choice' } = currentQuestion;
         
-        // Use choices if options is not available (for backward compatibility)
-        if (!options && choices) {
-            options = choices;
-            console.log('Using "choices" property as options:', options);
+        // Handle true/false questions
+        if (type === 'true-false') {
+            options = ['True', 'False'];
+            // Convert correctAnswer boolean to correctIndex
+            if (typeof currentQuestion.correctAnswer === 'boolean') {
+                currentQuestion.correctIndex = currentQuestion.correctAnswer ? 0 : 1; // True = 0, False = 1
+            }
+            console.log('True/False question detected. Correct answer:', currentQuestion.correctAnswer, 'Correct index:', currentQuestion.correctIndex);
+        } else {
+            // Use choices if options is not available (for backward compatibility)
+            if (!options && choices) {
+                options = choices;
+                console.log('Using "choices" property as options:', options);
+            }
         }
         
         console.log('Destructured values - question:', question, 'options:', options, 'type:', type);
