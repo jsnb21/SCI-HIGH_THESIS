@@ -227,7 +227,7 @@
               <div class="absolute inset-0 bg-accent/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
             </button>
             <!-- Professor Tab - Hidden by default, shown only for admin/professor users -->
-            <a href="professor-dashboard.html" id="professor-nav-link" class="gaming-nav-link text-textColor hover:text-accent transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative hidden">
+            <a href="html-pages/professor-dashboard.html" id="professor-nav-link" class="gaming-nav-link text-textColor hover:text-accent transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative hidden">
               <span class="relative z-10">👨‍🏫 Professor</span>
               <div class="absolute inset-0 bg-accent/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
             </a>
@@ -276,7 +276,7 @@
             <div class="absolute inset-0 bg-gradient-to-r from-yellow-300 to-primary rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </button>
           
-          <a href="leaderboards.html" class="group relative px-12 py-4 font-gaming text-lg font-bold text-textColor bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-accent/50 uppercase tracking-wider border-2 border-accent/50">
+          <a href="html-pages/leaderboards.html" class="group relative px-12 py-4 font-gaming text-lg font-bold text-textColor bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-accent/50 uppercase tracking-wider border-2 border-accent/50">
             <span class="relative z-10">🏆 Leaderboards</span>
             <div class="absolute inset-0 bg-gradient-to-r from-cyan to-accent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </a>
@@ -564,7 +564,7 @@
         </div>
         
         <div class="text-center">
-          <a href="game.html" id="play-game-btn" class="inline-block px-10 py-4 font-gaming text-lg font-bold text-dark bg-gradient-to-r from-primary to-yellow-300 rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50 uppercase tracking-wider">
+          <a href="html-pages/game.html" id="play-game-btn" class="inline-block px-10 py-4 font-gaming text-lg font-bold text-dark bg-gradient-to-r from-primary to-yellow-300 rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50 uppercase tracking-wider">
             🚀 Launch Game
           </a>
         </div>
@@ -1433,7 +1433,7 @@
           // Store authentication state for game.html
           sessionStorage.setItem('sci_high_authenticated', 'true');
           sessionStorage.setItem('sci_high_user_type', this.userType);
-          window.location.href = 'game.html';
+          window.location.href = 'html-pages/game.html';
         }
 
         // Update professor tab visibility based on user type
@@ -1765,7 +1765,7 @@
         if (result.success) {
           loginModal.classList.add('hidden');
           // Redirect to professor dashboard
-          window.location.href = 'professor-dashboard.html';
+          window.location.href = 'html-pages/professor-dashboard.html';
         } else {
           alert('Login failed: ' + result.error);
         }

@@ -16,7 +16,7 @@
         if (!isAuthenticated || !savedUser) {
           // Redirect to login page
           alert('Please log in to access the game.');
-          window.location.href = 'index.html';
+          window.location.href = '../index.html';
           return false;
         }
         
@@ -244,10 +244,10 @@
   <body>
     <!-- Authentication overlay -->
     <div id="auth-overlay">
-      <img src="public/assets/img/buko_productions-logo.png" alt="SCI-HIGH Logo" class="logo" />
+      <img src="../public/assets/img/buko_productions-logo.png" alt="SCI-HIGH Logo" class="logo" />
       <h2>Authentication Required</h2>
       <p>You need to be logged in to access the game</p>
-      <button onclick="window.location.href='index.html'">Go to Login</button>
+      <button onclick="window.location.href='../index.html'">Go to Login</button>
     </div>
     
     <!-- Orientation overlay for mobile portrait mode -->
@@ -294,6 +294,6 @@
       }
     </script>
     
-    <script type="module" src="./src/game.js"></script>
+    <script type="module" src="../src/game.js"></script>
   </body>
 </html>

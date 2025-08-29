@@ -8,10 +8,10 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: './index.html',
-        game: './game.html',
-        leaderboards: './leaderboards.html',
-        'professor-dashboard': './professor-dashboard.html',
-        developer: './developer.html'
+        game: './html-pages/game.html',
+        leaderboards: './html-pages/leaderboards.html',
+        'professor-dashboard': './html-pages/professor-dashboard.html',
+        developer: './html-pages/developer.html'
       },
     },
   },

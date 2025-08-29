@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="public/assets/img/logo/SCI-HIGH_LOGO.png" />
+    <link rel="icon" type="image/png" href="../public/assets/img/logo/SCI-HIGH_LOGO.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SCI-HIGH: Professor Dashboard</title>
     <!-- Last updated: August 8, 2025 - Force GitHub Pages refresh -->
@@ -50,7 +50,7 @@
       <div class="max-w-7xl mx-auto px-6">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-4">
-            <img src="public/assets/img/buko_productions-logo.png" alt="SCI-HIGH Logo" class="w-12 h-12" />
+            <img src="../public/assets/img/buko_productions-logo.png" alt="SCI-HIGH Logo" class="w-12 h-12" />
             <span class="font-gaming text-xl font-bold text-primary">Professor Dashboard</span>
           </div>
           <div class="flex items-center space-x-4">
@@ -163,13 +163,13 @@
           // Check if user is authenticated professor or admin
           const savedUser = localStorage.getItem('sci_high_user');
           if (!savedUser) {
-            window.location.href = 'index.html';
+            window.location.href = '../index.html';
             return;
           }
 
           this.currentUser = JSON.parse(savedUser);
           if (!this.currentUser || (this.currentUser.type !== 'professor' && this.currentUser.type !== 'admin')) {
-            window.location.href = 'index.html';
+            window.location.href = '../index.html';
             return;
           }
 
@@ -188,7 +188,7 @@
             localStorage.removeItem('sci_high_user');
             sessionStorage.removeItem('sci_high_authenticated');
             sessionStorage.removeItem('sci_high_user_type');
-            window.location.href = 'index.html';
+            window.location.href = '../index.html';
           });
 
           // Quick action buttons  
