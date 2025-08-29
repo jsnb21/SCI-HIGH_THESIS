@@ -698,23 +698,60 @@
 
       // Render Top 3 Player Cards
       function renderPlayerCards(data) {
+        console.log('renderPlayerCards called with data:', data);
         const container = document.getElementById('player-cards-grid');
         const loading = document.getElementById('player-cards-loading');
+        console.log('Player cards container found:', !!container);
+        console.log('Player cards loading element found:', !!loading);
         
-        if (!data || data.length === 0) {
-          loading.innerHTML = '<p class="text-gray-400 text-center font-gaming">No champions found</p>';
+        if (!container) {
+          console.error('ERROR: player-cards-grid element not found!');
           return;
         }
         
+        if (!data || data.length === 0) {
+          console.log('No player data for cards');
+          if (loading) {
+            loading.innerHTML = '<p class="text-gray-400 text-center font-gaming">No champions found</p>';
+            loading.style.display = 'block';
+          }
+          return;
+        }
+        
+        console.log('Rendering', data.length, 'player cards');
         // Hide loading and show cards
-        loading.style.display = 'none';
+        if (loading) {
+          loading.style.display = 'none';
+        }
         
         // Take only top 3 players for featured cards
         const topPlayers = data.slice(0, 3);
+        console.log('Top 3 players for cards:', topPlayers);
         
         let cardsHtml = '';
         topPlayers.forEach((player, index) => {
-          const initials = player.name.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
+          console.log(`Rendering card for player ${index}:`, player);
+          
+          // Safe name handling
+          let playerName = 'Unknown Player';
+          if (player && player.name && typeof player.name === 'string') {
+            playerName = player.name;
+          }
+          
+          // Safe initials generation
+          let initials = '??';
+          try {
+            if (playerName && typeof playerName === 'string' && playerName.trim().length > 0) {
+              const words = playerName.trim().split(' ').filter(word => word.length > 0);
+              if (words.length > 0) {
+                initials = words.map(word => word[0] ? word[0].toUpperCase() : '').join('').substring(0, 2);
+                if (!initials || initials.length === 0) initials = playerName.substring(0, 2).toUpperCase();
+              }
+            }
+          } catch (e) {
+            console.warn('Error generating initials:', e);
+            initials = '??';
+          }
           
           // Special styling for each position
           let cardStyle, rankIcon, rankColor;
@@ -746,7 +783,7 @@
                     ${initials}
                   </div>
                   <div class="text-center">
-                    <h3 class="font-gaming text-primary text-lg font-bold">${player.name}</h3>
+                    <h3 class="font-gaming text-primary text-lg font-bold">${playerName}</h3>
                     <p class="text-gray-400 text-sm">${player.department || 'Unknown'}</p>
                   </div>
                 </div>
@@ -755,7 +792,7 @@
                 <div class="space-y-3">
                   <div class="flex justify-between items-center">
                     <span class="text-gray-300 text-sm font-gaming">Battle Score</span>
-                    <span class="text-primary font-gaming font-bold text-lg">${player.score.toLocaleString()}</span>
+                    <span class="text-primary font-gaming font-bold text-lg">${(player.score || 0).toLocaleString()}</span>
                   </div>
                   <div class="flex justify-between items-center">
                     <span class="text-gray-300 text-sm font-gaming">Global Rank</span>
@@ -766,7 +803,7 @@
                   <div class="mt-4">
                     <div class="w-full bg-dark/50 rounded-full h-2">
                       <div class="bg-gradient-to-r from-primary to-accent h-2 rounded-full transition-all duration-500" 
-                           style="width: ${Math.min(100, (player.score / Math.max(...data.map(p => p.score))) * 100)}%"></div>
+                           style="width: ${Math.min(100, data.length > 0 && Math.max(...data.map(p => p.score || 0)) > 0 ? ((player.score || 0) / Math.max(...data.map(p => p.score || 0))) * 100 : 0)}%"></div>
                     </div>
                   </div>
                 </div>
@@ -788,69 +825,82 @@
 
       async function fetchLeaderboard(filter) {
         try {
-          // First, get all students from the students table
-          const studentsSnapshot = await db.ref('students').once('value');
-          const studentsData = studentsSnapshot.val() || {};
+          console.log('Starting fetchLeaderboard with filter:', filter);
           
-          // Then get leaderboard scores
-          const leaderboardSnapshot = await db.ref('leaderboards').orderByChild('score').limitToLast(100).once('value');
+          // Get leaderboard scores directly from Firebase
+          console.log('Fetching leaderboard scores...');
+          const leaderboardSnapshot = await db.ref('leaderboards').once('value');
+          const leaderboardData = leaderboardSnapshot.val() || {};
+          console.log('Raw leaderboard data:', leaderboardData);
+          
           const arr = [];
           
-          leaderboardSnapshot.forEach(child => {
-            const scoreData = child.val();
-            const studentId = scoreData.studentId || child.key;
+          // Process each leaderboard entry
+          Object.keys(leaderboardData).forEach(key => {
+            const entry = leaderboardData[key];
+            console.log('Processing entry:', key, entry);
+            console.log('Entry structure - name:', entry.name, 'score:', entry.score, 'department:', entry.department);
             
-            // Find corresponding student data
-            const studentKey = Object.keys(studentsData).find(key => 
-              studentsData[key].studentId === studentId
-            );
+            // Extract data from the Firebase structure
+            const processedEntry = {
+              userId: key,
+              name: entry.name || entry.playerName || entry.fullName || 'Unknown Player',
+              score: parseInt(entry.score) || 0,
+              department: entry.department || 'Unknown Department',
+              timestamp: entry.timestamp || Date.now(),
+              studentId: entry.studentId || key,
+              submissionDate: entry.submissionDate || 'Unknown'
+            };
             
-            if (studentKey) {
-              const studentInfo = studentsData[studentKey];
-              const combinedData = {
-                ...scoreData,
-                userId: child.key,
-                studentId: studentId,
-                name: studentInfo.name,
-                level: studentInfo.level,
-                course: studentInfo.course,
-                strand: studentInfo.strand,
-                year: studentInfo.year,
-                department: studentInfo.level === 'college' ? `College - ${studentInfo.course}` : 
-                           studentInfo.level === 'shs' ? `Senior High - ${studentInfo.strand}` : 
-                           studentInfo.level || 'Unknown'
-              };
-              arr.push(combinedData);
-            }
+            console.log('Processed entry:', processedEntry);
+            arr.push(processedEntry);
           });
+          
+          console.log('Total entries processed:', arr.length);
+          console.log('All processed entries:', arr);
           
           // Sort descending by score
           arr.sort((a, b) => b.score - a.score);
+          console.log('Sorted entries:', arr);
           
           // Apply filters
           let filtered = arr;
           if (filter === 'college') {
-            filtered = arr.filter(e => e.level === 'college');
+            console.log('Filtering for college students...');
+            filtered = arr.filter(e => e.department && e.department.toLowerCase().includes('college'));
           } else if (filter === 'seniorhigh') {
-            filtered = arr.filter(e => e.level === 'shs');
+            console.log('Filtering for senior high students...');
+            filtered = arr.filter(e => e.department && (e.department.toLowerCase().includes('senior') || e.department.toLowerCase().includes('high')));
           } else if (filter === 'juniorhigh') {
-            // Note: Add juniorhigh level to students table if needed
-            filtered = arr.filter(e => e.level === 'jhs');
+            console.log('Filtering for junior high students...');
+            filtered = arr.filter(e => e.department && e.department.toLowerCase().includes('junior'));
           }
           
-          // Render top 3 player cards and leaderboard table
-          renderPlayerCards(arr.slice(0, 3)); // Show top 3 for featured section
+          console.log('Filtered entries:', filtered.length);
+          console.log('Final filtered data:', filtered);
+          
+          // Render results
+          console.log('Calling renderPlayerCards with top 3...');
+          renderPlayerCards(arr.slice(0, 3));
+          
+          console.log('Calling renderLeaderboard with filtered data...');
           renderLeaderboard(filtered);
+          
         } catch (error) {
           console.error('Error fetching leaderboard:', error);
-          // Show error message to user
-          document.getElementById('leaderboard-body').innerHTML = `
-            <tr>
-              <td colspan="5" class="text-center py-8 text-red-400">
-                ⚠️ Failed to load leaderboard data. Please try again.
-              </td>
-            </tr>
-          `;
+          console.error('Error details:', error.message);
+          
+          // Show error message
+          const globalBody = document.getElementById('global-leaderboard-body');
+          const errorRow = `<tr><td colspan="6" class="text-center py-8 text-red-400">⚠️ Database error: ${error.message}</td></tr>`;
+          if (globalBody) globalBody.innerHTML = errorRow;
+          
+          // Show error in player cards
+          const loading = document.getElementById('player-cards-loading');
+          if (loading) {
+            loading.innerHTML = `<p class="text-red-400 text-center font-gaming">Database Error: ${error.message}</p>`;
+            loading.style.display = 'block';
+          }
         }
       }
 
