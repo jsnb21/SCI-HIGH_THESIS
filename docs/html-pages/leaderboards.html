@@ -576,7 +576,7 @@
           container.innerHTML = '<p class="text-gray-500">No scores yet.</p>';
           return;
         }
-        let html = `<table class="w-full text-left mt-4"><thead><tr><th class="py-2 px-4 text-dark">Rank</th><th class="py-2 px-4 text-dark">Name</th><th class="py-2 px-4 text-dark">Score</th><th class="py-2 px-4 text-dark">Department</th></tr></thead><tbody>`;
+        let html = `<table class="w-full text-left mt-4"><thead><tr><th class="py-2 px-4 text-cyan-300 font-bold">Rank</th><th class="py-2 px-4 text-cyan-300 font-bold">Name</th><th class="py-2 px-4 text-cyan-300 font-bold">Score</th><th class="py-2 px-4 text-cyan-300 font-bold">Department</th></tr></thead><tbody>`;
         let rank = 1;
         data.forEach(entry => {
           const playerNameHtml = entry.userId 
@@ -961,24 +961,21 @@
           const leaderboardSnapshot = await db.ref('leaderboards/' + userId).once('value');
           const leaderboardData = leaderboardSnapshot.val();
           
-          if (leaderboardData && studentInfo) {
-            // Combine student info with leaderboard data
-            const combinedData = {
-              ...leaderboardData,
-              ...studentInfo,
-              department: studentInfo.level === 'college' ? `College - ${studentInfo.course}` : 
-                         studentInfo.level === 'shs' ? `Senior High - ${studentInfo.strand}` : 
-                         studentInfo.level || 'Unknown'
-            };
-            renderPlayerProfile(combinedData);
-          } else {
-            document.getElementById('profile-content').innerHTML = `
-              <div class="text-center py-8">
-                <div class="text-red-400 font-gaming text-lg">⚠️ Student profile not found</div>
-                <p class="text-gray-400 mt-2">This student might not be registered or have no leaderboard data.</p>
-              </div>
-            `;
-          }
+          // Always try to show available data, even if partial
+          const combinedData = {
+            // Use leaderboard data if available, otherwise use empty object
+            ...(leaderboardData || {}),
+            // Use student info if available, otherwise use default values
+            ...(studentInfo || { 
+              fullName: 'Unknown Student',
+              studentId: userId,
+              level: 'Unknown'
+            }),
+            department: studentInfo?.level === 'college' ? `College - ${studentInfo.course}` : 
+                       studentInfo?.level === 'shs' ? `Senior High - ${studentInfo.strand}` : 
+                       studentInfo?.level || 'Unknown'
+          };
+          renderPlayerProfile(combinedData);
         } catch (error) {
           console.error('Error loading player profile:', error);
           document.getElementById('profile-content').innerHTML = `
