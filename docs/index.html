@@ -194,6 +194,77 @@
         transform: translateY(-1px);
         box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3);
       }
+
+      /* Custom Notification Styles */
+      .notification {
+        pointer-events: auto;
+        animation: slideInRight 0.5s ease-out forwards;
+        max-width: 400px;
+      }
+
+      .notification.removing {
+        animation: slideOutRight 0.3s ease-in forwards;
+      }
+
+      @keyframes slideInRight {
+        from {
+          opacity: 0;
+          transform: translateX(100%);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes slideOutRight {
+        from {
+          opacity: 1;
+          transform: translateX(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateX(100%);
+        }
+      }
+
+      .notification-success {
+        background: linear-gradient(135deg, #10B981, #059669);
+        border-color: #34D399;
+      }
+
+      .notification-error {
+        background: linear-gradient(135deg, #EF4444, #DC2626);
+        border-color: #F87171;
+      }
+
+      .notification-warning {
+        background: linear-gradient(135deg, #F59E0B, #D97706);
+        border-color: #FBBF24;
+      }
+
+      .notification-info {
+        background: linear-gradient(135deg, #3B82F6, #2563EB);
+        border-color: #60A5FA;
+      }
+
+      .notification-progress-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.3);
+        animation: progressBar linear;
+      }
+
+      @keyframes progressBar {
+        from {
+          width: 100%;
+        }
+        to {
+          width: 0%;
+        }
+      }
     </style>
   </head>
   <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed">
@@ -244,6 +315,39 @@
         </div>
       </div>
     </nav>
+
+    <!-- Custom Notification System -->
+    <div id="notification-container" class="fixed top-20 right-6 z-[9999] space-y-4 pointer-events-none">
+      <!-- Notifications will be dynamically inserted here -->
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] hidden flex items-center justify-center p-4">
+      <div class="bg-gradient-to-br from-dark to-cardBg border-2 border-primary/30 rounded-xl shadow-2xl max-w-md w-full mx-4 neon-glow">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-primary/20">
+          <div class="flex items-center space-x-3">
+            <div id="confirmation-icon" class="text-3xl">❓</div>
+            <h3 id="confirmation-title" class="font-gaming text-xl text-primary">Confirmation</h3>
+          </div>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6">
+          <p id="confirmation-message" class="text-gray-300 leading-relaxed"></p>
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="p-6 border-t border-primary/20 flex space-x-3 justify-end">
+          <button id="confirmation-cancel" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-gaming transition-all duration-300 transform hover:scale-105">
+            Cancel
+          </button>
+          <button id="confirmation-confirm" class="px-4 py-2 bg-primary hover:bg-primary/80 text-white rounded-lg font-gaming transition-all duration-300 transform hover:scale-105">
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Hero Section -->
     <section id="home" class="relative z-10 min-h-screen flex items-center justify-center px-6 py-20">
@@ -439,35 +543,138 @@
         <div id="student-form" class="hidden">
           <div class="text-center mb-8">
             <h2 class="font-gaming text-3xl font-bold mb-2 text-accent">🎓 Student Portal</h2>
-            <p class="text-gray-300">Enter your Student ID to begin your adventure</p>
-            <p class="text-sm text-gray-400 mt-2">✨ New student? An account will be created automatically for you!</p>
+            <p class="text-gray-300">Login or Register to access your learning adventure</p>
+            <div class="mt-3 p-3 bg-accent/10 border border-accent/30 rounded-lg">
+              <p class="text-sm text-accent">⚠️ New students must register first before logging in!</p>
+            </div>
           </div>
           
-          <div class="max-w-md mx-auto">
-            <form id="student-login-form" class="space-y-6">
-              <div>
-                <label class="block text-gray-300 text-sm mb-2">Student ID</label>
-                <input type="text" name="studentId" required placeholder="e.g., 24-2024-001" 
-                       class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none text-center font-gaming">
-                <p class="text-xs text-gray-400 mt-1">Format: XX-XXXX-XXX (numbers and dashes only)</p>
-              </div>
-              <button type="submit" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105">
-                🚀 Enter Adventure
-              </button>
-            </form>
+          <!-- Student Options -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             
-            <div class="text-center mt-6 pt-6 border-t border-gray-600">
-              <p class="text-gray-400 text-sm">📋 Only your Student ID is needed - no password required!</p>
-              <div class="mt-4 p-3 bg-dark/30 rounded-lg">
-                <p class="text-xs text-gray-500 mb-2">🔧 Dev Mode Test Accounts:</p>
-                <div class="text-xs text-accent space-y-1">
-                  <p>ID: 24-2024-001 (Juan - BS CS)</p>
-                  <p>ID: 24-2024-002 (Maria - BS IT)</p>
-                  <p>ID: 24-2024-003 (Pedro - SHS STEM)</p>
-                </div>
-                <hr class="my-2 border-gray-600">
-                <p class="text-cyan text-xs">💡 Or try any Student ID (XX-XXXX-XXX format) to create a new account!</p>
+            <!-- Existing Student Login -->
+            <div class="space-y-4">
+              <h3 class="font-gaming text-xl text-accent mb-4 text-center">🔐 Returning Student</h3>
+              <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg mb-4">
+                <p class="text-sm text-blue-300 text-center">✅ For students who already have an account</p>
               </div>
+              <form id="student-login-form" class="space-y-4">
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Student ID</label>
+                  <input type="text" name="studentId" required placeholder="e.g., 24-2024-001" 
+                         class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none text-center font-gaming">
+                  <p class="text-xs text-gray-400 mt-1">Format: XX-XXXX-XXX (numbers and dashes only)</p>
+                </div>
+                <button type="submit" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-blue-500 to-accent rounded-lg transform transition-all duration-300 hover:scale-105">
+                  🚀 Login to Adventure
+                </button>
+              </form>
+              
+              <div class="text-center mt-4">
+                <p class="text-gray-400 text-sm">📋 Only your Student ID is needed - no password required!</p>
+                <div class="mt-3 p-3 bg-dark/30 rounded-lg">
+                  <p class="text-xs text-gray-500 mb-2">🔧 Test Accounts:</p>
+                  <div class="text-xs text-accent space-y-1">
+                    <p>ID: 24-2024-001 (Juan - BS CS)</p>
+                    <p>ID: 24-2024-002 (Maria - BS IT)</p>
+                    <p>ID: 24-2024-003 (Pedro - SHS STEM)</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- New Student Registration -->
+            <div class="space-y-4">
+              <h3 class="font-gaming text-xl text-accent mb-4 text-center">📝 New Student Registration</h3>
+              <div class="p-3 bg-green-500/10 border border-green-500/30 rounded-lg mb-4">
+                <p class="text-sm text-green-300 text-center">✨ First time? Create your account here!</p>
+              </div>
+              <form id="student-register-form" class="space-y-4">
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Student ID</label>
+                  <input type="text" name="newStudentId" required placeholder="e.g., 24-2024-001" 
+                         class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none text-center font-gaming">
+                  <p class="text-xs text-gray-400 mt-1">Format: XX-XXXX-XXX</p>
+                </div>
+                
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Full Name</label>
+                  <input type="text" name="fullName" required placeholder="e.g., Juan Dela Cruz" 
+                         class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
+                </div>
+
+                <div>
+                  <label class="block text-gray-300 text-sm mb-2">Academic Level</label>
+                  <select name="academicLevel" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
+                    <option value="">Select Level</option>
+                    <option value="college">College</option>
+                    <option value="shs">Senior High School</option>
+                  </select>
+                </div>
+
+                <!-- College Fields -->
+                <div id="college-fields" class="hidden space-y-4">
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Course/Program</label>
+                    <select name="course" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
+                      <option value="">Select Course</option>
+                      <option value="BS Computer Science">BS Computer Science</option>
+                      <option value="BS Information Technology">BS Information Technology</option>
+                      <option value="BS Information Systems">BS Information Systems</option>
+                      <option value="BS Computer Engineering">BS Computer Engineering</option>
+                      <option value="BS Software Engineering">BS Software Engineering</option>
+                      <option value="BS Data Science">BS Data Science</option>
+                      <option value="BS Cybersecurity">BS Cybersecurity</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Year Level</label>
+                    <select name="collegeYear" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
+                      <option value="">Select Year</option>
+                      <option value="1st Year">1st Year</option>
+                      <option value="2nd Year">2nd Year</option>
+                      <option value="3rd Year">3rd Year</option>
+                      <option value="4th Year">4th Year</option>
+                      <option value="5th Year">5th Year</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Senior High School Fields -->
+                <div id="shs-fields" class="hidden space-y-4">
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Strand</label>
+                    <select name="strand" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
+                      <option value="">Select Strand</option>
+                      <option value="STEM">STEM (Science, Technology, Engineering, Mathematics)</option>
+                      <option value="ABM">ABM (Accountancy, Business, Management)</option>
+                      <option value="HUMSS">HUMSS (Humanities and Social Sciences)</option>
+                      <option value="GAS">GAS (General Academic Strand)</option>
+                      <option value="TVL-ICT">TVL-ICT (Technical-Vocational-Livelihood - ICT)</option>
+                      <option value="TVL-HE">TVL-HE (Technical-Vocational-Livelihood - Home Economics)</option>
+                      <option value="TVL-IA">TVL-IA (Technical-Vocational-Livelihood - Industrial Arts)</option>
+                      <option value="TVL-Agri">TVL-Agri (Technical-Vocational-Livelihood - Agriculture)</option>
+                      <option value="Arts and Design">Arts and Design</option>
+                      <option value="Sports">Sports</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Grade Level</label>
+                    <select name="shsYear" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
+                      <option value="">Select Grade</option>
+                      <option value="Grade 11">Grade 11</option>
+                      <option value="Grade 12">Grade 12</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button type="submit" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-green-500 to-accent rounded-lg transform transition-all duration-300 hover:scale-105">
+                  ✨ Create Account & Start Adventure
+                </button>
+              </form>
             </div>
           </div>
         </div>
@@ -836,6 +1043,194 @@
         }
       }
 
+      // Custom Notification System
+      class NotificationManager {
+        constructor() {
+          this.container = document.getElementById('notification-container');
+          this.notificationId = 0;
+        }
+
+        show(message, type = 'info', duration = 5000, options = {}) {
+          const notification = this.createNotification(message, type, duration, options);
+          this.container.appendChild(notification);
+          
+          // Auto remove after duration
+          if (duration > 0) {
+            setTimeout(() => {
+              this.remove(notification);
+            }, duration);
+          }
+          
+          return notification;
+        }
+
+        createNotification(message, type, duration, options) {
+          const id = `notification-${this.notificationId++}`;
+          const notification = document.createElement('div');
+          notification.id = id;
+          notification.className = `notification notification-${type} border-2 rounded-lg shadow-2xl p-4 relative overflow-hidden`;
+          
+          // Get icon based on type
+          const icons = {
+            success: '✅',
+            error: '❌', 
+            warning: '⚠️',
+            info: 'ℹ️',
+            loading: '⏳'
+          };
+          
+          // Get title based on type
+          const titles = {
+            success: 'Success!',
+            error: 'Error!',
+            warning: 'Warning!',
+            info: 'Information',
+            loading: 'Loading...'
+          };
+          
+          notification.innerHTML = `
+            <div class="flex items-start space-x-3">
+              <div class="text-2xl flex-shrink-0 mt-1">${options.icon || icons[type]}</div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-gaming text-white font-bold text-sm mb-1">${options.title || titles[type]}</h4>
+                <p class="text-white/90 text-sm leading-relaxed">${message}</p>
+                ${options.actions ? this.createActions(options.actions, id) : ''}
+              </div>
+              <button onclick="notificationManager.remove(document.getElementById('${id}'))" 
+                      class="text-white/70 hover:text-white transition-colors duration-200 flex-shrink-0 ml-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            ${duration > 0 ? `<div class="notification-progress-bar" style="animation-duration: ${duration}ms;"></div>` : ''}
+          `;
+          
+          return notification;
+        }
+
+        createActions(actions, notificationId) {
+          return `
+            <div class="mt-3 flex space-x-2">
+              ${actions.map(action => `
+                <button onclick="${action.onclick}; notificationManager.remove(document.getElementById('${notificationId}'))" 
+                        class="px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs font-gaming rounded transition-all duration-200 transform hover:scale-105">
+                  ${action.text}
+                </button>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        remove(notification) {
+          if (notification && notification.parentNode) {
+            notification.classList.add('removing');
+            setTimeout(() => {
+              if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+              }
+            }, 300);
+          }
+        }
+
+        success(message, options = {}) {
+          return this.show(message, 'success', options.duration || 4000, options);
+        }
+
+        error(message, options = {}) {
+          return this.show(message, 'error', options.duration || 6000, options);
+        }
+
+        warning(message, options = {}) {
+          return this.show(message, 'warning', options.duration || 5000, options);
+        }
+
+        info(message, options = {}) {
+          return this.show(message, 'info', options.duration || 4000, options);
+        }
+
+        loading(message, options = {}) {
+          return this.show(message, 'loading', 0, options);
+        }
+
+        confirm(message, options = {}) {
+          return new Promise((resolve) => {
+            const modal = document.getElementById('confirmation-modal');
+            const title = document.getElementById('confirmation-title');
+            const messageEl = document.getElementById('confirmation-message');
+            const icon = document.getElementById('confirmation-icon');
+            const confirmBtn = document.getElementById('confirmation-confirm');
+            const cancelBtn = document.getElementById('confirmation-cancel');
+            
+            // Set content
+            title.textContent = options.title || 'Confirmation';
+            messageEl.textContent = message;
+            icon.textContent = options.icon || '❓';
+            confirmBtn.textContent = options.confirmText || 'Confirm';
+            cancelBtn.textContent = options.cancelText || 'Cancel';
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            
+            // Handle responses
+            const handleConfirm = () => {
+              modal.classList.add('hidden');
+              resolve(true);
+              cleanup();
+            };
+            
+            const handleCancel = () => {
+              modal.classList.add('hidden');
+              resolve(false);
+              cleanup();
+            };
+            
+            const cleanup = () => {
+              confirmBtn.removeEventListener('click', handleConfirm);
+              cancelBtn.removeEventListener('click', handleCancel);
+            };
+            
+            confirmBtn.addEventListener('click', handleConfirm);
+            cancelBtn.addEventListener('click', handleCancel);
+            
+            // Close on outside click
+            modal.addEventListener('click', (e) => {
+              if (e.target === modal) {
+                handleCancel();
+              }
+            });
+          });
+        }
+      }
+
+      // Initialize notification manager
+      const notificationManager = new NotificationManager();
+
+      // Custom alert replacement functions
+      function showSuccess(message, options = {}) {
+        return notificationManager.success(message, options);
+      }
+
+      function showError(message, options = {}) {
+        return notificationManager.error(message, options);
+      }
+
+      function showWarning(message, options = {}) {
+        return notificationManager.warning(message, options);
+      }
+
+      function showInfo(message, options = {}) {
+        return notificationManager.info(message, options);
+      }
+
+      function showLoading(message, options = {}) {
+        return notificationManager.loading(message, options);
+      }
+
+      function showConfirm(message, options = {}) {
+        return notificationManager.confirm(message, options);
+      }
+
       function showUserTypeSelection() {
         const userTypeSelection = document.getElementById('user-type-selection');
         const professorForm = document.getElementById('professor-form');
@@ -1127,27 +1522,9 @@
               const studentsSnapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
               
               if (!studentsSnapshot.exists()) {
-                console.log('Student not found in database, creating new account...');
-                // Student doesn't exist, create a new account automatically
-                const newStudent = await this.createStudentAccount(studentId);
-                if (newStudent.success) {
-                  console.log('New student account created successfully');
-                  this.currentUser = {
-                    uid: newStudent.docId,
-                    studentId: studentId,
-                    type: 'student',
-                    profile: newStudent.studentData
-                  };
-
-                  localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
-                  this.userType = 'student';
-                  this.updateProfessorTabVisibility();
-                  this.updateUserInterface();
-
-                  return { success: true, user: this.currentUser, isNewAccount: true };
-                } else {
-                  throw new Error(newStudent.error);
-                }
+                console.log('Student not found in database');
+                // Student doesn't exist - DO NOT auto-create, redirect to registration
+                throw new Error('Student ID not found. Please register first using the "New Student Registration" form.');
               }
 
               console.log('Found existing student in database, loading data...');
@@ -1177,28 +1554,13 @@
               return { success: true, user: this.currentUser };
             } else {
               console.log('Firebase not available, using local storage fallback...');
-              // Fallback: Create account locally if Firebase not available
+              // Fallback: Check local storage for existing accounts
               const localStudents = JSON.parse(localStorage.getItem('sci_high_local_students') || '{}');
               
               if (!localStudents[studentId]) {
-                console.log('Creating new local student account...');
-                // Create new local account
-                localStudents[studentId] = this.createLocalStudentAccount(studentId);
-                localStorage.setItem('sci_high_local_students', JSON.stringify(localStudents));
-                
-                this.currentUser = {
-                  uid: 'local_' + studentId.replace(/-/g, '_'),
-                  studentId: studentId,
-                  type: 'student',
-                  profile: localStudents[studentId]
-                };
-
-                localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
-                this.userType = 'student';
-                this.updateProfessorTabVisibility();
-                this.updateUserInterface();
-
-                return { success: true, user: this.currentUser, isNewAccount: true };
+                console.log('Student not found in local storage');
+                // Student doesn't exist locally - DO NOT auto-create, redirect to registration
+                throw new Error('Student ID not found. Please register first using the "New Student Registration" form.');
               } else {
                 console.log('Found existing local student account...');
                 // Login with existing local account
@@ -1281,6 +1643,129 @@
             console.error('Error creating student account:', error);
             return { success: false, error: 'Failed to create student account: ' + error.message };
           }
+        }
+
+        // Register a new student with complete information
+        async registerStudent(studentData) {
+          try {
+            const { studentId, fullName, academicInfo } = studentData;
+            console.log('Registering new student:', { studentId, fullName, academicInfo });
+            
+            // Check if student ID already exists
+            if (typeof firebase !== 'undefined' && firebase.database) {
+              const existingStudentQuery = await firebase.database().ref('students')
+                .orderByChild('studentId')
+                .equalTo(studentId)
+                .once('value');
+              
+              if (existingStudentQuery.exists()) {
+                throw new Error('Student ID already exists. Please use a different ID or try logging in.');
+              }
+            }
+            
+            const completeStudentData = {
+              studentId,
+              fullName,
+              academicInfo: {
+                level: academicInfo.level,
+                course: academicInfo.course || null,
+                yearLevel: academicInfo.yearLevel || null,
+                strand: academicInfo.strand || null,
+                department: academicInfo.course ? this.getDepartmentFromCourse(academicInfo.course) : null
+              },
+              accountStatus: {
+                isActive: true,
+                isFirstLogin: true,
+                createdBy: 'self-registered',
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+              },
+              progress: {
+                completedQuizzes: [],
+                completedStories: [],
+                totalScore: 0,
+                lastActivity: new Date().toISOString()
+              },
+              gameData: {
+                totalPoints: 0,
+                achievements: [],
+                currentLevel: 1,
+                courseProgress: {
+                  'Web_Design': { unlocked: true, completed: false, progress: 0 },
+                  'Python': { unlocked: true, completed: false, progress: 0 },
+                  'Java': { unlocked: false, completed: false, progress: 0 },
+                  'C': { unlocked: false, completed: false, progress: 0 },
+                  'CPlusPlus': { unlocked: false, completed: false, progress: 0 },
+                  'CSharp': { unlocked: false, completed: false, progress: 0 }
+                }
+              },
+              needsProfileCompletion: false, // Profile is complete since they provided all info
+              accountType: 'student'
+            };
+
+            // Save to Firebase if available
+            if (typeof firebase !== 'undefined' && firebase.database) {
+              const newStudentRef = firebase.database().ref('students').push();
+              await newStudentRef.set(completeStudentData);
+              
+              // Auto-login the newly created student
+              this.currentUser = {
+                uid: newStudentRef.key,
+                studentId: studentId,
+                type: 'student',
+                profile: completeStudentData
+              };
+              this.userType = 'student';
+              localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+              this.updateProfessorTabVisibility();
+              this.updateUserInterface();
+              
+              console.log('Student registered and logged in successfully');
+              return { success: true, user: this.currentUser };
+            } else {
+              // Fallback to local storage
+              console.log('Firebase not available, saving to local storage');
+              const localStudents = JSON.parse(localStorage.getItem('sci_high_local_students') || '{}');
+              
+              if (localStudents[studentId]) {
+                throw new Error('Student ID already exists locally');
+              }
+              
+              localStudents[studentId] = completeStudentData;
+              localStorage.setItem('sci_high_local_students', JSON.stringify(localStudents));
+              
+              // Auto-login the newly created student
+              this.currentUser = {
+                uid: 'local_' + studentId,
+                studentId: studentId,
+                type: 'student',
+                profile: completeStudentData
+              };
+              this.userType = 'student';
+              localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+              this.updateProfessorTabVisibility();
+              this.updateUserInterface();
+              
+              return { success: true, user: this.currentUser };
+            }
+          } catch (error) {
+            console.error('Student registration error:', error);
+            return { success: false, error: error.message };
+          }
+        }
+
+        // Helper function to determine department from course
+        getDepartmentFromCourse(course) {
+          const departmentMap = {
+            'BS Computer Science': 'Computer Science Department',
+            'BS Information Technology': 'Information Technology Department',
+            'BS Information Systems': 'Information Systems Department',
+            'BS Computer Engineering': 'Computer Engineering Department',
+            'BS Software Engineering': 'Software Engineering Department',
+            'BS Data Science': 'Data Science Department',
+            'BS Cybersecurity': 'Cybersecurity Department'
+          };
+          return departmentMap[course] || 'General Studies Department';
         }
 
         // Create local student account for offline mode
@@ -1401,9 +1886,14 @@
           return this.currentUser;
         }
 
-        logout() {
+        async logout() {
           // Show confirmation dialog
-          const confirmLogout = confirm('Are you sure you want to logout?');
+          const confirmLogout = await showConfirm('Are you sure you want to logout?', {
+            title: 'Confirm Logout',
+            icon: '🚪',
+            confirmText: 'Yes, Logout',
+            cancelText: 'Cancel'
+          });
           if (!confirmLogout) {
             return; // User cancelled logout
           }
@@ -1422,7 +1912,11 @@
           this.updateUserInterface();
           
           // Show success message
-          alert('You have been logged out successfully!');
+          showSuccess('You have been logged out successfully!', {
+            title: 'Logged Out',
+            icon: '👋',
+            duration: 3000
+          });
         }
 
         isAuthenticated() {
@@ -1767,7 +2261,10 @@
           // Redirect to professor dashboard
           window.location.href = 'html-pages/professor-dashboard.html';
         } else {
-          alert('Login failed: ' + result.error);
+          showError('Login failed: ' + result.error, {
+            title: 'Professor Login Failed',
+            duration: 5000
+          });
         }
       });
 
@@ -1779,7 +2276,11 @@
         // Validate student ID format (XX-XXXX-XXX)
         const studentIdPattern = /^[0-9]{2}-[0-9]{4}-[0-9]{3}$/;
         if (!studentIdPattern.test(studentId)) {
-          alert('❌ Invalid Student ID format!\n\nPlease use the format: XX-XXXX-XXX\nExample: 24-2024-001\n\n• XX = 2-digit year/batch\n• XXXX = 4-digit year\n• XXX = 3-digit sequence number');
+          showError('Invalid Student ID format!', {
+            title: 'Format Error',
+            icon: '🆔',
+            duration: 6000
+          });
           return;
         }
         
@@ -1789,27 +2290,166 @@
           const result = await authManager.loginStudent(studentId);
           
           if (result.success) {
-            if (result.isNewAccount) {
-              alert('🎉 Welcome! A new account has been created for you. Your progress will be saved automatically.');
-            } else {
-              alert('👋 Welcome back! Your progress has been loaded.');
-            }
+            showSuccess('Welcome back! Your progress has been loaded.', {
+              title: 'Login Successful',
+              icon: '👋',
+              duration: 3000
+            });
             loginModal.classList.add('hidden');
             authManager.redirectToGame();
           } else {
-            alert('❌ Login failed: ' + result.error);
+            // Show specific error message for registration required
+            if (result.error.includes('not found') || result.error.includes('register')) {
+              showError('Student ID not found! Please use the "New Student Registration" form on the right to create your account first.', {
+                title: 'Account Not Found',
+                icon: '📝',
+                duration: 7000
+              });
+            } else {
+              showError(result.error, {
+                title: 'Login Failed',
+                duration: 5000
+              });
+            }
           }
         } catch (error) {
-          console.warn('Firebase login failed, trying offline mode:', error);
-          // Fallback to offline mode
-          const offlineResult = authManager.loginStudentOffline(formData.get('studentId'));
-          if (offlineResult.success) {
-            alert('Welcome! You are playing in offline mode. Progress will be saved locally.');
+          console.warn('Student login error:', error);
+          // Check if it's a registration-required error
+          if (error.message && (error.message.includes('not found') || error.message.includes('register'))) {
+            showError('Student ID not found! Please use the "New Student Registration" form on the right to create your account first.', {
+              title: 'Account Not Found',
+              icon: '📝',
+              duration: 7000
+            });
+          } else {
+            showError(error.message, {
+              title: 'Login Failed',
+              duration: 5000
+            });
+          }
+        }
+      });
+
+      // Student Registration Form Handler
+      document.getElementById('student-register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const studentId = formData.get('newStudentId').trim();
+        const fullName = formData.get('fullName').trim();
+        const academicLevel = formData.get('academicLevel');
+        
+        // Validate required fields
+        if (!studentId || !fullName || !academicLevel) {
+          showError('Please fill in all required fields.', {
+            title: 'Missing Information',
+            icon: '📝',
+            duration: 4000
+          });
+          return;
+        }
+        
+        // Validate student ID format
+        const studentIdPattern = /^[0-9]{2}-[0-9]{4}-[0-9]{3}$/;
+        if (!studentIdPattern.test(studentId)) {
+          showError('Invalid Student ID format! Please use the format: XX-XXXX-XXX (Example: 24-2024-001)', {
+            title: 'Invalid Student ID',
+            icon: '🆔',
+            duration: 5000
+          });
+          return;
+        }
+        
+        // Collect academic info based on level
+        let academicInfo = { level: academicLevel };
+        
+        if (academicLevel === 'college') {
+          const course = formData.get('course');
+          const year = formData.get('collegeYear');
+          if (!course || !year) {
+            showError('Please select both course and year level for college students.', {
+              title: 'Missing College Information',
+              icon: '🏫',
+              duration: 4000
+            });
+            return;
+          }
+          academicInfo.course = course;
+          academicInfo.yearLevel = year;
+        } else if (academicLevel === 'shs') {
+          const strand = formData.get('strand');
+          const grade = formData.get('shsYear');
+          if (!strand || !grade) {
+            showError('Please select both strand and grade level for SHS students.', {
+              title: 'Missing SHS Information',
+              icon: '🏫',
+              duration: 4000
+            });
+            return;
+          }
+          academicInfo.strand = strand;
+          academicInfo.yearLevel = grade;
+        }
+        
+        try {
+          // Create student account with detailed information
+          const result = await authManager.registerStudent({
+            studentId,
+            fullName,
+            academicInfo
+          });
+          
+          if (result.success) {
+            showSuccess(`Account created successfully!\n\n👤 Name: ${fullName}\n🆔 Student ID: ${studentId}\n📚 Level: ${academicLevel}\n\nYou can now start your learning adventure!`, {
+              title: 'Registration Complete',
+              icon: '🎉',
+              duration: 6000
+            });
+            e.target.reset();
+            // Hide academic fields
+            document.getElementById('college-fields').classList.add('hidden');
+            document.getElementById('shs-fields').classList.add('hidden');
+            // Auto-login the newly created student
             loginModal.classList.add('hidden');
             authManager.redirectToGame();
           } else {
-            alert('Login failed: Unable to authenticate');
+            showError('Registration failed: ' + result.error, {
+              title: 'Registration Error',
+              duration: 5000
+            });
           }
+        } catch (error) {
+          console.error('Registration error:', error);
+          showError('Registration failed: ' + error.message, {
+            title: 'Registration Error',
+            duration: 5000
+          });
+        }
+      });
+
+      // Academic Level Change Handler for Registration Form
+      document.querySelector('select[name="academicLevel"]').addEventListener('change', function() {
+        const collegeFields = document.getElementById('college-fields');
+        const shsFields = document.getElementById('shs-fields');
+        
+        // Hide all fields first
+        collegeFields.classList.add('hidden');
+        shsFields.classList.add('hidden');
+        
+        // Show relevant fields based on selection
+        if (this.value === 'college') {
+          collegeFields.classList.remove('hidden');
+          // Make college fields required
+          collegeFields.querySelectorAll('select').forEach(select => select.required = true);
+          shsFields.querySelectorAll('select').forEach(select => select.required = false);
+        } else if (this.value === 'shs') {
+          shsFields.classList.remove('hidden');
+          // Make SHS fields required
+          shsFields.querySelectorAll('select').forEach(select => select.required = true);
+          collegeFields.querySelectorAll('select').forEach(select => select.required = false);
+        } else {
+          // Reset all fields to not required
+          collegeFields.querySelectorAll('select').forEach(select => select.required = false);
+          shsFields.querySelectorAll('select').forEach(select => select.required = false);
         }
       });
 
@@ -1825,18 +2465,28 @@
             loginModal.classList.add('hidden');
             authManager.redirectToGame();
           } else {
-            alert('Login failed: ' + result.error);
+            showError('Login failed: ' + result.error, {
+              title: 'Professor Login Failed',
+              duration: 5000
+            });
           }
         } catch (error) {
           console.warn('Firebase login failed, trying offline mode:', error);
           // Fallback to offline mode
           const offlineResult = authManager.loginGeneralOffline(formData.get('email'));
           if (offlineResult.success) {
-            alert('Welcome! You are playing in offline mode. Progress will be saved locally.');
+            showInfo('Welcome! You are playing in offline mode. Progress will be saved locally.', {
+              title: 'Offline Mode',
+              icon: '📴',
+              duration: 5000
+            });
             loginModal.classList.add('hidden');
             authManager.redirectToGame();
           } else {
-            alert('Login failed: Unable to authenticate');
+            showError('Login failed: Unable to authenticate', {
+              title: 'Authentication Failed',
+              duration: 5000
+            });
           }
         }
       });
@@ -1854,13 +2504,20 @@
         });
         
         if (result.success) {
-          alert('Account created successfully!');
+          showSuccess('Account created successfully!', {
+            title: 'Registration Complete',
+            icon: '🎉',
+            duration: 4000
+          });
           e.target.reset();
           // Auto-login after successful registration
           loginModal.classList.add('hidden');
           authManager.redirectToGame();
         } else {
-          alert('Registration failed: ' + result.error);
+          showError('Registration failed: ' + result.error, {
+            title: 'Registration Error',
+            duration: 5000
+          });
         }
       });
 
@@ -2031,7 +2688,11 @@
           const devPanel = document.getElementById('dev-panel');
           devPanel.classList.toggle('hidden');
           if (!devPanel.classList.contains('hidden')) {
-            alert('🔧 DEV MODE ACTIVATED!\nUse the panel or console commands to create test accounts.');
+            showInfo('DEV MODE ACTIVATED! Use the panel or console commands to create test accounts.', {
+              title: 'Developer Mode',
+              icon: '🔧',
+              duration: 5000
+            });
           }
           devCode = [];
         }
@@ -2042,24 +2703,39 @@
       window.createAdminUser = async () => {
         const admin = await authManager.createAdminUser();
         console.log('Admin user created:', admin);
-        alert('🔧 Admin user created! Professor tab should now be visible.');
+        showSuccess('Admin user created! Professor tab should now be visible.', {
+          title: 'Admin Created',
+          icon: '🔧',
+          duration: 4000
+        });
         return admin;
       };
 
       // Create professor user with Firebase integration
       window.createProfessorUser = async (email, password, fullName, institution) => {
         if (!email || !password || !fullName) {
-          alert('Usage: createProfessorUser("email@domain.com", "password", "Full Name", "Institution (optional)")');
+          showWarning('Usage: createProfessorUser("email@domain.com", "password", "Full Name", "Institution (optional)")', {
+            title: 'Invalid Parameters',
+            icon: '⚠️',
+            duration: 6000
+          });
           return;
         }
         
         const result = await authManager.createProfessorUser(email, password, fullName, institution);
         if (result.success) {
           console.log('Professor user created successfully:', result);
-          alert(`✅ Professor user created!\nEmail: ${email}\nUID: ${result.uid}\nThe professor can now login with their email and password.`);
+          showSuccess(`Professor user created!\nEmail: ${email}\nUID: ${result.uid}\nThe professor can now login with their email and password.`, {
+            title: 'Professor Created',
+            icon: '✅',
+            duration: 6000
+          });
         } else {
           console.error('Failed to create professor user:', result.error);
-          alert(`❌ Failed to create professor user: ${result.error}`);
+          showError(`Failed to create professor user: ${result.error}`, {
+            title: 'Creation Failed',
+            duration: 5000
+          });
         }
         return result;
       };
@@ -2069,10 +2745,17 @@
         const result = await authManager.testFirebaseConnection();
         if (result.success) {
           console.log('✅ Firebase connection test passed');
-          alert('✅ Firebase connection test passed! Check console for details.');
+          showSuccess('Firebase connection test passed! Check console for details.', {
+            title: 'Connection Test',
+            icon: '✅',
+            duration: 4000
+          });
         } else {
           console.error('❌ Firebase connection test failed:', result.error);
-          alert(`❌ Firebase connection test failed: ${result.error}`);
+          showError(`Firebase connection test failed: ${result.error}`, {
+            title: 'Connection Failed',
+            duration: 5000
+          });
         }
         return result;
       };
@@ -2096,7 +2779,11 @@
         authManager.updateUserInterface();
         
         console.log('Sample professor created:', professor);
-        alert('👨‍🏫 Sample professor created!\nEmail: professor@sci-high.edu\nPassword: Prof123!');
+        showSuccess('Sample professor created!\nEmail: professor@sci-high.edu\nPassword: Prof123!', {
+          title: 'Professor Created',
+          icon: '👨‍🏫',
+          duration: 5000
+        });
         return professor;
       };
 
@@ -2136,7 +2823,11 @@
         authManager.updateUserInterface();
         
         console.log('Sample student created:', student);
-        alert('🎓 Sample student created!\nStudent ID: 24-2024-001\nNo password needed!\n\nOther test accounts:\n- 24-2024-002 (Maria Santos)\n- 24-2024-003 (Pedro Garcia)');
+        showSuccess('Sample student created!\nStudent ID: 24-2024-001\nNo password needed!\n\nOther test accounts:\n- 24-2024-002 (Maria Santos)\n- 24-2024-003 (Pedro Garcia)', {
+          title: 'Student Created',
+          icon: '🎓',
+          duration: 6000
+        });
         return student;
       };
 
@@ -2166,7 +2857,11 @@
         authManager.updateUserInterface();
         
         console.log('Sample general user created:', generalUser);
-        alert('🌟 Sample general user created!\nEmail: maria@example.com\nPassword: General123!');
+        showSuccess('Sample general user created!\nEmail: maria@example.com\nPassword: General123!', {
+          title: 'General User Created',
+          icon: '🌟',
+          duration: 5000
+        });
         return generalUser;
       };
 
@@ -2203,7 +2898,11 @@ createRealFirebaseStudent("2024-YOUR-001")  // Create real Firebase student
 
 For advanced tools: openDeveloperTools()
         `);
-        alert('📋 Dev commands shown in console! Press F12 to see all available commands.');
+        showInfo('Dev commands shown in console! Press F12 to see all available commands.', {
+          title: 'Developer Commands',
+          icon: '📋',
+          duration: 5000
+        });
       };
 
       // Developer page access
@@ -2212,7 +2911,11 @@ For advanced tools: openDeveloperTools()
         if (isAuthorized === 'sci-high-dev-2025') {
           window.open('developer.html', '_blank');
         } else {
-          alert('❌ Invalid access key. Developer tools access denied.');
+          showError('Invalid access key. Developer tools access denied.', {
+            title: 'Access Denied',
+            icon: '🔒',
+            duration: 4000
+          });
         }
       };
 
@@ -3036,8 +3739,14 @@ ${key}`;
           this.showStatus('💾 Chat history exported successfully!', 'success');
         }
         
-        clearChatHistory() {
-          if (confirm('Are you sure you want to clear all chat history? This action cannot be undone.')) {
+        async clearChatHistory() {
+          const confirmClear = await showConfirm('Are you sure you want to clear all chat history? This action cannot be undone.', {
+            title: 'Clear Chat History',
+            icon: '🗑️',
+            confirmText: 'Yes, Clear All',
+            cancelText: 'Cancel'
+          });
+          if (confirmClear) {
             this.conversationHistory = [];
             
             // Clear visual chat messages except the welcome message
