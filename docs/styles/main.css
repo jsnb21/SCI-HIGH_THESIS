@@ -1,0 +1,109 @@
+/* SCI-HIGH Main Styles */
+
+@keyframes pulse-glow {
+  from { box-shadow: 0 0 20px #F4CE14; }
+  to { box-shadow: 0 0 30px #F4CE14, 0 0 40px #F4CE14; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes slide-in {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes rank-glow {
+  0%, 100% { box-shadow: 0 0 10px currentColor; }
+  50% { box-shadow: 0 0 20px currentColor, 0 0 30px currentColor; }
+}
+
+.game-bg {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+.neon-border {
+  border: 2px solid transparent;
+  background: linear-gradient(135deg, rgba(244, 206, 20, 0.1), rgba(55, 151, 119, 0.1)) padding-box,
+              linear-gradient(135deg, #F4CE14, #379777) border-box;
+  box-shadow: 0 0 15px rgba(244, 206, 20, 0.3);
+}
+
+.neon-text {
+  text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(244, 206, 20, 0.6), 0 0 30px rgba(244, 206, 20, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Gaming rank styles */
+.rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+.rank-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); }
+.rank-3 { background: linear-gradient(135deg, #CD7F32, #B8860B); }
+
+/* Notification styles */
+.notification {
+  transform: translateX(100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.notification.show {
+  transform: translateX(0);
+}
+
+.notification.slideInRight {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification.slideOutRight {
+  animation: slideOutRight 0.3s ease-in;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Loading animation */
+.loading-progress {
+  animation: progressBar 5s linear forwards;
+}
+
+@keyframes progressBar {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
