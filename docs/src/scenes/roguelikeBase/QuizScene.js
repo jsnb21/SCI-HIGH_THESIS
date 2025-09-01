@@ -118,23 +118,51 @@ export default class QuizScene extends BaseScene {
         // Create main quiz container
         this.quizContainer = this.add.container(centerX, centerY);
         
-        // Create modern quiz box with gradient effect
+        // Create temporary question text to measure height
+        const tempQuestionText = this.add.text(0, 0, this.currentQuestion.question, {
+            fontFamily: 'Arial',
+            fontSize: '22px',
+            fontWeight: 'bold',
+            color: '#ffffff',
+            align: 'center',
+            wordWrap: { width: 620 },
+            lineSpacing: 8
+        }).setOrigin(0.5);
+        
+        const questionHeight = tempQuestionText.height;
+        tempQuestionText.destroy(); // Remove temporary text
+        
+        // Calculate content dimensions based on actual content
+        const answers = this.currentQuestion.options;
+        const numAnswers = answers.length;
+        const buttonHeight = 55;
+        const buttonSpacing = 70;
+        const titleHeight = 60;
+        const questionNumberHeight = 30;
+        const questionPadding = 70; // Increased from 40 to 70 for more space
+        const bottomPadding = 30;
+        
+        // Calculate required height based on actual content
+        const contentHeight = titleHeight + questionNumberHeight + questionHeight + questionPadding + (numAnswers * buttonSpacing) + bottomPadding;
+        const contentWidth = 700;
+        
+        // Create modern quiz box with dynamic size
         const quizBox = this.add.graphics();
-        quizBox.fillGradientStyle(0x1a1a2e, 0x16213e, 0x0f3460, 0x533483);
-        quizBox.fillRoundedRect(-350, -250, 700, 500, 20);
+        quizBox.fillStyle(0x2a2a3a, 1);
+        quizBox.fillRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 20);
         quizBox.lineStyle(4, 0x64ffda);
-        quizBox.strokeRoundedRect(-350, -250, 700, 500, 20);
+        quizBox.strokeRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 20);
         
         // Add glow effect
         const glowBox = this.add.graphics();
         glowBox.lineStyle(8, 0x64ffda, 0.3);
-        glowBox.strokeRoundedRect(-354, -254, 708, 508, 20);
+        glowBox.strokeRoundedRect(-contentWidth/2 - 4, -contentHeight/2 - 4, contentWidth + 8, contentHeight + 8, 20);
         
         this.quizContainer.add([glowBox, quizBox]);
         
         // Title with programming language
         const courseTopic = this.courseTopic || 'Programming';
-        this.titleText = this.add.text(0, -200, `${courseTopic.toUpperCase()} QUIZ CHALLENGE`, {
+        this.titleText = this.add.text(0, -contentHeight/2 + 30, `${courseTopic.toUpperCase()} QUIZ CHALLENGE`, {
             fontFamily: 'Arial',
             fontSize: '28px',
             fontWeight: 'bold',
@@ -144,28 +172,31 @@ export default class QuizScene extends BaseScene {
         this.quizContainer.add(this.titleText);
         
         // Question number indicator
-        const questionNumber = this.add.text(0, -160, 'Question 1 of 1', {
+        const questionNumber = this.add.text(0, -contentHeight/2 + titleHeight + 15, 'Question 1 of 1', {
             fontFamily: 'Arial',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#a0a0a0',
             align: 'center'
         }).setOrigin(0.5);
         this.quizContainer.add(questionNumber);
         
         // Question text with better formatting
-        this.questionText = this.add.text(0, -80, this.currentQuestion.question, {
+        this.questionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + (questionHeight/2) + 10, this.currentQuestion.question, {
             fontFamily: 'Arial',
-            fontSize: '20px',
+            fontSize: '22px',
             fontWeight: 'bold',
             color: '#ffffff',
             align: 'center',
             wordWrap: { width: 620 },
-            lineSpacing: 5
+            lineSpacing: 8
         }).setOrigin(0.5);
         this.quizContainer.add(this.questionText);
         
+        // Calculate start position for answer buttons
+        const buttonStartY = titleHeight + questionNumberHeight + questionHeight + questionPadding - contentHeight/2;
+        
         // Create answer options with modern design
-        this.createAnswerButtons();
+        this.createAnswerButtons(buttonStartY);
         
         // Add instruction text
         const instructionText = this.add.text(0, 200, 'Click on your answer choice', {
@@ -190,10 +221,10 @@ export default class QuizScene extends BaseScene {
         });
     }
 
-    createAnswerButtons() {
+    createAnswerButtons(startOffset) {
         const answers = this.currentQuestion.options;
-        const startY = 20;
-        const buttonHeight = 60;
+        const startY = startOffset || -80; // Start position relative to center
+        const buttonHeight = 55;
         const buttonSpacing = 70;
         
         this.answerButtons = [];
@@ -204,24 +235,24 @@ export default class QuizScene extends BaseScene {
             // Create button container
             const buttonContainer = this.add.container(0, buttonY);
             
-            // Create button background with gradient
+            // Create button background with solid color
             const buttonBg = this.add.graphics();
-            buttonBg.fillGradientStyle(0x2d3748, 0x4a5568, 0x2d3748, 0x4a5568);
-            buttonBg.fillRoundedRect(-300, -25, 600, 50, 10);
+            buttonBg.fillStyle(0x4a5568, 1);
+            buttonBg.fillRoundedRect(-320, -30, 640, 55, 10);
             buttonBg.lineStyle(2, 0x64ffda, 0.5);
-            buttonBg.strokeRoundedRect(-300, -25, 600, 50, 10);
+            buttonBg.strokeRoundedRect(-320, -30, 640, 55, 10);
             
-            // Create answer text
+            // Create answer text with better wrapping and larger font
             const answerText = this.add.text(0, 0, `${String.fromCharCode(65 + i)}. ${answers[i]}`, {
                 fontFamily: 'Arial',
-                fontSize: '16px',
+                fontSize: '18px',
                 color: '#ffffff',
                 align: 'center',
-                wordWrap: { width: 560 }
+                wordWrap: { width: 580 }
             }).setOrigin(0.5);
             
             // Create interactive area
-            const hitArea = this.add.rectangle(0, 0, 600, 50, 0x000000, 0);
+            const hitArea = this.add.rectangle(0, 0, 640, 55, 0x000000, 0);
             hitArea.setInteractive();
             
             buttonContainer.add([buttonBg, answerText, hitArea]);
@@ -241,24 +272,22 @@ export default class QuizScene extends BaseScene {
             hitArea.on('pointerover', () => {
                 if (!this.answerButtons[i].isSelected) {
                     buttonBg.clear();
-                    buttonBg.fillGradientStyle(0x4a5568, 0x64ffda, 0x4a5568, 0x64ffda);
-                    buttonBg.fillRoundedRect(-300, -25, 600, 50, 10);
+                    buttonBg.fillStyle(0x64ffda, 0.3);
+                    buttonBg.fillRoundedRect(-320, -30, 640, 55, 10);
                     buttonBg.lineStyle(2, 0x64ffda);
-                    buttonBg.strokeRoundedRect(-300, -25, 600, 50, 10);
+                    buttonBg.strokeRoundedRect(-320, -30, 640, 55, 10);
                 }
             });
-            
+
             hitArea.on('pointerout', () => {
                 if (!this.answerButtons[i].isSelected) {
                     buttonBg.clear();
-                    buttonBg.fillGradientStyle(0x2d3748, 0x4a5568, 0x2d3748, 0x4a5568);
-                    buttonBg.fillRoundedRect(-300, -25, 600, 50, 10);
+                    buttonBg.fillStyle(0x4a5568, 1);
+                    buttonBg.fillRoundedRect(-320, -30, 640, 55, 10);
                     buttonBg.lineStyle(2, 0x64ffda, 0.5);
-                    buttonBg.strokeRoundedRect(-300, -25, 600, 50, 10);
+                    buttonBg.strokeRoundedRect(-320, -30, 640, 55, 10);
                 }
-            });
-            
-            // Add click handler
+            });            // Add click handler
             hitArea.on('pointerdown', () => {
                 this.selectAnswer(i);
             });
@@ -280,20 +309,20 @@ export default class QuizScene extends BaseScene {
                 // Selected answer
                 button.background.clear();
                 if (isCorrect) {
-                    button.background.fillGradientStyle(0x38a169, 0x68d391, 0x38a169, 0x68d391);
+                    button.background.fillStyle(0x38a169, 1);
                 } else {
-                    button.background.fillGradientStyle(0xe53e3e, 0xfc8181, 0xe53e3e, 0xfc8181);
+                    button.background.fillStyle(0xe53e3e, 1);
                 }
-                button.background.fillRoundedRect(-300, -25, 600, 50, 10);
+                button.background.fillRoundedRect(-320, -30, 640, 55, 10);
                 button.background.lineStyle(3, 0xffffff);
-                button.background.strokeRoundedRect(-300, -25, 600, 50, 10);
+                button.background.strokeRoundedRect(-320, -30, 640, 55, 10);
             } else if (index === correctIndex && !isCorrect) {
                 // Show correct answer if user was wrong
                 button.background.clear();
-                button.background.fillGradientStyle(0x38a169, 0x68d391, 0x38a169, 0x68d391);
-                button.background.fillRoundedRect(-300, -25, 600, 50, 10);
+                button.background.fillStyle(0x38a169, 1);
+                button.background.fillRoundedRect(-320, -30, 640, 55, 10);
                 button.background.lineStyle(2, 0xffffff, 0.7);
-                button.background.strokeRoundedRect(-300, -25, 600, 50, 10);
+                button.background.strokeRoundedRect(-320, -30, 640, 55, 10);
             }
             
             // Disable interaction
