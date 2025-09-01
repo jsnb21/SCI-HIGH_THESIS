@@ -124,7 +124,7 @@ export default class ComputerLab extends Phaser.Scene {
             if (selectedItem.heading === "Web Design") {
                 LoadingScreen.transitionToCourse(this, 'WebDesignScene', 'Web Design Course', { topic: 'webdesign' });
             } else if (selectedItem.heading === "Python") {
-                LoadingScreen.transitionToCourse(this, 'PythonScene', 'Python Course', { topic: 'python' });
+                LoadingScreen.transitionToCourse(this, 'MainGameplay', 'Python Course - Roguelike Mode', { topic: 'python' });
             } else if (selectedItem.heading === "Java"){
                 LoadingScreen.transitionToCourse(this, 'JavaScene', 'Java Course', { topic: 'java' });
             } else if (selectedItem.heading === "C"){

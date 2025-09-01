@@ -40,6 +40,9 @@ import CSProgrammingScene from '/src/scenes/comlabscenes/CProg.js';
 import CPlusplusScene from '/src/scenes/comlabscenes/Cplusplus.js';
 import CSharpScene from '/src/scenes/comlabscenes/CSharp.js';
 
+// Roguelike Scenes
+import MainGameplay from '/src/scenes/roguelikeBase/main_gameplay.js';
+
 // Quiz Scenes
 import BaseQuizScene from '/src/scenes/quizscenes/BaseQuizScene.js';
 import WebDesignQuizScene from '/src/scenes/quizscenes/WebDesignQuizScene.js';
@@ -122,6 +125,8 @@ const config = {
     CSProgrammingScene,
     CPlusplusScene,
     CSharpScene,
+    /* Roguelike Scenes */
+    MainGameplay,
     /* Quiz Scenes */
     BaseQuizScene,
     WebDesignQuizScene,
