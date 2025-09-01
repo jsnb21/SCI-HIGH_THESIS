@@ -49,6 +49,12 @@ export default class QuizScene extends BaseScene {
         // Initialize answer submission flag
         this.answerSubmitted = false;
         
+        // Listen for timer events from main gameplay scene
+        const mainScene = this.scene.get('MainGameplay');
+        if (mainScene) {
+            mainScene.events.on('timer-expired', this.handleTimerExpired, this);
+        }
+        
         // Create background overlay that doesn't cover the UI area
         // Score at 30px, Streak at 65px + font height, so start overlay at 100px from top
         const overlayHeight = this.scale.height - 100;
@@ -939,5 +945,22 @@ export default class QuizScene extends BaseScene {
                 this.scene.stop();
             }
         });
+    }
+
+    handleTimerExpired() {
+        // Immediately close quiz scene when timer runs out
+        if (!this.answerSubmitted) {
+            this.answerSubmitted = true;
+            this.returnToGameplay(false); // Return as incorrect since time ran out
+        }
+    }
+
+    destroy() {
+        // Clean up event listeners
+        const mainScene = this.scene.get('MainGameplay');
+        if (mainScene) {
+            mainScene.events.off('timer-expired', this.handleTimerExpired, this);
+        }
+        super.destroy();
     }
 }

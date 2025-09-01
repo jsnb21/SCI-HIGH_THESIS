@@ -616,6 +616,9 @@ export default class MainGameplay extends BaseScene {
     }
 
     onTimerExpired() {
+        // Emit timer expired event for any listening scenes (like QuizScene)
+        this.events.emit('timer-expired');
+        
         // Stop the timer
         if (this.timerEvent) {
             this.timerEvent.remove();
