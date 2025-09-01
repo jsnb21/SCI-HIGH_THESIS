@@ -767,14 +767,10 @@ export default class MainGameplay extends BaseScene {
         this.quizActive = true;
         this.currentQuiz = enemy;
         
-        // Save current game state
-        const gameState = this.saveGameState();
-        
-        // Start quiz scene with course topic - let QuizScene handle quiz data loading
-        this.scene.pause();
+        // Launch quiz scene without pausing main scene (so timer continues)
+        // No need to save game state since scene stays active
         this.scene.launch('QuizScene', {
             courseTopic: this.courseTopic,
-            gameState: gameState,
             enemyToDestroy: enemy
         });
     }
@@ -870,9 +866,6 @@ export default class MainGameplay extends BaseScene {
     }
 
     handleQuizCompletion(data) {
-        // Load the returned game state
-        this.loadGameState(data.gameState);
-        
         // Handle quiz results
         if (data.correct) {
             // Correct answer - give rewards
@@ -884,10 +877,13 @@ export default class MainGameplay extends BaseScene {
             console.log('Wrong answer!');
         }
         
-        // Destroy the enemy
+        // Destroy the enemy that was collided with
         if (data.enemyToDestroy) {
             this.destroyEnemy(data.enemyToDestroy);
         }
+        
+        // Resume game
+        this.quizActive = false;
     }
 
     updateScoreDisplay() {

@@ -25,7 +25,6 @@ export default class QuizScene extends BaseScene {
     init(data) {
         // Receive data from main gameplay scene
         this.courseTopic = data.courseTopic;
-        this.gameplayState = data.gameState;
         this.enemyData = data.enemyToDestroy;
         this.selectedAnswer = null;
         this.currentQuestion = null;
@@ -359,7 +358,6 @@ export default class QuizScene extends BaseScene {
         // Prepare result data to send back
         const resultData = {
             correct: isCorrect,
-            gameState: this.gameplayState,
             enemyToDestroy: this.enemyData
         };
         
@@ -372,8 +370,7 @@ export default class QuizScene extends BaseScene {
             duration: 300,
             ease: 'Power2.easeIn',
             onComplete: () => {
-                // Resume main gameplay scene and emit completion event
-                this.scene.resume('MainGameplay');
+                // Send completion event to main gameplay scene and stop quiz scene
                 this.scene.get('MainGameplay').events.emit('quiz-completed', resultData);
                 this.scene.stop();
             }
