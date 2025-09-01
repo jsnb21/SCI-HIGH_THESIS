@@ -839,25 +839,8 @@ export default class MainGameplay extends BaseScene {
         // Add a slight red tint to distinguish from player
         enemySprite.setTint(0xff8888);
         
-        // Create enemy glow effect
-        const enemyGlow = this.add.circle(worldX, worldY, this.TILE_SIZE * 0.4, 0xff4444, 0.3);
-        enemyGlow.setDepth(3);
-        
-        // Animate enemy glow
-        this.tweens.add({
-            targets: enemyGlow,
-            scaleX: 1.3,
-            scaleY: 1.3,
-            alpha: 0.1,
-            duration: 1500,
-            ease: 'Sine.easeInOut',
-            yoyo: true,
-            repeat: -1
-        });
-        
         // Store sprite references for cleanup
         this.enemySprites.push(enemySprite);
-        this.enemySprites.push(enemyGlow);
         
         // Return enemy data
         return {
@@ -866,7 +849,7 @@ export default class MainGameplay extends BaseScene {
             worldX: worldX,
             worldY: worldY,
             sprite: enemySprite,
-            glow: enemyGlow,
+            glow: null, // No glow effect
             type: spriteKey,
             hp: 100
         };
@@ -1323,24 +1306,31 @@ export default class MainGameplay extends BaseScene {
     }
 
     destroyEnemy(enemy) {
+        if (!enemy) return;
+        
         // Remove enemy from array
         const enemyIndex = this.enemies.indexOf(enemy);
         if (enemyIndex > -1) {
             this.enemies.splice(enemyIndex, 1);
         }
         
-        // Destroy enemy sprites
+        // Destroy enemy sprites and stop any ongoing animations
         if (enemy.sprite) {
+            this.tweens.killTweensOf(enemy.sprite);
             enemy.sprite.destroy();
         }
-        if (enemy.glow) {
-            enemy.glow.destroy();
-        }
         
-        // Remove from sprite array
-        this.enemySprites = this.enemySprites.filter(sprite => 
-            sprite !== enemy.sprite && sprite !== enemy.glow
-        );
+        // Remove from sprite array - be more thorough
+        this.enemySprites = this.enemySprites.filter(sprite => {
+            if (sprite === enemy.sprite) {
+                return false; // Remove this sprite
+            }
+            // Also remove any destroyed/invalid sprites
+            if (!sprite || !sprite.scene) {
+                return false;
+            }
+            return true;
+        });
         
         // Create explosion effect
         this.createEnemyDestroyEffect(enemy.worldX, enemy.worldY);
