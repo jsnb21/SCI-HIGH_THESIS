@@ -140,8 +140,8 @@ export default class DataCollectionScreen extends BaseScene {
         gradient.fillRect(0, 0, this.scale.width, this.scale.height);
         
         // Create main panel
-        const panelWidth = 600;
-        const panelHeight = 400;
+        const panelWidth = 700;
+        const panelHeight = 550;
         const panelX = this.scale.width / 2;
         const panelY = this.scale.height / 2;
         
@@ -156,7 +156,7 @@ export default class DataCollectionScreen extends BaseScene {
         const panelGlow = this.add.rectangle(panelX, panelY, panelWidth + 10, panelHeight + 10, 0x0f4c75, 0.3);
         
         // Title
-        const title = this.add.text(panelX, panelY - 120, 'Session Complete!', {
+        const title = this.add.text(panelX, panelY - 220, 'Session Complete!', {
             fontFamily: 'Arial',
             fontSize: '32px',
             fontWeight: 'bold',
@@ -167,7 +167,7 @@ export default class DataCollectionScreen extends BaseScene {
         }).setOrigin(0.5);
         
         // Instruction text
-        const instruction = this.add.text(panelX, panelY - 60, 'Please enter your full name to save your progress:', {
+        const instruction = this.add.text(panelX, panelY - 180, 'Please enter your information to save your progress:', {
             fontFamily: 'Arial',
             fontSize: '20px',
             color: '#ffffff',
@@ -176,90 +176,14 @@ export default class DataCollectionScreen extends BaseScene {
             align: 'center'
         }).setOrigin(0.5);
         
-        // Create input field background
-        const inputBg = this.add.rectangle(panelX, panelY - 10, 400, 50, 0x0a1628);
-        inputBg.setStrokeStyle(2, 0x3282b8);
-        
-        // Create HTML input element
-        const inputElement = document.createElement('input');
-        inputElement.type = 'text';
-        inputElement.placeholder = 'Enter your full name...';
-        inputElement.style.position = 'absolute';
-        
-        // Calculate position relative to the game canvas
-        const gameCanvas = document.querySelector('#game canvas') || document.querySelector('canvas');
-        const canvasRect = gameCanvas ? gameCanvas.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
-        const scaleX = canvasRect.width / this.scale.width;
-        const scaleY = canvasRect.height / this.scale.height;
-        
-        inputElement.style.left = `${canvasRect.left + (panelX - 200) * scaleX}px`;
-        inputElement.style.top = `${canvasRect.top + (panelY - 35) * scaleY}px`;
-        inputElement.style.width = `${396 * scaleX}px`;
-        inputElement.style.height = `${46 * scaleY}px`;
-        inputElement.style.fontSize = `${18 * Math.min(scaleX, scaleY)}px`;
-        inputElement.style.padding = '10px';
-        inputElement.style.border = 'none';
-        inputElement.style.borderRadius = '5px';
-        inputElement.style.backgroundColor = '#0a1628';
-        inputElement.style.color = '#ffffff';
-        inputElement.style.outline = 'none';
-        inputElement.style.zIndex = '1000';
-        inputElement.style.fontFamily = 'Arial, sans-serif';
-        
-        // Disable Phaser keyboard capture when input is focused
-        inputElement.addEventListener('focus', () => {
-            console.log('Input focused - disabling Phaser keyboard');
-            if (this.input && this.input.keyboard) {
-                this.input.keyboard.enabled = false;
-            }
-        });
-        
-        inputElement.addEventListener('blur', () => {
-            console.log('Input blurred - enabling Phaser keyboard');
-            if (this.input && this.input.keyboard) {
-                this.input.keyboard.enabled = true;
-            }
-        });
-        
-        // Handle keyboard events properly
-        inputElement.addEventListener('keydown', (event) => {
-            // Stop event from propagating to Phaser
-            event.stopPropagation();
-            
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                this.handleSubmit();
-            }
-            
-            // Allow all other keys to work normally
-        });
-        
-        // Also handle keypress for additional compatibility
-        inputElement.addEventListener('keypress', (event) => {
-            event.stopPropagation();
-            
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                this.handleSubmit();
-            }
-        });
-        
-        // Add input to DOM
-        document.body.appendChild(inputElement);
-        
-        // Small delay before focusing to ensure proper setup
-        this.time.delayedCall(100, () => {
-            inputElement.focus();
-        });
-        
-        // Store reference for cleanup
-        this.inputElement = inputElement;
+        // Create form fields
+        this.createFormFields(panelX, panelY);
         
         // Submit button
-        const submitBg = this.add.rectangle(panelX, panelY + 80, 200, 50, 0x0f4c75);
+        const submitBg = this.add.rectangle(panelX, panelY + 200, 200, 50, 0x0f4c75);
         submitBg.setStrokeStyle(2, 0x3282b8);
         
-        const submitText = this.add.text(panelX, panelY + 80, 'Submit & Continue', {
+        const submitText = this.add.text(panelX, panelY + 200, 'Submit & Continue', {
             fontFamily: 'Arial',
             fontSize: '18px',
             fontWeight: 'bold',
@@ -267,7 +191,7 @@ export default class DataCollectionScreen extends BaseScene {
         }).setOrigin(0.5);
         
         // Loading indicator (hidden initially)
-        this.loadingText = this.add.text(panelX, panelY + 140, 'Saving data...', {
+        this.loadingText = this.add.text(panelX, panelY + 260, 'Saving data...', {
             fontFamily: 'Arial',
             fontSize: '16px',
             color: '#ffaa00',
@@ -289,7 +213,7 @@ export default class DataCollectionScreen extends BaseScene {
             });
         
         // Entrance animations
-        const animatedElements = [panelGlow, panel, title, instruction, inputBg, submitBg, submitText];
+        const animatedElements = [panelGlow, panel, title, instruction, submitBg, submitText];
         
         animatedElements.forEach((element, index) => {
             element.setAlpha(0);
@@ -302,23 +226,176 @@ export default class DataCollectionScreen extends BaseScene {
             });
         });
     }
+
+    createFormFields(centerX, centerY) {
+        // Calculate position relative to the game canvas
+        const gameCanvas = document.querySelector('#game canvas') || document.querySelector('canvas');
+        const canvasRect = gameCanvas ? gameCanvas.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+        const scaleX = canvasRect.width / this.scale.width;
+        const scaleY = canvasRect.height / this.scale.height;
+
+        const fieldWidth = 300;
+        const fieldHeight = 40;
+        const labelStyle = {
+            fontFamily: 'Arial',
+            fontSize: '16px',
+            color: '#ffffff',
+            fontWeight: 'bold'
+        };
+
+        // Form fields data
+        const fields = [
+            { label: 'First Name:', key: 'firstName', type: 'input', placeholder: 'Enter first name...' },
+            { label: 'Last Name:', key: 'lastName', type: 'input', placeholder: 'Enter last name...' },
+            { label: 'Department:', key: 'department', type: 'select', options: ['Senior High School Department', 'College Department'] },
+            { label: 'Strand/Year:', key: 'strandYear', type: 'input', placeholder: 'Enter strand or year level...' }
+        ];
+
+        this.formElements = {};
+        
+        fields.forEach((field, index) => {
+            const yOffset = -120 + (index * 80);
+            
+            // Label
+            this.add.text(centerX - 250, centerY + yOffset, field.label, labelStyle);
+            
+            // Field background
+            const fieldBg = this.add.rectangle(centerX + 50, centerY + yOffset, fieldWidth, fieldHeight, 0x0a1628);
+            fieldBg.setStrokeStyle(2, 0x3282b8);
+
+            if (field.type === 'input') {
+                // Create text input
+                const inputElement = document.createElement('input');
+                inputElement.type = 'text';
+                inputElement.placeholder = field.placeholder;
+                this.setupInputElement(inputElement, centerX + 50, centerY + yOffset, fieldWidth, fieldHeight, canvasRect, scaleX, scaleY);
+                this.formElements[field.key] = inputElement;
+                
+            } else if (field.type === 'select') {
+                // Create dropdown
+                const selectElement = document.createElement('select');
+                selectElement.style.position = 'absolute';
+                selectElement.style.backgroundColor = '#0a1628';
+                selectElement.style.color = '#ffffff';
+                selectElement.style.border = 'none';
+                selectElement.style.borderRadius = '5px';
+                selectElement.style.fontFamily = 'Arial, sans-serif';
+                selectElement.style.outline = 'none';
+                selectElement.style.zIndex = '1000';
+                selectElement.style.cursor = 'pointer';
+
+                // Add default option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Select department...';
+                defaultOption.disabled = true;
+                defaultOption.selected = true;
+                selectElement.appendChild(defaultOption);
+
+                // Add options
+                field.options.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option;
+                    optionElement.textContent = option;
+                    optionElement.style.backgroundColor = '#0a1628';
+                    optionElement.style.color = '#ffffff';
+                    selectElement.appendChild(optionElement);
+                });
+
+                this.setupInputElement(selectElement, centerX + 50, centerY + yOffset, fieldWidth, fieldHeight, canvasRect, scaleX, scaleY);
+                this.formElements[field.key] = selectElement;
+            }
+        });
+
+        // Focus first input after a delay
+        this.time.delayedCall(100, () => {
+            if (this.formElements.firstName) {
+                this.formElements.firstName.focus();
+            }
+        });
+    }
+
+    setupInputElement(element, x, y, width, height, canvasRect, scaleX, scaleY) {
+        element.style.position = 'absolute';
+        element.style.left = `${canvasRect.left + (x - width/2) * scaleX}px`;
+        element.style.top = `${canvasRect.top + (y - height/2) * scaleY}px`;
+        element.style.width = `${(width - 10) * scaleX}px`;
+        element.style.height = `${(height - 6) * scaleY}px`;
+        element.style.fontSize = `${16 * Math.min(scaleX, scaleY)}px`;
+        element.style.padding = '8px';
+        element.style.border = 'none';
+        element.style.borderRadius = '5px';
+        element.style.backgroundColor = '#0a1628';
+        element.style.color = '#ffffff';
+        element.style.outline = 'none';
+        element.style.zIndex = '1000';
+        element.style.fontFamily = 'Arial, sans-serif';
+
+        // Disable Phaser keyboard capture when focused
+        element.addEventListener('focus', () => {
+            if (this.input && this.input.keyboard) {
+                this.input.keyboard.enabled = false;
+            }
+        });
+
+        element.addEventListener('blur', () => {
+            if (this.input && this.input.keyboard) {
+                this.input.keyboard.enabled = true;
+            }
+        });
+
+        // Handle keyboard events
+        element.addEventListener('keydown', (event) => {
+            event.stopPropagation();
+            
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                this.handleSubmit();
+            }
+        });
+
+        element.addEventListener('keypress', (event) => {
+            event.stopPropagation();
+            
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                this.handleSubmit();
+            }
+        });
+
+        // Add to DOM
+        document.body.appendChild(element);
+    }
     
     async handleSubmit() {
-        const fullName = this.inputElement.value.trim();
+        // Get form data
+        const firstName = this.formElements.firstName?.value.trim() || '';
+        const lastName = this.formElements.lastName?.value.trim() || '';
+        const department = this.formElements.department?.value || '';
+        const strandYear = this.formElements.strandYear?.value.trim() || '';
         
-        if (!fullName) {
+        // Validation
+        const missingFields = [];
+        if (!firstName) missingFields.push('First Name');
+        if (!lastName) missingFields.push('Last Name');
+        if (!department) missingFields.push('Department');
+        if (!strandYear) missingFields.push('Strand/Year');
+        
+        if (missingFields.length > 0) {
             // Show error message
-            const errorText = this.add.text(this.scale.width / 2, this.scale.height / 2 + 140, 'Please enter your full name', {
+            const errorText = this.add.text(this.scale.width / 2, this.scale.height / 2 + 180, 
+                `Please fill in: ${missingFields.join(', ')}`, {
                 fontFamily: 'Arial',
                 fontSize: '16px',
-                color: '#ff4444'
+                color: '#ff4444',
+                align: 'center'
             }).setOrigin(0.5);
             
             this.tweens.add({
                 targets: errorText,
                 alpha: 0,
                 duration: 2000,
-                delay: 1000,
+                delay: 2000,
                 onComplete: () => errorText.destroy()
             });
             return;
@@ -342,10 +419,17 @@ export default class DataCollectionScreen extends BaseScene {
                 console.warn('Could not parse user data from localStorage:', e);
             }
             
+            // Combine first and last name
+            const fullName = `${firstName} ${lastName}`;
+            
             // Prepare gameplay data for upload
             const gameplayData = {
                 studentId: studentId,
                 studentName: fullName,
+                firstName: firstName,
+                lastName: lastName,
+                department: department,
+                strandYear: strandYear,
                 courseTopic: this.gameplayData.courseTopic,
                 sessionData: {
                     correctAnswers: this.gameplayData.correctAnswers,
@@ -363,8 +447,22 @@ export default class DataCollectionScreen extends BaseScene {
             
             console.log('Uploading gameplay data:', gameplayData);
             
-            // Upload to Firebase using our own database connection
+            // Upload detailed session data to Firebase
             await this.uploadToFirebase(gameplayData);
+            
+            // Update career stats (import the service dynamically)
+            try {
+                const { default: careerStatsService } = await import('../services/careerStatsService.js');
+                await careerStatsService.updateCareerStats(
+                    gameplayData.studentId, 
+                    fullName, // Use full name for career stats
+                    gameplayData.sessionData
+                );
+                console.log('Career stats updated successfully');
+            } catch (careerError) {
+                console.warn('Failed to update career stats, but session data was saved:', careerError);
+                // Don't fail the whole process if career stats update fails
+            }
             
             // Success - proceed to results
             this.proceedToResults();
@@ -408,31 +506,31 @@ export default class DataCollectionScreen extends BaseScene {
     }
     
     proceedToResults() {
-        // Clean up input element and restore Phaser keyboard
-        if (this.inputElement && this.inputElement.parentNode) {
-            this.inputElement.parentNode.removeChild(this.inputElement);
-        }
-        
-        // Re-enable Phaser keyboard
-        if (this.input && this.input.keyboard) {
-            this.input.keyboard.enabled = true;
-        }
+        // Clean up all form elements and restore Phaser keyboard
+        this.cleanupFormElements();
         
         // Proceed to ResultScreen with original data
         this.scene.start('ResultScreen', this.gameplayData);
     }
     
-    shutdown() {
-        // Clean up input element on scene shutdown and restore Phaser keyboard
-        if (this.inputElement && this.inputElement.parentNode) {
-            this.inputElement.parentNode.removeChild(this.inputElement);
+    cleanupFormElements() {
+        if (this.formElements) {
+            Object.values(this.formElements).forEach(element => {
+                if (element && element.parentNode) {
+                    element.parentNode.removeChild(element);
+                }
+            });
         }
         
         // Re-enable Phaser keyboard
         if (this.input && this.input.keyboard) {
             this.input.keyboard.enabled = true;
         }
-        
+    }
+    
+    shutdown() {
+        // Clean up form elements on scene shutdown and restore Phaser keyboard
+        this.cleanupFormElements();
         super.shutdown();
     }
 }
