@@ -29,6 +29,14 @@ export default class MainGameplay extends BaseScene {
         
         // Course data
         this.courseTopic = null;
+        
+        // Enemy system
+        this.enemies = [];
+        this.maxEnemies = 5;
+        this.enemySprites = [];
+        this.enemyMoveTimer = 0;
+        this.enemyMoveInterval = 1000; // Move enemies every 1 second
+        this.enemiesMoving = false;
     }
 
     init(data) {
@@ -38,8 +46,12 @@ export default class MainGameplay extends BaseScene {
     }
 
     preload() {
-        // Load the goblin sprite
+        // Load the goblin sprite for player
         this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
+        
+        // Load enemy sprites (using existing sprites from the project)
+        this.load.image('quizbox', 'assets/sprites/enemies/quizbox.png');
+        this.load.image('bigSlime', 'assets/sprites/enemies/bigSlime.png');
         
         // Load background tiles (optional - you can add your own)
         this.load.image('grassTile', 'assets/img/bg/grass.png');
@@ -59,6 +71,9 @@ export default class MainGameplay extends BaseScene {
         
         // Create player sprite
         this.createPlayer();
+        
+        // Create enemies
+        this.createEnemies();
         
         // Setup input controls
         this.setupInput();
@@ -181,6 +196,316 @@ export default class MainGameplay extends BaseScene {
         });
     }
 
+    createEnemies() {
+        // Clear existing enemies
+        this.enemies = [];
+        if (this.enemySprites) {
+            this.enemySprites.forEach(sprite => sprite.destroy());
+        }
+        this.enemySprites = [];
+        
+        // Available enemy types
+        const enemyTypes = ['quizbox', 'bigSlime', 'goblinNerd'];
+        
+        // Generate random enemy positions (avoiding player starting position)
+        const playerTileX = Math.floor(this.MAP_WIDTH / 2);
+        const playerTileY = Math.floor(this.MAP_HEIGHT / 2);
+        
+        for (let i = 0; i < this.maxEnemies; i++) {
+            let enemyTileX, enemyTileY;
+            let attempts = 0;
+            
+            // Try to find a valid position (not on player, not on other enemies)
+            do {
+                enemyTileX = Phaser.Math.Between(0, this.MAP_WIDTH - 1);
+                enemyTileY = Phaser.Math.Between(0, this.MAP_HEIGHT - 1);
+                attempts++;
+            } while (
+                attempts < 50 && (
+                    (enemyTileX === playerTileX && enemyTileY === playerTileY) ||
+                    this.enemies.some(enemy => enemy.tileX === enemyTileX && enemy.tileY === enemyTileY)
+                )
+            );
+            
+            // If we found a valid position, create the enemy
+            if (attempts < 50) {
+                const enemyType = Phaser.Utils.Array.GetRandom(enemyTypes);
+                const enemy = this.createEnemy(enemyTileX, enemyTileY, enemyType);
+                this.enemies.push(enemy);
+            }
+        }
+        
+        console.log(`Created ${this.enemies.length} enemies`);
+    }
+
+    createEnemy(tileX, tileY, spriteKey) {
+        // Calculate world position
+        const worldX = this.boardOffsetX + (tileX * this.TILE_SIZE) + this.TILE_SIZE/2;
+        const worldY = this.boardOffsetY + (tileY * this.TILE_SIZE) + this.TILE_SIZE/2;
+        
+        // Create enemy sprite
+        const enemySprite = this.add.image(worldX, worldY, spriteKey);
+        enemySprite.setDisplaySize(this.TILE_SIZE * 0.7, this.TILE_SIZE * 0.7);
+        enemySprite.setDepth(8);
+        
+        // Add a slight red tint to distinguish from player
+        enemySprite.setTint(0xff8888);
+        
+        // Create enemy glow effect
+        const enemyGlow = this.add.circle(worldX, worldY, this.TILE_SIZE * 0.4, 0xff4444, 0.3);
+        enemyGlow.setDepth(3);
+        
+        // Animate enemy glow
+        this.tweens.add({
+            targets: enemyGlow,
+            scaleX: 1.3,
+            scaleY: 1.3,
+            alpha: 0.1,
+            duration: 1500,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+        
+        // Store sprite references for cleanup
+        this.enemySprites.push(enemySprite);
+        this.enemySprites.push(enemyGlow);
+        
+        // Return enemy data
+        return {
+            tileX: tileX,
+            tileY: tileY,
+            worldX: worldX,
+            worldY: worldY,
+            sprite: enemySprite,
+            glow: enemyGlow,
+            type: spriteKey,
+            hp: 100
+        };
+    }
+
+    checkEnemyCollision(worldX, worldY) {
+        // Convert world coordinates to tile coordinates
+        const playerTileX = Math.floor((worldX - this.boardOffsetX) / this.TILE_SIZE);
+        const playerTileY = Math.floor((worldY - this.boardOffsetY) / this.TILE_SIZE);
+        
+        // Check if player is on the same tile as any enemy
+        const collidedEnemy = this.enemies.find(enemy => 
+            enemy.tileX === playerTileX && enemy.tileY === playerTileY
+        );
+        
+        if (collidedEnemy) {
+            console.log(`Player collided with ${collidedEnemy.type} at (${playerTileX}, ${playerTileY})`);
+            this.handleEnemyCollision(collidedEnemy);
+            return true;
+        }
+        
+        return false;
+    }
+
+    handleEnemyCollision(enemy) {
+        // Remove enemy from array
+        const enemyIndex = this.enemies.indexOf(enemy);
+        if (enemyIndex > -1) {
+            this.enemies.splice(enemyIndex, 1);
+        }
+        
+        // Destroy enemy sprites
+        if (enemy.sprite) {
+            enemy.sprite.destroy();
+        }
+        if (enemy.glow) {
+            enemy.glow.destroy();
+        }
+        
+        // Remove from sprite array
+        this.enemySprites = this.enemySprites.filter(sprite => 
+            sprite !== enemy.sprite && sprite !== enemy.glow
+        );
+        
+        // Create explosion effect
+        this.createEnemyDestroyEffect(enemy.worldX, enemy.worldY);
+        
+        // Respawn a new enemy if under max count
+        if (this.enemies.length < this.maxEnemies) {
+            this.spawnNewEnemy();
+        }
+        
+        console.log(`Enemy destroyed! Remaining enemies: ${this.enemies.length}`);
+    }
+
+    createEnemyDestroyEffect(x, y) {
+        // Create explosion particles
+        for (let i = 0; i < 8; i++) {
+            const particle = this.add.circle(x, y, 6, 0xff4444, 0.8);
+            particle.setDepth(15);
+            
+            const angle = (i / 8) * Math.PI * 2;
+            const distance = 30 + Math.random() * 20;
+            const targetX = x + Math.cos(angle) * distance;
+            const targetY = y + Math.sin(angle) * distance;
+            
+            this.tweens.add({
+                targets: particle,
+                x: targetX,
+                y: targetY,
+                alpha: 0,
+                scale: 0.2,
+                duration: 400,
+                ease: 'Power2',
+                onComplete: () => particle.destroy()
+            });
+        }
+    }
+
+    spawnNewEnemy() {
+        // Find a random empty position
+        const enemyTypes = ['quizbox', 'bigSlime', 'goblinNerd'];
+        const playerTileX = Math.floor((this.player.x - this.boardOffsetX) / this.TILE_SIZE);
+        const playerTileY = Math.floor((this.player.y - this.boardOffsetY) / this.TILE_SIZE);
+        
+        let attempts = 0;
+        let enemyTileX, enemyTileY;
+        
+        do {
+            enemyTileX = Phaser.Math.Between(0, this.MAP_WIDTH - 1);
+            enemyTileY = Phaser.Math.Between(0, this.MAP_HEIGHT - 1);
+            attempts++;
+        } while (
+            attempts < 50 && (
+                (enemyTileX === playerTileX && enemyTileY === playerTileY) ||
+                this.enemies.some(enemy => enemy.tileX === enemyTileX && enemy.tileY === enemyTileY)
+            )
+        );
+        
+        if (attempts < 50) {
+            const enemyType = Phaser.Utils.Array.GetRandom(enemyTypes);
+            const enemy = this.createEnemy(enemyTileX, enemyTileY, enemyType);
+            this.enemies.push(enemy);
+            console.log(`Spawned new ${enemyType} enemy at (${enemyTileX}, ${enemyTileY})`);
+        }
+    }
+
+    moveEnemiesAwayFromPlayer() {
+        if (this.enemies.length === 0 || this.enemiesMoving) return;
+        
+        this.enemiesMoving = true;
+        const playerTileX = Math.floor((this.player.x - this.boardOffsetX) / this.TILE_SIZE);
+        const playerTileY = Math.floor((this.player.y - this.boardOffsetY) / this.TILE_SIZE);
+        
+        let movedEnemies = 0;
+        const totalEnemies = this.enemies.length;
+        
+        this.enemies.forEach(enemy => {
+            const bestMove = this.findBestEnemyMove(enemy, playerTileX, playerTileY);
+            
+            if (bestMove) {
+                // Update enemy tile position
+                enemy.tileX = bestMove.x;
+                enemy.tileY = bestMove.y;
+                
+                // Calculate world position
+                const newWorldX = this.boardOffsetX + (bestMove.x * this.TILE_SIZE) + this.TILE_SIZE / 2;
+                const newWorldY = this.boardOffsetY + (bestMove.y * this.TILE_SIZE) + this.TILE_SIZE / 2;
+                
+                // Animate enemy movement
+                this.tweens.add({
+                    targets: enemy.sprite,
+                    x: newWorldX,
+                    y: newWorldY,
+                    duration: 300,
+                    ease: 'Power2',
+                    onComplete: () => {
+                        movedEnemies++;
+                        if (movedEnemies >= totalEnemies) {
+                            this.enemiesMoving = false;
+                        }
+                    }
+                });
+            } else {
+                // Enemy couldn't move, still count it as processed
+                movedEnemies++;
+                if (movedEnemies >= totalEnemies) {
+                    this.enemiesMoving = false;
+                }
+            }
+        });
+    }
+
+    findBestEnemyMove(enemy, playerTileX, playerTileY) {
+        const deltaX = enemy.tileX - playerTileX;
+        const deltaY = enemy.tileY - playerTileY;
+        
+        // Define all possible moves in order of preference
+        const allMoves = [
+            {x: 1, y: 0}, {x: -1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1},
+            {x: 1, y: 1}, {x: 1, y: -1}, {x: -1, y: 1}, {x: -1, y: -1}
+        ];
+        
+        // Score each move based on how much it increases distance from player
+        const scoredMoves = allMoves.map(move => {
+            const newTileX = enemy.tileX + move.x;
+            const newTileY = enemy.tileY + move.y;
+            
+            // Skip invalid moves
+            if (!this.isValidEnemyMove(newTileX, newTileY, enemy)) {
+                return { ...move, score: -1000, x: newTileX, y: newTileY };
+            }
+            
+            // Calculate distance from player after this move
+            const newDeltaX = newTileX - playerTileX;
+            const newDeltaY = newTileY - playerTileY;
+            const newDistance = Math.sqrt(newDeltaX * newDeltaX + newDeltaY * newDeltaY);
+            const currentDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            // Base score: how much distance increases
+            let score = (newDistance - currentDistance) * 100;
+            
+            // Bonus for moving away from player in the preferred direction
+            if ((deltaX > 0 && move.x > 0) || (deltaX < 0 && move.x < 0)) score += 50;
+            if ((deltaY > 0 && move.y > 0) || (deltaY < 0 && move.y < 0)) score += 50;
+            
+            // Bonus for diagonal movement (more distance)
+            if (move.x !== 0 && move.y !== 0) score += 20;
+            
+            // Penalty for staying too close to edges (to encourage movement toward center when possible)
+            if (newTileX <= 1 || newTileX >= this.MAP_WIDTH - 2) score -= 30;
+            if (newTileY <= 1 || newTileY >= this.MAP_HEIGHT - 2) score -= 30;
+            
+            // Large bonus for moving away when very close to player
+            if (currentDistance <= 2) {
+                score += 100;
+            }
+            
+            return { ...move, score, x: newTileX, y: newTileY };
+        });
+        
+        // Sort by score (highest first) and pick the best valid move
+        scoredMoves.sort((a, b) => b.score - a.score);
+        const bestMove = scoredMoves.find(move => move.score > -1000);
+        
+        return bestMove || null;
+    }
+
+    isValidEnemyMove(tileX, tileY, movingEnemy) {
+        // Check boundaries
+        if (tileX < 0 || tileX >= this.MAP_WIDTH || tileY < 0 || tileY >= this.MAP_HEIGHT) {
+            return false;
+        }
+        
+        // Check if position is occupied by player
+        const playerTileX = Math.floor((this.player.x - this.boardOffsetX) / this.TILE_SIZE);
+        const playerTileY = Math.floor((this.player.y - this.boardOffsetY) / this.TILE_SIZE);
+        if (tileX === playerTileX && tileY === playerTileY) {
+            return false;
+        }
+        
+        // Check if position is occupied by another enemy
+        return !this.enemies.some(enemy => 
+            enemy !== movingEnemy && enemy.tileX === tileX && enemy.tileY === tileY
+        );
+    }
+
     setupInput() {
         // Create cursor keys for arrow key input
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -299,13 +624,20 @@ export default class MainGameplay extends BaseScene {
         return { x, y };
     }
 
-    update() {
+    update(time, delta) {
         // Handle keyboard input for 8-directional movement
         this.handleKeyboardInput();
         
         // Update player glow position
         if (this.playerGlow) {
             this.playerGlow.setPosition(this.playerSprite.x, this.playerSprite.y);
+        }
+        
+        // Update enemy movement timer
+        this.enemyMoveTimer += delta;
+        if (this.enemyMoveTimer >= this.enemyMoveInterval && !this.enemiesMoving) {
+            this.moveEnemiesAwayFromPlayer();
+            this.enemyMoveTimer = 0;
         }
     }
 
@@ -352,6 +684,11 @@ export default class MainGameplay extends BaseScene {
         
         if (targetX < minX || targetX > maxX || targetY < minY || targetY > maxY) {
             return; // Can't move outside map
+        }
+        
+        // Check for enemy collision at target position
+        if (this.checkEnemyCollision(targetX, targetY)) {
+            return; // Handle enemy collision and don't move
         }
         
         // Store direction for sprite rotation/animation
