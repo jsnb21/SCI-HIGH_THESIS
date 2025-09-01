@@ -48,6 +48,7 @@ export default class QuizScene extends BaseScene {
         
         // Initialize answer submission flag
         this.answerSubmitted = false;
+        this.timerExpired = false; // Add timer expiration flag
         
         // Listen for timer events from main gameplay scene
         const mainScene = this.scene.get('MainGameplay');
@@ -265,9 +266,9 @@ export default class QuizScene extends BaseScene {
         const titleHeight = 50; // Reduced from 80 to 50
         const questionNumberHeight = 0; // Remove question number area
         const questionHeight = 100;
-        const instructionHeight = 50;
+        const instructionHeight = 120; // Increased from 80 to 120 for more space for note visibility
         const draggableAreaHeight = 300;
-        const submitAreaHeight = 120; // Increased space above submit button
+        const submitAreaHeight = 80; // Reduced from 120 to 80 for less space above submit
         
         const contentHeight = titleHeight + questionNumberHeight + questionHeight + instructionHeight + draggableAreaHeight + submitAreaHeight;
         const contentWidth = maxWidth;
@@ -320,7 +321,7 @@ export default class QuizScene extends BaseScene {
         this.quizContainer.add(descText);
         
         // Instruction text - same style as multiple choice
-        const instructionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + instructionHeight, 'Drag code blocks to arrange them in correct order', {
+        const instructionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + 60, 'Drag code blocks to arrange them in correct order', {
             fontFamily: 'Arial',
             fontSize: '16px',
             color: '#64ffda',
@@ -328,6 +329,16 @@ export default class QuizScene extends BaseScene {
             fontStyle: 'italic'
         }).setOrigin(0.5);
         this.quizContainer.add(instructionText);
+        
+        // Add swap behavior note with more space
+        const swapNote = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + 90, 'Note: Unplaced blocks can swap with placed blocks, but placed blocks cannot be removed', {
+            fontFamily: 'Arial',
+            fontSize: '12px',
+            color: '#a0a0a0',
+            align: 'center',
+            fontStyle: 'italic'
+        }).setOrigin(0.5);
+        this.quizContainer.add(swapNote);
         
         // Store dimensions for responsive block creation
         this.contentWidth = contentWidth;
@@ -636,8 +647,8 @@ export default class QuizScene extends BaseScene {
     }
 
     createSubmitButton() {
-        // Position the submit button at the bottom of the content area
-        const submitY = this.contentHeight/2 - 40;
+        // Position the submit button at the bottom of the content area with more space above
+        const submitY = this.contentHeight/2 - 60; // Increased from -40 to -60 for more space above
         
         // Create submit button with same style as multiple choice
         const submitBtn = this.add.graphics();
@@ -682,8 +693,8 @@ export default class QuizScene extends BaseScene {
     }
 
     checkDragDropAnswer() {
-        // Prevent multiple submissions
-        if (this.answerSubmitted) return;
+        // Prevent multiple submissions and check for timer expiration first
+        if (this.answerSubmitted || this.timerExpired) return;
         this.answerSubmitted = true;
         
         // Disable submit button
@@ -756,9 +767,11 @@ export default class QuizScene extends BaseScene {
             });
         }
         
-        // Show result after a brief delay
+        // Show result after a brief delay (only if timer hasn't expired)
         this.time.delayedCall(400, () => {
-            this.showResult(isCorrect);
+            if (!this.timerExpired) {
+                this.showResult(isCorrect);
+            }
         });
     }
 
@@ -836,7 +849,8 @@ export default class QuizScene extends BaseScene {
     }
 
     selectAnswer(selectedIndex) {
-        if (this.selectedAnswer !== null) return; // Prevent multiple selections
+        // Prevent multiple selections and check for timer expiration first
+        if (this.selectedAnswer !== null || this.timerExpired) return;
         
         this.selectedAnswer = selectedIndex;
         const correctIndex = this.currentQuestion.correctIndex;
@@ -870,13 +884,18 @@ export default class QuizScene extends BaseScene {
             button.hitArea.removeInteractive();
         });
         
-        // Show result after a brief delay
+        // Show result after a brief delay (only if timer hasn't expired)
         this.time.delayedCall(400, () => {
-            this.showResult(isCorrect);
+            if (!this.timerExpired) {
+                this.showResult(isCorrect);
+            }
         });
     }
 
     showResult(isCorrect) {
+        // Don't show result if timer has expired
+        if (this.timerExpired) return;
+        
         // Create result overlay
         this.resultContainer = this.add.container(this.scale.width / 2, this.scale.height / 2 + 300);
         
@@ -918,13 +937,18 @@ export default class QuizScene extends BaseScene {
             ease: 'Back.easeOut'
         });
         
-        // Return to gameplay after delay
+        // Return to gameplay after delay (only if timer hasn't expired)
         this.time.delayedCall(1200, () => {
-            this.returnToGameplay(isCorrect);
+            if (!this.timerExpired) {
+                this.returnToGameplay(isCorrect);
+            }
         });
     }
 
     returnToGameplay(isCorrect) {
+        // Don't proceed if timer has expired (scene should already be stopping)
+        if (this.timerExpired) return;
+        
         // Prepare result data to send back
         const resultData = {
             correct: isCorrect,
@@ -948,10 +972,28 @@ export default class QuizScene extends BaseScene {
     }
 
     handleTimerExpired() {
-        // Immediately close quiz scene when timer runs out
-        if (!this.answerSubmitted) {
-            this.answerSubmitted = true;
-            this.returnToGameplay(false); // Return as incorrect since time ran out
+        // Immediately close quiz scene when timer runs out - highest priority
+        if (!this.timerExpired) {
+            this.timerExpired = true;
+            this.answerSubmitted = true; // Prevent any answer submission
+            
+            // Cancel any pending delayed calls
+            if (this.time && this.time.removeAllEvents) {
+                this.time.removeAllEvents();
+            }
+            
+            // Immediately return to gameplay without any animations or delays
+            const resultData = {
+                correct: false,
+                enemyToDestroy: this.enemyData
+            };
+            
+            // Send completion event and stop scene immediately
+            const mainScene = this.scene.get('MainGameplay');
+            if (mainScene && mainScene.events) {
+                mainScene.events.emit('quiz-completed', resultData);
+            }
+            this.scene.stop();
         }
     }
 
