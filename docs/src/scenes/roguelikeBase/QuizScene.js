@@ -45,12 +45,16 @@ export default class QuizScene extends BaseScene {
     create() {
         super.create();
         
-        // Create full screen background overlay
+        // Create background overlay that doesn't cover the UI area
+        // Score at 30px, Streak at 65px + font height, so start overlay at 100px from top
+        const overlayHeight = this.scale.height - 100;
+        const overlayY = 100 + (overlayHeight / 2);
+        
         this.backgroundOverlay = this.add.rectangle(
             this.scale.width / 2, 
-            this.scale.height / 2, 
+            overlayY, 
             this.scale.width, 
-            this.scale.height, 
+            overlayHeight, 
             0x000000, 
             0.85
         );

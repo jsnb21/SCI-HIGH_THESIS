@@ -175,6 +175,9 @@ export default class MainGameplay extends BaseScene {
     }
 
     createBackground() {
+        // Create animated starfield background
+        this.createStarfield();
+        
         // Calculate centering offsets for the game board
         const boardWidth = this.MAP_WIDTH * this.TILE_SIZE;
         const boardHeight = this.MAP_HEIGHT * this.TILE_SIZE;
@@ -201,22 +204,90 @@ export default class MainGameplay extends BaseScene {
                 const tileX = offsetX + (x * this.TILE_SIZE);
                 const tileY = offsetY + (y * this.TILE_SIZE);
                 
+                // Get course-specific colors
+                const colors = this.getCourseColors(this.courseTopic);
+                
                 // Create background tile with alternating colors for visibility
                 const tile = this.add.rectangle(
                     tileX + this.TILE_SIZE/2, 
                     tileY + this.TILE_SIZE/2, 
                     this.TILE_SIZE, 
                     this.TILE_SIZE, 
-                    (x + y) % 2 === 0 ? 0x2d5a27 : 0x1e3a1c, // Dark green alternating pattern
+                    (x + y) % 2 === 0 ? colors.dark : colors.darker, // Course-specific alternating pattern
                     0.8
                 );
                 
                 // Add border
-                tile.setStrokeStyle(2, 0x4a7c59, 0.3);
+                tile.setStrokeStyle(2, colors.border, 0.3);
                 
                 this.backgroundGroup.add(tile);
             }
         }
+    }
+
+    createStarfield() {
+        // Create animated starfield background
+        this.stars = [];
+        const numStars = 100;
+        
+        for (let i = 0; i < numStars; i++) {
+            const star = this.add.circle(
+                Phaser.Math.Between(0, this.scale.width),
+                Phaser.Math.Between(0, this.scale.height),
+                Phaser.Math.FloatBetween(0.5, 2),
+                0xffffff,
+                Phaser.Math.FloatBetween(0.3, 0.9)
+            );
+            
+            star.setDepth(-10); // Behind everything
+            star.setScrollFactor(0); // Fixed to camera
+            
+            // Give each star random movement properties
+            star.speedX = Phaser.Math.FloatBetween(-20, -5);
+            star.speedY = Phaser.Math.FloatBetween(-5, 5);
+            star.twinkleSpeed = Phaser.Math.Between(2000, 4000);
+            
+            // Add twinkling effect
+            this.tweens.add({
+                targets: star,
+                alpha: 0.1,
+                duration: star.twinkleSpeed,
+                ease: 'Sine.easeInOut',
+                yoyo: true,
+                repeat: -1,
+                delay: Phaser.Math.Between(0, 2000)
+            });
+            
+            this.stars.push(star);
+        }
+        
+        // Create star movement update loop
+        this.time.addEvent({
+            delay: 50, // Update every 50ms
+            callback: this.updateStars,
+            callbackScope: this,
+            loop: true
+        });
+    }
+
+    updateStars() {
+        this.stars.forEach(star => {
+            // Move star
+            star.x += star.speedX * 0.05;
+            star.y += star.speedY * 0.05;
+            
+            // Wrap around screen
+            if (star.x < -10) {
+                star.x = this.scale.width + 10;
+                star.y = Phaser.Math.Between(0, this.scale.height);
+            }
+            if (star.y < -10) {
+                star.y = this.scale.height + 10;
+            }
+            if (star.y > this.scale.height + 10) {
+                star.y = -10;
+            }
+        });
     }
 
     createPlayer() {
@@ -317,7 +388,7 @@ export default class MainGameplay extends BaseScene {
                 blur: 3,
                 fill: true
             }
-        }).setOrigin(0.5, 0).setScrollFactor(0);
+        }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(1000);
         
         // Don't start the timer event yet - will be started after countdown
         this.timerEvent = null;
@@ -357,6 +428,45 @@ export default class MainGameplay extends BaseScene {
                 fill: true
             }
         }).setOrigin(0, 0).setScrollFactor(0);
+    }
+
+    getFormattedCourseName(topic) {
+        // Convert topic to stylized display name
+        const topicMap = {
+            'python': '🐍 PYTHON',
+            'java': '☕ JAVA',
+            'c': '⚡ C LANG',
+            'cpp': '⚙️ C++',
+            'csharp': '💎 C#',
+            'webdesign': '🌐 WEB DESIGN',
+            'javascript': '🟨 JAVASCRIPT'
+        };
+        
+        return topicMap[topic?.toLowerCase()] || `📚 ${(topic || 'PROGRAMMING').toUpperCase()}`;
+    }
+
+    getCourseColors(topic) {
+        // Return course-specific color schemes
+        const colorSchemes = {
+            'webdesign': {
+                dark: 0x1a237e,     // Dark blue
+                darker: 0x0d1460,   // Darker blue
+                border: 0x3f51b5    // Blue border
+            },
+            'python': {
+                dark: 0x2d5a27,     // Dark green
+                darker: 0x1e3a1c,   // Darker green
+                border: 0x4a7c59    // Green border
+            },
+            'java': {
+                dark: 0x5d4037,     // Dark orange/brown
+                darker: 0x3e2723,   // Darker orange/brown
+                border: 0x8d6e63    // Orange/brown border
+            }
+        };
+        
+        // Default to green if course not specified
+        return colorSchemes[topic?.toLowerCase()] || colorSchemes.python;
     }
 
     updateScore(points) {
@@ -649,9 +759,14 @@ export default class MainGameplay extends BaseScene {
         }
     }
 
+    addTime(seconds) {
+        // Add time but cap at 60 seconds (1 minute)
+        this.gameTimer = Math.min(this.gameTimer + seconds, 60);
+    }
+
     collectTimerIcon(icon) {
-        // Add 5 seconds to the timer
-        this.gameTimer += 5;
+        // Add 5 seconds to the timer (capped at 60 seconds)
+        this.addTime(5);
         
         // Update timer display immediately
         const minutes = Math.floor(this.gameTimer / 60);
@@ -905,7 +1020,7 @@ export default class MainGameplay extends BaseScene {
             
             // Correct answer - give rewards with streak bonus
             this.updateScore(totalScore);
-            this.gameTimer += 10;
+            this.addTime(10);
             this.updateTimerDisplay();
             this.updateStreakDisplay();
             
@@ -968,11 +1083,11 @@ export default class MainGameplay extends BaseScene {
         const originalX = 20;
         const originalY = 65;
         
-        // Create shake animation
+        // Create horizontal-only shake animation
         this.tweens.add({
             targets: this.streakText,
             x: originalX + Phaser.Math.Between(-intensity, intensity),
-            y: originalY + Phaser.Math.Between(-intensity, intensity),
+            y: originalY, // Keep Y position fixed
             duration: duration,
             ease: 'Power2',
             yoyo: true,
@@ -1143,7 +1258,7 @@ export default class MainGameplay extends BaseScene {
         if (isCorrect) {
             // Correct answer - give rewards
             this.updateScore(100);
-            this.gameTimer += 10;
+            this.addTime(10);
             
             // Update timer display
             const minutes = Math.floor(this.gameTimer / 60);
@@ -1445,23 +1560,37 @@ export default class MainGameplay extends BaseScene {
     }
 
     addCourseDisplay() {
-        // Add course topic display in the top-right corner
+        // Add stylized course topic display in the top-right corner
         if (this.courseTopic) {
-            const courseDisplay = this.add.text(this.scale.width - 16, 16, [
-                `Course: ${this.courseTopic.toUpperCase()}`,
-                'Roguelike Mode'
-            ], {
+            const courseDisplayName = this.getFormattedCourseName(this.courseTopic);
+            const courseDisplay = this.add.text(this.scale.width - 20, 30, courseDisplayName, {
                 fontFamily: 'Arial',
-                fontSize: '16px',
-                color: '#ffff00',
-                backgroundColor: '#000080',
-                padding: { x: 10, y: 8 },
-                alpha: 0.9,
-                align: 'right'
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: '#00ffff', // Cyan color
+                stroke: '#000080', // Dark blue stroke
+                strokeThickness: 2,
+                shadow: {
+                    offsetX: 2,
+                    offsetY: 2,
+                    color: '#000040',
+                    blur: 4,
+                    fill: true
+                }
             });
             courseDisplay.setOrigin(1, 0);
             courseDisplay.setScrollFactor(0);
             courseDisplay.setDepth(100);
+            
+            // Add subtle glow effect to course name
+            this.tweens.add({
+                targets: courseDisplay,
+                alpha: 0.7,
+                duration: 1500,
+                ease: 'Sine.easeInOut',
+                yoyo: true,
+                repeat: -1
+            });
         }
     }
 
