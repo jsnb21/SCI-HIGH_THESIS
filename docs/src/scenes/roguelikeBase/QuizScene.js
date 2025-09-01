@@ -26,6 +26,7 @@ export default class QuizScene extends BaseScene {
         // Receive data from main gameplay scene
         this.courseTopic = data.courseTopic;
         this.enemyData = data.enemyToDestroy;
+        this.intensity = data.intensity || 1;
         this.selectedAnswer = null;
         this.currentQuestion = null;
         
@@ -72,7 +73,19 @@ export default class QuizScene extends BaseScene {
     }
 
     loadQuizData() {
-        // Get quiz data based on course topic
+        // Check intensity level for quiz type
+        if (this.intensity >= 2) {
+            // Load drag-and-drop questions from main gameplay scene
+            const mainScene = this.scene.get('MainGameplay');
+            if (mainScene && mainScene.getDragDropQuestions) {
+                this.currentQuestion = mainScene.getDragDropQuestions(this.courseTopic);
+                this.currentQuestion.isDragDrop = true;
+                console.log('Loaded drag-and-drop question:', this.currentQuestion);
+                return;
+            }
+        }
+        
+        // Get quiz data based on course topic (normal multiple choice)
         const topic = this.courseTopic || 'python';
         let quizData = null;
         
@@ -119,7 +132,13 @@ export default class QuizScene extends BaseScene {
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2;
         
-        // Create main quiz container
+        // Check if this is a drag-and-drop question
+        if (this.currentQuestion.isDragDrop) {
+            this.createDragDropInterface(centerX, centerY);
+            return;
+        }
+        
+        // Create main quiz container for normal multiple choice
         this.quizContainer = this.add.container(centerX, centerY);
         
         // Create temporary question text to measure height
@@ -223,6 +242,249 @@ export default class QuizScene extends BaseScene {
             duration: 500,
             ease: 'Back.easeOut'
         });
+    }
+
+    createDragDropInterface(centerX, centerY) {
+        // Create main quiz container
+        this.quizContainer = this.add.container(centerX, centerY);
+        
+        // Create background
+        const bg = this.add.rectangle(0, 0, 800, 600, 0x2c3e50);
+        bg.setStrokeStyle(3, 0x34495e);
+        this.quizContainer.add(bg);
+        
+        // Title
+        const titleText = this.add.text(0, -250, this.currentQuestion.title, {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#ffffff',
+            align: 'center',
+            wordWrap: { width: 750 }
+        }).setOrigin(0.5);
+        this.quizContainer.add(titleText);
+        
+        // Description
+        const descText = this.add.text(0, -200, this.currentQuestion.description, {
+            fontFamily: 'Arial',
+            fontSize: '18px',
+            color: '#bdc3c7',
+            align: 'center',
+            wordWrap: { width: 700 }
+        }).setOrigin(0.5);
+        this.quizContainer.add(descText);
+        
+        // Create shuffled blocks and drop zones
+        this.createDragDropBlocks();
+        
+        // Submit button
+        this.createSubmitButton();
+        
+        // Add entrance animation
+        this.quizContainer.setScale(0.8);
+        this.quizContainer.setAlpha(0);
+        
+        this.tweens.add({
+            targets: this.quizContainer,
+            scaleX: 1,
+            scaleY: 1,
+            alpha: 1,
+            duration: 500,
+            ease: 'Back.easeOut'
+        });
+    }
+
+    createDragDropBlocks() {
+        const blocks = [...this.currentQuestion.blocks];
+        const correctOrder = this.currentQuestion.correctOrder;
+        
+        // Shuffle blocks for dragging
+        Phaser.Utils.Array.Shuffle(blocks);
+        
+        this.dragBlocks = [];
+        this.dropZones = [];
+        this.currentOrder = new Array(blocks.length).fill(null);
+        
+        // Create drag blocks (left side)
+        blocks.forEach((block, index) => {
+            const blockObj = this.add.rectangle(-250, -100 + (index * 60), 350, 50, 0x3498db);
+            blockObj.setStrokeStyle(2, 0x2980b9);
+            
+            const blockText = this.add.text(-250, -100 + (index * 60), block, {
+                fontFamily: 'monospace',
+                fontSize: '14px',
+                color: '#ffffff',
+                align: 'center',
+                wordWrap: { width: 330 }
+            }).setOrigin(0.5);
+            
+            // Make interactive
+            blockObj.setInteractive({ draggable: true });
+            blockText.setInteractive({ draggable: true });
+            
+            // Store data
+            blockObj.originalText = block;
+            blockObj.textObj = blockText;
+            blockText.blockObj = blockObj;
+            blockText.originalText = block;
+            
+            this.setupDragEvents(blockObj, blockText);
+            
+            this.quizContainer.add([blockObj, blockText]);
+            this.dragBlocks.push({ block: blockObj, text: blockText, originalText: block });
+        });
+        
+        // Create drop zones (right side)
+        for (let i = 0; i < blocks.length; i++) {
+            const dropZone = this.add.rectangle(200, -100 + (i * 60), 350, 50, 0x95a5a6);
+            dropZone.setStrokeStyle(2, 0x7f8c8d);
+            dropZone.setAlpha(0.3);
+            
+            const label = this.add.text(200, -100 + (i * 60), `${i + 1}. Drop here`, {
+                fontFamily: 'Arial',
+                fontSize: '14px',
+                color: '#2c3e50',
+                align: 'center'
+            }).setOrigin(0.5);
+            
+            dropZone.setInteractive({ dropZone: true });
+            dropZone.index = i;
+            dropZone.label = label;
+            
+            this.quizContainer.add([dropZone, label]);
+            this.dropZones.push(dropZone);
+        }
+    }
+
+    setupDragEvents(blockObj, blockText) {
+        // Store initial offsets between block and text
+        const textOffsetX = blockText.x - blockObj.x;
+        const textOffsetY = blockText.y - blockObj.y;
+        
+        // Set up drag events for the block
+        blockObj.on('dragstart', (pointer, dragX, dragY) => {
+            blockObj.setFillStyle(0xffff00); // Yellow highlight
+            blockText.setColor('#000000'); // Dark text for visibility
+            
+            // Store the offset from mouse to block center when drag starts
+            blockObj.dragOffsetX = pointer.worldX - (blockObj.x + this.quizContainer.x);
+            blockObj.dragOffsetY = pointer.worldY - (blockObj.y + this.quizContainer.y);
+        });
+        
+        blockObj.on('drag', (pointer, dragX, dragY) => {
+            // Calculate new position relative to container, accounting for initial offset
+            const newX = pointer.worldX - this.quizContainer.x - blockObj.dragOffsetX;
+            const newY = pointer.worldY - this.quizContainer.y - blockObj.dragOffsetY;
+            
+            // Update block position
+            blockObj.x = newX;
+            blockObj.y = newY;
+            
+            // Update text position to stay with the block
+            blockText.x = newX + textOffsetX;
+            blockText.y = newY + textOffsetY;
+        });
+        
+        blockObj.on('dragend', () => {
+            blockObj.setFillStyle(0x3498db); // Back to original blue
+            blockText.setColor('#ffffff'); // Back to white text
+        });
+        
+        // Set up drag events for the text (should move the block too)
+        blockText.on('dragstart', (pointer, dragX, dragY) => {
+            blockObj.setFillStyle(0xffff00); // Yellow highlight
+            blockText.setColor('#000000'); // Dark text for visibility
+            
+            // Store the offset from mouse to text position when drag starts
+            blockText.dragOffsetX = pointer.worldX - (blockText.x + this.quizContainer.x);
+            blockText.dragOffsetY = pointer.worldY - (blockText.y + this.quizContainer.y);
+        });
+        
+        blockText.on('drag', (pointer, dragX, dragY) => {
+            // Calculate new text position relative to container, accounting for initial offset
+            const newTextX = pointer.worldX - this.quizContainer.x - blockText.dragOffsetX;
+            const newTextY = pointer.worldY - this.quizContainer.y - blockText.dragOffsetY;
+            
+            // Update text position
+            blockText.x = newTextX;
+            blockText.y = newTextY;
+            
+            // Update block position to stay with the text
+            blockObj.x = newTextX - textOffsetX;
+            blockObj.y = newTextY - textOffsetY;
+        });
+        
+        blockText.on('dragend', () => {
+            blockObj.setFillStyle(0x3498db); // Back to original blue
+            blockText.setColor('#ffffff'); // Back to white text
+        });
+        
+        // Drop zone events
+        this.input.on('drop', (pointer, gameObject, dropZone) => {
+            if (this.dropZones.includes(dropZone)) {
+                // Clear previous item in this slot
+                if (this.currentOrder[dropZone.index]) {
+                    const prevItem = this.currentOrder[dropZone.index];
+                    prevItem.x = -250;
+                    prevItem.y = -100 + (this.dragBlocks.findIndex(db => db.block === prevItem) * 60);
+                }
+                
+                // Place new item
+                gameObject.x = dropZone.x;
+                gameObject.y = dropZone.y;
+                if (gameObject.textObj) {
+                    gameObject.textObj.x = dropZone.x;
+                    gameObject.textObj.y = dropZone.y;
+                    this.currentOrder[dropZone.index] = gameObject;
+                } else if (gameObject.blockObj) {
+                    gameObject.blockObj.x = dropZone.x;
+                    gameObject.blockObj.y = dropZone.y;
+                    this.currentOrder[dropZone.index] = gameObject.blockObj;
+                }
+                
+                // Update drop zone appearance
+                dropZone.setAlpha(0.7);
+                dropZone.label.setText(`${dropZone.index + 1}.`);
+            }
+        });
+    }
+
+    createSubmitButton() {
+        const submitBtn = this.add.rectangle(0, 220, 200, 50, 0x27ae60);
+        submitBtn.setStrokeStyle(2, 0x229954);
+        
+        const submitText = this.add.text(0, 220, 'Submit Order', {
+            fontFamily: 'Arial',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        
+        submitBtn.setInteractive();
+        submitBtn.on('pointerdown', () => this.checkDragDropAnswer());
+        
+        this.quizContainer.add([submitBtn, submitText]);
+    }
+
+    checkDragDropAnswer() {
+        const userOrder = this.currentOrder.map(item => {
+            if (item) {
+                return item.originalText || item.textObj.originalText;
+            }
+            return null;
+        });
+        
+        const correctTexts = this.currentQuestion.correctOrder.map(index => 
+            this.currentQuestion.blocks[index]
+        );
+        
+        const isCorrect = userOrder.every((text, index) => text === correctTexts[index]);
+        
+        console.log('User order:', userOrder);
+        console.log('Correct order:', correctTexts);
+        console.log('Is correct:', isCorrect);
+        
+        this.returnToGameplay(isCorrect);
     }
 
     createAnswerButtons(startOffset) {

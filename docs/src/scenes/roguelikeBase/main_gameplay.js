@@ -35,6 +35,11 @@ export default class MainGameplay extends BaseScene {
         this.highestStreak = 0;
         this.baseScore = 100;
         
+        // INTENSITY system
+        this.enemiesDefeated = 0;
+        this.intensity = 1; // Level 1 = normal quizzes, Level 2 = drag-and-drop
+        this.intensityThreshold = 10; // Enemies needed to increase intensity
+        
         // Enemy system
         this.enemies = [];
         this.maxEnemies = 5;
@@ -75,6 +80,10 @@ export default class MainGameplay extends BaseScene {
         // Initialize/reset streak system
         this.streak = 0;
         this.highestStreak = 0;
+        
+        // Initialize/reset INTENSITY system
+        this.enemiesDefeated = 0;
+        this.intensity = 1;
         
         console.log('MainGameplay initialized with topic:', this.courseTopic);
     }
@@ -467,6 +476,90 @@ export default class MainGameplay extends BaseScene {
         
         // Default to green if course not specified
         return colorSchemes[topic?.toLowerCase()] || colorSchemes.python;
+    }
+
+    getDragDropQuestions(topic) {
+        // Sample drag-and-drop code arrangement questions
+        const questionSets = {
+            'python': [
+                {
+                    title: "Arrange the Python code blocks in correct order:",
+                    description: "Create a simple greeting program",
+                    blocks: [
+                        'name = input("Enter your name: ")',
+                        'greeting = "Hello, " + name',
+                        'print(greeting)',
+                        'print("Welcome to Python!")'
+                    ],
+                    correctOrder: [0, 1, 2, 3]
+                },
+                {
+                    title: "Arrange the Python code blocks in correct order:",
+                    description: "Calculate area of a rectangle",
+                    blocks: [
+                        'length = float(input("Enter length: "))',
+                        'width = float(input("Enter width: "))',
+                        'area = length * width',
+                        'print(f"Area: {area}")'
+                    ],
+                    correctOrder: [0, 1, 2, 3]
+                },
+                {
+                    title: "Arrange the Python code blocks in correct order:",
+                    description: "Simple loop with condition",
+                    blocks: [
+                        'for i in range(5):',
+                        '    if i % 2 == 0:',
+                        '        print(f"{i} is even")',
+                        '    else:',
+                        '        print(f"{i} is odd")'
+                    ],
+                    correctOrder: [0, 1, 2, 3, 4]
+                }
+            ],
+            'java': [
+                {
+                    title: "Arrange the Java code blocks in correct order:",
+                    description: "Create a simple Hello World program",
+                    blocks: [
+                        'public class HelloWorld {',
+                        '    public static void main(String[] args) {',
+                        '        System.out.println("Hello, World!");',
+                        '    }'
+                    ],
+                    correctOrder: [0, 1, 2, 3]
+                },
+                {
+                    title: "Arrange the Java code blocks in correct order:",
+                    description: "Calculate sum of two numbers",
+                    blocks: [
+                        'Scanner scanner = new Scanner(System.in);',
+                        'int a = scanner.nextInt();',
+                        'int b = scanner.nextInt();',
+                        'int sum = a + b;',
+                        'System.out.println("Sum: " + sum);'
+                    ],
+                    correctOrder: [0, 1, 2, 3, 4]
+                }
+            ],
+            'webdesign': [
+                {
+                    title: "Arrange the HTML code blocks in correct order:",
+                    description: "Create a basic webpage structure",
+                    blocks: [
+                        '<!DOCTYPE html>',
+                        '<html>',
+                        '<head><title>My Page</title></head>',
+                        '<body><h1>Welcome!</h1></body>',
+                        '</html>'
+                    ],
+                    correctOrder: [0, 1, 2, 3, 4]
+                }
+            ]
+        };
+        
+        const questions = questionSets[topic?.toLowerCase()] || questionSets.python;
+        return Phaser.Utils.Array.GetRandom(questions);
     }
 
     updateScore(points) {
@@ -889,10 +982,11 @@ export default class MainGameplay extends BaseScene {
         this.currentQuiz = enemy;
         
         // Launch quiz scene without pausing main scene (so timer continues)
-        // No need to save game state since scene stays active
+        // Pass intensity level to determine quiz type
         this.scene.launch('QuizScene', {
             courseTopic: this.courseTopic,
-            enemyToDestroy: enemy
+            enemyToDestroy: enemy,
+            intensity: this.intensity
         });
     }
 
@@ -1018,6 +1112,12 @@ export default class MainGameplay extends BaseScene {
         // Destroy the enemy that was collided with
         if (data.enemyToDestroy) {
             this.destroyEnemy(data.enemyToDestroy);
+            
+            // Track INTENSITY progression
+            if (data.correct) {
+                this.enemiesDefeated++;
+                this.checkIntensityIncrease();
+            }
         }
         
         // Resume game
@@ -1079,6 +1179,62 @@ export default class MainGameplay extends BaseScene {
             onComplete: () => {
                 // Reset to original position when done
                 this.streakText.setPosition(originalX, originalY);
+            }
+        });
+    }
+
+    checkIntensityIncrease() {
+        if (this.enemiesDefeated >= this.intensityThreshold && this.intensity === 1) {
+            this.intensity = 2;
+            
+            // Show INTENSITY increase notification
+            this.showIntensityNotification();
+            
+            console.log(`INTENSITY INCREASED! Level ${this.intensity} - Drag-and-Drop quizzes activated!`);
+        }
+    }
+
+    showIntensityNotification() {
+        // Create dramatic notification
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
+        
+        const notification = this.add.text(centerX, centerY, 'INTENSITY LEVEL 2\nDRAG & DROP MODE!', {
+            fontFamily: 'Arial',
+            fontSize: '36px',
+            fontWeight: 'bold',
+            color: '#ff0000',
+            stroke: '#000000',
+            strokeThickness: 4,
+            align: 'center',
+            shadow: {
+                offsetX: 3,
+                offsetY: 3,
+                color: '#000000',
+                blur: 5,
+                fill: true
+            }
+        }).setOrigin(0.5).setDepth(1000);
+        
+        // Animate notification
+        notification.setScale(0);
+        this.tweens.add({
+            targets: notification,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 500,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+                this.time.delayedCall(2000, () => {
+                    this.tweens.add({
+                        targets: notification,
+                        alpha: 0,
+                        scaleX: 0.8,
+                        scaleY: 0.8,
+                        duration: 500,
+                        onComplete: () => notification.destroy()
+                    });
+                });
             }
         });
     }
