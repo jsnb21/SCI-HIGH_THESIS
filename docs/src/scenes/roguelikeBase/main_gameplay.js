@@ -38,6 +38,8 @@ export default class MainGameplay extends BaseScene {
         // INTENSITY system
         this.enemiesDefeated = 0;
         this.correctAnswers = 0; // Track correct answers for intensity progression
+        this.wrongAnswers = 0; // Track wrong answers for results
+        this.intensity3CorrectAnswers = 0; // Track answers in intensity 3 for completion
         this.intensity = 1; // Level 1 = multiple choice, Level 2 = mixed, Level 3 = code arrangement
         this.intensityThreshold = 5; // Correct answers needed to reach intensity 2
         this.intensityThreshold2 = 10; // Correct answers needed to reach intensity 3
@@ -86,6 +88,8 @@ export default class MainGameplay extends BaseScene {
         // Initialize/reset INTENSITY system
         this.enemiesDefeated = 0;
         this.correctAnswers = 0;
+        this.wrongAnswers = 0;
+        this.intensity3CorrectAnswers = 0;
         this.intensity = 1;
         
         console.log('MainGameplay initialized with topic:', this.courseTopic);
@@ -543,23 +547,8 @@ export default class MainGameplay extends BaseScene {
             this.timerEvent.remove();
         }
         
-        // Display game over message
-        const centerX = this.scale.width / 2;
-        const centerY = this.scale.height / 2;
-        
-        this.add.text(centerX, centerY, 'TIME UP!', {
-            fontFamily: 'Arial',
-            fontSize: '48px',
-            fontWeight: 'bold',
-            color: '#ff0000',
-            stroke: '#000000',
-            strokeThickness: 4
-        }).setOrigin(0.5).setScrollFactor(0);
-        
-        // Optional: Add a delay before returning to menu or restarting
-        this.time.delayedCall(3000, () => {
-            this.scene.start('ComputerLab');
-        });
+        // Show result screen when timer expires
+        this.showResultScreen(false); // Timer expired, not course completed
     }
 
     startCountdown() {
@@ -1011,6 +1000,17 @@ export default class MainGameplay extends BaseScene {
             // Increment correct answers for intensity progression
             this.correctAnswers++;
             
+            // Track intensity 3 progress for course completion
+            if (this.intensity === 3) {
+                this.intensity3CorrectAnswers++;
+                
+                // Check if course is completed (10 correct answers in intensity 3)
+                if (this.intensity3CorrectAnswers >= 10) {
+                    this.showResultScreen(true); // Course completed
+                    return;
+                }
+            }
+            
             // Update highest streak if current streak is higher (stored silently)
             if (this.streak > this.highestStreak) {
                 this.highestStreak = this.streak;
@@ -1031,6 +1031,9 @@ export default class MainGameplay extends BaseScene {
             // Check for intensity increase after correct answer
             this.checkIntensityIncrease();
         } else {
+            // Increment wrong answers counter
+            this.wrongAnswers++;
+            
             // Reset streak on wrong answer
             this.streak = 0;
             this.updateStreakDisplay();
@@ -1906,6 +1909,23 @@ export default class MainGameplay extends BaseScene {
             this.player.y = targetY;
             this.animatePlayerMovement(targetX, targetY);
         }
+    }
+
+    showResultScreen(courseCompleted = false) {
+        // Prepare data for ResultScreen
+        const resultData = {
+            correctAnswers: this.correctAnswers,
+            wrongAnswers: this.wrongAnswers,
+            highestStreak: this.highestStreak,
+            totalScore: this.score,
+            courseTopic: this.courseTopic,
+            courseCompleted: courseCompleted
+        };
+        
+        console.log('Showing result screen with data:', resultData);
+        
+        // Start the ResultScreen scene
+        this.scene.start('ResultScreen', resultData);
     }
 
     // Clean up when scene is shutdown
