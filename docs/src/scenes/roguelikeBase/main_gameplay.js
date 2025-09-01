@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import BaseScene from '../BaseScene.js';
-import { createBackButton } from '/src/components/buttons/backbutton.js';
 
 export default class MainGameplay extends BaseScene {
     constructor() {
@@ -37,6 +36,23 @@ export default class MainGameplay extends BaseScene {
         this.enemyMoveTimer = 0;
         this.enemyMoveInterval = 1000; // Move enemies every 1 second
         this.enemiesMoving = false;
+        
+        // Timer system
+        this.gameTimer = 60; // 1 minute in seconds
+        this.timerText = null;
+        this.timerEvent = null;
+        
+        // Timer icons system
+        this.timerIcons = [];
+        this.maxTimerIcons = 3;
+        this.timerIconSpawnTimer = 0;
+        this.timerIconSpawnInterval = 10000; // Spawn timer icon every 10 seconds
+        
+        // Countdown system
+        this.countdownTimer = 3; // 3 second countdown
+        this.countdownText = null;
+        this.countdownEvent = null;
+        this.gameStarted = false;
     }
 
     init(data) {
@@ -53,6 +69,18 @@ export default class MainGameplay extends BaseScene {
         this.load.image('quizbox', 'assets/sprites/enemies/quizbox.png');
         this.load.image('bigSlime', 'assets/sprites/enemies/bigSlime.png');
         
+        // Load timer icon (clock/hourglass icon)
+        this.load.image('timerIcon', 'data:image/svg+xml;base64,' + btoa(`
+            <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="16" cy="16" r="14" fill="#FFD700" stroke="#FFA500" stroke-width="2"/>
+                <circle cx="16" cy="16" r="10" fill="#FFFF00" stroke="#FFD700" stroke-width="1"/>
+                <line x1="16" y1="16" x2="16" y2="8" stroke="#FF4500" stroke-width="2" stroke-linecap="round"/>
+                <line x1="16" y1="16" x2="22" y2="16" stroke="#FF4500" stroke-width="1.5" stroke-linecap="round"/>
+                <circle cx="16" cy="16" r="2" fill="#FF4500"/>
+                <text x="16" y="28" text-anchor="middle" font-family="Arial" font-size="6" fill="#000">+5s</text>
+            </svg>
+        `));
+        
         // Load background tiles (optional - you can add your own)
         this.load.image('grassTile', 'assets/img/bg/grass.png');
         
@@ -63,9 +91,6 @@ export default class MainGameplay extends BaseScene {
     create() {
         super.create(); // Call BaseScene create method
         
-        // Add back button to return to computer lab
-        createBackButton(this, 'ComputerLab');
-        
         // Create background
         this.createBackground();
         
@@ -74,6 +99,15 @@ export default class MainGameplay extends BaseScene {
         
         // Create enemies
         this.createEnemies();
+        
+        // Create timer (but don't start it yet)
+        this.createTimer();
+        
+        // Initialize timer icons
+        this.initializeTimerIcons();
+        
+        // Start countdown before game begins
+        this.startCountdown();
         
         // Setup input controls
         this.setupInput();
@@ -236,6 +270,367 @@ export default class MainGameplay extends BaseScene {
         }
         
         console.log(`Created ${this.enemies.length} enemies`);
+    }
+
+    createTimer() {
+        // Create timer text at the top center of the screen
+        const centerX = this.scale.width / 2;
+        
+        this.timerText = this.add.text(centerX, 30, '1:00', {
+            fontFamily: 'Arial',
+            fontSize: '32px',
+            fontWeight: 'bold',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 3,
+            shadow: {
+                offsetX: 2,
+                offsetY: 2,
+                color: '#000000',
+                blur: 3,
+                fill: true
+            }
+        }).setOrigin(0.5, 0).setScrollFactor(0);
+        
+        // Don't start the timer event yet - will be started after countdown
+        this.timerEvent = null;
+    }
+
+    updateTimer() {
+        this.gameTimer--;
+        
+        // Format time as MM:SS
+        const minutes = Math.floor(this.gameTimer / 60);
+        const seconds = this.gameTimer % 60;
+        const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        this.timerText.setText(timeString);
+        
+        // Change color when time is running out
+        if (this.gameTimer <= 10) {
+            this.timerText.setColor('#ff0000'); // Red for last 10 seconds
+            
+            // Add shake animation for last 10 seconds
+            this.tweens.add({
+                targets: this.timerText,
+                x: this.timerText.x + Phaser.Math.Between(-5, 5),
+                y: this.timerText.y + Phaser.Math.Between(-3, 3),
+                duration: 50,
+                ease: 'Power2',
+                yoyo: true,
+                repeat: 3,
+                onComplete: () => {
+                    // Reset position to center after shake
+                    this.timerText.setPosition(this.scale.width / 2, 30);
+                }
+            });
+        } else if (this.gameTimer <= 30) {
+            this.timerText.setColor('#ffff00'); // Yellow for last 30 seconds
+        }
+        
+        // Handle timer expiration
+        if (this.gameTimer <= 0) {
+            this.onTimerExpired();
+        }
+    }
+
+    onTimerExpired() {
+        // Stop the timer
+        if (this.timerEvent) {
+            this.timerEvent.remove();
+        }
+        
+        // Display game over message
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
+        
+        this.add.text(centerX, centerY, 'TIME UP!', {
+            fontFamily: 'Arial',
+            fontSize: '48px',
+            fontWeight: 'bold',
+            color: '#ff0000',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5).setScrollFactor(0);
+        
+        // Optional: Add a delay before returning to menu or restarting
+        this.time.delayedCall(3000, () => {
+            this.scene.start('ComputerLab');
+        });
+    }
+
+    startCountdown() {
+        // Create countdown text at the center of the screen
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
+        
+        this.countdownText = this.add.text(centerX, centerY, '3', {
+            fontFamily: 'Arial',
+            fontSize: '128px',
+            fontWeight: 'bold',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 8,
+            shadow: {
+                offsetX: 4,
+                offsetY: 4,
+                color: '#000000',
+                blur: 6,
+                fill: true
+            }
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(1000);
+        
+        // Add countdown instruction text
+        this.instructionText = this.add.text(centerX, centerY + 100, 'Get Ready!', {
+            fontFamily: 'Arial',
+            fontSize: '32px',
+            fontWeight: 'bold',
+            color: '#ffff00',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(1000);
+        
+        // Create countdown event
+        this.countdownEvent = this.time.addEvent({
+            delay: 1000, // 1 second
+            callback: this.updateCountdown,
+            callbackScope: this,
+            repeat: 2 // Will fire 3 times total (3, 2, 1)
+        });
+        
+        // Add scale animation to countdown text
+        this.tweens.add({
+            targets: this.countdownText,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 500,
+            ease: 'Power2',
+            yoyo: true,
+            repeat: -1
+        });
+    }
+
+    updateCountdown() {
+        this.countdownTimer--;
+        
+        if (this.countdownTimer > 0) {
+            this.countdownText.setText(this.countdownTimer.toString());
+            
+            // Change color as countdown progresses
+            if (this.countdownTimer === 2) {
+                this.countdownText.setColor('#ffff00'); // Yellow for 2
+            } else if (this.countdownTimer === 1) {
+                this.countdownText.setColor('#ff8800'); // Orange for 1
+            }
+        } else {
+            // Countdown finished - start the game
+            this.startGame();
+        }
+    }
+
+    startGame() {
+        // Remove countdown text and instruction
+        if (this.countdownText) {
+            this.countdownText.destroy();
+        }
+        
+        if (this.instructionText) {
+            this.instructionText.destroy();
+        }
+        
+        // Show "GO!" message briefly
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
+        
+        const goText = this.add.text(centerX, centerY, 'GO!', {
+            fontFamily: 'Arial',
+            fontSize: '96px',
+            fontWeight: 'bold',
+            color: '#00ff00',
+            stroke: '#000000',
+            strokeThickness: 6
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(1000);
+        
+        // Animate GO! text
+        this.tweens.add({
+            targets: goText,
+            scaleX: 2,
+            scaleY: 2,
+            alpha: 0,
+            duration: 1000,
+            ease: 'Power2',
+            onComplete: () => {
+                goText.destroy();
+            }
+        });
+        
+        // Start the actual game timer
+        this.timerEvent = this.time.addEvent({
+            delay: 1000, // 1 second
+            callback: this.updateTimer,
+            callbackScope: this,
+            loop: true
+        });
+        
+        // Mark game as started
+        this.gameStarted = true;
+        
+        console.log('Game started! Timer and enemy movement activated.');
+    }
+
+    initializeTimerIcons() {
+        // Initialize timer icons array
+        this.timerIcons = [];
+    }
+
+    spawnTimerIcon() {
+        // Don't spawn if we already have max timer icons
+        if (this.timerIcons.length >= this.maxTimerIcons) {
+            return;
+        }
+
+        // Find a random empty position
+        const playerTileX = Math.floor((this.player.x - this.boardOffsetX) / this.TILE_SIZE);
+        const playerTileY = Math.floor((this.player.y - this.boardOffsetY) / this.TILE_SIZE);
+        
+        let attempts = 0;
+        let iconTileX, iconTileY;
+        
+        do {
+            iconTileX = Phaser.Math.Between(0, this.MAP_WIDTH - 1);
+            iconTileY = Phaser.Math.Between(0, this.MAP_HEIGHT - 1);
+            attempts++;
+        } while (
+            attempts < 50 && (
+                (iconTileX === playerTileX && iconTileY === playerTileY) ||
+                this.enemies.some(enemy => enemy.tileX === iconTileX && enemy.tileY === iconTileY) ||
+                this.timerIcons.some(icon => icon.tileX === iconTileX && icon.tileY === iconTileY)
+            )
+        );
+        
+        if (attempts < 50) {
+            this.createTimerIcon(iconTileX, iconTileY);
+        }
+    }
+
+    createTimerIcon(tileX, tileY) {
+        // Calculate world position
+        const worldX = this.boardOffsetX + (tileX * this.TILE_SIZE) + this.TILE_SIZE / 2;
+        const worldY = this.boardOffsetY + (tileY * this.TILE_SIZE) + this.TILE_SIZE / 2;
+        
+        // Create timer icon sprite
+        const iconSprite = this.add.image(worldX, worldY, 'timerIcon');
+        iconSprite.setDisplaySize(this.TILE_SIZE * 0.6, this.TILE_SIZE * 0.6);
+        
+        // Add glow effect
+        const glow = this.add.circle(worldX, worldY, this.TILE_SIZE * 0.4, 0xFFD700, 0.3);
+        
+        // Add floating animation
+        this.tweens.add({
+            targets: [iconSprite, glow],
+            y: worldY - 5,
+            duration: 1000,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+        
+        // Add spinning animation
+        this.tweens.add({
+            targets: iconSprite,
+            rotation: Math.PI * 2,
+            duration: 2000,
+            ease: 'Linear',
+            repeat: -1
+        });
+        
+        // Create timer icon object
+        const timerIcon = {
+            tileX: tileX,
+            tileY: tileY,
+            sprite: iconSprite,
+            glow: glow
+        };
+        
+        this.timerIcons.push(timerIcon);
+        console.log(`Spawned timer icon at (${tileX}, ${tileY})`);
+    }
+
+    checkTimerIconCollision(worldX, worldY) {
+        // Convert world coordinates to tile coordinates
+        const playerTileX = Math.floor((worldX - this.boardOffsetX) / this.TILE_SIZE);
+        const playerTileY = Math.floor((worldY - this.boardOffsetY) / this.TILE_SIZE);
+        
+        // Check if player is on the same tile as any timer icon
+        const collidedIcon = this.timerIcons.find(icon => 
+            icon.tileX === playerTileX && icon.tileY === playerTileY
+        );
+        
+        if (collidedIcon) {
+            this.collectTimerIcon(collidedIcon);
+        }
+    }
+
+    collectTimerIcon(icon) {
+        // Add 5 seconds to the timer
+        this.gameTimer += 5;
+        
+        // Update timer display immediately
+        const minutes = Math.floor(this.gameTimer / 60);
+        const seconds = this.gameTimer % 60;
+        const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        this.timerText.setText(timeString);
+        
+        // Reset timer color if it was red/yellow
+        if (this.gameTimer > 30) {
+            this.timerText.setColor('#ffffff');
+        } else if (this.gameTimer > 10) {
+            this.timerText.setColor('#ffff00');
+        }
+        
+        // Show +5s effect at timer location
+        const effectText = this.add.text(this.timerText.x, this.timerText.y + 40, '+5s', {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#00ff00',
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5).setScrollFactor(0);
+        
+        // Animate the +5s effect
+        this.tweens.add({
+            targets: effectText,
+            y: effectText.y - 30,
+            alpha: 0,
+            duration: 1000,
+            ease: 'Power2',
+            onComplete: () => {
+                effectText.destroy();
+            }
+        });
+        
+        // Remove icon from array
+        const iconIndex = this.timerIcons.indexOf(icon);
+        if (iconIndex > -1) {
+            this.timerIcons.splice(iconIndex, 1);
+        }
+        
+        // Destroy icon sprites with collection effect
+        this.tweens.add({
+            targets: [icon.sprite, icon.glow],
+            scaleX: 2,
+            scaleY: 2,
+            alpha: 0,
+            duration: 300,
+            ease: 'Power2',
+            onComplete: () => {
+                icon.sprite.destroy();
+                icon.glow.destroy();
+            }
+        });
+        
+        console.log(`Collected timer icon! Added 5 seconds. New time: ${this.gameTimer}s`);
     }
 
     createEnemy(tileX, tileY, spriteKey) {
@@ -625,7 +1020,7 @@ export default class MainGameplay extends BaseScene {
     }
 
     update(time, delta) {
-        // Handle keyboard input for 8-directional movement
+        // Always handle keyboard input and player glow
         this.handleKeyboardInput();
         
         // Update player glow position
@@ -633,11 +1028,23 @@ export default class MainGameplay extends BaseScene {
             this.playerGlow.setPosition(this.playerSprite.x, this.playerSprite.y);
         }
         
+        // Only run game systems if the game has started
+        if (!this.gameStarted) {
+            return;
+        }
+        
         // Update enemy movement timer
         this.enemyMoveTimer += delta;
         if (this.enemyMoveTimer >= this.enemyMoveInterval && !this.enemiesMoving) {
             this.moveEnemiesAwayFromPlayer();
             this.enemyMoveTimer = 0;
+        }
+        
+        // Update timer icon spawning
+        this.timerIconSpawnTimer += delta;
+        if (this.timerIconSpawnTimer >= this.timerIconSpawnInterval) {
+            this.spawnTimerIcon();
+            this.timerIconSpawnTimer = 0;
         }
     }
 
@@ -672,6 +1079,9 @@ export default class MainGameplay extends BaseScene {
     movePlayer(directionX, directionY) {
         if (this.isMoving) return;
         
+        // Don't allow movement during countdown
+        if (!this.gameStarted) return;
+        
         // Calculate target position
         const targetX = this.player.x + (directionX * this.TILE_SIZE);
         const targetY = this.player.y + (directionY * this.TILE_SIZE);
@@ -690,6 +1100,9 @@ export default class MainGameplay extends BaseScene {
         if (this.checkEnemyCollision(targetX, targetY)) {
             return; // Handle enemy collision and don't move
         }
+        
+        // Check for timer icon collision at target position
+        this.checkTimerIconCollision(targetX, targetY);
         
         // Store direction for sprite rotation/animation
         this.lastDirection.x = directionX;
