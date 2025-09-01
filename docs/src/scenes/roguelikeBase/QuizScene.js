@@ -85,12 +85,11 @@ export default class QuizScene extends BaseScene {
     loadQuizData() {
         // Check intensity level for quiz type
         if (this.intensity >= 2) {
-            // Load drag-and-drop questions from main gameplay scene
-            const mainScene = this.scene.get('MainGameplay');
-            if (mainScene && mainScene.getDragDropQuestions) {
-                this.currentQuestion = mainScene.getDragDropQuestions(this.courseTopic);
+            // Load code arrangement questions from JSON files
+            this.loadCodeArrangementQuestion();
+            if (this.currentQuestion) {
                 this.currentQuestion.isDragDrop = true;
-                console.log('Loaded drag-and-drop question:', this.currentQuestion);
+                console.log('Loaded code arrangement question:', this.currentQuestion);
                 return;
             }
         }
@@ -135,6 +134,43 @@ export default class QuizScene extends BaseScene {
                 this.currentQuestion = Phaser.Utils.Array.GetRandom(multipleChoiceQuestions);
                 console.log('Loaded question for', topic, ':', this.currentQuestion);
             }
+        }
+    }
+
+    loadCodeArrangementQuestion() {
+        // Get quiz data based on course topic
+        const topic = this.courseTopic || 'python';
+        let quizData = null;
+        
+        switch (topic.toLowerCase()) {
+            case 'python':
+                quizData = this.cache.json.get('pythonQuiz');
+                break;
+            case 'java':
+                quizData = this.cache.json.get('javaQuiz');
+                break;
+            case 'c':
+                quizData = this.cache.json.get('cQuiz');
+                break;
+            case 'c++':
+                quizData = this.cache.json.get('cppQuiz');
+                break;
+            case 'c#':
+            case 'csharp':
+                quizData = this.cache.json.get('csharpQuiz');
+                break;
+            case 'webdesign':
+                quizData = this.cache.json.get('webdesignQuiz');
+                break;
+            default:
+                quizData = this.cache.json.get('pythonQuiz');
+                break;
+        }
+        
+        if (quizData && quizData.codeArrangement && quizData.codeArrangement.length > 0) {
+            // Select a random code arrangement question
+            this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData.codeArrangement);
+            console.log('Loaded code arrangement question for', topic, ':', this.currentQuestion);
         }
     }
 

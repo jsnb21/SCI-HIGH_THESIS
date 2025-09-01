@@ -194,5 +194,41 @@
         ]
       }
     }
+  ],
+  "codeArrangement": [
+    {
+      "title": "Arrange the Python code blocks in correct order:",
+      "description": "Create a simple greeting program",
+      "blocks": [
+        "name = input(\"Enter your name: \")",
+        "greeting = \"Hello, \" + name",
+        "print(greeting)",
+        "print(\"Welcome to Python!\")"
+      ],
+      "correctOrder": [0, 1, 2, 3]
+    },
+    {
+      "title": "Arrange the Python code blocks in correct order:",
+      "description": "Calculate area of a rectangle",
+      "blocks": [
+        "length = float(input(\"Enter length: \"))",
+        "width = float(input(\"Enter width: \"))",
+        "area = length * width",
+        "print(f\"Area: {area}\")"
+      ],
+      "correctOrder": [0, 1, 2, 3]
+    },
+    {
+      "title": "Arrange the Python code blocks in correct order:",
+      "description": "Simple loop with condition",
+      "blocks": [
+        "for i in range(5):",
+        "    if i % 2 == 0:",
+        "        print(f\"{i} is even\")",
+        "    else:",
+        "        print(f\"{i} is odd\")"
+      ],
+      "correctOrder": [0, 1, 2, 3, 4]
+    }
   ]
 }
