@@ -46,6 +46,9 @@ export default class QuizScene extends BaseScene {
     create() {
         super.create();
         
+        // Initialize answer submission flag
+        this.answerSubmitted = false;
+        
         // Create background overlay that doesn't cover the UI area
         // Score at 30px, Streak at 65px + font height, so start overlay at 100px from top
         const overlayHeight = this.scale.height - 100;
@@ -386,8 +389,24 @@ export default class QuizScene extends BaseScene {
         });
         
         blockObj.on('dragend', () => {
-            blockObj.setFillStyle(0x3498db); // Back to original blue
-            blockText.setColor('#ffffff'); // Back to white text
+            // Check if block is in a drop zone to determine styling
+            let isInDropZone = false;
+            for (let i = 0; i < this.currentOrder.length; i++) {
+                if (this.currentOrder[i] === blockObj) {
+                    isInDropZone = true;
+                    break;
+                }
+            }
+            
+            if (isInDropZone) {
+                // Keep drop zone styling
+                blockObj.setFillStyle(0x2ecc71);
+                blockText.setColor('#ffffff');
+            } else {
+                // Back to original left side styling
+                blockObj.setFillStyle(0x3498db);
+                blockText.setColor('#ffffff');
+            }
         });
         
         // Set up drag events for the text (should move the block too)
@@ -415,35 +434,125 @@ export default class QuizScene extends BaseScene {
         });
         
         blockText.on('dragend', () => {
-            blockObj.setFillStyle(0x3498db); // Back to original blue
-            blockText.setColor('#ffffff'); // Back to white text
+            // Check if block is in a drop zone to determine styling
+            let isInDropZone = false;
+            for (let i = 0; i < this.currentOrder.length; i++) {
+                if (this.currentOrder[i] === blockObj) {
+                    isInDropZone = true;
+                    break;
+                }
+            }
+            
+            if (isInDropZone) {
+                // Keep drop zone styling
+                blockObj.setFillStyle(0x2ecc71);
+                blockText.setColor('#ffffff');
+            } else {
+                // Back to original left side styling
+                blockObj.setFillStyle(0x3498db);
+                blockText.setColor('#ffffff');
+            }
         });
         
         // Drop zone events
         this.input.on('drop', (pointer, gameObject, dropZone) => {
             if (this.dropZones.includes(dropZone)) {
-                // Clear previous item in this slot
-                if (this.currentOrder[dropZone.index]) {
-                    const prevItem = this.currentOrder[dropZone.index];
-                    prevItem.x = -250;
-                    prevItem.y = -100 + (this.dragBlocks.findIndex(db => db.block === prevItem) * 60);
+                // Get the dragged object (could be block or text)
+                let draggedBlock, draggedText;
+                if (gameObject.textObj) {
+                    // It's a block object
+                    draggedBlock = gameObject;
+                    draggedText = gameObject.textObj;
+                } else if (gameObject.blockObj) {
+                    // It's a text object
+                    draggedText = gameObject;
+                    draggedBlock = gameObject.blockObj;
                 }
                 
-                // Place new item
-                gameObject.x = dropZone.x;
-                gameObject.y = dropZone.y;
-                if (gameObject.textObj) {
-                    gameObject.textObj.x = dropZone.x;
-                    gameObject.textObj.y = dropZone.y;
-                    this.currentOrder[dropZone.index] = gameObject;
-                } else if (gameObject.blockObj) {
-                    gameObject.blockObj.x = dropZone.x;
-                    gameObject.blockObj.y = dropZone.y;
-                    this.currentOrder[dropZone.index] = gameObject.blockObj;
+                // Check if there's already something in this drop zone
+                const existingBlock = this.currentOrder[dropZone.index];
+                
+                if (existingBlock) {
+                    // SWAP: Find where the dragged item came from
+                    let draggedFromIndex = -1;
+                    
+                    // Check if dragged item was in a drop zone
+                    for (let i = 0; i < this.currentOrder.length; i++) {
+                        if (this.currentOrder[i] === draggedBlock) {
+                            draggedFromIndex = i;
+                            break;
+                        }
+                    }
+                    
+                    if (draggedFromIndex !== -1) {
+                        // Swap positions: move existing block to where dragged item came from
+                        const swapDropZone = this.dropZones[draggedFromIndex];
+                        existingBlock.x = swapDropZone.x;
+                        existingBlock.y = swapDropZone.y;
+                        existingBlock.textObj.x = swapDropZone.x;
+                        existingBlock.textObj.y = swapDropZone.y;
+                        this.currentOrder[draggedFromIndex] = existingBlock;
+                        
+                        // Keep existing block styled for drop zone
+                        existingBlock.setFillStyle(0x2ecc71);
+                        existingBlock.setStrokeStyle(3, 0x27ae60);
+                        existingBlock.textObj.setStyle({
+                            color: '#ffffff',
+                            fontWeight: 'bold',
+                            fontSize: '15px'
+                        });
+                        
+                        // Update the original drop zone appearance
+                        swapDropZone.setAlpha(0.1); // 10% opacity for occupied zones
+                        swapDropZone.label.setText(`${draggedFromIndex + 1}.`);
+                    } else {
+                        // Dragged item came from the left side, send existing block back to left
+                        const dragBlockIndex = this.dragBlocks.findIndex(db => db.block === draggedBlock);
+                        existingBlock.x = -250;
+                        existingBlock.y = -100 + (dragBlockIndex * 60);
+                        existingBlock.textObj.x = -250;
+                        existingBlock.textObj.y = -100 + (dragBlockIndex * 60);
+                        
+                        // Reset block styling when returning to left side
+                        existingBlock.setFillStyle(0x3498db);
+                        existingBlock.setStrokeStyle(2, 0x2980b9);
+                        existingBlock.textObj.setStyle({
+                            color: '#ffffff',
+                            fontWeight: 'normal',
+                            fontSize: '14px'
+                        });
+                    }
+                } else {
+                    // No existing block, check if dragged item was in another drop zone
+                    for (let i = 0; i < this.currentOrder.length; i++) {
+                        if (this.currentOrder[i] === draggedBlock) {
+                            // Clear the previous position
+                            this.currentOrder[i] = null;
+                            this.dropZones[i].setAlpha(0.3);
+                            this.dropZones[i].label.setText(`${i + 1}. Drop here`);
+                            break;
+                        }
+                    }
                 }
+                
+                // Place the dragged item in the new position
+                draggedBlock.x = dropZone.x;
+                draggedBlock.y = dropZone.y;
+                draggedText.x = dropZone.x;
+                draggedText.y = dropZone.y;
+                this.currentOrder[dropZone.index] = draggedBlock;
+                
+                // Make the block more visible when dropped in zone
+                draggedBlock.setFillStyle(0x2ecc71); // Bright green for dropped blocks
+                draggedBlock.setStrokeStyle(3, 0x27ae60); // Thicker green border
+                draggedText.setStyle({
+                    color: '#ffffff',
+                    fontWeight: 'bold',
+                    fontSize: '15px' // Slightly larger text
+                });
                 
                 // Update drop zone appearance
-                dropZone.setAlpha(0.7);
+                dropZone.setAlpha(0.1); // 10% opacity for occupied drop zones
                 dropZone.label.setText(`${dropZone.index + 1}.`);
             }
         });
@@ -467,6 +576,14 @@ export default class QuizScene extends BaseScene {
     }
 
     checkDragDropAnswer() {
+        // Prevent multiple submissions
+        if (this.answerSubmitted) return;
+        this.answerSubmitted = true;
+        
+        // Disable submit button
+        this.quizContainer.list[this.quizContainer.list.length - 2].setAlpha(0.5); // Submit button
+        this.quizContainer.list[this.quizContainer.list.length - 1].setAlpha(0.5); // Submit text
+        
         const userOrder = this.currentOrder.map(item => {
             if (item) {
                 return item.originalText || item.textObj.originalText;
@@ -484,7 +601,59 @@ export default class QuizScene extends BaseScene {
         console.log('Correct order:', correctTexts);
         console.log('Is correct:', isCorrect);
         
-        this.returnToGameplay(isCorrect);
+        // Visual feedback for drag and drop blocks
+        this.currentOrder.forEach((block, index) => {
+            if (block) {
+                const userText = block.originalText || block.textObj.originalText;
+                const correctText = correctTexts[index];
+                const isBlockCorrect = userText === correctText;
+                
+                if (isBlockCorrect) {
+                    // Correct block - green
+                    block.setFillStyle(0x38a169);
+                    block.setStrokeStyle(3, 0xffffff);
+                    block.textObj.setStyle({
+                        color: '#ffffff',
+                        fontWeight: 'bold',
+                        fontSize: '15px'
+                    });
+                } else {
+                    // Wrong block - red
+                    block.setFillStyle(0xe53e3e);
+                    block.setStrokeStyle(3, 0xffffff);
+                    block.textObj.setStyle({
+                        color: '#ffffff',
+                        fontWeight: 'bold',
+                        fontSize: '15px'
+                    });
+                }
+                
+                // Disable dragging
+                block.disableInteractive();
+                block.textObj.disableInteractive();
+            }
+        });
+        
+        // If wrong, highlight correct blocks on the left side
+        if (!isCorrect) {
+            this.dragBlocks.forEach((dragBlock) => {
+                const correctIndex = correctTexts.findIndex(text => text === dragBlock.originalText);
+                if (correctIndex !== -1 && !this.currentOrder[correctIndex]) {
+                    // This block should be in a drop zone but isn't
+                    dragBlock.block.setFillStyle(0x38a169);
+                    dragBlock.block.setStrokeStyle(2, 0xffffff, 0.7);
+                    dragBlock.text.setStyle({
+                        color: '#ffffff',
+                        fontWeight: 'bold'
+                    });
+                }
+            });
+        }
+        
+        // Show result after a brief delay
+        this.time.delayedCall(400, () => {
+            this.showResult(isCorrect);
+        });
     }
 
     createAnswerButtons(startOffset) {
