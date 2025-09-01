@@ -251,31 +251,82 @@ export default class QuizScene extends BaseScene {
         // Create main quiz container
         this.quizContainer = this.add.container(centerX, centerY);
         
-        // Create background
-        const bg = this.add.rectangle(0, 0, 800, 600, 0x2c3e50);
-        bg.setStrokeStyle(3, 0x34495e);
-        this.quizContainer.add(bg);
+        // Calculate responsive dimensions
+        const maxWidth = Math.min(this.scale.width * 0.9, 1000);
+        const maxHeight = Math.min(this.scale.height * 0.8, 700);
         
-        // Title
-        const titleText = this.add.text(0, -250, this.currentQuestion.title, {
+        // Calculate content areas
+        const titleHeight = 50; // Reduced from 80 to 50
+        const questionNumberHeight = 0; // Remove question number area
+        const questionHeight = 100;
+        const instructionHeight = 50;
+        const draggableAreaHeight = 300;
+        const submitAreaHeight = 120; // Increased space above submit button
+        
+        const contentHeight = titleHeight + questionNumberHeight + questionHeight + instructionHeight + draggableAreaHeight + submitAreaHeight;
+        const contentWidth = maxWidth;
+        
+        // Create main background with same style as multiple choice
+        const quizBox = this.add.graphics();
+        quizBox.fillStyle(0x1a2332, 0.95);
+        quizBox.fillRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 20);
+        quizBox.lineStyle(3, 0x34495e, 1);
+        quizBox.strokeRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 20);
+        
+        // Add glow effect
+        const glowBox = this.add.graphics();
+        glowBox.lineStyle(8, 0x64ffda, 0.3);
+        glowBox.strokeRoundedRect(-contentWidth/2 - 4, -contentHeight/2 - 4, contentWidth + 8, contentHeight + 8, 20);
+        
+        this.quizContainer.add([glowBox, quizBox]);
+        
+        // Title with programming language - same style as multiple choice
+        const courseTopic = this.courseTopic || 'Programming';
+        this.titleText = this.add.text(0, -contentHeight/2 + 30, `${courseTopic.toUpperCase()} CODE ARRANGEMENT`, {
             fontFamily: 'Arial',
-            fontSize: '24px',
+            fontSize: '28px',
+            fontWeight: 'bold',
+            color: '#64ffda',
+            align: 'center'
+        }).setOrigin(0.5);
+        this.quizContainer.add(this.titleText);
+        
+        // Question text with better formatting - same style as multiple choice
+        this.questionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + (questionHeight/2) + 10, this.currentQuestion.title, {
+            fontFamily: 'Arial',
+            fontSize: '22px',
             fontWeight: 'bold',
             color: '#ffffff',
             align: 'center',
-            wordWrap: { width: 750 }
+            wordWrap: { width: contentWidth - 80 },
+            lineSpacing: 8
         }).setOrigin(0.5);
-        this.quizContainer.add(titleText);
+        this.quizContainer.add(this.questionText);
         
-        // Description
-        const descText = this.add.text(0, -200, this.currentQuestion.description, {
+        // Description text
+        const descText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + 20, this.currentQuestion.description, {
             fontFamily: 'Arial',
-            fontSize: '18px',
+            fontSize: '16px',
             color: '#bdc3c7',
             align: 'center',
-            wordWrap: { width: 700 }
+            wordWrap: { width: contentWidth - 100 }
         }).setOrigin(0.5);
         this.quizContainer.add(descText);
+        
+        // Instruction text - same style as multiple choice
+        const instructionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + instructionHeight, 'Drag code blocks to arrange them in correct order', {
+            fontFamily: 'Arial',
+            fontSize: '16px',
+            color: '#64ffda',
+            align: 'center',
+            fontStyle: 'italic'
+        }).setOrigin(0.5);
+        this.quizContainer.add(instructionText);
+        
+        // Store dimensions for responsive block creation
+        this.contentWidth = contentWidth;
+        this.contentHeight = contentHeight;
+        this.draggableAreaY = -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + instructionHeight + 50;
         
         // Create shuffled blocks and drop zones
         this.createDragDropBlocks();
@@ -308,17 +359,29 @@ export default class QuizScene extends BaseScene {
         this.dropZones = [];
         this.currentOrder = new Array(blocks.length).fill(null);
         
+        // Calculate responsive dimensions
+        const blockWidth = Math.min(350, (this.contentWidth - 100) / 2);
+        const blockHeight = 50;
+        const blockSpacing = 60;
+        
+        // Calculate positions for left side (draggable blocks) and right side (drop zones)
+        const leftX = -this.contentWidth/4;
+        const rightX = this.contentWidth/4;
+        const startY = this.draggableAreaY;
+        
         // Create drag blocks (left side)
         blocks.forEach((block, index) => {
-            const blockObj = this.add.rectangle(-250, -100 + (index * 60), 350, 50, 0x3498db);
+            const blockY = startY + (index * blockSpacing);
+            
+            const blockObj = this.add.rectangle(leftX, blockY, blockWidth, blockHeight, 0x3498db);
             blockObj.setStrokeStyle(2, 0x2980b9);
             
-            const blockText = this.add.text(-250, -100 + (index * 60), block, {
+            const blockText = this.add.text(leftX, blockY, block, {
                 fontFamily: 'monospace',
                 fontSize: '14px',
                 color: '#ffffff',
                 align: 'center',
-                wordWrap: { width: 330 }
+                wordWrap: { width: blockWidth - 20 }
             }).setOrigin(0.5);
             
             // Make interactive
@@ -337,17 +400,20 @@ export default class QuizScene extends BaseScene {
             this.dragBlocks.push({ block: blockObj, text: blockText, originalText: block });
         });
         
-        // Create drop zones (right side)
+        // Create drop zones (right side) with better styling
         for (let i = 0; i < blocks.length; i++) {
-            const dropZone = this.add.rectangle(200, -100 + (i * 60), 350, 50, 0x95a5a6);
+            const dropY = startY + (i * blockSpacing);
+            
+            const dropZone = this.add.rectangle(rightX, dropY, blockWidth, blockHeight, 0x95a5a6);
             dropZone.setStrokeStyle(2, 0x7f8c8d);
             dropZone.setAlpha(0.3);
             
-            const label = this.add.text(200, -100 + (i * 60), `${i + 1}. Drop here`, {
+            const label = this.add.text(rightX, dropY, `${i + 1}. Drop here`, {
                 fontFamily: 'Arial',
                 fontSize: '14px',
                 color: '#2c3e50',
-                align: 'center'
+                align: 'center',
+                fontWeight: 'bold'
             }).setOrigin(0.5);
             
             dropZone.setInteractive({ dropZone: true });
@@ -457,6 +523,10 @@ export default class QuizScene extends BaseScene {
         // Drop zone events
         this.input.on('drop', (pointer, gameObject, dropZone) => {
             if (this.dropZones.includes(dropZone)) {
+                // Calculate positions for repositioning
+                const leftX = -this.contentWidth/4;
+                const rightX = this.contentWidth/4;
+                
                 // Get the dragged object (could be block or text)
                 let draggedBlock, draggedText;
                 if (gameObject.textObj) {
@@ -508,10 +578,11 @@ export default class QuizScene extends BaseScene {
                     } else {
                         // Dragged item came from the left side, send existing block back to left
                         const dragBlockIndex = this.dragBlocks.findIndex(db => db.block === draggedBlock);
-                        existingBlock.x = -250;
-                        existingBlock.y = -100 + (dragBlockIndex * 60);
-                        existingBlock.textObj.x = -250;
-                        existingBlock.textObj.y = -100 + (dragBlockIndex * 60);
+                        const originalY = this.draggableAreaY + (dragBlockIndex * 60);
+                        existingBlock.x = leftX;
+                        existingBlock.y = originalY;
+                        existingBlock.textObj.x = leftX;
+                        existingBlock.textObj.y = originalY;
                         
                         // Reset block styling when returning to left side
                         existingBlock.setFillStyle(0x3498db);
@@ -559,20 +630,49 @@ export default class QuizScene extends BaseScene {
     }
 
     createSubmitButton() {
-        const submitBtn = this.add.rectangle(0, 220, 200, 50, 0x27ae60);
-        submitBtn.setStrokeStyle(2, 0x229954);
+        // Position the submit button at the bottom of the content area
+        const submitY = this.contentHeight/2 - 40;
         
-        const submitText = this.add.text(0, 220, 'Submit Order', {
+        // Create submit button with same style as multiple choice
+        const submitBtn = this.add.graphics();
+        submitBtn.fillStyle(0x27ae60, 1);
+        submitBtn.fillRoundedRect(-100, -25, 200, 50, 10);
+        submitBtn.lineStyle(2, 0x229954, 1);
+        submitBtn.strokeRoundedRect(-100, -25, 200, 50, 10);
+        submitBtn.x = 0;
+        submitBtn.y = submitY;
+        
+        const submitText = this.add.text(0, submitY, 'Submit Order', {
             fontFamily: 'Arial',
             fontSize: '18px',
             fontWeight: 'bold',
             color: '#ffffff'
         }).setOrigin(0.5);
         
-        submitBtn.setInteractive();
-        submitBtn.on('pointerdown', () => this.checkDragDropAnswer());
+        // Create invisible hit area for better interaction
+        const hitArea = this.add.rectangle(0, submitY, 200, 50, 0x000000, 0);
+        hitArea.setInteractive();
         
-        this.quizContainer.add([submitBtn, submitText]);
+        // Add hover effects
+        hitArea.on('pointerover', () => {
+            submitBtn.clear();
+            submitBtn.fillStyle(0x229954, 1);
+            submitBtn.fillRoundedRect(-100, -25, 200, 50, 10);
+            submitBtn.lineStyle(3, 0x1e8449, 1);
+            submitBtn.strokeRoundedRect(-100, -25, 200, 50, 10);
+        });
+        
+        hitArea.on('pointerout', () => {
+            submitBtn.clear();
+            submitBtn.fillStyle(0x27ae60, 1);
+            submitBtn.fillRoundedRect(-100, -25, 200, 50, 10);
+            submitBtn.lineStyle(2, 0x229954, 1);
+            submitBtn.strokeRoundedRect(-100, -25, 200, 50, 10);
+        });
+        
+        hitArea.on('pointerdown', () => this.checkDragDropAnswer());
+        
+        this.quizContainer.add([submitBtn, submitText, hitArea]);
     }
 
     checkDragDropAnswer() {
