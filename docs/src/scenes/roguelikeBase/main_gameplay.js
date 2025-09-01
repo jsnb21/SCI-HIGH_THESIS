@@ -53,6 +53,13 @@ export default class MainGameplay extends BaseScene {
         this.countdownText = null;
         this.countdownEvent = null;
         this.gameStarted = false;
+        
+        // Score and quiz system
+        this.score = 0;
+        this.scoreText = null;
+        this.quizActive = false;
+        this.currentQuiz = null;
+        this.quizContainer = null;
     }
 
     init(data) {
@@ -81,6 +88,14 @@ export default class MainGameplay extends BaseScene {
             </svg>
         `));
         
+        // Load quiz data
+        this.load.json('pythonQuiz', 'data/quizzes/python.json');
+        this.load.json('javaQuiz', 'data/quizzes/java.json');
+        this.load.json('cQuiz', 'data/quizzes/C.json');
+        this.load.json('cppQuiz', 'data/quizzes/C++.json');
+        this.load.json('csharpQuiz', 'data/quizzes/csharp.json');
+        this.load.json('webdesignQuiz', 'data/quizzes/webdesign.json');
+        
         // Load background tiles (optional - you can add your own)
         this.load.image('grassTile', 'assets/img/bg/grass.png');
         
@@ -90,6 +105,9 @@ export default class MainGameplay extends BaseScene {
 
     create() {
         super.create(); // Call BaseScene create method
+        
+        // Listen for quiz completion
+        this.events.on('quiz-completed', this.handleQuizCompletion, this);
         
         // Create background
         this.createBackground();
@@ -102,6 +120,9 @@ export default class MainGameplay extends BaseScene {
         
         // Create timer (but don't start it yet)
         this.createTimer();
+        
+        // Create score display
+        this.createScoreDisplay();
         
         // Initialize timer icons
         this.initializeTimerIcons();
@@ -294,6 +315,40 @@ export default class MainGameplay extends BaseScene {
         
         // Don't start the timer event yet - will be started after countdown
         this.timerEvent = null;
+    }
+
+    createScoreDisplay() {
+        // Create score text at the top right of the screen
+        this.scoreText = this.add.text(this.scale.width - 20, 30, 'Score: 0', {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 2,
+            shadow: {
+                offsetX: 2,
+                offsetY: 2,
+                color: '#000000',
+                blur: 3,
+                fill: true
+            }
+        }).setOrigin(1, 0).setScrollFactor(0);
+    }
+
+    updateScore(points) {
+        this.score += points;
+        this.scoreText.setText(`Score: ${this.score}`);
+        
+        // Add visual effect for score increase
+        this.tweens.add({
+            targets: this.scoreText,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 200,
+            ease: 'Power2',
+            yoyo: true
+        });
     }
 
     updateTimer() {
@@ -699,6 +754,344 @@ export default class MainGameplay extends BaseScene {
     }
 
     handleEnemyCollision(enemy) {
+        // Don't handle collision if quiz is already active or game hasn't started
+        if (this.quizActive || !this.gameStarted) {
+            return;
+        }
+        
+        // Save game state and start quiz scene
+        this.startQuizScene(enemy);
+    }
+
+    startQuizScene(enemy) {
+        this.quizActive = true;
+        this.currentQuiz = enemy;
+        
+        // Save current game state
+        const gameState = this.saveGameState();
+        
+        // Start quiz scene with course topic - let QuizScene handle quiz data loading
+        this.scene.pause();
+        this.scene.launch('QuizScene', {
+            courseTopic: this.courseTopic,
+            gameState: gameState,
+            enemyToDestroy: enemy
+        });
+    }
+
+    saveGameState() {
+        return {
+            player: {
+                x: this.player.x,
+                y: this.player.y,
+                tileX: this.player.tileX,
+                tileY: this.player.tileY
+            },
+            enemies: this.enemies.map(enemy => ({
+                x: enemy.x,
+                y: enemy.y,
+                tileX: enemy.tileX,
+                tileY: enemy.tileY
+            })),
+            score: this.score,
+            gameTimer: this.gameTimer,
+            gameStarted: this.gameStarted,
+            timerIcons: this.timerIcons.map(icon => ({
+                x: icon.x,
+                y: icon.y,
+                tileX: icon.tileX,
+                tileY: icon.tileY,
+                visible: icon.visible
+            })),
+            courseTopic: this.courseTopic
+        };
+    }
+
+    loadGameState(gameState) {
+        // Restore player position
+        this.player.x = gameState.player.x;
+        this.player.y = gameState.player.y;
+        this.player.tileX = gameState.player.tileX;
+        this.player.tileY = gameState.player.tileY;
+        
+        if (this.playerSprite) {
+            this.playerSprite.x = this.player.x;
+            this.playerSprite.y = this.player.y;
+        }
+        
+        if (this.playerGlow) {
+            this.playerGlow.x = this.player.x;
+            this.playerGlow.y = this.player.y;
+        }
+        
+        // Restore enemies
+        this.enemies.forEach((enemy, index) => {
+            if (gameState.enemies[index]) {
+                enemy.x = gameState.enemies[index].x;
+                enemy.y = gameState.enemies[index].y;
+                enemy.tileX = gameState.enemies[index].tileX;
+                enemy.tileY = gameState.enemies[index].tileY;
+                
+                if (enemy.sprite) {
+                    enemy.sprite.x = enemy.x;
+                    enemy.sprite.y = enemy.y;
+                }
+            }
+        });
+        
+        // Restore timer icons
+        this.timerIcons.forEach((icon, index) => {
+            if (gameState.timerIcons[index]) {
+                icon.x = gameState.timerIcons[index].x;
+                icon.y = gameState.timerIcons[index].y;
+                icon.tileX = gameState.timerIcons[index].tileX;
+                icon.tileY = gameState.timerIcons[index].tileY;
+                icon.visible = gameState.timerIcons[index].visible;
+                
+                if (icon.sprite) {
+                    icon.sprite.x = icon.x;
+                    icon.sprite.y = icon.y;
+                    icon.sprite.setVisible(icon.visible);
+                }
+            }
+        });
+        
+        // Restore game state
+        this.score = gameState.score;
+        this.gameTimer = gameState.gameTimer;
+        this.gameStarted = gameState.gameStarted;
+        
+        // Update displays
+        this.updateScoreDisplay();
+        this.updateTimerDisplay();
+        
+        // Resume game
+        this.quizActive = false;
+    }
+
+    handleQuizCompletion(data) {
+        // Load the returned game state
+        this.loadGameState(data.gameState);
+        
+        // Handle quiz results
+        if (data.correct) {
+            // Correct answer - give rewards
+            this.updateScore(100);
+            this.gameTimer += 10;
+            this.updateTimerDisplay();
+            console.log('Correct answer! +100 score, +10 seconds');
+        } else {
+            console.log('Wrong answer!');
+        }
+        
+        // Destroy the enemy
+        if (data.enemyToDestroy) {
+            this.destroyEnemy(data.enemyToDestroy);
+        }
+    }
+
+    updateScoreDisplay() {
+        if (this.scoreText) {
+            this.scoreText.setText(`Score: ${this.score}`);
+        }
+    }
+
+    updateTimerDisplay() {
+        if (this.timerText) {
+            const minutes = Math.floor(this.gameTimer / 60);
+            const seconds = this.gameTimer % 60;
+            const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            this.timerText.setText(timeString);
+            
+            // Update timer color based on remaining time
+            if (this.gameTimer > 30) {
+                this.timerText.setColor('#ffffff');
+                if (this.timerShake) {
+                    this.timerShake.stop();
+                    this.timerText.setScale(1);
+                }
+            } else if (this.gameTimer > 10) {
+                this.timerText.setColor('#ffff00');
+                if (this.timerShake) {
+                    this.timerShake.stop();
+                    this.timerText.setScale(1);
+                }
+            } else {
+                this.timerText.setColor('#ff0000');
+                // Start shaking if not already shaking
+                if (!this.timerShake || !this.timerShake.isPlaying()) {
+                    this.startTimerShake();
+                }
+            }
+        }
+    }
+
+    showQuizPopup(enemy) {
+        this.quizActive = true;
+        this.currentQuiz = enemy;
+        
+        // Get random quiz question based on course topic
+        const quizData = this.getQuizData();
+        if (!quizData || !quizData.questions || quizData.questions.length === 0) {
+            console.error('No quiz data available');
+            this.destroyEnemy(enemy);
+            return;
+        }
+        
+        const randomQuestion = Phaser.Utils.Array.GetRandom(quizData.questions);
+        
+        // Create quiz container
+        this.quizContainer = this.add.container(this.scale.width / 2, this.scale.height / 2);
+        this.quizContainer.setDepth(2000);
+        
+        // Create quiz background
+        const quizBg = this.add.rectangle(0, 0, 600, 400, 0x000000, 0.9);
+        quizBg.setStroke(0xffffff, 4);
+        this.quizContainer.add(quizBg);
+        
+        // Create question text
+        const questionText = this.add.text(0, -120, randomQuestion.question, {
+            fontFamily: 'Arial',
+            fontSize: '20px',
+            fontWeight: 'bold',
+            color: '#ffffff',
+            align: 'center',
+            wordWrap: { width: 540 }
+        }).setOrigin(0.5);
+        this.quizContainer.add(questionText);
+        
+        // Create answer buttons
+        const answers = randomQuestion.options;
+        const correctAnswer = randomQuestion.correct;
+        
+        for (let i = 0; i < answers.length; i++) {
+            const answerBtn = this.add.rectangle(0, -40 + (i * 60), 500, 50, 0x333333);
+            answerBtn.setStroke(0xffffff, 2);
+            answerBtn.setInteractive();
+            
+            const answerText = this.add.text(0, -40 + (i * 60), `${String.fromCharCode(65 + i)}. ${answers[i]}`, {
+                fontFamily: 'Arial',
+                fontSize: '16px',
+                color: '#ffffff',
+                align: 'center',
+                wordWrap: { width: 480 }
+            }).setOrigin(0.5);
+            
+            this.quizContainer.add([answerBtn, answerText]);
+            
+            // Add hover effects
+            answerBtn.on('pointerover', () => {
+                answerBtn.setFillStyle(0x555555);
+            });
+            
+            answerBtn.on('pointerout', () => {
+                answerBtn.setFillStyle(0x333333);
+            });
+            
+            // Add click handler
+            answerBtn.on('pointerdown', () => {
+                this.handleQuizAnswer(i, correctAnswer, enemy);
+            });
+        }
+        
+        // Add title
+        const titleText = this.add.text(0, -170, 'Programming Quiz!', {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#ffff00'
+        }).setOrigin(0.5);
+        this.quizContainer.add(titleText);
+    }
+
+    getQuizData() {
+        // Get quiz data based on course topic
+        const topic = this.courseTopic || 'python';
+        switch (topic.toLowerCase()) {
+            case 'python': return this.cache.json.get('pythonQuiz');
+            case 'java': return this.cache.json.get('javaQuiz');
+            case 'c': return this.cache.json.get('cQuiz');
+            case 'c++': return this.cache.json.get('cppQuiz');
+            case 'csharp': return this.cache.json.get('csharpQuiz');
+            case 'webdesign': return this.cache.json.get('webdesignQuiz');
+            default: return this.cache.json.get('pythonQuiz');
+        }
+    }
+
+    handleQuizAnswer(selectedIndex, correctIndex, enemy) {
+        const isCorrect = selectedIndex === correctIndex;
+        
+        // Show result
+        this.showQuizResult(isCorrect);
+        
+        if (isCorrect) {
+            // Correct answer - give rewards
+            this.updateScore(100);
+            this.gameTimer += 10;
+            
+            // Update timer display
+            const minutes = Math.floor(this.gameTimer / 60);
+            const seconds = this.gameTimer % 60;
+            const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            this.timerText.setText(timeString);
+            
+            // Reset timer color if it was red/yellow
+            if (this.gameTimer > 30) {
+                this.timerText.setColor('#ffffff');
+            } else if (this.gameTimer > 10) {
+                this.timerText.setColor('#ffff00');
+            }
+            
+            console.log('Correct answer! +100 score, +10 seconds');
+        } else {
+            console.log('Wrong answer!');
+        }
+        
+        // Destroy enemy after quiz
+        setTimeout(() => {
+            this.destroyEnemy(enemy);
+            this.closeQuizPopup();
+        }, 2000);
+    }
+
+    showQuizResult(isCorrect) {
+        // Create result overlay
+        const resultText = this.add.text(this.scale.width / 2, this.scale.height / 2 + 150, 
+            isCorrect ? 'CORRECT! +100 Score, +10 Seconds!' : 'WRONG ANSWER!', {
+            fontFamily: 'Arial',
+            fontSize: '28px',
+            fontWeight: 'bold',
+            color: isCorrect ? '#00ff00' : '#ff0000',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5).setDepth(2100);
+        
+        // Animate result text
+        this.tweens.add({
+            targets: resultText,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 500,
+            ease: 'Power2',
+            yoyo: true,
+            onComplete: () => {
+                setTimeout(() => {
+                    resultText.destroy();
+                }, 1000);
+            }
+        });
+    }
+
+    closeQuizPopup() {
+        if (this.quizContainer) {
+            this.quizContainer.destroy();
+            this.quizContainer = null;
+        }
+        this.quizActive = false;
+        this.currentQuiz = null;
+    }
+
+    destroyEnemy(enemy) {
         // Remove enemy from array
         const enemyIndex = this.enemies.indexOf(enemy);
         if (enemyIndex > -1) {
@@ -1028,8 +1421,8 @@ export default class MainGameplay extends BaseScene {
             this.playerGlow.setPosition(this.playerSprite.x, this.playerSprite.y);
         }
         
-        // Only run game systems if the game has started
-        if (!this.gameStarted) {
+        // Only run game systems if the game has started and no quiz is active
+        if (!this.gameStarted || this.quizActive) {
             return;
         }
         
@@ -1079,8 +1472,8 @@ export default class MainGameplay extends BaseScene {
     movePlayer(directionX, directionY) {
         if (this.isMoving) return;
         
-        // Don't allow movement during countdown
-        if (!this.gameStarted) return;
+        // Don't allow movement during countdown or quiz
+        if (!this.gameStarted || this.quizActive) return;
         
         // Calculate target position
         const targetX = this.player.x + (directionX * this.TILE_SIZE);
