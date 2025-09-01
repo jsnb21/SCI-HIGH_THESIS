@@ -83,67 +83,45 @@ export default class QuizScene extends BaseScene {
     }
 
     loadQuizData() {
-        // Check intensity level for quiz type
-        if (this.intensity >= 2) {
-            // Load code arrangement questions from JSON files
+        // Load questions based on intensity level
+        if (this.intensity >= 3) {
+            // Intensity 3: Code arrangement only
             this.loadCodeArrangementQuestion();
             if (this.currentQuestion) {
                 this.currentQuestion.isDragDrop = true;
-                console.log('Loaded code arrangement question:', this.currentQuestion);
+                console.log('Loaded intensity 3 code arrangement question:', this.currentQuestion);
+                return;
+            }
+        } else if (this.intensity === 2) {
+            // Intensity 2: Mix of multiple choice and drag-drop (precedence order)
+            const questionType = Math.random() < 0.5 ? 'multipleChoice' : 'dragDrop';
+            if (questionType === 'dragDrop') {
+                this.loadDragDropQuestion();
+                if (this.currentQuestion) {
+                    console.log('Loaded intensity 2 drag-drop question:', this.currentQuestion);
+                    return;
+                }
+            } else {
+                this.loadMultipleChoiceQuestion(2);
+                if (this.currentQuestion) {
+                    console.log('Loaded intensity 2 multiple choice question:', this.currentQuestion);
+                    return;
+                }
+            }
+        } else {
+            // Intensity 1: Multiple choice only
+            this.loadMultipleChoiceQuestion(1);
+            if (this.currentQuestion) {
+                console.log('Loaded intensity 1 multiple choice question:', this.currentQuestion);
                 return;
             }
         }
         
-        // Get quiz data based on course topic (normal multiple choice)
-        const topic = this.courseTopic || 'python';
-        let quizData = null;
-        
-        switch (topic.toLowerCase()) {
-            case 'python':
-                quizData = this.cache.json.get('pythonQuiz');
-                break;
-            case 'java':
-                quizData = this.cache.json.get('javaQuiz');
-                break;
-            case 'c':
-                quizData = this.cache.json.get('cQuiz');
-                break;
-            case 'c++':
-                quizData = this.cache.json.get('cppQuiz');
-                break;
-            case 'c#':
-            case 'csharp':
-                quizData = this.cache.json.get('csharpQuiz');
-                break;
-            case 'webdesign':
-                quizData = this.cache.json.get('webdesignQuiz');
-                break;
-            default:
-                quizData = this.cache.json.get('pythonQuiz');
-                break;
-        }
-        
-        if (quizData && quizData.questions && quizData.questions.length > 0) {
-            // Filter questions to only get multiple choice questions (ones with options and correctIndex)
-            const multipleChoiceQuestions = quizData.questions.filter(q => 
-                q.options && Array.isArray(q.options) && typeof q.correctIndex === 'number'
-            );
-            
-            if (multipleChoiceQuestions.length > 0) {
-                // Select a random multiple choice question
-                this.currentQuestion = Phaser.Utils.Array.GetRandom(multipleChoiceQuestions);
-                
-                // Randomize answer choices if there are more than 2 options
-                if (this.currentQuestion.options.length > 2) {
-                    this.randomizeAnswerChoices();
-                }
-                
-                console.log('Loaded question for', topic, ':', this.currentQuestion);
-            }
-        }
+        // Fallback to intensity 1 multiple choice if nothing else works
+        this.loadMultipleChoiceQuestion(1);
     }
 
-    loadCodeArrangementQuestion() {
+    loadMultipleChoiceQuestion(intensityLevel) {
         // Get quiz data based on course topic
         const topic = this.courseTopic || 'python';
         let quizData = null;
@@ -173,8 +151,107 @@ export default class QuizScene extends BaseScene {
                 break;
         }
         
-        if (quizData && quizData.codeArrangement && quizData.codeArrangement.length > 0) {
-            // Select a random code arrangement question
+        // Try to load from intensity-specific structure first
+        const intensityKey = `intensity${intensityLevel}`;
+        if (quizData && quizData[intensityKey] && quizData[intensityKey].multipleChoice && quizData[intensityKey].multipleChoice.length > 0) {
+            // Select a random multiple choice question from the specific intensity
+            this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData[intensityKey].multipleChoice);
+            
+            // Randomize answer choices if there are more than 2 options
+            if (this.currentQuestion.options.length > 2) {
+                this.randomizeAnswerChoices();
+            }
+        } else if (quizData && quizData.questions && quizData.questions.length > 0) {
+            // Fallback to old structure for compatibility
+            const multipleChoiceQuestions = quizData.questions.filter(q => 
+                q.options && Array.isArray(q.options) && typeof q.correctIndex === 'number'
+            );
+            
+            if (multipleChoiceQuestions.length > 0) {
+                this.currentQuestion = Phaser.Utils.Array.GetRandom(multipleChoiceQuestions);
+                
+                // Randomize answer choices if there are more than 2 options
+                if (this.currentQuestion.options.length > 2) {
+                    this.randomizeAnswerChoices();
+                }
+            }
+        }
+    }
+
+    loadDragDropQuestion() {
+        // Get quiz data based on course topic for intensity 2 drag-drop questions
+        const topic = this.courseTopic || 'python';
+        let quizData = null;
+        
+        switch (topic.toLowerCase()) {
+            case 'python':
+                quizData = this.cache.json.get('pythonQuiz');
+                break;
+            case 'java':
+                quizData = this.cache.json.get('javaQuiz');
+                break;
+            case 'c':
+                quizData = this.cache.json.get('cQuiz');
+                break;
+            case 'c++':
+                quizData = this.cache.json.get('cppQuiz');
+                break;
+            case 'c#':
+            case 'csharp':
+                quizData = this.cache.json.get('csharpQuiz');
+                break;
+            case 'webdesign':
+                quizData = this.cache.json.get('webdesignQuiz');
+                break;
+            default:
+                quizData = this.cache.json.get('pythonQuiz');
+                break;
+        }
+        
+        if (quizData && quizData.intensity2 && quizData.intensity2.dragDrop && quizData.intensity2.dragDrop.length > 0) {
+            // Select a random drag-drop question from intensity 2
+            this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData.intensity2.dragDrop);
+            console.log('Loaded drag-drop question for', topic, ':', this.currentQuestion);
+        }
+    }
+
+    loadCodeArrangementQuestion() {
+        // Get quiz data based on course topic for intensity 3 code arrangement
+        const topic = this.courseTopic || 'python';
+        let quizData = null;
+        
+        switch (topic.toLowerCase()) {
+            case 'python':
+                quizData = this.cache.json.get('pythonQuiz');
+                break;
+            case 'java':
+                quizData = this.cache.json.get('javaQuiz');
+                break;
+            case 'c':
+                quizData = this.cache.json.get('cQuiz');
+                break;
+            case 'c++':
+                quizData = this.cache.json.get('cppQuiz');
+                break;
+            case 'c#':
+            case 'csharp':
+                quizData = this.cache.json.get('csharpQuiz');
+                break;
+            case 'webdesign':
+                quizData = this.cache.json.get('webdesignQuiz');
+                break;
+            default:
+                quizData = this.cache.json.get('pythonQuiz');
+                break;
+        }
+        
+        // Try to load from intensity3 structure first
+        if (quizData && quizData.intensity3 && quizData.intensity3.codeArrangement && quizData.intensity3.codeArrangement.length > 0) {
+            // Select a random code arrangement question from intensity 3
+            this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData.intensity3.codeArrangement);
+            console.log('Loaded intensity 3 code arrangement question for', topic, ':', this.currentQuestion);
+        } else if (quizData && quizData.codeArrangement && quizData.codeArrangement.length > 0) {
+            // Fallback to old structure for compatibility
             this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData.codeArrangement);
             console.log('Loaded code arrangement question for', topic, ':', this.currentQuestion);
         }
@@ -212,9 +289,15 @@ export default class QuizScene extends BaseScene {
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2;
         
-        // Check if this is a drag-and-drop question
+        // Check if this is a drag-and-drop question (code arrangement - intensity 3)
         if (this.currentQuestion.isDragDrop) {
             this.createDragDropInterface(centerX, centerY);
+            return;
+        }
+        
+        // Check if this is a drag-and-drop question (precedence order - intensity 2)
+        if (this.currentQuestion.type === 'drag-and-drop' && this.currentQuestion.options) {
+            this.createPrecedenceDragDropInterface(centerX, centerY);
             return;
         }
         
@@ -444,6 +527,23 @@ export default class QuizScene extends BaseScene {
             duration: 500,
             ease: 'Back.easeOut'
         });
+    }
+
+    createPrecedenceDragDropInterface(centerX, centerY) {
+        // For now, convert precedence questions to code arrangement format for compatibility
+        const dragItems = this.currentQuestion.options.dragItems.filter(item => !item.isDecoy);
+        const dropZones = this.currentQuestion.options.dropZones;
+        
+        // Convert to blocks format
+        this.currentQuestion.blocks = dragItems.map(item => item.text);
+        this.currentQuestion.correctOrder = dropZones.map(zone => {
+            const itemIndex = dragItems.findIndex(item => item.id === zone.correctItemId);
+            return itemIndex;
+        });
+        
+        // Mark as drag-drop and use existing interface
+        this.currentQuestion.isDragDrop = true;
+        this.createDragDropInterface(centerX, centerY);
     }
 
     createDragDropBlocks() {

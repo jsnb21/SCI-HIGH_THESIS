@@ -37,8 +37,10 @@ export default class MainGameplay extends BaseScene {
         
         // INTENSITY system
         this.enemiesDefeated = 0;
-        this.intensity = 1; // Level 1 = normal quizzes, Level 2 = drag-and-drop
-        this.intensityThreshold = 10; // Enemies needed to increase intensity
+        this.correctAnswers = 0; // Track correct answers for intensity progression
+        this.intensity = 1; // Level 1 = multiple choice, Level 2 = mixed, Level 3 = code arrangement
+        this.intensityThreshold = 5; // Correct answers needed to reach intensity 2
+        this.intensityThreshold2 = 10; // Correct answers needed to reach intensity 3
         
         // Enemy system
         this.enemies = [];
@@ -83,6 +85,7 @@ export default class MainGameplay extends BaseScene {
         
         // Initialize/reset INTENSITY system
         this.enemiesDefeated = 0;
+        this.correctAnswers = 0;
         this.intensity = 1;
         
         console.log('MainGameplay initialized with topic:', this.courseTopic);
@@ -1005,6 +1008,9 @@ export default class MainGameplay extends BaseScene {
             // Increment streak for correct answer
             this.streak++;
             
+            // Increment correct answers for intensity progression
+            this.correctAnswers++;
+            
             // Update highest streak if current streak is higher (stored silently)
             if (this.streak > this.highestStreak) {
                 this.highestStreak = this.streak;
@@ -1021,6 +1027,9 @@ export default class MainGameplay extends BaseScene {
             this.updateStreakDisplay();
             
             console.log(`Correct answer! Streak: ${this.streak}x, Score: +${totalScore} (+${this.baseScore} base + ${bonusScore} bonus), +10 seconds`);
+            
+            // Check for intensity increase after correct answer
+            this.checkIntensityIncrease();
         } else {
             // Reset streak on wrong answer
             this.streak = 0;
@@ -1103,13 +1112,20 @@ export default class MainGameplay extends BaseScene {
     }
 
     checkIntensityIncrease() {
-        if (this.enemiesDefeated >= this.intensityThreshold && this.intensity === 1) {
+        if (this.correctAnswers >= this.intensityThreshold2 && this.intensity === 2) {
+            this.intensity = 3;
+            
+            // Show INTENSITY 3 increase notification
+            this.showIntensityNotification();
+            
+            console.log(`INTENSITY INCREASED! Level ${this.intensity} - Code arrangement quizzes activated! (${this.correctAnswers} correct answers)`);
+        } else if (this.correctAnswers >= this.intensityThreshold && this.intensity === 1) {
             this.intensity = 2;
             
             // Show INTENSITY increase notification
             this.showIntensityNotification();
             
-            console.log(`INTENSITY INCREASED! Level ${this.intensity} - Drag-and-Drop quizzes activated!`);
+            console.log(`INTENSITY INCREASED! Level ${this.intensity} - Drag-and-Drop quizzes activated! (${this.correctAnswers} correct answers)`);
         }
     }
 
@@ -1118,7 +1134,14 @@ export default class MainGameplay extends BaseScene {
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2;
         
-        const notification = this.add.text(centerX, centerY, 'INTENSITY LEVEL 2\nDRAG & DROP MODE!', {
+        let notificationText = '';
+        if (this.intensity === 2) {
+            notificationText = 'INTENSITY LEVEL 2\nDRAG & DROP MODE!';
+        } else if (this.intensity === 3) {
+            notificationText = 'INTENSITY LEVEL 3\nCODE ARRANGEMENT!';
+        }
+        
+        const notification = this.add.text(centerX, centerY, notificationText, {
             fontFamily: 'Arial',
             fontSize: '36px',
             fontWeight: 'bold',
