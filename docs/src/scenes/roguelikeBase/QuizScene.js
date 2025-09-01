@@ -301,7 +301,7 @@ export default class QuizScene extends BaseScene {
         });
         
         // Show result after a brief delay
-        this.time.delayedCall(1500, () => {
+        this.time.delayedCall(400, () => {
             this.showResult(isCorrect);
         });
     }
@@ -349,7 +349,7 @@ export default class QuizScene extends BaseScene {
         });
         
         // Return to gameplay after delay
-        this.time.delayedCall(2500, () => {
+        this.time.delayedCall(1200, () => {
             this.returnToGameplay(isCorrect);
         });
     }

@@ -135,14 +135,9 @@ export default class MainGameplay extends BaseScene {
         
         // Setup camera to follow player
         this.setupCamera();
-        
-        // Add movement instructions
-        this.addInstructions();
-        
+
         // Add course topic display
-        this.addCourseDisplay();
-        
-        // Add resize listener to keep board centered
+        this.addCourseDisplay();        // Add resize listener to keep board centered
         this.scale.on('resize', this.onResize, this);
     }
 
@@ -318,8 +313,8 @@ export default class MainGameplay extends BaseScene {
     }
 
     createScoreDisplay() {
-        // Create score text at the top right of the screen
-        this.scoreText = this.add.text(this.scale.width - 20, 30, 'Score: 0', {
+        // Create score text at the top left of the screen
+        this.scoreText = this.add.text(20, 30, 'Score: 0', {
             fontFamily: 'Arial',
             fontSize: '24px',
             fontWeight: 'bold',
@@ -333,7 +328,7 @@ export default class MainGameplay extends BaseScene {
                 blur: 3,
                 fill: true
             }
-        }).setOrigin(1, 0).setScrollFactor(0);
+        }).setOrigin(0, 0).setScrollFactor(0);
     }
 
     updateScore(points) {
@@ -1322,29 +1317,6 @@ export default class MainGameplay extends BaseScene {
         
         this.cameras.main.setZoom(zoom);
         console.log(`Board: ${boardWidth}x${boardHeight}, Screen: ${screenWidth}x${screenHeight}, Zoom: ${zoom}`);
-    }
-
-    addInstructions() {
-        // Add control instructions
-        const instructions = this.add.text(16, 16, [
-            '8-DIRECTIONAL MOVEMENT:',
-            'Arrow Keys / WASD: Move',
-            'Number Keys (1-9): Direct movement',
-            'Click/Tap: Move towards pointer',
-            '',
-            '1=↖  2=↑  3=↗',
-            '4=←  5=⚫  6=→', 
-            '7=↙  8=↓  9=↘'
-        ], {
-            fontFamily: 'Arial',
-            fontSize: '14px',
-            color: '#ffffff',
-            backgroundColor: '#000000',
-            padding: { x: 10, y: 10 },
-            alpha: 0.8
-        });
-        instructions.setScrollFactor(0);
-        instructions.setDepth(100);
     }
 
     addCourseDisplay() {
