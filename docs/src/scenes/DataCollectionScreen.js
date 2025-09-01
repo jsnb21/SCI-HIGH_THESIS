@@ -187,8 +187,8 @@ export default class DataCollectionScreen extends BaseScene {
         inputElement.style.position = 'absolute';
         
         // Calculate position relative to the game canvas
-        const gameCanvas = document.querySelector('#game canvas');
-        const canvasRect = gameCanvas.getBoundingClientRect();
+        const gameCanvas = document.querySelector('#game canvas') || document.querySelector('canvas');
+        const canvasRect = gameCanvas ? gameCanvas.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
         const scaleX = canvasRect.width / this.scale.width;
         const scaleY = canvasRect.height / this.scale.height;
         
@@ -204,10 +204,53 @@ export default class DataCollectionScreen extends BaseScene {
         inputElement.style.color = '#ffffff';
         inputElement.style.outline = 'none';
         inputElement.style.zIndex = '1000';
+        inputElement.style.fontFamily = 'Arial, sans-serif';
+        
+        // Disable Phaser keyboard capture when input is focused
+        inputElement.addEventListener('focus', () => {
+            console.log('Input focused - disabling Phaser keyboard');
+            if (this.input && this.input.keyboard) {
+                this.input.keyboard.enabled = false;
+            }
+        });
+        
+        inputElement.addEventListener('blur', () => {
+            console.log('Input blurred - enabling Phaser keyboard');
+            if (this.input && this.input.keyboard) {
+                this.input.keyboard.enabled = true;
+            }
+        });
+        
+        // Handle keyboard events properly
+        inputElement.addEventListener('keydown', (event) => {
+            // Stop event from propagating to Phaser
+            event.stopPropagation();
+            
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                this.handleSubmit();
+            }
+            
+            // Allow all other keys to work normally
+        });
+        
+        // Also handle keypress for additional compatibility
+        inputElement.addEventListener('keypress', (event) => {
+            event.stopPropagation();
+            
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                this.handleSubmit();
+            }
+        });
         
         // Add input to DOM
         document.body.appendChild(inputElement);
-        inputElement.focus();
+        
+        // Small delay before focusing to ensure proper setup
+        this.time.delayedCall(100, () => {
+            inputElement.focus();
+        });
         
         // Store reference for cleanup
         this.inputElement = inputElement;
@@ -244,13 +287,6 @@ export default class DataCollectionScreen extends BaseScene {
             .on('pointerdown', () => {
                 this.handleSubmit();
             });
-        
-        // Handle Enter key press
-        inputElement.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                this.handleSubmit();
-            }
-        });
         
         // Entrance animations
         const animatedElements = [panelGlow, panel, title, instruction, inputBg, submitBg, submitText];
@@ -372,9 +408,14 @@ export default class DataCollectionScreen extends BaseScene {
     }
     
     proceedToResults() {
-        // Clean up input element
+        // Clean up input element and restore Phaser keyboard
         if (this.inputElement && this.inputElement.parentNode) {
             this.inputElement.parentNode.removeChild(this.inputElement);
+        }
+        
+        // Re-enable Phaser keyboard
+        if (this.input && this.input.keyboard) {
+            this.input.keyboard.enabled = true;
         }
         
         // Proceed to ResultScreen with original data
@@ -382,10 +423,16 @@ export default class DataCollectionScreen extends BaseScene {
     }
     
     shutdown() {
-        // Clean up input element on scene shutdown
+        // Clean up input element on scene shutdown and restore Phaser keyboard
         if (this.inputElement && this.inputElement.parentNode) {
             this.inputElement.parentNode.removeChild(this.inputElement);
         }
+        
+        // Re-enable Phaser keyboard
+        if (this.input && this.input.keyboard) {
+            this.input.keyboard.enabled = true;
+        }
+        
         super.shutdown();
     }
 }
