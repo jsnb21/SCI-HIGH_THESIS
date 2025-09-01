@@ -452,15 +452,38 @@ export default class DataCollectionScreen extends BaseScene {
             
             // Update career stats (import the service dynamically)
             try {
+                console.log('🔄 Attempting to import career stats service...');
                 const { default: careerStatsService } = await import('../services/careerStatsService.js');
+                console.log('✅ Career stats service imported successfully');
+                
+                console.log('🔄 Calling updateCareerStats with:', {
+                    studentId: gameplayData.studentId,
+                    fullName: fullName,
+                    sessionData: gameplayData.sessionData,
+                    additionalData: {
+                        firstName: firstName,
+                        lastName: lastName,
+                        department: department,
+                        strandYear: strandYear
+                    }
+                });
+                
                 await careerStatsService.updateCareerStats(
                     gameplayData.studentId, 
                     fullName, // Use full name for career stats
-                    gameplayData.sessionData
+                    gameplayData.sessionData,
+                    {
+                        firstName: firstName,
+                        lastName: lastName,
+                        department: department,
+                        strandYear: strandYear
+                    }
                 );
-                console.log('Career stats updated successfully');
+                console.log('✅ Career stats updated successfully');
             } catch (careerError) {
-                console.warn('Failed to update career stats, but session data was saved:', careerError);
+                console.error('❌ Failed to update career stats:', careerError);
+                console.error('❌ Career error stack:', careerError.stack);
+                console.warn('Session data was saved, but career stats update failed:', careerError.message);
                 // Don't fail the whole process if career stats update fails
             }
             

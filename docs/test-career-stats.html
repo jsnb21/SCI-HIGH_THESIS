@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Stats Service Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        button {
+            background: #00ff88;
+            color: #000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #00cc66;
+        }
+        .log {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Career Stats Service Test</h1>
+        <p>This tool tests the career stats service directly.</p>
+        
+        <button onclick="testCareerStatsUpdate()">Test Career Stats Update</button>
+        <button onclick="testCareerStatsGet()">Get Career Stats</button>
+        <button onclick="clearLog()">Clear Log</button>
+        
+        <div id="log" class="log">Ready to test career stats service...\n</div>
+    </div>
+
+    <script type="module">
+        function log(message) {
+            const logElement = document.getElementById('log');
+            logElement.textContent += new Date().toLocaleTimeString() + ' - ' + message + '\n';
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = 'Log cleared...\n';
+        }
+
+        // Make functions globally available
+        window.log = log;
+        window.clearLog = clearLog;
+
+        // Test career stats update
+        window.testCareerStatsUpdate = async () => {
+            try {
+                log('🔄 Testing career stats update...');
+                
+                // Import the service
+                log('📦 Importing career stats service...');
+                const { default: careerStatsService } = await import('./src/services/careerStatsService.js');
+                log('✅ Service imported successfully');
+                
+                // Test session data
+                const testSessionData = {
+                    correctAnswers: 8,
+                    wrongAnswers: 2,
+                    totalScore: 800,
+                    highestStreak: 6,
+                    courseTopic: 'python',
+                    courseCompleted: false,
+                    intensity3CorrectAnswers: 3,
+                    startTime: Date.now() - 300000, // 5 minutes ago
+                    sessionDuration: 300, // 5 minutes
+                    intensity: 2
+                };
+                
+                log('📊 Test session data:');
+                log(JSON.stringify(testSessionData, null, 2));
+                
+                // Call updateCareerStats
+                log('🔄 Calling updateCareerStats...');
+                const result = await careerStatsService.updateCareerStats(
+                    'test_student_001',
+                    'Test Student',
+                    testSessionData
+                );
+                
+                log('✅ Career stats update successful!');
+                log('📊 Result: ' + JSON.stringify(result, null, 2));
+                
+            } catch (error) {
+                log('❌ Error testing career stats update:');
+                log(error.message);
+                log(error.stack);
+            }
+        };
+
+        // Test getting career stats
+        window.testCareerStatsGet = async () => {
+            try {
+                log('🔄 Testing career stats retrieval...');
+                
+                // Import the service
+                const { default: careerStatsService } = await import('./src/services/careerStatsService.js');
+                log('✅ Service imported');
+                
+                // Get stats
+                const stats = await careerStatsService.getCareerStats('test_student_001');
+                
+                log('✅ Career stats retrieved successfully!');
+                log('📊 Stats: ' + JSON.stringify(stats, null, 2));
+                
+            } catch (error) {
+                log('❌ Error getting career stats:');
+                log(error.message);
+                log(error.stack);
+            }
+        };
+
+        // Auto-log initialization
+        log('🔧 Career Stats Service Test initialized');
+        log('👆 Use the buttons above to test the service');
+    </script>
+</body>
+</html>

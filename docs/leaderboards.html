@@ -556,7 +556,7 @@
       </div>
     </footer>
     <script>
-      // TODO: Replace with your Firebase config
+      // Firebase Configuration
       const firebaseConfig = {
         apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
         authDomain: "sci-high-website.firebaseapp.com",
@@ -565,144 +565,189 @@
         storageBucket: "sci-high-website.appspot.com",
         messagingSenderId: "451463202515",
         appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
-    };
+      };
+
       // Initialize Firebase
       firebase.initializeApp(firebaseConfig);
       const db = firebase.database();
-      // Fetch leaderboard data with filter
+
+      // Load Career Stats Data from Firebase
+      async function loadCareerStatsData(filter = 'overall') {
+        try {
+          console.log('Loading career stats data with filter:', filter);
+          
+          const snapshot = await db.ref('student_career_stats').once('value');
+          const data = snapshot.val();
+          
+          if (!data) {
+            console.log('No career stats data found');
+            return [];
+          }
+
+          // Convert to array and process data
+          const leaderboardData = [];
+          
+          Object.entries(data).forEach(([studentId, statsData]) => {
+            if (!statsData.careerStats || !statsData.studentInfo) {
+              return; // Skip incomplete records
+            }
+
+            const career = statsData.careerStats;
+            const info = statsData.studentInfo;
+            
+            // Determine department from the new form structure
+            let department = 'Unknown';
+            let departmentType = 'other';
+            
+            if (statsData.department) {
+              department = statsData.department;
+              departmentType = statsData.department.toLowerCase().includes('college') ? 'college' : 
+                              statsData.department.toLowerCase().includes('senior') ? 'seniorhigh' : 'other';
+            }
+
+            // Apply filter
+            if (filter !== 'overall') {
+              if (filter === 'college' && departmentType !== 'college') return;
+              if (filter === 'seniorhigh' && departmentType !== 'seniorhigh') return;
+              if (filter === 'juniorhigh' && departmentType !== 'juniorhigh') return;
+            }
+
+            // Calculate completion percentage
+            const completionStatus = career.courseCompletionStatus || {};
+            const totalCourses = Object.keys(completionStatus).length;
+            const completedCourses = Object.values(completionStatus).filter(Boolean).length;
+            const completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
+
+            leaderboardData.push({
+              studentId: studentId,
+              userId: studentId, // For compatibility
+              name: info.fullName || 'Unknown Student',
+              firstName: statsData.firstName || '',
+              lastName: statsData.lastName || '',
+              department: department,
+              strandYear: statsData.strandYear || '',
+              score: career.totalPoints || 0,
+              totalSessions: career.totalSessions || 0,
+              averageAccuracy: career.averageAccuracy || 0,
+              highestStreak: career.highestStreak || 0,
+              completedCourses: completedCourses,
+              totalCourses: totalCourses,
+              completionPercentage: completionPercentage,
+              courseCompletionStatus: completionStatus,
+              lastUpdated: info.lastUpdated || '',
+              recentSessions: statsData.recentSessions || {}
+            });
+          });
+
+          // Sort by total points (descending)
+          leaderboardData.sort((a, b) => b.score - a.score);
+          
+          console.log(`Loaded ${leaderboardData.length} career stats records`);
+          return leaderboardData;
+
+        } catch (error) {
+          console.error('Error loading career stats data:', error);
+          return [];
+        }
+      }
+
+      // Enhanced Leaderboard Rendering with Career Stats
       function renderLeaderboard(data) {
         const container = document.getElementById('leaderboard-list');
         if (!data || data.length === 0) {
-          container.innerHTML = '<p class="text-gray-500">No scores yet.</p>';
+          container.innerHTML = '<p class="text-gray-500 text-center font-gaming">No career stats available yet. Complete some quiz sessions!</p>';
           return;
         }
-        let html = `<table class="w-full text-left mt-4"><thead><tr><th class="py-2 px-4 text-dark">Rank</th><th class="py-2 px-4 text-dark">Name</th><th class="py-2 px-4 text-dark">Score</th><th class="py-2 px-4 text-dark">Department</th></tr></thead><tbody>`;
-        let rank = 1;
-        data.forEach(entry => {
-          const playerNameHtml = entry.userId 
-            ? `<button class="player-name-link text-primary hover:text-accent underline cursor-pointer font-medium" onclick="showPlayerProfile('${entry.userId}')">${entry.name}</button>`
-            : entry.name;
-          html += `<tr class="border-b border-light"><td class="py-2 px-4">${rank++}</td><td class="py-2 px-4">${playerNameHtml}</td><td class="py-2 px-4">${entry.score}</td><td class="py-2 px-4">${entry.department ? entry.department : '-'}</td></tr>`;
+
+        let html = `
+          <div class="overflow-x-auto">
+            <table class="w-full text-left bg-dark/50 rounded-lg overflow-hidden">
+              <thead class="bg-gradient-to-r from-primary to-accent">
+                <tr class="text-dark font-gaming">
+                  <th class="py-4 px-4 font-bold">Rank</th>
+                  <th class="py-4 px-4 font-bold">Student</th>
+                  <th class="py-4 px-4 font-bold">Total Points</th>
+                  <th class="py-4 px-4 font-bold">Sessions</th>
+                  <th class="py-4 px-4 font-bold">Avg Accuracy</th>
+                  <th class="py-4 px-4 font-bold">Courses</th>
+                  <th class="py-4 px-4 font-bold">Department</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        data.forEach((entry, index) => {
+          const rank = index + 1;
+          let rankBadge = '';
+          let rowClass = 'border-b border-light/30 hover:bg-light/20 transition-colors';
+          
+          if (rank === 1) {
+            rankBadge = '👑';
+            rowClass += ' bg-gradient-to-r from-yellow-400/10 to-yellow-600/10';
+          } else if (rank === 2) {
+            rankBadge = '🥈';
+            rowClass += ' bg-gradient-to-r from-gray-300/10 to-gray-500/10';
+          } else if (rank === 3) {
+            rankBadge = '🥉';
+            rowClass += ' bg-gradient-to-r from-orange-400/10 to-orange-600/10';
+          }
+
+          const playerNameHtml = `
+            <button class="player-name-link text-primary hover:text-accent underline cursor-pointer font-medium transition-colors" 
+                    onclick="showPlayerProfile('${entry.studentId}')">
+              ${entry.name}
+            </button>
+          `;
+
+          const coursesHtml = `
+            <div class="text-center">
+              <span class="text-accent font-bold">${entry.completedCourses}/${entry.totalCourses}</span>
+              <div class="text-xs text-gray-400">${entry.completionPercentage}%</div>
+            </div>
+          `;
+
+          html += `
+            <tr class="${rowClass}">
+              <td class="py-3 px-4">
+                <div class="flex items-center space-x-2">
+                  <span class="font-gaming font-bold text-primary">#${rank}</span>
+                  <span class="text-lg">${rankBadge}</span>
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                <div>
+                  ${playerNameHtml}
+                  <div class="text-xs text-gray-400">${entry.strandYear || 'N/A'}</div>
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                <span class="font-gaming font-bold text-primary text-lg">${entry.score.toLocaleString()}</span>
+              </td>
+              <td class="py-3 px-4 text-center">
+                <span class="font-gaming text-accent">${entry.totalSessions}</span>
+              </td>
+              <td class="py-3 px-4 text-center">
+                <span class="font-gaming text-cyan">${entry.averageAccuracy}%</span>
+              </td>
+              <td class="py-3 px-4">
+                ${coursesHtml}
+              </td>
+              <td class="py-3 px-4">
+                <span class="text-sm text-gray-300">${entry.department}</span>
+              </td>
+            </tr>
+          `;
         });
-        html += '</tbody></table>';
+
+        html += '</tbody></table></div>';
         container.innerHTML = html;
       }
 
-      async function addScore(userId, name, score, department) {
-        try {
-          // Validate input
-          if (!userId || !name || score < 0) {
-            throw new Error('Invalid score data');
-          }
-          
-          // First verify the user is a valid student
-          const studentsSnapshot = await db.ref('students').orderByChild('studentId').equalTo(userId).once('value');
-          
-          if (!studentsSnapshot.exists()) {
-            throw new Error('Only registered students can submit scores to the leaderboard');
-          }
-          
-          const studentData = Object.values(studentsSnapshot.val())[0];
-          
-          // Create sample gameData for testing
-          const gameData = {
-            totalPoints: score,
-            topicPoints: {
-              'python': Math.floor(score * (0.25 + Math.random() * 0.15)), // 25-40%
-              'java': Math.floor(score * (0.20 + Math.random() * 0.15)),   // 20-35%
-              'C_sharp_': Math.floor(score * (0.15 + Math.random() * 0.15)), // 15-30%
-              'webdesign': Math.floor(score * (0.15 + Math.random() * 0.10)), // 15-25%
-              'C': Math.floor(score * (0.10 + Math.random() * 0.10)),      // 10-20%
-              'C_plus_plus_': Math.floor(score * (0.05 + Math.random() * 0.10)) // 5-15%
-            },
-            achievementCount: Math.floor(Math.random() * 8) + 2, // 2-10 achievements
-            playTime: Math.floor(Math.random() * 7200) + 1800, // 30 min to 2 hours
-            courseProgress: {
-              'intro_to_programming': true,
-              'data_structures': Math.random() > 0.3,
-              'web_development': Math.random() > 0.4,
-              'algorithms': Math.random() > 0.6,
-              'advanced_topics': Math.random() > 0.8,
-              'software_engineering': Math.random() > 0.7
-            }
-          };
-          
-          const scoreData = {
-            studentId: userId, // Store student ID for reference
-            name: studentData.name, // Use the official name from student record
-            score: score,
-            department: studentData.level === 'college' ? `College - ${studentData.course}` : 
-                       studentData.level === 'shs' ? `Senior High - ${studentData.strand}` : 
-                       studentData.level || 'Unknown',
-            timestamp: Date.now(),
-            submissionDate: new Date().toISOString(),
-            gameData: gameData,
-            studentInfo: {
-              level: studentData.level,
-              course: studentData.course,
-              strand: studentData.strand,
-              year: studentData.year
-            }
-          };
-
-          await db.ref('leaderboards/' + userId).set(scoreData);
-          console.log('Score submitted successfully for student:', studentData.name);
-          return Promise.resolve();
-        } catch (error) {
-          console.error('Error submitting score:', error);
-          return Promise.reject(error);
-        }
-      }
-
-      // Enhanced function to update existing score if it's higher
-      async function updateBestScore(userId, name, score, department) {
-        try {
-          // First verify the user is a valid student
-          const studentsSnapshot = await db.ref('students').orderByChild('studentId').equalTo(userId).once('value');
-          
-          if (!studentsSnapshot.exists()) {
-            console.log('User is not a registered student');
-            return Promise.reject(new Error('Only registered students can submit scores to the leaderboard'));
-          }
-          
-          const leaderboardRef = db.ref('leaderboards/' + userId);
-          const snapshot = await leaderboardRef.once('value');
-          const existingData = snapshot.val();
-          
-          if (!existingData || score > existingData.score) {
-            // Add new score or update if higher
-            const result = await addScore(userId, name, score, department);
-            console.log('New best score saved!');
-            return true; // Indicates new best score
-          } else {
-            console.log('Score not high enough to update leaderboard');
-            return false; // Indicates score wasn't updated
-          }
-        } catch (error) {
-          console.error('Error updating best score:', error);
-          return Promise.reject(error);
-        }
-      }
-
-      // Function to get a player's current best score
-      async function getPlayerBestScore(userId) {
-        try {
-          const snapshot = await db.ref('leaderboards/' + userId).once('value');
-          const data = snapshot.val();
-          return data ? data.score : 0;
-        } catch (error) {
-          console.error('Error getting player best score:', error);
-          return 0;
-        }
-      }
-
-      // Render Top 3 Player Cards
+      // Enhanced Player Cards with Career Stats
       function renderPlayerCards(data) {
-        console.log('renderPlayerCards called with data:', data);
+        console.log('renderPlayerCards called with career stats data:', data);
         const container = document.getElementById('player-cards-grid');
         const loading = document.getElementById('player-cards-loading');
-        console.log('Player cards container found:', !!container);
-        console.log('Player cards loading element found:', !!loading);
         
         if (!container) {
           console.error('ERROR: player-cards-grid element not found!');
@@ -710,15 +755,15 @@
         }
         
         if (!data || data.length === 0) {
-          console.log('No player data for cards');
+          console.log('No career stats data for cards');
           if (loading) {
-            loading.innerHTML = '<p class="text-gray-400 text-center font-gaming">No champions found</p>';
+            loading.innerHTML = '<p class="text-gray-400 text-center font-gaming">No students with career stats found</p>';
             loading.style.display = 'block';
           }
           return;
         }
         
-        console.log('Rendering', data.length, 'player cards');
+        console.log('Rendering', Math.min(data.length, 3), 'career stats cards');
         // Hide loading and show cards
         if (loading) {
           loading.style.display = 'none';
@@ -726,17 +771,11 @@
         
         // Take only top 3 players for featured cards
         const topPlayers = data.slice(0, 3);
-        console.log('Top 3 players for cards:', topPlayers);
         
         let cardsHtml = '';
         topPlayers.forEach((player, index) => {
-          console.log(`Rendering card for player ${index}:`, player);
-          
           // Safe name handling
-          let playerName = 'Unknown Player';
-          if (player && player.name && typeof player.name === 'string') {
-            playerName = player.name;
-          }
+          let playerName = player.name || 'Unknown Student';
           
           // Safe initials generation
           let initials = '??';
@@ -770,7 +809,7 @@
           }
           
           cardsHtml += `
-            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105" onclick="showPlayerProfile('${player.userId}')">
+            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105" onclick="showPlayerProfile('${player.studentId}')">
               <div class="neon-border bg-gradient-to-br ${cardStyle} rounded-lg p-6 backdrop-blur-sm relative overflow-hidden">
                 <!-- Rank Badge -->
                 <div class="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br ${rankColor} rounded-full flex items-center justify-center text-lg font-bold text-white border-3 border-white shadow-xl z-10">
@@ -788,32 +827,39 @@
                   </div>
                 </div>
                 
-                <!-- Player Stats -->
+                <!-- Enhanced Player Stats -->
                 <div class="space-y-3">
                   <div class="flex justify-between items-center">
-                    <span class="text-gray-300 text-sm font-gaming">Battle Score</span>
+                    <span class="text-gray-300 text-sm font-gaming">Career Points</span>
                     <span class="text-primary font-gaming font-bold text-lg">${(player.score || 0).toLocaleString()}</span>
                   </div>
                   <div class="flex justify-between items-center">
                     <span class="text-gray-300 text-sm font-gaming">Global Rank</span>
                     <span class="text-accent font-gaming font-bold text-lg">#${index + 1}</span>
                   </div>
-                  
-                  <!-- Progress Bar -->
-                  <div class="mt-4">
-                    <div class="w-full bg-dark/50 rounded-full h-2">
-                      <div class="bg-gradient-to-r from-primary to-accent h-2 rounded-full transition-all duration-500" 
-                           style="width: ${Math.min(100, data.length > 0 && Math.max(...data.map(p => p.score || 0)) > 0 ? ((player.score || 0) / Math.max(...data.map(p => p.score || 0))) * 100 : 0)}%"></div>
-                    </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-gray-300 text-sm font-gaming">Sessions</span>
+                    <span class="text-cyan font-gaming font-bold">${player.totalSessions || 0}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-gray-300 text-sm font-gaming">Accuracy</span>
+                    <span class="text-purple font-gaming font-bold">${player.averageAccuracy || 0}%</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-gray-300 text-sm font-gaming">Courses</span>
+                    <span class="text-orange-400 font-gaming font-bold">${player.completedCourses}/${player.totalCourses}</span>
                   </div>
                 </div>
                 
-                <!-- Hover Overlay -->
-                <div class="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
-                
-                <!-- Click to view label -->
-                <div class="absolute bottom-3 left-3 right-3 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <span class="text-xs font-gaming text-primary bg-dark/90 px-3 py-1 rounded-full">Click to view profile</span>
+                <!-- Course Progress Bar -->
+                <div class="mt-4">
+                  <div class="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>Course Progress</span>
+                    <span>${player.completionPercentage}%</span>
+                  </div>
+                  <div class="w-full bg-gray-700 rounded-full h-2">
+                    <div class="bg-gradient-to-r from-accent to-cyan h-2 rounded-full transition-all duration-300" style="width: ${player.completionPercentage}%"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -823,77 +869,32 @@
         container.innerHTML = cardsHtml;
       }
 
+      // Enhanced Fetch Leaderboard using Career Stats
       async function fetchLeaderboard(filter) {
         try {
           console.log('Starting fetchLeaderboard with filter:', filter);
           
-          // Get leaderboard scores directly from Firebase
-          console.log('Fetching leaderboard scores...');
-          const leaderboardSnapshot = await db.ref('leaderboards').once('value');
-          const leaderboardData = leaderboardSnapshot.val() || {};
-          console.log('Raw leaderboard data:', leaderboardData);
+          // Load career stats data using the new function
+          const careerStatsData = await loadCareerStatsData(filter);
           
-          const arr = [];
-          
-          // Process each leaderboard entry
-          Object.keys(leaderboardData).forEach(key => {
-            const entry = leaderboardData[key];
-            console.log('Processing entry:', key, entry);
-            console.log('Entry structure - name:', entry.name, 'score:', entry.score, 'department:', entry.department);
-            
-            // Extract data from the Firebase structure
-            const processedEntry = {
-              userId: key,
-              name: entry.name || entry.playerName || entry.fullName || 'Unknown Player',
-              score: parseInt(entry.score) || 0,
-              department: entry.department || 'Unknown Department',
-              timestamp: entry.timestamp || Date.now(),
-              studentId: entry.studentId || key,
-              submissionDate: entry.submissionDate || 'Unknown'
-            };
-            
-            console.log('Processed entry:', processedEntry);
-            arr.push(processedEntry);
-          });
-          
-          console.log('Total entries processed:', arr.length);
-          console.log('All processed entries:', arr);
-          
-          // Sort descending by score
-          arr.sort((a, b) => b.score - a.score);
-          console.log('Sorted entries:', arr);
-          
-          // Apply filters
-          let filtered = arr;
-          if (filter === 'college') {
-            console.log('Filtering for college students...');
-            filtered = arr.filter(e => e.department && e.department.toLowerCase().includes('college'));
-          } else if (filter === 'seniorhigh') {
-            console.log('Filtering for senior high students...');
-            filtered = arr.filter(e => e.department && (e.department.toLowerCase().includes('senior') || e.department.toLowerCase().includes('high')));
-          } else if (filter === 'juniorhigh') {
-            console.log('Filtering for junior high students...');
-            filtered = arr.filter(e => e.department && e.department.toLowerCase().includes('junior'));
-          }
-          
-          console.log('Filtered entries:', filtered.length);
-          console.log('Final filtered data:', filtered);
+          console.log(`Loaded ${careerStatsData.length} career stats entries for filter:`, filter);
           
           // Render results
           console.log('Calling renderPlayerCards with top 3...');
-          renderPlayerCards(arr.slice(0, 3));
+          renderPlayerCards(careerStatsData.slice(0, 3));
           
-          console.log('Calling renderLeaderboard with filtered data...');
-          renderLeaderboard(filtered);
+          console.log('Calling renderLeaderboard with career stats data...');
+          renderLeaderboard(careerStatsData);
           
         } catch (error) {
-          console.error('Error fetching leaderboard:', error);
+          console.error('Error fetching career stats leaderboard:', error);
           console.error('Error details:', error.message);
           
           // Show error message
-          const globalBody = document.getElementById('global-leaderboard-body');
-          const errorRow = `<tr><td colspan="6" class="text-center py-8 text-red-400">⚠️ Database error: ${error.message}</td></tr>`;
-          if (globalBody) globalBody.innerHTML = errorRow;
+          const leaderboardList = document.getElementById('leaderboard-list');
+          if (leaderboardList) {
+            leaderboardList.innerHTML = `<div class="text-center py-8 text-red-400">⚠️ Database error: ${error.message}</div>`;
+          }
           
           // Show error in player cards
           const loading = document.getElementById('player-cards-loading');
@@ -924,9 +925,9 @@
         fetchLeaderboard
       };
 
-      // Player Profile Functions
+      // Enhanced Player Profile with Career Stats
       async function showPlayerProfile(userId) {
-        console.log('Loading profile for user:', userId);
+        console.log('Loading career stats profile for user:', userId);
         
         // Show modal with animation
         const modal = document.getElementById('player-profile-modal');
@@ -949,42 +950,26 @@
         `;
         
         try {
-          // Fetch student data first
-          const studentsSnapshot = await db.ref('students').orderByChild('studentId').equalTo(userId).once('value');
-          let studentInfo = null;
+          // Fetch career stats data
+          const careerStatsSnapshot = await db.ref('student_career_stats/' + userId).once('value');
+          const careerStatsData = careerStatsSnapshot.val();
           
-          if (studentsSnapshot.exists()) {
-            studentInfo = Object.values(studentsSnapshot.val())[0];
-          }
-          
-          // Fetch leaderboard data
-          const leaderboardSnapshot = await db.ref('leaderboards/' + userId).once('value');
-          const leaderboardData = leaderboardSnapshot.val();
-          
-          if (leaderboardData && studentInfo) {
-            // Combine student info with leaderboard data
-            const combinedData = {
-              ...leaderboardData,
-              ...studentInfo,
-              department: studentInfo.level === 'college' ? `College - ${studentInfo.course}` : 
-                         studentInfo.level === 'shs' ? `Senior High - ${studentInfo.strand}` : 
-                         studentInfo.level || 'Unknown'
-            };
-            renderPlayerProfile(combinedData);
+          if (careerStatsData && careerStatsData.careerStats && careerStatsData.studentInfo) {
+            renderPlayerProfileWithCareerStats(careerStatsData);
           } else {
             document.getElementById('profile-content').innerHTML = `
               <div class="text-center py-8">
-                <div class="text-red-400 font-gaming text-lg">⚠️ Student profile not found</div>
-                <p class="text-gray-400 mt-2">This student might not be registered or have no leaderboard data.</p>
+                <div class="text-red-400 font-gaming text-lg">⚠️ Career stats not found</div>
+                <p class="text-gray-400 mt-2">This student might not have completed any quiz sessions yet.</p>
               </div>
             `;
           }
         } catch (error) {
-          console.error('Error loading player profile:', error);
+          console.error('Error loading career stats profile:', error);
           document.getElementById('profile-content').innerHTML = `
             <div class="text-center py-8">
-              <div class="text-red-400 font-gaming text-lg">🚫 Error loading profile</div>
-              <p class="text-gray-400 mt-2">Failed to fetch student data. Please try again.</p>
+              <div class="text-red-400 font-gaming text-lg">⚠️ Error loading profile</div>
+              <p class="text-gray-400 mt-2">${error.message}</p>
             </div>
           `;
         }
@@ -1000,6 +985,155 @@
         activeCharts = [];
         
         document.getElementById('player-profile-modal').classList.add('hidden');
+      }
+
+      // New Enhanced Player Profile with Career Stats
+      function renderPlayerProfileWithCareerStats(careerStatsData) {
+        const career = careerStatsData.careerStats;
+        const info = careerStatsData.studentInfo;
+        const recentSessions = careerStatsData.recentSessions || {};
+        
+        // Generate avatar initials
+        let initials = '??';
+        const fullName = info.fullName || 'Unknown Student';
+        if (fullName && fullName.trim().length > 0) {
+          const words = fullName.trim().split(' ').filter(word => word.length > 0);
+          if (words.length > 0) {
+            initials = words.map(word => word[0] ? word[0].toUpperCase() : '').join('').substring(0, 2);
+          }
+        }
+        
+        // Calculate course completion stats
+        const completionStatus = career.courseCompletionStatus || {};
+        const totalCourses = Object.keys(completionStatus).length;
+        const completedCourses = Object.values(completionStatus).filter(Boolean).length;
+        const completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
+        
+        // Format department display
+        let department = 'Unknown';
+        if (careerStatsData.department) {
+          department = careerStatsData.department;
+        }
+        
+        // Update header information
+        document.getElementById('player-avatar').textContent = initials;
+        document.getElementById('profile-player-name').textContent = fullName;
+        document.getElementById('profile-department').innerHTML = `
+          <span class="inline-block w-6 h-4 bg-primary rounded shadow"></span>
+          ${department}
+        `;
+        
+        // Update rankings (calculated from career stats)
+        document.getElementById('global-rank').textContent = '#' + (career.globalRank || '?');
+        document.getElementById('dept-rank').textContent = '#' + (career.departmentRank || '?');
+        
+        // Update stats with career data
+        document.getElementById('ranked-score').textContent = (career.totalPoints || 0).toLocaleString();
+        document.getElementById('accuracy').textContent = (career.averageAccuracy || 0).toFixed(1) + '%';
+        document.getElementById('quiz-count').textContent = career.totalSessions || 0;
+        document.getElementById('total-score').textContent = (career.totalPoints || 0).toLocaleString();
+        document.getElementById('total-questions').textContent = career.totalQuestions || 0;
+        document.getElementById('max-combo').textContent = career.highestStreak || 0;
+        document.getElementById('total-playtime').textContent = formatPlayTime(career.totalPlayTime || 0);
+        
+        // Generate level badges based on career achievements
+        generateLevelBadges(career.totalSessions || 0);
+        
+        // Create enhanced profile content with career stats
+        const content = document.getElementById('profile-content');
+        content.innerHTML = `
+          <!-- Course Completion Progress -->
+          <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <h3 class="text-xl font-bold text-primary mb-4 flex items-center gap-2 font-gaming">
+              <span class="text-primary">🎓</span>
+              Course Completion Progress
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
+              ${generateCourseCompletionBadges(completionStatus)}
+            </div>
+            <div class="mt-4">
+              <div class="flex justify-between text-sm text-gray-400 mb-2">
+                <span>Overall Progress</span>
+                <span>${completedCourses}/${totalCourses} courses (${completionPercentage}%)</span>
+              </div>
+              <div class="w-full bg-gray-700 rounded-full h-3">
+                <div class="bg-gradient-to-r from-accent to-cyan h-3 rounded-full transition-all duration-300" style="width: ${completionPercentage}%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Career Statistics Overview -->
+          <div class="grid lg:grid-cols-2 gap-6">
+            <!-- Career Performance Chart -->
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-accent mb-4 font-gaming">Career Performance</h3>
+              <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
+                <canvas id="careerChart"></canvas>
+              </div>
+              <div class="text-sm text-gray-300 text-center">
+                Total Sessions: ${career.totalSessions || 0} • Best Streak: ${career.highestStreak || 0}
+              </div>
+            </div>
+
+            <!-- Recent Session Activity -->
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-cyan mb-4 font-gaming">Recent Activity</h3>
+              <div class="space-y-3 max-h-64 overflow-y-auto">
+                ${generateRecentSessionsDisplay(recentSessions)}
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Career Statistics -->
+          <div class="grid lg:grid-cols-2 gap-6">
+            <!-- Performance Metrics -->
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-purple mb-4 font-gaming">Performance Metrics</h3>
+              <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
+                <canvas id="performanceRadar"></canvas>
+              </div>
+              <div class="text-sm text-gray-300 text-center">
+                Comprehensive skill assessment
+              </div>
+            </div>
+
+            <!-- Course Progress Breakdown -->
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-primary mb-4 font-gaming">Course Progress</h3>
+              <div class="space-y-3">
+                ${generateCourseProgressBars(completionStatus)}
+              </div>
+            </div>
+          </div>
+
+          <!-- Career Summary -->
+          <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <h3 class="text-lg font-semibold text-cyan mb-4 font-gaming">Career Summary</h3>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-primary font-gaming">${(career.totalPoints || 0).toLocaleString()}</div>
+                <div class="text-sm text-gray-400">Total Points</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-accent font-gaming">${career.totalSessions || 0}</div>
+                <div class="text-sm text-gray-400">Total Sessions</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-cyan font-gaming">${(career.averageAccuracy || 0).toFixed(1)}%</div>
+                <div class="text-sm text-gray-400">Average Accuracy</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-purple font-gaming">${career.highestStreak || 0}</div>
+                <div class="text-sm text-gray-400">Best Streak</div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Initialize charts with career stats data
+        setTimeout(() => {
+          initializeCareerStatsCharts(career, completionStatus, recentSessions);
+        }, 100);
       }
 
       function renderPlayerProfile(playerData) {
@@ -1759,6 +1893,203 @@
           alert('Error: ' + error.message);
         }
       }
+
+      // Helper Functions for Career Stats Display
+      
+      function generateCourseCompletionBadges(completionStatus) {
+        const courses = {
+          python: { name: 'Python', color: 'bg-blue-500', icon: '🐍' },
+          java: { name: 'Java', color: 'bg-orange-500', icon: '☕' },
+          csharp: { name: 'C#', color: 'bg-purple-500', icon: '💎' },
+          cpp: { name: 'C++', color: 'bg-green-500', icon: '⚡' },
+          c: { name: 'C', color: 'bg-gray-500', icon: '🔧' },
+          webdesign: { name: 'Web Design', color: 'bg-pink-500', icon: '🎨' }
+        };
+        
+        return Object.entries(courses).map(([courseKey, course]) => {
+          const isCompleted = completionStatus[courseKey] || false;
+          return `
+            <div class="bg-dark/50 p-3 rounded-lg text-center transition-all duration-300 ${isCompleted ? 'neon-border-success' : 'neon-border opacity-50'}">
+              <div class="text-2xl mb-1">${course.icon}</div>
+              <div class="text-xs font-gaming text-gray-300">${course.name}</div>
+              <div class="text-xs mt-1 ${isCompleted ? 'text-green-400' : 'text-gray-500'}">
+                ${isCompleted ? '✅ Complete' : '⏳ Pending'}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      
+      function generateCourseProgressBars(completionStatus) {
+        const courses = {
+          python: { name: 'Python Programming', color: 'bg-blue-400' },
+          java: { name: 'Java Development', color: 'bg-orange-400' },
+          csharp: { name: 'C# Programming', color: 'bg-purple-400' },
+          cpp: { name: 'C++ Programming', color: 'bg-green-400' },
+          c: { name: 'C Programming', color: 'bg-gray-400' },
+          webdesign: { name: 'Web Design', color: 'bg-pink-400' }
+        };
+        
+        return Object.entries(courses).map(([courseKey, course]) => {
+          const isCompleted = completionStatus[courseKey] || false;
+          const percentage = isCompleted ? 100 : 0;
+          
+          return `
+            <div class="space-y-2">
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-300">${course.name}</span>
+                <span class="${isCompleted ? 'text-green-400' : 'text-gray-500'}">${percentage}%</span>
+              </div>
+              <div class="w-full bg-gray-700 rounded-full h-2">
+                <div class="${course.color} h-2 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      
+      function generateRecentSessionsDisplay(recentSessions) {
+        if (!recentSessions || Object.keys(recentSessions).length === 0) {
+          return `
+            <div class="text-center text-gray-400 py-8">
+              <div class="text-4xl mb-2">📚</div>
+              <div>No recent sessions</div>
+              <div class="text-sm">Complete some quizzes to see activity here!</div>
+            </div>
+          `;
+        }
+        
+        // Get the last 5 sessions
+        const sessions = Object.entries(recentSessions)
+          .sort(([,a], [,b]) => new Date(b.timestamp) - new Date(a.timestamp))
+          .slice(0, 5);
+        
+        return sessions.map(([sessionId, session]) => {
+          const date = new Date(session.timestamp).toLocaleDateString();
+          const scoreColor = session.score >= 80 ? 'text-green-400' : session.score >= 60 ? 'text-yellow-400' : 'text-red-400';
+          
+          return `
+            <div class="flex items-center gap-3 p-3 bg-dark/50 rounded neon-border">
+              <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-dark font-bold">
+                ${session.course ? session.course.charAt(0).toUpperCase() : '?'}
+              </div>
+              <div class="flex-1">
+                <div class="font-medium text-primary">${session.course || 'Unknown Course'}</div>
+                <div class="text-xs text-gray-400">${date} • ${session.questionsAnswered || 0} questions</div>
+              </div>
+              <div class="text-right">
+                <div class="font-bold ${scoreColor}">${session.score || 0}%</div>
+                <div class="text-xs text-gray-400">${session.points || 0} pts</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      
+      function initializeCareerStatsCharts(career, completionStatus, recentSessions) {
+        // Destroy existing charts
+        activeCharts.forEach(chart => {
+          if (chart && typeof chart.destroy === 'function') {
+            chart.destroy();
+          }
+        });
+        activeCharts = [];
+        
+        // Career Performance Chart
+        const careerCanvas = document.getElementById('careerChart');
+        if (careerCanvas) {
+          const careerChart = new Chart(careerCanvas, {
+            type: 'line',
+            data: {
+              labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current'],
+              datasets: [{
+                label: 'Points Earned',
+                data: [0, Math.floor(career.totalPoints * 0.2), Math.floor(career.totalPoints * 0.5), Math.floor(career.totalPoints * 0.8), career.totalPoints],
+                borderColor: '#00ff88',
+                backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                tension: 0.4,
+                fill: true
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                  }
+                },
+                x: {
+                  grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                  }
+                }
+              }
+            }
+          });
+          activeCharts.push(careerChart);
+        }
+        
+        // Performance Radar Chart
+        const radarCanvas = document.getElementById('performanceRadar');
+        if (radarCanvas) {
+          const radarChart = new Chart(radarCanvas, {
+            type: 'radar',
+            data: {
+              labels: ['Accuracy', 'Speed', 'Consistency', 'Difficulty', 'Completion'],
+              datasets: [{
+                label: 'Performance',
+                data: [
+                  career.averageAccuracy || 0,
+                  Math.min(100, (career.totalSessions || 0) * 10),
+                  Math.min(100, (career.highestStreak || 0) * 5),
+                  Object.values(completionStatus).filter(Boolean).length * 16.67,
+                  (Object.values(completionStatus).filter(Boolean).length / Object.keys(completionStatus).length) * 100 || 0
+                ],
+                borderColor: '#00ff88',
+                backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                pointBackgroundColor: '#00ff88'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
+                }
+              },
+              scales: {
+                r: {
+                  beginAtZero: true,
+                  max: 100,
+                  grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                  },
+                  angleLines: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                  }
+                }
+              }
+            }
+          });
+          activeCharts.push(radarChart);
+        }
+      }
+
+      // Enhanced API for external access
+      window.leaderboardAPI = {
+        loadCareerStatsData,
+        fetchLeaderboard,
+        showPlayerProfile: showPlayerProfile
+      };
 
       // Make test function available globally
       window.testStudentScore = testStudentScore;

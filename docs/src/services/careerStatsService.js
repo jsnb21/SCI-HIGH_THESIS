@@ -112,18 +112,45 @@ class CareerStatsService {
     }
 
     // Update student career stats with new session data
-    async updateCareerStats(studentId, studentName, sessionData) {
+    async updateCareerStats(studentId, studentName, sessionData, additionalData = {}) {
         try {
+            console.log('🔄 CareerStatsService: Starting updateCareerStats...');
+            console.log('📊 Input data:', { studentId, studentName, sessionData, additionalData });
+            
+            // Validate and sanitize sessionData to prevent NaN values
+            if (!sessionData) {
+                throw new Error('Session data is required');
+            }
+            
+            // Ensure all numeric values are valid
+            sessionData.totalScore = parseInt(sessionData.totalScore) || 0;
+            sessionData.correctAnswers = parseInt(sessionData.correctAnswers) || 0;
+            sessionData.wrongAnswers = parseInt(sessionData.wrongAnswers) || 0;
+            sessionData.highestStreak = parseInt(sessionData.highestStreak) || 0;
+            sessionData.accuracyPercentage = parseFloat(sessionData.accuracyPercentage) || 0;
+            sessionData.sessionDuration = parseInt(sessionData.sessionDuration) || 0;
+            
+            // Ensure timestamp exists
+            if (!sessionData.timestamp) {
+                sessionData.timestamp = new Date().toISOString();
+            }
+            
+            console.log('✅ CareerStatsService: Session data validated:', sessionData);
+            
             const isInitialized = await this.ensureFirebaseInitialized();
             if (!isInitialized) {
                 throw new Error('Firebase not initialized');
             }
+            console.log('✅ CareerStatsService: Firebase initialized');
 
             const statsRef = this.database.ref(`student_career_stats/${studentId}`);
+            console.log('🔗 CareerStatsService: Database reference created for:', `student_career_stats/${studentId}`);
             
             // Get current stats
+            console.log('🔄 CareerStatsService: Fetching current stats...');
             const currentStatsSnapshot = await statsRef.once('value');
             const currentStats = currentStatsSnapshot.val() || {};
+            console.log('📊 CareerStatsService: Current stats:', currentStats);
             
             // Initialize default structure if first time
             if (!currentStats.careerStats) {
@@ -169,7 +196,10 @@ class CareerStatsService {
                 totalPoints: (currentStats.careerStats.totalPoints || 0) + sessionData.totalScore,
                 totalCorrectAnswers: (currentStats.careerStats.totalCorrectAnswers || 0) + sessionData.correctAnswers,
                 totalWrongAnswers: (currentStats.careerStats.totalWrongAnswers || 0) + sessionData.wrongAnswers,
-                highestStreak: Math.max(currentStats.careerStats.highestStreak || 0, sessionData.highestStreak)
+                highestStreak: Math.max(
+                    parseInt(currentStats.careerStats.highestStreak) || 0, 
+                    parseInt(sessionData.highestStreak) || 0
+                )
             };
 
             // Calculate new average accuracy
@@ -195,7 +225,12 @@ class CareerStatsService {
                 const courseStats = newCareerStats.coursesCompleted[courseTopic];
                 courseStats.completedCount += 1;
                 courseStats.totalPoints += sessionData.totalScore;
-                courseStats.bestAccuracy = Math.max(courseStats.bestAccuracy, sessionData.accuracyPercentage);
+                
+                // Safely handle accuracy calculation to prevent NaN
+                const sessionAccuracy = parseFloat(sessionData.accuracyPercentage) || 0;
+                const currentBestAccuracy = parseFloat(courseStats.bestAccuracy) || 0;
+                courseStats.bestAccuracy = Math.max(currentBestAccuracy, sessionAccuracy);
+                
                 courseStats.lastCompleted = sessionData.timestamp;
 
                 // Set course completion boolean to true
@@ -239,19 +274,68 @@ class CareerStatsService {
                     lastUpdated: new Date().toISOString()
                 },
                 careerStats: newCareerStats,
-                recentSessions: newRecentSessions
+                recentSessions: newRecentSessions,
+                // Include additional form data
+                firstName: additionalData.firstName || studentName.split(' ')[0] || '',
+                lastName: additionalData.lastName || studentName.split(' ').slice(1).join(' ') || '',
+                department: additionalData.department || 'Unknown',
+                strandYear: additionalData.strandYear || 'Unknown'
             };
 
-            // Save to Firebase
-            await statsRef.set(updatedStats);
-            console.log('Career stats updated successfully:', updatedStats);
+            // Sanitize the data to remove any NaN values before saving
+            const sanitizedStats = this.sanitizeDataForFirebase(updatedStats);
             
-            return { success: true, data: updatedStats };
+            // Save to Firebase
+            console.log('🔄 CareerStatsService: Saving to Firebase...');
+            await statsRef.set(sanitizedStats);
+            console.log('✅ CareerStatsService: Career stats updated successfully!');
+            console.log('📊 CareerStatsService: Final stats:', sanitizedStats);
+            
+            return { success: true, data: sanitizedStats };
 
         } catch (error) {
-            console.error('Error updating career stats:', error);
+            console.error('❌ CareerStatsService: Error updating career stats:', error);
+            console.error('❌ CareerStatsService: Error details:', error.message);
+            console.error('❌ CareerStatsService: Error stack:', error.stack);
+            
+            // Check for specific Firebase permission errors
+            if (error.code === 'PERMISSION_DENIED') {
+                console.error('🚫 CareerStatsService: Firebase permission denied - check rules');
+            }
+            
             throw error;
         }
+    }
+
+    // Sanitize data to remove NaN values that would break Firebase
+    sanitizeDataForFirebase(obj) {
+        if (obj === null || obj === undefined) {
+            return obj;
+        }
+        
+        if (typeof obj === 'number') {
+            return isNaN(obj) ? 0 : obj;
+        }
+        
+        if (typeof obj === 'string') {
+            return obj;
+        }
+        
+        if (Array.isArray(obj)) {
+            return obj.map(item => this.sanitizeDataForFirebase(item));
+        }
+        
+        if (typeof obj === 'object') {
+            const sanitized = {};
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    sanitized[key] = this.sanitizeDataForFirebase(obj[key]);
+                }
+            }
+            return sanitized;
+        }
+        
+        return obj;
     }
 
     // Get student career stats
