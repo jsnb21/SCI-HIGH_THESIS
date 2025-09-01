@@ -298,13 +298,15 @@ export default class QuizScene extends BaseScene {
         const maxWidth = Math.min(this.scale.width * 0.9, 1000);
         const maxHeight = Math.min(this.scale.height * 0.8, 700);
         
-        // Calculate content areas
-        const titleHeight = 50; // Reduced from 80 to 50
-        const questionNumberHeight = 0; // Remove question number area
+        // Calculate content areas based on number of blocks
+        const numberOfBlocks = this.currentQuestion.blocks.length;
+        const blockSpacing = 60;
+        const titleHeight = 50;
+        const questionNumberHeight = 0;
         const questionHeight = 100;
-        const instructionHeight = 120; // Increased from 80 to 120 for more space for note visibility
-        const draggableAreaHeight = 300;
-        const submitAreaHeight = 80; // Reduced from 120 to 80 for less space above submit
+        const instructionHeight = 120;
+        const draggableAreaHeight = numberOfBlocks * blockSpacing + 40; // Dynamic height based on blocks
+        const submitAreaHeight = 100; // Space for submit button below blocks
         
         const contentHeight = titleHeight + questionNumberHeight + questionHeight + instructionHeight + draggableAreaHeight + submitAreaHeight;
         const contentWidth = maxWidth;
@@ -683,8 +685,11 @@ export default class QuizScene extends BaseScene {
     }
 
     createSubmitButton() {
-        // Position the submit button at the bottom of the content area with more space above
-        const submitY = this.contentHeight/2 - 60; // Increased from -40 to -60 for more space above
+        // Calculate submit button position based on the number of blocks
+        const blockSpacing = 60;
+        const numberOfBlocks = this.currentQuestion.blocks.length;
+        const lastBlockY = this.draggableAreaY + ((numberOfBlocks - 1) * blockSpacing);
+        const submitY = lastBlockY + 80; // 80px below the last block
         
         // Create submit button with same style as multiple choice
         const submitBtn = this.add.graphics();
