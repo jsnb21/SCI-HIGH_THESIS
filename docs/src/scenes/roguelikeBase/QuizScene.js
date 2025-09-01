@@ -211,8 +211,17 @@ export default class QuizScene extends BaseScene {
         const questionPadding = 70; // Increased from 40 to 70 for more space
         const bottomPadding = 30;
         
-        // Calculate required height based on actual content
-        const contentHeight = titleHeight + questionNumberHeight + questionHeight + questionPadding + (numAnswers * buttonSpacing) + bottomPadding;
+        // Calculate required height based on layout type
+        let buttonsAreaHeight;
+        if (numAnswers === 2) {
+            // Side-by-side layout uses less vertical space
+            buttonsAreaHeight = 70 + 30; // Button height + padding
+        } else {
+            // Vertical layout
+            buttonsAreaHeight = numAnswers * buttonSpacing;
+        }
+        
+        const contentHeight = titleHeight + questionNumberHeight + questionHeight + questionPadding + buttonsAreaHeight + bottomPadding;
         const contentWidth = 700;
         
         // Create modern quiz box with dynamic size
@@ -824,6 +833,13 @@ export default class QuizScene extends BaseScene {
         
         this.answerButtons = [];
         
+        // Check if there are only 2 answers for side-by-side layout
+        if (answers.length === 2) {
+            this.createTwoChoiceButtons(startY);
+            return;
+        }
+        
+        // Original vertical layout for 3+ answers
         for (let i = 0; i < answers.length; i++) {
             const buttonY = startY + (i * buttonSpacing);
             
@@ -882,7 +898,84 @@ export default class QuizScene extends BaseScene {
                     buttonBg.lineStyle(2, 0x64ffda, 0.5);
                     buttonBg.strokeRoundedRect(-320, -30, 640, 55, 10);
                 }
-            });            // Add click handler
+            });
+
+            // Add click handler
+            hitArea.on('pointerdown', () => {
+                this.selectAnswer(i);
+            });
+        }
+    }
+
+    createTwoChoiceButtons(startY) {
+        const answers = this.currentQuestion.options;
+        const buttonWidth = 280; // Narrower buttons for side-by-side
+        const buttonHeight = 70; // Slightly taller for better proportion
+        const spacing = 50; // Space between the two buttons
+        
+        for (let i = 0; i < 2; i++) {
+            // Position buttons side by side
+            const buttonX = i === 0 ? -(buttonWidth/2 + spacing/2) : (buttonWidth/2 + spacing/2);
+            
+            // Create button container
+            const buttonContainer = this.add.container(buttonX, startY);
+            
+            // Create button background with larger size for two-choice layout
+            const buttonBg = this.add.graphics();
+            buttonBg.fillStyle(0x4a5568, 1);
+            buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
+            buttonBg.lineStyle(3, 0x64ffda, 0.5);
+            buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
+            
+            // Create answer text with larger font for two-choice layout
+            const answerText = this.add.text(0, 0, answers[i], {
+                fontFamily: 'Arial',
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: '#ffffff',
+                align: 'center',
+                wordWrap: { width: buttonWidth - 20 }
+            }).setOrigin(0.5);
+            
+            // Create interactive area
+            const hitArea = this.add.rectangle(0, 0, buttonWidth, buttonHeight, 0x000000, 0);
+            hitArea.setInteractive();
+            
+            buttonContainer.add([buttonBg, answerText, hitArea]);
+            this.quizContainer.add(buttonContainer);
+            
+            // Store references
+            this.answerButtons.push({
+                container: buttonContainer,
+                background: buttonBg,
+                text: answerText,
+                hitArea: hitArea,
+                index: i,
+                isSelected: false
+            });
+            
+            // Add hover effects with enhanced styling for two-choice
+            hitArea.on('pointerover', () => {
+                if (!this.answerButtons[i].isSelected) {
+                    buttonBg.clear();
+                    buttonBg.fillStyle(0x64ffda, 0.4);
+                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
+                    buttonBg.lineStyle(3, 0x64ffda);
+                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
+                }
+            });
+
+            hitArea.on('pointerout', () => {
+                if (!this.answerButtons[i].isSelected) {
+                    buttonBg.clear();
+                    buttonBg.fillStyle(0x4a5568, 1);
+                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
+                    buttonBg.lineStyle(3, 0x64ffda, 0.5);
+                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
+                }
+            });
+
+            // Add click handler
             hitArea.on('pointerdown', () => {
                 this.selectAnswer(i);
             });

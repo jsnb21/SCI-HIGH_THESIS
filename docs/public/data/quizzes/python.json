@@ -193,6 +193,41 @@
           { "id": "zone4", "label": "4th", "correctItemId": "dict" }
         ]
       }
+    },
+    {
+      "question": "Python is a compiled programming language.",
+      "options": ["True", "False"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Python uses indentation to define code blocks.",
+      "options": ["True", "False"],
+      "correctIndex": 0
+    },
+    {
+      "question": "In Python, variables must be declared with their data type.",
+      "options": ["True", "False"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Python lists can contain elements of different data types.",
+      "options": ["True", "False"],
+      "correctIndex": 0
+    },
+    {
+      "question": "The == operator is used for assignment in Python.",
+      "options": ["True", "False"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Can you use Python for web development?",
+      "options": ["Yes", "No"],
+      "correctIndex": 0
+    },
+    {
+      "question": "Is Python case-sensitive?",
+      "options": ["Yes", "No"],
+      "correctIndex": 0
     }
   ],
   "codeArrangement": [
