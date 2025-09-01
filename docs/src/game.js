@@ -44,6 +44,7 @@ import CSharpScene from '/src/scenes/comlabscenes/CSharp.js';
 import MainGameplay from '/src/scenes/roguelikeBase/main_gameplay.js';
 import QuizScene from '/src/scenes/roguelikeBase/QuizScene.js';
 import ResultScreen from './scenes/roguelikeBase/ResultScreen.js';
+import DataCollectionScreen from './scenes/DataCollectionScreen.js';
 
 // Quiz Scenes
 import BaseQuizScene from '/src/scenes/quizscenes/BaseQuizScene.js';
@@ -130,6 +131,7 @@ const config = {
     /* Roguelike Scenes */
     MainGameplay,
     QuizScene,
+    DataCollectionScreen,
     ResultScreen,
     /* Quiz Scenes */
     BaseQuizScene,

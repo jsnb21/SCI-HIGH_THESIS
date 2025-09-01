@@ -37,6 +37,11 @@
       ".indexOn": ["score", "timestamp", "department"],
       ".read": true,
       ".write": "auth != null"
+    },
+    "gameplay_data": {
+      ".indexOn": ["studentId", "timestamp"],
+      ".read": true,
+      ".write": true
     }
   }
 }

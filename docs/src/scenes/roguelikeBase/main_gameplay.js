@@ -92,6 +92,9 @@ export default class MainGameplay extends BaseScene {
         this.intensity3CorrectAnswers = 0;
         this.intensity = 1;
         
+        // Track session start time
+        this.sessionStartTime = Date.now();
+        
         console.log('MainGameplay initialized with topic:', this.courseTopic);
     }
 
@@ -1912,20 +1915,22 @@ export default class MainGameplay extends BaseScene {
     }
 
     showResultScreen(courseCompleted = false) {
-        // Prepare data for ResultScreen
+        // Prepare data for DataCollectionScreen (which will then pass to ResultScreen)
         const resultData = {
             correctAnswers: this.correctAnswers,
             wrongAnswers: this.wrongAnswers,
             highestStreak: this.highestStreak,
             totalScore: this.score,
             courseTopic: this.courseTopic,
-            courseCompleted: courseCompleted
+            courseCompleted: courseCompleted,
+            intensity3CorrectAnswers: this.intensity3CorrectAnswers,
+            startTime: this.sessionStartTime
         };
         
-        console.log('Showing result screen with data:', resultData);
+        console.log('Showing data collection screen with data:', resultData);
         
-        // Start the ResultScreen scene
-        this.scene.start('ResultScreen', resultData);
+        // Start the DataCollectionScreen scene first
+        this.scene.start('DataCollectionScreen', resultData);
     }
 
     // Clean up when scene is shutdown
