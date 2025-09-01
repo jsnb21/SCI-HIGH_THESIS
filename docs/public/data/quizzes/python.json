@@ -228,6 +228,31 @@
       "question": "Is Python case-sensitive?",
       "options": ["Yes", "No"],
       "correctIndex": 0
+    },
+    {
+      "question": "Which of the following is the correct way to create a list in Python?",
+      "options": ["list = [1, 2, 3]", "list = (1, 2, 3)", "list = {1, 2, 3}", "list = <1, 2, 3>"],
+      "correctIndex": 0
+    },
+    {
+      "question": "What is the output of print(type(5.0))?",
+      "options": ["<class 'int'>", "<class 'float'>", "<class 'double'>", "<class 'number'>"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which keyword is used to create a function in Python?",
+      "options": ["function", "def", "func", "define"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What does the len() function return?",
+      "options": ["The memory size of an object", "The number of elements in a sequence", "The last element of a list", "The type of an object"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which of the following is used for comments in Python?",
+      "options": ["//", "/* */", "#", "<!-- -->"],
+      "correctIndex": 2
     }
   ],
   "codeArrangement": [

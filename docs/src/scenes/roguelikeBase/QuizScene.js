@@ -132,6 +132,12 @@ export default class QuizScene extends BaseScene {
             if (multipleChoiceQuestions.length > 0) {
                 // Select a random multiple choice question
                 this.currentQuestion = Phaser.Utils.Array.GetRandom(multipleChoiceQuestions);
+                
+                // Randomize answer choices if there are more than 2 options
+                if (this.currentQuestion.options.length > 2) {
+                    this.randomizeAnswerChoices();
+                }
+                
                 console.log('Loaded question for', topic, ':', this.currentQuestion);
             }
         }
@@ -172,6 +178,34 @@ export default class QuizScene extends BaseScene {
             this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData.codeArrangement);
             console.log('Loaded code arrangement question for', topic, ':', this.currentQuestion);
         }
+    }
+
+    randomizeAnswerChoices() {
+        if (!this.currentQuestion || !this.currentQuestion.options || this.currentQuestion.options.length <= 2) {
+            return; // Don't randomize if there are 2 or fewer options
+        }
+        
+        const originalOptions = [...this.currentQuestion.options];
+        const originalCorrectIndex = this.currentQuestion.correctIndex;
+        const correctAnswer = originalOptions[originalCorrectIndex];
+        
+        // Create array of indices to shuffle
+        const indices = Array.from({ length: originalOptions.length }, (_, i) => i);
+        
+        // Shuffle the indices using Phaser's shuffle utility
+        Phaser.Utils.Array.Shuffle(indices);
+        
+        // Create new shuffled options array
+        const shuffledOptions = indices.map(index => originalOptions[index]);
+        
+        // Find the new position of the correct answer
+        const newCorrectIndex = shuffledOptions.findIndex(option => option === correctAnswer);
+        
+        // Update the question with shuffled options and new correct index
+        this.currentQuestion.options = shuffledOptions;
+        this.currentQuestion.correctIndex = newCorrectIndex;
+        
+        console.log('Randomized answer choices. New correct index:', newCorrectIndex);
     }
 
     createQuizInterface() {
@@ -990,6 +1024,12 @@ export default class QuizScene extends BaseScene {
         const correctIndex = this.currentQuestion.correctIndex;
         const isCorrect = selectedIndex === correctIndex;
         
+        // Determine if we're using two-choice layout
+        const isTwoChoice = this.currentQuestion.options.length === 2;
+        const buttonWidth = isTwoChoice ? 280 : 640;
+        const buttonHeight = isTwoChoice ? 70 : 55;
+        const cornerRadius = isTwoChoice ? 15 : 10;
+        
         // Update button appearance to show selection
         this.answerButtons.forEach((button, index) => {
             button.isSelected = true;
@@ -1002,16 +1042,16 @@ export default class QuizScene extends BaseScene {
                 } else {
                     button.background.fillStyle(0xe53e3e, 1);
                 }
-                button.background.fillRoundedRect(-320, -30, 640, 55, 10);
+                button.background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius);
                 button.background.lineStyle(3, 0xffffff);
-                button.background.strokeRoundedRect(-320, -30, 640, 55, 10);
+                button.background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius);
             } else if (index === correctIndex && !isCorrect) {
                 // Show correct answer if user was wrong
                 button.background.clear();
                 button.background.fillStyle(0x38a169, 1);
-                button.background.fillRoundedRect(-320, -30, 640, 55, 10);
+                button.background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius);
                 button.background.lineStyle(2, 0xffffff, 0.7);
-                button.background.strokeRoundedRect(-320, -30, 640, 55, 10);
+                button.background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius);
             }
             
             // Disable interaction
