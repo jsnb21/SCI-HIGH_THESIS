@@ -29,6 +29,12 @@ export default class MainGameplay extends BaseScene {
         // Course data
         this.courseTopic = null;
         
+        // Score and streak system
+        this.score = 0;
+        this.streak = 0;
+        this.highestStreak = 0;
+        this.baseScore = 100;
+        
         // Enemy system
         this.enemies = [];
         this.maxEnemies = 5;
@@ -65,6 +71,11 @@ export default class MainGameplay extends BaseScene {
     init(data) {
         // Receive data from the computer lab scene
         this.courseTopic = data?.topic || 'python';
+        
+        // Initialize/reset streak system
+        this.streak = 0;
+        this.highestStreak = 0;
+        
         console.log('MainGameplay initialized with topic:', this.courseTopic);
     }
 
@@ -319,6 +330,23 @@ export default class MainGameplay extends BaseScene {
             fontSize: '24px',
             fontWeight: 'bold',
             color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 2,
+            shadow: {
+                offsetX: 2,
+                offsetY: 2,
+                color: '#000000',
+                blur: 3,
+                fill: true
+            }
+        }).setOrigin(0, 0).setScrollFactor(0);
+        
+        // Create streak display below the score
+        this.streakText = this.add.text(20, 65, 'Streak: 0', {
+            fontFamily: 'Arial',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            color: '#ffff00',
             stroke: '#000000',
             strokeThickness: 2,
             shadow: {
@@ -863,13 +891,30 @@ export default class MainGameplay extends BaseScene {
     handleQuizCompletion(data) {
         // Handle quiz results
         if (data.correct) {
-            // Correct answer - give rewards
-            this.updateScore(100);
+            // Increment streak for correct answer
+            this.streak++;
+            
+            // Update highest streak if current streak is higher (stored silently)
+            if (this.streak > this.highestStreak) {
+                this.highestStreak = this.streak;
+            }
+            
+            // Calculate bonus score based on streak
+            const bonusScore = (this.streak - 1) * 50; // x2 = +50, x3 = +100, etc.
+            const totalScore = this.baseScore + bonusScore;
+            
+            // Correct answer - give rewards with streak bonus
+            this.updateScore(totalScore);
             this.gameTimer += 10;
             this.updateTimerDisplay();
-            console.log('Correct answer! +100 score, +10 seconds');
+            this.updateStreakDisplay();
+            
+            console.log(`Correct answer! Streak: ${this.streak}x, Score: +${totalScore} (+${this.baseScore} base + ${bonusScore} bonus), +10 seconds`);
         } else {
-            console.log('Wrong answer!');
+            // Reset streak on wrong answer
+            this.streak = 0;
+            this.updateStreakDisplay();
+            console.log('Wrong answer! Streak reset.');
         }
         
         // Destroy the enemy that was collided with
@@ -884,6 +929,86 @@ export default class MainGameplay extends BaseScene {
     updateScoreDisplay() {
         if (this.scoreText) {
             this.scoreText.setText(`Score: ${this.score}`);
+        }
+    }
+
+    updateStreakDisplay() {
+        if (this.streakText) {
+            // Stop any existing shake animation
+            this.tweens.killTweensOf(this.streakText);
+            
+            if (this.streak > 0) {
+                this.streakText.setText(`Streak: ${this.streak}x`);
+                
+                // Change color and add shake based on streak level
+                if (this.streak >= 5) {
+                    this.streakText.setColor('#ff0080'); // Hot pink for 5+ streak
+                    // Intense shake for very high streaks
+                    this.addStreakShake(8, 80, 0.3);
+                } else if (this.streak >= 3) {
+                    this.streakText.setColor('#ff8000'); // Orange for 3+ streak
+                    // Medium shake for high streaks
+                    this.addStreakShake(5, 100, 0.4);
+                } else {
+                    this.streakText.setColor('#ffff00'); // Yellow for active streak
+                    // Light shake for low streaks
+                    this.addStreakShake(3, 150, 0.6);
+                }
+            } else {
+                this.streakText.setText('Streak: 0');
+                this.streakText.setColor('#888888'); // Gray when no streak
+                // Reset position when no streak
+                this.streakText.setPosition(20, 65);
+            }
+        }
+    }
+
+    addStreakShake(intensity, duration, delay) {
+        // Store original position
+        const originalX = 20;
+        const originalY = 65;
+        
+        // Create shake animation
+        this.tweens.add({
+            targets: this.streakText,
+            x: originalX + Phaser.Math.Between(-intensity, intensity),
+            y: originalY + Phaser.Math.Between(-intensity, intensity),
+            duration: duration,
+            ease: 'Power2',
+            yoyo: true,
+            repeat: -1,
+            delay: delay * 1000,
+            onComplete: () => {
+                // Reset to original position when done
+                this.streakText.setPosition(originalX, originalY);
+            }
+        });
+    }
+
+    updateHighestStreakDisplay() {
+        if (this.highestStreakText) {
+            this.highestStreakText.setText(`Best: ${this.highestStreak}`);
+            
+            // Add a brief glow effect when a new record is set
+            this.tweens.add({
+                targets: this.highestStreakText,
+                scaleX: 1.3,
+                scaleY: 1.3,
+                duration: 300,
+                ease: 'Back.easeOut',
+                yoyo: true,
+                onComplete: () => {
+                    this.highestStreakText.setScale(1);
+                }
+            });
+            
+            // Temporarily change color to gold for new record
+            const originalColor = this.highestStreakText.style.color;
+            this.highestStreakText.setColor('#ffd700'); // Gold color
+            
+            this.time.delayedCall(1000, () => {
+                this.highestStreakText.setColor('#00ff00'); // Back to green
+            });
         }
     }
 
