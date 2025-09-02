@@ -112,29 +112,125 @@ class AuthService {
         });
     }
 
+    // Ensure user is authenticated (anonymous auth for students)
+    async ensureAuthenticated() {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // If already authenticated, resolve immediately
+                if (this.auth.currentUser) {
+                    console.log('AuthService: Already authenticated with user:', this.auth.currentUser.uid);
+                    resolve();
+                    return;
+                }
+
+                // Set up a one-time auth state listener
+                const unsubscribe = this.auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        console.log('AuthService: Auth state changed - user authenticated:', user.uid);
+                        unsubscribe(); // Remove listener
+                        resolve();
+                    }
+                });
+
+                // Start anonymous authentication
+                console.log('AuthService: Starting anonymous authentication...');
+                await this.auth.signInAnonymously();
+                
+                // If auth state doesn't change within 3 seconds, resolve anyway
+                setTimeout(() => {
+                    if (this.auth.currentUser) {
+                        console.log('AuthService: Authentication timeout reached but user exists');
+                        unsubscribe();
+                        resolve();
+                    } else {
+                        console.error('AuthService: Authentication timeout - no user found');
+                        unsubscribe();
+                        reject(new Error('Authentication timeout'));
+                    }
+                }, 3000);
+
+            } catch (error) {
+                console.error('AuthService: Authentication error:', error);
+                reject(error);
+            }
+        });
+    }
+
+    // Ensure user is authenticated (anonymous auth for students)
+    async ensureAuthenticated() {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // If already authenticated, resolve immediately
+                if (this.auth.currentUser) {
+                    console.log('AuthService: Already authenticated with user:', this.auth.currentUser.uid);
+                    resolve();
+                    return;
+                }
+
+                // Set up a one-time auth state listener
+                const unsubscribe = this.auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        console.log('AuthService: Auth state changed - user authenticated:', user.uid);
+                        unsubscribe(); // Remove listener
+                        resolve();
+                    }
+                });
+
+                // Start anonymous authentication
+                console.log('AuthService: Starting anonymous authentication...');
+                await this.auth.signInAnonymously();
+                
+                // If auth state doesn't change within 3 seconds, resolve anyway
+                setTimeout(() => {
+                    if (this.auth.currentUser) {
+                        console.log('AuthService: Authentication timeout reached but user exists');
+                        unsubscribe();
+                        resolve();
+                    } else {
+                        console.error('AuthService: Authentication timeout - no user found');
+                        unsubscribe();
+                        reject(new Error('Authentication timeout'));
+                    }
+                }, 3000);
+
+            } catch (error) {
+                console.error('AuthService: Authentication error:', error);
+                reject(error);
+            }
+        });
+    }
+
     async loadUserProfile(firebaseUser) {
         try {
-            // Try to find user in professors collection first
-            const professorDoc = await this.firestore.collection('professors').doc(firebaseUser.uid).get();
-            if (professorDoc.exists) {
+            // For anonymous users (students), we don't need to load profile from professors/general collections
+            if (firebaseUser.isAnonymous) {
+                console.log('AuthService: Anonymous user authenticated, skipping profile load');
+                return;
+            }
+
+            // Try to find user in professors collection first using Realtime Database
+            const professorSnapshot = await this.database.ref('professors').child(firebaseUser.uid).once('value');
+            if (professorSnapshot.exists()) {
+                const professorData = professorSnapshot.val();
                 this.currentUser = {
                     uid: firebaseUser.uid,
                     email: firebaseUser.email,
                     type: 'professor',
-                    profile: professorDoc.data()
+                    profile: professorData
                 };
                 this.userType = 'professor';
                 return;
             }
 
             // Try general users collection
-            const generalDoc = await this.firestore.collection('general_users').doc(firebaseUser.uid).get();
-            if (generalDoc.exists) {
+            const generalSnapshot = await this.database.ref('general_users').child(firebaseUser.uid).once('value');
+            if (generalSnapshot.exists()) {
+                const generalData = generalSnapshot.val();
                 this.currentUser = {
                     uid: firebaseUser.uid,
                     email: firebaseUser.email,
                     type: 'general',
-                    profile: generalDoc.data()
+                    profile: generalData
                 };
                 this.userType = 'general';
                 return;
@@ -193,11 +289,6 @@ class AuthService {
             };
             this.userType = 'professor';
             
-            // Update last login
-            await this.firestore.collection('professors').doc(user.uid).update({
-                lastLogin: new Date().toISOString()
-            });
-
             this.saveUserSession();
             return { success: true, user: this.currentUser };
         } catch (error) {
@@ -218,8 +309,8 @@ class AuthService {
             const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
 
-            // Save professor profile
-            await this.firestore.collection('professors').doc(user.uid).set({
+            // Save professor profile to Realtime Database
+            await this.database.ref('professors').child(user.uid).set({
                 fullName,
                 email,
                 institution,
@@ -258,10 +349,9 @@ class AuthService {
                 throw new Error('Invalid student ID provided');
             }
 
-            // First, authenticate anonymously with Firebase to satisfy auth requirements
-            console.log('AuthService: Authenticating anonymously with Firebase...');
-            await this.auth.signInAnonymously();
-            console.log('AuthService: Anonymous authentication successful');
+            // First, ensure we have authentication
+            console.log('AuthService: Ensuring authentication...');
+            await this.ensureAuthenticated();
 
             // Query student by student ID using Realtime Database
             console.log('AuthService: Querying Realtime Database for student...');
