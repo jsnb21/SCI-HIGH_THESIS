@@ -64,5 +64,47 @@
       "type": "fill-in-the-blank",
       "correctAnswers": ["->", "arrow", "pointer arrow"]
     }
+  ],
+  "codeArrangement": [
+    {
+      "title": "Arrange the C++ code blocks in correct order:",
+      "description": "Create a simple Hello World program",
+      "blocks": [
+        "#include <iostream>",
+        "using namespace std;",
+        "int main() {",
+        "    cout << \"Hello, World!\" << endl;",
+        "    return 0;",
+        "}"
+      ],
+      "correctOrder": [0, 1, 2, 3, 4, 5]
+    },
+    {
+      "title": "Arrange the C++ code blocks in correct order:",
+      "description": "Calculate sum of two numbers",
+      "blocks": [
+        "int a, b, sum;",
+        "cout << \"Enter two numbers: \";",
+        "cin >> a >> b;",
+        "sum = a + b;",
+        "cout << \"Sum: \" << sum << endl;"
+      ],
+      "correctOrder": [0, 1, 2, 3, 4]
+    },
+    {
+      "title": "Arrange the C++ code blocks in correct order:",
+      "description": "Simple class definition",
+      "blocks": [
+        "class Rectangle {",
+        "private:",
+        "    int width, height;",
+        "public:",
+        "    void setDimensions(int w, int h) {",
+        "        width = w; height = h;",
+        "    }",
+        "};"
+      ],
+      "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7]
+    }
   ]
 }

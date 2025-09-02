@@ -20,6 +20,11 @@
       ".indexOn": ["score", "timestamp"],
       ".read": true,
       ".write": true
+    },
+    "gameplay_data": {
+      ".indexOn": ["studentId", "timestamp"],
+      ".read": true,
+      ".write": true
     }
   }
 }
