@@ -52,6 +52,18 @@ export default class MainGameplay extends BaseScene {
         this.enemyMoveInterval = 1000; // Move enemies every 1 second
         this.enemiesMoving = false;
         
+        // GoblinThug hazard system
+        this.goblinThugs = [];
+        this.goblinThugSprites = [];
+        this.goblinThugSpawnTimer = 0;
+        this.goblinThugSpawnInterval = 3000; // Spawn every 3 seconds
+        this.goblinThugTimePenalty = 5; // Reduce timer by 5 seconds on collision
+        
+        // GoblinThug spawn indicators
+        this.spawnIndicators = [];
+        this.spawnIndicatorDelay = 1000; // Show indicator 1 second before spawn
+        this.nextSpawnPositions = []; // Pre-calculated spawn positions
+        
         // Timer system
         this.gameTimer = 60; // 1 minute in seconds
         this.timerText = null;
@@ -100,11 +112,13 @@ export default class MainGameplay extends BaseScene {
 
     preload() {
         // Load the goblin sprite for player
-        this.load.image('goblinNerd', 'assets/sprites/enemies/goblinNerd.png');
+        this.load.image('goblinNerd', 'assets/sprites/player/goblinNerd.png');
         
-        // Load enemy sprites (using existing sprites from the project)
-        this.load.image('quizbox', 'assets/sprites/enemies/quizbox.png');
-        this.load.image('bigSlime', 'assets/sprites/enemies/bigSlime.png');
+        // Load enemy sprites (goblin-themed enemies)
+        this.load.image('goblinProfessor', 'assets/sprites/enemies/goblinProfessor.png');
+        this.load.image('goblinHacker', 'assets/sprites/enemies/goblinHacker.png');
+        this.load.image('goblinBully', 'assets/sprites/enemies/goblinBully.png');
+        this.load.image('goblinThug', 'assets/sprites/enemies/goblinThug.png');
         
         // Load timer icon (clock/hourglass icon)
         this.load.image('timerIcon', 'data:image/svg+xml;base64,' + btoa(`
@@ -355,8 +369,14 @@ export default class MainGameplay extends BaseScene {
         }
         this.enemySprites = [];
         
-        // Available enemy types
-        const enemyTypes = ['quizbox', 'bigSlime', 'goblinNerd'];
+        // Clear existing goblin thugs
+        this.clearGoblinThugs();
+        
+        // Clear existing spawn indicators
+        this.clearSpawnIndicators();
+        
+        // Available enemy types (goblin-themed enemies)
+        const enemyTypes = ['goblinProfessor', 'goblinHacker', 'goblinBully'];
         
         // Generate random enemy positions (avoiding player starting position)
         const playerTileX = Math.floor(this.MAP_WIDTH / 2);
@@ -831,6 +851,252 @@ export default class MainGameplay extends BaseScene {
         });
         
         console.log(`Collected timer icon! Added 5 seconds. New time: ${this.gameTimer}s`);
+    }
+
+    showSpawnIndicators() {
+        // Determine number of thugs to spawn based on intensity
+        let thugCount = 2; // Default for intensity 1
+        if (this.intensity === 2) {
+            thugCount = 4;
+        } else if (this.intensity === 3) {
+            thugCount = 6;
+        }
+
+        // Clear existing indicators
+        this.clearSpawnIndicators();
+
+        // Generate spawn positions and create indicators
+        this.nextSpawnPositions = [];
+        for (let i = 0; i < thugCount; i++) {
+            const position = this.generateSpawnPosition();
+            if (position) {
+                this.nextSpawnPositions.push(position);
+                this.createSpawnIndicator(position.x, position.y);
+            }
+        }
+
+        console.log(`Showing spawn indicators for ${this.nextSpawnPositions.length} positions`);
+    }
+
+    generateSpawnPosition() {
+        const playerTileX = Math.floor((this.player.x - this.boardOffsetX) / this.TILE_SIZE);
+        const playerTileY = Math.floor((this.player.y - this.boardOffsetY) / this.TILE_SIZE);
+        
+        let attempts = 0;
+        let spawnTileX, spawnTileY;
+        
+        do {
+            spawnTileX = Phaser.Math.Between(0, this.MAP_WIDTH - 1);
+            spawnTileY = Phaser.Math.Between(0, this.MAP_HEIGHT - 1);
+            attempts++;
+        } while (
+            attempts < 50 && (
+                (spawnTileX === playerTileX && spawnTileY === playerTileY) ||
+                this.enemies.some(enemy => enemy.tileX === spawnTileX && enemy.tileY === spawnTileY) ||
+                this.timerIcons.some(icon => icon.tileX === spawnTileX && icon.tileY === spawnTileY) ||
+                this.goblinThugs.some(thug => thug.tileX === spawnTileX && thug.tileY === spawnTileY) ||
+                this.nextSpawnPositions.some(pos => pos.x === spawnTileX && pos.y === spawnTileY)
+            )
+        );
+        
+        if (attempts < 50) {
+            return { x: spawnTileX, y: spawnTileY };
+        }
+        return null;
+    }
+
+    createSpawnIndicator(tileX, tileY) {
+        // Calculate world position
+        const worldX = this.boardOffsetX + (tileX * this.TILE_SIZE) + this.TILE_SIZE / 2;
+        const worldY = this.boardOffsetY + (tileY * this.TILE_SIZE) + this.TILE_SIZE / 2;
+        
+        // Create warning indicator (red circle with pulsing effect)
+        const indicator = this.add.circle(worldX, worldY, this.TILE_SIZE * 0.3, 0xff0000, 0.6);
+        indicator.setDepth(6); // Above background but below sprites
+        
+        // Add warning symbol in the center
+        const warningText = this.add.text(worldX, worldY, '⚠', {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#ffffff'
+        }).setOrigin(0.5).setDepth(7);
+        
+        // Add pulsing animation
+        this.tweens.add({
+            targets: [indicator, warningText],
+            scaleX: 1.2,
+            scaleY: 1.2,
+            alpha: 0.3,
+            duration: 500,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+        
+        // Store indicator for cleanup
+        this.spawnIndicators.push({
+            tileX: tileX,
+            tileY: tileY,
+            circle: indicator,
+            text: warningText
+        });
+    }
+
+    clearSpawnIndicators() {
+        // Destroy all existing spawn indicators
+        this.spawnIndicators.forEach(indicator => {
+            if (indicator.circle && !indicator.circle.destroyed) {
+                indicator.circle.destroy();
+            }
+            if (indicator.text && !indicator.text.destroyed) {
+                indicator.text.destroy();
+            }
+        });
+        
+        // Clear arrays
+        this.spawnIndicators = [];
+    }
+
+    spawnGoblinThugs() {
+        // Clear existing thugs first
+        this.clearGoblinThugs();
+        
+        // Clear spawn indicators
+        this.clearSpawnIndicators();
+
+        // Use pre-calculated spawn positions
+        this.nextSpawnPositions.forEach(position => {
+            this.createGoblinThug(position.x, position.y);
+        });
+
+        console.log(`Spawned ${this.nextSpawnPositions.length} goblin thugs for intensity ${this.intensity}`);
+        
+        // Clear spawn positions for next cycle
+        this.nextSpawnPositions = [];
+    }
+
+    createGoblinThug(tileX, tileY) {
+        // Calculate world position
+        const worldX = this.boardOffsetX + (tileX * this.TILE_SIZE) + this.TILE_SIZE / 2;
+        const worldY = this.boardOffsetY + (tileY * this.TILE_SIZE) + this.TILE_SIZE / 2;
+        
+        // Create thug sprite
+        const thugSprite = this.add.image(worldX, worldY, 'goblinThug');
+        thugSprite.setDisplaySize(this.TILE_SIZE * 0.8, this.TILE_SIZE * 0.8);
+        thugSprite.setDepth(7); // Lower depth than enemies but higher than background
+        
+        // Add menacing red tint to distinguish as hazard
+        thugSprite.setTint(0xff4444);
+        
+        // Create thug object
+        const goblinThug = {
+            tileX: tileX,
+            tileY: tileY,
+            sprite: thugSprite
+        };
+        
+        this.goblinThugs.push(goblinThug);
+        this.goblinThugSprites.push(thugSprite);
+    }
+
+    clearGoblinThugs() {
+        // Destroy all existing thug sprites
+        this.goblinThugSprites.forEach(sprite => {
+            if (sprite && !sprite.destroyed) {
+                sprite.destroy();
+            }
+        });
+        
+        // Clear arrays
+        this.goblinThugs = [];
+        this.goblinThugSprites = [];
+    }
+
+    checkGoblinThugCollision(worldX, worldY) {
+        // Convert world coordinates to tile coordinates
+        const playerTileX = Math.floor((worldX - this.boardOffsetX) / this.TILE_SIZE);
+        const playerTileY = Math.floor((worldY - this.boardOffsetY) / this.TILE_SIZE);
+        
+        // Check if player is on the same tile as any goblin thug
+        const collidedThug = this.goblinThugs.find(thug => 
+            thug.tileX === playerTileX && thug.tileY === playerTileY
+        );
+        
+        if (collidedThug) {
+            this.handleGoblinThugCollision(collidedThug);
+        }
+    }
+
+    handleGoblinThugCollision(thug) {
+        // Reduce game timer
+        this.gameTimer = Math.max(0, this.gameTimer - this.goblinThugTimePenalty);
+        
+        // Update timer display immediately
+        const minutes = Math.floor(this.gameTimer / 60);
+        const seconds = this.gameTimer % 60;
+        const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        this.timerText.setText(timeString);
+        
+        // Update timer color based on remaining time
+        if (this.gameTimer <= 10) {
+            this.timerText.setColor('#ff0000'); // Red for critical time
+        } else if (this.gameTimer <= 30) {
+            this.timerText.setColor('#ffff00'); // Yellow for low time
+        }
+        
+        // Show time penalty effect
+        const effectText = this.add.text(this.timerText.x, this.timerText.y + 40, `-${this.goblinThugTimePenalty}s`, {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#ff0000',
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5).setScrollFactor(0);
+        
+        // Animate the penalty effect
+        this.tweens.add({
+            targets: effectText,
+            y: effectText.y - 30,
+            alpha: 0,
+            duration: 1000,
+            ease: 'Power2',
+            onComplete: () => {
+                effectText.destroy();
+            }
+        });
+        
+        // Remove the thug from the game (they're consumed on collision)
+        const thugIndex = this.goblinThugs.indexOf(thug);
+        if (thugIndex > -1) {
+            this.goblinThugs.splice(thugIndex, 1);
+        }
+        
+        const spriteIndex = this.goblinThugSprites.indexOf(thug.sprite);
+        if (spriteIndex > -1) {
+            this.goblinThugSprites.splice(spriteIndex, 1);
+        }
+        
+        // Destroy thug sprite with effect
+        this.tweens.add({
+            targets: thug.sprite,
+            scaleX: 0,
+            scaleY: 0,
+            alpha: 0,
+            duration: 200,
+            ease: 'Power2',
+            onComplete: () => {
+                thug.sprite.destroy();
+            }
+        });
+        
+        console.log(`Hit goblin thug! Lost ${this.goblinThugTimePenalty} seconds. Time remaining: ${this.gameTimer}s`);
+        
+        // Check if time ran out
+        if (this.gameTimer <= 0) {
+            this.handleTimeUp();
+        }
     }
 
     createEnemy(tileX, tileY, spriteKey) {
@@ -1473,7 +1739,7 @@ export default class MainGameplay extends BaseScene {
 
     spawnNewEnemy() {
         // Find a random empty position
-        const enemyTypes = ['quizbox', 'bigSlime', 'goblinNerd'];
+        const enemyTypes = ['goblinProfessor', 'goblinHacker', 'goblinBully'];
         const playerTileX = Math.floor((this.player.x - this.boardOffsetX) / this.TILE_SIZE);
         const playerTileY = Math.floor((this.player.y - this.boardOffsetY) / this.TILE_SIZE);
         
@@ -1755,6 +2021,21 @@ export default class MainGameplay extends BaseScene {
             this.spawnTimerIcon();
             this.timerIconSpawnTimer = 0;
         }
+        
+        // Update goblinThug spawning with indicators
+        this.goblinThugSpawnTimer += delta;
+        
+        // Show spawn indicators 1 second before spawning
+        if (this.goblinThugSpawnTimer >= this.goblinThugSpawnInterval - this.spawnIndicatorDelay && 
+            this.spawnIndicators.length === 0) {
+            this.showSpawnIndicators();
+        }
+        
+        // Spawn thugs at full interval
+        if (this.goblinThugSpawnTimer >= this.goblinThugSpawnInterval) {
+            this.spawnGoblinThugs();
+            this.goblinThugSpawnTimer = 0;
+        }
     }
 
     handleKeyboardInput() {
@@ -1812,6 +2093,9 @@ export default class MainGameplay extends BaseScene {
         
         // Check for timer icon collision at target position
         this.checkTimerIconCollision(targetX, targetY);
+        
+        // Check for goblin thug collision at target position
+        this.checkGoblinThugCollision(targetX, targetY);
         
         // Store direction for sprite rotation/animation
         this.lastDirection.x = directionX;
