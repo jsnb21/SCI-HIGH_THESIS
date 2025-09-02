@@ -368,11 +368,21 @@ export default class DataCollectionScreen extends BaseScene {
     }
     
     async handleSubmit() {
+        console.log('🔄 DataCollectionScreen: handleSubmit() called');
+        console.log('📋 DataCollectionScreen: Form elements available:', Object.keys(this.formElements));
+        
         // Get form data
         const firstName = this.formElements.firstName?.value.trim() || '';
         const lastName = this.formElements.lastName?.value.trim() || '';
         const department = this.formElements.department?.value || '';
         const strandYear = this.formElements.strandYear?.value.trim() || '';
+        
+        console.log('📝 DataCollectionScreen: Form values retrieved:', {
+            firstName,
+            lastName,
+            department,
+            strandYear
+        });
         
         // Validation
         const missingFields = [];
@@ -381,7 +391,10 @@ export default class DataCollectionScreen extends BaseScene {
         if (!department) missingFields.push('Department');
         if (!strandYear) missingFields.push('Strand/Year');
         
+        console.log('✅ DataCollectionScreen: Validation check:', { missingFields });
+        
         if (missingFields.length > 0) {
+            console.log('❌ DataCollectionScreen: Validation failed - missing fields:', missingFields);
             // Show error message
             const errorText = this.add.text(this.scale.width / 2, this.scale.height / 2 + 180, 
                 `Please fill in: ${missingFields.join(', ')}`, {
@@ -401,26 +414,36 @@ export default class DataCollectionScreen extends BaseScene {
             return;
         }
         
+        console.log('✅ DataCollectionScreen: Validation passed - proceeding with submission');
+        
         // Show loading indicator
         this.loadingText.setAlpha(1);
+        console.log('🔄 DataCollectionScreen: Loading indicator shown');
         
         try {
             // Get student data from localStorage (same way authService stores it)
             let studentId = 'unknown';
             let currentUser = null;
             
+            console.log('🔄 DataCollectionScreen: Attempting to get student ID from localStorage...');
+            
             try {
                 const userDataStr = localStorage.getItem('sci_high_user');
+                console.log('📄 DataCollectionScreen: Raw localStorage data:', userDataStr);
+                
                 if (userDataStr) {
                     currentUser = JSON.parse(userDataStr);
                     studentId = currentUser.studentId || currentUser.uid || 'unknown';
+                    console.log('👤 DataCollectionScreen: Parsed user data:', currentUser);
+                    console.log('🆔 DataCollectionScreen: Student ID resolved to:', studentId);
                 }
             } catch (e) {
-                console.warn('Could not parse user data from localStorage:', e);
+                console.warn('⚠️ DataCollectionScreen: Could not parse user data from localStorage:', e);
             }
             
             // Combine first and last name
             const fullName = `${firstName} ${lastName}`;
+            console.log('👤 DataCollectionScreen: Full name constructed:', fullName);
             
             // Prepare gameplay data for upload
             const gameplayData = {
@@ -432,6 +455,7 @@ export default class DataCollectionScreen extends BaseScene {
                 strandYear: strandYear,
                 courseTopic: this.gameplayData.courseTopic,
                 sessionData: {
+                    courseTopic: this.gameplayData.courseTopic, // Add courseTopic to sessionData for career stats
                     correctAnswers: this.gameplayData.correctAnswers,
                     wrongAnswers: this.gameplayData.wrongAnswers,
                     highestStreak: this.gameplayData.highestStreak,
@@ -445,18 +469,24 @@ export default class DataCollectionScreen extends BaseScene {
                 }
             };
             
-            console.log('Uploading gameplay data:', gameplayData);
+            console.log('📊 DataCollectionScreen: Gameplay data prepared:', gameplayData);
+            console.log('📊 DataCollectionScreen: Session data details:', gameplayData.sessionData);
             
             // Upload detailed session data to Firebase
+            console.log('🔄 DataCollectionScreen: Starting Firebase upload...');
             await this.uploadToFirebase(gameplayData);
+            console.log('✅ DataCollectionScreen: Firebase upload completed successfully');
             
             // Update career stats (import the service dynamically)
             try {
-                console.log('🔄 Attempting to import career stats service...');
-                const { default: careerStatsService } = await import('../services/careerStatsService.js');
-                console.log('✅ Career stats service imported successfully');
+                console.log('🔄 DataCollectionScreen: Attempting to import career stats service...');
+                console.log('📂 DataCollectionScreen: Import path will be: ../services/careerStatsService.js');
                 
-                console.log('🔄 Calling updateCareerStats with:', {
+                const { default: careerStatsService } = await import('../services/careerStatsService.js');
+                console.log('✅ DataCollectionScreen: Career stats service imported successfully');
+                console.log('🔧 DataCollectionScreen: Service methods available:', Object.getOwnPropertyNames(Object.getPrototypeOf(careerStatsService)));
+                
+                console.log('🔄 DataCollectionScreen: Calling updateCareerStats with:', {
                     studentId: gameplayData.studentId,
                     fullName: fullName,
                     sessionData: gameplayData.sessionData,
@@ -468,7 +498,7 @@ export default class DataCollectionScreen extends BaseScene {
                     }
                 });
                 
-                await careerStatsService.updateCareerStats(
+                const careerResult = await careerStatsService.updateCareerStats(
                     gameplayData.studentId, 
                     fullName, // Use full name for career stats
                     gameplayData.sessionData,
@@ -479,11 +509,14 @@ export default class DataCollectionScreen extends BaseScene {
                         strandYear: strandYear
                     }
                 );
-                console.log('✅ Career stats updated successfully');
+                console.log('✅ DataCollectionScreen: Career stats updated successfully!');
+                console.log('📊 DataCollectionScreen: Career stats result:', careerResult);
             } catch (careerError) {
-                console.error('❌ Failed to update career stats:', careerError);
-                console.error('❌ Career error stack:', careerError.stack);
-                console.warn('Session data was saved, but career stats update failed:', careerError.message);
+                console.error('❌ DataCollectionScreen: Failed to update career stats:', careerError);
+                console.error('❌ DataCollectionScreen: Career error type:', careerError.constructor.name);
+                console.error('❌ DataCollectionScreen: Career error message:', careerError.message);
+                console.error('❌ DataCollectionScreen: Career error stack:', careerError.stack);
+                console.warn('⚠️ DataCollectionScreen: Session data was saved, but career stats update failed:', careerError.message);
                 // Don't fail the whole process if career stats update fails
             }
             

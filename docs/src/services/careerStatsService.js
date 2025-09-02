@@ -130,6 +130,12 @@ class CareerStatsService {
             sessionData.accuracyPercentage = parseFloat(sessionData.accuracyPercentage) || 0;
             sessionData.sessionDuration = parseInt(sessionData.sessionDuration) || 0;
             
+            // Ensure courseTopic exists (critical for career stats)
+            if (!sessionData.courseTopic || sessionData.courseTopic.trim() === '') {
+                console.warn('⚠️ CareerStatsService: courseTopic is missing or empty, using "unknown"');
+                sessionData.courseTopic = 'unknown';
+            }
+            
             // Ensure timestamp exists
             if (!sessionData.timestamp) {
                 sessionData.timestamp = new Date().toISOString();
@@ -310,7 +316,7 @@ class CareerStatsService {
     // Sanitize data to remove NaN values that would break Firebase
     sanitizeDataForFirebase(obj) {
         if (obj === null || obj === undefined) {
-            return obj;
+            return null; // Convert undefined to null for Firebase
         }
         
         if (typeof obj === 'number') {
@@ -318,7 +324,7 @@ class CareerStatsService {
         }
         
         if (typeof obj === 'string') {
-            return obj;
+            return obj.trim() === '' ? 'unknown' : obj; // Convert empty strings to 'unknown'
         }
         
         if (Array.isArray(obj)) {
@@ -329,7 +335,10 @@ class CareerStatsService {
             const sanitized = {};
             for (const key in obj) {
                 if (obj.hasOwnProperty(key)) {
-                    sanitized[key] = this.sanitizeDataForFirebase(obj[key]);
+                    const sanitizedValue = this.sanitizeDataForFirebase(obj[key]);
+                    if (sanitizedValue !== null) { // Only include non-null values
+                        sanitized[key] = sanitizedValue;
+                    }
                 }
             }
             return sanitized;

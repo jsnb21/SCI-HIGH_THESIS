@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Career Stats</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #ffffff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .log {
+            background: #000;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #3282b8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Career Stats Integration</h1>
+        
+        <button onclick="testImport()">1️⃣ Test Import</button>
+        <button onclick="testFirebaseConnection()">2️⃣ Test Firebase</button>
+        <button onclick="testDataFlow()">3️⃣ Test Data Flow</button>
+        <button onclick="openConsole()">4️⃣ Open Browser Console</button>
+        <button onclick="clearLog()">🗑️ Clear</button>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <script type="module">
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            logDiv.textContent += `${timestamp} - ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        window.log = log;
+        window.clearLog = () => { document.getElementById('log').textContent = ''; };
+
+        window.testImport = async () => {
+            try {
+                log('🔄 Testing career stats service import...');
+                const { default: careerStatsService } = await import('./src/services/careerStatsService.js');
+                log('✅ Import successful!');
+                log('📦 Service object:');
+                log(typeof careerStatsService);
+                log('Methods: ' + Object.getOwnPropertyNames(Object.getPrototypeOf(careerStatsService)));
+            } catch (error) {
+                log('❌ Import failed:');
+                log(error.message);
+                log(error.stack);
+            }
+        };
+
+        window.testFirebaseConnection = async () => {
+            try {
+                log('🔄 Testing Firebase connection...');
+                const { default: careerStatsService } = await import('./src/services/careerStatsService.js');
+                
+                // Try to get a non-existent student's stats (should return null, not error)
+                const testStats = await careerStatsService.getCareerStats('debug_test_student');
+                log('✅ Firebase connection successful!');
+                log('📊 Test result:');
+                log(testStats ? JSON.stringify(testStats, null, 2) : 'No data (expected)');
+                
+            } catch (error) {
+                log('❌ Firebase connection failed:');
+                log(error.message);
+                log(error.stack);
+            }
+        };
+
+        window.testDataFlow = async () => {
+            try {
+                log('🔄 Testing complete data flow...');
+                const { default: careerStatsService } = await import('./src/services/careerStatsService.js');
+                
+                const testSessionData = {
+                    correctAnswers: 5,
+                    wrongAnswers: 2,
+                    totalScore: 500,
+                    highestStreak: 4,
+                    courseTopic: 'python',
+                    courseCompleted: false,
+                    intensity3CorrectAnswers: 2,
+                    sessionDuration: 180,
+                    timestamp: new Date().toISOString(),
+                    accuracyPercentage: 71.4
+                };
+                
+                log('📊 Test session data:');
+                log(JSON.stringify(testSessionData, null, 2));
+                
+                const result = await careerStatsService.updateCareerStats(
+                    'debug_test_student_003',
+                    'Debug Test User',
+                    testSessionData,
+                    {
+                        firstName: 'Debug',
+                        lastName: 'User',
+                        department: 'STEM',
+                        strandYear: 'Grade 11'
+                    }
+                );
+                
+                log('✅ Data flow test successful!');
+                log('📊 Result:');
+                log(JSON.stringify(result, null, 2));
+                
+            } catch (error) {
+                log('❌ Data flow test failed:');
+                log(error.message);
+                log(error.stack);
+            }
+        };
+
+        window.openConsole = () => {
+            log('💡 To open browser console:');
+            log('- Press F12');
+            log('- Or right-click → Inspect → Console tab');
+            log('- Look for any red error messages');
+            log('- Check for messages starting with "❌" or "🔄"');
+        };
+
+        // Auto-run basic tests
+        setTimeout(async () => {
+            log('🚀 Starting automatic diagnosis...');
+            await testImport();
+            await testFirebaseConnection();
+        }, 1000);
+    </script>
+</body>
+</html>
