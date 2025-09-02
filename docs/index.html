@@ -1596,6 +1596,19 @@
             // Production Firebase login (using Realtime Database when available)
             if (typeof firebase !== 'undefined' && firebase.database) {
               console.log('Using Firebase for student login...');
+              
+              // Authenticate anonymously first to access the database
+              try {
+                if (!firebase.auth().currentUser) {
+                  console.log('Authenticating anonymously...');
+                  await firebase.auth().signInAnonymously();
+                  console.log('Anonymous authentication successful');
+                }
+              } catch (authError) {
+                console.error('Anonymous authentication failed:', authError);
+                throw new Error('Authentication failed. Please try again.');
+              }
+              
               // Query student by student ID in Realtime Database
               const studentsSnapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
               
@@ -1667,6 +1680,20 @@
           try {
             console.log('Creating new student account for ID:', studentId);
             
+            // Authenticate anonymously first if using Firebase
+            if (typeof firebase !== 'undefined' && firebase.database) {
+              try {
+                if (!firebase.auth().currentUser) {
+                  console.log('Authenticating anonymously for student creation...');
+                  await firebase.auth().signInAnonymously();
+                  console.log('Anonymous authentication successful');
+                }
+              } catch (authError) {
+                console.error('Anonymous authentication failed:', authError);
+                throw new Error('Authentication failed. Please try again.');
+              }
+            }
+            
             const studentData = {
               studentId,
               fullName: `Student ${studentId}`, // Default name, can be updated later
@@ -1728,6 +1755,20 @@
           try {
             const { studentId, fullName, academicInfo } = studentData;
             console.log('Registering new student:', { studentId, fullName, academicInfo });
+            
+            // Authenticate anonymously first if using Firebase
+            if (typeof firebase !== 'undefined' && firebase.database) {
+              try {
+                if (!firebase.auth().currentUser) {
+                  console.log('Authenticating anonymously for student registration...');
+                  await firebase.auth().signInAnonymously();
+                  console.log('Anonymous authentication successful');
+                }
+              } catch (authError) {
+                console.error('Anonymous authentication failed:', authError);
+                throw new Error('Authentication failed. Please try again.');
+              }
+            }
             
             // Check if student ID already exists
             if (typeof firebase !== 'undefined' && firebase.database) {
