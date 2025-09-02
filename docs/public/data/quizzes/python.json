@@ -1,198 +1,213 @@
 {
-  "questions": [
-    {
-      "question": "Complete the code: To define a function in Python, you use the _____ keyword.",
-      "type": "fill-in-the-blank",
-      "correctAnswers": ["def", "DEF"]
-    },
-    {
-      "question": "Arrange the correct order of a Python function definition:",
-      "type": "drag-and-drop",
-      "options": {
-        "dragItems": [
-          { "id": "step1", "text": "def", "isDecoy": false },
-          { "id": "step2", "text": "function_name", "isDecoy": false },
-          { "id": "step3", "text": "():", "isDecoy": false },
-          { "id": "step4", "text": "return", "isDecoy": false },
-          { "id": "decoy1", "text": "class", "isDecoy": true }
+  "intensity1": {
+    "multipleChoice": [
+      {
+        "question": "What is Python primarily used for?",
+        "options": [
+          "Web development",
+          "Data analysis",
+          "Machine learning",
+          "All of the above"
         ],
-        "dropZones": [
-          { "id": "zone1", "label": "1st", "correctItemId": "step1" },
-          { "id": "zone2", "label": "2nd", "correctItemId": "step2" },
-          { "id": "zone3", "label": "3rd", "correctItemId": "step3" },
-          { "id": "zone4", "label": "4th", "correctItemId": "step4" }
-        ]
+        "correctIndex": 3
+      },
+      {
+        "question": "Python is a compiled programming language.",
+        "options": ["True", "False"],
+        "correctIndex": 1
+      },
+      {
+        "question": "Python uses indentation to define code blocks.",
+        "options": ["True", "False"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Which of the following is the correct way to create a list in Python?",
+        "options": ["list = [1, 2, 3]", "list = (1, 2, 3)", "list = {1, 2, 3}", "list = <1, 2, 3>"],
+        "correctIndex": 0
+      },
+      {
+        "question": "What is the output of print(type(5.0))?",
+        "options": ["<class 'int'>", "<class 'float'>", "<class 'double'>", "<class 'number'>"],
+        "correctIndex": 1
+      },
+      {
+        "question": "Which keyword is used to create a function in Python?",
+        "options": ["function", "def", "func", "define"],
+        "correctIndex": 1
+      },
+      {
+        "question": "In Python, variables must be declared with their data type.",
+        "options": ["True", "False"],
+        "correctIndex": 1
+      },
+      {
+        "question": "Python lists can contain elements of different data types.",
+        "options": ["True", "False"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Which of the following is used for comments in Python?",
+        "options": ["//", "/* */", "#", "<!-- -->"],
+        "correctIndex": 2
+      },
+      {
+        "question": "Can you use Python for web development?",
+        "options": ["Yes", "No"],
+        "correctIndex": 0
       }
-    },
-    {
-      "question": "Order the Python data types from simplest to most complex:",
-      "type": "drag-and-drop", 
-      "options": {
-        "dragItems": [
-          { "id": "int", "text": "int", "isDecoy": false },
-          { "id": "list", "text": "list", "isDecoy": false },
-          { "id": "dict", "text": "dict", "isDecoy": false },
-          { "id": "str", "text": "str", "isDecoy": false },
-          { "id": "decoy1", "text": "array", "isDecoy": true }
+    ]
+  },
+  "intensity2": {
+    "multipleChoice": [
+      {
+        "question": "What does the len() function return?",
+        "options": ["The memory size of an object", "The number of elements in a sequence", "The last element of a list", "The type of an object"],
+        "correctIndex": 1
+      },
+      {
+        "question": "Which method is used to add an element to the end of a list?",
+        "options": ["add()", "append()", "insert()", "push()"],
+        "correctIndex": 1
+      },
+      {
+        "question": "What is the correct syntax for a while loop in Python?",
+        "options": ["while (condition):", "while condition:", "while condition do:", "while (condition) do:"],
+        "correctIndex": 1
+      },
+      {
+        "question": "The == operator is used for assignment in Python.",
+        "options": ["True", "False"],
+        "correctIndex": 1
+      },
+      {
+        "question": "Is Python case-sensitive?",
+        "options": ["Yes", "No"],
+        "correctIndex": 0
+      }
+    ],
+    "dragDrop": [
+      {
+        "question": "Arrange the correct order of a Python function definition:",
+        "type": "drag-and-drop",
+        "options": {
+          "dragItems": [
+            { "id": "step1", "text": "def", "isDecoy": false },
+            { "id": "step2", "text": "function_name", "isDecoy": false },
+            { "id": "step3", "text": "():", "isDecoy": false },
+            { "id": "step4", "text": "return", "isDecoy": false },
+            { "id": "decoy1", "text": "class", "isDecoy": true }
+          ],
+          "dropZones": [
+            { "id": "zone1", "label": "1st", "correctItemId": "step1" },
+            { "id": "zone2", "label": "2nd", "correctItemId": "step2" },
+            { "id": "zone3", "label": "3rd", "correctItemId": "step3" },
+            { "id": "zone4", "label": "4th", "correctItemId": "step4" }
+          ]
+        }
+      },
+      {
+        "question": "Order the Python data types from simplest to most complex:",
+        "type": "drag-and-drop", 
+        "options": {
+          "dragItems": [
+            { "id": "int", "text": "int", "isDecoy": false },
+            { "id": "list", "text": "list", "isDecoy": false },
+            { "id": "dict", "text": "dict", "isDecoy": false },
+            { "id": "str", "text": "str", "isDecoy": false },
+            { "id": "decoy1", "text": "array", "isDecoy": true }
+          ],
+          "dropZones": [
+            { "id": "zone1", "label": "1st", "correctItemId": "int" },
+            { "id": "zone2", "label": "2nd", "correctItemId": "str" },
+            { "id": "zone3", "label": "3rd", "correctItemId": "list" },
+            { "id": "zone4", "label": "4th", "correctItemId": "dict" }
+          ]
+        }
+      },
+      {
+        "question": "Arrange the steps to handle exceptions in Python:",
+        "type": "drag-and-drop",
+        "options": {
+          "dragItems": [
+            { "id": "try", "text": "try", "isDecoy": false },
+            { "id": "except", "text": "except", "isDecoy": false },
+            { "id": "finally", "text": "finally", "isDecoy": false },
+            { "id": "else", "text": "else", "isDecoy": false },
+            { "id": "decoy1", "text": "catch", "isDecoy": true }
+          ],
+          "dropZones": [
+            { "id": "zone1", "label": "1st", "correctItemId": "try" },
+            { "id": "zone2", "label": "2nd", "correctItemId": "except" },
+            { "id": "zone3", "label": "3rd", "correctItemId": "else" },
+            { "id": "zone4", "label": "4th", "correctItemId": "finally" }
+          ]
+        }
+      }
+    ]
+  },
+  "intensity3": {
+    "codeArrangement": [
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Create a simple greeting program",
+        "blocks": [
+          "name = input(\"Enter your name: \")",
+          "greeting = \"Hello, \" + name",
+          "print(greeting)",
+          "print(\"Welcome to Python!\")"
         ],
-        "dropZones": [
-          { "id": "zone1", "label": "1st", "correctItemId": "int" },
-          { "id": "zone2", "label": "2nd", "correctItemId": "str" },
-          { "id": "zone3", "label": "3rd", "correctItemId": "list" },
-          { "id": "zone4", "label": "4th", "correctItemId": "dict" }
-        ]
-      }
-    },
-    {
-      "question": "What is Python primarily used for?",
-      "options": [
-        "Web development",
-        "Data analysis",
-        "Machine learning",
-        "All of the above"
-      ],
-      "correctIndex": 3
-    },
-    {
-      "question": "Which of the following is a valid Python variable name?",
-      "options": [
-        "1variable",
-        "variable_1",
-        "variable-1",
-        "variable 1"
-      ],
-      "correctIndex": 1
-    },
-    {
-      "question": "What is the output of `print(type([]))`?",
-      "options": [
-        "<class 'list'>",
-        "<type 'list'>",
-        "list",
-        "list()"
-      ],
-      "correctIndex": 0
-    },
-    {
-      "question": "Which keyword is used to define a function in Python?",
-      "options": [
-        "func",
-        "define",
-        "def",
-        "function"
-      ],
-      "correctIndex": 2
-    },
-    {
-      "question": "How do you insert comments in Python code?",
-      "options": [
-        "// This is a comment",
-        "/* This is a comment */",
-        "# This is a comment",
-        "<!-- This is a comment -->"
-      ],
-      "correctIndex": 2
-    },
-    {
-      "question": "What is the result of `3 * 1 ** 3` in Python?",
-      "options": [
-        "3",
-        "1",
-        "9",
-        "0"
-      ],
-      "correctIndex": 0
-    },
-    {
-      "question": "Which data type is immutable in Python?",
-      "options": [
-        "List",
-        "Dictionary",
-        "Set",
-        "Tuple"
-      ],
-      "correctIndex": 3
-    },
-    {
-      "question": "What does the `len()` function do?",
-      "options": [
-        "Returns the length of an object",
-        "Returns the type of an object",
-        "Deletes an object",
-        "Returns the memory size of an object"
-      ],
-      "correctIndex": 0
-    },
-    {
-      "question": "Which of the following is used to handle exceptions in Python?",      "options": [
-        "catch",
-        "try/except",
-        "error handling",
-        "exception block"
-      ],
-      "correctIndex": 1
-    },
-    {
-      "question": "What will `print('Hello' + str(5))` output?",
-      "options": [
-        "Hello5",
-        "Hello 5",
-        "Hello + 5",
-        "Error"
-      ],
-      "correctIndex": 0    },
-    {
-      "question": "Fill in the blank: The _____ function is used to get the length of a list in Python.",
-      "type": "fill-in-the-blank",
-      "correctAnswers": ["len", "LEN", "len()"]
-    },
-    {
-      "question": "Complete this line: To create a comment in Python, you start with _____",
-      "type": "fill-in-the-blank",
-      "correctAnswers": ["#", "# ", "hash", "hashtag"]
-    },
-    {
-      "question": "Fill in the missing operator: To check if two values are equal in Python, you use _____",
-      "type": "fill-in-the-blank",
-      "correctAnswers": ["==", "equal", "equals"]
-    },
-    {
-      "question": "Arrange the correct order of Python function definition steps:",
-      "type": "drag-and-drop",
-      "options": {
-        "dragItems": [
-          { "id": "step1", "text": "def", "isDecoy": false },
-          { "id": "step2", "text": "function_name", "isDecoy": false },
-          { "id": "step3", "text": "parameters", "isDecoy": false },
-          { "id": "step4", "text": "return", "isDecoy": false },
-          { "id": "decoy1", "text": "class", "isDecoy": true }
+        "correctOrder": [0, 1, 2, 3]
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Calculate area of a rectangle",
+        "blocks": [
+          "length = float(input(\"Enter length: \"))",
+          "width = float(input(\"Enter width: \"))",
+          "area = length * width",
+          "print(f\"Area: {area}\")"
         ],
-        "dropZones": [
-          { "id": "zone1", "label": "1st", "correctItemId": "step1" },
-          { "id": "zone2", "label": "2nd", "correctItemId": "step2" },
-          { "id": "zone3", "label": "3rd", "correctItemId": "step3" },
-          { "id": "zone4", "label": "4th", "correctItemId": "step4" }
-        ]
-      }
-    },
-    {
-      "question": "Order the Python data types from simplest to most complex:",
-      "type": "drag-and-drop", 
-      "options": {
-        "dragItems": [
-          { "id": "int", "text": "int", "isDecoy": false },
-          { "id": "list", "text": "list", "isDecoy": false },
-          { "id": "dict", "text": "dict", "isDecoy": false },
-          { "id": "str", "text": "str", "isDecoy": false },
-          { "id": "decoy1", "text": "array", "isDecoy": true }
+        "correctOrder": [0, 1, 2, 3]
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Simple loop with condition",
+        "blocks": [
+          "for i in range(5):",
+          "    if i % 2 == 0:",
+          "        print(f\"{i} is even\")",
+          "    else:",
+          "        print(f\"{i} is odd\")"
         ],
-        "dropZones": [
-          { "id": "zone1", "label": "1st", "correctItemId": "int" },
-          { "id": "zone2", "label": "2nd", "correctItemId": "str" },
-          { "id": "zone3", "label": "3rd", "correctItemId": "list" },
-          { "id": "zone4", "label": "4th", "correctItemId": "dict" }
-        ]
+        "correctOrder": [0, 1, 2, 3, 4]
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Define and call a function",
+        "blocks": [
+          "def greet_user(name):",
+          "    message = f\"Hello, {name}!\"",
+          "    return message",
+          "user_name = \"Alice\"",
+          "result = greet_user(user_name)",
+          "print(result)"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4, 5]
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Working with lists and loops",
+        "blocks": [
+          "numbers = [1, 2, 3, 4, 5]",
+          "total = 0",
+          "for num in numbers:",
+          "    total += num",
+          "average = total / len(numbers)",
+          "print(f\"Average: {average}\")"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4, 5]
       }
-    }
-  ]
+    ]
+  }
 }

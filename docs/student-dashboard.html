@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCI-HIGH: Student Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Config -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              dark: '#0d1117',
+              primary: '#00ff88',
+              accent: '#ff6b6b',
+              secondary: '#4ecdc4',
+              light: '#f8f9fa',
+              gray: {
+                850: '#1a1d26'
+              }
+            },
+            fontFamily: {
+              gaming: ['Orbitron', 'monospace']
+            }
+          }
+        }
+      }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <style>
+      .neon-border {
+        border: 2px solid #00ff88;
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+      }
+      
+      .neon-border-accent {
+        border: 2px solid #ff6b6b;
+        box-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+      }
+      
+      .neon-border-success {
+        border: 2px solid #4ade80;
+        box-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
+      }
+      
+      .bg-cardBg {
+        background: rgba(13, 17, 23, 0.8);
+        backdrop-filter: blur(10px);
+      }
+      
+      .gaming-card {
+        background: linear-gradient(135deg, rgba(13, 17, 23, 0.9) 0%, rgba(26, 29, 38, 0.9) 100%);
+        border: 1px solid rgba(0, 255, 136, 0.3);
+        transition: all 0.3s ease;
+      }
+      
+      .gaming-card:hover {
+        border-color: #00ff88;
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        transform: translateY(-2px);
+      }
+      
+      .stat-card {
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 255, 136, 0.05) 100%);
+        border: 1px solid rgba(0, 255, 136, 0.3);
+      }
+      
+      .course-card {
+        background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 107, 107, 0.05) 100%);
+        border: 1px solid rgba(255, 107, 107, 0.3);
+      }
+      
+      .course-card.completed {
+        background: linear-gradient(135deg, rgba(74, 222, 128, 0.1) 0%, rgba(74, 222, 128, 0.05) 100%);
+        border: 1px solid rgba(74, 222, 128, 0.3);
+      }
+      
+      .progress-bar {
+        background: linear-gradient(90deg, #00ff88 0%, #4ecdc4 100%);
+      }
+      
+      body {
+        background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%);
+        min-height: 100vh;
+      }
+    </style>
+  </head>
+  
+  <body class="text-light">
+    <!-- Navigation -->
+    <nav class="bg-dark/90 backdrop-blur-md border-b border-primary/30 sticky top-0 z-50">
+      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+          <a href="index.html" class="flex items-center space-x-2">
+            <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <span class="font-gaming font-bold text-dark">SH</span>
+            </div>
+            <span class="font-gaming text-xl font-bold text-primary">Student Dashboard</span>
+          </a>
+        </div>
+        <div class="flex items-center space-x-4">
+          <a href="game.html" class="bg-primary text-dark px-4 py-2 rounded-lg font-gaming font-bold hover:bg-primary/80 transition-all">
+            Continue Learning
+          </a>
+          <a href="leaderboards.html" class="text-primary hover:text-accent transition-all font-gaming">
+            Leaderboards
+          </a>
+          <button id="logout-btn" class="text-gray-400 hover:text-primary transition-all font-gaming">
+            Logout
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Dashboard Content -->
+    <div class="container mx-auto px-4 py-8">
+      <!-- Welcome Section -->
+      <div class="mb-8">
+        <div class="gaming-card rounded-lg p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h1 class="text-3xl font-bold text-primary font-gaming mb-2">
+                Welcome back, <span id="student-name">Student</span>!
+              </h1>
+              <p class="text-gray-400 font-gaming">
+                Continue your programming journey • <span id="student-department">Department</span>
+              </p>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-bold text-accent font-gaming" id="total-points">0</div>
+              <div class="text-sm text-gray-400">Career Points</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats Row -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="stat-card rounded-lg p-4 text-center">
+          <div class="text-2xl font-bold text-primary font-gaming" id="total-sessions">0</div>
+          <div class="text-sm text-gray-400">Total Sessions</div>
+        </div>
+        <div class="stat-card rounded-lg p-4 text-center">
+          <div class="text-2xl font-bold text-secondary font-gaming" id="average-accuracy">0%</div>
+          <div class="text-sm text-gray-400">Average Accuracy</div>
+        </div>
+        <div class="stat-card rounded-lg p-4 text-center">
+          <div class="text-2xl font-bold text-accent font-gaming" id="highest-streak">0</div>
+          <div class="text-sm text-gray-400">Best Streak</div>
+        </div>
+        <div class="stat-card rounded-lg p-4 text-center">
+          <div class="text-2xl font-bold text-primary font-gaming" id="courses-completed">0/6</div>
+          <div class="text-sm text-gray-400">Courses Completed</div>
+        </div>
+      </div>
+
+      <!-- Course Progress Section -->
+      <div class="grid lg:grid-cols-2 gap-8 mb-8">
+        <!-- Course Completion -->
+        <div class="gaming-card rounded-lg p-6">
+          <h2 class="text-xl font-bold text-primary font-gaming mb-4 flex items-center gap-2">
+            <span>🎓</span>
+            Course Progress
+          </h2>
+          <div id="course-progress-grid" class="grid grid-cols-2 gap-4">
+            <!-- Courses will be populated here -->
+          </div>
+          <div class="mt-4">
+            <div class="flex justify-between text-sm text-gray-400 mb-2">
+              <span>Overall Progress</span>
+              <span id="overall-progress-text">0%</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-3">
+              <div id="overall-progress-bar" class="progress-bar h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="gaming-card rounded-lg p-6">
+          <h2 class="text-xl font-bold text-secondary font-gaming mb-4 flex items-center gap-2">
+            <span>📈</span>
+            Recent Activity
+          </h2>
+          <div id="recent-activity" class="space-y-3 max-h-80 overflow-y-auto">
+            <!-- Recent sessions will be populated here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Analytics -->
+      <div class="grid lg:grid-cols-2 gap-8 mb-8">
+        <!-- Performance Chart -->
+        <div class="gaming-card rounded-lg p-6">
+          <h2 class="text-xl font-bold text-accent font-gaming mb-4 flex items-center gap-2">
+            <span>📊</span>
+            Performance Trends
+          </h2>
+          <div class="relative h-64 bg-dark/50 rounded-lg p-4">
+            <canvas id="performanceChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Skills Radar -->
+        <div class="gaming-card rounded-lg p-6">
+          <h2 class="text-xl font-bold text-primary font-gaming mb-4 flex items-center gap-2">
+            <span>🎯</span>
+            Skills Assessment
+          </h2>
+          <div class="relative h-64 bg-dark/50 rounded-lg p-4">
+            <canvas id="skillsRadar"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Achievement Showcase -->
+      <div class="gaming-card rounded-lg p-6 mb-8">
+        <h2 class="text-xl font-bold text-secondary font-gaming mb-4 flex items-center gap-2">
+          <span>🏆</span>
+          Recent Achievements
+        </h2>
+        <div id="achievements-grid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+          <!-- Achievement badges will be populated here -->
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="grid md:grid-cols-3 gap-6">
+        <a href="game.html" class="gaming-card rounded-lg p-6 text-center hover:scale-105 transition-all duration-300">
+          <div class="text-4xl mb-3">🎮</div>
+          <h3 class="font-gaming text-primary font-bold mb-2">Continue Playing</h3>
+          <p class="text-gray-400 text-sm">Resume your programming adventure</p>
+        </a>
+        
+        <a href="leaderboards.html" class="gaming-card rounded-lg p-6 text-center hover:scale-105 transition-all duration-300">
+          <div class="text-4xl mb-3">🏆</div>
+          <h3 class="font-gaming text-accent font-bold mb-2">View Leaderboards</h3>
+          <p class="text-gray-400 text-sm">Compare your progress with others</p>
+        </a>
+        
+        <button onclick="viewFullProfile()" class="gaming-card rounded-lg p-6 text-center hover:scale-105 transition-all duration-300">
+          <div class="text-4xl mb-3">📋</div>
+          <h3 class="font-gaming text-secondary font-bold mb-2">Full Profile</h3>
+          <p class="text-gray-400 text-sm">View detailed statistics</p>
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-dark/90 flex items-center justify-center z-50">
+      <div class="text-center">
+        <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-primary font-gaming">Loading your dashboard...</p>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+      // Firebase Configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
+        authDomain: "sci-high-website.firebaseapp.com",
+        databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "sci-high-website",
+        storageBucket: "sci-high-website.appspot.com",
+        messagingSenderId: "451463202515",
+        appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
+      };
+
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.database();
+      const auth = firebase.auth();
+
+      class StudentDashboard {
+        constructor() {
+          this.currentUser = null;
+          this.careerStats = null;
+          this.charts = [];
+          this.init();
+        }
+
+        async init() {
+          try {
+            // Check authentication state
+            await this.checkAuthState();
+            
+            if (this.currentUser) {
+              await this.loadStudentData();
+              this.renderDashboard();
+              this.initializeCharts();
+            } else {
+              // Redirect to login if not authenticated
+              window.location.href = 'index.html';
+            }
+            
+            this.hideLoading();
+          } catch (error) {
+            console.error('Error initializing dashboard:', error);
+            this.showError('Failed to load dashboard. Please try refreshing.');
+            this.hideLoading();
+          }
+        }
+
+        checkAuthState() {
+          return new Promise((resolve) => {
+            auth.onAuthStateChanged((user) => {
+              this.currentUser = user;
+              resolve();
+            });
+          });
+        }
+
+        async loadStudentData() {
+          if (!this.currentUser) return;
+
+          try {
+            // Load career stats
+            const careerStatsRef = db.ref(`student_career_stats/${this.currentUser.uid}`);
+            const careerSnapshot = await careerStatsRef.once('value');
+            this.careerStats = careerSnapshot.val();
+
+            if (!this.careerStats) {
+              console.log('No career stats found, user needs to complete data collection');
+              this.showError('Please complete the in-game data collection first.');
+              return;
+            }
+
+            console.log('Loaded career stats:', this.careerStats);
+          } catch (error) {
+            console.error('Error loading student data:', error);
+            throw error;
+          }
+        }
+
+        renderDashboard() {
+          if (!this.careerStats) return;
+
+          const stats = this.careerStats.careerStats || {};
+          const info = this.careerStats.studentInfo || {};
+          const completionStatus = stats.courseCompletionStatus || {};
+
+          // Update header
+          document.getElementById('student-name').textContent = info.fullName || 'Student';
+          document.getElementById('student-department').textContent = this.careerStats.department || 'Unknown Department';
+          document.getElementById('total-points').textContent = (stats.totalPoints || 0).toLocaleString();
+
+          // Update quick stats
+          document.getElementById('total-sessions').textContent = stats.totalSessions || 0;
+          document.getElementById('average-accuracy').textContent = `${(stats.averageAccuracy || 0).toFixed(1)}%`;
+          document.getElementById('highest-streak').textContent = stats.highestStreak || 0;
+
+          // Update course completion
+          const completedCourses = Object.values(completionStatus).filter(Boolean).length;
+          const totalCourses = Object.keys(completionStatus).length;
+          const completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
+
+          document.getElementById('courses-completed').textContent = `${completedCourses}/${totalCourses}`;
+          document.getElementById('overall-progress-text').textContent = `${completionPercentage}%`;
+          document.getElementById('overall-progress-bar').style.width = `${completionPercentage}%`;
+
+          // Render course grid
+          this.renderCourseProgress(completionStatus);
+
+          // Render recent activity
+          this.renderRecentActivity(this.careerStats.recentSessions || {});
+
+          // Render achievements
+          this.renderAchievements(stats);
+        }
+
+        renderCourseProgress(completionStatus) {
+          const courses = {
+            python: { name: 'Python', icon: '🐍', color: 'text-blue-400' },
+            java: { name: 'Java', icon: '☕', color: 'text-orange-400' },
+            csharp: { name: 'C#', icon: '💎', color: 'text-purple-400' },
+            cpp: { name: 'C++', icon: '⚡', color: 'text-green-400' },
+            c: { name: 'C', icon: '🔧', color: 'text-gray-400' },
+            webdesign: { name: 'Web Design', icon: '🎨', color: 'text-pink-400' }
+          };
+
+          const grid = document.getElementById('course-progress-grid');
+          grid.innerHTML = Object.entries(courses).map(([courseKey, course]) => {
+            const isCompleted = completionStatus[courseKey] || false;
+            return `
+              <div class="course-card ${isCompleted ? 'completed' : ''} rounded-lg p-4 text-center transition-all duration-300">
+                <div class="text-2xl mb-2">${course.icon}</div>
+                <div class="text-sm font-gaming ${course.color} font-bold">${course.name}</div>
+                <div class="text-xs mt-1 ${isCompleted ? 'text-green-400' : 'text-gray-500'}">
+                  ${isCompleted ? '✅ Complete' : '⏳ In Progress'}
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        renderRecentActivity(recentSessions) {
+          const container = document.getElementById('recent-activity');
+          
+          if (!recentSessions || Object.keys(recentSessions).length === 0) {
+            container.innerHTML = `
+              <div class="text-center text-gray-400 py-8">
+                <div class="text-4xl mb-2">📚</div>
+                <div>No recent activity</div>
+                <div class="text-sm">Start playing to see your progress here!</div>
+              </div>
+            `;
+            return;
+          }
+
+          const sessions = Object.entries(recentSessions)
+            .sort(([,a], [,b]) => new Date(b.timestamp) - new Date(a.timestamp))
+            .slice(0, 5);
+
+          container.innerHTML = sessions.map(([sessionId, session]) => {
+            const date = new Date(session.timestamp).toLocaleDateString();
+            const scoreColor = session.score >= 80 ? 'text-green-400' : session.score >= 60 ? 'text-yellow-400' : 'text-red-400';
+            
+            return `
+              <div class="flex items-center gap-3 p-3 bg-dark/50 rounded-lg border border-primary/20">
+                <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-dark font-bold">
+                  ${session.course ? session.course.charAt(0).toUpperCase() : '?'}
+                </div>
+                <div class="flex-1">
+                  <div class="font-medium text-primary font-gaming">${session.course || 'Unknown Course'}</div>
+                  <div class="text-xs text-gray-400">${date} • ${session.questionsAnswered || 0} questions</div>
+                </div>
+                <div class="text-right">
+                  <div class="font-bold ${scoreColor} font-gaming">${session.score || 0}%</div>
+                  <div class="text-xs text-gray-400">${session.points || 0} pts</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        renderAchievements(stats) {
+          const container = document.getElementById('achievements-grid');
+          const achievements = this.generateAchievements(stats);
+          
+          container.innerHTML = achievements.map(achievement => `
+            <div class="gaming-card rounded-lg p-4 text-center ${achievement.unlocked ? 'neon-border-success' : 'opacity-50'}">
+              <div class="text-2xl mb-2">${achievement.icon}</div>
+              <div class="text-xs font-gaming ${achievement.unlocked ? 'text-green-400' : 'text-gray-500'}">
+                ${achievement.name}
+              </div>
+            </div>
+          `).join('');
+        }
+
+        generateAchievements(stats) {
+          return [
+            { name: 'First Steps', icon: '🎯', unlocked: (stats.totalSessions || 0) >= 1 },
+            { name: 'Getting Started', icon: '🌟', unlocked: (stats.totalSessions || 0) >= 5 },
+            { name: 'Dedicated', icon: '🔥', unlocked: (stats.totalSessions || 0) >= 10 },
+            { name: 'Expert', icon: '👑', unlocked: (stats.totalSessions || 0) >= 25 },
+            { name: 'Accurate', icon: '🎯', unlocked: (stats.averageAccuracy || 0) >= 80 },
+            { name: 'Perfect', icon: '💎', unlocked: (stats.averageAccuracy || 0) >= 95 },
+            { name: 'Combo King', icon: '⚡', unlocked: (stats.highestStreak || 0) >= 10 },
+            { name: 'Unstoppable', icon: '🚀', unlocked: (stats.highestStreak || 0) >= 20 },
+            { name: 'Scholar', icon: '📚', unlocked: (stats.totalPoints || 0) >= 1000 },
+            { name: 'Master', icon: '🏆', unlocked: (stats.totalPoints || 0) >= 5000 }
+          ];
+        }
+
+        initializeCharts() {
+          if (!this.careerStats) return;
+
+          const stats = this.careerStats.careerStats || {};
+          const recentSessions = this.careerStats.recentSessions || {};
+
+          // Performance Trends Chart
+          this.createPerformanceChart(recentSessions);
+          
+          // Skills Radar Chart
+          this.createSkillsRadar(stats);
+        }
+
+        createPerformanceChart(recentSessions) {
+          const canvas = document.getElementById('performanceChart');
+          if (!canvas) return;
+
+          // Get last 10 sessions for trend
+          const sessions = Object.entries(recentSessions)
+            .sort(([,a], [,b]) => new Date(a.timestamp) - new Date(b.timestamp))
+            .slice(-10);
+
+          const labels = sessions.map((_, index) => `Session ${index + 1}`);
+          const scores = sessions.map(([, session]) => session.score || 0);
+
+          const chart = new Chart(canvas, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Score %',
+                data: scores,
+                borderColor: '#00ff88',
+                backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                tension: 0.4,
+                fill: true
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                  ticks: { color: '#fff' }
+                },
+                x: {
+                  grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                  ticks: { color: '#fff' }
+                }
+              }
+            }
+          });
+
+          this.charts.push(chart);
+        }
+
+        createSkillsRadar(stats) {
+          const canvas = document.getElementById('skillsRadar');
+          if (!canvas) return;
+
+          const completionStatus = stats.courseCompletionStatus || {};
+          const completedCount = Object.values(completionStatus).filter(Boolean).length;
+          const totalCount = Object.keys(completionStatus).length;
+
+          const chart = new Chart(canvas, {
+            type: 'radar',
+            data: {
+              labels: ['Accuracy', 'Consistency', 'Speed', 'Completion', 'Dedication'],
+              datasets: [{
+                label: 'Skills',
+                data: [
+                  Math.min(100, stats.averageAccuracy || 0),
+                  Math.min(100, (stats.highestStreak || 0) * 5),
+                  Math.min(100, (stats.totalSessions || 0) * 4),
+                  totalCount > 0 ? (completedCount / totalCount) * 100 : 0,
+                  Math.min(100, (stats.totalSessions || 0) * 2)
+                ],
+                borderColor: '#00ff88',
+                backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                pointBackgroundColor: '#00ff88'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                r: {
+                  beginAtZero: true,
+                  max: 100,
+                  grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                  angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                  pointLabels: { color: '#fff' },
+                  ticks: { color: '#fff', display: false }
+                }
+              }
+            }
+          });
+
+          this.charts.push(chart);
+        }
+
+        showError(message) {
+          console.error(message);
+          // Could add a toast notification here
+        }
+
+        hideLoading() {
+          document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        // Cleanup charts when navigating away
+        destroy() {
+          this.charts.forEach(chart => {
+            if (chart && typeof chart.destroy === 'function') {
+              chart.destroy();
+            }
+          });
+          this.charts = [];
+        }
+      }
+
+      // Global functions
+      function viewFullProfile() {
+        if (dashboard.currentUser) {
+          window.open(`leaderboards.html#profile=${dashboard.currentUser.uid}`, '_blank');
+        }
+      }
+
+      // Logout functionality
+      document.getElementById('logout-btn').addEventListener('click', async () => {
+        try {
+          await auth.signOut();
+          window.location.href = 'index.html';
+        } catch (error) {
+          console.error('Error signing out:', error);
+        }
+      });
+
+      // Initialize dashboard
+      const dashboard = new StudentDashboard();
+
+      // Cleanup on page unload
+      window.addEventListener('beforeunload', () => {
+        dashboard.destroy();
+      });
+    </script>
+  </body>
+</html>

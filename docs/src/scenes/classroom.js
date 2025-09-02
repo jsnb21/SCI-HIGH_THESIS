@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { char1, char2, char3, char4, char5 } from '../gameManager';
 import { createBackButton } from '../components/buttons/backbutton';
 import Carousel from '../ui/carouselUI';
+import VNDialogueBox from '../ui/VNDialogueBox';
 import { onceOnlyFlags } from '../gameManager';
 import TutorialManager from '../components/TutorialManager.js';
 import { CLASSROOM_TUTORIAL_STEPS } from '../components/TutorialConfig.js';
@@ -21,6 +22,9 @@ export default class Classroom extends Phaser.Scene {
     preload() {
         // Load classroom background
         this.load.image('classroomBG', 'assets/img/bg/classroom_day.png');
+        
+        // Load Principal Richard image for intro dialogue
+        this.load.image('Richard', 'assets/sprites/npcs/principal.png');
         
         // Load character images from public/assets/sprites/npcs with their respective names
         this.load.image('Noah', 'assets/sprites/npcs/Noah.png');
@@ -172,6 +176,33 @@ export default class Classroom extends Phaser.Scene {
             }
         };
         
+        // Check for classroom intro cutscene
+        if (!onceOnlyFlags.hasSeen('classroom_intro')) {
+            // Show Principal Richard and intro dialogue first
+            this.showPrincipalRichard();
+            
+            this.vnBox = new VNDialogueBox(this, [
+                "Here I am in the classroom!",
+                "Now I should meet my classmates as Principal Richard suggested.",
+                "Welcome to the classroom! I see you followed my advice.",
+                "These are your classmates - they are all experts in different programming languages.",
+                "Each of them can teach you the basics of their specialty before you tackle the challenges in the computer lab.",
+                "Noah specializes in Python, Lily knows web design, Damian is great with Java, Bella handles C programming, and Finley is our C++ expert.",
+                "Make sure to talk to them and learn from their experience. They'll help you prepare for the coding challenges ahead!",
+                "Thanks, Principal Richard! I'll make sure to meet everyone and learn from them."
+            ], () => {
+                // Hide Principal Richard and create carousel
+                this.hidePrincipalRichard();
+                onceOnlyFlags.setSeen('classroom_intro');
+                this.createClassroomCarousel(charKeys, charInfo, carouselConfig);
+            });
+        } else {
+            // Create carousel directly if intro already seen
+            this.createClassroomCarousel(charKeys, charInfo, carouselConfig);
+        }
+    }
+
+    createClassroomCarousel(charKeys, charInfo, carouselConfig) {
         this.characterCarousel = new Carousel(this, carouselConfig).create(
             charKeys,
             charInfo.map(c => ({
@@ -531,5 +562,51 @@ export default class Classroom extends Phaser.Scene {
                 console.log('Classroom tutorial skipped!');
             }
         });
+    }
+
+    showPrincipalRichard() {
+        const scaleInfo = getScaleInfo(this);
+        const { width, height } = scaleInfo;
+        
+        // Position character on the left side of the screen
+        const characterX = width * 0.25; // 25% from left edge
+        const characterY = height * 0.45; // 45% from top to avoid dialogue box
+        
+        // Responsive scaling for mobile devices
+        const isMobile = width < 768 || height < 600;
+        const characterScale = isMobile ? 0.175 : 0.4; // Smaller scale for better positioning
+        
+        // Add Principal Richard character image
+        this.principalDisplay = this.add.image(characterX, characterY, 'Richard');
+        this.principalDisplay.setOrigin(0.5, 0.5);
+        this.principalDisplay.setScale(characterScale);
+        this.principalDisplay.setDepth(5); // Behind dialogue box but above background
+        
+        // Add a subtle fade-in effect
+        this.principalDisplay.setAlpha(0);
+        this.tweens.add({
+            targets: this.principalDisplay,
+            alpha: 1,
+            duration: 300,
+            ease: 'Power2'
+        });
+    }
+
+    hidePrincipalRichard() {
+        if (this.principalDisplay) {
+            // Fade out and destroy
+            this.tweens.add({
+                targets: this.principalDisplay,
+                alpha: 0,
+                duration: 300,
+                ease: 'Power2',
+                onComplete: () => {
+                    if (this.principalDisplay) {
+                        this.principalDisplay.destroy();
+                        this.principalDisplay = null;
+                    }
+                }
+            });
+        }
     }
 }
