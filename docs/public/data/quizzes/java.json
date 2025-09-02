@@ -64,45 +64,5 @@
       "type": "fill-in-the-blank",
       "correctAnswers": ["new", "NEW"]
     }
-  ],
-  "codeArrangement": [
-    {
-      "title": "Arrange the Java code blocks in correct order:",
-      "description": "Create a simple Hello World program",
-      "blocks": [
-        "public class HelloWorld {",
-        "    public static void main(String[] args) {",
-        "        System.out.println(\"Hello, World!\");",
-        "    }",
-        "}"
-      ],
-      "correctOrder": [0, 1, 2, 3, 4]
-    },
-    {
-      "title": "Arrange the Java code blocks in correct order:",
-      "description": "Calculate sum of two numbers",
-      "blocks": [
-        "Scanner scanner = new Scanner(System.in);",
-        "int a = scanner.nextInt();",
-        "int b = scanner.nextInt();",
-        "int sum = a + b;",
-        "System.out.println(\"Sum: \" + sum);"
-      ],
-      "correctOrder": [0, 1, 2, 3, 4]
-    },
-    {
-      "title": "Arrange the Java code blocks in correct order:",
-      "description": "Simple for loop",
-      "blocks": [
-        "for (int i = 0; i < 5; i++) {",
-        "    if (i % 2 == 0) {",
-        "        System.out.println(i + \" is even\");",
-        "    } else {",
-        "        System.out.println(i + \" is odd\");",
-        "    }",
-        "}"
-      ],
-      "correctOrder": [0, 1, 2, 3, 4, 5, 6]
-    }
   ]
 }

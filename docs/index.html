@@ -1034,9 +1034,6 @@
           <button onclick="createSampleGeneral()" class="w-full px-3 py-1 bg-cyan text-white text-xs rounded hover:bg-blue-500">
             General Account
           </button>
-          <button onclick="createSampleCareerStats()" class="w-full px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700">
-            📊 Career Stats Data
-          </button>
           <button onclick="logoutUser()" class="w-full px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">
             Logout
           </button>
@@ -2995,214 +2992,6 @@
         return generalUser;
       };
 
-      // Create 3 sample career stats entries
-      window.createSampleCareerStats = async () => {
-        try {
-          console.log('Creating 3 sample career stats entries...');
-          
-          const sampleCareerStats = [
-            {
-              studentId: 'student_001',
-              careerStats: {
-                totalPoints: 2450,
-                totalSessions: 18,
-                averageAccuracy: 87.5,
-                highestStreak: 15,
-                totalQuestions: 180,
-                totalPlayTime: 7200, // 2 hours in seconds
-                courseCompletionStatus: {
-                  python: true,
-                  java: true,
-                  csharp: false,
-                  cpp: true,
-                  c: false,
-                  webdesign: true
-                },
-                globalRank: 1,
-                departmentRank: 1
-              },
-              studentInfo: {
-                fullName: 'Maria Santos',
-                lastUpdated: new Date().toISOString()
-              },
-              firstName: 'Maria',
-              lastName: 'Santos',
-              department: 'College - BS Computer Science',
-              strandYear: '3rd Year',
-              recentSessions: {
-                session_001: {
-                  timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-                  course: 'python',
-                  score: 92,
-                  questionsAnswered: 10,
-                  points: 184,
-                  accuracy: 92,
-                  streak: 8
-                },
-                session_002: {
-                  timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-                  course: 'java',
-                  score: 85,
-                  questionsAnswered: 12,
-                  points: 170,
-                  accuracy: 85,
-                  streak: 6
-                },
-                session_003: {
-                  timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
-                  course: 'webdesign',
-                  score: 88,
-                  questionsAnswered: 8,
-                  points: 140,
-                  accuracy: 88,
-                  streak: 5
-                }
-              }
-            },
-            {
-              studentId: 'student_002',
-              careerStats: {
-                totalPoints: 1890,
-                totalSessions: 14,
-                averageAccuracy: 78.2,
-                highestStreak: 12,
-                totalQuestions: 140,
-                totalPlayTime: 5400, // 1.5 hours in seconds
-                courseCompletionStatus: {
-                  python: true,
-                  java: false,
-                  csharp: true,
-                  cpp: false,
-                  c: true,
-                  webdesign: false
-                },
-                globalRank: 2,
-                departmentRank: 1
-              },
-              studentInfo: {
-                fullName: 'John Carlo Reyes',
-                lastUpdated: new Date().toISOString()
-              },
-              firstName: 'John Carlo',
-              lastName: 'Reyes',
-              department: 'Senior High - STEM',
-              strandYear: 'Grade 12',
-              recentSessions: {
-                session_001: {
-                  timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-                  course: 'c',
-                  score: 76,
-                  questionsAnswered: 10,
-                  points: 152,
-                  accuracy: 76,
-                  streak: 4
-                },
-                session_002: {
-                  timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-                  course: 'csharp',
-                  score: 82,
-                  questionsAnswered: 10,
-                  points: 164,
-                  accuracy: 82,
-                  streak: 7
-                },
-                session_003: {
-                  timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
-                  course: 'python',
-                  score: 89,
-                  questionsAnswered: 15,
-                  points: 178,
-                  accuracy: 89,
-                  streak: 12
-                }
-              }
-            },
-            {
-              studentId: 'student_003',
-              careerStats: {
-                totalPoints: 1230,
-                totalSessions: 9,
-                averageAccuracy: 73.8,
-                highestStreak: 8,
-                totalQuestions: 90,
-                totalPlayTime: 3600, // 1 hour in seconds
-                courseCompletionStatus: {
-                  python: true,
-                  java: false,
-                  csharp: false,
-                  cpp: false,
-                  c: false,
-                  webdesign: true
-                },
-                globalRank: 3,
-                departmentRank: 2
-              },
-              studentInfo: {
-                fullName: 'Anna Mae Garcia',
-                lastUpdated: new Date().toISOString()
-              },
-              firstName: 'Anna Mae',
-              lastName: 'Garcia',
-              department: 'Senior High - ICT',
-              strandYear: 'Grade 11',
-              recentSessions: {
-                session_001: {
-                  timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-                  course: 'webdesign',
-                  score: 71,
-                  questionsAnswered: 8,
-                  points: 113,
-                  accuracy: 71,
-                  streak: 3
-                },
-                session_002: {
-                  timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
-                  course: 'python',
-                  score: 78,
-                  questionsAnswered: 12,
-                  points: 156,
-                  accuracy: 78,
-                  streak: 6
-                },
-                session_003: {
-                  timestamp: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), // 8 days ago
-                  course: 'webdesign',
-                  score: 68,
-                  questionsAnswered: 10,
-                  points: 136,
-                  accuracy: 68,
-                  streak: 4
-                }
-              }
-            }
-          ];
-
-          // Upload each sample career stat to Firebase
-          const db = firebase.database();
-          const promises = sampleCareerStats.map(async (careerData, index) => {
-            const studentId = careerData.studentId;
-            console.log(`Uploading career stats for ${careerData.studentInfo.fullName}...`);
-            
-            await db.ref(`student_career_stats/${studentId}`).set(careerData);
-            console.log(`✅ Career stats uploaded for ${careerData.studentInfo.fullName}`);
-          });
-
-          await Promise.all(promises);
-          
-          console.log('🎉 Successfully created 3 sample career stats entries!');
-          console.log('📊 Sample data includes:');
-          console.log('   • Maria Santos (College CS, Rank #1): 2450 pts, 87.5% accuracy, 4/6 courses');
-          console.log('   • John Carlo Reyes (SHS STEM, Rank #2): 1890 pts, 78.2% accuracy, 3/6 courses');
-          console.log('   • Anna Mae Garcia (SHS ICT, Rank #3): 1230 pts, 73.8% accuracy, 2/6 courses');
-          console.log('🔗 View results at: leaderboards.html');
-          
-          return sampleCareerStats;
-        } catch (error) {
-          console.error('❌ Error creating sample career stats:', error);
-          throw error;
-        }
-      };
-
       window.logoutUser = () => {
         authManager.logout();
       };
@@ -3219,15 +3008,14 @@ USER MANAGEMENT:
 3. createSampleProfessor()              - Create local professor account  
 4. createSampleStudent()                - Create student account  
 5. createSampleGeneral()                - Create general user account
-6. createSampleCareerStats()            - Create 3 sample career stats entries for leaderboards
-7. logoutUser()                        - Logout current user
+6. logoutUser()                        - Logout current user
 
 
 DEBUGGING & TOOLS:
-8. debugFirebaseConnection()           - Check Firebase connection and data storage
-9. createRealFirebaseStudent(id)       - Force create student in Firebase (bypasses samples)
-10. openDeveloperTools()                - Open advanced developer tools page
-11. showDevCommands()                  - Show this help
+7. debugFirebaseConnection()           - Check Firebase connection and data storage
+8. createRealFirebaseStudent(id)       - Force create student in Firebase (bypasses samples)
+9. openDeveloperTools()                - Open advanced developer tools page
+10. showDevCommands()                  - Show this help
 
 USAGE:  
 ------

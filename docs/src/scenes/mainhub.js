@@ -34,9 +34,6 @@ export default class MainHub extends Phaser.Scene {
         this.load.image('icon3', 'assets/img/mainhub/PUZZLE.png');
         // this.load.image('icon5', 'assets/img/mainhub/canteenIcon.png');
 
-        // Load Principal Richard image for dialogue
-        this.load.image('Richard', 'assets/sprites/npcs/principal.png');
-
         this.load.audio('se_select', 'assets/sounds/se_select.wav');
         this.load.audio('se_confirm', 'assets/sounds/se_confirm.wav');
         this.load.audio('bgm_mainhub', 'assets/audio/bgm/bgm_mainhub.mp3');
@@ -157,21 +154,11 @@ export default class MainHub extends Phaser.Scene {
         ];
 
         if (!onceOnlyFlags.hasSeen('mainhub_intro')) {
-            // Show Principal Richard character image
-            this.showPrincipalRichard();
-            
             this.vnBox = new VNDialogueBox(this, [
                 "Hmm...",
-                "This is the main hub of SCI HIGH. Where should I go first?",
-                "Welcome to SCI HIGH!",
-                "I see you're new here. Let me give you some guidance.",
-                "I'd recommend starting with the classroom to meet your classmates first.",
-                "Building connections with your peers is just as important as learning!",
-                "After that, feel free to explore the library for research and the computer lab for hands-on coding practice.",
-                "Thanks, Principal Richard! I'll head to the classroom first to meet everyone."
+                "Where should I go next?",
+                "I should go to the classroom and ask my professor on what I should do."
             ], () => {
-                // Hide Principal Richard when dialogue ends
-                this.hidePrincipalRichard();
                 onceOnlyFlags.setSeen('mainhub_intro');
                 this.createCarousel(iconKeys, iconInfo);
                 
@@ -378,53 +365,6 @@ export default class MainHub extends Phaser.Scene {
                 console.warn('Points display update failed, clearing reference:', error);
                 this.pointsDisplay = null;
             }
-        }
-    }
-
-    showPrincipalRichard() {
-        const { width, height } = this.scale;
-        
-        // Position character on the left side of the screen
-        const characterX = width * 0.25; // 25% from left edge
-        const characterY = height * 0.45; // 45% from top to avoid dialogue box
-        
-        // Responsive scaling for mobile devices
-        const isMobile = width < 768 || height < 600;
-        const characterScale = isMobile ? 0.175 : 0.4; // Smaller scale for better positioning
-        
-        // Add Principal Richard character image
-        this.principalDisplay = this.add.image(characterX, characterY, 'Richard');
-        this.principalDisplay.setOrigin(0.5, 0.5);
-        this.principalDisplay.setScale(characterScale);
-        this.principalDisplay.setDepth(5); // Behind dialogue box but above background
-        
-        // Add a subtle fade-in effect
-        this.principalDisplay.setAlpha(0);
-        this.tweens.add({
-            targets: this.principalDisplay,
-            alpha: 1,
-            duration: 300,
-            ease: 'Power2'
-        });
-        
-        this.uiElements.push(this.principalDisplay);
-    }
-
-    hidePrincipalRichard() {
-        if (this.principalDisplay) {
-            // Fade out and destroy
-            this.tweens.add({
-                targets: this.principalDisplay,
-                alpha: 0,
-                duration: 300,
-                ease: 'Power2',
-                onComplete: () => {
-                    if (this.principalDisplay) {
-                        this.principalDisplay.destroy();
-                        this.principalDisplay = null;
-                    }
-                }
-            });
         }
     }
 

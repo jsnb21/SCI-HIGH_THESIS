@@ -1,4 +1,5 @@
 {
+  "_comment": "Firebase Database Rules with Index Optimization - Copy to Firebase Console → Realtime Database → Rules",
   "rules": {
     "students": {
       ".indexOn": ["studentId"],
@@ -36,27 +37,6 @@
       ".indexOn": ["score", "timestamp", "department"],
       ".read": true,
       ".write": "auth != null"
-    },
-    "gameplay_data": {
-      ".indexOn": ["studentId", "timestamp"],
-      ".read": true,
-      ".write": true
-    },
-    "student_career_stats": {
-      ".indexOn": ["studentId"],
-      ".read": true,
-      ".write": true,
-      "$studentId": {
-        "studentInfo": {
-          ".validate": "newData.hasChildren(['studentId', 'fullName'])"
-        },
-        "careerStats": {
-          ".validate": "newData.hasChildren(['totalSessions', 'totalPoints'])"
-        },
-        "recentSessions": {
-          ".validate": "newData.hasChildren()"
-        }
-      }
     }
   }
 }

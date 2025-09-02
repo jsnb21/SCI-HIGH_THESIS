@@ -120,19 +120,19 @@ export default class ComputerLab extends Phaser.Scene {
         // Create the carousel with selection callback and locked states
         this.carousel.create(iconKeys, iconInfo, (selectedItem, index) => {
             console.log('Selected:', selectedItem.heading);
-            // Transition to the roguelike game based on the selected course
+            // Transition to the new scene based on the selected icon with loading screens
             if (selectedItem.heading === "Web Design") {
-                LoadingScreen.transitionToCourse(this, 'MainGameplay', 'Web Design Course - Roguelike Mode', { topic: 'webdesign' });
+                LoadingScreen.transitionToCourse(this, 'WebDesignScene', 'Web Design Course', { topic: 'webdesign' });
             } else if (selectedItem.heading === "Python") {
-                LoadingScreen.transitionToCourse(this, 'MainGameplay', 'Python Course - Roguelike Mode', { topic: 'python' });
+                LoadingScreen.transitionToCourse(this, 'PythonScene', 'Python Course', { topic: 'python' });
             } else if (selectedItem.heading === "Java"){
-                LoadingScreen.transitionToCourse(this, 'MainGameplay', 'Java Course - Roguelike Mode', { topic: 'java' });
+                LoadingScreen.transitionToCourse(this, 'JavaScene', 'Java Course', { topic: 'java' });
             } else if (selectedItem.heading === "C"){
-                LoadingScreen.transitionToCourse(this, 'MainGameplay', 'C Programming Course - Roguelike Mode', { topic: 'c' });
+                LoadingScreen.transitionToCourse(this, 'CSProgrammingScene', 'C Programming Course', { topic: 'C' });
             } else if (selectedItem.heading === "C++"){
-                LoadingScreen.transitionToCourse(this, 'MainGameplay', 'C++ Course - Roguelike Mode', { topic: 'cpp' });
+                LoadingScreen.transitionToCourse(this, 'CPlusplusScene', 'C++ Course', { topic: 'C++' });
             } else if (selectedItem.heading === "C#"){
-                LoadingScreen.transitionToCourse(this, 'MainGameplay', 'C# Course - Roguelike Mode', { topic: 'csharp' });
+                LoadingScreen.transitionToCourse(this, 'CSharpScene', 'C# Course', { topic: 'C#' });
             }
         }, lockedStates);
     }

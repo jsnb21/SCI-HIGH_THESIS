@@ -50,46 +50,5 @@
       "options": ["1", "0", "true", "10 == 10"],
       "correctIndex": 0
     }
-  ],
-  "codeArrangement": [
-    {
-      "title": "Arrange the C code blocks in correct order:",
-      "description": "Create a simple Hello World program",
-      "blocks": [
-        "#include <stdio.h>",
-        "int main() {",
-        "    printf(\"Hello, World!\\n\");",
-        "    return 0;",
-        "}"
-      ],
-      "correctOrder": [0, 1, 2, 3, 4]
-    },
-    {
-      "title": "Arrange the C code blocks in correct order:",
-      "description": "Calculate sum of two numbers",
-      "blocks": [
-        "int a, b, sum;",
-        "printf(\"Enter two numbers: \");",
-        "scanf(\"%d %d\", &a, &b);",
-        "sum = a + b;",
-        "printf(\"Sum: %d\\n\", sum);"
-      ],
-      "correctOrder": [0, 1, 2, 3, 4]
-    },
-    {
-      "title": "Arrange the C code blocks in correct order:",
-      "description": "Simple for loop",
-      "blocks": [
-        "int i;",
-        "for (i = 0; i < 5; i++) {",
-        "    if (i % 2 == 0) {",
-        "        printf(\"%d is even\\n\", i);",
-        "    } else {",
-        "        printf(\"%d is odd\\n\", i);",
-        "    }",
-        "}"
-      ],
-      "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7]
-    }
   ]
 }
