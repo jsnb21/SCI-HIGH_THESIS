@@ -267,9 +267,24 @@ class AuthService {
             console.log('AuthService: Query completed - data:', studentsData);
 
             if (!studentsData) {
-                console.log('AuthService: Student not found');
-                // Student doesn't exist - DO NOT auto-create, require registration
-                throw new Error('Student ID not found. Please register first using the registration form.');
+                console.log('AuthService: Student not found, creating new account');
+                // Student doesn't exist, create a new account
+                const newStudent = await this.createStudentAccount(studentId.trim());
+                if (newStudent.success) {
+                    console.log('AuthService: New student account created successfully');
+                    this.currentUser = {
+                        uid: newStudent.docId,
+                        studentId: studentId.trim(),
+                        type: 'student',
+                        profile: newStudent.studentData
+                    };
+                    this.userType = 'student';
+                    this.saveUserSession();
+                    return { success: true, user: this.currentUser, isNewAccount: true };
+                } else {
+                    console.error('AuthService: Failed to create new student account:', newStudent.error);
+                    throw new Error(newStudent.error);
+                }
             }
 
             console.log('AuthService: Found existing student, loading data...');
@@ -336,8 +351,21 @@ class AuthService {
         const student = offlineStudents.find(s => s.studentId === studentId);
         
         if (!student) {
-            // DO NOT create new offline student - require registration
-            throw new Error('Student ID not found in offline storage. Please register first using the registration form.');
+            // Create new offline student if not found
+            const newOfflineStudent = this.createOfflineStudent(studentId);
+            const updatedStudents = [...offlineStudents, newOfflineStudent];
+            localStorage.setItem('sci_high_offline_students', JSON.stringify(updatedStudents));
+            
+            this.currentUser = {
+                uid: 'offline_' + studentId,
+                studentId: newOfflineStudent.studentId,
+                type: 'student',
+                profile: newOfflineStudent
+            };
+            this.userType = 'student';
+            this.saveUserSession();
+            
+            return { success: true, user: this.currentUser, isNewAccount: true };
         }
 
         this.currentUser = {
@@ -673,165 +701,6 @@ class AuthService {
         } catch (error) {
             return { success: false, error: error.message };
         }
-    }
-
-    // Student self-registration method
-    async registerStudent(studentData) {
-        const isInitialized = await this.ensureFirebaseInitialized();
-        if (!isInitialized) {
-            // Fallback to offline mode
-            return this.registerStudentOffline(studentData);
-        }
-
-        try {
-            const { studentId, fullName, academicInfo } = studentData;
-            
-            // Check if student ID already exists
-            const existingStudentQuery = await this.database.ref('students')
-                .orderByChild('studentId')
-                .equalTo(studentId)
-                .once('value');
-            
-            if (existingStudentQuery.exists()) {
-                throw new Error('Student ID already exists. Please use a different ID or try logging in.');
-            }
-            
-            const completeStudentData = {
-                studentId,
-                fullName,
-                academicInfo: {
-                    level: academicInfo.level,
-                    course: academicInfo.course || null,
-                    yearLevel: academicInfo.yearLevel || null,
-                    strand: academicInfo.strand || null,
-                    department: academicInfo.course ? this.getDepartmentFromCourse(academicInfo.course) : null
-                },
-                accountStatus: {
-                    isActive: true,
-                    isFirstLogin: true,
-                    createdBy: 'self-registered',
-                    createdAt: new Date().toISOString(),
-                    lastLogin: new Date().toISOString()
-                },
-                progress: {
-                    completedQuizzes: [],
-                    completedStories: [],
-                    totalScore: 0,
-                    lastActivity: new Date().toISOString()
-                },
-                gameData: {
-                    totalPoints: 0,
-                    achievements: [],
-                    currentLevel: 1,
-                    courseProgress: {
-                        'Web_Design': { unlocked: true, completed: false, progress: 0 },
-                        'Python': { unlocked: true, completed: false, progress: 0 },
-                        'Java': { unlocked: false, completed: false, progress: 0 },
-                        'C': { unlocked: false, completed: false, progress: 0 },
-                        'CPlusPlus': { unlocked: false, completed: false, progress: 0 },
-                        'CSharp': { unlocked: false, completed: false, progress: 0 }
-                    }
-                },
-                needsProfileCompletion: false,
-                accountType: 'student'
-            };
-
-            // Save to Realtime Database
-            const newStudentRef = this.database.ref('students').push();
-            await newStudentRef.set(completeStudentData);
-            
-            // Auto-login the newly created student
-            this.currentUser = {
-                uid: newStudentRef.key,
-                studentId: studentId,
-                type: 'student',
-                profile: completeStudentData
-            };
-            this.userType = 'student';
-            this.saveUserSession();
-            
-            return { success: true, user: this.currentUser };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    }
-
-    // Offline student registration fallback
-    registerStudentOffline(studentData) {
-        try {
-            const { studentId, fullName, academicInfo } = studentData;
-            
-            const localStudents = JSON.parse(localStorage.getItem('sci_high_offline_students') || '[]');
-            
-            // Check if student ID already exists
-            if (localStudents.find(s => s.studentId === studentId)) {
-                throw new Error('Student ID already exists locally');
-            }
-            
-            const completeStudentData = {
-                studentId,
-                fullName,
-                academicInfo,
-                accountStatus: {
-                    isActive: true,
-                    isFirstLogin: true,
-                    createdBy: 'self-registered-offline',
-                    createdAt: new Date().toISOString(),
-                    lastLogin: new Date().toISOString()
-                },
-                progress: {
-                    completedQuizzes: [],
-                    completedStories: [],
-                    totalScore: 0,
-                    lastActivity: new Date().toISOString()
-                },
-                gameData: {
-                    totalPoints: 0,
-                    achievements: [],
-                    currentLevel: 1,
-                    courseProgress: {
-                        'Web_Design': { unlocked: true, completed: false, progress: 0 },
-                        'Python': { unlocked: true, completed: false, progress: 0 },
-                        'Java': { unlocked: false, completed: false, progress: 0 },
-                        'C': { unlocked: false, completed: false, progress: 0 },
-                        'CPlusPlus': { unlocked: false, completed: false, progress: 0 },
-                        'CSharp': { unlocked: false, completed: false, progress: 0 }
-                    }
-                },
-                isOffline: true
-            };
-            
-            localStudents.push(completeStudentData);
-            localStorage.setItem('sci_high_offline_students', JSON.stringify(localStudents));
-            
-            // Auto-login the newly created student
-            this.currentUser = {
-                uid: 'offline_' + studentId,
-                studentId: studentId,
-                type: 'student',
-                profile: completeStudentData
-            };
-            this.userType = 'student';
-            this.saveUserSession();
-            
-            return { success: true, user: this.currentUser };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    }
-
-    // Helper function to determine department from course
-    getDepartmentFromCourse(course) {
-        const departmentMap = {
-            'BS Computer Science': 'Computer Science Department',
-            'BS Information Technology': 'Information Technology Department',
-            'BS Information Systems': 'Information Systems Department',
-            'BS Computer Engineering': 'Computer Engineering Department',
-            'BS Software Engineering': 'Software Engineering Department',
-            'BS Data Science': 'Data Science Department',
-            'BS Cybersecurity': 'Cybersecurity Department'
-        };
-        return departmentMap[course] || 'General Studies Department';
     }
 
     generateStudentPassword() {

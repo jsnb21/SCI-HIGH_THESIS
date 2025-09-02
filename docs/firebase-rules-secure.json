@@ -1,0 +1,62 @@
+{
+  "rules": {
+    "students": {
+      ".indexOn": ["studentId"],
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$studentKey": {
+        "studentId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "fullName": {
+          ".validate": "newData.isString()"
+        },
+        "academicInfo": {
+          ".validate": "newData.hasChildren()"
+        },
+        "accountStatus": {
+          ".validate": "newData.hasChildren(['isActive', 'createdAt'])"
+        },
+        "gameData": {
+          ".validate": "newData.hasChildren()"
+        }
+      }
+    },
+    "professors": {
+      ".indexOn": ["email"],
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "general_users": {
+      ".indexOn": ["email"],
+      ".read": "auth != null", 
+      ".write": "auth != null"
+    },
+    "leaderboard": {
+      ".indexOn": ["score", "timestamp", "department"],
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "gameplay_data": {
+      ".indexOn": ["studentId", "timestamp"],
+      ".read": true,
+      ".write": true
+    },
+    "student_career_stats": {
+      ".indexOn": ["studentId"],
+      ".read": true,
+      ".write": true,
+      "$studentId": {
+        "studentInfo": {
+          ".validate": "newData.hasChildren(['studentId', 'fullName'])"
+        },
+        "careerStats": {
+          ".validate": "newData.hasChildren(['totalSessions', 'totalPoints'])"
+        },
+        "recentSessions": {
+          ".validate": "newData.hasChildren()"
+        }
+      }
+    }
+  }
+}

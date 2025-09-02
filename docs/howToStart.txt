@@ -1,0 +1,9 @@
+installs packages
+npm install
+
+-----------------------
+
+start server
+npm run dev
+
+python -m http.server 8000

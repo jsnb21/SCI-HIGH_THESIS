@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="public/assets/img/logo/SCI-HIGH_LOGO.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SCI-HIGH: Professor Dashboard</title>
+    <!-- Last updated: August 8, 2025 - Force GitHub Pages refresh -->
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#F4CE14',
+              accent: '#379777',
+              dark: '#1a1a2e',
+              light: '#16213e',
+              purple: '#9c27b0',
+              cyan: '#00bcd4',
+              textColor: '#ffffff',
+              cardBg: 'rgba(22, 33, 62, 0.8)',
+            },
+            fontFamily: {
+              gaming: ['Orbitron', 'monospace'],
+              body: ['Exo 2', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      .game-bg {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
+      }
+      
+      .neon-border {
+        border: 2px solid #F4CE14;
+        background: rgba(22, 33, 62, 0.8);
+        box-shadow: 0 0 10px rgba(244, 206, 20, 0.3);
+      }
+    </style>
+  </head>
+  <body class="font-body game-bg text-textColor min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-dark/90 to-light/90 backdrop-blur-md border-b-2 border-primary/30 py-4">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <img src="public/assets/img/buko_productions-logo.png" alt="SCI-HIGH Logo" class="w-12 h-12" />
+            <span class="font-gaming text-xl font-bold text-primary">Professor Dashboard</span>
+          </div>
+          <div class="flex items-center space-x-4">
+            <span class="text-gray-300" id="professor-name">Loading...</span>
+            <button id="logout-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-gaming text-sm transition-colors">
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-6 py-8">
+      <!-- Dashboard Header -->
+      <div class="mb-8">
+        <h1 class="font-gaming text-4xl font-bold text-primary mb-2">Student Management</h1>
+        <p class="text-gray-300">View and manage your students' progress</p>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <button id="view-analytics-btn" class="neon-border bg-cardBg rounded-lg p-4 hover:scale-105 transition-transform">
+          <div class="text-2xl mb-2">�</div>
+          <div class="font-gaming text-primary">Analytics</div>
+        </button>
+        <button id="export-data-btn" class="neon-border bg-cardBg rounded-lg p-4 hover:scale-105 transition-transform">
+          <div class="text-2xl mb-2">�</div>
+          <div class="font-gaming text-accent">Export Data</div>
+        </button>
+        <button id="refresh-students-btn" class="neon-border bg-cardBg rounded-lg p-4 hover:scale-105 transition-transform">
+          <div class="text-2xl mb-2">🔄</div>
+          <div class="font-gaming text-cyan">Refresh</div>
+        </button>
+      </div>
+
+      <!-- Student List -->
+      <div class="neon-border bg-cardBg rounded-xl p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="font-gaming text-2xl text-primary">Student List</h2>
+          <div class="flex space-x-4">
+            <input type="search" id="search-students" placeholder="Search students..." 
+                   class="px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white placeholder-gray-400">
+            <select id="filter-course" class="px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white">
+              <option value="">All Courses</option>
+              <option value="college">College</option>
+              <option value="shs">Senior High School</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Student Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead>
+              <tr class="border-b border-gray-600">
+                <th class="py-3 px-4 font-gaming text-primary">Student ID</th>
+                <th class="py-3 px-4 font-gaming text-primary">Name</th>
+                <th class="py-3 px-4 font-gaming text-primary">Course/Strand</th>
+                <th class="py-3 px-4 font-gaming text-primary">Year Level</th>
+                <th class="py-3 px-4 font-gaming text-primary">Progress</th>
+                <th class="py-3 px-4 font-gaming text-primary">Last Active</th>
+                <th class="py-3 px-4 font-gaming text-primary">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="students-table-body">
+              <tr>
+                <td colspan="7" class="py-8 text-center text-gray-400">
+                  Loading students...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Information Panel -->
+    <div class="mb-8 neon-border bg-cardBg rounded-xl p-6">
+      <div class="text-center">
+        <div class="text-4xl mb-4">📋</div>
+        <h3 class="font-gaming text-lg text-accent mb-3">How Student Accounts Work</h3>
+        <p class="text-gray-300 text-sm mb-4">
+          Students create their own accounts automatically by entering their Student ID. 
+          You can view and manage existing students below.
+        </p>
+        <div class="text-xs text-gray-400 bg-dark/50 rounded-lg p-3 max-w-md mx-auto">
+          <p class="mb-2">ℹ️ <strong>How it works:</strong></p>
+          <p>• Students enter their ID on the login page</p>
+          <p>• New accounts are created automatically</p>
+          <p>• Students can continue their progress seamlessly</p>
+        </div>
+      </div>
+    </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      class ProfessorDashboard {
+        constructor() {
+          this.students = [];
+          this.filteredStudents = [];
+          this.currentUser = null;
+          this.init();
+        }
+
+        async init() {
+          // Check if user is authenticated professor or admin
+          const savedUser = localStorage.getItem('sci_high_user');
+          if (!savedUser) {
+            window.location.href = 'index.html';
+            return;
+          }
+
+          this.currentUser = JSON.parse(savedUser);
+          if (!this.currentUser || (this.currentUser.type !== 'professor' && this.currentUser.type !== 'admin')) {
+            window.location.href = 'index.html';
+            return;
+          }
+
+          this.setupUI();
+          this.setupEventListeners();
+          await this.loadStudents();
+        }
+
+        setupUI() {
+          document.getElementById('professor-name').textContent = this.currentUser.profile.fullName;
+        }
+
+        setupEventListeners() {
+          // Logout
+          document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('sci_high_user');
+            sessionStorage.removeItem('sci_high_authenticated');
+            sessionStorage.removeItem('sci_high_user_type');
+            window.location.href = 'index.html';
+          });
+
+          // Quick action buttons  
+          document.getElementById('view-analytics-btn').addEventListener('click', () => {
+            this.showInfo('Analytics dashboard coming soon!');
+          });
+
+          document.getElementById('export-data-btn').addEventListener('click', () => {
+            this.showInfo('Data export feature coming soon!');
+          });
+
+          document.getElementById('refresh-students-btn').addEventListener('click', () => {
+            this.loadStudents();
+            this.showSuccess('Student list refreshed!');
+          });
+
+          // Search and filter
+          document.getElementById('search-students').addEventListener('input', (e) => {
+            this.filterStudents();
+          });
+
+          document.getElementById('filter-course').addEventListener('change', (e) => {
+            this.filterStudents();
+          });
+        }
+
+        async loadStudents() {
+          try {
+            // For now, load sample students for development
+            // In production, this would connect to Firebase
+            this.students = [
+              {
+                id: 'stud_sample_001',
+                studentId: '24-2024-001',
+                fullName: 'Juan Dela Cruz',
+                academicInfo: {
+                  level: 'college',
+                  course: 'BS Computer Science',
+                  yearLevel: '3rd Year'
+                },
+                accountStatus: {
+                  createdBy: this.currentUser.uid,
+                  lastLogin: new Date('2024-01-15').toISOString(),
+                  isFirstLogin: false
+                },
+                gameData: {
+                  totalPoints: 850,
+                  courseProgress: {
+                    python: { progress: 75, completed: 8, total: 12 },
+                    javascript: { progress: 60, completed: 6, total: 10 }
+                  }
+                }
+              },
+              {
+                id: 'stud_sample_002',
+                studentId: '24-2024-002',
+                fullName: 'Maria Santos',
+                academicInfo: {
+                  level: 'college',
+                  course: 'BS Information Technology',
+                  yearLevel: '2nd Year'
+                },
+                accountStatus: {
+                  createdBy: this.currentUser.uid,
+                  lastLogin: new Date('2024-01-20').toISOString(),
+                  isFirstLogin: false
+                },
+                gameData: {
+                  totalPoints: 1200,
+                  courseProgress: {
+                    python: { progress: 90, completed: 11, total: 12 },
+                    webdesign: { progress: 85, completed: 9, total: 10 }
+                  }
+                }
+              },
+              {
+                id: 'stud_sample_003',
+                studentId: '24-2024-003',
+                fullName: 'Pedro Garcia',
+                academicInfo: {
+                  level: 'shs',
+                  strand: 'STEM',
+                  yearLevel: 'Grade 12'
+                },
+                accountStatus: {
+                  createdBy: this.currentUser.uid,
+                  lastLogin: null,
+                  isFirstLogin: true
+                },
+                gameData: {
+                  totalPoints: 300,
+                  courseProgress: {
+                    python: { progress: 30, completed: 3, total: 12 }
+                  }
+                }
+              }
+            ];
+
+            this.filteredStudents = [...this.students];
+            this.renderStudentsTable();
+          } catch (error) {
+            console.error('Error loading students:', error);
+            this.showError('Failed to load students');
+          }
+        }
+
+        // Methods for student management
+        filterStudents() {
+          const searchTerm = document.getElementById('search-students').value.toLowerCase();
+          const courseFilter = document.getElementById('filter-course').value;
+
+          this.filteredStudents = this.students.filter(student => {
+            const matchesSearch = !searchTerm || 
+              student.studentId.toLowerCase().includes(searchTerm) ||
+              student.fullName.toLowerCase().includes(searchTerm);
+            
+            const matchesCourse = !courseFilter || 
+              student.academicInfo.level === courseFilter;
+
+            return matchesSearch && matchesCourse;
+          });
+
+          this.renderStudentsTable();
+        }
+
+        renderStudentsTable() {
+          const tbody = document.getElementById('students-table-body');
+          
+          if (this.filteredStudents.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="7" class="py-8 text-center text-gray-400">
+                  No students found
+                </td>
+              </tr>
+            `;
+            return;
+          }
+
+          tbody.innerHTML = this.filteredStudents.map(student => `
+            <tr class="border-b border-gray-700 hover:bg-dark/20">
+              <td class="py-3 px-4 font-mono">${student.studentId}</td>
+              <td class="py-3 px-4">${student.fullName}</td>
+              <td class="py-3 px-4">
+                ${student.academicInfo.level === 'college' ? 
+                  student.academicInfo.course : 
+                  student.academicInfo.strand}
+              </td>
+              <td class="py-3 px-4">${student.academicInfo.yearLevel}</td>
+              <td class="py-3 px-4">
+                <div class="w-full bg-gray-700 rounded-full h-2">
+                  <div class="bg-primary h-2 rounded-full" style="width: ${this.calculateProgress(student)}%"></div>
+                </div>
+                <span class="text-xs text-gray-400">${this.calculateProgress(student)}%</span>
+              </td>
+              <td class="py-3 px-4 text-sm text-gray-400">
+                ${student.accountStatus.lastLogin ? 
+                  new Date(student.accountStatus.lastLogin).toLocaleDateString() : 
+                  'Never'}
+              </td>
+              <td class="py-3 px-4">
+                <div class="flex space-x-2">
+                  <button onclick="dashboard.viewStudent('${student.id}')" 
+                          class="px-2 py-1 bg-cyan text-white text-xs rounded hover:bg-cyan/80">
+                    View
+                  </button>
+                  <button onclick="dashboard.resetPassword('${student.id}')" 
+                          class="px-2 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700">
+                    Reset
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('');
+        }
+
+        calculateProgress(student) {
+          if (!student.gameData || !student.gameData.courseProgress) return 0;
+          
+          const courses = Object.values(student.gameData.courseProgress);
+          const totalProgress = courses.reduce((sum, course) => sum + (course.progress || 0), 0);
+          return Math.round(totalProgress / courses.length);
+        }
+
+        showSuccess(message) {
+          alert('✅ Success: ' + message);
+        }
+
+        showError(message) {
+          alert('❌ Error: ' + message);
+        }
+
+        showInfo(message) {
+          alert('ℹ️ Info: ' + message);
+        }
+
+        // Global methods for inline onclick handlers
+        viewStudent(studentId) {
+          console.log('Viewing student:', studentId);
+          // Implement student detail view
+        }
+
+        async resetPassword(studentId) {
+          if (confirm('Reset password for this student?')) {
+            try {
+              const newPassword = 'Student123!';
+              
+              // In production, this would update Firebase
+              console.log(`Password reset for student ${studentId}: ${newPassword}`);
+              
+              this.showSuccess(`Password reset! New password: ${newPassword}`);
+            } catch (error) {
+              this.showError('Failed to reset password: ' + error.message);
+            }
+          }
+        }
+      }
+
+      // Initialize dashboard
+      const dashboard = new ProfessorDashboard();
+      window.dashboard = dashboard; // Make available for inline handlers
+    </script>
+  </body>
+</html>

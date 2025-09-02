@@ -9,8 +9,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts for Gaming Feel -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- Main Styles -->
-    <link rel="stylesheet" href="styles/main.css">
     <script>
       tailwind.config = {
         theme: {
@@ -196,77 +194,6 @@
         transform: translateY(-1px);
         box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3);
       }
-
-      /* Custom Notification Styles */
-      .notification {
-        pointer-events: auto;
-        animation: slideInRight 0.5s ease-out forwards;
-        max-width: 400px;
-      }
-
-      .notification.removing {
-        animation: slideOutRight 0.3s ease-in forwards;
-      }
-
-      @keyframes slideInRight {
-        from {
-          opacity: 0;
-          transform: translateX(100%);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(0);
-        }
-      }
-
-      @keyframes slideOutRight {
-        from {
-          opacity: 1;
-          transform: translateX(0);
-        }
-        to {
-          opacity: 0;
-          transform: translateX(100%);
-        }
-      }
-
-      .notification-success {
-        background: linear-gradient(135deg, #10B981, #059669);
-        border-color: #34D399;
-      }
-
-      .notification-error {
-        background: linear-gradient(135deg, #EF4444, #DC2626);
-        border-color: #F87171;
-      }
-
-      .notification-warning {
-        background: linear-gradient(135deg, #F59E0B, #D97706);
-        border-color: #FBBF24;
-      }
-
-      .notification-info {
-        background: linear-gradient(135deg, #3B82F6, #2563EB);
-        border-color: #60A5FA;
-      }
-
-      .notification-progress-bar {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        height: 3px;
-        background: rgba(255, 255, 255, 0.3);
-        animation: progressBar linear;
-      }
-
-      @keyframes progressBar {
-        from {
-          width: 100%;
-        }
-        to {
-          width: 0%;
-        }
-      }
     </style>
   </head>
   <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed">
@@ -300,7 +227,7 @@
               <div class="absolute inset-0 bg-accent/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
             </button>
             <!-- Professor Tab - Hidden by default, shown only for admin/professor users -->
-            <a href="html-pages/professor-dashboard.html" id="professor-nav-link" class="gaming-nav-link text-textColor hover:text-accent transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative hidden">
+            <a href="professor-dashboard.html" id="professor-nav-link" class="gaming-nav-link text-textColor hover:text-accent transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative hidden">
               <span class="relative z-10">👨‍🏫 Professor</span>
               <div class="absolute inset-0 bg-accent/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
             </a>
@@ -317,39 +244,6 @@
         </div>
       </div>
     </nav>
-
-    <!-- Custom Notification System -->
-    <div id="notification-container" class="fixed top-20 right-6 z-[9999] space-y-4 pointer-events-none">
-      <!-- Notifications will be dynamically inserted here -->
-    </div>
-
-    <!-- Custom Confirmation Modal -->
-    <div id="confirmation-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] hidden flex items-center justify-center p-4">
-      <div class="bg-gradient-to-br from-dark to-cardBg border-2 border-primary/30 rounded-xl shadow-2xl max-w-md w-full mx-4 neon-glow">
-        <!-- Modal Header -->
-        <div class="p-6 border-b border-primary/20">
-          <div class="flex items-center space-x-3">
-            <div id="confirmation-icon" class="text-3xl">❓</div>
-            <h3 id="confirmation-title" class="font-gaming text-xl text-primary">Confirmation</h3>
-          </div>
-        </div>
-        
-        <!-- Modal Body -->
-        <div class="p-6">
-          <p id="confirmation-message" class="text-gray-300 leading-relaxed"></p>
-        </div>
-        
-        <!-- Modal Footer -->
-        <div class="p-6 border-t border-primary/20 flex space-x-3 justify-end">
-          <button id="confirmation-cancel" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-gaming transition-all duration-300 transform hover:scale-105">
-            Cancel
-          </button>
-          <button id="confirmation-confirm" class="px-4 py-2 bg-primary hover:bg-primary/80 text-white rounded-lg font-gaming transition-all duration-300 transform hover:scale-105">
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- Hero Section -->
     <section id="home" class="relative z-10 min-h-screen flex items-center justify-center px-6 py-20">
@@ -382,7 +276,7 @@
             <div class="absolute inset-0 bg-gradient-to-r from-yellow-300 to-primary rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </button>
           
-          <a href="html-pages/leaderboards.html" class="group relative px-12 py-4 font-gaming text-lg font-bold text-textColor bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-accent/50 uppercase tracking-wider border-2 border-accent/50">
+          <a href="leaderboards.html" class="group relative px-12 py-4 font-gaming text-lg font-bold text-textColor bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-accent/50 uppercase tracking-wider border-2 border-accent/50">
             <span class="relative z-10">🏆 Leaderboards</span>
             <div class="absolute inset-0 bg-gradient-to-r from-cyan to-accent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </a>
@@ -545,138 +439,35 @@
         <div id="student-form" class="hidden">
           <div class="text-center mb-8">
             <h2 class="font-gaming text-3xl font-bold mb-2 text-accent">🎓 Student Portal</h2>
-            <p class="text-gray-300">Login or Register to access your learning adventure</p>
-            <div class="mt-3 p-3 bg-accent/10 border border-accent/30 rounded-lg">
-              <p class="text-sm text-accent">⚠️ New students must register first before logging in!</p>
-            </div>
+            <p class="text-gray-300">Enter your Student ID to begin your adventure</p>
+            <p class="text-sm text-gray-400 mt-2">✨ New student? An account will be created automatically for you!</p>
           </div>
           
-          <!-- Student Options -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div class="max-w-md mx-auto">
+            <form id="student-login-form" class="space-y-6">
+              <div>
+                <label class="block text-gray-300 text-sm mb-2">Student ID</label>
+                <input type="text" name="studentId" required placeholder="e.g., 24-2024-001" 
+                       class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none text-center font-gaming">
+                <p class="text-xs text-gray-400 mt-1">Format: XX-XXXX-XXX (numbers and dashes only)</p>
+              </div>
+              <button type="submit" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105">
+                🚀 Enter Adventure
+              </button>
+            </form>
             
-            <!-- Existing Student Login -->
-            <div class="space-y-4">
-              <h3 class="font-gaming text-xl text-accent mb-4 text-center">🔐 Returning Student</h3>
-              <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg mb-4">
-                <p class="text-sm text-blue-300 text-center">✅ For students who already have an account</p>
+            <div class="text-center mt-6 pt-6 border-t border-gray-600">
+              <p class="text-gray-400 text-sm">📋 Only your Student ID is needed - no password required!</p>
+              <div class="mt-4 p-3 bg-dark/30 rounded-lg">
+                <p class="text-xs text-gray-500 mb-2">🔧 Dev Mode Test Accounts:</p>
+                <div class="text-xs text-accent space-y-1">
+                  <p>ID: 24-2024-001 (Juan - BS CS)</p>
+                  <p>ID: 24-2024-002 (Maria - BS IT)</p>
+                  <p>ID: 24-2024-003 (Pedro - SHS STEM)</p>
+                </div>
+                <hr class="my-2 border-gray-600">
+                <p class="text-cyan text-xs">💡 Or try any Student ID (XX-XXXX-XXX format) to create a new account!</p>
               </div>
-              <form id="student-login-form" class="space-y-4">
-                <div>
-                  <label class="block text-gray-300 text-sm mb-2">Student ID</label>
-                  <input type="text" name="studentId" required placeholder="e.g., 24-2024-001" 
-                         class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none text-center font-gaming">
-                  <p class="text-xs text-gray-400 mt-1">Format: XX-XXXX-XXX (numbers and dashes only)</p>
-                </div>
-                <button type="submit" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-blue-500 to-accent rounded-lg transform transition-all duration-300 hover:scale-105">
-                  🚀 Login to Adventure
-                </button>
-              </form>
-              
-              <div class="text-center mt-4">
-                <p class="text-gray-400 text-sm">📋 Only your Student ID is needed - no password required!</p>
-                <div class="mt-3 p-3 bg-dark/30 rounded-lg">
-                  <p class="text-xs text-gray-500 mb-2">🔧 Test Accounts:</p>
-                  <div class="text-xs text-accent space-y-1">
-                    <p>ID: 24-2024-001 (Juan - BS CS)</p>
-                    <p>ID: 24-2024-002 (Maria - BS IT)</p>
-                    <p>ID: 24-2024-003 (Pedro - SHS STEM)</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- New Student Registration -->
-            <div class="space-y-4">
-              <h3 class="font-gaming text-xl text-accent mb-4 text-center">📝 New Student Registration</h3>
-              <div class="p-3 bg-green-500/10 border border-green-500/30 rounded-lg mb-4">
-                <p class="text-sm text-green-300 text-center">✨ First time? Create your account here!</p>
-              </div>
-              <form id="student-register-form" class="space-y-4">
-                <div>
-                  <label class="block text-gray-300 text-sm mb-2">Student ID</label>
-                  <input type="text" name="newStudentId" required placeholder="e.g., 24-2024-001" 
-                         class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none text-center font-gaming">
-                  <p class="text-xs text-gray-400 mt-1">Format: XX-XXXX-XXX</p>
-                </div>
-                
-                <div>
-                  <label class="block text-gray-300 text-sm mb-2">Full Name</label>
-                  <input type="text" name="fullName" required placeholder="e.g., Juan Dela Cruz" 
-                         class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
-                </div>
-
-                <div>
-                  <label class="block text-gray-300 text-sm mb-2">Academic Level</label>
-                  <select name="academicLevel" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
-                    <option value="">Select Level</option>
-                    <option value="college">College</option>
-                    <option value="shs">Senior High School</option>
-                  </select>
-                </div>
-
-                <!-- College Fields -->
-                <div id="college-fields" class="hidden space-y-4">
-                  <div>
-                    <label class="block text-gray-300 text-sm mb-2">Course/Program</label>
-                    <select name="course" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
-                      <option value="">Select Course</option>
-                      <option value="BS Computer Science">BS Computer Science</option>
-                      <option value="BS Information Technology">BS Information Technology</option>
-                      <option value="BS Information Systems">BS Information Systems</option>
-                      <option value="BS Computer Engineering">BS Computer Engineering</option>
-                      <option value="BS Software Engineering">BS Software Engineering</option>
-                      <option value="BS Data Science">BS Data Science</option>
-                      <option value="BS Cybersecurity">BS Cybersecurity</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label class="block text-gray-300 text-sm mb-2">Year Level</label>
-                    <select name="collegeYear" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
-                      <option value="">Select Year</option>
-                      <option value="1st Year">1st Year</option>
-                      <option value="2nd Year">2nd Year</option>
-                      <option value="3rd Year">3rd Year</option>
-                      <option value="4th Year">4th Year</option>
-                      <option value="5th Year">5th Year</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Senior High School Fields -->
-                <div id="shs-fields" class="hidden space-y-4">
-                  <div>
-                    <label class="block text-gray-300 text-sm mb-2">Strand</label>
-                    <select name="strand" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
-                      <option value="">Select Strand</option>
-                      <option value="STEM">STEM (Science, Technology, Engineering, Mathematics)</option>
-                      <option value="ABM">ABM (Accountancy, Business, Management)</option>
-                      <option value="HUMSS">HUMSS (Humanities and Social Sciences)</option>
-                      <option value="GAS">GAS (General Academic Strand)</option>
-                      <option value="TVL-ICT">TVL-ICT (Technical-Vocational-Livelihood - ICT)</option>
-                      <option value="TVL-HE">TVL-HE (Technical-Vocational-Livelihood - Home Economics)</option>
-                      <option value="TVL-IA">TVL-IA (Technical-Vocational-Livelihood - Industrial Arts)</option>
-                      <option value="TVL-Agri">TVL-Agri (Technical-Vocational-Livelihood - Agriculture)</option>
-                      <option value="Arts and Design">Arts and Design</option>
-                      <option value="Sports">Sports</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label class="block text-gray-300 text-sm mb-2">Grade Level</label>
-                    <select name="shsYear" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
-                      <option value="">Select Grade</option>
-                      <option value="Grade 11">Grade 11</option>
-                      <option value="Grade 12">Grade 12</option>
-                    </select>
-                  </div>
-                </div>
-
-                <button type="submit" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-green-500 to-accent rounded-lg transform transition-all duration-300 hover:scale-105">
-                  ✨ Create Account & Start Adventure
-                </button>
-              </form>
             </div>
           </div>
         </div>
@@ -773,7 +564,7 @@
         </div>
         
         <div class="text-center">
-          <a href="html-pages/game.html" id="play-game-btn" class="inline-block px-10 py-4 font-gaming text-lg font-bold text-dark bg-gradient-to-r from-primary to-yellow-300 rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50 uppercase tracking-wider">
+          <a href="game.html" id="play-game-btn" class="inline-block px-10 py-4 font-gaming text-lg font-bold text-dark bg-gradient-to-r from-primary to-yellow-300 rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50 uppercase tracking-wider">
             🚀 Launch Game
           </a>
         </div>
@@ -989,34 +780,6 @@
       </div>
     </section>
 
-    <!-- Registration Success Modal -->
-    <div id="registration-success-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] hidden backdrop-blur-sm">
-      <div class="neon-border bg-cardBg rounded-xl shadow-2xl max-w-md w-full mx-4 p-8 relative animate-bounce-in">
-        <div class="text-center">
-          <!-- Success Icon -->
-          <div class="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span class="text-4xl">🎉</span>
-          </div>
-          
-          <!-- Success Message -->
-          <h3 class="font-gaming text-2xl text-green-400 mb-4">Registration Complete!</h3>
-          <div id="registration-details" class="text-gray-300 text-sm mb-8 space-y-2">
-            <!-- Student details will be filled here -->
-          </div>
-          
-          <!-- Action Buttons -->
-          <div class="space-y-4">
-            <button id="modal-start-game-btn" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-green-500 to-green-600 rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.5)]">
-              🎮 Start Game Now
-            </button>
-            <button id="modal-back-to-index-btn" class="w-full px-6 py-3 font-gaming text-gray-300 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg transform transition-all duration-300 hover:scale-105 border border-gray-500 hover:border-gray-400">
-              🏠 Back to Home
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- DEV MODE Panel - Hidden by default -->
     <div id="dev-panel" class="fixed bottom-4 right-4 z-[200] hidden">
       <div class="neon-border bg-cardBg rounded-lg p-4 max-w-xs">
@@ -1074,242 +837,6 @@
         } else {
           console.error('Login modal not found');
         }
-      }
-
-      // Global Registration Success Modal Function
-      function showRegistrationSuccessModal(fullName, studentId, academicLevel) {
-        const modal = document.getElementById('registration-success-modal');
-        const detailsDiv = document.getElementById('registration-details');
-        
-        // Set the registration details
-        detailsDiv.innerHTML = `
-          <div class="text-center space-y-2">
-            <p><span class="text-cyan-300 font-bold">👤 Name:</span> ${fullName}</p>
-            <p><span class="text-cyan-300 font-bold">🆔 Student ID:</span> ${studentId}</p>
-            <p><span class="text-cyan-300 font-bold">📚 Level:</span> ${academicLevel}</p>
-            <p class="text-green-400 font-gaming mt-4">🎮 Ready to start your learning adventure!</p>
-          </div>
-        `;
-        
-        // Show the modal
-        modal.classList.remove('hidden');
-        
-        // Attach event listeners when modal is shown
-        const startGameBtn = document.getElementById('modal-start-game-btn');
-        const backToIndexBtn = document.getElementById('modal-back-to-index-btn');
-        
-        // Remove any existing listeners to prevent duplicates
-        const newStartGameBtn = startGameBtn.cloneNode(true);
-        const newBackToIndexBtn = backToIndexBtn.cloneNode(true);
-        startGameBtn.parentNode.replaceChild(newStartGameBtn, startGameBtn);
-        backToIndexBtn.parentNode.replaceChild(newBackToIndexBtn, backToIndexBtn);
-        
-        // Add fresh event listeners
-        newStartGameBtn.addEventListener('click', () => {
-          console.log('Start Game clicked');
-          modal.classList.add('hidden');
-          if (window.authManager && typeof window.authManager.redirectToGame === 'function') {
-            window.authManager.redirectToGame();
-          } else {
-            console.error('authManager not available');
-            // Fallback redirect to correct game path
-            window.location.href = 'html-pages/game.html';
-          }
-        });
-        
-        newBackToIndexBtn.addEventListener('click', () => {
-          console.log('Back to Index clicked');
-          modal.classList.add('hidden');
-          // Stay on the current page
-        });
-      }
-
-      // Custom Notification System
-      class NotificationManager {
-        constructor() {
-          this.container = document.getElementById('notification-container');
-          this.notificationId = 0;
-        }
-
-        show(message, type = 'info', duration = 5000, options = {}) {
-          const notification = this.createNotification(message, type, duration, options);
-          this.container.appendChild(notification);
-          
-          // Auto remove after duration
-          if (duration > 0) {
-            setTimeout(() => {
-              this.remove(notification);
-            }, duration);
-          }
-          
-          return notification;
-        }
-
-        createNotification(message, type, duration, options) {
-          const id = `notification-${this.notificationId++}`;
-          const notification = document.createElement('div');
-          notification.id = id;
-          notification.className = `notification notification-${type} border-2 rounded-lg shadow-2xl p-4 relative overflow-hidden`;
-          
-          // Get icon based on type
-          const icons = {
-            success: '✅',
-            error: '❌', 
-            warning: '⚠️',
-            info: 'ℹ️',
-            loading: '⏳'
-          };
-          
-          // Get title based on type
-          const titles = {
-            success: 'Success!',
-            error: 'Error!',
-            warning: 'Warning!',
-            info: 'Information',
-            loading: 'Loading...'
-          };
-          
-          notification.innerHTML = `
-            <div class="flex items-start space-x-3">
-              <div class="text-2xl flex-shrink-0 mt-1">${options.icon || icons[type]}</div>
-              <div class="flex-1 min-w-0">
-                <h4 class="font-gaming text-white font-bold text-sm mb-1">${options.title || titles[type]}</h4>
-                <p class="text-white/90 text-sm leading-relaxed">${message}</p>
-                ${options.actions ? this.createActions(options.actions, id) : ''}
-              </div>
-              <button onclick="notificationManager.remove(document.getElementById('${id}'))" 
-                      class="text-white/70 hover:text-white transition-colors duration-200 flex-shrink-0 ml-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-            ${duration > 0 ? `<div class="notification-progress-bar" style="animation-duration: ${duration}ms;"></div>` : ''}
-          `;
-          
-          return notification;
-        }
-
-        createActions(actions, notificationId) {
-          return `
-            <div class="mt-3 flex space-x-2">
-              ${actions.map(action => `
-                <button onclick="${action.onclick}; notificationManager.remove(document.getElementById('${notificationId}'))" 
-                        class="px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs font-gaming rounded transition-all duration-200 transform hover:scale-105">
-                  ${action.text}
-                </button>
-              `).join('')}
-            </div>
-          `;
-        }
-
-        remove(notification) {
-          if (notification && notification.parentNode) {
-            notification.classList.add('removing');
-            setTimeout(() => {
-              if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-              }
-            }, 300);
-          }
-        }
-
-        success(message, options = {}) {
-          return this.show(message, 'success', options.duration || 4000, options);
-        }
-
-        error(message, options = {}) {
-          return this.show(message, 'error', options.duration || 6000, options);
-        }
-
-        warning(message, options = {}) {
-          return this.show(message, 'warning', options.duration || 5000, options);
-        }
-
-        info(message, options = {}) {
-          return this.show(message, 'info', options.duration || 4000, options);
-        }
-
-        loading(message, options = {}) {
-          return this.show(message, 'loading', 0, options);
-        }
-
-        confirm(message, options = {}) {
-          return new Promise((resolve) => {
-            const modal = document.getElementById('confirmation-modal');
-            const title = document.getElementById('confirmation-title');
-            const messageEl = document.getElementById('confirmation-message');
-            const icon = document.getElementById('confirmation-icon');
-            const confirmBtn = document.getElementById('confirmation-confirm');
-            const cancelBtn = document.getElementById('confirmation-cancel');
-            
-            // Set content
-            title.textContent = options.title || 'Confirmation';
-            messageEl.textContent = message;
-            icon.textContent = options.icon || '❓';
-            confirmBtn.textContent = options.confirmText || 'Confirm';
-            cancelBtn.textContent = options.cancelText || 'Cancel';
-            
-            // Show modal
-            modal.classList.remove('hidden');
-            
-            // Handle responses
-            const handleConfirm = () => {
-              modal.classList.add('hidden');
-              resolve(true);
-              cleanup();
-            };
-            
-            const handleCancel = () => {
-              modal.classList.add('hidden');
-              resolve(false);
-              cleanup();
-            };
-            
-            const cleanup = () => {
-              confirmBtn.removeEventListener('click', handleConfirm);
-              cancelBtn.removeEventListener('click', handleCancel);
-            };
-            
-            confirmBtn.addEventListener('click', handleConfirm);
-            cancelBtn.addEventListener('click', handleCancel);
-            
-            // Close on outside click
-            modal.addEventListener('click', (e) => {
-              if (e.target === modal) {
-                handleCancel();
-              }
-            });
-          });
-        }
-      }
-
-      // Initialize notification manager
-      const notificationManager = new NotificationManager();
-
-      // Custom alert replacement functions
-      function showSuccess(message, options = {}) {
-        return notificationManager.success(message, options);
-      }
-
-      function showError(message, options = {}) {
-        return notificationManager.error(message, options);
-      }
-
-      function showWarning(message, options = {}) {
-        return notificationManager.warning(message, options);
-      }
-
-      function showInfo(message, options = {}) {
-        return notificationManager.info(message, options);
-      }
-
-      function showLoading(message, options = {}) {
-        return notificationManager.loading(message, options);
-      }
-
-      function showConfirm(message, options = {}) {
-        return notificationManager.confirm(message, options);
       }
 
       function showUserTypeSelection() {
@@ -1599,26 +1126,31 @@
             // Production Firebase login (using Realtime Database when available)
             if (typeof firebase !== 'undefined' && firebase.database) {
               console.log('Using Firebase for student login...');
-              
-              // Authenticate anonymously first to access the database
-              try {
-                if (!firebase.auth().currentUser) {
-                  console.log('Authenticating anonymously...');
-                  await firebase.auth().signInAnonymously();
-                  console.log('Anonymous authentication successful');
-                }
-              } catch (authError) {
-                console.error('Anonymous authentication failed:', authError);
-                throw new Error('Authentication failed. Please try again.');
-              }
-              
               // Query student by student ID in Realtime Database
               const studentsSnapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
               
               if (!studentsSnapshot.exists()) {
-                console.log('Student not found in database');
-                // Student doesn't exist - DO NOT auto-create, redirect to registration
-                throw new Error('Student ID not found. Please register first using the "New Student Registration" form.');
+                console.log('Student not found in database, creating new account...');
+                // Student doesn't exist, create a new account automatically
+                const newStudent = await this.createStudentAccount(studentId);
+                if (newStudent.success) {
+                  console.log('New student account created successfully');
+                  this.currentUser = {
+                    uid: newStudent.docId,
+                    studentId: studentId,
+                    type: 'student',
+                    profile: newStudent.studentData
+                  };
+
+                  localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+                  this.userType = 'student';
+                  this.updateProfessorTabVisibility();
+                  this.updateUserInterface();
+
+                  return { success: true, user: this.currentUser, isNewAccount: true };
+                } else {
+                  throw new Error(newStudent.error);
+                }
               }
 
               console.log('Found existing student in database, loading data...');
@@ -1648,13 +1180,28 @@
               return { success: true, user: this.currentUser };
             } else {
               console.log('Firebase not available, using local storage fallback...');
-              // Fallback: Check local storage for existing accounts
+              // Fallback: Create account locally if Firebase not available
               const localStudents = JSON.parse(localStorage.getItem('sci_high_local_students') || '{}');
               
               if (!localStudents[studentId]) {
-                console.log('Student not found in local storage');
-                // Student doesn't exist locally - DO NOT auto-create, redirect to registration
-                throw new Error('Student ID not found. Please register first using the "New Student Registration" form.');
+                console.log('Creating new local student account...');
+                // Create new local account
+                localStudents[studentId] = this.createLocalStudentAccount(studentId);
+                localStorage.setItem('sci_high_local_students', JSON.stringify(localStudents));
+                
+                this.currentUser = {
+                  uid: 'local_' + studentId.replace(/-/g, '_'),
+                  studentId: studentId,
+                  type: 'student',
+                  profile: localStudents[studentId]
+                };
+
+                localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+                this.userType = 'student';
+                this.updateProfessorTabVisibility();
+                this.updateUserInterface();
+
+                return { success: true, user: this.currentUser, isNewAccount: true };
               } else {
                 console.log('Found existing local student account...');
                 // Login with existing local account
@@ -1682,20 +1229,6 @@
         async createStudentAccount(studentId) {
           try {
             console.log('Creating new student account for ID:', studentId);
-            
-            // Authenticate anonymously first if using Firebase
-            if (typeof firebase !== 'undefined' && firebase.database) {
-              try {
-                if (!firebase.auth().currentUser) {
-                  console.log('Authenticating anonymously for student creation...');
-                  await firebase.auth().signInAnonymously();
-                  console.log('Anonymous authentication successful');
-                }
-              } catch (authError) {
-                console.error('Anonymous authentication failed:', authError);
-                throw new Error('Authentication failed. Please try again.');
-              }
-            }
             
             const studentData = {
               studentId,
@@ -1751,143 +1284,6 @@
             console.error('Error creating student account:', error);
             return { success: false, error: 'Failed to create student account: ' + error.message };
           }
-        }
-
-        // Register a new student with complete information
-        async registerStudent(studentData) {
-          try {
-            const { studentId, fullName, academicInfo } = studentData;
-            console.log('Registering new student:', { studentId, fullName, academicInfo });
-            
-            // Authenticate anonymously first if using Firebase
-            if (typeof firebase !== 'undefined' && firebase.database) {
-              try {
-                if (!firebase.auth().currentUser) {
-                  console.log('Authenticating anonymously for student registration...');
-                  await firebase.auth().signInAnonymously();
-                  console.log('Anonymous authentication successful');
-                }
-              } catch (authError) {
-                console.error('Anonymous authentication failed:', authError);
-                throw new Error('Authentication failed. Please try again.');
-              }
-            }
-            
-            // Check if student ID already exists
-            if (typeof firebase !== 'undefined' && firebase.database) {
-              const existingStudentQuery = await firebase.database().ref('students')
-                .orderByChild('studentId')
-                .equalTo(studentId)
-                .once('value');
-              
-              if (existingStudentQuery.exists()) {
-                throw new Error('Student ID already exists. Please use a different ID or try logging in.');
-              }
-            }
-            
-            const completeStudentData = {
-              studentId,
-              fullName,
-              academicInfo: {
-                level: academicInfo.level,
-                course: academicInfo.course || null,
-                yearLevel: academicInfo.yearLevel || null,
-                strand: academicInfo.strand || null,
-                department: academicInfo.course ? this.getDepartmentFromCourse(academicInfo.course) : null
-              },
-              accountStatus: {
-                isActive: true,
-                isFirstLogin: true,
-                createdBy: 'self-registered',
-                createdAt: new Date().toISOString(),
-                lastLogin: new Date().toISOString()
-              },
-              progress: {
-                completedQuizzes: [],
-                completedStories: [],
-                totalScore: 0,
-                lastActivity: new Date().toISOString()
-              },
-              gameData: {
-                totalPoints: 0,
-                achievements: [],
-                currentLevel: 1,
-                courseProgress: {
-                  'Web_Design': { unlocked: true, completed: false, progress: 0 },
-                  'Python': { unlocked: true, completed: false, progress: 0 },
-                  'Java': { unlocked: false, completed: false, progress: 0 },
-                  'C': { unlocked: false, completed: false, progress: 0 },
-                  'CPlusPlus': { unlocked: false, completed: false, progress: 0 },
-                  'CSharp': { unlocked: false, completed: false, progress: 0 }
-                }
-              },
-              needsProfileCompletion: false, // Profile is complete since they provided all info
-              accountType: 'student'
-            };
-
-            // Save to Firebase if available
-            if (typeof firebase !== 'undefined' && firebase.database) {
-              const newStudentRef = firebase.database().ref('students').push();
-              await newStudentRef.set(completeStudentData);
-              
-              // Auto-login the newly created student
-              this.currentUser = {
-                uid: newStudentRef.key,
-                studentId: studentId,
-                type: 'student',
-                profile: completeStudentData
-              };
-              this.userType = 'student';
-              localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
-              this.updateProfessorTabVisibility();
-              this.updateUserInterface();
-              
-              console.log('Student registered and logged in successfully');
-              return { success: true, user: this.currentUser };
-            } else {
-              // Fallback to local storage
-              console.log('Firebase not available, saving to local storage');
-              const localStudents = JSON.parse(localStorage.getItem('sci_high_local_students') || '{}');
-              
-              if (localStudents[studentId]) {
-                throw new Error('Student ID already exists locally');
-              }
-              
-              localStudents[studentId] = completeStudentData;
-              localStorage.setItem('sci_high_local_students', JSON.stringify(localStudents));
-              
-              // Auto-login the newly created student
-              this.currentUser = {
-                uid: 'local_' + studentId,
-                studentId: studentId,
-                type: 'student',
-                profile: completeStudentData
-              };
-              this.userType = 'student';
-              localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
-              this.updateProfessorTabVisibility();
-              this.updateUserInterface();
-              
-              return { success: true, user: this.currentUser };
-            }
-          } catch (error) {
-            console.error('Student registration error:', error);
-            return { success: false, error: error.message };
-          }
-        }
-
-        // Helper function to determine department from course
-        getDepartmentFromCourse(course) {
-          const departmentMap = {
-            'BS Computer Science': 'Computer Science Department',
-            'BS Information Technology': 'Information Technology Department',
-            'BS Information Systems': 'Information Systems Department',
-            'BS Computer Engineering': 'Computer Engineering Department',
-            'BS Software Engineering': 'Software Engineering Department',
-            'BS Data Science': 'Data Science Department',
-            'BS Cybersecurity': 'Cybersecurity Department'
-          };
-          return departmentMap[course] || 'General Studies Department';
         }
 
         // Create local student account for offline mode
@@ -2008,14 +1404,9 @@
           return this.currentUser;
         }
 
-        async logout() {
+        logout() {
           // Show confirmation dialog
-          const confirmLogout = await showConfirm('Are you sure you want to logout?', {
-            title: 'Confirm Logout',
-            icon: '🚪',
-            confirmText: 'Yes, Logout',
-            cancelText: 'Cancel'
-          });
+          const confirmLogout = confirm('Are you sure you want to logout?');
           if (!confirmLogout) {
             return; // User cancelled logout
           }
@@ -2034,11 +1425,7 @@
           this.updateUserInterface();
           
           // Show success message
-          showSuccess('You have been logged out successfully!', {
-            title: 'Logged Out',
-            icon: '👋',
-            duration: 3000
-          });
+          alert('You have been logged out successfully!');
         }
 
         isAuthenticated() {
@@ -2049,7 +1436,7 @@
           // Store authentication state for game.html
           sessionStorage.setItem('sci_high_authenticated', 'true');
           sessionStorage.setItem('sci_high_user_type', this.userType);
-          window.location.href = 'html-pages/game.html';
+          window.location.href = 'game.html';
         }
 
         // Update professor tab visibility based on user type
@@ -2381,12 +1768,9 @@
         if (result.success) {
           loginModal.classList.add('hidden');
           // Redirect to professor dashboard
-          window.location.href = 'html-pages/professor-dashboard.html';
+          window.location.href = 'professor-dashboard.html';
         } else {
-          showError('Login failed: ' + result.error, {
-            title: 'Professor Login Failed',
-            duration: 5000
-          });
+          alert('Login failed: ' + result.error);
         }
       });
 
@@ -2398,11 +1782,7 @@
         // Validate student ID format (XX-XXXX-XXX)
         const studentIdPattern = /^[0-9]{2}-[0-9]{4}-[0-9]{3}$/;
         if (!studentIdPattern.test(studentId)) {
-          showError('Invalid Student ID format!', {
-            title: 'Format Error',
-            icon: '🆔',
-            duration: 6000
-          });
+          alert('❌ Invalid Student ID format!\n\nPlease use the format: XX-XXXX-XXX\nExample: 24-2024-001\n\n• XX = 2-digit year/batch\n• XXXX = 4-digit year\n• XXX = 3-digit sequence number');
           return;
         }
         
@@ -2412,162 +1792,27 @@
           const result = await authManager.loginStudent(studentId);
           
           if (result.success) {
-            showSuccess('Welcome back! Your progress has been loaded.', {
-              title: 'Login Successful',
-              icon: '👋',
-              duration: 3000
-            });
+            if (result.isNewAccount) {
+              alert('🎉 Welcome! A new account has been created for you. Your progress will be saved automatically.');
+            } else {
+              alert('👋 Welcome back! Your progress has been loaded.');
+            }
             loginModal.classList.add('hidden');
             authManager.redirectToGame();
           } else {
-            // Show specific error message for registration required
-            if (result.error.includes('not found') || result.error.includes('register')) {
-              showError('Student ID not found! Please use the "New Student Registration" form on the right to create your account first.', {
-                title: 'Account Not Found',
-                icon: '📝',
-                duration: 7000
-              });
-            } else {
-              showError(result.error, {
-                title: 'Login Failed',
-                duration: 5000
-              });
-            }
+            alert('❌ Login failed: ' + result.error);
           }
         } catch (error) {
-          console.warn('Student login error:', error);
-          // Check if it's a registration-required error
-          if (error.message && (error.message.includes('not found') || error.message.includes('register'))) {
-            showError('Student ID not found! Please use the "New Student Registration" form on the right to create your account first.', {
-              title: 'Account Not Found',
-              icon: '📝',
-              duration: 7000
-            });
-          } else {
-            showError(error.message, {
-              title: 'Login Failed',
-              duration: 5000
-            });
-          }
-        }
-      });
-
-      // Student Registration Form Handler
-      document.getElementById('student-register-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const studentId = formData.get('newStudentId').trim();
-        const fullName = formData.get('fullName').trim();
-        const academicLevel = formData.get('academicLevel');
-        
-        // Validate required fields
-        if (!studentId || !fullName || !academicLevel) {
-          showError('Please fill in all required fields.', {
-            title: 'Missing Information',
-            icon: '📝',
-            duration: 4000
-          });
-          return;
-        }
-        
-        // Validate student ID format
-        const studentIdPattern = /^[0-9]{2}-[0-9]{4}-[0-9]{3}$/;
-        if (!studentIdPattern.test(studentId)) {
-          showError('Invalid Student ID format! Please use the format: XX-XXXX-XXX (Example: 24-2024-001)', {
-            title: 'Invalid Student ID',
-            icon: '🆔',
-            duration: 5000
-          });
-          return;
-        }
-        
-        // Collect academic info based on level
-        let academicInfo = { level: academicLevel };
-        
-        if (academicLevel === 'college') {
-          const course = formData.get('course');
-          const year = formData.get('collegeYear');
-          if (!course || !year) {
-            showError('Please select both course and year level for college students.', {
-              title: 'Missing College Information',
-              icon: '🏫',
-              duration: 4000
-            });
-            return;
-          }
-          academicInfo.course = course;
-          academicInfo.yearLevel = year;
-        } else if (academicLevel === 'shs') {
-          const strand = formData.get('strand');
-          const grade = formData.get('shsYear');
-          if (!strand || !grade) {
-            showError('Please select both strand and grade level for SHS students.', {
-              title: 'Missing SHS Information',
-              icon: '🏫',
-              duration: 4000
-            });
-            return;
-          }
-          academicInfo.strand = strand;
-          academicInfo.yearLevel = grade;
-        }
-        
-        try {
-          // Create student account with detailed information
-          const result = await authManager.registerStudent({
-            studentId,
-            fullName,
-            academicInfo
-          });
-          
-          if (result.success) {
-            // Show the success modal instead of notification
-            showRegistrationSuccessModal(fullName, studentId, academicLevel);
-            e.target.reset();
-            // Hide academic fields
-            document.getElementById('college-fields').classList.add('hidden');
-            document.getElementById('shs-fields').classList.add('hidden');
-            // Hide the login modal
+          console.warn('Firebase login failed, trying offline mode:', error);
+          // Fallback to offline mode
+          const offlineResult = authManager.loginStudentOffline(formData.get('studentId'));
+          if (offlineResult.success) {
+            alert('Welcome! You are playing in offline mode. Progress will be saved locally.');
             loginModal.classList.add('hidden');
+            authManager.redirectToGame();
           } else {
-            showError('Registration failed: ' + result.error, {
-              title: 'Registration Error',
-              duration: 5000
-            });
+            alert('Login failed: Unable to authenticate');
           }
-        } catch (error) {
-          console.error('Registration error:', error);
-          showError('Registration failed: ' + error.message, {
-            title: 'Registration Error',
-            duration: 5000
-          });
-        }
-      });
-
-      // Academic Level Change Handler for Registration Form
-      document.querySelector('select[name="academicLevel"]').addEventListener('change', function() {
-        const collegeFields = document.getElementById('college-fields');
-        const shsFields = document.getElementById('shs-fields');
-        
-        // Hide all fields first
-        collegeFields.classList.add('hidden');
-        shsFields.classList.add('hidden');
-        
-        // Show relevant fields based on selection
-        if (this.value === 'college') {
-          collegeFields.classList.remove('hidden');
-          // Make college fields required
-          collegeFields.querySelectorAll('select').forEach(select => select.required = true);
-          shsFields.querySelectorAll('select').forEach(select => select.required = false);
-        } else if (this.value === 'shs') {
-          shsFields.classList.remove('hidden');
-          // Make SHS fields required
-          shsFields.querySelectorAll('select').forEach(select => select.required = true);
-          collegeFields.querySelectorAll('select').forEach(select => select.required = false);
-        } else {
-          // Reset all fields to not required
-          collegeFields.querySelectorAll('select').forEach(select => select.required = false);
-          shsFields.querySelectorAll('select').forEach(select => select.required = false);
         }
       });
 
@@ -2583,28 +1828,18 @@
             loginModal.classList.add('hidden');
             authManager.redirectToGame();
           } else {
-            showError('Login failed: ' + result.error, {
-              title: 'Professor Login Failed',
-              duration: 5000
-            });
+            alert('Login failed: ' + result.error);
           }
         } catch (error) {
           console.warn('Firebase login failed, trying offline mode:', error);
           // Fallback to offline mode
           const offlineResult = authManager.loginGeneralOffline(formData.get('email'));
           if (offlineResult.success) {
-            showInfo('Welcome! You are playing in offline mode. Progress will be saved locally.', {
-              title: 'Offline Mode',
-              icon: '📴',
-              duration: 5000
-            });
+            alert('Welcome! You are playing in offline mode. Progress will be saved locally.');
             loginModal.classList.add('hidden');
             authManager.redirectToGame();
           } else {
-            showError('Login failed: Unable to authenticate', {
-              title: 'Authentication Failed',
-              duration: 5000
-            });
+            alert('Login failed: Unable to authenticate');
           }
         }
       });
@@ -2622,20 +1857,13 @@
         });
         
         if (result.success) {
-          showSuccess('Account created successfully!', {
-            title: 'Registration Complete',
-            icon: '🎉',
-            duration: 4000
-          });
+          alert('Account created successfully!');
           e.target.reset();
           // Auto-login after successful registration
           loginModal.classList.add('hidden');
           authManager.redirectToGame();
         } else {
-          showError('Registration failed: ' + result.error, {
-            title: 'Registration Error',
-            duration: 5000
-          });
+          alert('Registration failed: ' + result.error);
         }
       });
 
@@ -2733,18 +1961,6 @@
         if (e.target === screenshotsModal) screenshotsModal.classList.add('hidden');
       });
 
-      // Registration Success Modal - Close on outside click
-      document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.getElementById('registration-success-modal');
-        if (modal) {
-          modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-              modal.classList.add('hidden');
-            }
-          });
-        }
-      });
-
       // Smooth scrolling for navigation
       document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
@@ -2818,11 +2034,7 @@
           const devPanel = document.getElementById('dev-panel');
           devPanel.classList.toggle('hidden');
           if (!devPanel.classList.contains('hidden')) {
-            showInfo('DEV MODE ACTIVATED! Use the panel or console commands to create test accounts.', {
-              title: 'Developer Mode',
-              icon: '🔧',
-              duration: 5000
-            });
+            alert('🔧 DEV MODE ACTIVATED!\nUse the panel or console commands to create test accounts.');
           }
           devCode = [];
         }
@@ -2833,39 +2045,24 @@
       window.createAdminUser = async () => {
         const admin = await authManager.createAdminUser();
         console.log('Admin user created:', admin);
-        showSuccess('Admin user created! Professor tab should now be visible.', {
-          title: 'Admin Created',
-          icon: '🔧',
-          duration: 4000
-        });
+        alert('🔧 Admin user created! Professor tab should now be visible.');
         return admin;
       };
 
       // Create professor user with Firebase integration
       window.createProfessorUser = async (email, password, fullName, institution) => {
         if (!email || !password || !fullName) {
-          showWarning('Usage: createProfessorUser("email@domain.com", "password", "Full Name", "Institution (optional)")', {
-            title: 'Invalid Parameters',
-            icon: '⚠️',
-            duration: 6000
-          });
+          alert('Usage: createProfessorUser("email@domain.com", "password", "Full Name", "Institution (optional)")');
           return;
         }
         
         const result = await authManager.createProfessorUser(email, password, fullName, institution);
         if (result.success) {
           console.log('Professor user created successfully:', result);
-          showSuccess(`Professor user created!\nEmail: ${email}\nUID: ${result.uid}\nThe professor can now login with their email and password.`, {
-            title: 'Professor Created',
-            icon: '✅',
-            duration: 6000
-          });
+          alert(`✅ Professor user created!\nEmail: ${email}\nUID: ${result.uid}\nThe professor can now login with their email and password.`);
         } else {
           console.error('Failed to create professor user:', result.error);
-          showError(`Failed to create professor user: ${result.error}`, {
-            title: 'Creation Failed',
-            duration: 5000
-          });
+          alert(`❌ Failed to create professor user: ${result.error}`);
         }
         return result;
       };
@@ -2875,17 +2072,10 @@
         const result = await authManager.testFirebaseConnection();
         if (result.success) {
           console.log('✅ Firebase connection test passed');
-          showSuccess('Firebase connection test passed! Check console for details.', {
-            title: 'Connection Test',
-            icon: '✅',
-            duration: 4000
-          });
+          alert('✅ Firebase connection test passed! Check console for details.');
         } else {
           console.error('❌ Firebase connection test failed:', result.error);
-          showError(`Firebase connection test failed: ${result.error}`, {
-            title: 'Connection Failed',
-            duration: 5000
-          });
+          alert(`❌ Firebase connection test failed: ${result.error}`);
         }
         return result;
       };
@@ -2909,11 +2099,7 @@
         authManager.updateUserInterface();
         
         console.log('Sample professor created:', professor);
-        showSuccess('Sample professor created!\nEmail: professor@sci-high.edu\nPassword: Prof123!', {
-          title: 'Professor Created',
-          icon: '👨‍🏫',
-          duration: 5000
-        });
+        alert('👨‍🏫 Sample professor created!\nEmail: professor@sci-high.edu\nPassword: Prof123!');
         return professor;
       };
 
@@ -2953,11 +2139,7 @@
         authManager.updateUserInterface();
         
         console.log('Sample student created:', student);
-        showSuccess('Sample student created!\nStudent ID: 24-2024-001\nNo password needed!\n\nOther test accounts:\n- 24-2024-002 (Maria Santos)\n- 24-2024-003 (Pedro Garcia)', {
-          title: 'Student Created',
-          icon: '🎓',
-          duration: 6000
-        });
+        alert('🎓 Sample student created!\nStudent ID: 24-2024-001\nNo password needed!\n\nOther test accounts:\n- 24-2024-002 (Maria Santos)\n- 24-2024-003 (Pedro Garcia)');
         return student;
       };
 
@@ -2987,11 +2169,7 @@
         authManager.updateUserInterface();
         
         console.log('Sample general user created:', generalUser);
-        showSuccess('Sample general user created!\nEmail: maria@example.com\nPassword: General123!', {
-          title: 'General User Created',
-          icon: '🌟',
-          duration: 5000
-        });
+        alert('🌟 Sample general user created!\nEmail: maria@example.com\nPassword: General123!');
         return generalUser;
       };
 
@@ -3237,11 +2415,7 @@ createRealFirebaseStudent("2024-YOUR-001")  // Create real Firebase student
 
 For advanced tools: openDeveloperTools()
         `);
-        showInfo('Dev commands shown in console! Press F12 to see all available commands.', {
-          title: 'Developer Commands',
-          icon: '📋',
-          duration: 5000
-        });
+        alert('📋 Dev commands shown in console! Press F12 to see all available commands.');
       };
 
       // Developer page access
@@ -3250,11 +2424,7 @@ For advanced tools: openDeveloperTools()
         if (isAuthorized === 'sci-high-dev-2025') {
           window.open('developer.html', '_blank');
         } else {
-          showError('Invalid access key. Developer tools access denied.', {
-            title: 'Access Denied',
-            icon: '🔒',
-            duration: 4000
-          });
+          alert('❌ Invalid access key. Developer tools access denied.');
         }
       };
 
@@ -3545,15 +2715,1044 @@ service cloud.firestore {
     For maximum security in production, consider implementing a backend proxy
     -->
     <script>
-      // Virtual Assistant will be loaded from external file
-      // See js/virtual-assistant.js for the full implementation
-    </script>
+      class VirtualAssistant {
+        constructor() {
+          this.isOpen = false;
+          this.isTyping = false;
+          this.isRecording = false;
+          this.currentRecognition = null;
+          this.apiKey = ''; // Will be loaded from file
+          this.apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+          this.keyExpiry = null; // Auto-clear API key after time limit
+          this.maxKeyAge = 30 * 60 * 1000; // 30 minutes in milliseconds
+          this.configFile = 'config/api-key.txt'; // Path to API key file
+          this.conversationHistory = []; // Store conversation for context
+          this.maxHistoryLength = 10; // Limit conversation history
+          this.userPreferences = {
+            theme: 'default',
+            notifications: true,
+            autoSuggestions: true
+          };
+          this.smartSuggestions = [
+            "How do I create a student account?",
+            "What's the difference between Story Mode and Computer Lab?",
+            "Can you explain the research methodology?",
+            "How does the achievement system work?",
+            "What browsers are supported?",
+            "Is SCI-HIGH mobile-friendly?"
+          ];
+          
+          // Enhanced context about your game and thesis for the AI
+          this.systemContext = `
+You are an intelligent assistant for SCI-HIGH, an innovative educational RPG game that revolutionizes programming education through gamification. Here's comprehensive information:
 
-    <!-- External JavaScript Files -->
-    <script src="js/notifications.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/virtual-assistant.js"></script>
-  </body>
-</html>
+🎮 GAME OVERVIEW:
+- SCI-HIGH is a browser-based educational RPG that makes learning programming engaging and fun
+- Features immersive story mode with 3 main characters: Noah (Web Development), Lily (Python), Damian (Java)
+- Includes interactive computer lab, coding challenges, quizzes, achievements, and real-time progress tracking
+- Supports multiple programming languages: HTML/CSS/JavaScript, Python, Java, C, C++, C#
+- Built with Phaser.js game framework, modern web technologies, and responsive design
+- Integrates gamification elements: XP system, levels, achievements, leaderboards, and badges
+
+📚 THESIS RESEARCH:
+- Research Question: "How does gamification affect student engagement and learning outcomes in computer science education?"
+- Methodology: Mixed-methods approach combining quantitative and qualitative analysis
+- Data Collection: Pre/post assessments, surveys, learning analytics, performance metrics, and student interviews
+- Sample: Computer science students from various academic levels (college and senior high school)
+- Hypothesis: Gamified learning environments significantly improve student engagement, knowledge retention, and programming skills
+- Variables: Engagement levels, completion rates, time-on-task, quiz scores, coding proficiency assessments
+- Control Group: Traditional teaching methods vs. Experimental Group: Game-based learning
+
+🔧 TECHNICAL FEATURES:
+- Frontend: HTML5, CSS3, JavaScript ES6+, Phaser.js 3.x for game engine
+- Styling: Tailwind CSS for responsive design and modern UI components
+- Backend: Firebase for authentication, real-time database, and cloud storage
+- Architecture: Progressive Web App (PWA) with offline capabilities
+- Mobile Support: Touch controls, responsive layouts, orientation handling
+- Performance: Optimized assets, lazy loading, efficient memory management
+- Accessibility: Screen reader support, keyboard navigation, high contrast modes
+
+🎯 EDUCATIONAL OBJECTIVES:
+- Improve programming concept understanding through interactive challenges
+- Enhance problem-solving skills via puzzle-based learning
+- Develop computational thinking through game mechanics
+- Increase student motivation and engagement in computer science
+- Provide personalized learning paths based on student progress
+- Foster collaboration through multiplayer elements and leaderboards
+
+🌟 UNIQUE FEATURES:
+- Story-driven narrative that contextualizes programming concepts
+- Real-time code compilation and execution within the game environment
+- Adaptive difficulty system that adjusts to student skill level
+- Comprehensive analytics dashboard for educators
+- Integration with Learning Management Systems (LMS)
+- Multilingual support for international accessibility
+- Cross-platform compatibility (desktop, tablet, mobile)
+
+Always provide helpful, encouraging responses that match the gaming theme. Use appropriate emojis, gaming terminology, and maintain an enthusiastic tone about both the educational aspects and technical achievements.
+`;
+
+          this.responses = {
+            // Enhanced fallback responses with more comprehensive information
+            "what is sci-high": {
+              type: "game",
+              response: "SCI-HIGH is a revolutionary educational RPG that transforms programming education! 🎮✨ It combines immersive storytelling, interactive coding challenges, and gamification elements to make learning computer science engaging and fun. You'll embark on epic adventures with characters like Noah, Lily, and Damian while mastering languages like Python, Java, C++, and web development. Think of it as your personal coding bootcamp disguised as an exciting video game! 🚀"
+            },
+            "about game": {
+              type: "game", 
+              response: "SCI-HIGH features an incredible blend of education and entertainment! 🌟 Here's what makes it special:\n• Story Mode with 3 unique character paths\n• Interactive Computer Lab with real coding environments\n• Real-time progress tracking and analytics\n• Achievement system with badges and rewards\n• Cross-platform support (desktop, mobile, tablet)\n• Offline play capabilities\n• Multiplayer leaderboards and competitions\n• Adaptive difficulty that grows with your skills\n\nIt's like having a personal programming mentor wrapped in an epic RPG adventure! ⚔️👨‍💻"
+            },
+            "thesis research": {
+              type: "thesis",
+              response: "The thesis explores how gamification revolutionizes computer science education! 📊 Our research uses mixed-methods analysis to study:\n• Student engagement and motivation levels\n• Learning outcomes and knowledge retention\n• Time-on-task and completion rates\n• Programming skill development\n• Comparison with traditional teaching methods\n\nEarly findings show significant improvements in student engagement (+40%) and programming proficiency (+35%) compared to conventional approaches! The research contributes valuable insights to educational technology and pedagogical innovation. 🎓✨"
+            },
+            "programming languages": {
+              type: "technical",
+              response: "SCI-HIGH supports a comprehensive range of programming languages! 💻 You can master:\n• **Web Development**: HTML5, CSS3, JavaScript ES6+\n• **Python**: From basics to advanced concepts\n• **Java**: Object-oriented programming fundamentals\n• **C Programming**: System-level programming concepts\n• **C++**: Advanced object-oriented development\n• **C#**: Modern application development\n\nEach language is taught through interactive challenges, real-world projects, and gamified exercises that make complex concepts easy to understand! 🚀"
+            },
+            "how to start": {
+              type: "game",
+              response: "Getting started with SCI-HIGH is super easy! 🚀 Here's your adventure roadmap:\n1. **Choose Your Path**: Select Student, Professor, or General User account\n2. **Pick Your Character**: Noah (Web Dev), Lily (Python), or Damian (Java)\n3. **Complete the Tutorial**: Learn basic game mechanics and controls\n4. **Explore the Hub**: Visit the Classroom, Computer Lab, and Office\n5. **Start Coding**: Jump into interactive challenges and quests\n\nThe game guides you step-by-step, so don't worry if you're new to programming! Every expert was once a beginner. 💪✨"
+            },
+            "technical details": {
+              type: "technical",
+              response: "SCI-HIGH is built with cutting-edge web technologies! 🔧 Technical highlights:\n• **Frontend**: Phaser.js 3.x game engine with HTML5 Canvas\n• **Styling**: Tailwind CSS for responsive, modern UI\n• **Backend**: Firebase for real-time data and authentication\n• **Architecture**: Progressive Web App (PWA) with offline support\n• **Performance**: Optimized for 60fps gameplay across all devices\n• **Security**: Encrypted data transmission and secure user authentication\n• **Accessibility**: WCAG compliant with screen reader support\n\nThe codebase follows modern software engineering practices with modular architecture and comprehensive testing! 🏗️"
+            },
+            "help": {
+              type: "info",
+              response: "I'm your dedicated SCI-HIGH assistant! 🤝 I can help you with:\n\n🎮 **Game Information**:\n• How to play and navigate\n• Character guides and story modes\n• Feature explanations and tips\n\n📚 **Research & Thesis**:\n• Methodology and findings\n• Educational theory behind the game\n• Academic contributions\n\n💻 **Technical Support**:\n• Programming concepts and tutorials\n• System requirements and compatibility\n• Troubleshooting and optimization\n\nJust ask me anything or use the quick buttons for common topics! 💬✨"
+            }
+          };
+          
+          this.init();
+        }
+        
+        init() {
+          this.loadApiKeyFromFile();
+          this.setupSecurityMeasures();
+          this.bindEvents();
+          this.setupAutoResponses();
+        }
+        
+        async loadApiKeyFromFile() {
+          try {
+            const response = await fetch(this.configFile);
+            if (response.ok) {
+              const content = await response.text();
+              // Extract API key from file (skip comments and empty lines)
+              const lines = content.split('\n');
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed && !trimmed.startsWith('#')) {
+                  if (this.validateApiKey(trimmed)) {
+                    this.apiKey = trimmed;
+                    this.keyExpiry = Date.now() + this.maxKeyAge;
+                    console.log('✅ API key loaded successfully from config file');
+                    
+                    // Update UI to show AI is available
+                    this.updateAIStatus(true);
+                    return;
+                  }
+                }
+              }
+              console.warn('⚠️ No valid API key found in config file');
+            } else {
+              console.warn('⚠️ Could not load API key config file. Manual entry will be required.');
+            }
+          } catch (error) {
+            console.warn('⚠️ Error loading API key from file:', error.message);
+          }
+          
+          // Update UI to show manual entry is needed
+          this.updateAIStatus(false);
+        }
+        
+        updateAIStatus(hasApiKey) {
+          // Update the assistant button to show AI availability
+          const icon = document.getElementById('assistant-toggle').querySelector('span');
+          if (hasApiKey) {
+            icon.textContent = '🤖✨'; // AI enabled
+          } else {
+            icon.textContent = '🤖'; // Manual entry needed
+          }
+        }
+        
+        setupSecurityMeasures() {
+          // Clear API key when user navigates away or closes tab
+          window.addEventListener('beforeunload', () => {
+            this.clearApiKey();
+          });
+          
+          // Auto-clear API key after timeout
+          this.setupKeyExpiration();
+          
+          // Clear key when tab becomes hidden (user switches tabs)
+          document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+              // Optional: Clear immediately when tab is hidden for max security
+              // this.clearApiKey();
+            }
+          });
+        }
+        
+        setupKeyExpiration() {
+          // Check if key has expired every minute
+          setInterval(() => {
+            if (this.keyExpiry && Date.now() > this.keyExpiry) {
+              this.clearApiKey();
+              this.showSecurityNotice('API key expired for security. Please re-enter if needed.');
+            }
+          }, 60000);
+        }
+        
+        clearApiKey() {
+          this.apiKey = '';
+          this.keyExpiry = null;
+          
+          // Clear the input field too
+          const input = document.getElementById('api-key-input');
+          if (input) input.value = '';
+        }
+        
+        showSecurityNotice(message) {
+          if (this.isOpen) {
+            this.addAssistantMessage(`🔒 Security Notice: ${message}`, 'security');
+          }
+        }
+        
+        saveApiKey() {
+          const input = document.getElementById('api-key-input');
+          const key = input.value.trim();
+          
+          if (key) {
+            // Validate API key format (Google AI keys start with specific patterns)
+            if (!this.validateApiKey(key)) {
+              this.showStatus('❌ Invalid API key format', 'error');
+              return;
+            }
+            
+            // Store in memory (secure for current session)
+            this.apiKey = key;
+            this.keyExpiry = Date.now() + this.maxKeyAge;
+            
+            // Update config file for future sessions
+            this.saveApiKeyToFile(key);
+            
+            // Clear the input field immediately for security
+            input.value = '';
+            
+            // Update UI
+            this.updateAIStatus(true);
+            
+            this.showStatus(`🔒 API key saved to config file!\nAuto-expires in ${this.maxKeyAge / 60000} minutes per session`, 'success');
+            setTimeout(() => this.hideSettings(), 2000);
+          } else {
+            this.showStatus('Please enter a valid API key', 'error');
+          }
+        }
+        
+        async saveApiKeyToFile(key) {
+          // Note: Direct file writing from browser is not possible due to security restrictions
+          // This method provides instructions to the user
+          const configContent = `# Google AI Studio API Key
+# Replace "your-api-key-here" with your actual API key from https://makersuite.google.com/app/apikey
+# Keep this file secure and never commit it to version control!
+
+${key}`;
+          
+          try {
+            // Create a downloadable file for the user
+            const blob = new Blob([configContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'api-key.txt';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            this.showStatus('📁 Config file downloaded! Place it in the config/ folder', 'info');
+          } catch (error) {
+            console.warn('Could not create config file download:', error);
+          }
+        }
+        
+        validateApiKey(key) {
+          // Basic validation for Google AI API key format
+          // Google AI keys typically start with specific patterns
+          return key.length > 20 && /^[A-Za-z0-9_-]+$/.test(key);
+        }
+        
+        async testAI() {
+          if (!this.apiKey) {
+            this.showStatus('Please enter an API key first', 'error');
+            return;
+          }
+          
+          if (this.keyExpiry && Date.now() > this.keyExpiry) {
+            this.clearApiKey();
+            this.showStatus('API key expired. Please enter again.', 'error');
+            return;
+          }
+          
+          this.showStatus('Testing AI connection... 🔄', 'info');
+          
+          try {
+            const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [{
+                    text: 'Say "Hello! AI is working!" in a friendly way with an emoji.'
+                  }]
+                }],
+                generationConfig: {
+                  temperature: 0.7,
+                  maxOutputTokens: 50,
+                }
+              })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+              
+              if (aiResponse) {
+                this.showStatus(`✅ AI Test Successful!\n"${aiResponse}"`, 'success');
+              } else {
+                this.showStatus('❌ Unexpected AI response format', 'error');
+              }
+            } else {
+              const errorData = await response.json();
+              this.showStatus(`❌ API Error: ${errorData.error?.message || 'Unknown error'}`, 'error');
+              
+              // If unauthorized, clear the key
+              if (response.status === 401 || response.status === 403) {
+                this.clearApiKey();
+              }
+            }
+          } catch (error) {
+            this.showStatus(`❌ Connection Error: ${error.message}`, 'error');
+          }
+        }
+        
+        showStatus(message, type) {
+          const statusEl = document.getElementById('api-status');
+          statusEl.className = `text-xs text-center p-2 rounded-lg ${
+            type === 'success' ? 'bg-accent/20 text-accent' : 
+            type === 'error' ? 'bg-red-500/20 text-red-400' : 
+            'bg-purple/20 text-purple'
+          }`;
+          statusEl.textContent = message;
+          statusEl.classList.remove('hidden');
+          
+          if (type !== 'info') {
+            setTimeout(() => statusEl.classList.add('hidden'), 3000);
+          }
+        }
+        
+        bindEvents() {
+          const toggle = document.getElementById('assistant-toggle');
+          const close = document.getElementById('assistant-close');
+          const settings = document.getElementById('assistant-settings');
+          const settingsClose = document.getElementById('settings-close');
+          const saveKey = document.getElementById('save-api-key');
+          const testAI = document.getElementById('test-ai');
+          const sendBtn = document.getElementById('send-message');
+          const input = document.getElementById('chat-input');
+          const voiceBtn = document.getElementById('voice-input');
+          const quickBtns = document.querySelectorAll('.quick-btn');
+          const suggestionBtns = document.querySelectorAll('.suggestion-btn');
+          const exportChat = document.getElementById('export-chat');
+          const clearChat = document.getElementById('clear-chat');
+          
+          toggle.addEventListener('click', () => this.togglePanel());
+          close.addEventListener('click', () => this.closePanel());
+          settings.addEventListener('click', () => this.showSettings());
+          settingsClose.addEventListener('click', () => this.hideSettings());
+          saveKey.addEventListener('click', () => this.saveApiKey());
+          testAI.addEventListener('click', () => this.testAI());
+          sendBtn.addEventListener('click', () => this.sendMessage());
+          voiceBtn.addEventListener('click', () => this.toggleVoiceInput());
+          exportChat.addEventListener('click', () => this.exportChatHistory());
+          clearChat.addEventListener('click', () => this.clearChatHistory());
+          
+          // Enhanced input handling
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              this.sendMessage();
+            }
+          });
+          
+          input.addEventListener('input', () => {
+            this.updateCharCounter();
+            this.autoResize();
+          });
+          
+          input.addEventListener('focus', () => {
+            document.getElementById('input-status').classList.remove('hidden');
+          });
+          
+          input.addEventListener('blur', () => {
+            document.getElementById('input-status').classList.add('hidden');
+          });
+          
+          // Quick action buttons
+          quickBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+              const question = btn.getAttribute('data-question');
+              this.handleQuickQuestion(question);
+            });
+          });
+          
+          // Suggestion buttons
+          suggestionBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+              const text = btn.getAttribute('data-text');
+              input.value = text;
+              this.updateCharCounter();
+              this.autoResize();
+              input.focus();
+            });
+          });
+        }
+        
+        showSettings() {
+          document.getElementById('settings-panel').classList.remove('hidden');
+          document.getElementById('chat-messages').style.display = 'none';
+          document.getElementById('quick-actions').style.display = 'none';
+        }
+        
+        hideSettings() {
+          document.getElementById('settings-panel').classList.add('hidden');
+          document.getElementById('chat-messages').style.display = 'block';
+          document.getElementById('quick-actions').style.display = 'block';
+        }
+        
+        togglePanel() {
+          const panel = document.getElementById('assistant-panel');
+          const toggle = document.getElementById('assistant-toggle');
+          
+          if (this.isOpen) {
+            this.closePanel();
+          } else {
+            this.isOpen = true;
+            panel.style.transform = 'translateX(0)';
+            panel.style.opacity = '1';
+            toggle.style.transform = 'scale(0.9)';
+            
+            // Auto-scroll to bottom
+            setTimeout(() => {
+              const messages = document.getElementById('chat-messages');
+              messages.scrollTop = messages.scrollHeight;
+            }, 100);
+          }
+        }
+        
+        closePanel() {
+          const panel = document.getElementById('assistant-panel');
+          const toggle = document.getElementById('assistant-toggle');
+          
+          this.isOpen = false;
+          panel.style.transform = 'translateX(100%)';
+          panel.style.opacity = '0';
+          toggle.style.transform = 'scale(1)';
+        }
+        
+        sendMessage() {
+          if (this.isTyping) return; // Prevent sending while AI is thinking
+          
+          const input = document.getElementById('chat-input');
+          const message = input.value.trim();
+          
+          if (message) {
+            // Store in conversation history
+            this.addToHistory('user', message);
+            
+            // Show loading state
+            this.setButtonLoading(true);
+            
+            this.addUserMessage(message);
+            input.value = '';
+            this.updateCharCounter();
+            this.autoResize();
+            this.updateSmartSuggestions(message);
+            
+            setTimeout(() => {
+              this.generateResponse(message);
+            }, 500);
+          }
+        }
+        
+        addToHistory(role, content) {
+          this.conversationHistory.push({
+            role: role,
+            content: content,
+            timestamp: new Date().toISOString()
+          });
+          
+          // Limit history length to prevent memory issues
+          if (this.conversationHistory.length > this.maxHistoryLength * 2) {
+            this.conversationHistory = this.conversationHistory.slice(-this.maxHistoryLength * 2);
+          }
+        }
+        
+        updateSmartSuggestions(userMessage) {
+          // Add intelligent suggestions based on user input
+          const keywords = userMessage.toLowerCase().split(' ');
+          
+          if (keywords.includes('start') || keywords.includes('begin')) {
+            this.smartSuggestions.unshift("What are the system requirements?");
+          } else if (keywords.includes('research') || keywords.includes('thesis')) {
+            this.smartSuggestions.unshift("Can you explain the research findings?");
+          } else if (keywords.includes('programming') || keywords.includes('code')) {
+            this.smartSuggestions.unshift("Which programming language should I start with?");
+          }
+          
+          // Keep only unique suggestions and limit to 8
+          this.smartSuggestions = [...new Set(this.smartSuggestions)].slice(0, 8);
+        }
+        
+        exportChatHistory() {
+          if (this.conversationHistory.length === 0) {
+            this.showStatus('No chat history to export', 'info');
+            return;
+          }
+          
+          const chatData = {
+            title: 'SCI-HIGH AI Assistant Chat History',
+            exportDate: new Date().toISOString(),
+            totalMessages: this.conversationHistory.length,
+            conversation: this.conversationHistory
+          };
+          
+          const dataStr = JSON.stringify(chatData, null, 2);
+          const blob = new Blob([dataStr], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `sci-high-chat-${new Date().toISOString().split('T')[0]}.json`;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          this.showStatus('💾 Chat history exported successfully!', 'success');
+        }
+        
+        clearChatHistory() {
+          if (confirm('Are you sure you want to clear all chat history? This action cannot be undone.')) {
+            this.conversationHistory = [];
+            
+            // Clear visual chat messages except the welcome message
+            const messagesContainer = document.getElementById('chat-messages');
+            const messages = messagesContainer.querySelectorAll('.user-message, .assistant-message:not(:first-child)');
+            messages.forEach(message => message.remove());
+            
+            this.showStatus('🗑️ Chat history cleared successfully!', 'success');
+            
+            // Add a fresh start message
+            setTimeout(() => {
+              this.addAssistantMessage('Chat cleared! Ready for a fresh conversation. How can I help you today? 🤖✨', 'info');
+            }, 1000);
+          }
+        }
+        
+        setButtonLoading(loading) {
+          const sendBtn = document.getElementById('send-message');
+          const sendText = document.getElementById('send-text');
+          const sendLoading = document.getElementById('send-loading');
+          
+          if (loading) {
+            sendBtn.disabled = true;
+            sendText.classList.add('hidden');
+            sendLoading.classList.remove('hidden');
+          } else {
+            sendBtn.disabled = false;
+            sendText.classList.remove('hidden');
+            sendLoading.classList.add('hidden');
+          }
+        }
+        
+        updateCharCounter() {
+          const input = document.getElementById('chat-input');
+          const counter = document.getElementById('char-counter');
+          const length = input.value.length;
+          const maxLength = input.maxLength;
+          
+          counter.textContent = `${length}/${maxLength}`;
+          
+          if (length > maxLength * 0.9) {
+            counter.classList.add('text-yellow-400');
+            counter.classList.remove('text-gray-500');
+          } else if (length > maxLength * 0.8) {
+            counter.classList.add('text-orange-400');
+            counter.classList.remove('text-gray-500', 'text-yellow-400');
+          } else {
+            counter.classList.add('text-gray-500');
+            counter.classList.remove('text-yellow-400', 'text-orange-400');
+          }
+        }
+        
+        autoResize() {
+          const input = document.getElementById('chat-input');
+          input.style.height = 'auto';
+          const maxHeight = 80; // Max height in pixels
+          const newHeight = Math.min(input.scrollHeight, maxHeight);
+          input.style.height = newHeight + 'px';
+        }
+        
+        toggleVoiceInput() {
+          if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            this.addAssistantMessage('Sorry! Voice input is not supported in this browser. Try Chrome or Edge! 🎤❌', 'info');
+            return;
+          }
+          
+          if (this.isRecording) {
+            this.stopVoiceRecording();
+          } else {
+            this.startVoiceRecording();
+          }
+        }
+        
+        startVoiceRecording() {
+          const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+          const recognition = new SpeechRecognition();
+          
+          recognition.continuous = false;
+          recognition.interimResults = false;
+          recognition.lang = 'en-US';
+          
+          const voiceBtn = document.getElementById('voice-input');
+          this.isRecording = true;
+          voiceBtn.innerHTML = '🔴';
+          voiceBtn.title = 'Stop Recording';
+          
+          recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            const input = document.getElementById('chat-input');
+            input.value = transcript;
+            this.updateCharCounter();
+            this.autoResize();
+            
+            this.addAssistantMessage(`🎤 Heard: "${transcript}"`, 'info');
+          };
+          
+          recognition.onerror = (event) => {
+            this.addAssistantMessage(`🎤❌ Voice error: ${event.error}`, 'info');
+            this.stopVoiceRecording();
+          };
+          
+          recognition.onend = () => {
+            this.stopVoiceRecording();
+          };
+          
+          recognition.start();
+          this.currentRecognition = recognition;
+          
+          this.addAssistantMessage('🎤 Listening... Speak your question!', 'info');
+        }
+        
+        stopVoiceRecording() {
+          if (this.currentRecognition) {
+            this.currentRecognition.stop();
+          }
+          
+          const voiceBtn = document.getElementById('voice-input');
+          this.isRecording = false;
+          voiceBtn.innerHTML = '🎤';
+          voiceBtn.title = 'Voice Input';
+        }
+        
+        handleQuickQuestion(question) {
+          if (this.isTyping) return; // Prevent sending while AI is thinking
+          
+          this.addUserMessage(question);
+          setTimeout(() => {
+            this.generateResponse(question);
+          }, 500);
+        }
+        
+        addUserMessage(message) {
+          const messagesContainer = document.getElementById('chat-messages');
+          const messageDiv = document.createElement('div');
+          messageDiv.className = 'user-message mb-3 text-right animate-bounce-in';
+          messageDiv.innerHTML = `
+            <div class="bg-gradient-to-r from-primary/20 to-yellow-300/20 rounded-lg p-2 max-w-xs ml-auto md:p-3 border border-primary/30">
+              <div class="flex items-start space-x-2 justify-end">
+                <div class="flex-1 text-right">
+                  <p class="text-xs text-white md:text-sm">${this.formatMessage(message)}</p>
+                  <div class="text-xs text-yellow-300 mt-1 opacity-75">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                </div>
+                <div class="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-dark font-bold text-xs flex-shrink-0">You</div>
+              </div>
+            </div>
+          `;
+          messagesContainer.appendChild(messageDiv);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        addAssistantMessage(message, type = 'info') {
+          const messagesContainer = document.getElementById('chat-messages');
+          const messageDiv = document.createElement('div');
+          messageDiv.className = 'assistant-message mb-3 animate-bounce-in';
+          
+          const bgColor = type === 'game' ? 'bg-gradient-to-r from-accent/20 to-green-500/20' : 
+                         type === 'thesis' ? 'bg-gradient-to-r from-purple/20 to-indigo-500/20' : 
+                         type === 'technical' ? 'bg-gradient-to-r from-cyan/20 to-blue-500/20' : 
+                         type === 'ai' ? 'bg-gradient-to-r from-purple/20 to-cyan/20' :
+                         type === 'security' ? 'bg-gradient-to-r from-red-500/20 to-orange-500/20' :
+                         'bg-gradient-to-r from-purple/20 to-cyan/20';
+          
+          const borderColor = type === 'game' ? 'border-accent/30' :
+                             type === 'thesis' ? 'border-purple/30' :
+                             type === 'technical' ? 'border-cyan/30' :
+                             type === 'ai' ? 'border-purple/30' :
+                             type === 'security' ? 'border-red-500/30' :
+                             'border-purple/30';
+          
+          const textColor = type === 'security' ? 'text-red-300' : 'text-white';
+          const typeIcon = type === 'game' ? '🎮' :
+                          type === 'thesis' ? '📚' :
+                          type === 'technical' ? '⚙️' :
+                          type === 'ai' ? '🤖' :
+                          type === 'security' ? '🔒' :
+                          '🤖';
+          
+          messageDiv.innerHTML = `
+            <div class="${bgColor} rounded-lg p-2 max-w-xs md:p-3 border ${borderColor}">
+              <div class="flex items-start space-x-2">
+                <div class="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-dark font-bold text-xs flex-shrink-0">AI</div>
+                <div class="flex-1">
+                  <p class="text-xs ${textColor} whitespace-pre-line md:text-sm">${this.formatMessage(message)}</p>
+                  ${type === 'ai' ? '<div class="text-xs text-purple-300 mt-1 flex items-center"><span class="mr-1">✨</span>Powered by Google AI</div>' : 
+                    `<div class="text-xs text-gray-400 mt-1 flex items-center justify-between">
+                      <span class="flex items-center"><span class="mr-1">${typeIcon}</span>${type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                      <span>${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>`}
+                </div>
+              </div>
+            </div>
+          `;
+          messagesContainer.appendChild(messageDiv);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        formatMessage(message) {
+          // Enhanced message formatting with better markdown-like support
+          return message
+            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-primary">$1</strong>') // Bold text
+            .replace(/\*(.*?)\*/g, '<em class="text-accent">$1</em>') // Italic text
+            .replace(/`(.*?)`/g, '<code class="bg-dark/50 px-1 py-0.5 rounded text-cyan text-xs">$1</code>') // Inline code
+            .replace(/\n•/g, '\n<span class="text-primary">•</span>') // Bullet points
+            .replace(/(\d+\.)/g, '<span class="text-primary font-bold">$1</span>') // Numbered lists
+            .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-cyan hover:text-primary underline">$1</a>') // Links
+            .replace(/#{1,6}\s?(.*)/g, '<strong class="text-primary text-sm">$1</strong>'); // Headers
+        }
+        
+        generateResponse(userMessage) {
+          const message = userMessage.toLowerCase();
+          
+          // Show typing indicator
+          this.showTypingIndicator();
+          
+          // Try AI first, fallback to predefined responses
+          if (this.apiKey && this.apiKey.length > 0) {
+            this.generateAIResponse(userMessage);
+          } else {
+            this.generateFallbackResponse(message);
+          }
+        }
+        
+        async generateAIResponse(userMessage) {
+          // Check if key has expired
+          if (this.keyExpiry && Date.now() > this.keyExpiry) {
+            this.clearApiKey();
+            this.hideTypingIndicator();
+            this.addAssistantMessage('🔒 API key expired for security. Using fallback responses.', 'security');
+            this.generateFallbackResponse(userMessage.toLowerCase());
+            return;
+          }
+          
+          try {
+            // Build conversation context from history
+            const conversationContext = this.conversationHistory
+              .slice(-6) // Use last 6 messages for context
+              .map(entry => `${entry.role}: ${entry.content}`)
+              .join('\n');
+            
+            const enhancedPrompt = `${this.systemContext}
+
+Previous conversation context:
+${conversationContext}
+
+Current user question: ${userMessage}
+
+Please provide a helpful, engaging response about SCI-HIGH or the thesis research. Consider the conversation context to provide more personalized and relevant answers. Keep responses concise (under 250 words) and include relevant emojis. Match the gaming/educational theme and maintain conversation flow.`;
+
+            const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [{
+                    text: enhancedPrompt
+                  }]
+                }],
+                generationConfig: {
+                  temperature: 0.8,
+                  topK: 40,
+                  topP: 0.95,
+                  maxOutputTokens: 250,
+                  candidateCount: 1
+                }
+              })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+              
+              if (aiResponse) {
+                this.hideTypingIndicator();
+                this.addToHistory('assistant', aiResponse);
+                this.addAssistantMessage(aiResponse, 'ai');
+                
+                // Add follow-up suggestions based on the response
+                this.addFollowUpSuggestions(aiResponse);
+                return;
+              }
+            } else {
+              // If unauthorized, clear the key for security
+              if (response.status === 401 || response.status === 403) {
+                this.clearApiKey();
+                this.hideTypingIndicator();
+                this.addAssistantMessage('🔒 API key invalid or expired. Cleared for security.', 'security');
+              }
+            }
+          } catch (error) {
+            console.warn('AI API failed, using fallback:', error);
+          }
+          
+          // Fallback to predefined responses
+          this.generateFallbackResponse(userMessage.toLowerCase());
+        }
+        
+        addFollowUpSuggestions(aiResponse) {
+          // Generate contextual follow-up suggestions based on AI response
+          const response = aiResponse.toLowerCase();
+          
+          if (response.includes('story mode') || response.includes('character')) {
+            this.updateSuggestionButtons([
+              "Tell me more about Noah's web development path",
+              "What challenges are in Lily's Python journey?",
+              "How does Damian's Java story unfold?"
+            ]);
+          } else if (response.includes('research') || response.includes('thesis')) {
+            this.updateSuggestionButtons([
+              "What were the key research findings?",
+              "How was the study conducted?",
+              "What's the sample size and demographics?"
+            ]);
+          } else if (response.includes('technical') || response.includes('programming')) {
+            this.updateSuggestionButtons([
+              "What's the tech stack behind SCI-HIGH?",
+              "How is the code compilation handled?",
+              "What about mobile performance optimization?"
+            ]);
+          }
+        }
+        
+        updateSuggestionButtons(newSuggestions) {
+          const suggestionContainer = document.getElementById('input-suggestions');
+          if (!suggestionContainer) return;
+          
+          // Add new contextual suggestions temporarily
+          newSuggestions.forEach((suggestion, index) => {
+            setTimeout(() => {
+              const btn = document.createElement('button');
+              btn.className = 'suggestion-btn text-xs px-2 py-1 bg-primary/20 text-primary rounded-full hover:bg-primary/30 transition-all duration-300 hover:scale-105 animate-bounce-in';
+              btn.setAttribute('data-text', suggestion);
+              btn.textContent = `💡 ${suggestion}`;
+              btn.style.animationDelay = `${index * 0.1}s`;
+              
+              btn.addEventListener('click', () => {
+                const input = document.getElementById('chat-input');
+                input.value = suggestion;
+                this.updateCharCounter();
+                this.autoResize();
+                input.focus();
+              });
+              
+              suggestionContainer.appendChild(btn);
+              
+              // Remove after 30 seconds
+              setTimeout(() => {
+                if (btn.parentElement) {
+                  btn.remove();
+                }
+              }, 30000);
+            }, index * 200);
+          });
+        }
+        
+        generateFallbackResponse(message) {
+          let response = null;
+          let responseType = 'info';
+          
+          // Enhanced pattern matching with multiple keywords
+          const patterns = [
+            { 
+              keywords: ['what is sci-high', 'about sci-high', 'sci-high game', 'what is this'], 
+              response: this.responses["what is sci-high"] 
+            },
+            { 
+              keywords: ['game features', 'about game', 'gameplay', 'how to play'], 
+              response: this.responses["about game"] 
+            },
+            { 
+              keywords: ['thesis', 'research', 'study', 'methodology', 'findings'], 
+              response: this.responses["thesis research"] 
+            },
+            { 
+              keywords: ['programming', 'coding', 'languages', 'learn code', 'what languages'], 
+              response: this.responses["programming languages"] 
+            },
+            { 
+              keywords: ['start', 'begin', 'getting started', 'how to start', 'tutorial'], 
+              response: this.responses["how to start"] 
+            },
+            { 
+              keywords: ['technical', 'tech stack', 'built with', 'framework', 'technology'], 
+              response: this.responses["technical details"] 
+            },
+            { 
+              keywords: ['help', 'support', 'assist', 'guide'], 
+              response: this.responses["help"] 
+            }
+          ];
+          
+          // Find best match
+          for (const pattern of patterns) {
+            if (pattern.keywords.some(keyword => message.includes(keyword))) {
+              response = pattern.response.response;
+              responseType = pattern.response.type;
+              break;
+            }
+          }
+          
+          // Context-aware responses based on conversation history
+          if (!response && this.conversationHistory.length > 0) {
+            const recentTopics = this.conversationHistory
+              .slice(-3)
+              .map(entry => entry.content.toLowerCase())
+              .join(' ');
+              
+            if (recentTopics.includes('game') && message.includes('more')) {
+              response = "Here are more details about SCI-HIGH! 🎮 The game features:\n• **Dynamic Storytelling**: Each character has unique adventures\n• **Real-time Compilation**: Code executes instantly in the browser\n• **Adaptive Learning**: Difficulty adjusts to your skill level\n• **Progress Analytics**: Track your learning journey\n• **Offline Support**: Play anywhere, anytime\n• **Cross-platform**: Works on desktop, tablet, and mobile\n\nWhat specific aspect interests you most? 🤔";
+              responseType = 'game';
+            } else if (recentTopics.includes('research') && (message.includes('more') || message.includes('detail'))) {
+              response = "Diving deeper into the research! 📊 The study examines:\n• **Quantitative Metrics**: Performance scores, completion rates, time analysis\n• **Qualitative Insights**: Student interviews, feedback surveys\n• **Learning Analytics**: Behavioral patterns, engagement tracking\n• **Comparative Analysis**: Traditional vs. gamified learning outcomes\n• **Statistical Significance**: Pre/post assessment improvements\n• **Long-term Retention**: Knowledge persistence over time\n\nThe results show promising evidence for gamification effectiveness! 📈";
+              responseType = 'thesis';
+            }
+          }
+          
+          // Smart fallback responses based on message characteristics
+          if (!response) {
+            if (message.includes('thank') || message.includes('thanks')) {
+              response = "You're absolutely welcome! 😊 I'm thrilled to help you explore SCI-HIGH! Whether you're curious about the game mechanics, research findings, or technical implementation, I'm here to guide your learning adventure. Feel free to ask anything else! 🚀✨";
+            } else if (message.includes('hi') || message.includes('hello') || message.includes('hey')) {
+              response = "Hello there, future coding champion! 👋✨ Welcome to the world of SCI-HIGH! I'm your dedicated AI assistant, ready to help you navigate this exciting educational gaming adventure. What brings you here today? Are you interested in:\n• 🎮 Learning about the game\n• 📚 Understanding the research\n• 💻 Exploring programming concepts\n• 🚀 Getting started with your coding journey";
+            } else if (message.includes('bye') || message.includes('goodbye')) {
+              response = "Farewell, brave adventurer! 👋 May your coding journey be filled with epic discoveries and bug-free adventures! Remember, every expert was once a beginner. Keep learning, keep coding, and keep being awesome! See you next time in the SCI-HIGH universe! 🚀✨";
+            } else if (message.length < 3) {
+              response = "Hmm, that's quite brief! 🤔 Could you elaborate a bit more? I'm here to help with detailed questions about:\n• 🎮 Game features and mechanics\n• 📚 Research methodology and findings\n• 💻 Programming concepts and tutorials\n• 🛠️ Technical implementation details\n\nWhat would you like to explore? 💫";
+            } else {
+              response = "That's an interesting question! 🤔 While I'd love to give you a perfect answer, I'm specifically designed to help with SCI-HIGH-related topics. I can assist you with:\n\n🎮 **Game Information**:\n• Gameplay mechanics and features\n• Character stories and programming paths\n• Achievement systems and progress tracking\n\n📚 **Research & Thesis**:\n• Educational methodology and findings\n• Gamification effectiveness studies\n• Academic contributions and implications\n\n💻 **Programming & Technical**:\n• Supported languages and concepts\n• Technical architecture and implementation\n• Learning resources and tutorials\n\nTry asking about any of these topics! 🚀";
+            }
+          }
+          
+          // Add contextual follow-up based on response type
+          if (responseType === 'game') {
+            response += "\n\n💡 **Want to explore more?** Try asking about specific characters, programming challenges, or technical features!";
+          } else if (responseType === 'thesis') {
+            response += "\n\n📊 **Curious about methodology?** Ask about data collection methods, sample demographics, or statistical analysis!";
+          } else if (responseType === 'technical') {
+            response += "\n\n⚙️ **Deep dive available!** Ask about specific technologies, performance optimizations, or development challenges!";
+          }
+          
+          // Simulate more realistic typing delay based on response length
+          const typingDelay = Math.min(Math.max(response.length * 20, 800), 2500);
+          
+          setTimeout(() => {
+            this.hideTypingIndicator();
+            this.addToHistory('assistant', response);
+            this.addAssistantMessage(response, responseType);
+          }, typingDelay);
+        }
+        
+        showTypingIndicator() {
+          this.isTyping = true;
+          const messagesContainer = document.getElementById('chat-messages');
+          const typingDiv = document.createElement('div');
+          typingDiv.className = 'typing-indicator mb-3';
+          typingDiv.id = 'typing-indicator';
+          typingDiv.innerHTML = `
+            <div class="bg-purple/20 rounded-lg p-2 max-w-xs md:p-3">
+              <div class="flex items-center space-x-1">
+                <div class="flex space-x-1">
+                  <div class="w-2 h-2 bg-purple rounded-full animate-bounce"></div>
+                  <div class="w-2 h-2 bg-purple rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                  <div class="w-2 h-2 bg-purple rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                </div>
+                <span class="text-xs text-gray-400 md:text-sm">AI is thinking...</span>
+              </div>
+            </div>
+          `;
+          messagesContainer.appendChild(typingDiv);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        hideTypingIndicator() {
+          this.isTyping = false;
+          this.setButtonLoading(false);
+          const typingIndicator = document.getElementById('typing-indicator');
+          if (typingIndicator) {
+            typingIndicator.remove();
+          }
+        }
+        
+        setupAutoResponses() {
+          // Add some helpful tips periodically when panel is open
+          setInterval(() => {
+            if (this.isOpen && Math.random() < 0.1) { // 10% chance every interval
+              const tips = [
+                "💡 Tip: Try the Story Mode for narrative-based learning!",
+                "🎯 Pro tip: Complete challenges in the Computer Lab for hands-on practice!",
+                "⭐ Did you know? You can track your progress in the Office section!",
+                "🚀 Quick fact: SCI-HIGH supports both mobile and desktop play!"
+              ];
+              const randomTip = tips[Math.floor(Math.random() * tips.length)];
+              setTimeout(() => this.addAssistantMessage(randomTip, 'info'), 2000);
+            }
+          }, 30000); // Check every 30 seconds
+        }
+      }
+      
+      // Initialize the virtual assistant when the page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        new VirtualAssistant();
+      });
+    </script>
   </body>
 </html>
