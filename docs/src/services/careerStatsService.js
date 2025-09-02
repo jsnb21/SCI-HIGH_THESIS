@@ -239,14 +239,17 @@ class CareerStatsService {
                 
                 courseStats.lastCompleted = sessionData.timestamp;
 
-                // Set course completion boolean to true
-                if (newCareerStats.courseCompletionStatus.hasOwnProperty(normalizedCourse)) {
-                    newCareerStats.courseCompletionStatus[normalizedCourse] = true;
-                } else if (newCareerStats.courseCompletionStatus.hasOwnProperty(courseTopic.toLowerCase())) {
-                    newCareerStats.courseCompletionStatus[courseTopic.toLowerCase()] = true;
+                // Only set course completion to true if the course was actually completed (reached Intensity 3)
+                if (sessionData.courseCompleted === true) {
+                    console.log(`Course ${courseTopic} fully completed (Intensity 3) - marking as complete`);
+                    if (newCareerStats.courseCompletionStatus.hasOwnProperty(normalizedCourse)) {
+                        newCareerStats.courseCompletionStatus[normalizedCourse] = true;
+                    } else if (newCareerStats.courseCompletionStatus.hasOwnProperty(courseTopic.toLowerCase())) {
+                        newCareerStats.courseCompletionStatus[courseTopic.toLowerCase()] = true;
+                    }
+                } else {
+                    console.log(`Course ${courseTopic} session completed but not fully finished (not Intensity 3)`);
                 }
-                
-                console.log(`Course ${courseTopic} completed - setting ${normalizedCourse} to true`);
             }
 
             // Update recent sessions (keep only last 3)

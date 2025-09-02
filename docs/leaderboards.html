@@ -123,8 +123,7 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-    <!-- Chart.js for graphs -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lightweight custom charts - no external dependencies needed -->
   </head>
   <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed min-h-screen flex flex-col">
     <!-- Particle Background Effect -->
@@ -571,6 +570,24 @@
       firebase.initializeApp(firebaseConfig);
       const db = firebase.database();
 
+      // Helper function to format course names properly
+      function formatCourseName(courseTopic) {
+        if (!courseTopic || courseTopic === 'unknown') {
+          return 'Unknown Course';
+        }
+        
+        const courseMap = {
+          'python': 'Python Programming',
+          'java': 'Java Development',
+          'csharp': 'C# Programming',
+          'cpp': 'C++ Programming',
+          'c': 'C Programming',
+          'webdesign': 'Web Design'
+        };
+        
+        return courseMap[courseTopic.toLowerCase()] || courseTopic.charAt(0).toUpperCase() + courseTopic.slice(1);
+      }
+
       // Load Career Stats Data from Firebase
       async function loadCareerStatsData(filter = 'overall') {
         try {
@@ -976,14 +993,6 @@
       }
 
       function closePlayerProfile() {
-        // Destroy all active charts before closing
-        activeCharts.forEach(chart => {
-          if (chart && typeof chart.destroy === 'function') {
-            chart.destroy();
-          }
-        });
-        activeCharts = [];
-        
         document.getElementById('player-profile-modal').classList.add('hidden');
       }
 
@@ -1067,8 +1076,12 @@
             <!-- Career Performance Chart -->
             <div class="bg-cardBg p-6 rounded-lg neon-border">
               <h3 class="text-lg font-semibold text-accent mb-4 font-gaming">Career Performance</h3>
-              <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
-                <canvas id="careerChart"></canvas>
+              <div class="relative h-64 mb-4 bg-dark/50 rounded-lg flex items-center justify-center overflow-hidden">
+                <canvas id="careerChart" class="max-w-full max-h-full"></canvas>
+                <div id="careerChartFallback" class="text-gray-400 text-center absolute inset-0 flex flex-col items-center justify-center">
+                  <div class="text-4xl mb-2">📈</div>
+                  <div>Loading performance chart...</div>
+                </div>
               </div>
               <div class="text-sm text-gray-300 text-center">
                 Total Sessions: ${career.totalSessions || 0} • Best Streak: ${career.highestStreak || 0}
@@ -1089,8 +1102,12 @@
             <!-- Performance Metrics -->
             <div class="bg-cardBg p-6 rounded-lg neon-border">
               <h3 class="text-lg font-semibold text-purple mb-4 font-gaming">Performance Metrics</h3>
-              <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
-                <canvas id="performanceRadar"></canvas>
+              <div class="relative h-64 mb-4 bg-dark/50 rounded-lg flex items-center justify-center overflow-hidden">
+                <canvas id="performanceRadar" class="max-w-full max-h-full"></canvas>
+                <div id="radarChartFallback" class="text-gray-400 text-center absolute inset-0 flex flex-col items-center justify-center">
+                  <div class="text-4xl mb-2">🎯</div>
+                  <div>Loading skill assessment...</div>
+                </div>
               </div>
               <div class="text-sm text-gray-300 text-center">
                 Comprehensive skill assessment
@@ -1101,7 +1118,7 @@
             <div class="bg-cardBg p-6 rounded-lg neon-border">
               <h3 class="text-lg font-semibold text-primary mb-4 font-gaming">Course Progress</h3>
               <div class="space-y-3">
-                ${generateCourseProgressBars(completionStatus)}
+                ${generateCourseProgressBars(completionStatus, career)}
               </div>
             </div>
           </div>
@@ -1132,6 +1149,9 @@
         
         // Initialize charts with career stats data
         setTimeout(() => {
+          console.log('⏰ Chart initialization timeout triggered');
+          console.log('📊 Chart data check - career:', career);
+          console.log('✅ Chart data check - completionStatus:', completionStatus);
           initializeCareerStatsCharts(career, completionStatus, recentSessions);
         }, 100);
       }
@@ -1345,17 +1365,8 @@
       }
 
       // Chart Creation Functions
-      let activeCharts = []; // Track active charts for cleanup
 
       function createPlayerCharts(playerData, topicPoints, gameData) {
-        // Destroy existing charts
-        activeCharts.forEach(chart => {
-          if (chart && typeof chart.destroy === 'function') {
-            chart.destroy();
-          }
-        });
-        activeCharts = [];
-
         // Create Topic Performance Chart (Doughnut)
         if (Object.keys(topicPoints).length > 0) {
           createTopicChart(topicPoints);
@@ -1419,7 +1430,6 @@
             }
           }
         });
-        activeCharts.push(chart);
       }
 
       function createScoreChart(playerData, gameData) {
@@ -1478,7 +1488,6 @@
             }
           }
         });
-        activeCharts.push(chart);
       }
 
       function createProgressChart(courseProgress) {
@@ -1530,7 +1539,6 @@
             }
           }
         });
-        activeCharts.push(chart);
       }
 
       function createRadarChart(playerData, gameData, topicPoints) {
@@ -1585,7 +1593,6 @@
             }
           }
         });
-        activeCharts.push(chart);
       }
 
       // Utility Functions for Charts
@@ -1920,7 +1927,7 @@
         }).join('');
       }
       
-      function generateCourseProgressBars(completionStatus) {
+      function generateCourseProgressBars(completionStatus, careerStats = null) {
         const courses = {
           python: { name: 'Python Programming', color: 'bg-blue-400' },
           java: { name: 'Java Development', color: 'bg-orange-400' },
@@ -1932,17 +1939,49 @@
         
         return Object.entries(courses).map(([courseKey, course]) => {
           const isCompleted = completionStatus[courseKey] || false;
-          const percentage = isCompleted ? 100 : 0;
+          let percentage = 0;
+          let statusText = 'Not Started';
+          let sessionsInfo = '';
+          
+          // Calculate actual progress based on sessions
+          if (careerStats && careerStats.coursesCompleted) {
+            // Look for the course by key or by formatted name
+            const courseData = careerStats.coursesCompleted[courseKey] || 
+                              careerStats.coursesCompleted[course.name] ||
+                              careerStats.coursesCompleted[course.name.toLowerCase()];
+                              
+            if (courseData && courseData.completedCount > 0) {
+              const sessionsCompleted = courseData.completedCount;
+              // Assume 3 intensities = 100% completion, but show progress even for partial completion
+              percentage = isCompleted ? 100 : Math.min((sessionsCompleted / 3) * 100, 90); // Cap at 90% unless fully completed
+              
+              sessionsInfo = `${sessionsCompleted} session${sessionsCompleted > 1 ? 's' : ''} completed`;
+              
+              if (isCompleted) {
+                statusText = '100% Complete';
+              } else if (sessionsCompleted >= 2) {
+                statusText = `${Math.round(percentage)}% (Intensity ${sessionsCompleted})`;
+              } else {
+                statusText = `${Math.round(percentage)}% (Intensity ${sessionsCompleted})`;
+              }
+            }
+          } else if (isCompleted) {
+            percentage = 100;
+            statusText = '100% Complete';
+          }
+          
+          const progressColor = isCompleted ? 'text-green-400' : percentage > 0 ? 'text-yellow-400' : 'text-gray-500';
           
           return `
             <div class="space-y-2">
               <div class="flex justify-between text-sm">
                 <span class="text-gray-300">${course.name}</span>
-                <span class="${isCompleted ? 'text-green-400' : 'text-gray-500'}">${percentage}%</span>
+                <span class="${progressColor}">${statusText}</span>
               </div>
               <div class="w-full bg-gray-700 rounded-full h-2">
                 <div class="${course.color} h-2 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
               </div>
+              ${sessionsInfo ? `<div class="text-xs text-gray-400">${sessionsInfo}</div>` : ''}
             </div>
           `;
         }).join('');
@@ -1966,20 +2005,25 @@
         
         return sessions.map(([sessionId, session]) => {
           const date = new Date(session.timestamp).toLocaleDateString();
-          const scoreColor = session.score >= 80 ? 'text-green-400' : session.score >= 60 ? 'text-yellow-400' : 'text-red-400';
+          const accuracy = session.accuracyPercentage || 0;
+          const scoreColor = accuracy >= 80 ? 'text-green-400' : accuracy >= 60 ? 'text-yellow-400' : 'text-red-400';
+          
+          // Use courseTopic instead of course, and format it nicely
+          const courseName = session.courseTopic || 'Unknown';
+          const formattedCourseName = formatCourseName(courseName);
           
           return `
             <div class="flex items-center gap-3 p-3 bg-dark/50 rounded neon-border">
               <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-dark font-bold">
-                ${session.course ? session.course.charAt(0).toUpperCase() : '?'}
+                ${formattedCourseName.charAt(0).toUpperCase()}
               </div>
               <div class="flex-1">
-                <div class="font-medium text-primary">${session.course || 'Unknown Course'}</div>
-                <div class="text-xs text-gray-400">${date} • ${session.questionsAnswered || 0} questions</div>
+                <div class="font-medium text-primary">${formattedCourseName}</div>
+                <div class="text-xs text-gray-400">${date} • ${(session.correctAnswers || 0) + (session.wrongAnswers || 0)} questions</div>
               </div>
               <div class="text-right">
-                <div class="font-bold ${scoreColor}">${session.score || 0}%</div>
-                <div class="text-xs text-gray-400">${session.points || 0} pts</div>
+                <div class="font-bold ${scoreColor}">${accuracy.toFixed(1)}%</div>
+                <div class="text-xs text-gray-400">${session.totalScore || 0} pts</div>
               </div>
             </div>
           `;
@@ -1987,101 +2031,246 @@
       }
       
       function initializeCareerStatsCharts(career, completionStatus, recentSessions) {
-        // Destroy existing charts
-        activeCharts.forEach(chart => {
-          if (chart && typeof chart.destroy === 'function') {
-            chart.destroy();
+        console.log('🎨 Initializing lightweight custom charts...');
+        console.log('📊 Career data:', career);
+        
+        // Create Career Performance Line Chart
+        createCareerLineChart(career);
+        
+        // Create Performance Radar Chart
+        createPerformanceRadarChart(career, completionStatus);
+        
+        console.log('✅ Custom charts initialized');
+      }
+
+      // Lightweight Line Chart for Career Performance
+      function createCareerLineChart(career) {
+        const canvas = document.getElementById('careerChart');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        const container = canvas.parentElement;
+        
+        // Set canvas size to match container with proper centering
+        const containerRect = container.getBoundingClientRect();
+        const size = Math.min(containerRect.width, containerRect.height) * 0.9; // 90% of container
+        
+        canvas.width = size * window.devicePixelRatio;
+        canvas.height = size * window.devicePixelRatio;
+        canvas.style.width = size + 'px';
+        canvas.style.height = size + 'px';
+        
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        
+        const width = size;
+        const height = size;
+        const padding = 30;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        // Chart data
+        const totalPoints = career.totalPoints || 0;
+        const data = [
+          0,
+          Math.floor(totalPoints * 0.2),
+          Math.floor(totalPoints * 0.5),
+          Math.floor(totalPoints * 0.8),
+          totalPoints
+        ];
+        const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current'];
+        
+        const maxValue = Math.max(...data) || 100;
+        
+        // Draw background
+        ctx.fillStyle = 'rgba(26, 26, 46, 0.8)';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Draw grid lines
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1;
+        
+        for (let i = 0; i <= 4; i++) {
+          const y = padding + (i * (height - 2 * padding)) / 4;
+          ctx.beginPath();
+          ctx.moveTo(padding, y);
+          ctx.lineTo(width - padding, y);
+          ctx.stroke();
+        }
+        
+        // Draw data line
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        
+        for (let i = 0; i < data.length; i++) {
+          const x = padding + (i * (width - 2 * padding)) / (data.length - 1);
+          const y = height - padding - (data[i] / maxValue) * (height - 2 * padding);
+          
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
           }
-        });
-        activeCharts = [];
+        }
+        ctx.stroke();
         
-        // Career Performance Chart
-        const careerCanvas = document.getElementById('careerChart');
-        if (careerCanvas) {
-          const careerChart = new Chart(careerCanvas, {
-            type: 'line',
-            data: {
-              labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current'],
-              datasets: [{
-                label: 'Points Earned',
-                data: [0, Math.floor(career.totalPoints * 0.2), Math.floor(career.totalPoints * 0.5), Math.floor(career.totalPoints * 0.8), career.totalPoints],
-                borderColor: '#00ff88',
-                backgroundColor: 'rgba(0, 255, 136, 0.1)',
-                tension: 0.4,
-                fill: true
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  display: false
-                }
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  grid: {
-                    color: 'rgba(255, 255, 255, 0.1)'
-                  }
-                },
-                x: {
-                  grid: {
-                    color: 'rgba(255, 255, 255, 0.1)'
-                  }
-                }
-              }
-            }
-          });
-          activeCharts.push(careerChart);
+        // Draw data points
+        ctx.fillStyle = '#00ff88';
+        for (let i = 0; i < data.length; i++) {
+          const x = padding + (i * (width - 2 * padding)) / (data.length - 1);
+          const y = height - padding - (data[i] / maxValue) * (height - 2 * padding);
+          
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, 2 * Math.PI);
+          ctx.fill();
         }
         
-        // Performance Radar Chart
-        const radarCanvas = document.getElementById('performanceRadar');
-        if (radarCanvas) {
-          const radarChart = new Chart(radarCanvas, {
-            type: 'radar',
-            data: {
-              labels: ['Accuracy', 'Speed', 'Consistency', 'Difficulty', 'Completion'],
-              datasets: [{
-                label: 'Performance',
-                data: [
-                  career.averageAccuracy || 0,
-                  Math.min(100, (career.totalSessions || 0) * 10),
-                  Math.min(100, (career.highestStreak || 0) * 5),
-                  Object.values(completionStatus).filter(Boolean).length * 16.67,
-                  (Object.values(completionStatus).filter(Boolean).length / Object.keys(completionStatus).length) * 100 || 0
-                ],
-                borderColor: '#00ff88',
-                backgroundColor: 'rgba(0, 255, 136, 0.2)',
-                pointBackgroundColor: '#00ff88'
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  display: false
-                }
-              },
-              scales: {
-                r: {
-                  beginAtZero: true,
-                  max: 100,
-                  grid: {
-                    color: 'rgba(255, 255, 255, 0.1)'
-                  },
-                  angleLines: {
-                    color: 'rgba(255, 255, 255, 0.1)'
-                  }
-                }
-              }
-            }
-          });
-          activeCharts.push(radarChart);
+        // Draw labels
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        
+        for (let i = 0; i < labels.length; i++) {
+          const x = padding + (i * (width - 2 * padding)) / (labels.length - 1);
+          ctx.fillText(labels[i], x, height - 10);
         }
+        
+        // Draw values
+        ctx.textAlign = 'left';
+        for (let i = 0; i <= 4; i++) {
+          const value = Math.round((maxValue * (4 - i)) / 4);
+          const y = padding + (i * (height - 2 * padding)) / 4;
+          ctx.fillText(value.toString(), 5, y + 4);
+        }
+        
+        // Hide fallback
+        const fallback = document.getElementById('careerChartFallback');
+        if (fallback) fallback.style.display = 'none';
+        
+        console.log('✅ Career line chart created');
+      }
+
+      // Lightweight Radar Chart for Performance Metrics
+      function createPerformanceRadarChart(career, completionStatus) {
+        const canvas = document.getElementById('performanceRadar');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        const container = canvas.parentElement;
+        
+        // Set canvas size to match container with proper centering
+        const containerRect = container.getBoundingClientRect();
+        const size = Math.min(containerRect.width, containerRect.height) * 0.9; // 90% of container
+        
+        canvas.width = size * window.devicePixelRatio;
+        canvas.height = size * window.devicePixelRatio;
+        canvas.style.width = size + 'px';
+        canvas.style.height = size + 'px';
+        
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        
+        const width = size;
+        const height = size;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = Math.min(width, height) / 2 - 30;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        // Chart data
+        const completedCourses = Object.values(completionStatus).filter(Boolean).length;
+        const totalCourses = Object.keys(completionStatus).length;
+        const completionPercentage = totalCourses > 0 ? (completedCourses / totalCourses) * 100 : 0;
+        
+        const data = [
+          career.averageAccuracy || 0,
+          Math.min(100, (career.totalSessions || 0) * 10),
+          Math.min(100, (career.highestStreak || 0) * 5),
+          completedCourses * 16.67,
+          completionPercentage
+        ];
+        
+        const labels = ['Accuracy', 'Speed', 'Consistency', 'Difficulty', 'Completion'];
+        const angles = labels.map((_, i) => (i * 2 * Math.PI) / labels.length - Math.PI / 2);
+        
+        // Draw background
+        ctx.fillStyle = 'rgba(26, 26, 46, 0.8)';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Draw grid circles
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1;
+        
+        for (let i = 1; i <= 5; i++) {
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, (radius * i) / 5, 0, 2 * Math.PI);
+          ctx.stroke();
+        }
+        
+        // Draw grid lines
+        for (let i = 0; i < angles.length; i++) {
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.lineTo(
+            centerX + Math.cos(angles[i]) * radius,
+            centerY + Math.sin(angles[i]) * radius
+          );
+          ctx.stroke();
+        }
+        
+        // Draw data area
+        ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 2;
+        
+        ctx.beginPath();
+        for (let i = 0; i < data.length; i++) {
+          const value = data[i] / 100; // Normalize to 0-1
+          const x = centerX + Math.cos(angles[i]) * radius * value;
+          const y = centerY + Math.sin(angles[i]) * radius * value;
+          
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        // Draw data points
+        ctx.fillStyle = '#00ff88';
+        for (let i = 0; i < data.length; i++) {
+          const value = data[i] / 100;
+          const x = centerX + Math.cos(angles[i]) * radius * value;
+          const y = centerY + Math.sin(angles[i]) * radius * value;
+          
+          ctx.beginPath();
+          ctx.arc(x, y, 3, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+        
+        // Draw labels
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        
+        for (let i = 0; i < labels.length; i++) {
+          const labelRadius = radius + 20;
+          const x = centerX + Math.cos(angles[i]) * labelRadius;
+          const y = centerY + Math.sin(angles[i]) * labelRadius;
+          
+          ctx.fillText(labels[i], x, y + 4);
+        }
+        
+        // Hide fallback
+        const fallback = document.getElementById('radarChartFallback');
+        if (fallback) fallback.style.display = 'none';
+        
+        console.log('✅ Performance radar chart created');
       }
 
       // Enhanced API for external access
