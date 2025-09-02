@@ -896,6 +896,28 @@
           this.updateUserInterface();
         }
 
+        // Helper method to ensure authentication before database operations
+        async ensureAuthenticated() {
+          try {
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+              if (!firebase.auth().currentUser) {
+                console.log('No authenticated user found, signing in anonymously...');
+                await firebase.auth().signInAnonymously();
+                console.log('✅ Anonymous authentication successful');
+              } else {
+                console.log('✅ User already authenticated:', firebase.auth().currentUser.uid);
+              }
+              return true;
+            } else {
+              console.warn('⚠️ Firebase Auth not available');
+              return false;
+            }
+          } catch (error) {
+            console.error('❌ Authentication failed:', error);
+            throw new Error(`Authentication failed: ${error.message}`);
+          }
+        }
+
         // Debug function to test Firebase connectivity
         async testFirebaseConnection() {
           try {
@@ -908,6 +930,9 @@
             if (!firebase.auth) {
               throw new Error('Firebase Auth not available');
             }
+            
+            // Ensure authentication before database operations
+            await this.ensureAuthenticated();
             
             // Test Realtime Database
             if (firebase.database) {
@@ -1126,6 +1151,10 @@
             // Production Firebase login (using Realtime Database when available)
             if (typeof firebase !== 'undefined' && firebase.database) {
               console.log('Using Firebase for student login...');
+              
+              // Ensure authentication before database access
+              await this.ensureAuthenticated();
+              
               // Query student by student ID in Realtime Database
               const studentsSnapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
               
@@ -1229,6 +1258,9 @@
         async createStudentAccount(studentId) {
           try {
             console.log('Creating new student account for ID:', studentId);
+            
+            // Ensure authentication before database operations
+            await this.ensureAuthenticated();
             
             const studentData = {
               studentId,
@@ -1495,6 +1527,9 @@
         // DEV MODE: Create admin user for testing
         async createAdminUser() {
           try {
+            // Ensure authentication before database operations
+            await this.ensureAuthenticated();
+            
             const adminData = {
               fullName: 'System Administrator',
               email: 'admin@sci-high.edu',
@@ -1636,6 +1671,58 @@
           }
         }
       }
+
+      // Global debug function for testing authentication
+      window.debugAuth = async () => {
+        console.log('🔍 Debugging Authentication...');
+        
+        try {
+          // Test Firebase availability
+          console.log('Firebase available:', typeof firebase !== 'undefined');
+          if (typeof firebase !== 'undefined') {
+            console.log('Firebase Auth available:', !!firebase.auth);
+            console.log('Firebase Database available:', !!firebase.database);
+            
+            if (firebase.auth) {
+              console.log('Current user:', firebase.auth().currentUser);
+              
+              // Test authentication
+              if (!firebase.auth().currentUser) {
+                console.log('Attempting anonymous authentication...');
+                await firebase.auth().signInAnonymously();
+                console.log('✅ Authentication successful');
+              }
+              
+              // Test database access
+              if (firebase.database) {
+                console.log('Testing database read access...');
+                const testRef = firebase.database().ref('test/debug');
+                await testRef.set({ timestamp: new Date().toISOString() });
+                const snapshot = await testRef.once('value');
+                console.log('✅ Database access successful:', snapshot.val());
+              }
+            }
+          }
+          
+          console.log('🎉 Debug completed successfully!');
+        } catch (error) {
+          console.error('❌ Debug failed:', error);
+        }
+      };
+
+      // Test student login function for debugging
+      window.debugStudentLogin = async (studentId = '20-0774-140') => {
+        console.log(`🔍 Debugging student login for ID: ${studentId}`);
+        
+        try {
+          const result = await authManager.loginStudent(studentId);
+          console.log('Login result:', result);
+          return result;
+        } catch (error) {
+          console.error('❌ Student login debug failed:', error);
+          return { success: false, error: error.message };
+        }
+      };
 
       // Initialize AuthManager and ensure Firebase is ready
       const authManager = new AuthManager();
