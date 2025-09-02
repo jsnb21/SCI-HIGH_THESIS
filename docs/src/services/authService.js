@@ -258,6 +258,11 @@ class AuthService {
                 throw new Error('Invalid student ID provided');
             }
 
+            // First, authenticate anonymously with Firebase to satisfy auth requirements
+            console.log('AuthService: Authenticating anonymously with Firebase...');
+            await this.auth.signInAnonymously();
+            console.log('AuthService: Anonymous authentication successful');
+
             // Query student by student ID using Realtime Database
             console.log('AuthService: Querying Realtime Database for student...');
             const studentsRef = this.database.ref('students');
