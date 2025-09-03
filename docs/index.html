@@ -1965,14 +1965,18 @@
             if (result.isNewAccount) {
               showSuccess('Welcome! A new account has been created for you. Your progress will be saved automatically.', {
                 title: '🎉 Account Created!'
+              }).then(() => {
+                loginModal.classList.add('hidden');
+                authManager.redirectToGame();
               });
             } else {
               showSuccess('Welcome back! Your progress has been loaded.', {
                 title: '👋 Welcome Back!'
+              }).then(() => {
+                loginModal.classList.add('hidden');
+                authManager.redirectToGame();
               });
             }
-            loginModal.classList.add('hidden');
-            authManager.redirectToGame();
           } else {
             showError('Login failed: ' + result.error, { title: 'Student Login Failed' });
           }
@@ -1983,9 +1987,10 @@
           if (offlineResult.success) {
             showInfo('Welcome! You are playing in offline mode. Progress will be saved locally.', {
               title: '📱 Offline Mode'
+            }).then(() => {
+              loginModal.classList.add('hidden');
+              authManager.redirectToGame();
             });
-            loginModal.classList.add('hidden');
-            authManager.redirectToGame();
           } else {
             showError('Login failed: Unable to authenticate', { title: 'Authentication Error' });
           }
@@ -2013,9 +2018,10 @@
           if (offlineResult.success) {
             showInfo('Welcome! You are playing in offline mode. Progress will be saved locally.', {
               title: '📱 Offline Mode'
+            }).then(() => {
+              loginModal.classList.add('hidden');
+              authManager.redirectToGame();
             });
-            loginModal.classList.add('hidden');
-            authManager.redirectToGame();
           } else {
             showError('Login failed: Unable to authenticate', { title: 'Authentication Error' });
           }
@@ -2035,11 +2041,12 @@
         });
         
         if (result.success) {
-          showSuccess('Account created successfully!', { title: '🎉 Registration Complete' });
-          e.target.reset();
-          // Auto-login after successful registration
-          loginModal.classList.add('hidden');
-          authManager.redirectToGame();
+          showSuccess('Account created successfully!', { title: '🎉 Registration Complete' }).then(() => {
+            e.target.reset();
+            // Auto-login after successful registration
+            loginModal.classList.add('hidden');
+            authManager.redirectToGame();
+          });
         } else {
           showError('Registration failed: ' + result.error, { title: 'Registration Failed' });
         }
