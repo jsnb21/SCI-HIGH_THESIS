@@ -16,6 +16,7 @@
       window.ensureNotifications = function() {
         if (typeof window.modernConfirm === 'undefined') {
           console.warn('Notification system not loaded, using fallback');
+          window.modernConfirm = function(message, options = {}) {
             return Promise.resolve(confirm(message));
           };
           window.modernAlert = function(message, options = {}) {
