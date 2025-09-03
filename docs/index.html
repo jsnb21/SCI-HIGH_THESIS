@@ -862,16 +862,29 @@
     </footer>
     
     <script>
+      // Global variables for modal management
+      let globalLoginModal = null;
+      let globalScreenshotsModal = null;
+
       // Global Modal Functions (defined early for immediate onclick access)
       function showLoginModal() {
         console.log('showLoginModal called');
-        const loginModal = document.getElementById('login-modal');
+        // Use global variable or find element
+        const loginModal = globalLoginModal || document.getElementById('login-modal');
         console.log('Login modal element:', loginModal);
         if (loginModal) {
           loginModal.classList.remove('hidden');
           showUserTypeSelection();
         } else {
           console.error('Login modal not found');
+          // Retry after a short delay in case DOM isn't ready
+          setTimeout(() => {
+            const retryModal = document.getElementById('login-modal');
+            if (retryModal) {
+              retryModal.classList.remove('hidden');
+              showUserTypeSelection();
+            }
+          }, 100);
         }
       }
 
@@ -890,6 +903,28 @@
       // Make functions globally accessible for onclick handlers
       window.showLoginModal = showLoginModal;
       window.showUserTypeSelection = showUserTypeSelection;
+
+      // Fallback function for modal access - for GitHub Pages compatibility
+      window.ensureModalAccess = function() {
+        if (!globalLoginModal) {
+          globalLoginModal = document.getElementById('login-modal');
+        }
+        if (!globalScreenshotsModal) {
+          globalScreenshotsModal = document.getElementById('screenshots-modal');
+        }
+        return {
+          loginModal: globalLoginModal,
+          screenshotsModal: globalScreenshotsModal
+        };
+      };
+
+      // Additional safety check for GitHub Pages
+      if (typeof window !== 'undefined') {
+        window.addEventListener('load', function() {
+          console.log('Window loaded, ensuring modal access...');
+          window.ensureModalAccess();
+        });
+      }
 
       // Particle System for Background Effect
       function createParticles() {
@@ -1816,10 +1851,14 @@
       document.addEventListener('DOMContentLoaded', function() {
         console.log('DOMContentLoaded fired');
         
+        // Initialize global modal variables
+        globalLoginModal = document.getElementById('login-modal');
+        globalScreenshotsModal = document.getElementById('screenshots-modal');
+        
         // Check for critical elements
         const criticalElements = {
-          'login-modal': document.getElementById('login-modal'),
-          'screenshots-modal': document.getElementById('screenshots-modal'),
+          'login-modal': globalLoginModal,
+          'screenshots-modal': globalScreenshotsModal,
           'start-game-btn': document.getElementById('start-game-btn'),
           'professor-login-form': document.getElementById('professor-login-form'),
           'student-login-form': document.getElementById('student-login-form'),
@@ -1833,10 +1872,10 @@
           console.log(`${id}:`, element ? '✅ Found' : '❌ Missing');
         });
         
-        // Modal Management
-        const loginModal = document.getElementById('login-modal');
-      const screenshotsModal = document.getElementById('screenshots-modal');
-      const startGameBtn = document.getElementById('start-game-btn');
+        // Modal Management - Use global variables
+        const loginModal = globalLoginModal;
+        const screenshotsModal = globalScreenshotsModal;
+        const startGameBtn = document.getElementById('start-game-btn');
 
         console.log('Elements found:', {
           loginModal: !!loginModal,
@@ -2006,15 +2045,26 @@
         }
       });
 
-      // Close Modal Functions
-      document.getElementById('close-login-modal').addEventListener('click', () => {
-        loginModal.classList.add('hidden');
-      });
+      // Close Modal Functions with error handling
+      const closeLoginModalBtn = document.getElementById('close-login-modal');
+      if (closeLoginModalBtn) {
+        closeLoginModalBtn.addEventListener('click', () => {
+          if (loginModal) {
+            loginModal.classList.add('hidden');
+          }
+        });
+      } else {
+        console.warn('Close login modal button not found');
+      }
 
       // Close modal on outside click
-      loginModal.addEventListener('click', (e) => {
-        if (e.target === loginModal) loginModal.classList.add('hidden');
-      });
+      if (loginModal) {
+        loginModal.addEventListener('click', (e) => {
+          if (e.target === loginModal) loginModal.classList.add('hidden');
+        });
+      } else {
+        console.warn('Login modal not found for outside click handler');
+      }
 
       // Gaming Modal and Carousel System
       const screenshots = [
@@ -2077,28 +2127,44 @@
         });
       }
       
-      closeModalBtn.addEventListener('click', () => {
-        screenshotsModal.classList.add('hidden');
-      });
+      // Screenshots modal close handlers with error handling  
+      if (closeModalBtn && screenshotsModal) {
+        closeModalBtn.addEventListener('click', () => {
+          screenshotsModal.classList.add('hidden');
+        });
+      } else {
+        console.warn('Screenshots modal or close button not found:', {
+          closeBtn: !!closeModalBtn,
+          modal: !!screenshotsModal
+        });
+      }
       
-      prevBtn.addEventListener('click', () => {
-        let prev = (current - 1 + screenshots.length) % screenshots.length;
-        showScreenshot(prev);
-      });
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+          let prev = (current - 1 + screenshots.length) % screenshots.length;
+          showScreenshot(prev);
+        });
+      }
       
-      nextBtn.addEventListener('click', () => {
-        let next = (current + 1) % screenshots.length;
-        showScreenshot(next);
-      });
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          let next = (current + 1) % screenshots.length;
+          showScreenshot(next);
+        });
+      }
       
       dots.forEach((dot, i) => {
         dot.addEventListener('click', () => showScreenshot(i));
       });
       
-      // Close modal on outside click
-      screenshotsModal.addEventListener('click', (e) => {
-        if (e.target === screenshotsModal) screenshotsModal.classList.add('hidden');
-      });
+      // Close modal on outside click with error handling
+      if (screenshotsModal) {
+        screenshotsModal.addEventListener('click', (e) => {
+          if (e.target === screenshotsModal) screenshotsModal.classList.add('hidden');
+        });
+      } else {
+        console.warn('Screenshots modal not found for outside click handler');
+      }
 
       // Smooth scrolling for navigation
       document.querySelectorAll('a[href^="#"]').forEach(anchor => {
