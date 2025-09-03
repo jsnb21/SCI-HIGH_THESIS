@@ -9,6 +9,42 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts for Gaming Feel -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Modern Notification System -->
+    <script src="js/notifications.js"></script>
+    <script>
+      // Fallback functions in case notifications.js hasn't loaded yet
+      window.ensureNotifications = function() {
+        if (typeof window.modernConfirm === 'undefined') {
+          console.warn('Notification system not loaded, using fallback');
+          window.modernConfirm = function(message, options = {}) {
+            return Promise.resolve(confirm(message));
+          };
+          window.modernAlert = function(message, options = {}) {
+            alert(message);
+            return Promise.resolve(true);
+          };
+          window.showSuccess = function(message, options = {}) {
+            alert('✅ ' + message);
+            return Promise.resolve(true);
+          };
+          window.showError = function(message, options = {}) {
+            alert('❌ ' + message);
+            return Promise.resolve(true);
+          };
+          window.showWarning = function(message, options = {}) {
+            alert('⚠️ ' + message);
+            return Promise.resolve(true);
+          };
+          window.showInfo = function(message, options = {}) {
+            alert('ℹ️ ' + message);
+            return Promise.resolve(true);
+          };
+        }
+      };
+      
+      // Ensure notifications are available immediately
+      window.ensureNotifications();
+    </script>
     <script>
       tailwind.config = {
         theme: {
@@ -1805,10 +1841,12 @@
         const department = 'College of Computer Studies';
         
         updateBestScore(userId, name, score, department).then(result => {
-          alert(`Test Result: ${result.isNewBest ? 'New Best Score!' : 'Score not better than existing'}\nScore: ${score}`);
+          showInfo(`Test Result: ${result.isNewBest ? 'New Best Score!' : 'Score not better than existing'}\nScore: ${score}`, {
+            title: 'Test Result'
+          });
           fetchLeaderboard('overall'); // Refresh the display
         }).catch(error => {
-          alert('Error: ' + error.message);
+          showError('Error: ' + error.message, { title: 'Test Error' });
         });
       }
 
@@ -1868,12 +1906,14 @@
         db.ref('leaderboards/' + userId).set(scoreData)
           .then(() => {
             console.log('Game integration successful:', scoreData);
-            alert(`Game Integration Test: Advanced player created!\nScore: ${gameData.score}\nClick the player name to view detailed profile with charts.`);
+            showSuccess(`Game Integration Test: Advanced player created!\nScore: ${gameData.score}\nClick the player name to view detailed profile with charts.`, {
+              title: '🎮 Game Integration Test'
+            });
             fetchLeaderboard('overall');
           })
           .catch(error => {
             console.error('Game integration error:', error);
-            alert('Integration Error: ' + error.message);
+            showError('Integration Error: ' + error.message, { title: 'Integration Error' });
           });
       }
 
@@ -1885,7 +1925,9 @@
           
           if (!studentsSnapshot.exists()) {
             console.error('Student not found:', studentId);
-            alert(`Student ${studentId} not found in the database. Please create the student first using developer tools.`);
+            showWarning(`Student ${studentId} not found in the database. Please create the student first using developer tools.`, {
+              title: 'Student Not Found'
+            });
             return;
           }
           
@@ -1893,11 +1935,13 @@
           
           await addScore(studentId, studentData.name, score, 'Test Department');
           console.log(`Score ${score} submitted for student ${studentId}`);
-          alert(`Score submitted successfully for ${studentData.name}!`);
+          showSuccess(`Score submitted successfully for ${studentData.name}!`, {
+            title: 'Score Submitted'
+          });
           fetchLeaderboard('overall');
         } catch (error) {
           console.error('Error testing student score:', error);
-          alert('Error: ' + error.message);
+          showError('Error: ' + error.message, { title: 'Submission Error' });
         }
       }
 

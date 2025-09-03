@@ -9,6 +9,41 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts for Gaming Feel -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Modern Notification System -->
+    <script src="js/notifications.js"></script>
+    <script>
+      // Fallback functions in case notifications.js hasn't loaded yet
+      window.ensureNotifications = function() {
+        if (typeof window.modernConfirm === 'undefined') {
+          console.warn('Notification system not loaded, using fallback');
+            return Promise.resolve(confirm(message));
+          };
+          window.modernAlert = function(message, options = {}) {
+            alert(message);
+            return Promise.resolve(true);
+          };
+          window.showSuccess = function(message, options = {}) {
+            alert('✅ ' + message);
+            return Promise.resolve(true);
+          };
+          window.showError = function(message, options = {}) {
+            alert('❌ ' + message);
+            return Promise.resolve(true);
+          };
+          window.showWarning = function(message, options = {}) {
+            alert('⚠️ ' + message);
+            return Promise.resolve(true);
+          };
+          window.showInfo = function(message, options = {}) {
+            alert('ℹ️ ' + message);
+            return Promise.resolve(true);
+          };
+        }
+      };
+      
+      // Ensure notifications are available immediately
+      window.ensureNotifications();
+    </script>
     <script>
       tailwind.config = {
         theme: {
@@ -1438,26 +1473,32 @@
 
         logout() {
           // Show confirmation dialog
-          const confirmLogout = confirm('Are you sure you want to logout?');
-          if (!confirmLogout) {
-            return; // User cancelled logout
-          }
+          modernConfirm('Are you sure you want to logout?', {
+            title: 'Confirm Logout',
+            type: 'warning',
+            confirmText: 'Yes, Logout',
+            cancelText: 'Cancel'
+          }).then((confirmed) => {
+            if (!confirmed) {
+              return; // User cancelled logout
+            }
 
-          if (this.userType !== 'guest') {
-            firebase.auth().signOut();
-          }
-          
-          this.currentUser = null;
-          this.userType = null;
-          localStorage.removeItem('sci_high_user');
-          
-          // Update professor tab visibility (hide it)
-          this.updateProfessorTabVisibility();
-          // Update user interface (hide greeting and logout button)
-          this.updateUserInterface();
-          
-          // Show success message
-          alert('You have been logged out successfully!');
+            if (this.userType !== 'guest') {
+              firebase.auth().signOut();
+            }
+            
+            this.currentUser = null;
+            this.userType = null;
+            localStorage.removeItem('sci_high_user');
+            
+            // Update professor tab visibility (hide it)
+            this.updateProfessorTabVisibility();
+            // Update user interface (hide greeting and logout button)
+            this.updateUserInterface();
+            
+            // Show success message
+            showSuccess('You have been logged out successfully!');
+          });
         }
 
         isAuthenticated() {
@@ -1857,7 +1898,7 @@
           // Redirect to professor dashboard
           window.location.href = 'professor-dashboard.html';
         } else {
-          alert('Login failed: ' + result.error);
+          showError('Login failed: ' + result.error, { title: 'Professor Login Failed' });
         }
       });
 
@@ -1869,7 +1910,9 @@
         // Validate student ID format (XX-XXXX-XXX)
         const studentIdPattern = /^[0-9]{2}-[0-9]{4}-[0-9]{3}$/;
         if (!studentIdPattern.test(studentId)) {
-          alert('❌ Invalid Student ID format!\n\nPlease use the format: XX-XXXX-XXX\nExample: 24-2024-001\n\n• XX = 2-digit year/batch\n• XXXX = 4-digit year\n• XXX = 3-digit sequence number');
+          showError('Invalid Student ID format!\n\nPlease use the format: XX-XXXX-XXX\nExample: 24-2024-001\n\n• XX = 2-digit year/batch\n• XXXX = 4-digit year\n• XXX = 3-digit sequence number', {
+            title: 'Invalid Student ID Format'
+          });
           return;
         }
         
@@ -1880,25 +1923,31 @@
           
           if (result.success) {
             if (result.isNewAccount) {
-              alert('🎉 Welcome! A new account has been created for you. Your progress will be saved automatically.');
+              showSuccess('Welcome! A new account has been created for you. Your progress will be saved automatically.', {
+                title: '🎉 Account Created!'
+              });
             } else {
-              alert('👋 Welcome back! Your progress has been loaded.');
+              showSuccess('Welcome back! Your progress has been loaded.', {
+                title: '👋 Welcome Back!'
+              });
             }
             loginModal.classList.add('hidden');
             authManager.redirectToGame();
           } else {
-            alert('❌ Login failed: ' + result.error);
+            showError('Login failed: ' + result.error, { title: 'Student Login Failed' });
           }
         } catch (error) {
           console.warn('Firebase login failed, trying offline mode:', error);
           // Fallback to offline mode
           const offlineResult = authManager.loginStudentOffline(formData.get('studentId'));
           if (offlineResult.success) {
-            alert('Welcome! You are playing in offline mode. Progress will be saved locally.');
+            showInfo('Welcome! You are playing in offline mode. Progress will be saved locally.', {
+              title: '📱 Offline Mode'
+            });
             loginModal.classList.add('hidden');
             authManager.redirectToGame();
           } else {
-            alert('Login failed: Unable to authenticate');
+            showError('Login failed: Unable to authenticate', { title: 'Authentication Error' });
           }
         }
       });
@@ -1915,18 +1964,20 @@
             loginModal.classList.add('hidden');
             authManager.redirectToGame();
           } else {
-            alert('Login failed: ' + result.error);
+            showError('Login failed: ' + result.error, { title: 'General Login Failed' });
           }
         } catch (error) {
           console.warn('Firebase login failed, trying offline mode:', error);
           // Fallback to offline mode
           const offlineResult = authManager.loginGeneralOffline(formData.get('email'));
           if (offlineResult.success) {
-            alert('Welcome! You are playing in offline mode. Progress will be saved locally.');
+            showInfo('Welcome! You are playing in offline mode. Progress will be saved locally.', {
+              title: '📱 Offline Mode'
+            });
             loginModal.classList.add('hidden');
             authManager.redirectToGame();
           } else {
-            alert('Login failed: Unable to authenticate');
+            showError('Login failed: Unable to authenticate', { title: 'Authentication Error' });
           }
         }
       });
@@ -1944,13 +1995,13 @@
         });
         
         if (result.success) {
-          alert('Account created successfully!');
+          showSuccess('Account created successfully!', { title: '🎉 Registration Complete' });
           e.target.reset();
           // Auto-login after successful registration
           loginModal.classList.add('hidden');
           authManager.redirectToGame();
         } else {
-          alert('Registration failed: ' + result.error);
+          showError('Registration failed: ' + result.error, { title: 'Registration Failed' });
         }
       });
 
@@ -2121,7 +2172,10 @@
           const devPanel = document.getElementById('dev-panel');
           devPanel.classList.toggle('hidden');
           if (!devPanel.classList.contains('hidden')) {
-            alert('🔧 DEV MODE ACTIVATED!\nUse the panel or console commands to create test accounts.');
+            showInfo('DEV MODE ACTIVATED!\nUse the panel or console commands to create test accounts.', {
+              title: '🔧 Developer Mode',
+              type: 'info'
+            });
           }
           devCode = [];
         }
@@ -2132,24 +2186,32 @@
       window.createAdminUser = async () => {
         const admin = await authManager.createAdminUser();
         console.log('Admin user created:', admin);
-        alert('🔧 Admin user created! Professor tab should now be visible.');
+        showSuccess('Admin user created! Professor tab should now be visible.', {
+          title: '🔧 Admin Created'
+        });
         return admin;
       };
 
       // Create professor user with Firebase integration
       window.createProfessorUser = async (email, password, fullName, institution) => {
         if (!email || !password || !fullName) {
-          alert('Usage: createProfessorUser("email@domain.com", "password", "Full Name", "Institution (optional)")');
+          showWarning('Usage: createProfessorUser("email@domain.com", "password", "Full Name", "Institution (optional)")', {
+            title: 'Missing Parameters'
+          });
           return;
         }
         
         const result = await authManager.createProfessorUser(email, password, fullName, institution);
         if (result.success) {
           console.log('Professor user created successfully:', result);
-          alert(`✅ Professor user created!\nEmail: ${email}\nUID: ${result.uid}\nThe professor can now login with their email and password.`);
+          showSuccess(`Professor user created!\nEmail: ${email}\nUID: ${result.uid}\nThe professor can now login with their email and password.`, {
+            title: '✅ Professor Created'
+          });
         } else {
           console.error('Failed to create professor user:', result.error);
-          alert(`❌ Failed to create professor user: ${result.error}`);
+          showError(`Failed to create professor user: ${result.error}`, {
+            title: '❌ Creation Failed'
+          });
         }
         return result;
       };
@@ -2159,10 +2221,14 @@
         const result = await authManager.testFirebaseConnection();
         if (result.success) {
           console.log('✅ Firebase connection test passed');
-          alert('✅ Firebase connection test passed! Check console for details.');
+          showSuccess('Firebase connection test passed! Check console for details.', {
+            title: '✅ Connection Test Passed'
+          });
         } else {
           console.error('❌ Firebase connection test failed:', result.error);
-          alert(`❌ Firebase connection test failed: ${result.error}`);
+          showError(`Firebase connection test failed: ${result.error}`, {
+            title: '❌ Connection Test Failed'
+          });
         }
         return result;
       };
@@ -2186,7 +2252,9 @@
         authManager.updateUserInterface();
         
         console.log('Sample professor created:', professor);
-        alert('👨‍🏫 Sample professor created!\nEmail: professor@sci-high.edu\nPassword: Prof123!');
+        showSuccess('Sample professor created!\nEmail: professor@sci-high.edu\nPassword: Prof123!', {
+          title: '👨‍🏫 Sample Professor Created'
+        });
         return professor;
       };
 
@@ -2226,7 +2294,9 @@
         authManager.updateUserInterface();
         
         console.log('Sample student created:', student);
-        alert('🎓 Sample student created!\nStudent ID: 24-2024-001\nNo password needed!\n\nOther test accounts:\n- 24-2024-002 (Maria Santos)\n- 24-2024-003 (Pedro Garcia)');
+        showSuccess('Sample student created!\nStudent ID: 24-2024-001\nNo password needed!\n\nOther test accounts:\n- 24-2024-002 (Maria Santos)\n- 24-2024-003 (Pedro Garcia)', {
+          title: '🎓 Sample Student Created'
+        });
         return student;
       };
 
@@ -2256,7 +2326,9 @@
         authManager.updateUserInterface();
         
         console.log('Sample general user created:', generalUser);
-        alert('🌟 Sample general user created!\nEmail: maria@example.com\nPassword: General123!');
+        showSuccess('Sample general user created!\nEmail: maria@example.com\nPassword: General123!', {
+          title: '🌟 General User Created'
+        });
         return generalUser;
       };
 
@@ -2502,7 +2574,9 @@ createRealFirebaseStudent("2024-YOUR-001")  // Create real Firebase student
 
 For advanced tools: openDeveloperTools()
         `);
-        alert('📋 Dev commands shown in console! Press F12 to see all available commands.');
+        showInfo('Dev commands shown in console! Press F12 to see all available commands.', {
+          title: '📋 Developer Commands'
+        });
       };
 
       // Developer page access
@@ -2511,7 +2585,9 @@ For advanced tools: openDeveloperTools()
         if (isAuthorized === 'sci-high-dev-2025') {
           window.open('developer.html', '_blank');
         } else {
-          alert('❌ Invalid access key. Developer tools access denied.');
+          showError('Invalid access key. Developer tools access denied.', {
+            title: '❌ Access Denied'
+          });
         }
       };
 
