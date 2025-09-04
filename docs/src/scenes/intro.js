@@ -15,6 +15,7 @@ export default class VNScene extends Phaser.Scene {
     
     // Images
     this.load.image('vnBg', 'assets/img/bg/classroom_day.png');
+    this.load.image('SCI-HIGH_SCHOOL', 'assets/img/bg/SCI-HIGH_SCHOOL.png'); // Correct path
     this.load.image('Richard', 'assets/sprites/npcs/principal.png');
     
     // Load character tutor images
@@ -30,6 +31,135 @@ export default class VNScene extends Phaser.Scene {
   }
 
   create() {
+    const { width, height } = this.scale;
+    
+    // Start with the opening sequence
+    this.startOpeningSequence();
+  }
+
+  startOpeningSequence() {
+    const { width, height } = this.scale;
+    
+    // Create black background
+    const blackBg = this.add.rectangle(width / 2, height / 2, width, height, 0x000000);
+    blackBg.setDepth(0);
+    
+    // Add SCI-HIGH school image (initially invisible)
+    const schoolImage = this.add.image(width / 2, height / 2, 'SCI-HIGH_SCHOOL');
+    schoolImage.setDisplaySize(width, height);
+    schoolImage.setAlpha(0);
+    schoolImage.setDepth(1);
+    
+    // Create additional dark overlay for the school image to make it darker
+    const schoolDarkOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.4);
+    schoolDarkOverlay.setAlpha(0);
+    schoolDarkOverlay.setDepth(1.5);
+    
+    // Create dim overlay (initially invisible) - increased opacity for darker effect
+    const dimOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7);
+    dimOverlay.setAlpha(0);
+    dimOverlay.setDepth(2);
+    
+    // Create text elements (initially invisible)
+    const textStyle = {
+      fontSize: `${Math.min(width, height) * 0.04}px`,
+      color: '#FFFFFF',
+      fontFamily: 'Helvetica',
+      fontStyle: 'bold',
+      align: 'center',
+      stroke: '#000000',
+      strokeThickness: 5
+    };
+    
+    const line1 = this.add.text(width / 2, height * 0.3, 'SCI-HIGH is where I will reach my dreams one step closer...', textStyle);
+    line1.setOrigin(0.5).setAlpha(0).setDepth(3);
+    
+    const line2 = this.add.text(width / 2, height * 0.45, 'To become a smarter and better programmer...', textStyle);
+    line2.setOrigin(0.5).setAlpha(0).setDepth(3);
+    
+    const line3 = this.add.text(width / 2, height * 0.6, 'In this place where I must aim high to soar high!', textStyle);
+    line3.setOrigin(0.5).setAlpha(0).setDepth(3);
+    
+    // Animation sequence using regular tweens and delayed calls - improved pacing
+    // 1. Fade in school image with dark overlay (faster)
+    this.tweens.add({
+      targets: schoolImage,
+      alpha: 1,
+      duration: 800,
+      ease: 'Power2'
+    });
+    
+    // Fade in the school dark overlay at the same time to make it darker
+    this.tweens.add({
+      targets: schoolDarkOverlay,
+      alpha: 1,
+      duration: 800,
+      ease: 'Power2'
+    });
+    
+    // 2. Wait for 2 seconds, then dim the image even more (reduced from 4s to 2.5s)
+    this.time.delayedCall(2500, () => {
+      this.tweens.add({
+        targets: dimOverlay,
+        alpha: 1,
+        duration: 800,
+        ease: 'Power2'
+      });
+    });
+    
+    // 3. Fade in text lines one by one (faster overlapping timing)
+    this.time.delayedCall(3500, () => {
+      this.tweens.add({
+        targets: line1,
+        alpha: 1,
+        duration: 1000,
+        ease: 'Power2'
+      });
+    });
+    
+    this.time.delayedCall(4800, () => {
+      this.tweens.add({
+        targets: line2,
+        alpha: 1,
+        duration: 1000,
+        ease: 'Power2'
+      });
+    });
+    
+    this.time.delayedCall(6100, () => {
+      this.tweens.add({
+        targets: line3,
+        alpha: 1,
+        duration: 1000,
+        ease: 'Power2'
+      });
+    });
+    
+    // 4. Fade out everything and start normal intro (much faster - reduced from 13.5s to 8.5s)
+    this.time.delayedCall(8500, () => {
+      this.tweens.add({
+        targets: [schoolImage, schoolDarkOverlay, dimOverlay, line1, line2, line3, blackBg],
+        alpha: 0,
+        duration: 1500,
+        ease: 'Power2',
+        onComplete: () => {
+          // Clean up opening sequence elements
+          schoolImage.destroy();
+          schoolDarkOverlay.destroy();
+          dimOverlay.destroy();
+          line1.destroy();
+          line2.destroy();
+          line3.destroy();
+          blackBg.destroy();
+          
+          // Start normal intro
+          this.startNormalIntro();
+        }
+      });
+    });
+  }
+
+  startNormalIntro() {
     // Add and scale the background image to fit the screen
     const { width, height } = this.scale;
     const bg = this.add.image(width / 2, height / 2, 'vnBg').setDisplaySize(width, height);
@@ -104,13 +234,23 @@ export default class VNScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
     
-    // Calculate center position, accounting for dialogue box at bottom
-    // Position character in the center-upper area to avoid dialogue box overlap
-    const characterY = height * 0.45; // Position at 45% of screen height from top
-    
-    // Responsive scaling for mobile devices
-    const isMobile = width < 768 || height < 600;
-    const characterScale = isMobile ? 0.175 : 0.56; // 50% smaller for mobile devices
+    // Apply special positioning for principal Richard
+    let characterY, characterScale;
+    if (characterKey === 'Richard') {
+      // Position principal so half of his body is covered by the dialogue box
+      characterY = height * 0.7; // Lower position so dialogue box covers upper half
+      
+      // Responsive scaling for mobile devices - increased size for principal
+      const isMobile = width < 768 || height < 600;
+      characterScale = isMobile ? 0.35 : 0.8; // Larger scale for more presence
+    } else {
+      // Default positioning for other characters
+      characterY = height * 0.45; // Position at 45% of screen height from top
+      
+      // Responsive scaling for mobile devices
+      const isMobile = width < 768 || height < 600;
+      characterScale = isMobile ? 0.175 : 0.56; // 50% smaller for mobile devices
+    }
     
     // Add new character
     this.characterDisplay = this.add.image(width / 2, characterY, characterKey);

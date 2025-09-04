@@ -24,7 +24,7 @@ export default class Classroom extends Phaser.Scene {
         this.load.image('classroomBG', 'assets/img/bg/classroom_day.png');
         
         // Load Principal Richard image for intro dialogue
-        this.load.image('Richard', 'assets/sprites/npcs/principal.png');
+        this.load.image('Secretary', 'assets/sprites/npcs/secretary.png');
         
         // Load character images from public/assets/sprites/npcs with their respective names
         this.load.image('Noah', 'assets/sprites/npcs/Noah.png');
@@ -179,20 +179,17 @@ export default class Classroom extends Phaser.Scene {
         // Check for classroom intro cutscene
         if (!onceOnlyFlags.hasSeen('classroom_intro')) {
             // Show Principal Richard and intro dialogue first
-            this.showPrincipalRichard();
+            this.showSecretary();
             
             this.vnBox = new VNDialogueBox(this, [
-                "Here I am in the classroom!",
-                "Now I should meet my classmates as Principal Richard suggested.",
                 "Welcome to the classroom! I see you followed my advice.",
-                "These are your classmates - they are all experts in different programming languages.",
-                "Each of them can teach you the basics of their specialty before you tackle the challenges in the computer lab.",
-                "Noah specializes in Python, Lily knows web design, Damian is great with Java, Bella handles C programming, and Finley is our C++ expert.",
-                "Make sure to talk to them and learn from their experience. They'll help you prepare for the coding challenges ahead!",
-                "Thanks, Principal Richard! I'll make sure to meet everyone and learn from them."
+                "These are your classmates, they are all profecient in different programming languages.",
+                "Each of them can teach you the basics of their specialty before you tackle the challenges in the Computer Lab.",
+                "Noah specializes in Python, Lily knows Web Design, Damian is great with Java, Bella handles C programming, and Finley is our C++ prodigy.",
+                "Make sure to talk to them and learn from their experience. They'll help you prepare for the coding challenges ahead!"
             ], () => {
                 // Hide Principal Richard and create carousel
-                this.hidePrincipalRichard();
+                this.hideSecretary();
                 onceOnlyFlags.setSeen('classroom_intro');
                 this.createClassroomCarousel(charKeys, charInfo, carouselConfig);
             });
@@ -564,46 +561,46 @@ export default class Classroom extends Phaser.Scene {
         });
     }
 
-    showPrincipalRichard() {
+    showSecretary() {
         const scaleInfo = getScaleInfo(this);
         const { width, height } = scaleInfo;
         
-        // Position character on the left side of the screen
+        // Position character so half of his body is covered by the dialogue box
         const characterX = width * 0.25; // 25% from left edge
-        const characterY = height * 0.45; // 45% from top to avoid dialogue box
+        const characterY = height * 0.7; // Lower position so dialogue box covers upper half
         
-        // Responsive scaling for mobile devices
+        // Responsive scaling for mobile devices - increased size
         const isMobile = width < 768 || height < 600;
-        const characterScale = isMobile ? 0.175 : 0.4; // Smaller scale for better positioning
+        const characterScale = isMobile ? 0.35 : 0.8; // Larger scale for more presence
         
-        // Add Principal Richard character image
-        this.principalDisplay = this.add.image(characterX, characterY, 'Richard');
-        this.principalDisplay.setOrigin(0.5, 0.5);
-        this.principalDisplay.setScale(characterScale);
-        this.principalDisplay.setDepth(5); // Behind dialogue box but above background
+        // Add Secretary character image
+        this.secretaryDisplay = this.add.image(characterX, characterY, 'Secretary');
+        this.secretaryDisplay.setOrigin(0.5, 0.5);
+        this.secretaryDisplay.setScale(characterScale);
+        this.secretaryDisplay.setDepth(5); // Behind dialogue box but above background
         
         // Add a subtle fade-in effect
-        this.principalDisplay.setAlpha(0);
+        this.secretaryDisplay.setAlpha(0);
         this.tweens.add({
-            targets: this.principalDisplay,
+            targets: this.secretaryDisplay,
             alpha: 1,
             duration: 300,
             ease: 'Power2'
         });
     }
 
-    hidePrincipalRichard() {
-        if (this.principalDisplay) {
+    hideSecretary() {
+        if (this.secretaryDisplay) {
             // Fade out and destroy
             this.tweens.add({
-                targets: this.principalDisplay,
+                targets: this.secretaryDisplay,
                 alpha: 0,
                 duration: 300,
                 ease: 'Power2',
                 onComplete: () => {
-                    if (this.principalDisplay) {
-                        this.principalDisplay.destroy();
-                        this.principalDisplay = null;
+                    if (this.secretaryDisplay) {
+                        this.secretaryDisplay.destroy();
+                        this.secretaryDisplay = null;
                     }
                 }
             });

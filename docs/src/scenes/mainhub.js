@@ -34,8 +34,8 @@ export default class MainHub extends Phaser.Scene {
         this.load.image('icon3', 'assets/img/mainhub/PUZZLE.png');
         // this.load.image('icon5', 'assets/img/mainhub/canteenIcon.png');
 
-        // Load Principal Richard image for dialogue
-        this.load.image('Richard', 'assets/sprites/npcs/principal.png');
+        // Load Secretary image for dialogue
+        this.load.image('Secretary', 'assets/sprites/npcs/secretary.png');
 
         this.load.audio('se_select', 'assets/sounds/se_select.wav');
         this.load.audio('se_confirm', 'assets/sounds/se_confirm.wav');
@@ -120,6 +120,10 @@ export default class MainHub extends Phaser.Scene {
             fontStyle: 'bold'
         }).setOrigin(0.5).setDepth(101);
 
+        // Store references to UI elements that should be hidden during cutscene
+        this.leaderboardBtn = leaderboardBtn;
+        this.leaderboardText = leaderboardText;
+
         // Hover effects
         leaderboardBtn.on('pointerover', () => {
             leaderboardBtn.setFillStyle(0x2980B9);
@@ -148,6 +152,12 @@ export default class MainHub extends Phaser.Scene {
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
 
+        // Create back button using the reusable component before cutscene logic
+        const backButtonComponents = createBackButton(this, 'MainMenu');
+        this.backButtonBg = backButtonComponents.buttonBg;
+        this.backButton = backButtonComponents.backButton;
+        this.uiElements.push(backButtonComponents.buttonBg, backButtonComponents.backButton);
+
         const iconKeys = ['icon1', 'icon2', 'icon3'];
         const iconInfo = [
             { heading: "Classroom", desc: "Meet your classmates!" },
@@ -157,22 +167,24 @@ export default class MainHub extends Phaser.Scene {
         ];
 
         if (!onceOnlyFlags.hasSeen('mainhub_intro')) {
-            // Show Principal Richard character image
-            this.showPrincipalRichard();
+            // Hide UI elements during cutscene
+            this.hideUIElementsForCutscene();
+            
+            // Show Secretary character image
+            this.showSecretary();
             
             this.vnBox = new VNDialogueBox(this, [
-                "Hmm...",
-                "This is the main hub of SCI HIGH. Where should I go first?",
-                "Welcome to SCI HIGH!",
-                "I see you're new here. Let me give you some guidance.",
+                "Welcome! You must be the new student.",
+                "I am the Principal's Secretary. I am happy to guide you on your first day.",
                 "I'd recommend starting with the classroom to meet your classmates first.",
                 "Building connections with your peers is just as important as learning!",
-                "After that, feel free to explore the library for research and the computer lab for hands-on coding practice.",
-                "Thanks, Principal Richard! I'll head to the classroom first to meet everyone."
+                "After that, feel free to explore the library for research and the computer lab for hands-on coding practice."
             ], () => {
-                // Hide Principal Richard when dialogue ends
-                this.hidePrincipalRichard();
+                // Hide Secretary when dialogue ends
+                this.hideSecretary();
                 onceOnlyFlags.setSeen('mainhub_intro');
+                // Show UI elements after cutscene
+                this.showUIElementsAfterCutscene();
                 this.createCarousel(iconKeys, iconInfo);
                 
                 // Start tutorial after carousel is created (if first time visiting hub)
@@ -193,10 +205,6 @@ export default class MainHub extends Phaser.Scene {
                 });
             }
         }
-
-        // Create back button using the reusable component
-        const backButtonComponents = createBackButton(this, 'MainMenu');
-        this.uiElements.push(backButtonComponents.buttonBg, backButtonComponents.backButton);
 
         // Initialize tutorial manager
         this.tutorialManager = new TutorialManager(this);
@@ -381,50 +389,96 @@ export default class MainHub extends Phaser.Scene {
         }
     }
 
-    showPrincipalRichard() {
+    showSecretary() {
         const { width, height } = this.scale;
         
-        // Position character on the left side of the screen
+        // Position character so half of her body is covered by the dialogue box
         const characterX = width * 0.25; // 25% from left edge
-        const characterY = height * 0.45; // 45% from top to avoid dialogue box
+        const characterY = height * 0.7; // Lower position so dialogue box covers upper half
         
-        // Responsive scaling for mobile devices
+        // Responsive scaling for mobile devices - increased size
         const isMobile = width < 768 || height < 600;
-        const characterScale = isMobile ? 0.175 : 0.4; // Smaller scale for better positioning
+        const characterScale = isMobile ? 0.35 : 0.8; // Larger scale for more presence
         
-        // Add Principal Richard character image
-        this.principalDisplay = this.add.image(characterX, characterY, 'Richard');
-        this.principalDisplay.setOrigin(0.5, 0.5);
-        this.principalDisplay.setScale(characterScale);
-        this.principalDisplay.setDepth(5); // Behind dialogue box but above background
+        // Add Secretary character image
+        this.secretaryDisplay = this.add.image(characterX, characterY, 'Secretary');
+        this.secretaryDisplay.setOrigin(0.5, 0.5);
+        this.secretaryDisplay.setScale(characterScale);
+        this.secretaryDisplay.setDepth(5); // Behind dialogue box but above background
         
         // Add a subtle fade-in effect
-        this.principalDisplay.setAlpha(0);
+        this.secretaryDisplay.setAlpha(0);
         this.tweens.add({
-            targets: this.principalDisplay,
+            targets: this.secretaryDisplay,
             alpha: 1,
             duration: 300,
             ease: 'Power2'
         });
         
-        this.uiElements.push(this.principalDisplay);
+        this.uiElements.push(this.secretaryDisplay);
     }
 
-    hidePrincipalRichard() {
-        if (this.principalDisplay) {
+    hideSecretary() {
+        if (this.secretaryDisplay) {
             // Fade out and destroy
             this.tweens.add({
-                targets: this.principalDisplay,
+                targets: this.secretaryDisplay,
                 alpha: 0,
                 duration: 300,
                 ease: 'Power2',
                 onComplete: () => {
-                    if (this.principalDisplay) {
-                        this.principalDisplay.destroy();
-                        this.principalDisplay = null;
+                    if (this.secretaryDisplay) {
+                        this.secretaryDisplay.destroy();
+                        this.secretaryDisplay = null;
                     }
                 }
             });
+        }
+    }
+
+    hideUIElementsForCutscene() {
+        // Hide points display
+        if (this.pointsDisplay && this.pointsDisplay.container) {
+            this.pointsDisplay.container.setVisible(false);
+        }
+        
+        // Hide leaderboard button and text
+        if (this.leaderboardBtn) {
+            this.leaderboardBtn.setVisible(false);
+        }
+        if (this.leaderboardText) {
+            this.leaderboardText.setVisible(false);
+        }
+        
+        // Hide back button
+        if (this.backButtonBg) {
+            this.backButtonBg.setVisible(false);
+        }
+        if (this.backButton) {
+            this.backButton.setVisible(false);
+        }
+    }
+
+    showUIElementsAfterCutscene() {
+        // Show points display
+        if (this.pointsDisplay && this.pointsDisplay.container) {
+            this.pointsDisplay.container.setVisible(true);
+        }
+        
+        // Show leaderboard button and text
+        if (this.leaderboardBtn) {
+            this.leaderboardBtn.setVisible(true);
+        }
+        if (this.leaderboardText) {
+            this.leaderboardText.setVisible(true);
+        }
+        
+        // Show back button
+        if (this.backButtonBg) {
+            this.backButtonBg.setVisible(true);
+        }
+        if (this.backButton) {
+            this.backButton.setVisible(true);
         }
     }
 
