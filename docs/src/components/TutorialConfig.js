@@ -982,8 +982,8 @@ export const CLASSROOM_TUTORIAL_STEPS = {
 export const LIBRARY_TUTORIAL_STEPS = {
     firstTimeLibrary: [
         {
-            title: "Welcome to the Library!",
-            text: "The library is your research center! Here you can read books, track your progress, take notes, and access study materials.",
+            title: "Welcome to the Digital Library!",
+            text: "Welcome to your digital library! Here you can browse and read ebooks on various programming topics to enhance your learning.",
             textBoxPosition: { x: 400, y: 200 },
             onShow: (scene) => {
                 if (scene.sound && scene.sound.add) {
@@ -992,58 +992,52 @@ export const LIBRARY_TUTORIAL_STEPS = {
             }
         },
         {
-            title: "Library Sections",
-            text: "The library is organized into different sections. Use the menu to navigate between books, progress tracking, notes, and settings.",
-            target: 'mainMenu',
+            title: "Topic Carousel",
+            text: "Browse different programming topics using this carousel. Each topic contains a collection of ebooks you can read.",
+            target: 'carousel',
             highlightStyle: {
                 borderColor: 0x00FF7F,
-                padding: 15
-            },
-            textBoxPosition: { x: 400, y: 100 }
-        },
-        {
-            title: "Books Collection",
-            text: "Access a wide variety of programming books and resources. Reading helps reinforce what you learn in quizzes and provides deeper understanding.",
-            target: 'booksSection',
-            highlightStyle: {
-                borderColor: 0xFF6B6B,
                 pulsate: true,
-                padding: 10
+                padding: 20
             },
-            textBoxPosition: { x: 200, y: 300 }
+            textBoxPosition: { x: 400, y: 150 }
         },
         {
-            title: "Progress Tracking",
-            text: "Monitor your learning progress across all subjects. See which topics you've mastered and which ones need more attention.",
-            target: 'progressSection',
+            title: "Selecting Topics",
+            text: "Click on any topic icon to view the available ebooks in that category. You can navigate left and right to see all topics.",
+            target: 'carousel',
             highlightStyle: {
                 borderColor: 0x4ECDC4,
-                pulsate: true,
-                padding: 10
+                padding: 15
             },
-            textBoxPosition: { x: 500, y: 300 }
+            textBoxPosition: { x: 400, y: 500 }
         },
         {
-            title: "Personal Notes",
-            text: "Take notes while studying! Write down important concepts, code snippets, or anything that helps you remember key information.",
-            target: 'notesSection',
+            title: "Ebook Collections",
+            text: "When you select a topic, a dialog will show all available ebooks. Each ebook includes the title, author, and a link to read it.",
+            textBoxPosition: { x: 400, y: 250 }
+        },
+        {
+            title: "Reading Ebooks",
+            text: "Click the 'READ' button next to any ebook to open it in a new tab. These resources will help you understand concepts better before taking quizzes.",
+            textBoxPosition: { x: 400, y: 300 }
+        },
+        {
+            title: "Navigation",
+            text: "Use the back button in the top-left corner to return to the main hub when you're done browsing the library.",
+            target: 'backButton',
             highlightStyle: {
                 borderColor: 0xFFD700,
                 pulsate: true,
                 padding: 10
             },
-            textBoxPosition: { x: 300, y: 400 }
-        },
-        {
-            title: "Study Tips",
-            text: "Reading books before taking quizzes can improve your performance. Use the library regularly to supplement your practical learning!",
-            textBoxPosition: { x: 400, y: 350 }
+            textBoxPosition: { x: 300, y: 150 }
         },
         {
             title: "Happy Reading!",
-            text: "Explore the library at your own pace. Knowledge is power, and the library is your gateway to deeper understanding!",
+            text: "Explore the different topics and read the ebooks that interest you. Knowledge gained here will help you excel in your programming quizzes!",
             textBoxPosition: { x: 400, y: 400 },
-            buttonText: "Start Reading!"
+            buttonText: "Start Exploring!"
         }
     ]
 };

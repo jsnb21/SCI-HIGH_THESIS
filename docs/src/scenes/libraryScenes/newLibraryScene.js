@@ -6,10 +6,10 @@ import { onceOnlyFlags } from '../../gameManager';
 import TutorialManager from '../../components/TutorialManager.js';
 import { LIBRARY_TUTORIAL_STEPS } from '../../components/TutorialConfig.js';
 
-class BaseLibraryScene extends Phaser.Scene {
+class NewLibraryScene extends Phaser.Scene {
     constructor() {
         super({ 
-            key: 'BaseLibraryScene',
+            key: 'NewLibraryScene',
             active: false
         });
         this.carousel = null;
@@ -22,7 +22,7 @@ class BaseLibraryScene extends Phaser.Scene {
 
     init(data) {
         // Receive data from previous scene
-        this.previousScene = data?.previousScene || 'MainHub';
+        this.previousScene = data?.previousScene || 'MainScene';
         this.playerData = data?.playerData || {};
         this.gameProgress = data?.gameProgress || {};
     }
@@ -405,67 +405,22 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     createBackButton() {
-        // Add a custom back handler method to the scene
-        this.goBackToPreviousScene = () => {
+        // Create back button
+        createBackButton(this, () => {
             console.log('Returning to previous scene:', this.previousScene);
             this.scene.start(this.previousScene, {
                 playerData: this.playerData,
                 gameProgress: this.gameProgress
             });
-        };
-        
-        // Create back button - it will automatically use our custom goBackToPreviousScene method
-        createBackButton(this, this.previousScene || 'MainHub');
+        });
     }
 
     startLibraryTutorial() {
-        const tutorialSteps = [...LIBRARY_TUTORIAL_STEPS.firstTimeLibrary];
-        
-        // Set dynamic targets for tutorial steps
-        tutorialSteps.forEach(step => {
-            switch(step.target) {
-                case 'carousel':
-                    if (this.carousel && this.carousel.container) {
-                        step.target = this.carousel.container;
-                    }
-                    break;
-                case 'backButton':
-                    // The back button will be found automatically by the tutorial system
-                    // or we can set it to a specific element if needed
-                    break;
-            }
-        });
-
-        this.tutorialManager.init(tutorialSteps, {
-            onComplete: () => {
-                onceOnlyFlags.setSeen('library_tutorial');
-                console.log('Library tutorial completed!');
-            },
-            onSkip: () => {
-                onceOnlyFlags.setSeen('library_tutorial');
-                console.log('Library tutorial skipped!');
-            }
-        });
-    }
-
-    shutdown() {
-        // Clean up tutorial manager
         if (this.tutorialManager) {
-            this.tutorialManager.destroy();
-            this.tutorialManager = null;
-        }
-        
-        // Clean up dialog if open
-        if (this.ebookDialog) {
-            this.ebookDialog.destroy();
-            this.ebookDialog = null;
-        }
-        
-        // Clean up carousel
-        if (this.carousel) {
-            this.carousel = null;
+            onceOnlyFlags.markAsSeen('library_tutorial');
+            this.tutorialManager.startTutorial(LIBRARY_TUTORIAL_STEPS);
         }
     }
 }
 
-export default BaseLibraryScene;
+export default NewLibraryScene;

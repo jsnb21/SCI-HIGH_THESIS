@@ -327,7 +327,11 @@ export default class MainHub extends Phaser.Scene {
                     this.scene.start('Classroom');
                     break;
                 case "Library":
-                    this.scene.start('BaseLibraryScene');
+                    this.scene.start('BaseLibraryScene', {
+                        previousScene: 'MainHub',
+                        playerData: this.playerData,
+                        gameProgress: this.gameProgress
+                    });
                     break;
                 case "Cafeteria":
                     this.scene.start('Cafeteria');
