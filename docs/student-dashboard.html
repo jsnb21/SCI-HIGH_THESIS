@@ -96,54 +96,90 @@
   
   <body class="text-light">
     <!-- Navigation -->
-    <nav class="bg-dark/90 backdrop-blur-md border-b border-primary/30 sticky top-0 z-50">
-      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div class="flex items-center space-x-4">
-          <a href="index.html" class="flex items-center space-x-2">
-            <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <span class="font-gaming font-bold text-dark">SH</span>
-            </div>
-            <span class="font-gaming text-xl font-bold text-primary">Student Dashboard</span>
-          </a>
+    <nav class="bg-dark/95 backdrop-blur-md border-b border-primary/30 sticky top-0 z-50">
+      <div class="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center space-x-2 sm:space-x-4">
+            <a href="index.html" class="flex items-center space-x-2">
+              <div class="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-lg flex items-center justify-center">
+                <span class="font-gaming font-bold text-dark text-xs sm:text-base">SH</span>
+              </div>
+              <span class="font-gaming text-sm sm:text-xl font-bold text-primary hidden sm:inline">Student Dashboard</span>
+              <span class="font-gaming text-xs font-bold text-primary sm:hidden">Dashboard</span>
+            </a>
+          </div>
+          
+          <!-- Mobile menu button -->
+          <div class="md:hidden">
+            <button id="mobile-menu-btn" type="button" class="p-2 text-light hover:text-primary focus:outline-none focus:text-primary transition-colors duration-300 bg-dark/50 rounded-lg border border-primary/30" aria-controls="mobile-menu" aria-expanded="false">
+              <span class="sr-only">Open main menu</span>
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Desktop navigation -->
+          <div class="hidden md:flex items-center space-x-4">
+            <a href="game.html" class="bg-primary text-dark px-3 sm:px-4 py-2 rounded-lg font-gaming font-bold hover:bg-primary/80 transition-all text-sm lg:text-base">
+              Continue Learning
+            </a>
+            <a href="leaderboards.html" class="text-primary hover:text-accent transition-all font-gaming text-sm lg:text-base">
+              Leaderboards
+            </a>
+            <button id="logout-btn" class="text-gray-400 hover:text-primary transition-all font-gaming text-sm lg:text-base">
+              Logout
+            </button>
+          </div>
         </div>
-        <div class="flex items-center space-x-4">
-          <a href="game.html" class="bg-primary text-dark px-4 py-2 rounded-lg font-gaming font-bold hover:bg-primary/80 transition-all">
-            Continue Learning
-          </a>
-          <a href="leaderboards.html" class="text-primary hover:text-accent transition-all font-gaming">
-            Leaderboards
-          </a>
-          <button id="logout-btn" class="text-gray-400 hover:text-primary transition-all font-gaming">
-            Logout
-          </button>
+        
+        <!-- Mobile navigation menu -->
+        <div class="md:hidden" id="mobile-menu" style="display: none;">
+          <div class="px-3 pt-3 pb-4 space-y-2 bg-gradient-to-br from-dark/98 to-gray-850/98 backdrop-blur-xl rounded-xl mt-3 border-2 border-primary/40 shadow-xl shadow-primary/20">
+            <a href="game.html" class="block px-4 py-3 text-center bg-primary text-dark font-gaming font-bold hover:bg-primary/80 transition-all rounded-lg shadow-lg">
+              <span class="flex items-center justify-center">
+                <span class="mr-2">⚡</span> Continue Learning
+              </span>
+            </a>
+            <a href="leaderboards.html" class="block px-4 py-3 text-primary hover:text-accent hover:bg-primary/10 transition-all font-gaming rounded-lg border border-transparent hover:border-primary/30">
+              <span class="flex items-center">
+                <span class="mr-2">🏆</span> Leaderboards
+              </span>
+            </a>
+            <button id="mobile-logout-btn" class="block w-full text-left px-4 py-3 text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all font-gaming rounded-lg border border-transparent hover:border-red-500/30">
+              <span class="flex items-center">
+                <span class="mr-2">🚪</span> Logout
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </nav>
 
     <!-- Main Dashboard Content -->
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
       <!-- Welcome Section -->
-      <div class="mb-8">
-        <div class="gaming-card rounded-lg p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <h1 class="text-3xl font-bold text-primary font-gaming mb-2">
+      <div class="mb-4 sm:mb-8">
+        <div class="gaming-card rounded-xl p-3 sm:p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div class="mb-3 sm:mb-0">
+              <h1 class="text-xl sm:text-3xl font-bold text-primary font-gaming mb-1 sm:mb-2">
                 Welcome back, <span id="student-name">Student</span>!
               </h1>
-              <p class="text-gray-400 font-gaming">
+              <p class="text-gray-400 font-gaming text-xs sm:text-base">
                 Continue your programming journey • <span id="student-department">Department</span>
               </p>
             </div>
-            <div class="text-right">
-              <div class="text-2xl font-bold text-accent font-gaming" id="total-points">0</div>
-              <div class="text-sm text-gray-400">Career Points</div>
+            <div class="text-left sm:text-right">
+              <div class="text-lg sm:text-2xl font-bold text-accent font-gaming" id="total-points">0</div>
+              <div class="text-xs sm:text-sm text-gray-400">Career Points</div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Quick Stats Row -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6 mb-4 sm:mb-8">
         <div class="stat-card rounded-lg p-4 text-center">
           <div class="text-2xl font-bold text-primary font-gaming" id="total-sessions">0</div>
           <div class="text-sm text-gray-400">Total Sessions</div>
@@ -620,6 +656,55 @@
           window.location.href = 'index.html';
         } catch (error) {
           console.error('Error signing out:', error);
+        }
+      });
+
+      // Mobile logout functionality
+      document.getElementById('mobile-logout-btn').addEventListener('click', async () => {
+        try {
+          await auth.signOut();
+          window.location.href = 'index.html';
+        } catch (error) {
+          console.error('Error signing out:', error);
+        }
+      });
+
+      // Mobile menu functionality
+      document.addEventListener('DOMContentLoaded', () => {
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        if (mobileMenuBtn && mobileMenu) {
+          mobileMenuBtn.addEventListener('click', () => {
+            const isHidden = mobileMenu.style.display === 'none' || !mobileMenu.style.display;
+            mobileMenu.style.display = isHidden ? 'block' : 'none';
+            
+            // Update aria-expanded
+            mobileMenuBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            
+            // Update icon
+            const svg = mobileMenuBtn.querySelector('svg');
+            if (svg) {
+              if (isHidden) {
+                svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />';
+              } else {
+                svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />';
+              }
+            }
+          });
+          
+          // Close mobile menu when clicking on a link
+          const mobileLinks = mobileMenu.querySelectorAll('a, button');
+          mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+              mobileMenu.style.display = 'none';
+              mobileMenuBtn.setAttribute('aria-expanded', 'false');
+              const svg = mobileMenuBtn.querySelector('svg');
+              if (svg) {
+                svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />';
+              }
+            });
+          });
         }
       });
 

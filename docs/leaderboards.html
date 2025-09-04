@@ -167,13 +167,25 @@
     
     <!-- Gaming HUD Navigation -->
     <nav class="relative z-50 bg-gradient-to-r from-dark/90 to-light/90 backdrop-blur-md border-b-2 border-primary/30 py-4 sticky top-0">
-      <div class="max-w-6xl mx-auto px-6">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
         <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-4">
-            <img src="public/assets/img/buko_productions-logo.png" alt="Buko Productions Logo" class="w-12 h-12 animate-bounce-in" />
-            <span class="font-gaming text-xl font-bold text-primary">SCI-HIGH</span>
+          <div class="flex items-center space-x-2 sm:space-x-4">
+            <img src="public/assets/img/buko_productions-logo.png" alt="Buko Productions Logo" class="w-10 h-10 sm:w-12 sm:h-12 animate-bounce-in" />
+            <span class="font-gaming text-lg sm:text-xl font-bold text-primary">SCI-HIGH</span>
           </div>
-          <div class="flex space-x-8">
+          
+          <!-- Mobile menu button -->
+          <div class="md:hidden">
+            <button id="mobile-menu-btn" type="button" class="text-textColor hover:text-primary focus:outline-none focus:text-primary transition-colors duration-300" aria-controls="mobile-menu" aria-expanded="false">
+              <span class="sr-only">Open main menu</span>
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Desktop navigation -->
+          <div class="hidden md:flex space-x-8">
             <a href="index.html" class="gaming-nav-link text-textColor hover:text-primary transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
               <span class="relative z-10">Home</span>
               <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
@@ -188,35 +200,56 @@
             </a>
           </div>
         </div>
+        
+        <!-- Mobile navigation menu -->
+        <div class="md:hidden" id="mobile-menu" style="display: none;">
+          <div class="px-3 pt-3 pb-4 space-y-2 bg-gradient-to-br from-dark/98 to-light/98 backdrop-blur-xl rounded-xl mt-3 border-2 border-primary/40 shadow-xl shadow-primary/20">
+            <a href="index.html" class="block px-4 py-3 text-textColor hover:text-primary hover:bg-primary/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-primary/30">
+              <span class="flex items-center">
+                <span class="mr-2">🏠</span> Home
+              </span>
+            </a>
+            <a href="index.html#about" class="block px-4 py-3 text-textColor hover:text-primary hover:bg-primary/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-primary/30">
+              <span class="flex items-center">
+                <span class="mr-2">ℹ️</span> About
+              </span>
+            </a>
+            <a href="index.html#contact" class="block px-4 py-3 text-textColor hover:text-primary hover:bg-primary/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-primary/30">
+              <span class="flex items-center">
+                <span class="mr-2">📞</span> Contact
+              </span>
+            </a>
+          </div>
+        </div>
       </div>
     </nav>
     
     <!-- Main content wrapper with flex-grow to push footer down -->
     <div class="flex-grow relative z-10">
       <!-- Hero Section -->
-      <section class="py-16 px-6">
+      <section class="py-12 sm:py-16 px-4 sm:px-6">
         <div class="max-w-6xl mx-auto text-center">
-          <div class="mb-12 animate-bounce-in">
-            <h1 class="font-gaming text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-cyan mb-6">
+          <div class="mb-8 sm:mb-12 animate-bounce-in">
+            <h1 class="font-gaming text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-cyan mb-4 sm:mb-6">
               🏆 Global Leaderboards
             </h1>
-            <p class="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-8">
+            <p class="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-6 sm:mb-8 px-4">
               Compete with programmers worldwide and climb the ranks in the ultimate coding challenge!
             </p>
           </div>
           
           <!-- Gaming Filter Buttons -->
-          <div class="flex flex-wrap justify-center gap-4 mb-12 animate-slide-in">
-            <button class="filter-btn px-8 py-3 font-gaming text-sm uppercase tracking-wider rounded-lg font-bold text-dark bg-gradient-to-r from-primary to-yellow-300 transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50 border-2 border-primary" data-filter="overall">
+          <div class="flex flex-wrap justify-center gap-2 sm:gap-4 mb-8 sm:mb-12 animate-slide-in px-2 sm:px-4">
+            <button class="filter-btn px-3 xs:px-4 sm:px-8 py-2 sm:py-3 font-gaming text-xs sm:text-sm uppercase tracking-wider rounded-xl font-bold text-dark bg-gradient-to-r from-primary to-yellow-300 transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50 border-2 border-primary touch-manipulation" data-filter="overall">
               <span class="relative z-10">🌟 Overall</span>
             </button>
-            <button class="filter-btn px-8 py-3 font-gaming text-sm uppercase tracking-wider rounded-lg font-bold text-textColor bg-gradient-to-r from-accent to-cyan transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-accent/50 border-2 border-accent/50" data-filter="college">
+            <button class="filter-btn px-3 xs:px-4 sm:px-8 py-2 sm:py-3 font-gaming text-xs sm:text-sm uppercase tracking-wider rounded-xl font-bold text-textColor bg-gradient-to-r from-accent to-cyan transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-accent/50 border-2 border-accent/50 touch-manipulation" data-filter="college">
               <span class="relative z-10">🎓 College</span>
             </button>
-            <button class="filter-btn px-8 py-3 font-gaming text-sm uppercase tracking-wider rounded-lg font-bold text-textColor bg-gradient-to-r from-purple to-pink-500 transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple/50 border-2 border-purple/50" data-filter="seniorhigh">
+            <button class="filter-btn px-3 xs:px-4 sm:px-8 py-2 sm:py-3 font-gaming text-xs sm:text-sm uppercase tracking-wider rounded-xl font-bold text-textColor bg-gradient-to-r from-purple to-pink-500 transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple/50 border-2 border-purple/50 touch-manipulation" data-filter="seniorhigh">
               <span class="relative z-10">📚 Senior High</span>
             </button>
-            <button class="filter-btn px-8 py-3 font-gaming text-sm uppercase tracking-wider rounded-lg font-bold text-textColor bg-gradient-to-r from-cyan to-blue-500 transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-cyan/50 border-2 border-cyan/50" data-filter="juniorhigh">
+            <button class="filter-btn px-3 xs:px-4 sm:px-8 py-2 sm:py-3 font-gaming text-xs sm:text-sm uppercase tracking-wider rounded-xl font-bold text-textColor bg-gradient-to-r from-cyan to-blue-500 transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-cyan/50 border-2 border-cyan/50 touch-manipulation" data-filter="juniorhigh">
               <span class="relative z-10">🎒 Junior High</span>
             </button>
           </div>
@@ -2326,6 +2359,45 @@
 
       // Make test function available globally
       window.testStudentScore = testStudentScore;
+
+      // Mobile menu functionality
+      document.addEventListener('DOMContentLoaded', () => {
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        if (mobileMenuBtn && mobileMenu) {
+          mobileMenuBtn.addEventListener('click', () => {
+            const isHidden = mobileMenu.style.display === 'none' || !mobileMenu.style.display;
+            mobileMenu.style.display = isHidden ? 'block' : 'none';
+            
+            // Update aria-expanded
+            mobileMenuBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            
+            // Update icon
+            const svg = mobileMenuBtn.querySelector('svg');
+            if (svg) {
+              if (isHidden) {
+                svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />';
+              } else {
+                svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />';
+              }
+            }
+          });
+          
+          // Close mobile menu when clicking on a link
+          const mobileLinks = mobileMenu.querySelectorAll('a, button');
+          mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+              mobileMenu.style.display = 'none';
+              mobileMenuBtn.setAttribute('aria-expanded', 'false');
+              const svg = mobileMenuBtn.querySelector('svg');
+              if (svg) {
+                svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />';
+              }
+            });
+          });
+        }
+      });
     </script>
   </body>
 </html>
