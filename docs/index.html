@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="public/assets/img/logo/SCI-HIGH_LOGO.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, orientation=landscape" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
     <title>SCI-HIGH: A Byte-Size Learning Adventure!</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -48,6 +48,14 @@
     <script>
       tailwind.config = {
         theme: {
+          screens: {
+            'xs': '475px',
+            'sm': '640px',
+            'md': '768px',
+            'lg': '1024px',
+            'xl': '1280px',
+            '2xl': '1536px',
+          },
           extend: {
             colors: {
               primary: '#F4CE14', // yellow
@@ -230,6 +238,70 @@
         transform: translateY(-1px);
         box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3);
       }
+      
+      /* Mobile-specific improvements */
+      @media (max-width: 768px) {
+        /* Better touch targets */
+        button, a {
+          min-height: 44px;
+        }
+        
+        /* Prevent zoom on inputs */
+        input, select, textarea {
+          font-size: 16px;
+        }
+        
+        /* Smooth scrolling for mobile */
+        html {
+          scroll-behavior: smooth;
+          -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Prevent horizontal scroll */
+        body {
+          overflow-x: hidden;
+        }
+        
+        /* Better mobile menu animations */
+        #mobile-menu {
+          animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        /* Mobile-friendly card spacing */
+        .gaming-card, .neon-border {
+          margin-bottom: 1rem;
+        }
+        
+        /* Optimize text for mobile reading */
+        .font-gaming {
+          letter-spacing: 0.05em;
+        }
+      }
+      
+      /* Very small screens (phones in portrait) */
+      @media (max-width: 475px) {
+        .container {
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+        
+        /* Smaller text on very small screens */
+        h1 {
+          font-size: 2rem;
+          line-height: 1.2;
+        }
+      }
     </style>
   </head>
   <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed">
@@ -237,14 +309,26 @@
     <div id="particles" class="fixed inset-0 pointer-events-none z-0"></div>
     
     <!-- Gaming HUD Navigation -->
-    <nav class="relative z-50 bg-gradient-to-r from-dark/90 to-light/90 backdrop-blur-md border-b-2 border-primary/30 py-4 sticky top-0">
-      <div class="max-w-6xl mx-auto px-6">
+    <nav class="relative z-50 bg-gradient-to-r from-dark/95 to-light/95 backdrop-blur-md border-b-2 border-primary/30 py-3 sm:py-4 sticky top-0">
+      <div class="max-w-6xl mx-auto px-3 sm:px-6">
         <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-4">
-            <img src="public/assets/img/buko_productions-logo.png" alt="Buko Productions Logo" class="w-16 h-16 animate-bounce-in" />
-            <span class="font-gaming text-xl font-bold text-primary">SCI-HIGH</span>
+          <div class="flex items-center space-x-2 sm:space-x-4">
+            <img src="public/assets/img/buko_productions-logo.png" alt="Buko Productions Logo" class="w-10 h-10 sm:w-16 sm:h-16 animate-bounce-in" />
+            <span class="font-gaming text-base sm:text-xl font-bold text-primary">SCI-HIGH</span>
           </div>
-          <div class="flex space-x-8">
+          
+          <!-- Mobile menu button -->
+          <div class="md:hidden">
+            <button id="mobile-menu-btn" type="button" class="p-2 text-textColor hover:text-primary focus:outline-none focus:text-primary transition-colors duration-300 bg-dark/50 rounded-lg border border-primary/30" aria-controls="mobile-menu" aria-expanded="false">
+              <span class="sr-only">Open main menu</span>
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Desktop navigation -->
+          <div class="hidden md:flex space-x-8">
             <a href="#home" class="gaming-nav-link text-textColor hover:text-primary transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
               <span class="relative z-10">Home</span>
               <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
@@ -278,48 +362,87 @@
             </button>
           </div>
         </div>
+        
+        <!-- Mobile navigation menu -->
+        <div class="md:hidden" id="mobile-menu" style="display: none;">
+          <div class="px-3 pt-3 pb-4 space-y-2 bg-gradient-to-br from-dark/98 to-light/98 backdrop-blur-xl rounded-xl mt-3 border-2 border-primary/40 shadow-xl shadow-primary/20">
+            <a href="#home" class="block px-4 py-3 text-textColor hover:text-primary hover:bg-primary/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-primary/30">
+              <span class="flex items-center">
+                <span class="mr-2">🏠</span> Home
+              </span>
+            </a>
+            <a href="#about" class="block px-4 py-3 text-textColor hover:text-primary hover:bg-primary/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-primary/30">
+              <span class="flex items-center">
+                <span class="mr-2">ℹ️</span> About
+              </span>
+            </a>
+            <a href="#contact" class="block px-4 py-3 text-textColor hover:text-primary hover:bg-primary/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-primary/30">
+              <span class="flex items-center">
+                <span class="mr-2">📞</span> Contact
+              </span>
+            </a>
+            <button id="mobile-login-btn" class="block w-full text-left px-4 py-3 text-textColor hover:text-accent hover:bg-accent/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-accent/30" onclick="showLoginModal()">
+              <span class="flex items-center">
+                <span class="mr-2">🔐</span> Login
+              </span>
+            </button>
+            <a href="professor-dashboard.html" id="mobile-professor-nav-link" class="block px-4 py-3 text-textColor hover:text-accent hover:bg-accent/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-accent/30 hidden">
+              <span class="flex items-center">
+                <span class="mr-2">👨‍🏫</span> Professor
+              </span>
+            </a>
+            <div id="mobile-user-greeting" class="block px-4 py-3 text-primary font-gaming text-sm uppercase tracking-wider bg-primary/10 rounded-lg border border-primary/30 hidden">
+              <span id="mobile-greeting-text">Hello, User!</span>
+            </div>
+            <button id="mobile-logout-btn" class="block w-full text-left px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-red-500/30 hidden" onclick="logoutUser()">
+              <span class="flex items-center">
+                <span class="mr-2">🚪</span> Logout
+              </span>
+            </button>
+          </div>
+        </div>
       </div>
     </nav>
 
     <!-- Hero Section -->
-    <section id="home" class="relative z-10 min-h-screen flex items-center justify-center px-6 py-20">
+    <section id="home" class="relative z-10 min-h-screen flex items-center justify-center px-3 sm:px-6 py-12 sm:py-20">
       <div class="max-w-6xl mx-auto text-center">
         <!-- Main Hero Content -->
-        <div class="mb-12 animate-slide-in">
-          <div class="mb-8 relative">
-            <img src="public/assets/img/buko_productions-logo.png" alt="Buko Productions - SCI-HIGH" class="mx-auto w-48 h-48 animate-float drop-shadow-2xl relative z-10" />
-            <div class="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse-glow"></div>
+        <div class="mb-6 sm:mb-12 animate-slide-in">
+          <div class="mb-4 sm:mb-8 relative">
+            <img src="public/assets/img/buko_productions-logo.png" alt="Buko Productions - SCI-HIGH" class="mx-auto w-24 h-24 sm:w-32 sm:h-32 md:w-48 md:h-48 animate-float drop-shadow-2xl relative z-10" />
+            <div class="absolute inset-0 bg-primary/20 blur-2xl sm:blur-3xl rounded-full animate-pulse-glow"></div>
           </div>
           
-          <h1 class="font-gaming text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-cyan mb-6 animate-bounce-in">
+          <h1 class="font-gaming text-3xl xs:text-4xl sm:text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-cyan mb-3 sm:mb-6 animate-bounce-in px-2">
             SCI-HIGH
           </h1>
           
-          <div class="font-gaming text-xl md:text-2xl text-primary mb-4 tracking-widest animate-bounce-in" style="animation-delay: 0.2s;">
+          <div class="font-gaming text-sm xs:text-base sm:text-xl md:text-2xl text-primary mb-3 sm:mb-4 tracking-wide sm:tracking-widest animate-bounce-in px-2" style="animation-delay: 0.2s;">
             A BYTE-SIZE LEARNING ADVENTURE!
           </div>
           
-          <p class="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-12 animate-bounce-in" style="animation-delay: 0.4s;">
+          <p class="text-sm xs:text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-6 sm:mb-12 px-4 sm:px-6 animate-bounce-in leading-relaxed" style="animation-delay: 0.4s;">
             Embark on an epic educational journey where programming meets adventure. 
             Battle bugs, solve coding puzzles, and level up your skills in this immersive learning experience!
           </p>
         </div>
 
         <!-- Gaming Action Buttons -->
-        <div class="flex flex-col md:flex-row gap-6 justify-center items-center mb-16 animate-bounce-in" style="animation-delay: 0.6s;">
-          <button id="start-game-btn" class="group relative px-12 py-4 font-gaming text-lg font-bold text-dark bg-gradient-to-r from-primary to-yellow-300 rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50 uppercase tracking-wider">
+        <div class="flex flex-col gap-3 sm:gap-4 md:flex-row md:gap-6 justify-center items-center mb-8 sm:mb-16 animate-bounce-in px-3 sm:px-4" style="animation-delay: 0.6s;">
+          <button id="start-game-btn" class="group relative w-full sm:max-w-sm md:w-auto px-6 sm:px-8 md:px-12 py-3 sm:py-4 font-gaming text-sm sm:text-base md:text-lg font-bold text-dark bg-gradient-to-r from-primary to-yellow-300 rounded-xl transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50 uppercase tracking-wider touch-manipulation">
             <span class="relative z-10">⚡ Start Adventure</span>
-            <div class="absolute inset-0 bg-gradient-to-r from-yellow-300 to-primary rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-yellow-300 to-primary rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </button>
           
-          <a href="leaderboards.html" class="group relative px-12 py-4 font-gaming text-lg font-bold text-textColor bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-accent/50 uppercase tracking-wider border-2 border-accent/50">
+          <a href="leaderboards.html" class="group relative w-full sm:max-w-sm md:w-auto px-6 sm:px-8 md:px-12 py-3 sm:py-4 font-gaming text-sm sm:text-base md:text-lg font-bold text-textColor bg-gradient-to-r from-accent to-cyan rounded-xl transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-accent/50 uppercase tracking-wider border-2 border-accent/50 touch-manipulation">
             <span class="relative z-10">🏆 Leaderboards</span>
-            <div class="absolute inset-0 bg-gradient-to-r from-cyan to-accent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-cyan to-accent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </a>
         </div>
 
         <!-- Game Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto animate-bounce-in" style="animation-delay: 0.8s;">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto animate-bounce-in px-4" style="animation-delay: 0.8s;">
           <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105">
             <div class="text-3xl mb-2">🎮</div>
             <h3 class="font-gaming text-primary text-lg mb-2">Interactive Learning</h3>
@@ -3989,6 +4112,78 @@ Please provide a helpful, engaging response about SCI-HIGH or the thesis researc
       // Initialize the virtual assistant when the page loads
       document.addEventListener('DOMContentLoaded', () => {
         new VirtualAssistant();
+        
+        // Mobile menu functionality
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        if (mobileMenuBtn && mobileMenu) {
+          mobileMenuBtn.addEventListener('click', () => {
+            const isHidden = mobileMenu.style.display === 'none' || !mobileMenu.style.display;
+            mobileMenu.style.display = isHidden ? 'block' : 'none';
+            
+            // Update aria-expanded
+            mobileMenuBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            
+            // Update icon
+            const svg = mobileMenuBtn.querySelector('svg');
+            if (svg) {
+              if (isHidden) {
+                svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />';
+              } else {
+                svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />';
+              }
+            }
+          });
+          
+          // Close mobile menu when clicking on a link
+          const mobileLinks = mobileMenu.querySelectorAll('a, button');
+          mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+              mobileMenu.style.display = 'none';
+              mobileMenuBtn.setAttribute('aria-expanded', 'false');
+              const svg = mobileMenuBtn.querySelector('svg');
+              if (svg) {
+                svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />';
+              }
+            });
+          });
+        }
+        
+        // Sync mobile menu visibility with desktop menu for user state
+        const syncMobileMenu = () => {
+          const loginBtn = document.getElementById('login-btn');
+          const professorNavLink = document.getElementById('professor-nav-link');
+          const userGreeting = document.getElementById('user-greeting');
+          const logoutBtn = document.getElementById('logout-btn');
+          
+          const mobileLoginBtn = document.getElementById('mobile-login-btn');
+          const mobileProfessorNavLink = document.getElementById('mobile-professor-nav-link');
+          const mobileUserGreeting = document.getElementById('mobile-user-greeting');
+          const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
+          
+          if (loginBtn && mobileLoginBtn) {
+            mobileLoginBtn.style.display = loginBtn.classList.contains('hidden') ? 'none' : 'block';
+          }
+          if (professorNavLink && mobileProfessorNavLink) {
+            mobileProfessorNavLink.style.display = professorNavLink.classList.contains('hidden') ? 'none' : 'block';
+          }
+          if (userGreeting && mobileUserGreeting) {
+            mobileUserGreeting.style.display = userGreeting.classList.contains('hidden') ? 'none' : 'block';
+            const greetingText = document.getElementById('greeting-text');
+            const mobileGreetingText = document.getElementById('mobile-greeting-text');
+            if (greetingText && mobileGreetingText) {
+              mobileGreetingText.textContent = greetingText.textContent;
+            }
+          }
+          if (logoutBtn && mobileLogoutBtn) {
+            mobileLogoutBtn.style.display = logoutBtn.classList.contains('hidden') ? 'none' : 'block';
+          }
+        };
+        
+        // Call sync function periodically to keep mobile menu in sync
+        setInterval(syncMobileMenu, 1000);
+        syncMobileMenu(); // Initial sync
       });
     </script>
   </body>
