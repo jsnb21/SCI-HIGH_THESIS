@@ -93,16 +93,41 @@ export default class MainGameplay extends BaseScene {
         // Receive data from the computer lab scene
         this.courseTopic = data?.topic || 'python';
         
-        // Initialize/reset streak system
-        this.streak = 0;
-        this.highestStreak = 0;
-        
-        // Initialize/reset INTENSITY system
-        this.enemiesDefeated = 0;
-        this.correctAnswers = 0;
-        this.wrongAnswers = 0;
-        this.intensity3CorrectAnswers = 0;
-        this.intensity = 1;
+        // Initialize/reset timer system - ONLY if not resuming from quiz
+        if (!data?.gameState) {
+            this.gameTimer = 60; // Reset to 1 minute for new session
+            this.countdownTimer = 3; // Reset countdown
+            this.gameStarted = false; // Reset game started flag
+            this.score = 0; // Reset score
+            this.quizActive = false; // Reset quiz state
+            this.currentQuiz = null;
+            this.isMoving = false; // Reset movement state
+            
+            // Reset enemy movement timers but NOT the movement state flags
+            this.enemyMoveTimer = 0;
+            this.timerIconSpawnTimer = 0;
+            this.goblinThugSpawnTimer = 0;
+            
+            // Reset enemy movement flags to ensure they can move
+            this.enemiesMoving = false;
+            
+            // Always reset streak system for new sessions
+            this.streak = 0;
+            this.highestStreak = 0;
+            
+            // Always reset INTENSITY system for new sessions
+            this.enemiesDefeated = 0;
+            this.correctAnswers = 0;
+            this.wrongAnswers = 0;
+            this.intensity3CorrectAnswers = 0;
+            this.intensity = 1;
+            
+            console.log('Fresh game session - timer reset to:', this.gameTimer, 'seconds');
+        } else {
+            // Resuming from quiz - load saved state
+            this.loadGameState(data.gameState);
+            console.log('Resuming game session - timer restored to:', this.gameTimer, 'seconds');
+        }
         
         // Track session start time
         this.sessionStartTime = Date.now();

@@ -179,6 +179,9 @@ export default class DataCollectionScreen extends BaseScene {
         // Create form fields
         this.createFormFields(panelX, panelY);
         
+        // Try to autofill form with existing user data
+        this.attemptAutofill();
+        
         // Submit button
         const submitBg = this.add.rectangle(panelX, panelY + 200, 200, 50, 0x0f4c75);
         submitBg.setStrokeStyle(2, 0x3282b8);
@@ -367,6 +370,180 @@ export default class DataCollectionScreen extends BaseScene {
         document.body.appendChild(element);
     }
     
+    async attemptAutofill() {
+        try {
+            console.log('🔍 Attempting to autofill form with existing user data...');
+            
+            // First ensure Firebase is initialized
+            const isInitialized = await this.ensureFirebaseInitialized();
+            if (!isInitialized) {
+                console.log('⚠️ Firebase not initialized, skipping autofill');
+                return;
+            }
+            
+            // Check localStorage for recently used student data
+            const recentStudentData = localStorage.getItem('recentStudentData');
+            if (recentStudentData) {
+                try {
+                    const parsedData = JSON.parse(recentStudentData);
+                    console.log('📋 Found recent student data in localStorage:', parsedData);
+                    
+                    // Check if data is recent (within last 24 hours)
+                    const dataAge = Date.now() - (parsedData.timestamp || 0);
+                    const twentyFourHours = 24 * 60 * 60 * 1000;
+                    
+                    if (dataAge < twentyFourHours) {
+                        this.autofillForm(parsedData);
+                        console.log('✅ Form autofilled with recent localStorage data');
+                        return;
+                    } else {
+                        console.log('📅 localStorage data is too old, removing...');
+                        localStorage.removeItem('recentStudentData');
+                    }
+                } catch (parseError) {
+                    console.error('❌ Failed to parse localStorage data:', parseError);
+                    localStorage.removeItem('recentStudentData');
+                }
+            }
+            
+            // If no recent localStorage data, try to find user in Firebase by partial name match
+            // This is useful if user has played before but on different device/browser
+            console.log('🔍 No recent localStorage data found, checking for form interaction...');
+            
+            // Set up real-time name matching when user starts typing
+            this.setupNameMatching();
+            
+        } catch (error) {
+            console.error('❌ Error during autofill attempt:', error);
+        }
+    }
+    
+    autofillForm(studentData) {
+        if (this.formElements.firstName && studentData.firstName) {
+            this.formElements.firstName.value = studentData.firstName;
+        }
+        if (this.formElements.lastName && studentData.lastName) {
+            this.formElements.lastName.value = studentData.lastName;
+        }
+        if (this.formElements.department && studentData.department) {
+            this.formElements.department.value = studentData.department;
+        }
+        if (this.formElements.strandYear && studentData.strandYear) {
+            this.formElements.strandYear.value = studentData.strandYear;
+        }
+        
+        // Show a hint that data was autofilled
+        const hintText = this.add.text(this.scale.width / 2, this.scale.height / 2 + 250, 
+            '✨ Form autofilled with your previous information', {
+            fontFamily: 'Arial',
+            fontSize: '14px',
+            color: '#00ff88',
+            stroke: '#000000',
+            strokeThickness: 1
+        }).setOrigin(0.5);
+        
+        // Fade out the hint after 3 seconds
+        this.tweens.add({
+            targets: hintText,
+            alpha: 0,
+            duration: 3000,
+            delay: 2000,
+            onComplete: () => hintText.destroy()
+        });
+    }
+    
+    setupNameMatching() {
+        // Add event listeners to firstName and lastName fields for real-time matching
+        if (this.formElements.firstName) {
+            this.formElements.firstName.addEventListener('input', () => {
+                this.debounceNameSearch();
+            });
+        }
+        if (this.formElements.lastName) {
+            this.formElements.lastName.addEventListener('input', () => {
+                this.debounceNameSearch();
+            });
+        }
+    }
+    
+    debounceNameSearch() {
+        // Clear existing timeout
+        if (this.nameSearchTimeout) {
+            clearTimeout(this.nameSearchTimeout);
+        }
+        
+        // Set new timeout to search after user stops typing for 1 second
+        this.nameSearchTimeout = setTimeout(() => {
+            this.searchForExistingStudent();
+        }, 1000);
+    }
+    
+    async searchForExistingStudent() {
+        try {
+            const firstName = this.formElements.firstName?.value.trim().toLowerCase();
+            const lastName = this.formElements.lastName?.value.trim().toLowerCase();
+            
+            // Only search if both names have at least 2 characters
+            if (!firstName || !lastName || firstName.length < 2 || lastName.length < 2) {
+                return;
+            }
+            
+            console.log(`🔍 Searching for existing student: ${firstName} ${lastName}`);
+            
+            // Search Firebase for matching student
+            const gameplayRef = this.database.ref('gameplay_data');
+            const snapshot = await gameplayRef.orderByChild('firstName').once('value');
+            
+            let matchFound = false;
+            snapshot.forEach((childSnapshot) => {
+                const data = childSnapshot.val();
+                if (data.firstName && data.lastName && data.firstName.toLowerCase() === firstName && data.lastName.toLowerCase() === lastName) {
+                    console.log('✅ Found matching student in Firebase:', data);
+                    
+                    // Autofill the remaining fields
+                    if (this.formElements.department && data.department && !this.formElements.department.value) {
+                        this.formElements.department.value = data.department;
+                    }
+                    if (this.formElements.strandYear && data.strandYear && !this.formElements.strandYear.value) {
+                        this.formElements.strandYear.value = data.strandYear;
+                    }
+                    
+                    // Show success message
+                    if (!this.matchHintShown) {
+                        const matchText = this.add.text(this.scale.width / 2, this.scale.height / 2 + 250, 
+                            '✅ Found your previous information!', {
+                            fontFamily: 'Arial',
+                            fontSize: '14px',
+                            color: '#00ff88',
+                            stroke: '#000000',
+                            strokeThickness: 1
+                        }).setOrigin(0.5);
+                        
+                        this.tweens.add({
+                            targets: matchText,
+                            alpha: 0,
+                            duration: 3000,
+                            delay: 2000,
+                            onComplete: () => matchText.destroy()
+                        });
+                        
+                        this.matchHintShown = true;
+                    }
+                    
+                    matchFound = true;
+                    return true; // Stop iteration
+                }
+            });
+            
+            if (!matchFound) {
+                console.log('ℹ️ No matching student found in Firebase');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error searching for existing student:', error);
+        }
+    }
+    
     async handleSubmit() {
         console.log('🔄 DataCollectionScreen: handleSubmit() called');
         console.log('📋 DataCollectionScreen: Form elements available:', Object.keys(this.formElements));
@@ -519,6 +696,17 @@ export default class DataCollectionScreen extends BaseScene {
                 console.warn('⚠️ DataCollectionScreen: Session data was saved, but career stats update failed:', careerError.message);
                 // Don't fail the whole process if career stats update fails
             }
+            
+            // Save student data to localStorage for future autofill
+            const studentDataForStorage = {
+                firstName: firstName,
+                lastName: lastName,
+                department: department,
+                strandYear: strandYear,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('recentStudentData', JSON.stringify(studentDataForStorage));
+            console.log('💾 Student data saved to localStorage for future autofill');
             
             // Success - proceed to results
             this.proceedToResults();
