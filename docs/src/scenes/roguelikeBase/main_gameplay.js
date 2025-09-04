@@ -143,6 +143,14 @@ export default class MainGameplay extends BaseScene {
         // Load background tiles (optional - you can add your own)
         this.load.image('grassTile', 'assets/img/bg/grass.png');
         
+        // Load audio effects
+        this.load.audio('se_hurt', 'assets/audio/se/se_hurt.wav');
+        this.load.audio('se_combo', 'assets/audio/se/se_combo.wav');
+        this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
+        this.load.audio('se_explosion', 'assets/audio/se/se_explosion.wav');
+        this.load.audio('se_select', 'assets/audio/se/se_select.wav');
+        this.load.audio('se_wrong', 'assets/audio/se/se_wrong.wav');
+        
         // Create a simple colored rectangle if grass tile doesn't exist
         this.load.image('defaultTile', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
     }
@@ -792,6 +800,9 @@ export default class MainGameplay extends BaseScene {
     }
 
     collectTimerIcon(icon) {
+        // Play timer pickup sound
+        this.sound.play('se_select', { volume: 0.5 });
+        
         // Add 5 seconds to the timer (capped at 60 seconds)
         this.addTime(5);
         
@@ -1029,6 +1040,35 @@ export default class MainGameplay extends BaseScene {
     }
 
     handleGoblinThugCollision(thug) {
+        // Play hurt sound effect
+        this.sound.play('se_hurt', { volume: 0.8 });
+        
+        // Create red screen flash effect
+        const flashOverlay = this.add.rectangle(
+            this.cameras.main ? this.cameras.main.centerX : this.scale.width / 2, 
+            this.cameras.main ? this.cameras.main.centerY : this.scale.height / 2, 
+            this.scale.width, 
+            this.scale.height, 
+            0xff6666, 
+            0.3
+        ).setScrollFactor(0).setDepth(1000);
+        
+        // Animate the flash effect
+        this.tweens.add({
+            targets: flashOverlay,
+            alpha: 0,
+            duration: 300,
+            ease: 'Power2',
+            onComplete: () => {
+                flashOverlay.destroy();
+            }
+        });
+        
+        // Add camera shake effect
+        if (this.cameras && this.cameras.main) {
+            this.cameras.main.shake(200, 0.02);
+        }
+        
         // Reduce game timer
         this.gameTimer = Math.max(0, this.gameTimer - this.goblinThugTimePenalty);
         
@@ -1295,11 +1335,21 @@ export default class MainGameplay extends BaseScene {
             this.updateTimerDisplay();
             this.updateStreakDisplay();
             
+            // Play sound effect based on streak
+            if (this.streak >= 3) {
+                this.sound.play('se_combo', { volume: 0.6 }); // Combo sound for streaks 3+
+            } else {
+                this.sound.play('se_confirm', { volume: 0.5 }); // Confirm sound for correct answers
+            }
+            
             console.log(`Correct answer! Streak: ${this.streak}x, Score: +${totalScore} (+${this.baseScore} base + ${bonusScore} bonus), +10 seconds`);
             
             // Check for intensity increase after correct answer
             this.checkIntensityIncrease();
         } else {
+            // Play wrong answer sound
+            this.sound.play('se_wrong', { volume: 0.5 });
+            
             // Increment wrong answers counter
             this.wrongAnswers++;
             
@@ -1387,12 +1437,18 @@ export default class MainGameplay extends BaseScene {
         if (this.correctAnswers >= this.intensityThreshold2 && this.intensity === 2) {
             this.intensity = 3;
             
+            // Play intensity increase sound
+            this.sound.play('se_combo', { volume: 0.8 });
+            
             // Show INTENSITY 3 increase notification
             this.showIntensityNotification();
             
             console.log(`INTENSITY INCREASED! Level ${this.intensity} - Code arrangement quizzes activated! (${this.correctAnswers} correct answers)`);
         } else if (this.correctAnswers >= this.intensityThreshold && this.intensity === 1) {
             this.intensity = 2;
+            
+            // Play intensity increase sound
+            this.sound.play('se_combo', { volume: 0.7 });
             
             // Show INTENSITY increase notification
             this.showIntensityNotification();
@@ -1678,6 +1734,9 @@ export default class MainGameplay extends BaseScene {
     destroyEnemy(enemy) {
         if (!enemy) return;
         
+        // Play explosion sound effect
+        this.sound.play('se_explosion', { volume: 0.4 });
+        
         // Remove enemy from array
         const enemyIndex = this.enemies.indexOf(enemy);
         if (enemyIndex > -1) {
@@ -1900,6 +1959,12 @@ export default class MainGameplay extends BaseScene {
     }
 
     setupCamera() {
+        // Safety check - ensure camera exists before trying to use it
+        if (!this.cameras || !this.cameras.main) {
+            console.warn('Camera not yet initialized, skipping setupCamera');
+            return;
+        }
+        
         // For a board game, we want the camera to show the entire board centered
         // Set camera to show the entire scene without following the player
         this.cameras.main.centerOn(this.scale.width / 2, this.scale.height / 2);
@@ -2071,6 +2136,9 @@ export default class MainGameplay extends BaseScene {
         
         // Don't allow movement during countdown or quiz
         if (!this.gameStarted || this.quizActive) return;
+        
+        // Play subtle movement sound
+        this.sound.play('se_select', { volume: 0.2 });
         
         // Calculate target position
         const targetX = this.player.x + (directionX * this.TILE_SIZE);
