@@ -125,6 +125,53 @@ export default class DataCollectionScreen extends BaseScene {
         });
     }
 
+    disableGlobalKeyboardCapture() {
+        // Ensure Phaser doesn't capture keyboard events
+        if (this.game && this.game.input && this.game.input.keyboard) {
+            this.game.input.keyboard.enabled = false;
+        }
+        
+        // Create a more targeted approach to block game keys
+        this.keydownHandler = (event) => {
+            // Only block WASD and arrow keys that are commonly used in games
+            const gameKeys = ['w', 'a', 's', 'd', 'W', 'A', 'S', 'D', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+            
+            // Don't block if the user is typing in a form input
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'SELECT' || event.target.tagName === 'TEXTAREA') {
+                return true; // Allow normal input
+            }
+            
+            // Block game keys from reaching Phaser
+            if (gameKeys.includes(event.key)) {
+                event.stopImmediatePropagation();
+                event.preventDefault();
+                return false;
+            }
+        };
+        
+        document.addEventListener('keydown', this.keydownHandler, true);
+        console.log('Targeted keyboard capture disabled for game keys');
+    }
+
+    restoreGlobalKeyboardCapture() {
+        // Re-enable Phaser keyboard
+        if (this.input && this.input.keyboard) {
+            this.input.keyboard.enabled = true;
+        }
+        
+        if (this.game && this.game.input && this.game.input.keyboard) {
+            this.game.input.keyboard.enabled = true;
+        }
+        
+        // Remove our custom handler
+        if (this.keydownHandler) {
+            document.removeEventListener('keydown', this.keydownHandler, true);
+            this.keydownHandler = null;
+        }
+        
+        console.log('Global keyboard capture restored');
+    }
+
     init(data) {
         // Receive data from main gameplay scene
         this.gameplayData = data;
@@ -133,104 +180,480 @@ export default class DataCollectionScreen extends BaseScene {
 
     create() {
         super.create();
+
+        // Stop the roguelike scene if it's running
+        const roguelikeScene = this.scene.get('roguelike');
+        if (roguelikeScene && roguelikeScene.scene.isActive()) {
+            this.roguelikeScene = roguelikeScene;
+            this.roguelikeScene.scene.stop();
+            console.log('Roguelike scene stopped');
+        }
         
-        // Create gradient background
+        // Stop any other active game scenes to prevent input conflicts
+        const sceneManager = this.scene.manager;
+        const scenesToStop = ['DungeonScene', 'ComputerLab', 'Classroom', 'BaseLibraryScene'];
+        scenesToStop.forEach(sceneName => {
+            if (sceneManager.isActive(sceneName) || sceneManager.isPaused(sceneName)) {
+                sceneManager.stop(sceneName);
+                console.log(`${sceneName} stopped`);
+            }
+        });
+        
+        // Disable Phaser keyboard input to allow DOM form inputs to work
+        if (this.input && this.input.keyboard) {
+            this.input.keyboard.enabled = false;
+            console.log('Phaser keyboard input disabled for form');
+        }
+        
+        // Also disable any global keyboard capturing
+        this.disableGlobalKeyboardCapture();
+        
+        // Use VNDialogue scaling system for consistency
+        const BASE_WIDTH = 816;
+        const BASE_HEIGHT = 624;
+        const { width, height } = this.scale;
+        const scaleX = width / BASE_WIDTH;
+        const scaleY = height / BASE_HEIGHT;
+        const scale = Math.min(scaleX, scaleY);
+        
+        // Create animated background overlay
+        const overlay = this.add.rectangle(
+            this.cameras.main.width / 2, 
+            this.cameras.main.height / 2, 
+            this.cameras.main.width, 
+            this.cameras.main.height, 
+            0x000000, 
+            0.8
+        ).setOrigin(0.5).setDepth(1999);
+
+        // Add fade-in animation to overlay
+        overlay.setAlpha(0);
+        this.tweens.add({
+            targets: overlay,
+            alpha: 0.8,
+            duration: 300,
+            ease: 'Power2'
+        });
+
+        // Enhanced dialog background with gradient effect and glow
+        const dialogWidth = 350 * scale;
+        const dialogHeight = 450 * scale;
+        const borderRadius = 20 * scale;
+        const borderThickness = 4 * scale;
+        
+        const dialogBg = this.add.graphics();
+        
+        // Create gradient background effect
         const gradient = this.add.graphics();
-        gradient.fillGradientStyle(0x000000, 0x000000, 0x1a1a2e, 0x1a1a2e, 1);
-        gradient.fillRect(0, 0, this.scale.width, this.scale.height);
+        gradient.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x16213e, 0x16213e, 1, 1, 1, 1);
+        gradient.fillRoundedRect(
+            this.cameras.main.width / 2 - dialogWidth / 2,
+            this.cameras.main.height / 2 - dialogHeight / 2,
+            dialogWidth,
+            dialogHeight,
+            borderRadius
+        );
+        gradient.setDepth(2000);
         
-        // Create main panel
-        const panelWidth = 700;
-        const panelHeight = 550;
-        const panelX = this.scale.width / 2;
-        const panelY = this.scale.height / 2;
+        // Outer glow effect
+        const outerGlow = this.add.graphics();
+        outerGlow.lineStyle(borderThickness * 3, 0xF4CE14, 0.3);
+        outerGlow.strokeRoundedRect(
+            this.cameras.main.width / 2 - dialogWidth / 2 - borderThickness,
+            this.cameras.main.height / 2 - dialogHeight / 2 - borderThickness,
+            dialogWidth + borderThickness * 2,
+            dialogHeight + borderThickness * 2,
+            borderRadius + borderThickness
+        );
+        outerGlow.setDepth(1999);
         
-        // Panel shadow
-        const shadow = this.add.rectangle(panelX + 5, panelY + 5, panelWidth, panelHeight, 0x000000, 0.5);
+        // Main border with golden theme
+        dialogBg.lineStyle(borderThickness, 0xF4CE14, 1);
+        dialogBg.strokeRoundedRect(
+            this.cameras.main.width / 2 - dialogWidth / 2,
+            this.cameras.main.height / 2 - dialogHeight / 2,
+            dialogWidth,
+            dialogHeight,
+            borderRadius
+        );
+        dialogBg.setDepth(2001);
+
+        // Add scale-in animation for dialog
+        gradient.setScale(0);
+        outerGlow.setScale(0);
+        dialogBg.setScale(0);
+        this.tweens.add({
+            targets: [gradient, outerGlow, dialogBg],
+            scaleX: 1,
+            scaleY: 1,
+            duration: 400,
+            ease: 'Back.easeOut',
+            delay: 100
+        });
+
+        // Enhanced title with animated effects
+        const title = this.add.text(
+            this.cameras.main.width / 2, 
+            this.cameras.main.height / 2 - 200 * scale,
+            '🎓 Session Complete!', 
+            {
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: `${Math.round(28 * scale)}px`,
+                color: '#F4CE14',
+                stroke: '#000',
+                strokeThickness: 3,
+                shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 4, fill: true }
+            }
+        ).setOrigin(0.5).setDepth(2002);
+
+        // Add pulse animation to title
+        this.tweens.add({
+            targets: title,
+            scaleX: 1.05,
+            scaleY: 1.05,
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // Enhanced instruction text
+        const instruction = this.add.text(
+            this.cameras.main.width / 2, 
+            this.cameras.main.height / 2 - 150 * scale,
+            'Please enter your information\nto save your progress:', 
+            {
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: `${Math.round(14 * scale)}px`,
+                color: '#ffffff',
+                stroke: '#000',
+                strokeThickness: 2,
+                shadow: { offsetX: 1, offsetY: 1, color: '#000', blur: 3, fill: true },
+                align: 'center',
+                wordWrap: { width: 320 * scale }
+            }
+        ).setOrigin(0.5).setDepth(2002);
+
+        // Animate elements appearing with stagger
+        [title, instruction].forEach((element, index) => {
+            element.setAlpha(0);
+            element.setY(element.y - 20);
+            this.tweens.add({
+                targets: element,
+                alpha: 1,
+                y: element.y + 20,
+                duration: 300,
+                ease: 'Power2',
+                delay: 200 + (index * 100)
+            });
+        });
         
-        // Main panel
-        const panel = this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x16213e);
-        panel.setStrokeStyle(3, 0x0f4c75);
-        
-        // Panel glow effect
-        const panelGlow = this.add.rectangle(panelX, panelY, panelWidth + 10, panelHeight + 10, 0x0f4c75, 0.3);
-        
-        // Title
-        const title = this.add.text(panelX, panelY - 220, 'Session Complete!', {
-            fontFamily: 'Arial',
-            fontSize: '32px',
-            fontWeight: 'bold',
-            color: '#00ff88',
-            stroke: '#000000',
-            strokeThickness: 2,
-            align: 'center'
-        }).setOrigin(0.5);
-        
-        // Instruction text
-        const instruction = this.add.text(panelX, panelY - 180, 'Please enter your information to save your progress:', {
-            fontFamily: 'Arial',
-            fontSize: '20px',
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 1,
-            align: 'center'
-        }).setOrigin(0.5);
-        
-        // Create form fields
-        this.createFormFields(panelX, panelY);
+        // Create form fields with enhanced styling
+        this.createEnhancedFormFields(scale);
         
         // Try to autofill form with existing user data
         this.attemptAutofill();
         
-        // Submit button
-        const submitBg = this.add.rectangle(panelX, panelY + 200, 200, 50, 0x0f4c75);
-        submitBg.setStrokeStyle(2, 0x3282b8);
-        
-        const submitText = this.add.text(panelX, panelY + 200, 'Submit & Continue', {
-            fontFamily: 'Arial',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: '#ffffff'
-        }).setOrigin(0.5);
+        // Enhanced submit button
+        this.createEnhancedSubmitButton(scale);
         
         // Loading indicator (hidden initially)
-        this.loadingText = this.add.text(panelX, panelY + 260, 'Saving data...', {
-            fontFamily: 'Arial',
-            fontSize: '16px',
+        this.loadingText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2 + 280 * scale, 'Saving data...', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: `${Math.round(16 * scale)}px`,
             color: '#ffaa00',
             alpha: 0
-        }).setOrigin(0.5);
+        }).setOrigin(0.5).setDepth(2002);
+    }
+
+    createEnhancedFormFields(scale) {
+        const centerX = this.cameras.main.width / 2;
+        const centerY = this.cameras.main.height / 2;
         
-        // Submit button interaction
-        submitBg.setInteractive({ useHandCursor: true })
-            .on('pointerover', () => {
-                submitBg.setFillStyle(0x3282b8);
-                submitText.setScale(1.05);
-            })
-            .on('pointerout', () => {
-                submitBg.setFillStyle(0x0f4c75);
-                submitText.setScale(1);
-            })
-            .on('pointerdown', () => {
-                this.handleSubmit();
+        // Form layout constants - Made more compact
+        const formStartY = centerY - 120 * scale;
+        const fieldHeight = 58 * scale;
+        const labelOffset = 25 * scale;
+        
+        // Form fields data
+        const fields = [
+            { label: 'First Name *', key: 'firstName', placeholder: 'Enter your first name' },
+            { label: 'Last Name *', key: 'lastName', placeholder: 'Enter your last name' },
+            { label: 'Student ID (optional)', key: 'studentId', placeholder: 'Enter your student ID' },
+            { label: 'Department *', key: 'department', type: 'select' }
+        ];
+
+        this.formElements = {};
+        this.domLabels = [];
+        
+        fields.forEach((field, index) => {
+            const fieldY = formStartY + (index * fieldHeight);
+            
+            // Create DOM label
+            const labelEl = document.createElement('div');
+            labelEl.textContent = field.label;
+            labelEl.style.cssText = `
+                position: absolute;
+                left: ${centerX - 120 * scale}px;
+                top: ${fieldY - labelOffset}px;
+                width: ${240 * scale}px;
+                z-index: 2003;
+                color: ${field.label.includes('*') ? '#F4CE14' : '#ffffff'};
+                font-family: 'Caprasimo-Regular', monospace;
+                font-size: ${12 * scale}px;
+                text-shadow: 0 2px 0 #000;
+                pointer-events: none;
+            `;
+            document.body.appendChild(labelEl);
+            this.domLabels.push(labelEl);
+            
+            // Create input or select
+            let inputEl;
+            if (field.type === 'select') {
+                inputEl = document.createElement('select');
+                
+                // Add department options
+                const departmentGroups = [
+                    { label: '-- Select Department --', value: '', disabled: true },
+                    { label: 'Senior High School Department', value: 'Senior High School Department' },
+                    { label: 'College Department', value: 'College Department' }
+                ];
+                
+                departmentGroups.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.value;
+                    option.textContent = dept.label;
+                    option.disabled = dept.disabled || false;
+                    option.style.cssText = `
+                        background-color: #1a1a2e;
+                        color: #ffffff;
+                        padding: 8px;
+                    `;
+                    inputEl.appendChild(option);
+                });
+            } else {
+                inputEl = document.createElement('input');
+                inputEl.type = 'text';
+                inputEl.placeholder = field.placeholder;
+            }
+            
+            inputEl.style.cssText = `
+                position: absolute;
+                left: ${centerX - 120 * scale}px;
+                top: ${fieldY}px;
+                width: ${240 * scale}px;
+                height: ${35 * scale}px;
+                z-index: 2002;
+                padding: ${10 * scale}px ${14 * scale}px;
+                border: ${2 * scale}px solid #379777;
+                border-radius: ${10 * scale}px;
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                color: #ffffff;
+                font-family: 'Caprasimo-Regular', monospace;
+                font-size: ${14 * scale}px;
+                box-shadow: 
+                    0 ${3 * scale}px ${6 * scale}px rgba(0,0,0,0.3),
+                    inset 0 ${1 * scale}px ${2 * scale}px rgba(255,255,255,0.1);
+                box-sizing: border-box;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                outline: none;
+            `;
+            
+            // Add focus effects
+            inputEl.addEventListener('focus', () => {
+                inputEl.style.borderColor = '#F4CE14';
+                inputEl.style.boxShadow = `
+                    0 0 ${12 * scale}px rgba(244, 206, 20, 0.4),
+                    0 ${3 * scale}px ${8 * scale}px rgba(0,0,0,0.4),
+                    inset 0 ${1 * scale}px ${2 * scale}px rgba(255,255,255,0.2)
+                `;
+                inputEl.style.transform = `scale(1.01)`;
+                console.log('Input focused, ensuring keyboard is available');
             });
-        
-        // Entrance animations
-        const animatedElements = [panelGlow, panel, title, instruction, submitBg, submitText];
-        
-        animatedElements.forEach((element, index) => {
-            element.setAlpha(0);
-            this.tweens.add({
-                targets: element,
-                alpha: 1,
-                duration: 400,
-                delay: index * 50,
-                ease: 'Power2.out'
+            
+            inputEl.addEventListener('blur', () => {
+                inputEl.style.borderColor = '#379777';
+                inputEl.style.boxShadow = `
+                    0 ${4 * scale}px ${8 * scale}px rgba(0,0,0,0.3),
+                    inset 0 ${1 * scale}px ${2 * scale}px rgba(255,255,255,0.1)
+                `;
+                inputEl.style.transform = `scale(1)`;
             });
+            
+            // Add keyboard event handling
+            inputEl.addEventListener('keydown', (event) => {
+                // Allow all keyboard input for forms
+                event.stopPropagation();
+                
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    this.handleSubmit();
+                }
+            });
+            
+            inputEl.addEventListener('keypress', (event) => {
+                event.stopPropagation();
+            });
+            
+            // Ensure input works by preventing event bubbling
+            inputEl.addEventListener('input', (event) => {
+                event.stopPropagation();
+            });
+            
+            document.body.appendChild(inputEl);
+            this.formElements[field.key] = inputEl;
+        });
+        
+        // Fade-in animation for DOM labels
+        this.domLabels.forEach((el, index) => {
+            el.style.opacity = '0';
+            el.style.transition = 'opacity 300ms ease';
+            setTimeout(() => { el.style.opacity = '1'; }, 300 + (index * 100));
+        });
+        
+        // Focus the first input after a delay to ensure everything is ready
+        setTimeout(() => {
+            if (this.formElements.firstName) {
+                this.formElements.firstName.focus();
+                console.log('First input focused');
+            }
+        }, 500);
+    }
+
+    createEnhancedSubmitButton(scale) {
+        const centerX = this.cameras.main.width / 2;
+        const centerY = this.cameras.main.height / 2;
+        
+        // Enhanced button creation
+        const createButton = (x, y, width, height, text, buttonType, callback) => {
+            const cornerRadius = 20 * scale;
+            const borderWidth = 3 * scale;
+            
+            // Color scheme for submit button
+            const colors = {
+                bg: [0x379777, 0x2d7a5f],
+                bgHover: [0x4fb085, 0x379777],
+                border: 0x5fd4a5,
+                text: '#ffffff',
+                textHover: '#F4CE14',
+                icon: '📝'
+            };
+            
+            // Button container
+            const buttonContainer = this.add.container(x, y).setDepth(2001);
+            
+            // Button background
+            const btnBg = this.add.graphics();
+            const drawButton = (bgColors, isHover = false) => {
+                btnBg.clear();
+                btnBg.fillGradientStyle(bgColors[0], bgColors[0], bgColors[1], bgColors[1], 1, 1, 1, 1);
+                btnBg.fillRoundedRect(-width / 2, -height / 2, width, height, cornerRadius);
+                btnBg.lineStyle(borderWidth, colors.border, isHover ? 1 : 0.8);
+                btnBg.strokeRoundedRect(-width / 2, -height / 2, width, height, cornerRadius);
+                
+                if (isHover) {
+                    btnBg.lineStyle(1, 0xffffff, 0.3);
+                    btnBg.strokeRoundedRect(-width / 2 + 3, -height / 2 + 3, width - 6, height - 6, cornerRadius - 3);
+                }
+            };
+            
+            drawButton(colors.bg);
+            buttonContainer.add(btnBg);
+
+            // Button text
+            const btnText = this.add.text(0, 0, `${colors.icon} ${text}`, {
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: `${Math.round(18 * scale)}px`,
+                color: colors.text,
+                stroke: '#000',
+                strokeThickness: 3,
+                shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 4, fill: true }
+            }).setOrigin(0.5);
+            
+            buttonContainer.add(btnText);
+            buttonContainer.setInteractive(
+                new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height),
+                Phaser.Geom.Rectangle.Contains
+            );
+            buttonContainer.input.useHandCursor = true;
+
+            // Hover effects
+            buttonContainer.on('pointerover', () => {
+                drawButton(colors.bgHover, true);
+                btnText.setStyle({ color: colors.textHover });
+                this.tweens.add({
+                    targets: buttonContainer,
+                    scaleX: 1.05,
+                    scaleY: 1.05,
+                    duration: 150,
+                    ease: 'Power2'
+                });
+            });
+            
+            buttonContainer.on('pointerout', () => {
+                drawButton(colors.bg);
+                btnText.setStyle({ color: colors.text });
+                this.tweens.add({
+                    targets: buttonContainer,
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 150,
+                    ease: 'Power2'
+                });
+            });
+            
+            buttonContainer.on('pointerdown', () => {
+                this.tweens.add({
+                    targets: buttonContainer,
+                    scaleX: 0.95,
+                    scaleY: 0.95,
+                    duration: 100,
+                    ease: 'Power2'
+                });
+            });
+            
+            buttonContainer.on('pointerup', () => {
+                this.tweens.add({
+                    targets: buttonContainer,
+                    scaleX: 1.05,
+                    scaleY: 1.05,
+                    duration: 100,
+                    ease: 'Power2',
+                    onComplete: () => callback()
+                });
+            });
+
+            return buttonContainer;
+        };
+
+        // Create submit button
+        this.submitButton = createButton(
+            centerX,
+            centerY + 180 * scale,
+            200 * scale,
+            45 * scale,
+            'Submit & Continue',
+            'confirm',
+            () => this.handleSubmit()
+        );
+        
+        // Slide-in animation for button
+        this.submitButton.setScale(0);
+        this.submitButton.setAlpha(0);
+        this.tweens.add({
+            targets: this.submitButton,
+            scaleX: 1,
+            scaleY: 1,
+            alpha: 1,
+            duration: 400,
+            ease: 'Back.easeOut',
+            delay: 500
         });
     }
 
     createFormFields(centerX, centerY) {
+        // Legacy method - keeping for compatibility but using enhanced version
+        this.createEnhancedFormFields(1);
         // Calculate position relative to the game canvas
         const gameCanvas = document.querySelector('#game canvas') || document.querySelector('canvas');
         const canvasRect = gameCanvas ? gameCanvas.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
@@ -334,7 +757,7 @@ export default class DataCollectionScreen extends BaseScene {
         element.style.zIndex = '1000';
         element.style.fontFamily = 'Arial, sans-serif';
 
-        // Disable Phaser keyboard capture when focused
+        // Disable Phaser keyboard capture when focused (already disabled globally)
         element.addEventListener('focus', () => {
             if (this.input && this.input.keyboard) {
                 this.input.keyboard.enabled = false;
@@ -342,9 +765,8 @@ export default class DataCollectionScreen extends BaseScene {
         });
 
         element.addEventListener('blur', () => {
-            if (this.input && this.input.keyboard) {
-                this.input.keyboard.enabled = true;
-            }
+            // Keep keyboard disabled since we're in form mode
+            // It will be re-enabled when the scene is cleaned up
         });
 
         // Handle keyboard events
@@ -553,12 +975,14 @@ export default class DataCollectionScreen extends BaseScene {
         const lastName = this.formElements.lastName?.value.trim() || '';
         const department = this.formElements.department?.value || '';
         const strandYear = this.formElements.strandYear?.value.trim() || '';
+        let studentId = this.formElements.studentId?.value.trim() || '';
         
         console.log('📝 DataCollectionScreen: Form values retrieved:', {
             firstName,
             lastName,
             department,
-            strandYear
+            strandYear,
+            studentId
         });
         
         // Validation
@@ -566,26 +990,40 @@ export default class DataCollectionScreen extends BaseScene {
         if (!firstName) missingFields.push('First Name');
         if (!lastName) missingFields.push('Last Name');
         if (!department) missingFields.push('Department');
-        if (!strandYear) missingFields.push('Strand/Year');
         
         console.log('✅ DataCollectionScreen: Validation check:', { missingFields });
         
         if (missingFields.length > 0) {
             console.log('❌ DataCollectionScreen: Validation failed - missing fields:', missingFields);
-            // Show error message
-            const errorText = this.add.text(this.scale.width / 2, this.scale.height / 2 + 180, 
-                `Please fill in: ${missingFields.join(', ')}`, {
-                fontFamily: 'Arial',
+            
+            // Enhanced error display
+            const errorText = this.add.text(
+                this.cameras.main.width / 2, 
+                this.cameras.main.height / 2 + 180, 
+                `⚠️ Please fill in: ${missingFields.join(', ')}`, {
+                fontFamily: 'Caprasimo-Regular',
                 fontSize: '16px',
                 color: '#ff4444',
+                stroke: '#000',
+                strokeThickness: 2,
                 align: 'center'
-            }).setOrigin(0.5);
+            }).setOrigin(0.5).setDepth(2003);
             
+            // Shake animation for error
+            this.tweens.add({
+                targets: errorText,
+                x: errorText.x - 5,
+                duration: 50,
+                yoyo: true,
+                repeat: 5
+            });
+            
+            // Auto-hide error after 3 seconds
             this.tweens.add({
                 targets: errorText,
                 alpha: 0,
-                duration: 2000,
-                delay: 2000,
+                duration: 300,
+                delay: 3000,
                 onComplete: () => errorText.destroy()
             });
             return;
@@ -593,13 +1031,31 @@ export default class DataCollectionScreen extends BaseScene {
         
         console.log('✅ DataCollectionScreen: Validation passed - proceeding with submission');
         
-        // Show loading indicator
+        // Show loading indicator with animation
         this.loadingText.setAlpha(1);
+        this.tweens.add({
+            targets: this.loadingText,
+            scaleX: 1.1,
+            scaleY: 1.1,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1
+        });
         console.log('🔄 DataCollectionScreen: Loading indicator shown');
         
         try {
-            // Get student data from localStorage (same way authService stores it)
-            let studentId = 'unknown';
+            // Store user info in localStorage for future use
+            const userInfo = {
+                firstName,
+                lastName,
+                department,
+                studentId,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('sci_high_player_info', JSON.stringify(userInfo));
+            
+            // Get current user data
+            let currentStudentId = studentId || 'unknown';
             let currentUser = null;
             
             console.log('🔄 DataCollectionScreen: Attempting to get student ID from localStorage...');
@@ -758,18 +1214,30 @@ export default class DataCollectionScreen extends BaseScene {
     }
     
     cleanupFormElements() {
+        // Clean up DOM form elements
         if (this.formElements) {
             Object.values(this.formElements).forEach(element => {
                 if (element && element.parentNode) {
                     element.parentNode.removeChild(element);
                 }
             });
+            this.formElements = null;
         }
         
-        // Re-enable Phaser keyboard
-        if (this.input && this.input.keyboard) {
-            this.input.keyboard.enabled = true;
+        // Clean up DOM labels
+        if (this.domLabels) {
+            this.domLabels.forEach(el => {
+                if (el && el.parentNode) {
+                    el.parentNode.removeChild(el);
+                }
+            });
+            this.domLabels = null;
         }
+        
+        // Restore global keyboard capture
+        this.restoreGlobalKeyboardCapture();
+        
+        console.log('Form cleanup completed with keyboard restoration');
     }
     
     shutdown() {

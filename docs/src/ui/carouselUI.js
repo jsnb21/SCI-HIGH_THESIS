@@ -1,3 +1,5 @@
+import { seVolume } from '../audioUtils.js';
+
 const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
 
@@ -389,12 +391,14 @@ class Carousel {
 
     playHoverSound() {
         if (this.scene[this.config.sounds?.hover]) {
+            this.scene[this.config.sounds.hover].setVolume(seVolume);
             this.scene[this.config.sounds.hover].play();
         }
     }
 
     playConfirmSound() {
         if (this.scene[this.config.sounds?.confirm]) {
+            this.scene[this.config.sounds.confirm].setVolume(seVolume);
             this.scene[this.config.sounds.confirm].play();
         }
     }
