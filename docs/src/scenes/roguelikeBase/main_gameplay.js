@@ -274,6 +274,46 @@ export default class MainGameplay extends BaseScene {
         
         // Update camera
         this.setupCamera();
+        
+        // Update HUD positions for responsive design
+        this.updateHudPositions();
+    }
+
+    updateHudPositions() {
+        // Calculate responsive positions based on current screen size
+        const screenWidth = this.scale.width;
+        const screenHeight = this.scale.height;
+        const isMobile = screenWidth < 768;
+        
+        // Update score and streak positions
+        const scoreX = isMobile ? Math.min(20, screenWidth * 0.03) : 20;
+        const scoreY = isMobile ? Math.min(30, screenHeight * 0.05) : 30;
+        const streakY = isMobile ? Math.min(65, screenHeight * 0.11) : 65;
+        
+        // Responsive font sizes
+        const scoreFontSize = isMobile ? Math.max(18, screenWidth * 0.03) : 24;
+        const streakFontSize = isMobile ? Math.max(14, screenWidth * 0.025) : 18;
+        const timerFontSize = isMobile ? Math.max(24, screenWidth * 0.04) : 32;
+        
+        // Update score text position and font size
+        if (this.scoreText) {
+            this.scoreText.setPosition(scoreX, scoreY);
+            this.scoreText.setFontSize(`${scoreFontSize}px`);
+        }
+        
+        // Update streak text position and font size
+        if (this.streakText) {
+            this.streakText.setPosition(scoreX, streakY);
+            this.streakText.setFontSize(`${streakFontSize}px`);
+        }
+        
+        // Update timer position and font size
+        if (this.timerText) {
+            const centerX = screenWidth / 2;
+            const timerY = isMobile ? Math.min(30, screenHeight * 0.05) : 30;
+            this.timerText.setPosition(centerX, timerY);
+            this.timerText.setFontSize(`${timerFontSize}px`);
+        }
     }
 
     createBackground() {
@@ -287,10 +327,15 @@ export default class MainGameplay extends BaseScene {
         // Get screen dimensions
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
+        const isMobile = screenWidth < 768;
         
-        // Calculate offset to center the board
+        // Account for HUD space at the top
+        const hudHeight = isMobile ? Math.max(80, screenHeight * 0.12) : 100;
+        const availableHeight = screenHeight - hudHeight;
+        
+        // Calculate offset to center the board in available space
         const offsetX = Math.max(0, (screenWidth - boardWidth) / 2);
-        const offsetY = Math.max(0, (screenHeight - boardHeight) / 2);
+        const offsetY = Math.max(hudHeight, hudHeight + (availableHeight - boardHeight) / 2);
         
         // Store offsets for later use
         this.boardOffsetX = offsetX;
@@ -556,12 +601,21 @@ export default class MainGameplay extends BaseScene {
     }
 
     createTimer() {
-        // Create timer text at the top center of the screen
-        const centerX = this.scale.width / 2;
+        // Calculate responsive positions based on screen size
+        const screenWidth = this.scale.width;
+        const screenHeight = this.scale.height;
+        const isMobile = screenWidth < 768;
         
-        this.timerText = this.add.text(centerX, 30, '1:00', {
+        // Center the timer horizontally
+        const centerX = screenWidth / 2;
+        const timerY = isMobile ? Math.min(30, screenHeight * 0.05) : 30;
+        
+        // Responsive font size
+        const timerFontSize = isMobile ? Math.max(24, screenWidth * 0.04) : 32;
+        
+        this.timerText = this.add.text(centerX, timerY, '1:00', {
             fontFamily: 'Arial',
-            fontSize: '32px',
+            fontSize: `${timerFontSize}px`,
             fontWeight: 'bold',
             color: '#ffffff',
             stroke: '#000000',
@@ -580,10 +634,24 @@ export default class MainGameplay extends BaseScene {
     }
 
     createScoreDisplay() {
+        // Calculate responsive positions based on screen size
+        const screenWidth = this.scale.width;
+        const screenHeight = this.scale.height;
+        const isMobile = screenWidth < 768;
+        
+        // Use responsive positioning
+        const scoreX = isMobile ? Math.min(20, screenWidth * 0.03) : 20;
+        const scoreY = isMobile ? Math.min(30, screenHeight * 0.05) : 30;
+        const streakY = isMobile ? Math.min(65, screenHeight * 0.11) : 65;
+        
+        // Responsive font sizes
+        const scoreFontSize = isMobile ? Math.max(18, screenWidth * 0.03) : 24;
+        const streakFontSize = isMobile ? Math.max(14, screenWidth * 0.025) : 18;
+        
         // Create score text at the top left of the screen
-        this.scoreText = this.add.text(20, 30, 'Score: 0', {
+        this.scoreText = this.add.text(scoreX, scoreY, 'Score: 0', {
             fontFamily: 'Arial',
-            fontSize: '24px',
+            fontSize: `${scoreFontSize}px`,
             fontWeight: 'bold',
             color: '#ffffff',
             stroke: '#000000',
@@ -595,12 +663,12 @@ export default class MainGameplay extends BaseScene {
                 blur: 3,
                 fill: true
             }
-        }).setOrigin(0, 0).setScrollFactor(0);
+        }).setOrigin(0, 0).setScrollFactor(0).setDepth(1000);
         
         // Create streak display below the score
-        this.streakText = this.add.text(20, 65, 'Streak: 0', {
+        this.streakText = this.add.text(scoreX, streakY, 'Streak: 0', {
             fontFamily: 'Arial',
-            fontSize: '18px',
+            fontSize: `${streakFontSize}px`,
             fontWeight: 'bold',
             color: '#ffff00',
             stroke: '#000000',
@@ -612,7 +680,7 @@ export default class MainGameplay extends BaseScene {
                 blur: 3,
                 fill: true
             }
-        }).setOrigin(0, 0).setScrollFactor(0);
+        }).setOrigin(0, 0).setScrollFactor(0).setDepth(1000);
     }
 
     getFormattedCourseName(topic) {
@@ -2445,23 +2513,32 @@ export default class MainGameplay extends BaseScene {
             return;
         }
         
+        // Calculate the center of the actual board based on our offsets
+        const boardWidth = this.MAP_WIDTH * this.TILE_SIZE;
+        const boardHeight = this.MAP_HEIGHT * this.TILE_SIZE;
+        const boardCenterX = this.boardOffsetX + boardWidth / 2;
+        const boardCenterY = this.boardOffsetY + boardHeight / 2;
+        
         // For a board game, we want the camera to show the entire board centered
-        // Set camera to show the entire scene without following the player
-        this.cameras.main.centerOn(this.scale.width / 2, this.scale.height / 2);
+        // Center the camera on the actual board position
+        this.cameras.main.centerOn(boardCenterX, boardCenterY);
         
         // Calculate zoom to ensure the board is visible with padding
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
-        const boardWidth = this.MAP_WIDTH * this.TILE_SIZE;
-        const boardHeight = this.MAP_HEIGHT * this.TILE_SIZE;
+        const isMobile = screenWidth < 768;
         
-        // Calculate zoom to fit the board with padding (90% of screen)
-        const zoomX = (screenWidth * 0.8) / boardWidth;
-        const zoomY = (screenHeight * 0.8) / boardHeight;
+        // Account for HUD space when calculating available screen area
+        const hudHeight = isMobile ? Math.max(80, screenHeight * 0.12) : 100;
+        const availableHeight = screenHeight - hudHeight;
+        
+        // Calculate zoom to fit the board with padding (90% of available screen)
+        const zoomX = (screenWidth * 0.9) / boardWidth;
+        const zoomY = (availableHeight * 0.9) / boardHeight;
         const zoom = Math.min(zoomX, zoomY, 1); // Don't zoom in beyond 1x
         
         this.cameras.main.setZoom(zoom);
-        console.log(`Board: ${boardWidth}x${boardHeight}, Screen: ${screenWidth}x${screenHeight}, Zoom: ${zoom}`);
+        console.log(`Board: ${boardWidth}x${boardHeight}, Screen: ${screenWidth}x${availableHeight}, Zoom: ${zoom}, Center: ${boardCenterX},${boardCenterY}`);
     }
 
     addCourseDisplay() {
