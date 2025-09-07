@@ -103,7 +103,8 @@ export default class MainGameplay extends BaseScene {
         this.currentPowerUp = null;
         this.activePowerUps = {
             streakProtection: false,
-            goblinImmunity: false,
+            goblinImmunityReady: false,  // Power-up selected, waiting for correct answer
+            goblinImmunityActive: false, // Currently immune to one goblin thug
             speedBoost: false
         };
         this.originalPlayerSpeed = 200; // Store original speed for speed boost
@@ -146,7 +147,8 @@ export default class MainGameplay extends BaseScene {
             // Always reset power-up system for new sessions
             this.activePowerUps = {
                 streakProtection: false,
-                goblinImmunity: false,
+                goblinImmunityReady: false,
+                goblinImmunityActive: false,
                 speedBoost: false
             };
             this.player.speed = this.originalPlayerSpeed;
@@ -1178,14 +1180,17 @@ export default class MainGameplay extends BaseScene {
 
     handleGoblinThugCollision(thug) {
         // Check for goblin immunity power-up
-        if (this.activePowerUps.goblinImmunity) {
+        if (this.activePowerUps.goblinImmunityActive) {
             // Player is immune - destroy thug without penalty
             console.log('Goblin immunity active! No damage taken.');
+            
+            // Deactivate immunity after blocking one thug
+            this.activePowerUps.goblinImmunityActive = false;
             
             // Show immunity notification
             this.showPowerUpNotification({
                 icon: '✨',
-                name: 'Goblin Immunity!'
+                name: 'Goblin Blocked!'
             });
             
             // Create golden shield effect instead of damage
@@ -1614,10 +1619,17 @@ export default class MainGameplay extends BaseScene {
             // Update player speed if speed boost is active
             this.updatePlayerSpeed();
             
-            // Activate goblin immunity if power-up is selected
-            if (this.activePowerUps.goblinImmunity) {
-                this.activePowerUps.goblinImmunity = true; // Keep it active (doesn't expire until wrong answer)
-                console.log('Goblin immunity activated!');
+            // Activate goblin immunity if power-up is ready
+            if (this.activePowerUps.goblinImmunityReady) {
+                this.activePowerUps.goblinImmunityReady = false; // Consume the ready state
+                this.activePowerUps.goblinImmunityActive = true; // Activate protection
+                console.log('Goblin immunity activated! Next goblin thug will be blocked.');
+                
+                // Show activation notification
+                this.showPowerUpNotification({
+                    icon: '✨',
+                    name: 'Goblin Ward Active!'
+                });
             }
             
             // Check for intensity increase after correct answer
@@ -1644,8 +1656,9 @@ export default class MainGameplay extends BaseScene {
                 console.log('Wrong answer! Streak reset.');
                 
                 // Reset goblin immunity on wrong answer
-                if (this.activePowerUps.goblinImmunity) {
-                    this.activePowerUps.goblinImmunity = false;
+                if (this.activePowerUps.goblinImmunityReady || this.activePowerUps.goblinImmunityActive) {
+                    this.activePowerUps.goblinImmunityReady = false;
+                    this.activePowerUps.goblinImmunityActive = false;
                     console.log('Goblin immunity lost due to wrong answer.');
                 }
             }
@@ -2210,7 +2223,8 @@ export default class MainGameplay extends BaseScene {
                 this.activePowerUps.streakProtection = true;
                 break;
             case 'goblinImmunity':
-                this.activePowerUps.goblinImmunity = true;
+                this.activePowerUps.goblinImmunityReady = true;
+                console.log('Goblin Ward selected! Answer correctly to activate immunity.');
                 break;
             case 'speedBoost':
                 this.activePowerUps.speedBoost = true;
