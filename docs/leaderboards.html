@@ -1111,7 +1111,7 @@
           const careerStatsData = careerStatsSnapshot.val();
           
           if (careerStatsData && careerStatsData.careerStats && careerStatsData.studentInfo) {
-            renderPlayerProfileWithCareerStats(careerStatsData);
+            await renderPlayerProfileWithCareerStats(careerStatsData, userId);
           } else {
             document.getElementById('profile-content').innerHTML = `
               <div class="text-center py-8">
@@ -1135,8 +1135,36 @@
         document.getElementById('player-profile-modal').classList.add('hidden');
       }
 
+      // Function to calculate player rankings
+      async function calculatePlayerRankings(studentId, currentPlayerScore, currentPlayerDepartment) {
+        try {
+          // Load all career stats data for ranking calculation
+          const allCareerStatsData = await loadCareerStatsData('overall');
+          
+          // Calculate global rank
+          const globalRank = allCareerStatsData.findIndex(player => player.studentId === studentId) + 1;
+          
+          // Calculate department rank
+          const departmentPlayers = allCareerStatsData.filter(player => 
+            player.department === currentPlayerDepartment
+          );
+          const departmentRank = departmentPlayers.findIndex(player => player.studentId === studentId) + 1;
+          
+          return {
+            globalRank: globalRank > 0 ? globalRank : '?',
+            departmentRank: departmentRank > 0 ? departmentRank : '?'
+          };
+        } catch (error) {
+          console.error('Error calculating rankings:', error);
+          return {
+            globalRank: '?',
+            departmentRank: '?'
+          };
+        }
+      }
+
       // New Enhanced Player Profile with Career Stats
-      function renderPlayerProfileWithCareerStats(careerStatsData) {
+      async function renderPlayerProfileWithCareerStats(careerStatsData, studentId) {
         const career = careerStatsData.careerStats;
         const info = careerStatsData.studentInfo;
         const recentSessions = careerStatsData.recentSessions || {};
@@ -1171,9 +1199,10 @@
           ${department}
         `;
         
-        // Update rankings (calculated from career stats)
-        document.getElementById('global-rank').textContent = '#' + (career.globalRank || '?');
-        document.getElementById('dept-rank').textContent = '#' + (career.departmentRank || '?');
+        // Calculate and update rankings dynamically
+        const rankings = await calculatePlayerRankings(studentId, career.totalPoints || 0, department);
+        document.getElementById('global-rank').textContent = '#' + rankings.globalRank;
+        document.getElementById('dept-rank').textContent = '#' + rankings.departmentRank;
         
         // Update stats with career data
         document.getElementById('ranked-score').textContent = (career.totalPoints || 0).toLocaleString();
@@ -1323,9 +1352,12 @@
           ${playerData.department || 'Unknown'}
         `;
         
-        // Update rankings (we'll calculate these properly later)
-        document.getElementById('global-rank').textContent = '#' + (Math.floor(Math.random() * 1000) + 1);
-        document.getElementById('dept-rank').textContent = '#' + (Math.floor(Math.random() * 100) + 1);
+        // Update rankings (calculate proper rankings based on score)
+        // For now, use a simple approximation until we can get proper user ID
+        const estimatedGlobalRank = Math.max(1, Math.floor((5000 - playerData.score) / 10) + 1);
+        const estimatedDeptRank = Math.max(1, Math.floor((2000 - playerData.score) / 15) + 1);
+        document.getElementById('global-rank').textContent = '#' + estimatedGlobalRank;
+        document.getElementById('dept-rank').textContent = '#' + estimatedDeptRank;
         
         // Update stats
         document.getElementById('ranked-score').textContent = playerData.score.toLocaleString();
