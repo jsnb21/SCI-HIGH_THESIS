@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import BaseScene from '../BaseScene.js';
+import { getScaleInfo, scaleFontSize, scaleDimension } from '../../utils/mobileUtils.js';
 
 export default class ResultScreen extends BaseScene {
     constructor() {
@@ -20,6 +21,9 @@ export default class ResultScreen extends BaseScene {
 
     create() {
         super.create();
+        
+        // Get scale information for mobile responsiveness
+        const scaleInfo = getScaleInfo();
         
         // Calculate ranking based on correct/wrong ratio
         const totalQuestions = this.correctAnswers + this.wrongAnswers;
@@ -60,9 +64,9 @@ export default class ResultScreen extends BaseScene {
         gradient.fillGradientStyle(0x000000, 0x000000, 0x1a1a2e, 0x1a1a2e, 1);
         gradient.fillRect(0, 0, this.scale.width, this.scale.height);
         
-        // Create main result panel
-        const panelWidth = 500;
-        const panelHeight = 450;
+        // Create main result panel with responsive dimensions
+        const panelWidth = scaleDimension(500, scaleInfo);
+        const panelHeight = scaleDimension(450, scaleInfo);
         const panelX = this.scale.width / 2;
         const panelY = this.scale.height / 2;
         
@@ -167,23 +171,27 @@ export default class ResultScreen extends BaseScene {
             }).setOrigin(1, 0.5);
         });
         
-        // Enhanced button design
-        const buttonY = panelY + 160;
-        const buttonBg = this.add.rectangle(panelX, buttonY, 280, 50, 0x0f4c75);
-        buttonBg.setStrokeStyle(2, 0x3282b8);
+        // Enhanced button design with responsive dimensions
+        const buttonY = panelY + scaleDimension(160, scaleInfo);
+        const buttonWidth = scaleDimension(280, scaleInfo);
+        const buttonHeight = scaleDimension(50, scaleInfo);
+        const buttonFontSize = scaleFontSize(18, scaleInfo);
         
-        const buttonGlow = this.add.rectangle(panelX, buttonY, 280, 50, 0x3282b8, 0.3);
+        const buttonBg = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x0f4c75);
+        buttonBg.setStrokeStyle(scaleDimension(2, scaleInfo), 0x3282b8);
+        
+        const buttonGlow = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x3282b8, 0.3);
         
         const buttonText = this.add.text(panelX, buttonY, 'Back to Computer Lab', {
             fontFamily: 'Arial',
-            fontSize: '18px',
+            fontSize: `${buttonFontSize}px`,
             fontWeight: 'bold',
             color: '#ffffff',
             shadow: {
-                offsetX: 1,
-                offsetY: 1,
+                offsetX: scaleDimension(1, scaleInfo),
+                offsetY: scaleDimension(1, scaleInfo),
                 color: '#000000',
-                blur: 3,
+                blur: scaleDimension(3, scaleInfo),
                 fill: true
             }
         }).setOrigin(0.5);

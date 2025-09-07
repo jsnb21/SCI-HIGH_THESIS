@@ -1,18 +1,31 @@
 import gameManager from '../../gameManager.js'; // Add this import
-import { createDebouncedClickHandler } from '../../utils/mobileUtils.js'; // Add mobile utils import
+import { createDebouncedClickHandler, getScaleInfo, scaleFontSize, scaleDimension, getResponsivePosition } from '../../utils/mobileUtils.js'; // Add mobile utils import
 
 // This file is for the back button component in the game, separated to reduce lines of code in the main file
 
 export function createBackButton(scene, targetScene = 'ComputerLab') {
-    // Visual style parameters - increased size for PC
-    const buttonX = 120;
-    const buttonY = 60;
-    const buttonWidth = 180; // Increased from 120
-    const buttonHeight = 60; // Increased from 40
+    // Get mobile scaling information
+    const scaleInfo = getScaleInfo(scene);
+    
+    // Responsive button parameters
+    const baseButtonWidth = 120;
+    const baseButtonHeight = 40;
+    const baseFontSize = 24;
+    
+    const buttonWidth = scaleDimension(baseButtonWidth, scaleInfo);
+    const buttonHeight = scaleDimension(baseButtonHeight, scaleInfo);
+    const fontSize = scaleFontSize(baseFontSize, scaleInfo);
+    
+    // Position button in top-left with appropriate offset
+    const buttonPosition = getResponsivePosition(scaleInfo, 'top-left', { 
+        x: buttonWidth/2 + 20, 
+        y: buttonHeight/2 + 20 
+    });
+    
     // Create button background (rectangle with stroke)
     const buttonBg = scene.add.rectangle(
-        buttonX,
-        buttonY,
+        buttonPosition.x,
+        buttonPosition.y,
         buttonWidth,
         buttonHeight,
         0x000000,
@@ -23,11 +36,11 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
 
     // Create button text
     const backButton = scene.add.text(
-        buttonX,
-        buttonY,
+        buttonPosition.x,
+        buttonPosition.y,
         'Back',
         {
-            font: '32px Caprasimo-Regular', // Increased from 24px
+            font: `${fontSize}px Caprasimo-Regular`,
             fill: '#ffffff',
             padding: { left: 0, right: 0, top: 0, bottom: 0 }
         }

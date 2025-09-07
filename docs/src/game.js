@@ -76,7 +76,7 @@ const config = {
     forceSetTimeOut: true
   },
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.ENVELOP,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     // Mobile-optimized scaling
     width: 1920,
@@ -88,7 +88,11 @@ const config = {
     max: {
       width: 1920,
       height: 1080
-    }
+    },
+    // Mobile-specific scaling options
+    zoom: 1,
+    expandParent: false,
+    autoRound: true
   },
   scene: [
     StartUp, // Added StartUp as the first scene
@@ -186,13 +190,7 @@ if (typeof window.SES !== 'undefined') {
 
 window.addEventListener('resize', () => {
     if (window.game && window.game.scale) {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        window.game.scale.resize(width, height);
-
-        const canvas = window.game.canvas;
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
+        window.game.scale.refresh();
     }
 });
 
@@ -200,12 +198,9 @@ window.addEventListener('resize', () => {
 window.addEventListener('orientationchange', () => {
     setTimeout(() => {
         if (window.game && window.game.scale) {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            window.game.scale.resize(width, height);
             window.game.scale.refresh();
         }
-    }, 100);
+    }, 100); // Small delay to ensure viewport has updated
 });
 
 // Add error handling for game initialization
