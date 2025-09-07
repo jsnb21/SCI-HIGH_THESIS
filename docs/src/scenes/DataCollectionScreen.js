@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import BaseScene from './BaseScene.js';
 import { playExclusiveBGM, updateSoundVolumes } from '../audioUtils.js';
+import { getScaleInfo, scaleFontSize, scaleDimension, getResponsivePosition } from '../utils/mobileUtils.js';
 
 export default class DataCollectionScreen extends BaseScene {
     constructor() {
@@ -140,6 +141,10 @@ export default class DataCollectionScreen extends BaseScene {
     create() {
         super.create();
         
+        // Get scale information using mobile utilities
+        const scaleInfo = getScaleInfo(this);
+        this.scaleInfo = scaleInfo;
+        
         // Play results music for data collection
         playExclusiveBGM(this, 'bgm_results', { loop: true });
         updateSoundVolumes(this);
@@ -149,26 +154,36 @@ export default class DataCollectionScreen extends BaseScene {
         gradient.fillGradientStyle(0x000000, 0x000000, 0x1a1a2e, 0x1a1a2e, 1);
         gradient.fillRect(0, 0, this.scale.width, this.scale.height);
         
-        // Create main panel
-        const panelWidth = 700;
-        const panelHeight = 550;
-        const panelX = this.scale.width / 2;
-        const panelY = this.scale.height / 2;
+        // Create responsive main panel using mobile utilities
+        const basePanelWidth = 700;
+        const basePanelHeight = 550;
+        
+        const panelWidth = Math.min(
+            scaleDimension(basePanelWidth, scaleInfo),
+            scaleInfo.width - 40
+        );
+        const panelHeight = Math.min(
+            scaleDimension(basePanelHeight, scaleInfo),
+            scaleInfo.height - 80
+        );
+        
+        const centerPos = getResponsivePosition(scaleInfo, 'center');
         
         // Panel shadow
-        const shadow = this.add.rectangle(panelX + 5, panelY + 5, panelWidth, panelHeight, 0x000000, 0.5);
+        const shadow = this.add.rectangle(centerPos.x + 5, centerPos.y + 5, panelWidth, panelHeight, 0x000000, 0.5);
         
         // Main panel
-        const panel = this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x16213e);
+        const panel = this.add.rectangle(centerPos.x, centerPos.y, panelWidth, panelHeight, 0x16213e);
         panel.setStrokeStyle(3, 0x0f4c75);
         
         // Panel glow effect
-        const panelGlow = this.add.rectangle(panelX, panelY, panelWidth + 10, panelHeight + 10, 0x0f4c75, 0.3);
+        const panelGlow = this.add.rectangle(centerPos.x, centerPos.y, panelWidth + 10, panelHeight + 10, 0x0f4c75, 0.3);
         
-        // Title
-        const title = this.add.text(panelX, panelY - 220, 'Session Complete!', {
+        // Responsive title
+        const titleFontSize = scaleFontSize(32, scaleInfo);
+        const title = this.add.text(centerPos.x, centerPos.y - (panelHeight/2 - 40), 'Session Complete!', {
             fontFamily: 'Arial',
-            fontSize: '32px',
+            fontSize: `${titleFontSize}px`,
             fontWeight: 'bold',
             color: '#00ff88',
             stroke: '#000000',
@@ -176,37 +191,43 @@ export default class DataCollectionScreen extends BaseScene {
             align: 'center'
         }).setOrigin(0.5);
         
-        // Instruction text
-        const instruction = this.add.text(panelX, panelY - 180, 'Please enter your information to save your progress:', {
+        // Responsive instruction text
+        const instructionFontSize = scaleFontSize(20, scaleInfo);
+        const instruction = this.add.text(centerPos.x, centerPos.y - (panelHeight/2 - 80), 'Please enter your information to save your progress:', {
             fontFamily: 'Arial',
-            fontSize: '20px',
+            fontSize: `${instructionFontSize}px`,
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 1,
-            align: 'center'
+            align: 'center',
+            wordWrap: { width: panelWidth - 60 }
         }).setOrigin(0.5);
         
-        // Create form fields
-        this.createFormFields(panelX, panelY);
+        // Create form fields with responsive sizing
+        this.createFormFields(centerPos.x, centerPos.y, scaleInfo, panelWidth, panelHeight);
         
         // Try to autofill form with existing user data
         this.attemptAutofill();
         
-        // Submit button
-        const submitBg = this.add.rectangle(panelX, panelY + 200, 200, 50, 0x0f4c75);
+        // Responsive submit button
+        const submitWidth = scaleDimension(200, scaleInfo);
+        const submitHeight = scaleDimension(50, scaleInfo);
+        const submitBg = this.add.rectangle(centerPos.x, centerPos.y + (panelHeight/2 - 70), submitWidth, submitHeight, 0x0f4c75);
         submitBg.setStrokeStyle(2, 0x3282b8);
         
-        const submitText = this.add.text(panelX, panelY + 200, 'Submit & Continue', {
+        const submitFontSize = scaleFontSize(18, scaleInfo);
+        const submitText = this.add.text(centerPos.x, centerPos.y + (panelHeight/2 - 70), 'Submit & Continue', {
             fontFamily: 'Arial',
-            fontSize: '18px',
+            fontSize: `${submitFontSize}px`,
             fontWeight: 'bold',
             color: '#ffffff'
         }).setOrigin(0.5);
         
         // Loading indicator (hidden initially)
-        this.loadingText = this.add.text(panelX, panelY + 260, 'Saving data...', {
+        const loadingFontSize = scaleFontSize(16, scaleInfo);
+        this.loadingText = this.add.text(centerPos.x, centerPos.y + (panelHeight/2 - 30), 'Saving data...', {
             fontFamily: 'Arial',
-            fontSize: '16px',
+            fontSize: `${loadingFontSize}px`,
             color: '#ffaa00',
             alpha: 0
         }).setOrigin(0.5);
@@ -240,18 +261,24 @@ export default class DataCollectionScreen extends BaseScene {
         });
     }
 
-    createFormFields(centerX, centerY) {
+    createFormFields(centerX, centerY, scaleInfo, panelWidth, panelHeight) {
         // Calculate position relative to the game canvas
         const gameCanvas = document.querySelector('#game canvas') || document.querySelector('canvas');
         const canvasRect = gameCanvas ? gameCanvas.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
         const scaleX = canvasRect.width / this.scale.width;
         const scaleY = canvasRect.height / this.scale.height;
 
-        const fieldWidth = 300;
-        const fieldHeight = 40;
+        // Responsive field dimensions using mobile utilities
+        const baseFieldWidth = 300;
+        const fieldWidth = Math.min(
+            scaleDimension(baseFieldWidth, scaleInfo),
+            panelWidth - 120
+        );
+        const fieldHeight = scaleDimension(40, scaleInfo);
+        
         const labelStyle = {
             fontFamily: 'Arial',
-            fontSize: '16px',
+            fontSize: `${scaleFontSize(16, scaleInfo)}px`,
             color: '#ffffff',
             fontWeight: 'bold'
         };
@@ -266,14 +293,22 @@ export default class DataCollectionScreen extends BaseScene {
 
         this.formElements = {};
         
+        // Responsive spacing between fields
+        const fieldSpacing = scaleDimension(80, scaleInfo);
+        const startY = -140;
+        
         fields.forEach((field, index) => {
-            const yOffset = -120 + (index * 80);
+            const yOffset = startY + (index * fieldSpacing);
+            
+            // Responsive label positioning
+            const labelX = scaleInfo.isMobile ? centerX - (panelWidth/2 - 30) : centerX - scaleDimension(250, scaleInfo);
+            const fieldX = scaleInfo.isMobile ? centerX : centerX + scaleDimension(50, scaleInfo);
             
             // Label
-            this.add.text(centerX - 250, centerY + yOffset, field.label, labelStyle);
+            this.add.text(labelX, centerY + yOffset, field.label, labelStyle);
             
             // Field background
-            const fieldBg = this.add.rectangle(centerX + 50, centerY + yOffset, fieldWidth, fieldHeight, 0x0a1628);
+            const fieldBg = this.add.rectangle(fieldX, centerY + yOffset, fieldWidth, fieldHeight, 0x0a1628);
             fieldBg.setStrokeStyle(2, 0x3282b8);
 
             if (field.type === 'input') {
@@ -281,7 +316,7 @@ export default class DataCollectionScreen extends BaseScene {
                 const inputElement = document.createElement('input');
                 inputElement.type = 'text';
                 inputElement.placeholder = field.placeholder;
-                this.setupInputElement(inputElement, centerX + 50, centerY + yOffset, fieldWidth, fieldHeight, canvasRect, scaleX, scaleY);
+                this.setupInputElement(inputElement, fieldX, centerY + yOffset, fieldWidth, fieldHeight, canvasRect, scaleX, scaleY, scaleInfo);
                 this.formElements[field.key] = inputElement;
                 
             } else if (field.type === 'select') {
@@ -315,7 +350,7 @@ export default class DataCollectionScreen extends BaseScene {
                     selectElement.appendChild(optionElement);
                 });
 
-                this.setupInputElement(selectElement, centerX + 50, centerY + yOffset, fieldWidth, fieldHeight, canvasRect, scaleX, scaleY);
+                this.setupInputElement(selectElement, fieldX, centerY + yOffset, fieldWidth, fieldHeight, canvasRect, scaleX, scaleY, scaleInfo);
                 this.formElements[field.key] = selectElement;
             }
         });
@@ -328,14 +363,14 @@ export default class DataCollectionScreen extends BaseScene {
         });
     }
 
-    setupInputElement(element, x, y, width, height, canvasRect, scaleX, scaleY) {
+    setupInputElement(element, x, y, width, height, canvasRect, scaleX, scaleY, scaleInfo) {
         element.style.position = 'absolute';
         element.style.left = `${canvasRect.left + (x - width/2) * scaleX}px`;
         element.style.top = `${canvasRect.top + (y - height/2) * scaleY}px`;
         element.style.width = `${(width - 10) * scaleX}px`;
         element.style.height = `${(height - 6) * scaleY}px`;
-        element.style.fontSize = `${16 * Math.min(scaleX, scaleY)}px`;
-        element.style.padding = '8px';
+        element.style.fontSize = `${scaleFontSize(16, scaleInfo) * Math.min(scaleX, scaleY)}px`;
+        element.style.padding = scaleInfo.isMobile ? '6px' : '8px';
         element.style.border = 'none';
         element.style.borderRadius = '5px';
         element.style.backgroundColor = '#0a1628';
@@ -343,6 +378,31 @@ export default class DataCollectionScreen extends BaseScene {
         element.style.outline = 'none';
         element.style.zIndex = '1000';
         element.style.fontFamily = 'Arial, sans-serif';
+
+        // Mobile-specific optimizations
+        if (scaleInfo.isMobile) {
+            // Prevent zoom on focus for iOS - ensure minimum 16px font size
+            const minFontSize = Math.max(16, scaleFontSize(14, scaleInfo) * Math.min(scaleX, scaleY));
+            element.style.fontSize = minFontSize + 'px';
+            
+            // Better mobile input handling
+            element.setAttribute('autocomplete', 'off');
+            element.setAttribute('autocorrect', 'off');
+            element.setAttribute('autocapitalize', 'words');
+            element.setAttribute('spellcheck', 'false');
+            
+            // Add mobile-specific viewport meta tag to prevent zooming
+            element.setAttribute('inputmode', element.type === 'text' ? 'text' : 'none');
+            
+            // Ensure input is visible when virtual keyboard appears
+            element.addEventListener('focus', () => {
+                this.handleMobileFocus(element);
+            });
+            
+            element.addEventListener('blur', () => {
+                this.handleMobileBlur();
+            });
+        }
 
         // Disable Phaser keyboard capture when focused
         element.addEventListener('focus', () => {
@@ -378,6 +438,81 @@ export default class DataCollectionScreen extends BaseScene {
 
         // Add to DOM
         document.body.appendChild(element);
+    }
+
+    handleMobileFocus(element) {
+        // Check if game is in fullscreen and exit fullscreen to allow keyboard input
+        if (document.fullscreenElement && this.scaleInfo.isMobile) {
+            console.log('Exiting fullscreen to allow mobile keyboard input');
+            document.exitFullscreen().catch(err => {
+                console.warn('Could not exit fullscreen:', err);
+            });
+        }
+        
+        // Store original viewport settings
+        if (!this.originalViewport) {
+            const viewport = document.querySelector('meta[name="viewport"]');
+            this.originalViewport = viewport ? viewport.getAttribute('content') : '';
+        }
+
+        // Temporarily adjust viewport to prevent scaling issues
+        let viewport = document.querySelector('meta[name="viewport"]');
+        if (!viewport) {
+            viewport = document.createElement('meta');
+            viewport.name = 'viewport';
+            document.head.appendChild(viewport);
+        }
+        
+        // Prevent zoom on iOS while allowing user interaction
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+
+        // Scroll element into view with padding for virtual keyboard
+        setTimeout(() => {
+            const elementRect = element.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const keyboardHeight = viewportHeight * 0.4; // Estimate keyboard height
+            
+            if (elementRect.bottom > viewportHeight - keyboardHeight) {
+                const scrollAmount = elementRect.bottom - (viewportHeight - keyboardHeight) + 20;
+                window.scrollBy(0, scrollAmount);
+                
+                // Also try to bring element into view using scrollIntoView
+                element.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center',
+                    inline: 'nearest'
+                });
+            }
+        }, 300); // Delay to allow keyboard to appear
+
+        // Add visual indicator that input is focused
+        element.style.borderColor = '#00ff88';
+        element.style.boxShadow = '0 0 10px rgba(0, 255, 136, 0.5)';
+    }
+
+    handleMobileBlur() {
+        // Restore original viewport settings
+        if (this.originalViewport !== undefined) {
+            let viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                if (this.originalViewport) {
+                    viewport.setAttribute('content', this.originalViewport);
+                } else {
+                    viewport.remove();
+                }
+            }
+        }
+
+        // Scroll back to original position
+        setTimeout(() => {
+            window.scrollTo(0, 0);
+        }, 300);
+
+        // Remove focus visual indicators from all form elements
+        Object.values(this.formElements || {}).forEach(formElement => {
+            formElement.style.borderColor = '';
+            formElement.style.boxShadow = '';
+        });
     }
     
     async attemptAutofill() {
