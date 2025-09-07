@@ -6,11 +6,34 @@ class NotificationSystem {
     this.queue = [];
     this.isShowing = false;
     this.notificationId = 0;
+    this.isInitialized = false;
+    this.init();
+  }
+
+  init() {
     this.createModalStructure();
     this.bindEvents();
+    if (document.getElementById('universal-notification-modal')) {
+      this.isInitialized = true;
+    }
   }
 
   createModalStructure() {
+    // Wait for DOM to be ready
+    if (!document.body) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          this.createModalStructure();
+          this.bindEvents();
+          this.isInitialized = true;
+        });
+        return;
+      } else {
+        console.error('Document body not available');
+        return;
+      }
+    }
+
     // Remove old container if exists
     const oldContainer = document.getElementById('notification-container');
     if (oldContainer) {
@@ -62,15 +85,24 @@ class NotificationSystem {
   }
 
   bindEvents() {
+    // Check if modal elements exist before binding events
+    const modal = document.getElementById('universal-notification-modal');
+    const closeBtn = document.getElementById('notification-close');
+    
+    if (!modal || !closeBtn) {
+      console.warn('Modal elements not found, skipping event binding');
+      return;
+    }
+
     // Close modal on backdrop click
-    document.getElementById('universal-notification-modal').addEventListener('click', (e) => {
+    modal.addEventListener('click', (e) => {
       if (e.target.id === 'universal-notification-modal') {
         this.closeModal();
       }
     });
 
     // Close button
-    document.getElementById('notification-close').addEventListener('click', () => {
+    closeBtn.addEventListener('click', () => {
       this.closeModal();
     });
 
@@ -84,6 +116,13 @@ class NotificationSystem {
 
   // Modern alert replacement
   alert(message, options = {}) {
+    // Fallback to native alert if not initialized
+    if (!this.isInitialized) {
+      console.warn('Notification system not ready, using native alert');
+      window.alert(message);
+      return Promise.resolve(true);
+    }
+
     return new Promise((resolve) => {
       const config = {
         title: options.title || 'Alert',
@@ -106,6 +145,12 @@ class NotificationSystem {
 
   // Modern confirm replacement
   confirm(message, options = {}) {
+    // Fallback to native confirm if not initialized
+    if (!this.isInitialized) {
+      console.warn('Notification system not ready, using native confirm');
+      return Promise.resolve(window.confirm(message));
+    }
+
     return new Promise((resolve) => {
       const config = {
         title: options.title || 'Confirm',
