@@ -25,6 +25,167 @@ export default class MainHub extends Phaser.Scene {
         super({ key: 'MainHub' });
         this.uiElements = [];
         this.tutorialManager = null;
+        
+        // Firebase initialization properties
+        this.isFirebaseInitialized = false;
+        this.database = null;
+        this.initializationPromise = null;
+        
+        // Firebase config
+        this.firebaseConfig = {
+            apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
+            authDomain: "sci-high-website.firebaseapp.com",
+            databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "sci-high-website",
+            storageBucket: "sci-high-website.appspot.com",
+            messagingSenderId: "451463202515",
+            appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
+        };
+    }
+
+    async ensureFirebaseInitialized() {
+        if (this.isFirebaseInitialized) {
+            return true;
+        }
+        
+        if (!this.initializationPromise) {
+            this.initializationPromise = this.initializeFirebase();
+        }
+        
+        try {
+            await this.initializationPromise;
+            return this.isFirebaseInitialized;
+        } catch (error) {
+            console.warn('Firebase initialization failed in MainHub:', error.message);
+            return false;
+        }
+    }
+
+    async initializeFirebase() {
+        try {
+            console.log('Starting Firebase initialization for MainHub...');
+            
+            // First check if we have internet connectivity
+            if (!navigator.onLine) {
+                throw new Error('No internet connection detected');
+            }
+            
+            // Check if Firebase is already loaded
+            if (typeof window.firebase === 'undefined') {
+                console.log('Loading Firebase scripts...');
+                await this.loadFirebaseScripts();
+            }
+            
+            // Wait a bit for Firebase to be available
+            let retries = 0;
+            while (typeof window.firebase === 'undefined' && retries < 10) {
+                console.log(`Waiting for Firebase to load... (attempt ${retries + 1})`);
+                await new Promise(resolve => setTimeout(resolve, 300));
+                retries++;
+            }
+            
+            if (typeof window.firebase === 'undefined') {
+                throw new Error('Firebase failed to load after multiple attempts - check your internet connection');
+            }
+            
+            // Initialize Firebase app if not already done
+            if (!window.firebase.apps.length) {
+                console.log('Initializing Firebase app...');
+                window.firebase.initializeApp(this.firebaseConfig);
+            }
+            
+            // Test Firebase connection
+            this.database = window.firebase.database();
+            
+            // Try a simple connection test
+            await this.database.ref('.info/connected').once('value');
+            
+            this.isFirebaseInitialized = true;
+            console.log('Firebase Database initialized successfully for MainHub');
+        } catch (error) {
+            console.error('Failed to initialize Firebase for MainHub:', error);
+            this.isFirebaseInitialized = false;
+            throw error;
+        }
+    }
+
+    async loadFirebaseScripts() {
+        return new Promise((resolve, reject) => {
+            if (typeof window.firebase !== 'undefined') {
+                resolve();
+                return;
+            }
+
+            const scripts = [
+                'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
+                'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js'
+            ];
+            
+            let loaded = 0;
+            const timeout = setTimeout(() => {
+                reject(new Error('Firebase script loading timeout'));
+            }, 10000);
+            
+            scripts.forEach(src => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => {
+                    loaded++;
+                    if (loaded === scripts.length) {
+                        clearTimeout(timeout);
+                        resolve();
+                    }
+                };
+                script.onerror = () => {
+                    clearTimeout(timeout);
+                    reject(new Error(`Failed to load Firebase script: ${src}`));
+                };
+                document.head.appendChild(script);
+            });
+        });
+    }
+
+    async checkStudentDataInFirebase() {
+        try {
+            console.log('🔍 MainHub: Checking for existing student data in Firebase...');
+            
+            // Get current user from localStorage
+            const userDataStr = localStorage.getItem('sci_high_user');
+            if (!userDataStr) {
+                console.log('ℹ️ MainHub: No user data found in localStorage');
+                return false;
+            }
+            
+            const currentUser = JSON.parse(userDataStr);
+            const studentId = currentUser.studentId || currentUser.uid;
+            
+            if (!studentId) {
+                console.log('ℹ️ MainHub: No student ID found in user data');
+                return false;
+            }
+            
+            console.log('🔍 MainHub: Searching for student data with ID:', studentId);
+            
+            // Ensure Firebase is initialized
+            const isInitialized = await this.ensureFirebaseInitialized();
+            if (!isInitialized) {
+                console.log('⚠️ MainHub: Firebase not initialized, cannot check student data');
+                return false;
+            }
+            
+            // Search for any gameplay data for this student
+            const gameplayRef = this.database.ref('gameplay_data');
+            const snapshot = await gameplayRef.orderByChild('studentId').equalTo(studentId).limitToFirst(1).once('value');
+            
+            const hasData = snapshot.exists();
+            console.log(`${hasData ? '✅' : 'ℹ️'} MainHub: Student ${studentId} ${hasData ? 'has' : 'does not have'} existing data in Firebase`);
+            
+            return hasData;
+            
+        } catch (error) {
+            console.error('❌ MainHub: Error checking student data in Firebase:', error);
+            return false;
+        }
     }
 
     preload() {
@@ -63,12 +224,12 @@ export default class MainHub extends Phaser.Scene {
         // Set up cameras first
         this.cameras.main.setBackgroundColor('#87ceeb');
         
-        // Then initialize UI with delay to ensure everything is ready
-        this.time.delayedCall(10, () => this.createUI());
+        // Then initialize UI with delay to ensure everything is ready (now async)
+        this.time.delayedCall(10, async () => await this.createUI());
         this.scale.on('resize', this.onResize, this);
     }
 
-    createUI() {
+    async createUI() {
         if (this.uiElements.length) {
             this.uiElements.forEach(el => el.destroy());
             this.uiElements = [];
@@ -127,7 +288,14 @@ export default class MainHub extends Phaser.Scene {
             // { heading: "Cafeteria", desc: "Take a break and eat." }
         ];
 
-        if (!onceOnlyFlags.hasSeen('mainhub_intro')) {
+        // Check if student has data in Firebase to decide whether to show intro
+        const hasFirebaseData = await this.checkStudentDataInFirebase();
+        
+        // Skip intro if student has Firebase data OR if they've already seen it
+        const shouldSkipIntro = hasFirebaseData || onceOnlyFlags.hasSeen('mainhub_intro');
+        
+        if (!shouldSkipIntro) {
+            console.log('🎬 MainHub: Showing intro cutscene for new student');
             // Hide UI elements during cutscene
             this.hideUIElementsForCutscene();
             
@@ -157,10 +325,22 @@ export default class MainHub extends Phaser.Scene {
             });
             this.uiElements.push(this.vnBox);
         } else {
+            if (hasFirebaseData) {
+                console.log('✅ MainHub: Skipping intro - student has existing Firebase data');
+                // Auto-mark intro as seen for returning students
+                onceOnlyFlags.setSeen('mainhub_intro');
+            } else {
+                console.log('✅ MainHub: Skipping intro - already seen before');
+            }
+            
             this.createCarousel(iconKeys, iconInfo);
             
-            // Start tutorial after carousel is created (if first time visiting hub)
-            if (!onceOnlyFlags.hasSeen('mainhub_tutorial')) {
+            // Skip tutorial as well for returning students with Firebase data
+            if (hasFirebaseData) {
+                onceOnlyFlags.setSeen('mainhub_tutorial');
+                console.log('✅ MainHub: Skipping tutorial - returning student');
+            } else if (!onceOnlyFlags.hasSeen('mainhub_tutorial')) {
+                // Start tutorial after carousel is created (if first time visiting hub)
                 this.time.delayedCall(300, () => {
                     this.startHubTutorial();
                 });
@@ -291,8 +471,8 @@ export default class MainHub extends Phaser.Scene {
             }
         });
     }    onResize() {
-        // Just recreate the entire UI to avoid geometry issues
-        this.time.delayedCall(50, () => this.createUI());
+        // Just recreate the entire UI to avoid geometry issues (now async)
+        this.time.delayedCall(50, async () => await this.createUI());
     }
 
     update() {

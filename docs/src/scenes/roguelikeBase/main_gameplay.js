@@ -568,7 +568,8 @@ export default class MainGameplay extends BaseScene {
     }
 
     updateTimer() {
-        this.gameTimer--;
+        // Prevent timer from going negative
+        this.gameTimer = Math.max(0, this.gameTimer - 1);
         
         // Format time as MM:SS
         const minutes = Math.floor(this.gameTimer / 60);

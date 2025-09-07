@@ -18,6 +18,193 @@ import {
 export default class MainMenu extends Phaser.Scene {
     constructor() {
         super('MainMenu');
+        
+        // Firebase initialization properties
+        this.isFirebaseInitialized = false;
+        this.database = null;
+        this.initializationPromise = null;
+        
+        // Firebase config
+        this.firebaseConfig = {
+            apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
+            authDomain: "sci-high-website.firebaseapp.com",
+            databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "sci-high-website",
+            storageBucket: "sci-high-website.appspot.com",
+            messagingSenderId: "451463202515",
+            appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
+        };
+    }
+
+    async ensureFirebaseInitialized() {
+        if (this.isFirebaseInitialized) {
+            return true;
+        }
+        
+        if (!this.initializationPromise) {
+            this.initializationPromise = this.initializeFirebase();
+        }
+        
+        try {
+            await this.initializationPromise;
+            return this.isFirebaseInitialized;
+        } catch (error) {
+            console.warn('Firebase initialization failed in MainMenu:', error.message);
+            return false;
+        }
+    }
+
+    async initializeFirebase() {
+        try {
+            console.log('Starting Firebase initialization for MainMenu...');
+            
+            // First check if we have internet connectivity
+            if (!navigator.onLine) {
+                throw new Error('No internet connection detected');
+            }
+            
+            // Check if Firebase is already loaded
+            if (typeof window.firebase === 'undefined') {
+                console.log('Loading Firebase scripts...');
+                await this.loadFirebaseScripts();
+            }
+            
+            // Wait a bit for Firebase to be available
+            let retries = 0;
+            while (typeof window.firebase === 'undefined' && retries < 10) {
+                console.log(`Waiting for Firebase to load... (attempt ${retries + 1})`);
+                await new Promise(resolve => setTimeout(resolve, 300));
+                retries++;
+            }
+            
+            if (typeof window.firebase === 'undefined') {
+                throw new Error('Firebase failed to load after multiple attempts - check your internet connection');
+            }
+            
+            // Initialize Firebase app if not already done
+            if (!window.firebase.apps.length) {
+                console.log('Initializing Firebase app...');
+                window.firebase.initializeApp(this.firebaseConfig);
+            }
+            
+            // Test Firebase connection
+            this.database = window.firebase.database();
+            
+            // Try a simple connection test
+            await this.database.ref('.info/connected').once('value');
+            
+            this.isFirebaseInitialized = true;
+            console.log('Firebase Database initialized successfully for MainMenu');
+        } catch (error) {
+            console.error('Failed to initialize Firebase for MainMenu:', error);
+            this.isFirebaseInitialized = false;
+            throw error;
+        }
+    }
+
+    async loadFirebaseScripts() {
+        return new Promise((resolve, reject) => {
+            if (typeof window.firebase !== 'undefined') {
+                resolve();
+                return;
+            }
+
+            const scripts = [
+                'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
+                'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js'
+            ];
+            
+            let loaded = 0;
+            const timeout = setTimeout(() => {
+                reject(new Error('Firebase script loading timeout'));
+            }, 10000);
+            
+            scripts.forEach(src => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => {
+                    loaded++;
+                    if (loaded === scripts.length) {
+                        clearTimeout(timeout);
+                        resolve();
+                    }
+                };
+                script.onerror = () => {
+                    clearTimeout(timeout);
+                    reject(new Error(`Failed to load Firebase script: ${src}`));
+                };
+                document.head.appendChild(script);
+            });
+        });
+    }
+
+    async checkStudentDataInFirebase() {
+        try {
+            console.log('🔍 Checking for existing student data in Firebase...');
+            
+            // Get current user from localStorage
+            const userDataStr = localStorage.getItem('sci_high_user');
+            if (!userDataStr) {
+                console.log('ℹ️ No user data found in localStorage');
+                return false;
+            }
+            
+            const currentUser = JSON.parse(userDataStr);
+            const studentId = currentUser.studentId || currentUser.uid;
+            
+            if (!studentId) {
+                console.log('ℹ️ No student ID found in user data');
+                return false;
+            }
+            
+            console.log('🔍 Searching for student data with ID:', studentId);
+            
+            // Ensure Firebase is initialized
+            const isInitialized = await this.ensureFirebaseInitialized();
+            if (!isInitialized) {
+                console.log('⚠️ Firebase not initialized, cannot check student data');
+                return false;
+            }
+            
+            // Search for any gameplay data for this student
+            const gameplayRef = this.database.ref('gameplay_data');
+            const snapshot = await gameplayRef.orderByChild('studentId').equalTo(studentId).limitToFirst(1).once('value');
+            
+            const hasData = snapshot.exists();
+            console.log(`${hasData ? '✅' : 'ℹ️'} Student ${studentId} ${hasData ? 'has' : 'does not have'} existing data in Firebase`);
+            
+            if (hasData) {
+                // Also check if student info exists in localStorage
+                const studentInfo = localStorage.getItem('studentInfo');
+                if (studentInfo) {
+                    console.log('✅ Student info also found in localStorage');
+                    return true;
+                } else {
+                    // If Firebase data exists but no localStorage info, extract it from Firebase
+                    const firstRecord = Object.values(snapshot.val())[0];
+                    if (firstRecord.firstName && firstRecord.lastName) {
+                        console.log('📋 Extracting student info from Firebase data');
+                        const extractedStudentInfo = {
+                            firstName: firstRecord.firstName,
+                            lastName: firstRecord.lastName,
+                            department: firstRecord.department || '',
+                            strandYear: firstRecord.strandYear || '',
+                            timestamp: Date.now()
+                        };
+                        localStorage.setItem('studentInfo', JSON.stringify(extractedStudentInfo));
+                        localStorage.setItem('recentStudentData', JSON.stringify(extractedStudentInfo));
+                        console.log('✅ Student info extracted and saved to localStorage');
+                    }
+                    return true;
+                }
+            }
+            
+            return false;
+            
+        } catch (error) {
+            console.error('❌ Error checking student data in Firebase:', error);
+            return false;
+        }
     }
 
     preload() {
@@ -160,9 +347,9 @@ export default class MainMenu extends Phaser.Scene {
             // Menu button data for mobile 2x2 grid
             const menuButtons = [
                 // Top row
-                { label: 'Start Adventure', x: leftX, y: topY, onClick: () => {
+                { label: 'Start Adventure', x: leftX, y: topY, onClick: async () => {
                     se_confirmSound.play();
-                    this.handleAdventureStart();
+                    await this.handleAdventureStart();
                 }},
                 { label: 'View Progress', x: rightX, y: topY, onClick: () => {
                     se_confirmSound.play();
@@ -190,9 +377,9 @@ export default class MainMenu extends Phaser.Scene {
 
             // Menu button data with responsive positioning
             const menuButtons = [
-                { label: 'Start Adventure', y: startY, onClick: () => {
+                { label: 'Start Adventure', y: startY, onClick: async () => {
                     se_confirmSound.play();
-                    this.handleAdventureStart();
+                    await this.handleAdventureStart();
                 }},
                 { label: 'View Progress', y: startY + buttonSpacing, onClick: () => {
                     se_confirmSound.play();
@@ -764,18 +951,26 @@ export default class MainMenu extends Phaser.Scene {
         });
     }
 
-    handleAdventureStart() {
+    async handleAdventureStart() {
         console.log('Starting adventure...');
         
         // Get save data to determine where to start
         const saveData = JSON.parse(localStorage.getItem('sci_high_save_data') || '{}');
         
-        // Check if player has meaningful progress
-        const hasProgress = this.checkForMeaningfulProgress(saveData);
+        // Check if player has meaningful progress in local save
+        const hasLocalProgress = this.checkForMeaningfulProgress(saveData);
         
-        if (hasProgress) {
-            // Player has existing progress, continue from main hub
-            console.log('Player has progress, continuing to MainHub');
+        // Check if player has data in Firebase
+        const hasFirebaseData = await this.checkStudentDataInFirebase();
+        
+        if (hasLocalProgress || hasFirebaseData) {
+            // Player has existing progress or Firebase data, continue from main hub
+            if (hasFirebaseData && !hasLocalProgress) {
+                console.log('Player has Firebase data but no local progress, skipping intro to MainHub');
+            } else {
+                console.log('Player has local progress, continuing to MainHub');
+            }
+            
             // Load the save data into gameManager before transitioning
             if (saveData.courseProgress) {
                 gameManager.courseProgress = { ...saveData.courseProgress };
@@ -788,7 +983,7 @@ export default class MainMenu extends Phaser.Scene {
             }
             LoadingScreen.transitionToScene(this, 'MainHub', 'Loading your progress...', 800);
         } else {
-            // New player or no meaningful progress, start with intro
+            // New player with no local progress and no Firebase data, start with intro
             console.log('Starting new adventure from intro');
             LoadingScreen.transitionToScene(this, 'VNScene', 'Starting your journey...', 800);
         }
