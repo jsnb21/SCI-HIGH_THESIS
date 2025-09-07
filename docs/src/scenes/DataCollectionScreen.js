@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import BaseScene from './BaseScene.js';
+import { playExclusiveBGM, updateSoundVolumes } from '../audioUtils.js';
 
 export default class DataCollectionScreen extends BaseScene {
     constructor() {
@@ -21,6 +22,11 @@ export default class DataCollectionScreen extends BaseScene {
         this.isFirebaseInitialized = false;
         this.database = null;
         this.initializationPromise = null;
+    }
+    
+    preload() {
+        // Load BGM for data collection screen
+        this.load.audio('bgm_results', 'assets/audio/bgm/bgm_results.mp3');
     }
     
     async ensureFirebaseInitialized() {
@@ -133,6 +139,10 @@ export default class DataCollectionScreen extends BaseScene {
 
     create() {
         super.create();
+        
+        // Play results music for data collection
+        playExclusiveBGM(this, 'bgm_results', { loop: true });
+        updateSoundVolumes(this);
         
         // Create gradient background
         const gradient = this.add.graphics();

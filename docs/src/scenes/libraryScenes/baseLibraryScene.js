@@ -5,6 +5,7 @@ import { createBackButton } from '../../components/buttons/backbutton.js';
 import { onceOnlyFlags } from '../../gameManager';
 import TutorialManager from '../../components/TutorialManager.js';
 import { LIBRARY_TUTORIAL_STEPS } from '../../components/TutorialConfig.js';
+import { playExclusiveBGM, updateSoundVolumes } from '../../audioUtils.js';
 
 class BaseLibraryScene extends Phaser.Scene {
     constructor() {
@@ -36,6 +37,11 @@ class BaseLibraryScene extends Phaser.Scene {
         this.load.json('libraryData', `public/library/library.json`);
         this.load.json('progressData', `public/library/progress.json`);
         this.load.json('notesData', `public/library/notes.json`);
+        
+        // Load audio files
+        this.load.audio('se_select', 'assets/audio/se/se_select.wav');
+        this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
+        this.load.audio('bgm_library', 'assets/audio/bgm/bgm_library.mp3');
         
         // Create topic icons programmatically
         this.createTopicIcons();
@@ -86,6 +92,12 @@ class BaseLibraryScene extends Phaser.Scene {
         this.createLibraryTitle();
         this.createTopicCarousel();
         this.createBackButton();
+
+        // Initialize sound effects and background music
+        this.se_hoverSound = this.sound.add('se_select');
+        this.se_confirmSound = this.sound.add('se_confirm');
+        playExclusiveBGM(this, 'bgm_library', { loop: true });
+        updateSoundVolumes(this);
 
         // Initialize tutorial manager
         this.tutorialManager = new TutorialManager(this);

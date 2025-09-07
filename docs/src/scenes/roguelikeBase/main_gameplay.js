@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import BaseScene from '../BaseScene.js';
+import { playExclusiveBGM, updateSoundVolumes } from '../../audioUtils.js';
 
 export default class MainGameplay extends BaseScene {
     constructor() {
@@ -175,6 +176,7 @@ export default class MainGameplay extends BaseScene {
         this.load.audio('se_explosion', 'assets/audio/se/se_explosion.wav');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_wrong', 'assets/audio/se/se_wrong.wav');
+        this.load.audio('bgm_game1', 'assets/audio/bgm/bgm_game1.mp3');
         
         // Create a simple colored rectangle if grass tile doesn't exist
         this.load.image('defaultTile', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
@@ -182,6 +184,10 @@ export default class MainGameplay extends BaseScene {
 
     create() {
         super.create(); // Call BaseScene create method
+        
+        // Initialize sound effects and background music
+        playExclusiveBGM(this, 'bgm_game1', { loop: true });
+        updateSoundVolumes(this);
         
         // Listen for quiz completion
         this.events.on('quiz-completed', this.handleQuizCompletion, this);

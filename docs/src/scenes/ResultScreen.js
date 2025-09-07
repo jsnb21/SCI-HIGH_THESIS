@@ -1,9 +1,17 @@
 import Phaser from 'phaser';
 import BaseScene from './BaseScene.js';
+import { playExclusiveBGM, updateSoundVolumes } from '../audioUtils.js';
 
 export default class ResultScreen extends BaseScene {
     constructor() {
         super('ResultScreen');
+    }
+
+    preload() {
+        // Load result screen music and sound effects
+        this.load.audio('bgm_results', 'assets/audio/bgm/bgm_results.mp3');
+        this.load.audio('se_select', 'assets/audio/se/se_select.wav');
+        this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
     }
 
     init(data) {
@@ -20,6 +28,12 @@ export default class ResultScreen extends BaseScene {
 
     create() {
         super.create();
+        
+        // Initialize sound effects and background music
+        this.se_hoverSound = this.sound.add('se_select');
+        this.se_confirmSound = this.sound.add('se_confirm');
+        playExclusiveBGM(this, 'bgm_results', { loop: true });
+        updateSoundVolumes(this);
         
         // Calculate ranking based on correct/wrong ratio
         const totalQuestions = this.correctAnswers + this.wrongAnswers;

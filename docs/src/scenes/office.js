@@ -7,6 +7,7 @@ import { createBackButton } from '../components/buttons/backbutton'; // <-- Add 
 import { onceOnlyFlags } from '../gameManager';
 import TutorialManager from '../components/TutorialManager.js';
 import { OFFICE_TUTORIAL_STEPS } from '../components/TutorialConfig.js';
+import { playExclusiveBGM, updateSoundVolumes } from '../audioUtils.js';
 
 export default class Office extends Phaser.Scene {
     constructor() {
@@ -25,6 +26,7 @@ export default class Office extends Phaser.Scene {
         this.load.image('feedback', 'assets/img/icons/office/feedback.png');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
+        this.load.audio('bgm_mainhub', 'assets/audio/bgm/bgm_mainhub.mp3'); // Use mainhub music for office
     }
 
     create() {
@@ -39,6 +41,10 @@ export default class Office extends Phaser.Scene {
         // Sound effects
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
+
+        // Play background music (using mainhub music for office)
+        playExclusiveBGM(this, 'bgm_mainhub', { loop: true });
+        updateSoundVolumes(this);
 
         // Carousel data
         const sectionKeys = ['profile', 'stats', 'achievements', 'feedback'];

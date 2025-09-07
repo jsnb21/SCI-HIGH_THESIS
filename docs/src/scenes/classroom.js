@@ -6,6 +6,7 @@ import VNDialogueBox from '../ui/VNDialogueBox';
 import { onceOnlyFlags } from '../gameManager';
 import TutorialManager from '../components/TutorialManager.js';
 import { CLASSROOM_TUTORIAL_STEPS } from '../components/TutorialConfig.js';
+import { playExclusiveBGM, updateSoundVolumes } from '../audioUtils';
 import { 
     getScaleInfo, 
     scaleFontSize, 
@@ -34,6 +35,7 @@ export default class Classroom extends Phaser.Scene {
         this.load.image('Finley', 'assets/sprites/npcs/Finley.png');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
+        this.load.audio('bgm_classroom', 'assets/audio/bgm/bgm_classroom.mp3');
         
         // Add error handling for missing images
         this.load.on('loaderror', (file) => {
@@ -66,6 +68,10 @@ export default class Classroom extends Phaser.Scene {
         // Sound effects
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
+
+        // Play classroom background music
+        playExclusiveBGM(this, 'bgm_classroom', { loop: true });
+        updateSoundVolumes(this);
 
         // Carousel data using images from assets/img/sprites/npcs with their respective names
         const charKeys = ['Noah', 'Lily', 'Damian', 'Bella', 'Finley'];

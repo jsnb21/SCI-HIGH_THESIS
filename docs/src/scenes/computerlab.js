@@ -6,6 +6,7 @@ import { onceOnlyFlags } from '../gameManager.js';
 import TutorialManager from '../components/TutorialManager.js';
 import { COMPUTER_LAB_TUTORIAL_STEPS } from '../components/TutorialConfig.js';
 import LoadingScreen from '../ui/LoadingScreen.js';
+import { playExclusiveBGM, updateSoundVolumes } from '../audioUtils.js';
 
 export default class ComputerLab extends Phaser.Scene {
     constructor() {
@@ -27,6 +28,7 @@ export default class ComputerLab extends Phaser.Scene {
         // Load sound effects
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
+        this.load.audio('bgm_computer-lab', 'assets/audio/bgm/bgm_computer-lab.mp3');
 
         // Load questions JSON
         this.load.json('questions', 'data/questions.json');
@@ -51,7 +53,11 @@ export default class ComputerLab extends Phaser.Scene {
 
         // Add sound effects
         this.se_hoverSound = this.sound.add('se_select');
-        this.se_confirmSound = this.sound.add('se_confirm');        // Define carousel data
+        this.se_confirmSound = this.sound.add('se_confirm');
+
+        // Play computer lab background music
+        playExclusiveBGM(this, 'bgm_computer-lab', { loop: true });
+        updateSoundVolumes(this);        // Define carousel data
         const iconKeys = ['Web_Design', 'Python', 'Java', 'C', 'C++', 'C#'];
         const iconInfo = [
             { heading: "Web Design", desc: "Learn HTML, CSS & JavaScript", courseKey: "Web_Design" },
