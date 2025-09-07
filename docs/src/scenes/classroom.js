@@ -520,6 +520,204 @@ export default class Classroom extends Phaser.Scene {
                 this.se_hoverSound.play();
             });
             progressBtn.on('pointerout', () => progressBtn.setFillStyle(progressColor));
+        } else if (charData.name === "Bella" || charData.name === "Finley") {
+            // Locked story mode buttons for characters without story content yet
+            const lockedColor = 0x666666; // Gray color for locked buttons
+            const lockIconColor = 0xdddddd;
+            
+            // Locked Story Mode button
+            const lockedStoryBtn = this.add.rectangle(
+                width / 2 - 110,
+                height / 2 + boxHeight / 2 - 50,
+                180,
+                40,
+                lockedColor
+            ).setDepth(12).setInteractive({ useHandCursor: true });
+            boxObjects.push(lockedStoryBtn);
+
+            // Add lock icon
+            const lockIcon = this.add.text(
+                width / 2 - 140,
+                height / 2 + boxHeight / 2 - 50,
+                '🔒',
+                {
+                    fontSize: '16px',
+                    color: '#ffffff'
+                }
+            ).setOrigin(0.5).setDepth(13);
+            boxObjects.push(lockIcon);
+
+            const lockedStoryBtnText = this.add.text(
+                width / 2 - 95,
+                height / 2 + boxHeight / 2 - 50,
+                'Story Mode',
+                {
+                    fontFamily: 'Caprasimo-Regular',
+                    fontSize: '14px',
+                    color: lockIconColor,
+                    stroke: '#000000',
+                    strokeThickness: 1
+                }
+            ).setOrigin(0.5).setDepth(13);
+            boxObjects.push(lockedStoryBtnText);
+
+            // Locked Progress button
+            const lockedProgressBtn = this.add.rectangle(
+                width / 2 + 110,
+                height / 2 + boxHeight / 2 - 50,
+                180,
+                40,
+                lockedColor
+            ).setDepth(12).setInteractive({ useHandCursor: true });
+            boxObjects.push(lockedProgressBtn);
+
+            // Add lock icon for progress
+            const progressLockIcon = this.add.text(
+                width / 2 + 80,
+                height / 2 + boxHeight / 2 - 50,
+                '🔒',
+                {
+                    fontSize: '16px',
+                    color: '#ffffff'
+                }
+            ).setOrigin(0.5).setDepth(13);
+            boxObjects.push(progressLockIcon);
+
+            const lockedProgressBtnText = this.add.text(
+                width / 2 + 125,
+                height / 2 + boxHeight / 2 - 50,
+                'Progress',
+                {
+                    fontFamily: 'Caprasimo-Regular',
+                    fontSize: '14px',
+                    color: lockIconColor,
+                    stroke: '#000000',
+                    strokeThickness: 1
+                }
+            ).setOrigin(0.5).setDepth(13);
+            boxObjects.push(lockedProgressBtnText);
+
+            // Show "Coming Soon" message when clicked
+            const showComingSoonMessage = () => {
+                // Create temporary overlay
+                const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7).setDepth(20);
+                
+                const messageBox = this.add.rectangle(width / 2, height / 2, 400, 200, 0x2c3e50).setDepth(21);
+                messageBox.setStrokeStyle(3, 0x3498db);
+                
+                const comingSoonText = this.add.text(width / 2, height / 2 - 20, 'Coming Soon!', {
+                    fontFamily: 'Caprasimo-Regular',
+                    fontSize: '24px',
+                    color: '#ffffff',
+                    stroke: '#000000',
+                    strokeThickness: 2
+                }).setOrigin(0.5).setDepth(22);
+                
+                const subText = this.add.text(width / 2, height / 2 + 20, `${charData.name}'s story is under development`, {
+                    fontFamily: 'Caprasimo-Regular',
+                    fontSize: '16px',
+                    color: '#bdc3c7',
+                    stroke: '#000000',
+                    strokeThickness: 1
+                }).setOrigin(0.5).setDepth(22);
+                
+                const okButton = this.add.rectangle(width / 2, height / 2 + 60, 100, 35, 0x3498db).setDepth(22);
+                okButton.setInteractive({ useHandCursor: true });
+                
+                const okText = this.add.text(width / 2, height / 2 + 60, 'OK', {
+                    fontFamily: 'Caprasimo-Regular',
+                    fontSize: '16px',
+                    color: '#ffffff',
+                    stroke: '#000000',
+                    strokeThickness: 1
+                }).setOrigin(0.5).setDepth(23);
+                
+                // Animate message appearance
+                [overlay, messageBox, comingSoonText, subText, okButton, okText].forEach((element, index) => {
+                    element.setAlpha(0);
+                    this.tweens.add({
+                        targets: element,
+                        alpha: 1,
+                        duration: 300,
+                        delay: index * 50,
+                        ease: 'Power2.out'
+                    });
+                });
+                
+                messageBox.setScale(0.5);
+                this.tweens.add({
+                    targets: messageBox,
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 400,
+                    ease: 'Back.out'
+                });
+                
+                // Close message on OK button click
+                okButton.on('pointerdown', () => {
+                    [overlay, messageBox, comingSoonText, subText, okButton, okText].forEach(element => {
+                        this.tweens.add({
+                            targets: element,
+                            alpha: 0,
+                            duration: 200,
+                            onComplete: () => element.destroy()
+                        });
+                    });
+                });
+                
+                // Button hover effect
+                okButton.on('pointerover', () => okButton.setFillStyle(0x2980b9));
+                okButton.on('pointerout', () => okButton.setFillStyle(0x3498db));
+            };
+
+            // Add click handlers for locked buttons
+            lockedStoryBtn.on('pointerdown', showComingSoonMessage);
+            lockedProgressBtn.on('pointerdown', showComingSoonMessage);
+
+            // Subtle hover effects for locked buttons
+            lockedStoryBtn.on('pointerover', () => {
+                lockedStoryBtn.setFillStyle(0x777777);
+                this.tweens.add({
+                    targets: [lockIcon, lockedStoryBtnText],
+                    scaleX: 1.05,
+                    scaleY: 1.05,
+                    duration: 200,
+                    ease: 'Power2.out'
+                });
+            });
+            
+            lockedStoryBtn.on('pointerout', () => {
+                lockedStoryBtn.setFillStyle(lockedColor);
+                this.tweens.add({
+                    targets: [lockIcon, lockedStoryBtnText],
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 200,
+                    ease: 'Power2.out'
+                });
+            });
+
+            lockedProgressBtn.on('pointerover', () => {
+                lockedProgressBtn.setFillStyle(0x777777);
+                this.tweens.add({
+                    targets: [progressLockIcon, lockedProgressBtnText],
+                    scaleX: 1.05,
+                    scaleY: 1.05,
+                    duration: 200,
+                    ease: 'Power2.out'
+                });
+            });
+            
+            lockedProgressBtn.on('pointerout', () => {
+                lockedProgressBtn.setFillStyle(lockedColor);
+                this.tweens.add({
+                    targets: [progressLockIcon, lockedProgressBtnText],
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 200,
+                    ease: 'Power2.out'
+                });
+            });
         }
 
         // Close button (top right of box)

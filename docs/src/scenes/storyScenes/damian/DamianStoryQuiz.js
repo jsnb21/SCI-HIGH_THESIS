@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { createBackButton } from '/src/components/buttons/backbutton.js';
+import { getScaleInfo, scaleFontSize, scaleDimension } from '/src/utils/mobileUtils.js';
 
 export default class DamianStoryQuiz extends Phaser.Scene {
     constructor() {
@@ -74,6 +75,10 @@ export default class DamianStoryQuiz extends Phaser.Scene {
         }
 
         const { width, height } = this.scale;
+        
+        // Get scale information for mobile responsiveness
+        const scaleInfo = getScaleInfo();
+        
         const question = this.quizData.questions[this.currentQuestionIndex];
         
         // Clear previous question
@@ -83,9 +88,9 @@ export default class DamianStoryQuiz extends Phaser.Scene {
         this.progressText.setText(`Question ${this.currentQuestionIndex + 1} of ${this.quizData.questions.length}`);
         
         // Question text
-        const questionText = this.add.text(width / 2, 200, question.question, {
+        const questionText = this.add.text(width / 2, scaleDimension(200, scaleInfo), question.question, {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '24px',
+            fontSize: `${scaleFontSize(24, scaleInfo)}px`,
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 2,
@@ -96,25 +101,27 @@ export default class DamianStoryQuiz extends Phaser.Scene {
         this.questionContainer.add(questionText);
         
         // Answer options
-        const startY = 280;
-        const buttonSpacing = 80;
+        const startY = scaleDimension(280, scaleInfo);
+        const buttonSpacing = scaleDimension(80, scaleInfo);
+        const buttonWidth = scaleDimension(600, scaleInfo);
+        const buttonHeight = scaleDimension(60, scaleInfo);
         
         question.options.forEach((option, index) => {
             const y = startY + (index * buttonSpacing);
             
             // Button background
-            const button = this.add.rectangle(width / 2, y, 600, 60, 0xf57c00)
-                .setStrokeStyle(3, 0x000000)
+            const button = this.add.rectangle(width / 2, y, buttonWidth, buttonHeight, 0xf57c00)
+                .setStrokeStyle(scaleDimension(3, scaleInfo), 0x000000)
                 .setInteractive({ useHandCursor: true });
             
             // Button text
             const buttonText = this.add.text(width / 2, y, option, {
                 fontFamily: 'Caprasimo-Regular',
-                fontSize: '18px',
+                fontSize: `${scaleFontSize(18, scaleInfo)}px`,
                 color: '#ffffff',
                 stroke: '#000000',
-                strokeThickness: 2,
-                wordWrap: { width: 550 },
+                strokeThickness: scaleDimension(2, scaleInfo),
+                wordWrap: { width: buttonWidth - scaleDimension(50, scaleInfo) },
                 align: 'center'
             }).setOrigin(0.5);
             
@@ -175,6 +182,9 @@ export default class DamianStoryQuiz extends Phaser.Scene {
     showResults() {
         const { width, height } = this.scale;
         
+        // Get scale information for mobile responsiveness
+        const scaleInfo = getScaleInfo();
+        
         // Clear question container
         this.questionContainer.removeAll(true);
         this.progressText.setText('');
@@ -218,13 +228,16 @@ export default class DamianStoryQuiz extends Phaser.Scene {
         }).setOrigin(0.5);
         
         // Continue button
-        const continueBtn = this.add.rectangle(width / 2, height / 2 + 120, 200, 50, 0xf57c00)
-            .setStrokeStyle(3, 0x000000)
+        const buttonWidth = scaleDimension(200, scaleInfo);
+        const buttonHeight = scaleDimension(50, scaleInfo);
+        
+        const continueBtn = this.add.rectangle(width / 2, height / 2 + scaleDimension(120, scaleInfo), buttonWidth, buttonHeight, 0xf57c00)
+            .setStrokeStyle(scaleDimension(3, scaleInfo), 0x000000)
             .setInteractive({ useHandCursor: true });
         
-        this.add.text(width / 2, height / 2 + 120, 'Continue', {
+        this.add.text(width / 2, height / 2 + scaleDimension(120, scaleInfo), 'Continue', {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '20px',
+            fontSize: `${scaleFontSize(20, scaleInfo)}px`,
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 2

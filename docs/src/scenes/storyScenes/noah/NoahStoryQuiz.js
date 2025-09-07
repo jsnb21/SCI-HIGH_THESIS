@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import VNDialogueBox from '/src/ui/VNDialogueBox.js';
 import { createBackButton } from '/src/components/buttons/backbutton.js';
 import { char1, onceOnlyFlags } from '/src/gameManager.js';
+import { getScaleInfo, scaleFontSize, scaleDimension } from '/src/utils/mobileUtils.js';
 
 export default class NoahStoryQuiz extends Phaser.Scene {
     constructor() {
@@ -140,6 +141,9 @@ export default class NoahStoryQuiz extends Phaser.Scene {
     showQuestion() {
         const { width, height } = this.scale;
         
+        // Get scale information for mobile responsiveness
+        const scaleInfo = getScaleInfo();
+        
         // Clear previous elements
         if (this.questionElements) {
             this.questionElements.forEach(element => element.destroy());
@@ -177,18 +181,18 @@ export default class NoahStoryQuiz extends Phaser.Scene {
         };
         const theme = themes[this.chapterType] || themes.html;
         
-        // Card dimensions - Larger for PC
-        const cardWidth = Math.min(width * 0.9, 1200);
-        const cardHeight = Math.min(height * 0.85, 700);
+        // Card dimensions - Responsive for mobile and PC
+        const cardWidth = Math.min(width * 0.9, scaleDimension(1200, scaleInfo));
+        const cardHeight = Math.min(height * 0.85, scaleDimension(700, scaleInfo));
         const cardX = width / 2;
         const cardY = height / 2;
         
         // Main card
         const card = this.add.graphics();
         card.fillStyle(0x2c3e50, 0.95);
-        card.fillRoundedRect(cardX - cardWidth/2, cardY - cardHeight/2, cardWidth, cardHeight, 15);
-        card.lineStyle(2, theme.color, 1);
-        card.strokeRoundedRect(cardX - cardWidth/2, cardY - cardHeight/2, cardWidth, cardHeight, 15);
+        card.fillRoundedRect(cardX - cardWidth/2, cardY - cardHeight/2, cardWidth, cardHeight, scaleDimension(15, scaleInfo));
+        card.lineStyle(scaleDimension(2, scaleInfo), theme.color, 1);
+        card.strokeRoundedRect(cardX - cardWidth/2, cardY - cardHeight/2, cardWidth, cardHeight, scaleDimension(15, scaleInfo));
         this.questionElements.push(card);
         
         // Header
@@ -258,9 +262,9 @@ export default class NoahStoryQuiz extends Phaser.Scene {
         }
         
         // Answers
-        const answersY = questionY + 130 + codeHeight; // Increased spacing from 90
-        const answerHeight = 50; // Increased from 40
-        const answerSpacing = 65; // Increased from 50
+        const answersY = questionY + scaleDimension(130, scaleInfo) + codeHeight; // Responsive spacing
+        const answerHeight = scaleDimension(50, scaleInfo); // Responsive height
+        const answerSpacing = scaleDimension(65, scaleInfo); // Responsive spacing
         const answerWidth = cardWidth * 0.85;
         
         question.answers.forEach((answer, index) => {
@@ -269,9 +273,9 @@ export default class NoahStoryQuiz extends Phaser.Scene {
             // Answer button
             const btn = this.add.graphics();
             btn.fillStyle(0x34495e, 0.8);
-            btn.fillRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, 8);
-            btn.lineStyle(1, 0x7f8c8d, 0.6);
-            btn.strokeRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, 8);
+            btn.fillRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, scaleDimension(8, scaleInfo));
+            btn.lineStyle(scaleDimension(1, scaleInfo), 0x7f8c8d, 0.6);
+            btn.strokeRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, scaleDimension(8, scaleInfo));
             btn.setInteractive(new Phaser.Geom.Rectangle(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight), Phaser.Geom.Rectangle.Contains);
             btn.setData('useHandCursor', true);
             this.questionElements.push(btn);
@@ -279,23 +283,26 @@ export default class NoahStoryQuiz extends Phaser.Scene {
             // Letter badge
             const letter = this.add.graphics();
             letter.fillStyle(theme.color, 1);
-            letter.fillCircle(cardX - answerWidth/2 + 28, y, 15); // Larger circle and adjusted position
+            const badgeRadius = scaleDimension(15, scaleInfo); // Responsive badge size
+            const badgeX = cardX - answerWidth/2 + scaleDimension(28, scaleInfo);
+            letter.fillCircle(badgeX, y, badgeRadius);
             this.questionElements.push(letter);
             
-            const letterText = this.add.text(cardX - answerWidth/2 + 28, y, String.fromCharCode(65 + index), {
+            const letterText = this.add.text(badgeX, y, String.fromCharCode(65 + index), {
                 fontFamily: 'Caprasimo-Regular',
-                fontSize: '16px', // Increased from 14px
+                fontSize: `${scaleFontSize(16, scaleInfo)}px`, // Responsive font size
                 color: '#ffffff'
             }).setOrigin(0.5);
             this.questionElements.push(letterText);
             
             // Answer text
-            const answerText = this.add.text(cardX - answerWidth/2 + 55, y, answer, {
+            const answerTextX = cardX - answerWidth/2 + scaleDimension(55, scaleInfo);
+            const answerText = this.add.text(answerTextX, y, answer, {
                 fontFamily: 'Caprasimo-Regular',
-                fontSize: '18px',
+                fontSize: `${scaleFontSize(18, scaleInfo)}px`, // Responsive font size
                 color: '#ecf0f1',
-                wordWrap: { width: answerWidth - 80 }, // Adjusted for larger badge
-                lineSpacing: 4 // Added line spacing for multi-line answers
+                wordWrap: { width: answerWidth - scaleDimension(80, scaleInfo) }, // Responsive word wrap
+                lineSpacing: scaleDimension(4, scaleInfo) // Responsive line spacing
             }).setOrigin(0, 0.5);
             this.questionElements.push(answerText);
             
@@ -303,18 +310,18 @@ export default class NoahStoryQuiz extends Phaser.Scene {
             btn.on('pointerover', () => {
                 btn.clear();
                 btn.fillStyle(theme.color, 0.3);
-                btn.fillRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, 8);
-                btn.lineStyle(1, theme.color, 0.8);
-                btn.strokeRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, 8);
+                btn.fillRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, scaleDimension(8, scaleInfo));
+                btn.lineStyle(scaleDimension(1, scaleInfo), theme.color, 0.8);
+                btn.strokeRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, scaleDimension(8, scaleInfo));
                 this.sound.play('se_select');
             });
             
             btn.on('pointerout', () => {
                 btn.clear();
                 btn.fillStyle(0x34495e, 0.8);
-                btn.fillRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, 8);
-                btn.lineStyle(1, 0x7f8c8d, 0.6);
-                btn.strokeRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, 8);
+                btn.fillRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, scaleDimension(8, scaleInfo));
+                btn.lineStyle(scaleDimension(1, scaleInfo), 0x7f8c8d, 0.6);
+                btn.strokeRoundedRect(cardX - answerWidth/2, y - answerHeight/2, answerWidth, answerHeight, scaleDimension(8, scaleInfo));
             });
             
             btn.on('pointerdown', () => {
@@ -357,6 +364,9 @@ export default class NoahStoryQuiz extends Phaser.Scene {
 
     showResults() {
         const { width, height } = this.scale;
+        
+        // Get scale information for mobile responsiveness
+        const scaleInfo = getScaleInfo();
         
         // Clear ALL elements (both question and result elements)
         if (this.questionElements) {
@@ -410,14 +420,18 @@ export default class NoahStoryQuiz extends Phaser.Scene {
         
         // Buttons
         if (passed) {
-            const continueBtn = this.add.rectangle(cardX, cardY + 60, 280, 40, 0x27ae60);
-            continueBtn.setStrokeStyle(2, 0xffffff);
+            const buttonWidth = scaleDimension(280, scaleInfo);
+            const buttonHeight = scaleDimension(40, scaleInfo);
+            const buttonFontSize = scaleFontSize(16, scaleInfo);
+            
+            const continueBtn = this.add.rectangle(cardX, cardY + scaleDimension(60, scaleInfo), buttonWidth, buttonHeight, 0x27ae60);
+            continueBtn.setStrokeStyle(scaleDimension(2, scaleInfo), 0xffffff);
             continueBtn.setInteractive({ useHandCursor: true });
             this.resultElements.push(continueBtn);
             
-            const continueBtnText = this.add.text(cardX, cardY + 60, 'Continue to Next Chapter', {
+            const continueBtnText = this.add.text(cardX, cardY + scaleDimension(60, scaleInfo), 'Continue to Next Chapter', {
                 fontFamily: 'Caprasimo-Regular',
-                fontSize: '16px',
+                fontSize: `${buttonFontSize}px`,
                 color: '#ffffff'
             }).setOrigin(0.5);
             this.resultElements.push(continueBtnText);
@@ -429,27 +443,33 @@ export default class NoahStoryQuiz extends Phaser.Scene {
             });
         } else {
             // Retry button
-            const retryBtn = this.add.rectangle(cardX - 80, cardY + 60, 120, 40, 0xf39c12);
-            retryBtn.setStrokeStyle(2, 0xffffff);
+            const smallButtonWidth = scaleDimension(120, scaleInfo);
+            const smallButtonHeight = scaleDimension(40, scaleInfo);
+            const smallButtonFontSize = scaleFontSize(16, scaleInfo);
+            const buttonSpacing = scaleDimension(80, scaleInfo);
+            const buttonY = cardY + scaleDimension(60, scaleInfo);
+            
+            const retryBtn = this.add.rectangle(cardX - buttonSpacing, buttonY, smallButtonWidth, smallButtonHeight, 0xf39c12);
+            retryBtn.setStrokeStyle(scaleDimension(2, scaleInfo), 0xffffff);
             retryBtn.setInteractive({ useHandCursor: true });
             this.resultElements.push(retryBtn);
             
-            const retryBtnText = this.add.text(cardX - 80, cardY + 60, 'Retry Quiz', {
+            const retryBtnText = this.add.text(cardX - buttonSpacing, buttonY, 'Retry Quiz', {
                 fontFamily: 'Caprasimo-Regular',
-                fontSize: '16px',
+                fontSize: `${smallButtonFontSize}px`,
                 color: '#ffffff'
             }).setOrigin(0.5);
             this.resultElements.push(retryBtnText);
             
             // Back button
-            const backBtn = this.add.rectangle(cardX + 80, cardY + 60, 120, 40, 0x7f8c8d);
-            backBtn.setStrokeStyle(2, 0xffffff);
+            const backBtn = this.add.rectangle(cardX + buttonSpacing, buttonY, smallButtonWidth, smallButtonHeight, 0x7f8c8d);
+            backBtn.setStrokeStyle(scaleDimension(2, scaleInfo), 0xffffff);
             backBtn.setInteractive({ useHandCursor: true });
             this.resultElements.push(backBtn);
             
-            const backBtnText = this.add.text(cardX + 80, cardY + 60, 'Back to Story', {
+            const backBtnText = this.add.text(cardX + buttonSpacing, buttonY, 'Back to Story', {
                 fontFamily: 'Caprasimo-Regular',
-                fontSize: '16px',
+                fontSize: `${smallButtonFontSize}px`,
                 color: '#ffffff'
             }).setOrigin(0.5);
             this.resultElements.push(backBtnText);

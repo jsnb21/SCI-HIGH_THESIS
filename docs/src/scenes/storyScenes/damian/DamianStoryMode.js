@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import VNDialogueBox from '/src/ui/VNDialogueBox.js';
 import { createBackButton } from '/src/components/buttons/backbutton.js';
 import { char3, onceOnlyFlags } from '/src/gameManager.js';
+import { getScaleInfo, scaleFontSize, scaleDimension } from '/src/utils/mobileUtils.js';
 
 export default class DamianStoryMode extends Phaser.Scene {
     constructor() {
@@ -367,6 +368,9 @@ export default class DamianStoryMode extends Phaser.Scene {
     showInlineQuizFeedback(isCorrect, quizData, callback) {
         const { width, height } = this.scale;
         
+        // Get scale information for mobile responsiveness
+        const scaleInfo = getScaleInfo();
+        
         const feedbackColor = isCorrect ? 0x27ae60 : 0xe74c3c;
         const feedbackIcon = isCorrect ? '✅' : '❌';
         const feedbackTitle = isCorrect ? 'Correct!' : 'Not quite right';
@@ -401,17 +405,22 @@ export default class DamianStoryMode extends Phaser.Scene {
         }).setOrigin(0.5);
         explanation.setDepth(11);
 
-        // Continue button (50% larger)
+        // Continue button with responsive dimensions
+        const buttonWidth = scaleDimension(150, scaleInfo);
+        const buttonHeight = scaleDimension(45, scaleInfo);
+        const buttonX = width/2 - buttonWidth/2;
+        const buttonY = height/2 + scaleDimension(90, scaleInfo);
+        
         const continueBtn = this.add.graphics();
         continueBtn.fillStyle(0xffffff, 1);
-        continueBtn.fillRoundedRect(width/2 - 75, height/2 + 90, 150, 45, 12);
+        continueBtn.fillRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, scaleDimension(12, scaleInfo));
         continueBtn.setDepth(11);
-        continueBtn.setInteractive(new Phaser.Geom.Rectangle(width/2 - 75, height/2 + 90, 150, 45), Phaser.Geom.Rectangle.Contains);
+        continueBtn.setInteractive(new Phaser.Geom.Rectangle(buttonX, buttonY, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
         continueBtn.setData('useHandCursor', true);
 
-        const continueText = this.add.text(width/2, height/2 + 112, 'Continue', {
+        const continueText = this.add.text(width/2, buttonY + buttonHeight/2, 'Continue', {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '18px', // 12px * 1.5
+            fontSize: `${scaleFontSize(18, scaleInfo)}px`,
             color: '#000000'
         }).setOrigin(0.5);
         continueText.setDepth(12);
