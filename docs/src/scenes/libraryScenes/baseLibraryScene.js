@@ -1,4 +1,4 @@
-// Enhanced Library Scene with Carousel Interface and Ebook Links
+// Enhanced Library Scene with Direct Book Links
 
 import Carousel from '../../ui/carouselUI.js';
 import { createBackButton } from '../../components/buttons/backbutton.js';
@@ -15,10 +15,7 @@ class BaseLibraryScene extends Phaser.Scene {
         });
         this.carousel = null;
         this.booksData = null;
-        this.ebookDialog = null;
-        this.isDialogOpen = false;
         this.tutorialManager = null;
-        this.topicIcons = ['📚', '💻', '🌐', '📊', '🤖', '🎨'];
     }
 
     init(data) {
@@ -33,64 +30,86 @@ class BaseLibraryScene extends Phaser.Scene {
         this.load.image('libraryBg', 'assets/img/bg/libraryBG.png');
         
         // Load JSON data files
-        this.load.json('booksData', `public/library/books.json`);
-        this.load.json('libraryData', `public/library/library.json`);
-        this.load.json('progressData', `public/library/progress.json`);
-        this.load.json('notesData', `public/library/notes.json`);
+        this.load.json('booksData', `library/books.json`);
+        
+        // Load programming language icons from comlab folder
+        this.load.image('web-design_logo', 'assets/img/comlab/icons/web-design_logo.png');
+        this.load.image('python_logo', 'assets/img/comlab/icons/python_logo.png');
+        this.load.image('java_logo', 'assets/img/comlab/icons/java_logo.png');
+        this.load.image('cplus_logo', 'assets/img/comlab/icons/cplus_logo.png');
+        this.load.image('c_logo', 'assets/img/comlab/icons/c_logo.png');
+        this.load.image('csharp_logo', 'assets/img/comlab/icons/csharp_logo.png');
         
         // Load audio files
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.audio('bgm_library', 'assets/audio/bgm/bgm_library.mp3');
-        
-        // Create topic icons programmatically
-        this.createTopicIcons();
     }
 
-    createTopicIcons() {
-        // Create programmatic topic icons for each category
-        const categories = ['Programming', 'Data Science', 'Web Development', 'Computer Science', 'Machine Learning', 'Design'];
-        const icons = ['📚', '📊', '🌐', '💻', '🤖', '🎨'];
-        
-        categories.forEach((category, index) => {
-            const iconKey = `topic_${category.toLowerCase().replace(' ', '_')}`;
+    createBookIcons() {
+        // Create book icons using actual image files from comlab folder
+        if (!this.booksData || !this.booksData.books) {
+            console.warn('No books data available for creating icons');
+            return;
+        }
+
+        this.booksData.books.forEach((book, index) => {
+            const iconKey = `book_${book.id}`;
+            const sourceIconKey = book.icon; // This will be like 'python_logo', 'java_logo', etc.
             
-            // Create a simple colored circle with emoji as topic icon
-            const graphics = this.add.graphics();
-            graphics.fillStyle(0x4a90e2, 0.8);
-            graphics.fillCircle(64, 64, 60);
-            graphics.lineStyle(4, 0xffffff, 1);
-            graphics.strokeCircle(64, 64, 60);
+            console.log(`Creating icon for book: ${book.title}, using source: ${sourceIconKey}`);
             
-            // Add emoji text
-            const emoji = this.add.text(64, 64, icons[index] || '📚', {
-                fontSize: '48px',
-                fontFamily: 'Arial'
-            }).setOrigin(0.5);
-            
-            // Create texture from graphics
-            const renderTexture = this.add.renderTexture(0, 0, 128, 128);
-            renderTexture.draw(graphics);
-            renderTexture.draw(emoji);
-            
-            // Save as texture
-            renderTexture.saveTexture(iconKey);
-            
-            // Clean up
-            graphics.destroy();
-            emoji.destroy();
-            renderTexture.destroy();
+            // Check if the source icon exists in the texture manager
+            if (this.textures.exists(sourceIconKey)) {
+                // Create a copy of the texture with our book-specific key
+                const sourceTexture = this.textures.get(sourceIconKey);
+                this.textures.addImage(iconKey, sourceTexture.source[0].image);
+                console.log(`Successfully created icon: ${iconKey} from ${sourceIconKey}`);
+            } else {
+                console.warn(`Source icon ${sourceIconKey} not found for book ${book.title}`);
+                // Fallback: create a simple colored rectangle as backup
+                const graphics = this.add.graphics();
+                graphics.fillStyle(0x4a90e2, 0.8);
+                graphics.fillRoundedRect(0, 0, 128, 128, 10);
+                graphics.lineStyle(4, 0xffffff, 1);
+                graphics.strokeRoundedRect(0, 0, 128, 128, 10);
+                
+                // Add book title as text
+                const titleText = this.add.text(64, 64, book.title, {
+                    fontSize: '16px',
+                    fontFamily: 'Arial',
+                    color: '#ffffff',
+                    align: 'center',
+                    wordWrap: { width: 120 }
+                }).setOrigin(0.5);
+                
+                // Create texture from graphics
+                const renderTexture = this.add.renderTexture(0, 0, 128, 128);
+                renderTexture.draw(graphics);
+                renderTexture.draw(titleText);
+                
+                // Save as texture
+                renderTexture.saveTexture(iconKey);
+                
+                // Clean up
+                graphics.destroy();
+                titleText.destroy();
+                renderTexture.destroy();
+            }
         });
     }
 
     create() {
-        // Load books data
+        // Load books data first
         this.loadBooksData();
+        
+        // Create book icons after data is loaded
+        this.createBookIcons();
         
         // Setup scene
         this.setupBackground();
         this.createLibraryTitle();
-        this.createTopicCarousel();
+        this.createBooksCarousel();
         this.createBackButton();
 
         // Initialize sound effects and background music
@@ -108,41 +127,23 @@ class BaseLibraryScene extends Phaser.Scene {
                 this.startLibraryTutorial();
             });
         }
-
-        // Debug features
-        this.input.keyboard.on('keydown-T', () => {
-            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
-                this.startLibraryTutorial();
-            }
-        });
-
-        this.input.keyboard.on('keydown-R', () => {
-            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
-                onceOnlyFlags.flags['library_tutorial'] = false;
-                console.log('Library tutorial flag reset');
-            }
-        });
     }
 
     loadBooksData() {
         this.booksData = this.cache.json.get('booksData');
         
-        if (!this.booksData || !this.booksData.categories) {
+        if (!this.booksData || !this.booksData.books) {
             console.warn('Books data not found, using default data');
             this.booksData = {
-                categories: [
+                books: [
                     {
-                        name: "Programming",
-                        books: [
-                            {
-                                id: 1,
-                                title: "Web Design Basics",
-                                author: "Jane Smith",
-                                status: "available",
-                                description: "Learn the fundamentals of web design",
-                                link: "https://example.com/web-design-basics"
-                            }
-                        ]
+                        id: 1,
+                        title: "Sample Ebook",
+                        author: "Sample Author",
+                        status: "available",
+                        description: "A sample ebook for testing",
+                        link: "https://example.com",
+                        icon: "📚"
                     }
                 ]
             };
@@ -161,16 +162,16 @@ class BaseLibraryScene extends Phaser.Scene {
     createLibraryTitle() {
         const title = this.add.text(this.cameras.main.centerX, 80, 'DIGITAL LIBRARY', {
             fontSize: '48px',
-            fontFamily: 'Caprasimo-Regular',
+            fontFamily: 'Arial',
             color: '#ffe066',
             stroke: '#111122',
             strokeThickness: 8,
             shadow: { offsetX: 0, offsetY: 4, color: '#000', blur: 12, fill: true }
         }).setOrigin(0.5).setDepth(100);
 
-        const subtitle = this.add.text(this.cameras.main.centerX, 130, 'Choose a topic to explore available ebooks', {
+        const subtitle = this.add.text(this.cameras.main.centerX, 130, 'Click on any book to open it in a new tab', {
             fontSize: '24px',
-            fontFamily: 'Caprasimo-Regular',
+            fontFamily: 'Arial',
             color: '#e0e0ff',
             stroke: '#111122',
             strokeThickness: 4,
@@ -178,21 +179,27 @@ class BaseLibraryScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(100);
     }
 
-    createTopicCarousel() {
-        // Get categories from books data
-        const categories = this.booksData.categories || [];
+    createBooksCarousel() {
+        // Get books from books data
+        const books = this.booksData.books || [];
         const iconKeys = [];
         const iconInfo = [];
         
-        categories.forEach((category, index) => {
-            const iconKey = `topic_${category.name.toLowerCase().replace(' ', '_')}`;
+        books.forEach((book, index) => {
+            const iconKey = `book_${book.id}`;
+            console.log(`Creating icon for book: ${book.title}, key: ${iconKey}`);
             iconKeys.push(iconKey);
             iconInfo.push({
-                title: category.name,
-                description: `${category.books.length} ebooks available`,
-                category: category
+                heading: book.title, // Use 'heading' for carousel compatibility
+                desc: `by ${book.author}`, // Use 'desc' for carousel compatibility
+                title: book.title,
+                description: `by ${book.author}`,
+                book: book
             });
         });
+
+        console.log('Icon keys:', iconKeys);
+        console.log('Icon info:', iconInfo);
 
         // Create carousel
         this.carousel = new Carousel(this, {
@@ -200,220 +207,357 @@ class BaseLibraryScene extends Phaser.Scene {
             iconSpacing: 200,
             iconToTitleGap: 120,
             iconToDescGap: 60,
-            smallScale: 0.6,
-            largeScale: 1.0
+            smallScale: 0.15,  // Further reduced from 0.3 to make icons much smaller
+            largeScale: 0.25   // Further reduced from 0.5 to make icons much smaller
         });
 
         this.carousel.create(
             iconKeys,
             iconInfo,
-            (selectedIndex) => this.onTopicSelected(selectedIndex),
-            [] // No locked topics
+            (selectedData) => this.onBookSelected(selectedData),
+            [] // No locked books
         );
+
+        // Add book names above each icon
+        this.createBookNameLabels();
+
+        // Override carousel's move method to update our book name labels
+        const originalMove = this.carousel.move.bind(this.carousel);
+        this.carousel.move = (direction) => {
+            originalMove(direction);
+            // Update book name labels after carousel moves
+            this.time.delayedCall(50, () => {
+                this.updateBookNameLabels();
+            });
+        };
     }
 
-    onTopicSelected(selectedIndex) {
-        const categories = this.booksData.categories || [];
-        const selectedCategory = categories[selectedIndex];
+    createBookNameLabels() {
+        const books = this.booksData.books || [];
+        const scale = this.carousel.getScale();
+        const iconSpacing = 200 * scale;
+        const iconYOffset = 50 * scale;
         
-        if (selectedCategory) {
-            this.showEbookDialog(selectedCategory);
+        let iconCenterX, iconCenterY;
+        if (this.cameras && this.cameras.main) {
+            iconCenterX = this.cameras.main.centerX;
+            iconCenterY = this.cameras.main.centerY + iconYOffset;
+        } else {
+            iconCenterX = this.scale.width / 2;
+            iconCenterY = this.scale.height / 2 + iconYOffset;
         }
-    }
 
-    showEbookDialog(category) {
-        if (this.isDialogOpen) return;
-        
-        this.isDialogOpen = true;
-        
-        // Create dialog container
-        this.ebookDialog = this.add.container(this.cameras.main.centerX, this.cameras.main.centerY);
-        this.ebookDialog.setDepth(200);
-
-        // Semi-transparent overlay
-        const overlay = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.7);
-        overlay.setInteractive();
-        overlay.on('pointerdown', () => this.closeEbookDialog());
-        this.ebookDialog.add(overlay);
-
-        // Dialog background
-        const dialogWidth = Math.min(600, this.cameras.main.width * 0.9);
-        const dialogHeight = Math.min(500, this.cameras.main.height * 0.8);
-        
-        const dialogBg = this.add.graphics();
-        dialogBg.fillStyle(0x2a2a3a, 0.95);
-        dialogBg.fillRoundedRect(-dialogWidth/2, -dialogHeight/2, dialogWidth, dialogHeight, 20);
-        dialogBg.lineStyle(3, 0x4a90e2, 1);
-        dialogBg.strokeRoundedRect(-dialogWidth/2, -dialogHeight/2, dialogWidth, dialogHeight, 20);
-        this.ebookDialog.add(dialogBg);
-
-        // Title
-        const title = this.add.text(0, -dialogHeight/2 + 40, category.name, {
-            fontSize: '32px',
-            fontFamily: 'Caprasimo-Regular',
-            color: '#ffe066',
-            stroke: '#111122',
-            strokeThickness: 4
-        }).setOrigin(0.5);
-        this.ebookDialog.add(title);
-
-        // Close button
-        const closeBtn = this.add.text(dialogWidth/2 - 30, -dialogHeight/2 + 30, '✕', {
-            fontSize: '24px',
-            color: '#ff6666',
-            fontFamily: 'Arial'
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        closeBtn.on('pointerdown', () => this.closeEbookDialog());
-        closeBtn.on('pointerover', () => closeBtn.setScale(1.2));
-        closeBtn.on('pointerout', () => closeBtn.setScale(1));
-        this.ebookDialog.add(closeBtn);
-
-        // Books list
-        this.createBooksList(category, dialogWidth, dialogHeight);
-
-        // Animate dialog appearance
-        this.ebookDialog.setScale(0);
-        this.tweens.add({
-            targets: this.ebookDialog,
-            scaleX: 1,
-            scaleY: 1,
-            duration: 300,
-            ease: 'Back.easeOut'
-        });
-    }
-
-    createBooksList(category, dialogWidth, dialogHeight) {
-        const books = category.books || [];
-        const listStartY = -dialogHeight/2 + 100;
-        const itemHeight = 80;
-        const maxVisibleItems = Math.floor((dialogHeight - 200) / itemHeight);
-        
-        // Create scrollable container for books
-        const booksContainer = this.add.container(0, 0);
-        this.ebookDialog.add(booksContainer);
+        this.bookNameLabels = [];
 
         books.forEach((book, index) => {
-            if (index >= maxVisibleItems) return; // Simple pagination for now
+            // Calculate position relative to carousel center
+            let relativePos = index - this.carousel.carouselIndex;
+            const iconCount = books.length;
+            if (relativePos > Math.floor(iconCount / 2)) relativePos -= iconCount;
+            else if (relativePos < -Math.floor(iconCount / 2)) relativePos += iconCount;
             
-            const yPos = listStartY + (index * itemHeight);
+            const x = iconCenterX + relativePos * iconSpacing;
+            const y = iconCenterY - 80 * scale; // Position above the icon
+
+            const nameLabel = this.add.text(x, y, book.title, {
+                fontSize: `${Math.round(16 * scale)}px`,
+                fontFamily: 'Arial',
+                color: index === this.carousel.carouselIndex ? '#ffe066' : '#ffffff',
+                stroke: '#000000',
+                strokeThickness: 2,
+                align: 'center',
+                wordWrap: { width: 120 * scale, useAdvancedWrap: true }
+            }).setOrigin(0.5).setDepth(200);
+
+            // Set initial alpha based on selection
+            nameLabel.setAlpha(index === this.carousel.carouselIndex ? 1.0 : 0.7);
             
-            // Book item background
-            const itemBg = this.add.graphics();
-            itemBg.fillStyle(0x3a3a4a, 0.8);
-            itemBg.fillRoundedRect(-dialogWidth/2 + 20, yPos - itemHeight/2, dialogWidth - 40, itemHeight - 10, 8);
-            itemBg.lineStyle(1, 0x5a5a6a, 1);
-            itemBg.strokeRoundedRect(-dialogWidth/2 + 20, yPos - itemHeight/2, dialogWidth - 40, itemHeight - 10, 8);
-            booksContainer.add(itemBg);
-
-            // Book title
-            const bookTitle = this.add.text(-dialogWidth/2 + 40, yPos - 15, book.title, {
-                fontSize: '18px',
-                fontFamily: 'Arial',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                wordWrap: { width: dialogWidth - 180 }
-            }).setOrigin(0, 0.5);
-            booksContainer.add(bookTitle);
-
-            // Book author
-            const bookAuthor = this.add.text(-dialogWidth/2 + 40, yPos + 5, `by ${book.author}`, {
-                fontSize: '14px',
-                fontFamily: 'Arial',
-                color: '#cccccc'
-            }).setOrigin(0, 0.5);
-            booksContainer.add(bookAuthor);
-
-            // Status indicator
-            const status = book.status || 'available';
-            const statusColor = this.getStatusColor(status);
-            const statusText = this.add.text(-dialogWidth/2 + 40, yPos + 20, status.toUpperCase(), {
-                fontSize: '12px',
-                fontFamily: 'Arial',
-                color: statusColor,
-                fontStyle: 'bold'
-            }).setOrigin(0, 0.5);
-            booksContainer.add(statusText);
-
-            // Link button (if available)
-            if (book.link) {
-                const linkBtn = this.add.graphics();
-                linkBtn.fillStyle(0x4a90e2, 0.9);
-                linkBtn.fillRoundedRect(dialogWidth/2 - 120, yPos - 15, 80, 30, 6);
-                linkBtn.setInteractive(new Phaser.Geom.Rectangle(dialogWidth/2 - 120, yPos - 15, 80, 30), Phaser.Geom.Rectangle.Contains);
-                linkBtn.on('pointerdown', () => this.openEbook(book));
-                linkBtn.on('pointerover', () => {
-                    linkBtn.clear();
-                    linkBtn.fillStyle(0x6ab0f2, 0.9);
-                    linkBtn.fillRoundedRect(dialogWidth/2 - 120, yPos - 15, 80, 30, 6);
-                });
-                linkBtn.on('pointerout', () => {
-                    linkBtn.clear();
-                    linkBtn.fillStyle(0x4a90e2, 0.9);
-                    linkBtn.fillRoundedRect(dialogWidth/2 - 120, yPos - 15, 80, 30, 6);
-                });
-                booksContainer.add(linkBtn);
-
-                const linkText = this.add.text(dialogWidth/2 - 80, yPos, 'READ', {
-                    fontSize: '14px',
-                    fontFamily: 'Arial',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5);
-                booksContainer.add(linkText);
-            }
+            // Store reference for updates
+            nameLabel.bookIndex = index;
+            this.bookNameLabels.push(nameLabel);
         });
-
-        // Show "no books" message if empty
-        if (books.length === 0) {
-            const noBooks = this.add.text(0, listStartY + 50, 'No ebooks available in this category yet.', {
-                fontSize: '18px',
-                fontFamily: 'Arial',
-                color: '#888888'
-            }).setOrigin(0.5);
-            booksContainer.add(noBooks);
-        }
     }
 
-    getStatusColor(status) {
-        switch (status.toLowerCase()) {
-            case 'available': return '#00ff00';
-            case 'reading': return '#ffaa00';
-            case 'completed': return '#0088ff';
-            default: return '#cccccc';
+    updateBookNameLabels() {
+        if (!this.bookNameLabels) return;
+        
+        const books = this.booksData.books || [];
+        const scale = this.carousel.getScale();
+        const iconSpacing = 200 * scale;
+        const iconYOffset = 50 * scale;
+        
+        let iconCenterX, iconCenterY;
+        if (this.cameras && this.cameras.main) {
+            iconCenterX = this.cameras.main.centerX;
+            iconCenterY = this.cameras.main.centerY + iconYOffset;
+        } else {
+            iconCenterX = this.scale.width / 2;
+            iconCenterY = this.scale.height / 2 + iconYOffset;
+        }
+
+        this.bookNameLabels.forEach((label, arrayIndex) => {
+            const bookIndex = label.bookIndex;
+            
+            // Calculate new position
+            let relativePos = bookIndex - this.carousel.carouselIndex;
+            const iconCount = books.length;
+            if (relativePos > Math.floor(iconCount / 2)) relativePos -= iconCount;
+            else if (relativePos < -Math.floor(iconCount / 2)) relativePos += iconCount;
+            
+            const x = iconCenterX + relativePos * iconSpacing;
+            const y = iconCenterY - 80 * scale;
+
+            // Animate to new position
+            this.tweens.add({
+                targets: label,
+                x: x,
+                y: y,
+                duration: 300,
+                ease: 'Power2'
+            });
+
+            // Update styling based on selection
+            const isSelected = bookIndex === this.carousel.carouselIndex;
+            label.setColor(isSelected ? '#ffe066' : '#ffffff');
+            this.tweens.add({
+                targets: label,
+                alpha: isSelected ? 1.0 : 0.7,
+                duration: 200,
+                ease: 'Power2'
+            });
+        });
+    }
+
+    onBookSelected(selectedData) {
+        console.log('Book selected data:', selectedData);
+        
+        let selectedBook = null;
+        
+        if (typeof selectedData === 'object' && selectedData.book) {
+            // If selectedData is the iconInfo object with book property
+            selectedBook = selectedData.book;
+        } else if (typeof selectedData === 'number') {
+            // If selectedData is an index
+            const books = this.booksData.books || [];
+            selectedBook = books[selectedData];
+        }
+        
+        console.log('Selected book:', selectedBook);
+        
+        if (selectedBook) {
+            this.openEbook(selectedBook);
+        } else {
+            console.error('No book found from selection:', selectedData);
         }
     }
 
     openEbook(book) {
+        console.log('OpenEbook called with:', book);
+        
         if (book.link) {
-            // Open in a new window/tab
-            window.open(book.link, '_blank');
-            console.log(`Opening ebook: ${book.title} at ${book.link}`);
+            console.log('Opening link:', book.link);
             
-            // Optional: Mark as reading
+            // Play confirmation sound
+            if (this.se_confirmSound) {
+                this.se_confirmSound.play();
+            }
+            
+            // Show visual feedback
+            this.showOpeningFeedback(book);
+            
+            // Open in a new window/tab with better security
+            const newWindow = window.open(book.link, '_blank', 'noopener,noreferrer');
+            
+            // Handle popup blocker
+            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                console.warn('Popup blocked for:', book.link);
+                this.showPopupBlockedMessage(book);
+                return;
+            }
+            
+            console.log(`Successfully opened ebook: ${book.title} at ${book.link}`);
+            
+            // Mark as reading and save progress
             if (book.status === 'available') {
                 book.status = 'reading';
-                // You could save this state to localStorage or send to server
+                this.saveReadingProgress(book);
             }
+            
+            // Update statistics
+            this.updateBookAccessStats(book);
+            
         } else {
             console.warn(`No link available for book: ${book.title}`);
+            this.showNoLinkMessage(book);
         }
     }
 
-    closeEbookDialog() {
-        if (!this.isDialogOpen || !this.ebookDialog) return;
-        
+    showOpeningFeedback(book) {
+        // Create a temporary feedback message
+        const feedback = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY - 100, 
+            `Opening "${book.title}"...`, {
+            fontSize: '20px',
+            fontFamily: 'Arial',
+            color: '#00ff00',
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: { x: 20, y: 10 },
+            borderRadius: 10
+        }).setOrigin(0.5).setDepth(300);
+
+        // Animate and remove feedback
         this.tweens.add({
-            targets: this.ebookDialog,
+            targets: feedback,
+            alpha: 0,
+            y: feedback.y - 50,
+            duration: 2000,
+            ease: 'Power2.easeOut',
+            onComplete: () => feedback.destroy()
+        });
+    }
+
+    showPopupBlockedMessage(book) {
+        // Show popup blocked message
+        const popup = this.add.container(this.cameras.main.centerX, this.cameras.main.centerY);
+        popup.setDepth(400);
+
+        const bg = this.add.graphics();
+        bg.fillStyle(0xff4444, 0.9);
+        bg.fillRoundedRect(-200, -60, 400, 120, 10);
+        bg.lineStyle(2, 0xffffff, 1);
+        bg.strokeRoundedRect(-200, -60, 400, 120, 10);
+        popup.add(bg);
+
+        const title = this.add.text(0, -20, 'Popup Blocked', {
+            fontSize: '18px',
+            fontFamily: 'Arial',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        popup.add(title);
+
+        const message = this.add.text(0, 10, 'Please allow popups and try again', {
+            fontSize: '14px',
+            fontFamily: 'Arial',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        popup.add(message);
+
+        const copyButton = this.add.graphics();
+        copyButton.fillStyle(0x4a90e2, 1);
+        copyButton.fillRoundedRect(-60, 25, 120, 25, 5);
+        copyButton.setInteractive(new Phaser.Geom.Rectangle(-60, 25, 120, 25), Phaser.Geom.Rectangle.Contains);
+        copyButton.on('pointerdown', () => {
+            navigator.clipboard.writeText(book.link);
+            this.showCopiedMessage();
+            this.closeFeedbackPopup(popup);
+        });
+        popup.add(copyButton);
+
+        const copyText = this.add.text(0, 37, 'Copy Link', {
+            fontSize: '12px',
+            fontFamily: 'Arial',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        popup.add(copyText);
+
+        // Auto close after 5 seconds
+        this.time.delayedCall(5000, () => {
+            this.closeFeedbackPopup(popup);
+        });
+    }
+
+    showNoLinkMessage(book) {
+        const feedback = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY - 100, 
+            `No link available for "${book.title}"`, {
+            fontSize: '18px',
+            fontFamily: 'Arial',
+            color: '#ff6666',
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: { x: 20, y: 10 }
+        }).setOrigin(0.5).setDepth(300);
+
+        this.tweens.add({
+            targets: feedback,
+            alpha: 0,
+            y: feedback.y - 30,
+            duration: 2000,
+            ease: 'Power2.easeOut',
+            onComplete: () => feedback.destroy()
+        });
+    }
+
+    showCopiedMessage() {
+        const feedback = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY + 100, 
+            'Link copied to clipboard!', {
+            fontSize: '16px',
+            fontFamily: 'Arial',
+            color: '#00ff00',
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: { x: 15, y: 8 }
+        }).setOrigin(0.5).setDepth(300);
+
+        this.tweens.add({
+            targets: feedback,
+            alpha: 0,
+            duration: 1500,
+            ease: 'Power2.easeOut',
+            onComplete: () => feedback.destroy()
+        });
+    }
+
+    closeFeedbackPopup(popup) {
+        this.tweens.add({
+            targets: popup,
             scaleX: 0,
             scaleY: 0,
+            alpha: 0,
             duration: 200,
             ease: 'Back.easeIn',
-            onComplete: () => {
-                this.ebookDialog.destroy();
-                this.ebookDialog = null;
-                this.isDialogOpen = false;
-            }
+            onComplete: () => popup.destroy()
         });
+    }
+
+    saveReadingProgress(book) {
+        // Save to localStorage for persistence
+        let progress = JSON.parse(localStorage.getItem('libraryProgress') || '{}');
+        
+        if (!progress.booksReading) progress.booksReading = [];
+        if (!progress.booksAccessed) progress.booksAccessed = [];
+        
+        // Add to reading list if not already there
+        if (!progress.booksReading.find(b => b.id === book.id)) {
+            progress.booksReading.push({
+                id: book.id,
+                title: book.title,
+                author: book.author,
+                accessedAt: new Date().toISOString()
+            });
+        }
+        
+        // Add to accessed list
+        if (!progress.booksAccessed.find(b => b.id === book.id)) {
+            progress.booksAccessed.push({
+                id: book.id,
+                title: book.title,
+                accessedAt: new Date().toISOString()
+            });
+        }
+        
+        localStorage.setItem('libraryProgress', JSON.stringify(progress));
+    }
+
+    updateBookAccessStats(book) {
+        // Update access statistics
+        let stats = JSON.parse(localStorage.getItem('libraryStats') || '{}');
+        
+        if (!stats.totalAccesses) stats.totalAccesses = 0;
+        if (!stats.bookAccesses) stats.bookAccesses = {};
+        
+        stats.totalAccesses++;
+        stats.bookAccesses[book.id] = (stats.bookAccesses[book.id] || 0) + 1;
+        stats.lastAccessed = new Date().toISOString();
+        
+        localStorage.setItem('libraryStats', JSON.stringify(stats));
     }
 
     createBackButton() {
@@ -467,15 +611,19 @@ class BaseLibraryScene extends Phaser.Scene {
             this.tutorialManager = null;
         }
         
-        // Clean up dialog if open
-        if (this.ebookDialog) {
-            this.ebookDialog.destroy();
-            this.ebookDialog = null;
-        }
-        
         // Clean up carousel
         if (this.carousel) {
             this.carousel = null;
+        }
+
+        // Clean up book name labels
+        if (this.bookNameLabels) {
+            this.bookNameLabels.forEach(label => {
+                if (label && label.destroy) {
+                    label.destroy();
+                }
+            });
+            this.bookNameLabels = [];
         }
     }
 }

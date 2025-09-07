@@ -58,7 +58,6 @@ import CplusplusQuizScene from './scenes/quizscenes/CplusplusQuizScene.js';
 
 //Library Scenes
 import BaseLibraryScene from './scenes/libraryScenes/baseLibraryScene.js';
-import ReadingScene from './scenes/libraryScenes/readingScene.js';
 
 // Dungeon Scene
 import DungeonScene from './scenes/comlabscenes/dungeon.js';
@@ -144,8 +143,7 @@ const config = {
     CQuizScene,
     CSharpQuizScene,
     /* Library Scenes */
-    BaseLibraryScene,
-    ReadingScene
+    BaseLibraryScene
   ],
   dom: {
     createContainer: true
