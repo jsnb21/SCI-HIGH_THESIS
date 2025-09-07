@@ -1,135 +1,49 @@
 {
-  "categories": [
+  "books": [
     {
-      "name": "Programming",
-      "books": [
-        {
-          "id": 1,
-          "title": "Web Design Basics",
-          "author": "Jane Smith",
-          "status": "available",
-          "description": "Learn the fundamentals of web design including HTML, CSS, and responsive layouts.",
-          "pages": 250,
-          "difficulty": "beginner",
-          "content": {
-          "pages": [
-              {
-                "pageNumber": 1,
-                "type": "cover",
-                "title": "Web Design Basics",
-                "subtitle": "A Complete Guide",
-                "author": "Jane Smith"
-              },
-              {
-                "pageNumber": 2,
-                "type": "table-of-contents",
-                "title": "Table of Contents",
-                "items": [
-                  "Chapter 1: Introduction - Page 3",
-                  "Chapter 2: HTML Basics - Page 15",
-                  "Chapter 3: CSS Fundamentals - Page 30"
-                ]
-              },
-              {
-                "pageNumber": 3,
-                "type": "chapter-start",
-                "chapterNumber": 1,
-                "title": "Introduction to Web Design",
-                "content": "Welcome to the world of web design..."
-              },
-              {
-                "pageNumber": 4,
-                "type": "content",
-                "title": "CSS Grid Layout",
-                "content": "CSS Grid Layout is a two-dimensional layout system for the web. It lets you lay content out in rows and columns, and has many features that make building complex layouts straightforward. Here's how to get started with CSS Grid..."
-              }
-            ]
-          }
-        },
-        {
-          "id": 2,
-          "title": "Java Programming Essentials",
-          "author": "Robert Johnson",
-          "status": "reading",
-          "description": "Comprehensive guide to Java programming from basics to advanced concepts.",
-          "pages": 450,
-          "difficulty": "intermediate"
-        },
-        {
-          "id": 3,
-          "title": "Exceptions in Java: Basics, advanced concepts, and real API examples",
-          "author": "Lumi, Nik",
-          "status": "available",
-          "description": "Master Java exception handling with practical examples and advanced concepts.",
-          "pages": 280,
-          "difficulty": "intermediate",
-          "link": "https://annas-archive.org/md5/d9e051c314c0333fd580a1fc906bb618"
-        },
-        {
-          "id": 4,
-          "title": "Python for Beginners",
-          "author": "Alice Brown",
-          "status": "available",
-          "description": "Start your programming journey with Python, the most beginner-friendly language.",
-          "pages": 320,
-          "difficulty": "beginner"
-        },
-        {
-          "id": 5,
-          "title": "C++ Advanced Techniques",
-          "author": "Michael Davis",
-          "status": "available",
-          "description": "Master advanced C++ programming techniques and best practices.",
-          "pages": 580,
-          "difficulty": "advanced"
-        }
-      ]
+      "id": 1,
+      "title": "HTML",
+      "author": "Computer Science Study Material",
+      "status": "available",
+      "description": "Complete HTML programming guide",
+      "link": "https://www.snggdcg.ac.in/pdf/study-material/computer-science/0071611436%20HTML.pdf",
+      "icon": "web-design_logo"
     },
     {
-      "name": "Data Science",
-      "books": [
-        {
-          "id": 6,
-          "title": "Data Analysis with Python",
-          "author": "Sarah Wilson",
-          "status": "available",
-          "description": "Learn data analysis techniques using Python and popular libraries.",
-          "pages": 400,
-          "difficulty": "intermediate"
-        },
-        {
-          "id": 7,
-          "title": "Machine Learning Fundamentals",
-          "author": "David Lee",
-          "status": "available",
-          "description": "Introduction to machine learning concepts and algorithms.",
-          "pages": 350,
-          "difficulty": "intermediate"
-        }
-      ]
+      "id": 2,
+      "title": "CSS",
+      "author": "Jon Duckett",
+      "status": "available",
+      "description": "HTML and CSS: Design and Build Websites",
+      "link": "https://sites.math.duke.edu/courses/math_everywhere/assets/techRefs/HTML%20and%20CSS-%20Design%20and%20Build%20Websites_Jon%20Duckett_2011.pdf",
+      "icon": "web-design_logo"
     },
     {
-      "name": "Web Development",
-      "books": [
-        {
-          "id": 8,
-          "title": "React Development Guide",
-          "author": "Emily Chen",
-          "status": "available",
-          "description": "Build modern web applications with React and its ecosystem.",
-          "pages": 380,
-          "difficulty": "intermediate"
-        },
-        {
-          "id": 9,
-          "title": "Node.js Backend Development",
-          "author": "Kevin Rodriguez",
-          "status": "available",
-          "description": "Create scalable backend applications with Node.js and Express.",
-          "pages": 420,
-          "difficulty": "intermediate"
-        }
-      ]
+      "id": 3,
+      "title": "JavaScript",
+      "author": "Terry McNavage",
+      "status": "available",
+      "description": "JavaScript for Absolute Beginners",
+      "link": "https://pepa.holla.cz/wp-content/uploads/2015/11/JavaScript-for-Absolute-Beginners.pdf",
+      "icon": "web-design_logo"
+    },
+    {
+      "id": 4,
+      "title": "Python",
+      "author": "Real Python",
+      "status": "available",
+      "description": "Python Basics Sample Chapters",
+      "link": "https://static.realpython.com/python-basics-sample-chapters.pdf",
+      "icon": "python_logo"
+    },
+    {
+      "id": 5,
+      "title": "Java",
+      "author": "University of Malta",
+      "status": "available",
+      "description": "Java Programming Guide",
+      "link": "https://staff.um.edu.mt/__data/assets/pdf_file/0010/57169/jn.pdf",
+      "icon": "java_logo"
     }
   ]
 }
