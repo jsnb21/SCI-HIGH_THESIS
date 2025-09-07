@@ -6,6 +6,11 @@ export default class MainGameplay extends BaseScene {
     constructor() {
         super('MainGameplay');
         
+        // Firebase initialization properties
+        this.isFirebaseInitialized = false;
+        this.database = null;
+        this.initializationPromise = null;
+        
         // Player properties
         this.player = {
             x: 0,
@@ -2298,7 +2303,7 @@ export default class MainGameplay extends BaseScene {
     }
 
     showResultScreen(courseCompleted = false) {
-        // Prepare data for DataCollectionScreen (which will then pass to ResultScreen)
+        // Prepare data for ResultScreen
         const resultData = {
             correctAnswers: this.correctAnswers,
             wrongAnswers: this.wrongAnswers,
@@ -2310,10 +2315,233 @@ export default class MainGameplay extends BaseScene {
             startTime: this.sessionStartTime
         };
         
-        console.log('Showing data collection screen with data:', resultData);
+        console.log('Checking for existing student information...');
         
-        // Start the DataCollectionScreen scene first
-        this.scene.start('DataCollectionScreen', resultData);
+        // Check if student information already exists from intro
+        const studentInfo = localStorage.getItem('studentInfo');
+        
+        if (studentInfo) {
+            try {
+                const parsedStudentInfo = JSON.parse(studentInfo);
+                console.log('Found existing student info, going directly to ResultScreen:', parsedStudentInfo);
+                
+                // Add student info to result data
+                resultData.studentName = `${parsedStudentInfo.firstName} ${parsedStudentInfo.lastName}`;
+                resultData.firstName = parsedStudentInfo.firstName;
+                resultData.lastName = parsedStudentInfo.lastName;
+                resultData.department = parsedStudentInfo.department;
+                resultData.strandYear = parsedStudentInfo.strandYear;
+                
+                // Go directly to ResultScreen since we have student info
+                this.scene.start('ResultScreen', resultData);
+                
+                // Also upload the data to Firebase in the background
+                this.uploadGameplayDataInBackground(resultData);
+                
+            } catch (error) {
+                console.error('Error parsing student info, falling back to DataCollectionScreen:', error);
+                // Fall back to DataCollectionScreen if parsing fails
+                this.scene.start('DataCollectionScreen', resultData);
+            }
+        } else {
+            console.log('No existing student info found, showing DataCollectionScreen');
+            // No student info found, show DataCollectionScreen as before
+            this.scene.start('DataCollectionScreen', resultData);
+        }
+    }
+
+    async uploadGameplayDataInBackground(resultData) {
+        try {
+            console.log('Uploading gameplay data in background...');
+            
+            // Get student data from localStorage (same way authService stores it)
+            let studentId = 'unknown';
+            let currentUser = null;
+            
+            try {
+                const userDataStr = localStorage.getItem('sci_high_user');
+                if (userDataStr) {
+                    currentUser = JSON.parse(userDataStr);
+                    studentId = currentUser.studentId || currentUser.uid || 'unknown';
+                }
+            } catch (e) {
+                console.warn('Could not parse user data from localStorage:', e);
+            }
+            
+            // Prepare gameplay data for upload (similar to DataCollectionScreen)
+            const gameplayData = {
+                studentId: studentId,
+                studentName: resultData.studentName,
+                firstName: resultData.firstName,
+                lastName: resultData.lastName,
+                department: resultData.department,
+                strandYear: resultData.strandYear,
+                courseTopic: resultData.courseTopic,
+                sessionData: {
+                    courseTopic: resultData.courseTopic,
+                    correctAnswers: resultData.correctAnswers,
+                    wrongAnswers: resultData.wrongAnswers,
+                    highestStreak: resultData.highestStreak,
+                    totalScore: resultData.totalScore,
+                    intensity3CorrectAnswers: resultData.intensity3CorrectAnswers || 0,
+                    courseCompleted: resultData.courseCompleted,
+                    sessionDuration: Date.now() - (resultData.startTime || Date.now()),
+                    timestamp: new Date().toISOString(),
+                    accuracyPercentage: resultData.correctAnswers + resultData.wrongAnswers > 0 ? 
+                        ((resultData.correctAnswers / (resultData.correctAnswers + resultData.wrongAnswers)) * 100).toFixed(1) : 0
+                }
+            };
+            
+            console.log('Background upload - Prepared gameplay data:', gameplayData);
+            
+            // Ensure Firebase is initialized
+            await this.ensureFirebaseInitialized();
+            
+            // Upload to Firebase
+            if (this.database) {
+                const gameplayRef = this.database.ref('gameplay_data');
+                const result = await gameplayRef.push(gameplayData);
+                console.log('Background gameplay data upload successful:', result.key);
+                
+                // Also update career stats if available
+                try {
+                    const { default: careerStatsService } = await import('../../services/careerStatsService.js');
+                    await careerStatsService.updateCareerStats(
+                        gameplayData.studentId, 
+                        resultData.studentName,
+                        gameplayData.sessionData,
+                        {
+                            firstName: resultData.firstName,
+                            lastName: resultData.lastName,
+                            department: resultData.department,
+                            strandYear: resultData.strandYear
+                        }
+                    );
+                    console.log('Background career stats update successful');
+                } catch (careerError) {
+                    console.warn('Background career stats update failed:', careerError.message);
+                }
+            } else {
+                console.warn('Firebase database not available for background upload');
+            }
+            
+        } catch (error) {
+            console.error('Background gameplay data upload failed:', error);
+            // Don't throw error since this is background operation
+        }
+    }
+
+    async ensureFirebaseInitialized() {
+        if (this.isFirebaseInitialized) {
+            return true;
+        }
+        
+        if (!this.initializationPromise) {
+            this.initializationPromise = this.initializeFirebase();
+        }
+        
+        try {
+            await this.initializationPromise;
+            return this.isFirebaseInitialized;
+        } catch (error) {
+            console.warn('Firebase initialization failed:', error.message);
+            return false;
+        }
+    }
+
+    async initializeFirebase() {
+        try {
+            console.log('Starting Firebase initialization for MainGameplay...');
+            
+            // Firebase config (same as DataCollectionScreen)
+            const firebaseConfig = {
+                apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
+                authDomain: "sci-high-website.firebaseapp.com",
+                databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+                projectId: "sci-high-website",
+                storageBucket: "sci-high-website.appspot.com",
+                messagingSenderId: "451463202515",
+                appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
+            };
+            
+            // First check if we have internet connectivity
+            if (!navigator.onLine) {
+                throw new Error('No internet connection detected');
+            }
+            
+            // Check if Firebase is already loaded
+            if (typeof window.firebase === 'undefined') {
+                console.log('Loading Firebase scripts...');
+                await this.loadFirebaseScripts();
+            }
+            
+            // Wait a bit for Firebase to be available
+            let retries = 0;
+            while (typeof window.firebase === 'undefined' && retries < 10) {
+                console.log(`Waiting for Firebase to load... (attempt ${retries + 1})`);
+                await new Promise(resolve => setTimeout(resolve, 300));
+                retries++;
+            }
+            
+            if (typeof window.firebase === 'undefined') {
+                throw new Error('Firebase failed to load after multiple attempts - check your internet connection');
+            }
+            
+            // Initialize Firebase app if not already done
+            if (!window.firebase.apps.length) {
+                console.log('Initializing Firebase app...');
+                window.firebase.initializeApp(firebaseConfig);
+            }
+            
+            // Test Firebase connection
+            this.database = window.firebase.database();
+            
+            // Try a simple connection test
+            await this.database.ref('.info/connected').once('value');
+            
+            this.isFirebaseInitialized = true;
+            console.log('Firebase Database initialized successfully for MainGameplay');
+        } catch (error) {
+            console.error('Failed to initialize Firebase for MainGameplay:', error);
+            this.isFirebaseInitialized = false;
+            throw error;
+        }
+    }
+
+    async loadFirebaseScripts() {
+        return new Promise((resolve, reject) => {
+            if (typeof window.firebase !== 'undefined') {
+                resolve();
+                return;
+            }
+
+            const scripts = [
+                'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
+                'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js'
+            ];
+            
+            let loaded = 0;
+            const timeout = setTimeout(() => {
+                reject(new Error('Firebase script loading timeout'));
+            }, 10000);
+            
+            scripts.forEach(src => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => {
+                    loaded++;
+                    if (loaded === scripts.length) {
+                        clearTimeout(timeout);
+                        resolve();
+                    }
+                };
+                script.onerror = () => {
+                    clearTimeout(timeout);
+                    reject(new Error(`Failed to load Firebase script: ${src}`));
+                };
+                document.head.appendChild(script);
+            });
+        });
     }
 
     // Clean up when scene is shutdown
