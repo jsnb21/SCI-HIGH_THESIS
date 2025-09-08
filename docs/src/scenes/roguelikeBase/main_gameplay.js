@@ -1506,7 +1506,7 @@ export default class MainGameplay extends BaseScene {
         
         // Check if time ran out
         if (this.gameTimer <= 0) {
-            this.handleTimeUp();
+            this.onTimerExpired();
         }
     }
 
@@ -2877,6 +2877,9 @@ export default class MainGameplay extends BaseScene {
     }
 
     handlePointerInput(pointer) {
+        // Add click feedback for both mobile and PC
+        this.createClickFeedback(pointer.worldX, pointer.worldY);
+        
         // Skip if quiz is active or game hasn't started
         if (this.quizActive || !this.gameStarted) {
             return;
@@ -2899,6 +2902,11 @@ export default class MainGameplay extends BaseScene {
         
         if (direction.x !== 0 || direction.y !== 0) {
             this.movePlayer(direction.x, direction.y);
+            // Play movement sound feedback
+            this.playClickSound();
+        } else {
+            // Play invalid click sound for clicks that don't result in movement
+            this.playInvalidClickSound();
         }
     }
 
@@ -2923,6 +2931,129 @@ export default class MainGameplay extends BaseScene {
         else if (deltaY < -minDistance) y = -1;
         
         return { x, y };
+    }
+
+    createClickFeedback(worldX, worldY) {
+        // Create visual feedback at click/touch position
+        const isMobile = this.scale.width < 768;
+        
+        // Create ripple effect
+        const ripple = this.add.circle(worldX, worldY, 0, 0xffffff, 0.6);
+        ripple.setDepth(1000); // High depth to appear above everything
+        
+        // Create expanding ripple animation
+        this.tweens.add({
+            targets: ripple,
+            radius: isMobile ? 30 : 20, // Larger ripple on mobile
+            alpha: 0,
+            duration: 300,
+            ease: 'Power2',
+            onComplete: () => {
+                ripple.destroy();
+            }
+        });
+        
+        // Create inner pulse effect
+        const pulse = this.add.circle(worldX, worldY, isMobile ? 15 : 10, 0x00ffff, 0.8);
+        pulse.setDepth(1001);
+        
+        this.tweens.add({
+            targets: pulse,
+            scaleX: 0,
+            scaleY: 0,
+            alpha: 0,
+            duration: 200,
+            ease: 'Power2',
+            onComplete: () => {
+                pulse.destroy();
+            }
+        });
+        
+        // Add sparkle particles for extra feedback
+        const numSparkles = isMobile ? 6 : 4;
+        for (let i = 0; i < numSparkles; i++) {
+            const angle = (Math.PI * 2 * i) / numSparkles;
+            const distance = isMobile ? 25 : 20;
+            const sparkleX = worldX + Math.cos(angle) * distance;
+            const sparkleY = worldY + Math.sin(angle) * distance;
+            
+            const sparkle = this.add.circle(sparkleX, sparkleY, 3, 0xffff00, 1);
+            sparkle.setDepth(1002);
+            
+            this.tweens.add({
+                targets: sparkle,
+                alpha: 0,
+                scaleX: 0,
+                scaleY: 0,
+                duration: 400,
+                delay: i * 50,
+                ease: 'Power2',
+                onComplete: () => {
+                    sparkle.destroy();
+                }
+            });
+        }
+    }
+
+    playClickSound() {
+        // Play a subtle click sound for valid movements
+        if (this.sound && this.sound.get('se_select')) {
+            this.sound.play('se_select', { volume: 0.3 });
+        }
+    }
+
+    playInvalidClickSound() {
+        // Play a different sound for invalid clicks (optional, softer)
+        if (this.sound && this.sound.get('se_select')) {
+            this.sound.play('se_select', { volume: 0.15, rate: 0.8 }); // Lower volume and pitch
+        }
+    }
+
+    createKeyboardFeedback(directionX, directionY) {
+        // Create directional arrow feedback for keyboard input
+        const playerX = this.playerSprite.x;
+        const playerY = this.playerSprite.y;
+        
+        // Calculate target position for visual indicator
+        const targetX = playerX + (directionX * this.TILE_SIZE * 0.7);
+        const targetY = playerY + (directionY * this.TILE_SIZE * 0.7);
+        
+        // Create directional arrow
+        const arrow = this.add.triangle(playerX, playerY, 0, -8, -6, 8, 6, 8, 0x00ff00, 0.8);
+        arrow.setDepth(1000);
+        
+        // Rotate arrow to point in movement direction
+        let angle = Math.atan2(directionY, directionX) + (Math.PI / 2);
+        arrow.setRotation(angle);
+        
+        // Animate arrow moving in direction and fading
+        this.tweens.add({
+            targets: arrow,
+            x: targetX,
+            y: targetY,
+            alpha: 0,
+            duration: 250,
+            ease: 'Power2',
+            onComplete: () => {
+                arrow.destroy();
+            }
+        });
+        
+        // Add pulse effect at player position
+        const pulse = this.add.circle(playerX, playerY, 20, 0x00ff00, 0.3);
+        pulse.setDepth(999);
+        
+        this.tweens.add({
+            targets: pulse,
+            scaleX: 1.5,
+            scaleY: 1.5,
+            alpha: 0,
+            duration: 200,
+            ease: 'Power2',
+            onComplete: () => {
+                pulse.destroy();
+            }
+        });
     }
 
     update(time, delta) {
@@ -2993,6 +3124,8 @@ export default class MainGameplay extends BaseScene {
         
         // Execute movement if any direction is pressed
         if (moveX !== 0 || moveY !== 0) {
+            // Create visual feedback at player position for keyboard input
+            this.createKeyboardFeedback(moveX, moveY);
             this.movePlayer(moveX, moveY);
         }
     }
@@ -3002,9 +3135,6 @@ export default class MainGameplay extends BaseScene {
         
         // Don't allow movement during countdown or quiz
         if (!this.gameStarted || this.quizActive) return;
-        
-        // Play subtle movement sound
-        this.sound.play('se_select', { volume: 0.2 });
         
         // Calculate target position
         const targetX = this.player.x + (directionX * this.TILE_SIZE);
@@ -3017,13 +3147,20 @@ export default class MainGameplay extends BaseScene {
         const maxY = this.boardOffsetY + ((this.MAP_HEIGHT - 0.5) * this.TILE_SIZE);
         
         if (targetX < minX || targetX > maxX || targetY < minY || targetY > maxY) {
+            // Play invalid move sound for boundary collision
+            this.playInvalidClickSound();
             return; // Can't move outside map
         }
         
         // Check for enemy collision at target position
         if (this.checkEnemyCollision(targetX, targetY)) {
+            // Play invalid move sound for enemy collision
+            this.playInvalidClickSound();
             return; // Handle enemy collision and don't move
         }
+        
+        // Play successful movement sound
+        this.playClickSound();
         
         // Check for power-up collision at target position
         this.checkPowerUpCollision(targetX, targetY);
