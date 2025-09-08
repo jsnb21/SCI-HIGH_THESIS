@@ -18,6 +18,154 @@ export default class Classroom extends Phaser.Scene {
     constructor() {
         super('Classroom');
         this.tutorialManager = null;
+        
+        // Firebase initialization properties
+        this.isFirebaseInitialized = false;
+        this.database = null;
+        this.initializationPromise = null;
+        
+        // Firebase config
+        this.firebaseConfig = {
+            apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
+            authDomain: "sci-high-website.firebaseapp.com",
+            databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "sci-high-website",
+            storageBucket: "sci-high-website.appspot.com",
+            messagingSenderId: "451463202515",
+            appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
+        };
+    }
+
+    async ensureFirebaseInitialized() {
+        if (this.isFirebaseInitialized) {
+            return true;
+        }
+        
+        if (!this.initializationPromise) {
+            this.initializationPromise = this.initializeFirebase();
+        }
+        
+        try {
+            await this.initializationPromise;
+            return this.isFirebaseInitialized;
+        } catch (error) {
+            console.warn('Firebase initialization failed in Classroom:', error.message);
+            return false;
+        }
+    }
+
+    async initializeFirebase() {
+        try {
+            console.log('Starting Firebase initialization for Classroom...');
+            
+            // First check if we have internet connectivity
+            if (!navigator.onLine) {
+                throw new Error('No internet connection detected');
+            }
+            
+            // Check if Firebase is already loaded
+            if (typeof window.firebase === 'undefined') {
+                console.log('Loading Firebase scripts...');
+                await this.loadFirebaseScripts();
+            }
+            
+            // Wait a bit for Firebase to be available
+            let retries = 0;
+            while (typeof window.firebase === 'undefined' && retries < 10) {
+                console.log(`Waiting for Firebase to load... (attempt ${retries + 1})`);
+                await new Promise(resolve => setTimeout(resolve, 300));
+                retries++;
+            }
+            
+            if (typeof window.firebase === 'undefined') {
+                throw new Error('Firebase failed to load after multiple attempts - check your internet connection');
+            }
+            
+            // Initialize Firebase app if not already done
+            if (!window.firebase.apps.length) {
+                console.log('Initializing Firebase app...');
+                window.firebase.initializeApp(this.firebaseConfig);
+            }
+            
+            // Test Firebase connection
+            this.database = window.firebase.database();
+            
+            // Try a simple connection test
+            await this.database.ref('.info/connected').once('value');
+            
+            this.isFirebaseInitialized = true;
+            console.log('Firebase Database initialized successfully for Classroom');
+        } catch (error) {
+            console.error('Failed to initialize Firebase for Classroom:', error);
+            this.isFirebaseInitialized = false;
+            throw error;
+        }
+    }
+
+    async loadFirebaseScripts() {
+        const scripts = [
+            'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js',
+            'https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js'
+        ];
+
+        try {
+            for (const src of scripts) {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.onload = resolve;
+                    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+                    document.head.appendChild(script);
+                });
+            }
+            console.log('Firebase scripts loaded successfully');
+        } catch (error) {
+            console.error('Error loading Firebase scripts:', error);
+            throw error;
+        }
+    }
+
+    async checkStudentDataInFirebase() {
+        try {
+            console.log('🔍 Classroom: Checking for existing student data in Firebase...');
+            
+            // Get current user from localStorage
+            const userDataStr = localStorage.getItem('sci_high_user');
+            if (!userDataStr) {
+                console.log('ℹ️ Classroom: No user data found in localStorage');
+                return false;
+            }
+            
+            const currentUser = JSON.parse(userDataStr);
+            const studentId = currentUser.studentId || currentUser.uid;
+            
+            if (!studentId) {
+                console.log('ℹ️ Classroom: No student ID found in user data');
+                return false;
+            }
+            
+            console.log('🔍 Classroom: Searching for student data with ID:', studentId);
+            
+            // Ensure Firebase is initialized
+            const isInitialized = await this.ensureFirebaseInitialized();
+            if (!isInitialized) {
+                console.log('⚠️ Classroom: Firebase not initialized, cannot check student data');
+                return false;
+            }
+            
+            // Search for any gameplay data for this student
+            const gameplayRef = this.database.ref('gameplay_data');
+            const snapshot = await gameplayRef.orderByChild('studentId').equalTo(studentId).limitToFirst(1).once('value');
+            
+            const hasData = snapshot.exists();
+            console.log(`${hasData ? '✅' : 'ℹ️'} Classroom: Student ${studentId} ${hasData ? 'has' : 'does not have'} existing data in Firebase`);
+            
+            return hasData;
+            
+        } catch (error) {
+            console.error('❌ Classroom: Error checking student data in Firebase:', error);
+            return false;
+        }
     }
 
     preload() {
@@ -72,6 +220,21 @@ export default class Classroom extends Phaser.Scene {
         // Play classroom background music
         playExclusiveBGM(this, 'bgm_classroom', { loop: true });
         updateSoundVolumes(this);
+
+        // Create back button using the reusable component
+        const backButtonComponents = createBackButton(this, 'MainHub');
+        this.backButtonBg = backButtonComponents.buttonBg;
+        this.backButton = backButtonComponents.backButton;
+
+        // Then initialize classroom UI with delay to ensure everything is ready
+        this.time.delayedCall(100, () => {
+            this.createClassroomUI();
+        });
+    }
+
+    async createClassroomUI() {
+        // Get mobile scaling info
+        const scaleInfo = getScaleInfo(this);
 
         // Carousel data using images from assets/img/sprites/npcs with their respective names
         const charKeys = ['Noah', 'Lily', 'Damian', 'Bella', 'Finley'];
@@ -181,10 +344,19 @@ export default class Classroom extends Phaser.Scene {
                 confirm: 'se_confirm'
             }
         };
+
+        // Check if student has data in Firebase to decide whether to show intro
+        const hasFirebaseData = await this.checkStudentDataInFirebase();
         
-        // Check for classroom intro cutscene
-        if (!onceOnlyFlags.hasSeen('classroom_intro')) {
-            // Show Principal Richard and intro dialogue first
+        // Skip intro if student has Firebase data OR if they've already seen it
+        const shouldSkipIntro = hasFirebaseData || onceOnlyFlags.hasSeen('classroom_intro');
+        
+        if (!shouldSkipIntro) {
+            console.log('🎬 Classroom: Showing intro cutscene for new student');
+            // Hide UI elements during cutscene
+            this.hideUIElementsForCutscene();
+            
+            // Show Secretary character image
             this.showSecretary();
             
             this.vnBox = new VNDialogueBox(this, [
@@ -194,15 +366,61 @@ export default class Classroom extends Phaser.Scene {
                 "Noah specializes in Python, Lily knows Web Design, Damian is great with Java, Bella handles C programming, and Finley is our C++ prodigy.",
                 "Make sure to talk to them and learn from their experience. They'll help you prepare for the coding challenges ahead!"
             ], () => {
-                // Hide Principal Richard and create carousel
+                // Hide Secretary when dialogue ends
                 this.hideSecretary();
                 onceOnlyFlags.setSeen('classroom_intro');
+                // Show UI elements after cutscene
+                this.showUIElementsAfterCutscene();
                 this.createClassroomCarousel(charKeys, charInfo, carouselConfig);
+                
+                // Start tutorial after carousel is created (if first time visiting classroom)
+                if (!onceOnlyFlags.hasSeen('classroom_tutorial')) {
+                    this.time.delayedCall(300, () => {
+                        this.startClassroomTutorial();
+                    });
+                }
             });
         } else {
-            // Create carousel directly if intro already seen
+            if (hasFirebaseData) {
+                console.log('✅ Classroom: Skipping intro - student has existing Firebase data');
+                // Auto-mark intro as seen for returning students
+                onceOnlyFlags.setSeen('classroom_intro');
+            } else {
+                console.log('✅ Classroom: Skipping intro - already seen before');
+            }
+            
             this.createClassroomCarousel(charKeys, charInfo, carouselConfig);
+            
+            // Skip tutorial as well for returning students with Firebase data
+            if (hasFirebaseData) {
+                onceOnlyFlags.setSeen('classroom_tutorial');
+                console.log('✅ Classroom: Skipping tutorial - returning student');
+            } else if (!onceOnlyFlags.hasSeen('classroom_tutorial')) {
+                // Start tutorial after carousel is created (if first time visiting classroom)
+                this.time.delayedCall(300, () => {
+                    this.startClassroomTutorial();
+                });
+            }
         }
+
+        // Initialize tutorial manager
+        this.tutorialManager = new TutorialManager(this);
+
+        // Debug feature: Add a key to manually trigger the tutorial (T key)
+        this.input.keyboard.on('keydown-T', () => {
+            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
+                // Shift+T to trigger tutorial manually for testing
+                this.startClassroomTutorial();
+            }
+        });
+
+        // Debug feature: Reset tutorial flag with Shift+R for testing
+        this.input.keyboard.on('keydown-R', () => {
+            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
+                onceOnlyFlags.flags['classroom_tutorial'] = false;
+                console.log('Classroom tutorial flag reset - tutorial will show on next visit');
+            }
+        });
     }
 
     createClassroomCarousel(charKeys, charInfo, carouselConfig) {
@@ -228,32 +446,7 @@ export default class Classroom extends Phaser.Scene {
         });
 
         // Back button
-        createBackButton(this, 'MainHub');
-
-        // Initialize tutorial manager
-        this.tutorialManager = new TutorialManager(this);
-
-        // Check if this is the first time visiting the classroom
-        if (!onceOnlyFlags.hasSeen('classroom_tutorial')) {
-            // Delay tutorial start to ensure all UI elements are created
-            this.time.delayedCall(500, () => {
-                this.startClassroomTutorial();
-            });
-        }
-
-        // Debug features
-        this.input.keyboard.on('keydown-T', () => {
-            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
-                this.startClassroomTutorial();
-            }
-        });
-
-        this.input.keyboard.on('keydown-R', () => {
-            if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
-                onceOnlyFlags.flags['classroom_tutorial'] = false;
-                console.log('Classroom tutorial flag reset');
-            }
-        });
+        // (Already created in create method)
 
         // Add shutdown and destroy event listeners to clean up the carousel
         this.events.on('shutdown', () => {
@@ -744,27 +937,6 @@ export default class Classroom extends Phaser.Scene {
         });
     }
 
-    startClassroomTutorial() {
-        const tutorialSteps = [...CLASSROOM_TUTORIAL_STEPS.firstTimeClassroom];
-        
-        // Set dynamic targets
-        tutorialSteps.forEach(step => {
-            switch (step.target) {
-            }
-        });
-
-        this.tutorialManager.init(tutorialSteps, {
-            onComplete: () => {
-                onceOnlyFlags.setSeen('classroom_tutorial');
-                console.log('Classroom tutorial completed!');
-            },
-            onSkip: () => {
-                onceOnlyFlags.setSeen('classroom_tutorial');
-                console.log('Classroom tutorial skipped!');
-            }
-        });
-    }
-
     showSecretary() {
         const scaleInfo = getScaleInfo(this);
         const { width, height } = scaleInfo;
@@ -809,5 +981,46 @@ export default class Classroom extends Phaser.Scene {
                 }
             });
         }
+    }
+
+    hideUIElementsForCutscene() {
+        // Hide back button
+        if (this.backButtonBg) {
+            this.backButtonBg.setVisible(false);
+        }
+        if (this.backButton) {
+            this.backButton.setVisible(false);
+        }
+    }
+
+    showUIElementsAfterCutscene() {
+        // Show back button
+        if (this.backButtonBg) {
+            this.backButtonBg.setVisible(true);
+        }
+        if (this.backButton) {
+            this.backButton.setVisible(true);
+        }
+    }
+
+    startClassroomTutorial() {
+        if (!this.tutorialManager) {
+            console.warn('Tutorial manager not initialized');
+            return;
+        }
+
+        const tutorialSteps = CLASSROOM_TUTORIAL_STEPS.map(step => ({ ...step }));
+
+        // Start the tutorial
+        this.tutorialManager.init(tutorialSteps, {
+            onComplete: () => {
+                onceOnlyFlags.setSeen('classroom_tutorial');
+                console.log('Classroom tutorial completed!');
+            },
+            onSkip: () => {
+                onceOnlyFlags.setSeen('classroom_tutorial');
+                console.log('Classroom tutorial skipped!');
+            }
+        });
     }
 }
