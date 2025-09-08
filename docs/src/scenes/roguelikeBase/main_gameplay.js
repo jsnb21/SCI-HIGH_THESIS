@@ -233,6 +233,7 @@ export default class MainGameplay extends BaseScene {
         this.load.audio('se_hurt', 'assets/audio/se/se_hurt.wav');
         this.load.audio('se_combo', 'assets/audio/se/se_combo.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
+        this.load.audio('se_correct', 'assets/audio/se/se_correct.wav');
         this.load.audio('se_explosion', 'assets/audio/se/se_explosion.wav');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_wrong', 'assets/audio/se/se_wrong.wav');
@@ -1145,7 +1146,7 @@ export default class MainGameplay extends BaseScene {
 
     collectTimerIcon(icon) {
         // Play timer pickup sound
-        this.sound.play('se_select', { volume: 0.5 });
+        this.sound.play('se_select', { volume: 0.8 });
         
         // Add 5 seconds to the timer (capped at 60 seconds)
         this.addTime(5);
@@ -1690,6 +1691,9 @@ export default class MainGameplay extends BaseScene {
             return;
         }
         
+        // Play power-up pickup sound
+        this.sound.play('se_select', { volume: 0.8 });
+        
         // Save game state and start power-up scene
         this.startPowerUpScene(powerUp);
     }
@@ -1842,9 +1846,9 @@ export default class MainGameplay extends BaseScene {
             
             // Play sound effect based on streak
             if (this.streak >= 3) {
-                this.sound.play('se_combo', { volume: 0.6 }); // Combo sound for streaks 3+
+                this.sound.play('se_combo', { volume: 0.8 }); // Combo sound for streaks 3+
             } else {
-                this.sound.play('se_confirm', { volume: 0.5 }); // Confirm sound for correct answers
+                this.sound.play('se_correct', { volume: 0.8 }); // Correct answer sound
             }
             
             console.log(`Correct answer! Streak: ${this.streak}x, Score: +${totalScore} (+${this.baseScore} base + ${bonusScore} bonus), +10 seconds`);
@@ -1869,7 +1873,7 @@ export default class MainGameplay extends BaseScene {
             this.checkIntensityIncrease();
         } else {
             // Play wrong answer sound
-            this.sound.play('se_wrong', { volume: 0.5 });
+            this.sound.play('se_wrong', { volume: 0.8 });
             
             // Increment wrong answers counter
             this.wrongAnswers++;
