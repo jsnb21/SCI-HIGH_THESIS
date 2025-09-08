@@ -173,7 +173,7 @@ export default class MainGameplay extends BaseScene {
         const isMobile = screenWidth < 768;
         const isSmallMobile = screenWidth < 480;
         
-        // Base tile size calculations
+        // Base tile size calculations - increased for better mobile visibility
         let baseTileSize;
         if (isSmallMobile) {
             // For very small screens, calculate tile size to fit screen better
@@ -182,11 +182,11 @@ export default class MainGameplay extends BaseScene {
             const tileSizeByWidth = availableWidth / this.MAP_WIDTH;
             const tileSizeByHeight = availableHeight / this.MAP_HEIGHT;
             baseTileSize = Math.min(tileSizeByWidth, tileSizeByHeight);
-            baseTileSize = Math.max(baseTileSize, 35); // Minimum size for playability
-            baseTileSize = Math.min(baseTileSize, 65); // Maximum size to prevent too large
+            baseTileSize = Math.max(baseTileSize, 40); // Increased minimum size for better visibility
+            baseTileSize = Math.min(baseTileSize, 75); // Increased maximum size
         } else if (isMobile) {
-            // For regular mobile screens
-            baseTileSize = 52; // Slightly smaller than desktop
+            // For regular mobile screens - increased size
+            baseTileSize = 60; // Increased from 52 for better visibility
         } else {
             // Desktop size
             baseTileSize = 58; // Original size
@@ -264,6 +264,9 @@ export default class MainGameplay extends BaseScene {
         // Create enemies
         this.createEnemies();
         
+        // Setup camera to follow player (must be after player creation)
+        this.setupCamera();
+        
         // Create timer (but don't start it yet)
         this.createTimer();
         
@@ -278,9 +281,6 @@ export default class MainGameplay extends BaseScene {
         
         // Setup input controls
         this.setupInput();
-        
-        // Setup camera to follow player
-        this.setupCamera();
 
         // Add course topic display
         this.addCourseDisplay();
@@ -310,7 +310,7 @@ export default class MainGameplay extends BaseScene {
             this.playerSprite.setPosition(this.player.x, this.player.y);
         }
         
-        // Update camera
+        // Update camera after player position is set
         this.setupCamera();
         
         // Update HUD positions for responsive design
@@ -2701,19 +2701,19 @@ export default class MainGameplay extends BaseScene {
         }
         const availableHeight = screenHeight - hudHeight;
         
-        // Enhanced mobile zoom calculation
+        // Enhanced mobile zoom calculation - increased zoom for better visibility
         let paddingFactor, minZoom, maxZoom;
         
         if (isSmallMobile) {
-            // Very small screens (phones in portrait) - use more screen space
-            paddingFactor = 0.95; // Use 95% of available space
-            minZoom = 0.6; // Allow more zoom out for small screens
-            maxZoom = 2.0; // Allow zoom in for better visibility
+            // Very small screens (phones in portrait) - much higher zoom for visibility
+            paddingFactor = 0.98; // Use 98% of available space
+            minZoom = 1.2; // Much higher minimum zoom
+            maxZoom = 3.0; // Allow significant zoom in for better visibility
         } else if (isMobile) {
-            // Regular mobile screens (tablets, phones in landscape)
-            paddingFactor = 0.92; // Use 92% of available space
-            minZoom = 0.7;
-            maxZoom = 1.8;
+            // Regular mobile screens (tablets, phones in landscape) - higher zoom
+            paddingFactor = 0.95; // Use 95% of available space
+            minZoom = 1.0; // Higher minimum zoom
+            maxZoom = 2.5; // Allow more zoom in
         } else {
             // Desktop screens - keep original behavior
             paddingFactor = 0.9;
@@ -2743,16 +2743,16 @@ export default class MainGameplay extends BaseScene {
         // Set up smooth camera following for the player
         if (this.playerSprite) {
             // Set different follow speeds based on device type for optimal experience
-            const followSpeed = isMobile ? 0.12 : 0.08; // Faster follow on mobile for better responsiveness
+            const followSpeed = isMobile ? 0.15 : 0.08; // Faster follow on mobile for better responsiveness
             this.cameras.main.startFollow(this.playerSprite, true, followSpeed, followSpeed);
             
             // Set camera follow offset to account for HUD space
-            const offsetY = isMobile ? -hudHeight / (4 * zoom) : -hudHeight / (3 * zoom);
+            const offsetY = isMobile ? -hudHeight / (6 * zoom) : -hudHeight / (3 * zoom);
             this.cameras.main.setFollowOffset(0, offsetY);
             
-            // Set up deadzone for smoother camera movement
-            const deadzoneWidth = isMobile ? this.TILE_SIZE * 2 : this.TILE_SIZE * 1.5;
-            const deadzoneHeight = isMobile ? this.TILE_SIZE * 2 : this.TILE_SIZE * 1.5;
+            // Set up deadzone for smoother camera movement - smaller deadzone for mobile
+            const deadzoneWidth = isMobile ? this.TILE_SIZE * 1.5 : this.TILE_SIZE * 1.5;
+            const deadzoneHeight = isMobile ? this.TILE_SIZE * 1.5 : this.TILE_SIZE * 1.5;
             this.cameras.main.setDeadzone(deadzoneWidth, deadzoneHeight);
         }
         
