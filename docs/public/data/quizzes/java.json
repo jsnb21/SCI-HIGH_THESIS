@@ -1,108 +1,287 @@
 {
-  "questions": [
-    {
-      "question": "Which keyword is used to create a class in Java?",
-      "options": ["function", "class", "new", "public"],
-      "correctIndex": 1
-    },
-    {
-      "question": "What is the size of an int in Java?",
-      "options": ["2 bytes", "4 bytes", "8 bytes", "Depends on system"],
-      "correctIndex": 1
-    },
-    {
-      "question": "Which of the following is not a Java keyword?",
-      "options": ["interface", "unsigned", "extends", "import"],
-      "correctIndex": 1
-    },
-    {
-      "question": "Which method is the entry point of a Java program?",
-      "options": ["start()", "main()", "run()", "init()"],
-      "correctIndex": 1
-    },
-    {
-      "question": "Which package contains the Scanner class?",
-      "options": ["java.io", "java.util", "java.lang", "java.text"],
-      "correctIndex": 1
-    },
-    {
-      "question": "How do you declare an array in Java?",
-      "options": ["int arr[];", "array int arr;", "arr[] int;", "int[] arr = new int();"],
-      "correctIndex": 0
-    },
-    {
-      "question": "What is the parent class of all classes in Java?",
-      "options": ["Object", "Class", "Super", "Base"],
-      "correctIndex": 0
-    },
-    {
-      "question": "Which of the following is not an access modifier in Java?",
-      "options": ["private", "protected", "internal", "public"],
-      "correctIndex": 2
-    },
-    {
-      "question": "Which keyword is used to inherit a class?",
-      "options": ["this", "super", "implements", "extends"],
-      "correctIndex": 3
-    },
-    {
-      "question": "Which exception is thrown when a required file is missing?",      "options": ["FileNotFoundException", "IOException", "NullPointerException", "MissingFileException"],
-      "correctIndex": 0
-    },
-    {
-      "question": "Complete the code: To declare a public static method in Java, you write _____ static void methodName()",
-      "type": "fill-in-the-blank",
-      "correctAnswers": ["public", "PUBLIC"]
-    },
-    {
-      "question": "Fill in the blank: The main method in Java has the signature: public static void _____(String[] args)",
-      "type": "fill-in-the-blank",
-      "correctAnswers": ["main", "MAIN"]
-    },
-    {
-      "question": "Complete this statement: To create a new object in Java, you use the _____ keyword.",
-      "type": "fill-in-the-blank",
-      "correctAnswers": ["new", "NEW"]
-    }
-  ],
-  "codeArrangement": [
-    {
-      "title": "Arrange the Java code blocks in correct order:",
-      "description": "Create a simple Hello World program",
-      "blocks": [
-        "public class HelloWorld {",
-        "    public static void main(String[] args) {",
-        "        System.out.println(\"Hello, World!\");",
-        "    }",
-        "}"
-      ],
-      "correctOrder": [0, 1, 2, 3, 4]
-    },
-    {
-      "title": "Arrange the Java code blocks in correct order:",
-      "description": "Calculate sum of two numbers",
-      "blocks": [
-        "Scanner scanner = new Scanner(System.in);",
-        "int a = scanner.nextInt();",
-        "int b = scanner.nextInt();",
-        "int sum = a + b;",
-        "System.out.println(\"Sum: \" + sum);"
-      ],
-      "correctOrder": [0, 1, 2, 3, 4]
-    },
-    {
-      "title": "Arrange the Java code blocks in correct order:",
-      "description": "Simple for loop",
-      "blocks": [
-        "for (int i = 0; i < 5; i++) {",
-        "    if (i % 2 == 0) {",
-        "        System.out.println(i + \" is even\");",
-        "    } else {",
-        "        System.out.println(i + \" is odd\");",
-        "    }",
-        "}"
-      ],
-      "correctOrder": [0, 1, 2, 3, 4, 5, 6]
-    }
-  ]
+  "intensity1": {
+    "multipleChoice": [
+      {
+        "question": "Which is a valid integer declaration?",
+        "options": ["int x = 10;", "int = x;", "integer x = 10;", "x int = 10;"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Default value of a boolean in Java?",
+        "options": ["false", "true", "0", "null"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Which operator is used for addition?",
+        "options": ["+", "+=", "++", "&"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Which keyword creates a new object?",
+        "options": ["new", "create", "make", "this"],
+        "correctIndex": 0
+      },
+      {
+        "question": "What does \"Java\".length() return?",
+        "options": ["4", "5", "\"Java\"", "error"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Correct way to convert \"123\" to int?",
+        "options": ["Integer.parseInt(\"123\")", "parseInt(\"123\")", "int(\"123\")", "String.parseInt(\"123\")"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Which finds the position of a char?",
+        "options": ["indexOf()", "charAt()", "substring()", "contains()"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Logical AND operator in Java?",
+        "options": ["&&", "||", "AND", "&and;"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Result of true && false?",
+        "options": ["false", "true", "0", "null"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Which is a valid if statement?",
+        "options": ["if (x == 10) { }", "if x = 10 { }", "if (x 10) { }", "if (x == 10);"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Method with no return uses:",
+        "options": ["void", "null", "int", "none"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Correct method header?",
+        "options": ["public void getData()", "public void getData;", "getData public void()", "void getData public()"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Role of method parameters?",
+        "options": ["provide input values", "create objects", "store attributes", "define return types"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Which defines a constructor?",
+        "options": ["public MyClass()", "public void MyClass()", "constructor MyClass()", "class MyClass()"],
+        "correctIndex": 0
+      },
+      {
+        "question": "What does this mean?",
+        "options": ["current object", "superclass", "static variable", "null"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Which gets a private variable?",
+        "options": ["accessor", "mutator", "static", "local"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Correct int array declaration?",
+        "options": ["int[] arr = new int[5];", "int arr(5);", "int arr = int[5];", "arr int[5];"],
+        "correctIndex": 0
+      },
+      {
+        "question": "What does arr.length give?",
+        "options": ["number of elements", "last index", "max value", "size in bytes"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Which adds an item?",
+        "options": ["add()", "put()", "insert()", "append()"],
+        "correctIndex": 0
+      },
+      {
+        "question": "list.get(0) gives:",
+        "options": ["first element", "last element", "size of list", "null"],
+        "correctIndex": 0
+      }
+    ]
+  },
+  "intensity2": {
+    "multipleChoice": [
+      {
+        "question": "Which loop always runs once?",
+        "options": ["do…while", "while", "for", "foreach"],
+        "correctIndex": 0
+      },
+      {
+        "question": "In for (int i = 0; i < 4; i++), how many times does it run?",
+        "options": ["4", "3", "5", "0"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Control variable in for (int i = 0; i < 5; i++)?",
+        "options": ["i", "int", "for", "5"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Best loop when number of repetitions is known?",
+        "options": ["for", "while", "do-while", "if"],
+        "correctIndex": 0
+      },
+      {
+        "question": "First row, second column of arr?",
+        "options": ["arr[0][1]", "arr[1][0]", "arr[1][1]", "arr[0,1]"],
+        "correctIndex": 0
+      },
+      {
+        "question": "A 2D array in Java is:",
+        "options": ["array of arrays", "matrix", "grid", "list of lists"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Keyword to create subclass?",
+        "options": ["extends", "implements", "super", "inherits"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Method overriding is:",
+        "options": ["redefining parent method", "renaming method", "copying method", "deleting method"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Recursive method must have:",
+        "options": ["base case", "static keyword", "loop", "parameter"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Recursion is when:",
+        "options": ["method calls itself", "loop repeats", "no return", "subclass calls superclass"],
+        "correctIndex": 0
+      }
+    ]
+  },
+  "intensity3": {
+    "codeArrangement": [
+      {
+        "title": "Arrange the Java code blocks in correct order:",
+        "description": "Create a complete Java class with constructor and methods",
+        "blocks": [
+          "public class Student {",
+          "    private String name;",
+          "    private int age;",
+          "    public Student(String name, int age) {",
+          "        this.name = name;",
+          "        this.age = age;",
+          "    }",
+          "    public String getName() {",
+          "        return name;",
+          "    }",
+          "    public void setAge(int age) {",
+          "        this.age = age;",
+          "    }",
+          "}"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      },
+      {
+        "title": "Arrange the Java code blocks in correct order:",
+        "description": "Implement inheritance with method overriding",
+        "blocks": [
+          "class Animal {",
+          "    public void speak() {",
+          "        System.out.println(\"Animal makes a sound\");",
+          "    }",
+          "}",
+          "class Dog extends Animal {",
+          "    @Override",
+          "    public void speak() {",
+          "        System.out.println(\"Dog barks\");",
+          "    }",
+          "}"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      },
+      {
+        "title": "Arrange the Java code blocks in correct order:",
+        "description": "Create and use a recursive factorial method",
+        "blocks": [
+          "public class MathUtils {",
+          "    public static int factorial(int n) {",
+          "        if (n <= 1) {",
+          "            return 1;",
+          "        } else {",
+          "            return n * factorial(n - 1);",
+          "        }",
+          "    }",
+          "    public static void main(String[] args) {",
+          "        int result = factorial(5);",
+          "        System.out.println(\"5! = \" + result);",
+          "    }",
+          "}"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      },
+      {
+        "title": "Arrange the Java code blocks in correct order:",
+        "description": "Work with 2D arrays and nested loops",
+        "blocks": [
+          "public class Matrix {",
+          "    public static void printMatrix(int[][] matrix) {",
+          "        for (int i = 0; i < matrix.length; i++) {",
+          "            for (int j = 0; j < matrix[i].length; j++) {",
+          "                System.out.print(matrix[i][j] + \" \");",
+          "            }",
+          "            System.out.println();",
+          "        }",
+          "    }",
+          "    public static void main(String[] args) {",
+          "        int[][] grid = {{1, 2, 3}, {4, 5, 6}};",
+          "        printMatrix(grid);",
+          "    }",
+          "}"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+      },
+      {
+        "title": "Arrange the Java code blocks in correct order:",
+        "description": "Use ArrayList with error handling",
+        "blocks": [
+          "import java.util.ArrayList;",
+          "public class ListManager {",
+          "    private ArrayList<String> items;",
+          "    public ListManager() {",
+          "        items = new ArrayList<>();",
+          "    }",
+          "    public void addItem(String item) {",
+          "        try {",
+          "            items.add(item);",
+          "            System.out.println(\"Added: \" + item);",
+          "        } catch (Exception e) {",
+          "            System.out.println(\"Error adding item\");",
+          "        }",
+          "    }",
+          "}"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+      },
+      {
+        "title": "Arrange the Java code blocks in correct order:",
+        "description": "Complex method with multiple control structures",
+        "blocks": [
+          "public static void analyzeNumbers(int[] numbers) {",
+          "    int sum = 0;",
+          "    int evenCount = 0;",
+          "    for (int num : numbers) {",
+          "        sum += num;",
+          "        if (num % 2 == 0) {",
+          "            evenCount++;",
+          "        }",
+          "    }",
+          "    double average = (double) sum / numbers.length;",
+          "    System.out.println(\"Sum: \" + sum);",
+          "    System.out.println(\"Average: \" + average);",
+          "    System.out.println(\"Even numbers: \" + evenCount);",
+          "}"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+      }
+    ]
+  }
 }
