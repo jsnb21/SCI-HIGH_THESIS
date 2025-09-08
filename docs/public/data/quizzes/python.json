@@ -2,58 +2,103 @@
   "intensity1": {
     "multipleChoice": [
       {
-        "question": "What is Python primarily used for?",
-        "options": [
-          "Web development",
-          "Data analysis",
-          "Machine learning",
-          "All of the above"
-        ],
-        "correctIndex": 3
+        "question": "Which symbol is used to start a comment in Python?",
+        "options": ["//", "<!-- -->", "#", "%"],
+        "correctIndex": 2
       },
       {
-        "question": "Python is a compiled programming language.",
-        "options": ["True", "False"],
+        "question": "Which function is used to display output in Python?",
+        "options": ["show()", "echo()", "print()", "display()"],
+        "correctIndex": 2
+      },
+      {
+        "question": "Which function is used to take input from the user in Python?",
+        "options": ["scan()", "read()", "input()", "get()"],
+        "correctIndex": 2
+      },
+      {
+        "question": "What is the correct extension for a Python file?",
+        "options": [".java", ".html", ".py", ".exe"],
+        "correctIndex": 2
+      },
+      {
+        "question": "Which of these is a correct variable name in Python?",
+        "options": ["2name", "first_name", "my-name", "class"],
         "correctIndex": 1
       },
       {
-        "question": "Python uses indentation to define code blocks.",
-        "options": ["True", "False"],
+        "question": "What is the correct way to create a string variable in Python?",
+        "options": ["name = \"Alice\"", "name = Alice", "name = 'Alice\"", "string name = \"Alice\""],
         "correctIndex": 0
       },
       {
-        "question": "Which of the following is the correct way to create a list in Python?",
-        "options": ["list = [1, 2, 3]", "list = (1, 2, 3)", "list = {1, 2, 3}", "list = <1, 2, 3>"],
-        "correctIndex": 0
-      },
-      {
-        "question": "What is the output of print(type(5.0))?",
-        "options": ["<class 'int'>", "<class 'float'>", "<class 'double'>", "<class 'number'>"],
+        "question": "Which of these is a floating-point number in Python?",
+        "options": ["10", "10.0", "\"10\"", "'10'"],
         "correctIndex": 1
       },
       {
         "question": "Which keyword is used to create a function in Python?",
-        "options": ["function", "def", "func", "define"],
+        "options": ["method", "func", "def", "function"],
+        "correctIndex": 2
+      },
+      {
+        "question": "Which data type is used to store True or False values in Python?",
+        "options": ["bool", "int", "str", "char"],
+        "correctIndex": 0
+      },
+      {
+        "question": "What is the first index of a list in Python?",
+        "options": ["0", "1", "-1", "any number"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Which of the following creates a list in Python?",
+        "options": ["list = \"apple\", \"banana\", \"cherry\"", "list = [\"apple\", \"banana\", \"cherry\"]", "list = (\"apple\", \"banana\", \"cherry\")", "list = {\"apple\", \"banana\", \"cherry\"}"],
         "correctIndex": 1
       },
       {
-        "question": "In Python, variables must be declared with their data type.",
-        "options": ["True", "False"],
+        "question": "How do you create a dictionary in Python?",
+        "options": ["dict = [key:value]", "dict = {key:value}", "dict = (key:value)", "dict = key:value"],
         "correctIndex": 1
       },
       {
-        "question": "Python lists can contain elements of different data types.",
+        "question": "A Python file must always end with the extension .py.",
         "options": ["True", "False"],
         "correctIndex": 0
       },
       {
-        "question": "Which of the following is used for comments in Python?",
-        "options": ["//", "/* */", "#", "<!-- -->"],
-        "correctIndex": 2
+        "question": "The print() function in Python can only display text, not numbers.",
+        "options": ["True", "False"],
+        "correctIndex": 1
       },
       {
-        "question": "Can you use Python for web development?",
-        "options": ["Yes", "No"],
+        "question": "The input() function always returns user input as a string, even if you type numbers.",
+        "options": ["True", "False"],
+        "correctIndex": 0
+      },
+      {
+        "question": "In Python, variable names can begin with a number.",
+        "options": ["True", "False"],
+        "correctIndex": 1
+      },
+      {
+        "question": "Lists in Python can store mixed data types, like numbers and strings together.",
+        "options": ["True", "False"],
+        "correctIndex": 0
+      },
+      {
+        "question": "The first index of a list in Python starts at 1.",
+        "options": ["True", "False"],
+        "correctIndex": 1
+      },
+      {
+        "question": "The keyword def is used to create a function in Python.",
+        "options": ["True", "False"],
+        "correctIndex": 0
+      },
+      {
+        "question": "In Python, # is used to write a comment.",
+        "options": ["True", "False"],
         "correctIndex": 0
       }
     ]
@@ -61,88 +106,104 @@
   "intensity2": {
     "multipleChoice": [
       {
-        "question": "What does the len() function return?",
-        "options": ["The memory size of an object", "The number of elements in a sequence", "The last element of a list", "The type of an object"],
+        "question": "What is the output of this code? print(2 + 3)",
+        "options": ["23", "5", "\"2+3\"", "Error"],
         "correctIndex": 1
       },
       {
-        "question": "Which method is used to add an element to the end of a list?",
-        "options": ["add()", "append()", "insert()", "push()"],
+        "question": "Which operator is used for multiplication in Python?",
+        "options": ["×", "*", "x", "mul"],
         "correctIndex": 1
       },
       {
-        "question": "What is the correct syntax for a while loop in Python?",
-        "options": ["while (condition):", "while condition:", "while condition do:", "while (condition) do:"],
+        "question": "What is the output of this code? print(10 // 3)",
+        "options": ["3", "3.33", "4", "0"],
+        "correctIndex": 0
+      },
+      {
+        "question": "What is the output of this code? x = 5; print(x > 3)",
+        "options": ["True", "False", "5", "3"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Which symbol is used for equality comparison in Python?",
+        "options": ["=", "==", "===", ":="],
         "correctIndex": 1
       },
       {
-        "question": "The == operator is used for assignment in Python.",
+        "question": "Which keyword is used to define a class in Python?",
+        "options": ["def", "class", "object", "struct"],
+        "correctIndex": 1
+      },
+      {
+        "question": "Which keyword is used for decision-making in Python?",
+        "options": ["switch", "if", "choose", "case"],
+        "correctIndex": 1
+      },
+      {
+        "question": "Which function gives the length of a list in Python?",
+        "options": ["count()", "size()", "len()", "length()"],
+        "correctIndex": 2
+      },
+      {
+        "question": "What is the output of this code? print(type(\"Hello\"))",
+        "options": ["int", "string", "str", "text"],
+        "correctIndex": 2
+      },
+      {
+        "question": "Which operator is used to find the remainder in Python?",
+        "options": ["%", "/", "//", "mod"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Which of these is NOT a valid Python data type?",
+        "options": ["int", "str", "float", "real"],
+        "correctIndex": 3
+      },
+      {
+        "question": "Which loop is best if you want to repeat code a known number of times?",
+        "options": ["while loop", "for loop", "repeat loop", "do loop"],
+        "correctIndex": 1
+      },
+      {
+        "question": "What will this code print? x = \"Python\"; print(x[0])",
+        "options": ["P", "y", "0", "Error"],
+        "correctIndex": 0
+      },
+      {
+        "question": "Which function converts a string into an integer in Python?",
+        "options": ["str()", "int()", "float()", "toInt()"],
+        "correctIndex": 1
+      },
+      {
+        "question": "In Python, indentation (spaces) is optional when writing code blocks.",
         "options": ["True", "False"],
         "correctIndex": 1
       },
       {
-        "question": "Is Python case-sensitive?",
-        "options": ["Yes", "No"],
+        "question": "The expression 5 == \"5\" evaluates to True.",
+        "options": ["True", "False"],
+        "correctIndex": 1
+      },
+      {
+        "question": "A while loop in Python continues running until its condition becomes False.",
+        "options": ["True", "False"],
         "correctIndex": 0
-      }
-    ],
-    "dragDrop": [
-      {
-        "question": "Arrange the correct order of a Python function definition:",
-        "type": "drag-and-drop",
-        "options": {
-          "dragItems": [
-            { "id": "step1", "text": "def", "isDecoy": false },
-            { "id": "step2", "text": "function_name", "isDecoy": false },
-            { "id": "step3", "text": "():", "isDecoy": false },
-            { "id": "step4", "text": "return", "isDecoy": false },
-            { "id": "decoy1", "text": "class", "isDecoy": true }
-          ],
-          "dropZones": [
-            { "id": "zone1", "label": "1st", "correctItemId": "step1" },
-            { "id": "zone2", "label": "2nd", "correctItemId": "step2" },
-            { "id": "zone3", "label": "3rd", "correctItemId": "step3" },
-            { "id": "zone4", "label": "4th", "correctItemId": "step4" }
-          ]
-        }
       },
       {
-        "question": "Order the Python data types from simplest to most complex:",
-        "type": "drag-and-drop", 
-        "options": {
-          "dragItems": [
-            { "id": "int", "text": "int", "isDecoy": false },
-            { "id": "list", "text": "list", "isDecoy": false },
-            { "id": "dict", "text": "dict", "isDecoy": false },
-            { "id": "str", "text": "str", "isDecoy": false },
-            { "id": "decoy1", "text": "array", "isDecoy": true }
-          ],
-          "dropZones": [
-            { "id": "zone1", "label": "1st", "correctItemId": "int" },
-            { "id": "zone2", "label": "2nd", "correctItemId": "str" },
-            { "id": "zone3", "label": "3rd", "correctItemId": "list" },
-            { "id": "zone4", "label": "4th", "correctItemId": "dict" }
-          ]
-        }
+        "question": "A dictionary in Python stores data as key–value pairs.",
+        "options": ["True", "False"],
+        "correctIndex": 0
       },
       {
-        "question": "Arrange the steps to handle exceptions in Python:",
-        "type": "drag-and-drop",
-        "options": {
-          "dragItems": [
-            { "id": "try", "text": "try", "isDecoy": false },
-            { "id": "except", "text": "except", "isDecoy": false },
-            { "id": "finally", "text": "finally", "isDecoy": false },
-            { "id": "else", "text": "else", "isDecoy": false },
-            { "id": "decoy1", "text": "catch", "isDecoy": true }
-          ],
-          "dropZones": [
-            { "id": "zone1", "label": "1st", "correctItemId": "try" },
-            { "id": "zone2", "label": "2nd", "correctItemId": "except" },
-            { "id": "zone3", "label": "3rd", "correctItemId": "else" },
-            { "id": "zone4", "label": "4th", "correctItemId": "finally" }
-          ]
-        }
+        "question": "Strings in Python are mutable, meaning you can change characters directly.",
+        "options": ["True", "False"],
+        "correctIndex": 1
+      },
+      {
+        "question": "The keyword class is used to define a new class in Python.",
+        "options": ["True", "False"],
+        "correctIndex": 0
       }
     ]
   },
@@ -150,7 +211,7 @@
     "codeArrangement": [
       {
         "title": "Arrange the Python code blocks in correct order:",
-        "description": "Create a simple greeting program",
+        "description": "Create a simple greeting program with user input",
         "blocks": [
           "name = input(\"Enter your name: \")",
           "greeting = \"Hello, \" + name",
@@ -161,52 +222,101 @@
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
-        "description": "Calculate area of a rectangle",
+        "description": "Create a function to calculate rectangle area",
         "blocks": [
+          "def calculate_area(length, width):",
+          "    area = length * width",
+          "    return area",
           "length = float(input(\"Enter length: \"))",
           "width = float(input(\"Enter width: \"))",
-          "area = length * width",
-          "print(f\"Area: {area}\")"
+          "result = calculate_area(length, width)",
+          "print(f\"Area: {result}\")"
         ],
-        "correctOrder": [0, 1, 2, 3]
+        "correctOrder": [0, 1, 2, 3, 4, 5, 6]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
-        "description": "Simple loop with condition",
+        "description": "Loop through a list and check even/odd numbers",
         "blocks": [
-          "for i in range(5):",
-          "    if i % 2 == 0:",
-          "        print(f\"{i} is even\")",
+          "numbers = [1, 2, 3, 4, 5]",
+          "for num in numbers:",
+          "    if num % 2 == 0:",
+          "        print(f\"{num} is even\")",
           "    else:",
-          "        print(f\"{i} is odd\")"
+          "        print(f\"{num} is odd\")"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4, 5]
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Handle file operations with error handling",
+        "blocks": [
+          "try:",
+          "    file = open(\"data.txt\", \"r\")",
+          "    content = file.read()",
+          "    print(content)",
+          "    file.close()",
+          "except FileNotFoundError:",
+          "    print(\"File not found!\")"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4, 5, 6]
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Create a class with methods and use it",
+        "blocks": [
+          "class Calculator:",
+          "    def __init__(self):",
+          "        self.result = 0",
+          "    def add(self, x, y):",
+          "        return x + y",
+          "calc = Calculator()",
+          "answer = calc.add(5, 3)",
+          "print(f\"Result: {answer}\")"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7]
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Working with dictionaries and loops",
+        "blocks": [
+          "students = {\"Alice\": 85, \"Bob\": 92, \"Charlie\": 78}",
+          "total_score = 0",
+          "count = 0",
+          "for name, score in students.items():",
+          "    print(f\"{name}: {score}\")",
+          "    total_score += score",
+          "    count += 1",
+          "average = total_score / count",
+          "print(f\"Average score: {average}\")"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "List comprehension and filtering",
+        "blocks": [
+          "numbers = range(1, 11)",
+          "even_numbers = [num for num in numbers if num % 2 == 0]",
+          "squared_evens = [num ** 2 for num in even_numbers]",
+          "print(\"Even numbers:\", even_numbers)",
+          "print(\"Squared evens:\", squared_evens)"
         ],
         "correctOrder": [0, 1, 2, 3, 4]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
-        "description": "Define and call a function",
+        "description": "Import modules and use functions",
         "blocks": [
-          "def greet_user(name):",
-          "    message = f\"Hello, {name}!\"",
-          "    return message",
-          "user_name = \"Alice\"",
-          "result = greet_user(user_name)",
-          "print(result)"
+          "import math",
+          "from datetime import datetime",
+          "radius = float(input(\"Enter radius: \"))",
+          "area = math.pi * radius ** 2",
+          "current_time = datetime.now()",
+          "print(f\"Circle area: {area:.2f}\")",
+          "print(f\"Calculated at: {current_time}\")"
         ],
-        "correctOrder": [0, 1, 2, 3, 4, 5]
-      },
-      {
-        "title": "Arrange the Python code blocks in correct order:",
-        "description": "Working with lists and loops",
-        "blocks": [
-          "numbers = [1, 2, 3, 4, 5]",
-          "total = 0",
-          "for num in numbers:",
-          "    total += num",
-          "average = total / len(numbers)",
-          "print(f\"Average: {average}\")"
-        ],
-        "correctOrder": [0, 1, 2, 3, 4, 5]
+        "correctOrder": [0, 1, 2, 3, 4, 5, 6]
       }
     ]
   }
