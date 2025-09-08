@@ -14,6 +14,20 @@ export const MIN_HEIGHT = 240;
  * @returns {object} - Scaling information
  */
 export function getScaleInfo(scene) {
+    // Handle case where scene is undefined or doesn't have scale property
+    if (!scene || !scene.scale) {
+        console.warn('getScaleInfo called with invalid scene, using default values');
+        return {
+            scaleX: 1,
+            scaleY: 1,
+            uniformScale: 1,
+            finalScale: 1,
+            isMobile: false,
+            width: BASE_WIDTH,
+            height: BASE_HEIGHT
+        };
+    }
+    
     const { width, height } = scene.scale;
     
     // Calculate scale factors

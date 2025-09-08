@@ -23,7 +23,7 @@ export default class ResultScreen extends BaseScene {
         super.create();
         
         // Get scale information for mobile responsiveness
-        const scaleInfo = getScaleInfo();
+        const scaleInfo = getScaleInfo(this);
         
         // Calculate ranking based on correct/wrong ratio
         const totalQuestions = this.correctAnswers + this.wrongAnswers;
