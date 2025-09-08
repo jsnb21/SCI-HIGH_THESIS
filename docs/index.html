@@ -602,19 +602,83 @@
             <p class="text-xs sm:text-sm text-gray-400 mt-2">✨ New student? An account will be created automatically for you!</p>
           </div>
           
-          <div class="max-w-md mx-auto px-2 sm:px-0">
-            <form id="student-login-form" class="space-y-6">
-              <div>
+          <div class="max-w-2xl mx-auto px-2 sm:px-0">
+            <!-- Step 1: Student ID Input -->
+            <div id="student-id-step" class="space-y-6">
+              <div class="max-w-md mx-auto">
                 <label class="block text-gray-300 text-sm mb-2">Student ID</label>
-                <input type="text" name="studentId" required placeholder="e.g., 24-2024-001" 
+                <input type="text" id="student-id-input" required placeholder="e.g., 24-2024-001" 
                        class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none text-center font-gaming">
                 <p class="text-xs text-gray-400 mt-1">Format: XX-XXXX-XXX (numbers and dashes only)</p>
               </div>
-              <button type="submit" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105">
-                🚀 Enter Adventure
-              </button>
-            </form>
+              <div class="text-center">
+                <button type="button" id="verify-student-id" class="px-8 py-3 font-gaming text-white bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105">
+                  🔍 Verify Student ID
+                </button>
+              </div>
+            </div>
+
+            <!-- Step 2: Profile Completion (shown only if needed) -->
+            <div id="student-profile-step" class="hidden space-y-6">
+              <div class="text-center mb-6">
+                <h3 class="font-gaming text-lg text-cyan mb-2">📝 Complete Your Profile</h3>
+                <p class="text-gray-300 text-sm">We need a bit more information to set up your account</p>
+              </div>
+              
+              <form id="student-complete-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">First Name *</label>
+                    <input type="text" name="firstName" required placeholder="Enter your first name" 
+                           class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Last Name *</label>
+                    <input type="text" name="lastName" required placeholder="Enter your last name" 
+                           class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
+                  </div>
+                </div>
+                
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Department *</label>
+                    <select name="department" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
+                      <option value="">Select your department</option>
+                      <option value="Senior High School Department">Senior High School Department</option>
+                      <option value="College Department">College Department</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Strand/Year & Course *</label>
+                    <input type="text" name="strandYear" required placeholder="e.g., Grade 12 STEM or 3rd Year BS CS" 
+                           class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
+                  </div>
+                </div>
+                
+                <div class="md:col-span-2 text-center pt-4">
+                  <button type="submit" class="px-8 py-3 font-gaming text-white bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105">
+                    🚀 Complete Setup & Enter Adventure
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Step 3: Profile Found (for existing users) -->
+            <div id="student-found-step" class="hidden space-y-6">
+              <div class="text-center">
+                <div class="bg-dark/30 rounded-lg p-6">
+                  <h3 class="font-gaming text-lg text-green-400 mb-4">✅ Profile Found!</h3>
+                  <div id="student-profile-preview" class="text-left space-y-2 text-gray-300 max-w-md mx-auto">
+                    <!-- Profile details will be inserted here -->
+                  </div>
+                  <button type="button" id="login-existing-student" class="mt-4 px-8 py-3 font-gaming text-white bg-gradient-to-r from-green-500 to-green-600 rounded-lg transform transition-all duration-300 hover:scale-105">
+                    🚀 Continue Adventure
+                  </button>
+                </div>
+              </div>
+            </div>
             
+            <!-- Help Section -->
             <div class="text-center mt-6 pt-6 border-t border-gray-600">
               <p class="text-gray-400 text-sm">📋 Only your Student ID is needed - no password required!</p>
               <div class="mt-4 p-3 bg-dark/30 rounded-lg">
@@ -1021,11 +1085,37 @@
         if (professorForm) professorForm.classList.add('hidden');
         if (studentForm) studentForm.classList.add('hidden');
         if (generalForm) generalForm.classList.add('hidden');
+        
+        // Reset student form steps when switching forms
+        resetStudentFormSteps();
+      }
+
+      function resetStudentFormSteps() {
+        // Reset all form steps to initial state
+        const studentIdStep = document.getElementById('student-id-step');
+        const studentProfileStep = document.getElementById('student-profile-step');
+        const studentFoundStep = document.getElementById('student-found-step');
+        
+        if (studentIdStep) studentIdStep.classList.remove('hidden');
+        if (studentProfileStep) studentProfileStep.classList.add('hidden');
+        if (studentFoundStep) studentFoundStep.classList.add('hidden');
+        
+        // Clear form fields
+        const studentIdInput = document.getElementById('student-id-input');
+        const completeForm = document.getElementById('student-complete-form');
+        
+        if (studentIdInput) studentIdInput.value = '';
+        if (completeForm) completeForm.reset();
+        
+        // Reset global variables
+        currentStudentId = null;
+        currentStudentData = null;
       }
 
       // Make functions globally accessible for onclick handlers
       window.showLoginModal = showLoginModal;
       window.showUserTypeSelection = showUserTypeSelection;
+      window.resetStudentFormSteps = resetStudentFormSteps;
 
       // Fallback function for modal access - for GitHub Pages compatibility
       window.ensureModalAccess = function() {
@@ -1965,6 +2055,149 @@
           localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
           return { success: true, user: this.currentUser };
         };
+        
+        // Enhanced student profile methods
+        this.getStudentProfile = async function(studentId) {
+          try {
+            // Try to get from Firebase first
+            if (this.database) {
+              const snapshot = await this.database.ref('students').orderByChild('studentId').equalTo(studentId).once('value');
+              const data = snapshot.val();
+              if (data) {
+                const studentKey = Object.keys(data)[0];
+                return data[studentKey];
+              }
+            }
+          } catch (error) {
+            console.warn('Firebase getStudentProfile failed:', error);
+          }
+          
+          // Fallback to offline storage
+          const offlineStudents = JSON.parse(localStorage.getItem('sci_high_offline_students') || '[]');
+          return offlineStudents.find(s => s.studentId === studentId) || null;
+        };
+        
+        this.loginStudentWithProfile = async function(studentId, profileData) {
+          try {
+            // Try Firebase first
+            if (this.database) {
+              const studentsRef = this.database.ref('students');
+              
+              // Check if student exists
+              const snapshot = await studentsRef.orderByChild('studentId').equalTo(studentId).once('value');
+              const existingData = snapshot.val();
+              let studentKey;
+              
+              if (existingData) {
+                studentKey = Object.keys(existingData)[0];
+                // Update existing student with new profile data
+                await studentsRef.child(studentKey).update({
+                  firstName: profileData.firstName,
+                  lastName: profileData.lastName,
+                  fullName: `${profileData.firstName} ${profileData.lastName}`,
+                  department: profileData.department,
+                  strandYear: profileData.strandYear,
+                  lastLogin: new Date().toISOString(),
+                  profileCompleted: true
+                });
+              } else {
+                // Create new student
+                const newStudentData = {
+                  studentId,
+                  firstName: profileData.firstName,
+                  lastName: profileData.lastName,
+                  fullName: `${profileData.firstName} ${profileData.lastName}`,
+                  department: profileData.department,
+                  strandYear: profileData.strandYear,
+                  isActive: true,
+                  createdAt: new Date().toISOString(),
+                  lastLogin: new Date().toISOString(),
+                  profileCompleted: true,
+                  progress: {
+                    completedQuizzes: [],
+                    completedStories: [],
+                    totalScore: 0,
+                    lastActivity: new Date().toISOString(),
+                    gameData: {
+                      currentLevel: 1,
+                      totalPoints: 0,
+                      achievements: [],
+                      courseProgress: {}
+                    }
+                  }
+                };
+                
+                const newRef = await studentsRef.push(newStudentData);
+                studentKey = newRef.key;
+              }
+              
+              // Set current user
+              this.currentUser = {
+                uid: studentKey,
+                studentId: studentId,
+                type: 'student',
+                profile: {
+                  studentId,
+                  firstName: profileData.firstName,
+                  lastName: profileData.lastName,
+                  fullName: `${profileData.firstName} ${profileData.lastName}`,
+                  department: profileData.department,
+                  strandYear: profileData.strandYear,
+                  profileCompleted: true
+                }
+              };
+              this.userType = 'student';
+              localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+              
+              return { success: true, user: this.currentUser };
+            }
+          } catch (error) {
+            console.warn('Firebase loginStudentWithProfile failed:', error);
+          }
+          
+          // Fallback to offline
+          return this.loginStudentOfflineWithProfile(studentId, profileData);
+        };
+        
+        this.loginStudentOfflineWithProfile = function(studentId, profileData) {
+          console.log('Using offline student login with profile for:', studentId);
+          
+          const studentData = {
+            studentId,
+            firstName: profileData.firstName,
+            lastName: profileData.lastName,
+            fullName: `${profileData.firstName} ${profileData.lastName}`,
+            department: profileData.department,
+            strandYear: profileData.strandYear,
+            isOffline: true,
+            profileCompleted: true,
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString()
+          };
+          
+          // Save to offline storage
+          const offlineStudents = JSON.parse(localStorage.getItem('sci_high_offline_students') || '[]');
+          const existingIndex = offlineStudents.findIndex(s => s.studentId === studentId);
+          
+          if (existingIndex >= 0) {
+            offlineStudents[existingIndex] = { ...offlineStudents[existingIndex], ...studentData };
+          } else {
+            offlineStudents.push(studentData);
+          }
+          
+          localStorage.setItem('sci_high_offline_students', JSON.stringify(offlineStudents));
+          
+          this.currentUser = {
+            uid: 'offline_' + studentId,
+            studentId: studentId,
+            type: 'student',
+            profile: studentData
+          };
+          this.userType = 'student';
+          localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+          
+          return { success: true, user: this.currentUser };
+        };
       };
       
       // Initialize offline accounts
@@ -1984,7 +2217,7 @@
           'screenshots-modal': globalScreenshotsModal,
           'start-game-btn': document.getElementById('start-game-btn'),
           'professor-login-form': document.getElementById('professor-login-form'),
-          'student-login-form': document.getElementById('student-login-form'),
+          'student-complete-form': document.getElementById('student-complete-form'),
           'general-login-form': document.getElementById('general-login-form'),
           'general-register-form': document.getElementById('general-register-form'),
           'guest-option': document.getElementById('guest-option')
@@ -2065,10 +2298,14 @@
         }
       });
 
-      document.getElementById('student-login-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const studentId = formData.get('studentId').trim();
+      // Student Login Process
+      let currentStudentId = null;
+      let currentStudentData = null;
+      
+      // Step 1: Verify Student ID
+      document.getElementById('verify-student-id').addEventListener('click', async () => {
+        const studentIdInput = document.getElementById('student-id-input');
+        const studentId = studentIdInput.value.trim();
         
         // Validate student ID format (XX-XXXX-XXX)
         const studentIdPattern = /^[0-9]{2}-[0-9]{4}-[0-9]{3}$/;
@@ -2079,34 +2316,89 @@
           return;
         }
         
+        currentStudentId = studentId;
+        
         try {
-          console.log('Attempting login with Student ID:', studentId);
-          // Use the local authManager instead of importing external service
-          const result = await authManager.loginStudent(studentId);
+          // Check if student exists and profile is complete
+          const studentData = await authManager.getStudentProfile(studentId);
+          
+          if (studentData && studentData.firstName && studentData.lastName && studentData.department && studentData.strandYear) {
+            // Profile is complete, show welcome screen
+            showStudentFoundStep(studentData);
+          } else {
+            // Profile incomplete or new student, show completion form
+            showStudentProfileStep(studentData);
+          }
+        } catch (error) {
+          console.warn('Error checking student profile:', error);
+          // If Firebase is down, show profile completion form
+          showStudentProfileStep(null);
+        }
+      });
+      
+      // Step 2: Complete Profile Form
+      document.getElementById('student-complete-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        
+        const profileData = {
+          studentId: currentStudentId,
+          firstName: formData.get('firstName').trim(),
+          lastName: formData.get('lastName').trim(),
+          department: formData.get('department'),
+          strandYear: formData.get('strandYear').trim()
+        };
+        
+        try {
+          // Complete the student login with profile data
+          const result = await authManager.loginStudentWithProfile(currentStudentId, profileData);
           
           if (result.success) {
-            if (result.isNewAccount) {
-              showSuccess('Welcome! A new account has been created for you. Your progress will be saved automatically.', {
-                title: '🎉 Account Created!'
-              }).then(() => {
-                loginModal.classList.add('hidden');
-                authManager.redirectToGame();
-              });
-            } else {
-              showSuccess('Welcome back! Your progress has been loaded.', {
-                title: '👋 Welcome Back!'
-              }).then(() => {
-                loginModal.classList.add('hidden');
-                authManager.redirectToGame();
-              });
-            }
+            showSuccess('Welcome! Your profile has been set up successfully. Your progress will be saved automatically.', {
+              title: '🎉 Profile Complete!'
+            }).then(() => {
+              loginModal.classList.add('hidden');
+              authManager.redirectToGame();
+            });
+          } else {
+            showError('Profile setup failed: ' + result.error, { title: 'Setup Failed' });
+          }
+        } catch (error) {
+          console.warn('Firebase profile setup failed, trying offline mode:', error);
+          // Fallback to offline mode
+          const offlineResult = authManager.loginStudentOfflineWithProfile(currentStudentId, profileData);
+          if (offlineResult.success) {
+            showInfo('Welcome! Your profile has been set up in offline mode. Progress will be saved locally.', {
+              title: '📱 Offline Mode'
+            }).then(() => {
+              loginModal.classList.add('hidden');
+              authManager.redirectToGame();
+            });
+          } else {
+            showError('Profile setup failed: Unable to save profile', { title: 'Setup Error' });
+          }
+        }
+      });
+      
+      // Step 3: Login Existing Student
+      document.getElementById('login-existing-student').addEventListener('click', async () => {
+        try {
+          const result = await authManager.loginStudent(currentStudentId);
+          
+          if (result.success) {
+            showSuccess('Welcome back! Your progress has been loaded.', {
+              title: '👋 Welcome Back!'
+            }).then(() => {
+              loginModal.classList.add('hidden');
+              authManager.redirectToGame();
+            });
           } else {
             showError('Login failed: ' + result.error, { title: 'Student Login Failed' });
           }
         } catch (error) {
           console.warn('Firebase login failed, trying offline mode:', error);
           // Fallback to offline mode
-          const offlineResult = authManager.loginStudentOffline(formData.get('studentId'));
+          const offlineResult = authManager.loginStudentOffline(currentStudentId);
           if (offlineResult.success) {
             showInfo('Welcome! You are playing in offline mode. Progress will be saved locally.', {
               title: '📱 Offline Mode'
@@ -2117,6 +2409,46 @@
           } else {
             showError('Login failed: Unable to authenticate', { title: 'Authentication Error' });
           }
+        }
+      });
+      
+      // Helper functions for step management
+      function showStudentProfileStep(existingData) {
+        document.getElementById('student-id-step').classList.add('hidden');
+        document.getElementById('student-found-step').classList.add('hidden');
+        document.getElementById('student-profile-step').classList.remove('hidden');
+        
+        // Pre-fill existing data if available
+        if (existingData) {
+          const form = document.getElementById('student-complete-form');
+          if (existingData.firstName) form.querySelector('[name="firstName"]').value = existingData.firstName;
+          if (existingData.lastName) form.querySelector('[name="lastName"]').value = existingData.lastName;
+          if (existingData.department) form.querySelector('[name="department"]').value = existingData.department;
+          if (existingData.strandYear) form.querySelector('[name="strandYear"]').value = existingData.strandYear;
+        }
+      }
+      
+      function showStudentFoundStep(studentData) {
+        document.getElementById('student-id-step').classList.add('hidden');
+        document.getElementById('student-profile-step').classList.add('hidden');
+        document.getElementById('student-found-step').classList.remove('hidden');
+        
+        // Show student profile preview
+        const preview = document.getElementById('student-profile-preview');
+        preview.innerHTML = `
+          <p><strong>👤 Name:</strong> ${studentData.firstName} ${studentData.lastName}</p>
+          <p><strong>🎓 Department:</strong> ${studentData.department}</p>
+          <p><strong>📚 Strand/Year:</strong> ${studentData.strandYear}</p>
+          <p><strong>🆔 Student ID:</strong> ${studentData.studentId}</p>
+        `;
+        
+        currentStudentData = studentData;
+      }
+      
+      // Allow Enter key to trigger verification
+      document.getElementById('student-id-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          document.getElementById('verify-student-id').click();
         }
       });
 
@@ -2181,6 +2513,7 @@
         closeLoginModalBtn.addEventListener('click', () => {
           if (loginModal) {
             loginModal.classList.add('hidden');
+            resetStudentFormSteps(); // Reset student form when modal closes
           }
         });
       } else {
@@ -2190,7 +2523,10 @@
       // Close modal on outside click
       if (loginModal) {
         loginModal.addEventListener('click', (e) => {
-          if (e.target === loginModal) loginModal.classList.add('hidden');
+          if (e.target === loginModal) {
+            loginModal.classList.add('hidden');
+            resetStudentFormSteps(); // Reset student form when modal closes
+          }
         });
       } else {
         console.warn('Login modal not found for outside click handler');
