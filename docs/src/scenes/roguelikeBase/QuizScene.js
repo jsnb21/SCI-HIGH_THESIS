@@ -28,6 +28,11 @@ export default class QuizScene extends BaseScene {
         this.courseTopic = data.courseTopic;
         this.enemyData = data.enemyToDestroy;
         this.intensity = data.intensity || 1;
+        this.answeredQuestions = data.answeredQuestions || {
+            intensity1: { multipleChoice: new Set() },
+            intensity2: { multipleChoice: new Set(), dragDrop: new Set() },
+            intensity3: { codeArrangement: new Set() }
+        };
         this.selectedAnswer = null;
         this.currentQuestion = null;
         
@@ -168,12 +173,21 @@ export default class QuizScene extends BaseScene {
         // Try to load from intensity-specific structure first
         const intensityKey = `intensity${intensityLevel}`;
         if (quizData && quizData[intensityKey] && quizData[intensityKey].multipleChoice && quizData[intensityKey].multipleChoice.length > 0) {
-            // Select a random multiple choice question from the specific intensity
-            this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData[intensityKey].multipleChoice);
+            // Filter out already answered questions
+            const availableQuestions = this.filterAnsweredQuestions(
+                quizData[intensityKey].multipleChoice, 
+                intensityLevel, 
+                'multipleChoice'
+            );
             
-            // Randomize answer choices if there are more than 2 options
-            if (this.currentQuestion.options.length > 2) {
-                this.randomizeAnswerChoices();
+            if (availableQuestions.length > 0) {
+                // Select a random multiple choice question from the available questions
+                this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+                
+                // Randomize answer choices if there are more than 2 options
+                if (this.currentQuestion.options.length > 2) {
+                    this.randomizeAnswerChoices();
+                }
             }
         } else if (quizData && quizData.questions && quizData.questions.length > 0) {
             // Fallback to old structure for compatibility
@@ -181,8 +195,15 @@ export default class QuizScene extends BaseScene {
                 q.options && Array.isArray(q.options) && typeof q.correctIndex === 'number'
             );
             
-            if (multipleChoiceQuestions.length > 0) {
-                this.currentQuestion = Phaser.Utils.Array.GetRandom(multipleChoiceQuestions);
+            // Filter out already answered questions
+            const availableQuestions = this.filterAnsweredQuestions(
+                multipleChoiceQuestions, 
+                intensityLevel, 
+                'multipleChoice'
+            );
+            
+            if (availableQuestions.length > 0) {
+                this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
                 
                 // Randomize answer choices if there are more than 2 options
                 if (this.currentQuestion.options.length > 2) {
@@ -223,9 +244,18 @@ export default class QuizScene extends BaseScene {
         }
         
         if (quizData && quizData.intensity2 && quizData.intensity2.dragDrop && quizData.intensity2.dragDrop.length > 0) {
-            // Select a random drag-drop question from intensity 2
-            this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData.intensity2.dragDrop);
-            console.log('Loaded drag-drop question for', topic, ':', this.currentQuestion);
+            // Filter out already answered questions
+            const availableQuestions = this.filterAnsweredQuestions(
+                quizData.intensity2.dragDrop, 
+                2, 
+                'dragDrop'
+            );
+            
+            if (availableQuestions.length > 0) {
+                // Select a random drag-drop question from the available questions
+                this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+                console.log('Loaded drag-drop question for', topic, ':', this.currentQuestion);
+            }
         }
     }
 
@@ -261,13 +291,30 @@ export default class QuizScene extends BaseScene {
         
         // Try to load from intensity3 structure first
         if (quizData && quizData.intensity3 && quizData.intensity3.codeArrangement && quizData.intensity3.codeArrangement.length > 0) {
-            // Select a random code arrangement question from intensity 3
-            this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData.intensity3.codeArrangement);
-            console.log('Loaded intensity 3 code arrangement question for', topic, ':', this.currentQuestion);
+            // Filter out already answered questions
+            const availableQuestions = this.filterAnsweredQuestions(
+                quizData.intensity3.codeArrangement, 
+                3, 
+                'codeArrangement'
+            );
+            
+            if (availableQuestions.length > 0) {
+                // Select a random code arrangement question from the available questions
+                this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+                console.log('Loaded intensity 3 code arrangement question for', topic, ':', this.currentQuestion);
+            }
         } else if (quizData && quizData.codeArrangement && quizData.codeArrangement.length > 0) {
             // Fallback to old structure for compatibility
-            this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData.codeArrangement);
-            console.log('Loaded code arrangement question for', topic, ':', this.currentQuestion);
+            const availableQuestions = this.filterAnsweredQuestions(
+                quizData.codeArrangement, 
+                3, 
+                'codeArrangement'
+            );
+            
+            if (availableQuestions.length > 0) {
+                this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+                console.log('Loaded code arrangement question for', topic, ':', this.currentQuestion);
+            }
         }
     }
 
@@ -297,6 +344,60 @@ export default class QuizScene extends BaseScene {
         this.currentQuestion.correctIndex = newCorrectIndex;
         
         console.log('Randomized answer choices. New correct index:', newCorrectIndex);
+    }
+
+    filterAnsweredQuestions(questions, intensity, questionType) {
+        if (!this.answeredQuestions) {
+            return questions; // Return all questions if no tracking system
+        }
+        
+        const intensityKey = `intensity${intensity}`;
+        const answeredSet = this.answeredQuestions[intensityKey]?.[questionType];
+        
+        if (!answeredSet) {
+            return questions; // Return all questions if no answered questions for this category
+        }
+        
+        // Filter out questions that have already been answered
+        const availableQuestions = questions.filter(question => {
+            const questionId = this.createQuestionId(question);
+            return !answeredSet.has(questionId);
+        });
+        
+        console.log(`Filtered questions - Total: ${questions.length}, Available: ${availableQuestions.length}, Answered: ${answeredSet.size}`);
+        
+        // If all questions have been answered, reset the answered questions for this category
+        if (availableQuestions.length === 0) {
+            console.log(`All questions answered for ${intensityKey} ${questionType}. Resetting answered questions.`);
+            answeredSet.clear();
+            return questions; // Return all questions after reset
+        }
+        
+        return availableQuestions;
+    }
+
+    createQuestionId(questionData) {
+        // Create a unique identifier based on question content
+        // Use the question text as the primary identifier
+        if (questionData.question) {
+            return questionData.question;
+        } else if (questionData.prompt) {
+            return questionData.prompt;
+        } else if (questionData.description) {
+            return questionData.description;
+        } else {
+            // Fallback: use JSON string of the question
+            return JSON.stringify(questionData);
+        }
+    }
+
+    getQuestionType() {
+        // Determine the type of the current question
+        if (this.currentQuestion.isDragDrop || this.currentQuestion.type === 'drag-and-drop') {
+            return this.intensity === 3 ? 'codeArrangement' : 'dragDrop';
+        } else {
+            return 'multipleChoice';
+        }
     }
 
     createQuizInterface() {
@@ -1298,7 +1399,9 @@ export default class QuizScene extends BaseScene {
         // Prepare result data to send back
         const resultData = {
             correct: isCorrect,
-            enemyToDestroy: this.enemyData
+            enemyToDestroy: this.enemyData,
+            questionData: this.currentQuestion,
+            questionType: this.getQuestionType()
         };
         
         // Animate exit
@@ -1331,7 +1434,9 @@ export default class QuizScene extends BaseScene {
             // Immediately return to gameplay without any animations or delays
             const resultData = {
                 correct: false,
-                enemyToDestroy: this.enemyData
+                enemyToDestroy: this.enemyData,
+                questionData: this.currentQuestion,
+                questionType: this.getQuestionType()
             };
             
             // Send completion event and stop scene immediately

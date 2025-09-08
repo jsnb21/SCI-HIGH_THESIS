@@ -95,6 +95,20 @@ export default class MainGameplay extends BaseScene {
         this.currentQuiz = null;
         this.quizContainer = null;
         
+        // Answered questions tracking system - prevents question repetition
+        this.answeredQuestions = {
+            intensity1: {
+                multipleChoice: new Set()
+            },
+            intensity2: {
+                multipleChoice: new Set(),
+                dragDrop: new Set()
+            },
+            intensity3: {
+                codeArrangement: new Set()
+            }
+        };
+        
         // Power-up system
         this.powerUps = [];
         this.maxPowerUps = 2; // Maximum power-up tiles on the board
@@ -143,6 +157,20 @@ export default class MainGameplay extends BaseScene {
             this.intensity3CorrectAnswers = 0;
             this.intensity3PowerUpCounter = 0;
             this.intensity = 1;
+            
+            // Reset answered questions tracking for new sessions
+            this.answeredQuestions = {
+                intensity1: {
+                    multipleChoice: new Set()
+                },
+                intensity2: {
+                    multipleChoice: new Set(),
+                    dragDrop: new Set()
+                },
+                intensity3: {
+                    codeArrangement: new Set()
+                }
+            };
             
             // Always reset power-up system for new sessions
             this.activePowerUps = {
@@ -1677,11 +1705,12 @@ export default class MainGameplay extends BaseScene {
         this.currentQuiz = enemy;
         
         // Launch quiz scene without pausing main scene (so timer continues)
-        // Pass intensity level to determine quiz type
+        // Pass intensity level and answered questions tracker to determine quiz type and avoid repetition
         this.scene.launch('QuizScene', {
             courseTopic: this.courseTopic,
             enemyToDestroy: enemy,
-            intensity: this.intensity
+            intensity: this.intensity,
+            answeredQuestions: this.answeredQuestions
         });
     }
 
@@ -1802,6 +1831,11 @@ export default class MainGameplay extends BaseScene {
     }
 
     handleQuizCompletion(data) {
+        // Track the answered question to prevent repetition
+        if (data.questionData) {
+            this.trackAnsweredQuestion(data.questionData, data.questionType, this.intensity);
+        }
+        
         // Handle quiz results
         if (data.correct) {
             // Increment streak for correct answer
@@ -1917,6 +1951,54 @@ export default class MainGameplay extends BaseScene {
         
         // Resume game
         this.quizActive = false;
+    }
+
+    trackAnsweredQuestion(questionData, questionType, intensity) {
+        // Create a unique identifier for the question based on its content
+        const questionId = this.createQuestionId(questionData);
+        
+        // Track the question based on intensity and type
+        const intensityKey = `intensity${intensity}`;
+        
+        if (intensity === 1) {
+            // Intensity 1: Only multiple choice
+            this.answeredQuestions[intensityKey].multipleChoice.add(questionId);
+        } else if (intensity === 2) {
+            // Intensity 2: Multiple choice or drag-drop
+            if (questionType === 'dragDrop' || questionData.type === 'drag-and-drop') {
+                this.answeredQuestions[intensityKey].dragDrop.add(questionId);
+            } else {
+                this.answeredQuestions[intensityKey].multipleChoice.add(questionId);
+            }
+        } else if (intensity === 3) {
+            // Intensity 3: Code arrangement
+            this.answeredQuestions[intensityKey].codeArrangement.add(questionId);
+        }
+        
+        console.log(`Question tracked - Intensity ${intensity}, Type: ${questionType}, ID: ${questionId}`);
+        console.log('Total answered questions:', {
+            intensity1: this.answeredQuestions.intensity1.multipleChoice.size,
+            intensity2: {
+                multipleChoice: this.answeredQuestions.intensity2.multipleChoice.size,
+                dragDrop: this.answeredQuestions.intensity2.dragDrop.size
+            },
+            intensity3: this.answeredQuestions.intensity3.codeArrangement.size
+        });
+    }
+
+    createQuestionId(questionData) {
+        // Create a unique identifier based on question content
+        // Use the question text as the primary identifier
+        if (questionData.question) {
+            return questionData.question;
+        } else if (questionData.prompt) {
+            return questionData.prompt;
+        } else if (questionData.description) {
+            return questionData.description;
+        } else {
+            // Fallback: use JSON string of the question
+            return JSON.stringify(questionData);
+        }
     }
 
     handlePowerUpResult(powerUpData, success, selectedPowerUp) {
