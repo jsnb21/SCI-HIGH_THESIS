@@ -96,20 +96,53 @@ export default class QuizScene extends BaseScene {
         if (this.currentQuestion) {
             this.createQuizInterface();
         } else {
-            console.error('No quiz data available for topic:', this.courseTopic);
-            this.returnToGameplay(false);
+            console.error('No quiz data available for topic:', this.courseTopic, 'intensity:', this.intensity);
+            // Show a brief error message before returning to gameplay
+            const errorText = this.add.text(
+                this.scale.width / 2, 
+                this.scale.height / 2, 
+                'No quiz questions available!\nReturning to game...', 
+                {
+                    fontFamily: 'Caprasimo-Regular',
+                    fontSize: '32px',
+                    color: '#ff0000',
+                    align: 'center'
+                }
+            );
+            errorText.setOrigin(0.5);
+            errorText.setDepth(20);
+            
+            // Return to gameplay after a short delay
+            this.time.delayedCall(2000, () => {
+                this.returnToGameplay(false);
+            });
         }
     }
 
     loadQuizData() {
         // Load questions based on intensity level
         if (this.intensity >= 3) {
-            // Intensity 3: Code arrangement only
+            // Intensity 3: Try code arrangement first, then expand to all question types
             this.loadCodeArrangementQuestion();
             if (this.currentQuestion) {
-                this.currentQuestion.isDragDrop = true;
-                console.log('Loaded intensity 3 code arrangement question:', this.currentQuestion);
+                // Check if it's actually a drag-drop question or just multiple choice
+                if (this.currentQuestion.prompt || this.currentQuestion.description || 
+                    (this.currentQuestion.type && this.currentQuestion.type.includes('drag'))) {
+                    this.currentQuestion.isDragDrop = true;
+                    console.log('Loaded intensity 3 code arrangement question:', this.currentQuestion);
+                } else {
+                    // It's actually a multiple choice question in the code arrangement section
+                    console.log('Loaded intensity 3 multiple choice question (from codeArrangement):', this.currentQuestion);
+                }
                 return;
+            } else {
+                // No code arrangement questions available, try loading from combined pool
+                console.log('No code arrangement questions available, loading from combined intensity 3 pool');
+                this.loadCombinedIntensity3Question();
+                if (this.currentQuestion) {
+                    console.log('Loaded intensity 3 question from combined pool:', this.currentQuestion);
+                    return;
+                }
             }
         } else if (this.intensity === 2) {
             // Intensity 2: Mix of multiple choice and drag-drop (precedence order)
@@ -136,7 +169,8 @@ export default class QuizScene extends BaseScene {
             }
         }
         
-        // Fallback to intensity 1 multiple choice if nothing else works
+        // Final fallback to intensity 1 multiple choice if nothing else works
+        console.log('All question loading failed, falling back to intensity 1 multiple choice');
         this.loadMultipleChoiceQuestion(1);
     }
 
@@ -188,8 +222,38 @@ export default class QuizScene extends BaseScene {
                 if (this.currentQuestion.options.length > 2) {
                     this.randomizeAnswerChoices();
                 }
+                return; // Successfully loaded
             }
-        } else if (quizData && quizData.questions && quizData.questions.length > 0) {
+        }
+        
+        // For intensity 3, also check codeArrangement section (some quizzes have multiple choice there)
+        if (intensityLevel === 3 && quizData && quizData[intensityKey] && quizData[intensityKey].codeArrangement && quizData[intensityKey].codeArrangement.length > 0) {
+            // Check if codeArrangement questions are actually multiple choice
+            const codeQuestions = quizData[intensityKey].codeArrangement.filter(q => 
+                q.options && Array.isArray(q.options) && typeof q.correctIndex === 'number'
+            );
+            
+            if (codeQuestions.length > 0) {
+                const availableQuestions = this.filterAnsweredQuestions(
+                    codeQuestions, 
+                    intensityLevel, 
+                    'codeArrangement' // Use codeArrangement tracking to avoid conflicts
+                );
+                
+                if (availableQuestions.length > 0) {
+                    this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+                    
+                    // Randomize answer choices if there are more than 2 options
+                    if (this.currentQuestion.options.length > 2) {
+                        this.randomizeAnswerChoices();
+                    }
+                    return; // Successfully loaded
+                }
+            }
+        }
+        
+        // Fallback to old structure for compatibility
+        if (quizData && quizData.questions && quizData.questions.length > 0) {
             // Fallback to old structure for compatibility
             const multipleChoiceQuestions = quizData.questions.filter(q => 
                 q.options && Array.isArray(q.options) && typeof q.correctIndex === 'number'
@@ -318,6 +382,99 @@ export default class QuizScene extends BaseScene {
         }
     }
 
+    loadCombinedIntensity3Question() {
+        // This method combines all available questions for intensity 3 when code arrangement is exhausted
+        const topic = this.courseTopic || 'python';
+        let quizData = null;
+        
+        switch (topic.toLowerCase()) {
+            case 'python':
+                quizData = this.cache.json.get('pythonQuiz');
+                break;
+            case 'java':
+                quizData = this.cache.json.get('javaQuiz');
+                break;
+            case 'c':
+                quizData = this.cache.json.get('cQuiz');
+                break;
+            case 'c++':
+                quizData = this.cache.json.get('cppQuiz');
+                break;
+            case 'c#':
+            case 'csharp':
+                quizData = this.cache.json.get('csharpQuiz');
+                break;
+            case 'webdesign':
+                quizData = this.cache.json.get('webdesignQuiz');
+                break;
+            default:
+                quizData = this.cache.json.get('pythonQuiz');
+                break;
+        }
+
+        if (!quizData) {
+            console.log('No quiz data available for combined intensity 3 questions');
+            return;
+        }
+
+        // Collect all available questions from intensity 3
+        let allQuestions = [];
+        
+        // Add intensity 3 multiple choice questions
+        if (quizData.intensity3 && quizData.intensity3.multipleChoice && quizData.intensity3.multipleChoice.length > 0) {
+            allQuestions = allQuestions.concat(quizData.intensity3.multipleChoice.map(q => ({...q, sourceType: 'multipleChoice'})));
+        }
+        
+        // Add intensity 3 code arrangement questions
+        if (quizData.intensity3 && quizData.intensity3.codeArrangement && quizData.intensity3.codeArrangement.length > 0) {
+            allQuestions = allQuestions.concat(quizData.intensity3.codeArrangement.map(q => ({...q, sourceType: 'codeArrangement'})));
+        }
+
+        // If no intensity 3 questions, fall back to other sources
+        if (allQuestions.length === 0) {
+            // Try intensity 2 questions as fallback
+            if (quizData.intensity2) {
+                if (quizData.intensity2.multipleChoice && quizData.intensity2.multipleChoice.length > 0) {
+                    allQuestions = allQuestions.concat(quizData.intensity2.multipleChoice.map(q => ({...q, sourceType: 'multipleChoice'})));
+                }
+                if (quizData.intensity2.dragDrop && quizData.intensity2.dragDrop.length > 0) {
+                    allQuestions = allQuestions.concat(quizData.intensity2.dragDrop.map(q => ({...q, sourceType: 'dragDrop'})));
+                }
+            }
+            
+            // Try intensity 1 questions as final fallback
+            if (allQuestions.length === 0 && quizData.intensity1 && quizData.intensity1.multipleChoice && quizData.intensity1.multipleChoice.length > 0) {
+                allQuestions = allQuestions.concat(quizData.intensity1.multipleChoice.map(q => ({...q, sourceType: 'multipleChoice'})));
+            }
+        }
+
+        if (allQuestions.length === 0) {
+            console.log('No questions available for combined intensity 3 pool');
+            return;
+        }
+
+        // Use special filtering for combined questions
+        const availableQuestions = this.filterCombinedQuestions(allQuestions);
+        
+        if (availableQuestions.length > 0) {
+            this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+            
+            // Set appropriate flags based on source type
+            if (this.currentQuestion.sourceType === 'codeArrangement' || this.currentQuestion.sourceType === 'dragDrop') {
+                this.currentQuestion.isDragDrop = true;
+            }
+            
+            // Randomize answer choices if applicable
+            if (this.currentQuestion.options && this.currentQuestion.options.length > 2) {
+                this.randomizeAnswerChoices();
+            }
+            
+            console.log(`Loaded combined intensity 3 question (${this.currentQuestion.sourceType}):`, this.currentQuestion);
+        } else {
+            console.log('All combined intensity 3 questions have been answered, cycling will reset automatically');
+        }
+    }
+
     randomizeAnswerChoices() {
         if (!this.currentQuestion || !this.currentQuestion.options || this.currentQuestion.options.length <= 2) {
             return; // Don't randomize if there are 2 or fewer options
@@ -346,8 +503,56 @@ export default class QuizScene extends BaseScene {
         console.log('Randomized answer choices. New correct index:', newCorrectIndex);
     }
 
+    filterCombinedQuestions(questions) {
+        // Special filtering for combined intensity 3 questions that tracks all question types together
+        if (!this.answeredQuestions) {
+            console.log(`No answered questions tracking - returning all ${questions.length} combined questions`);
+            return questions;
+        }
+
+        // Use a special combined tracker for intensity 3
+        const intensityKey = 'intensity3';
+        if (!this.answeredQuestions[intensityKey]) {
+            this.answeredQuestions[intensityKey] = {
+                multipleChoice: new Set(),
+                dragDrop: new Set(),
+                codeArrangement: new Set(),
+                combined: new Set() // Special tracker for combined pool
+            };
+        }
+
+        const combinedSet = this.answeredQuestions[intensityKey].combined;
+
+        // Filter out questions that have already been answered in the combined pool
+        const availableQuestions = questions.filter(question => {
+            const questionId = this.createQuestionId(question);
+            return !combinedSet.has(questionId);
+        });
+
+        console.log(`Combined intensity 3 question filtering:`);
+        console.log(`  - Total questions in combined pool: ${questions.length}`);
+        console.log(`  - Already answered in combined pool: ${combinedSet.size}`);
+        console.log(`  - Available questions: ${availableQuestions.length}`);
+
+        // If all questions have been answered, reset the combined pool and all individual pools
+        if (availableQuestions.length === 0 && questions.length > 0) {
+            console.log('All combined intensity 3 questions answered. Resetting entire intensity 3 question pool for fresh cycle.');
+            
+            // Clear all intensity 3 question pools to start fresh cycle
+            this.answeredQuestions[intensityKey].multipleChoice.clear();
+            this.answeredQuestions[intensityKey].dragDrop.clear();
+            this.answeredQuestions[intensityKey].codeArrangement.clear();
+            this.answeredQuestions[intensityKey].combined.clear();
+            
+            return questions; // Return all questions after reset
+        }
+
+        return availableQuestions;
+    }
+
     filterAnsweredQuestions(questions, intensity, questionType) {
         if (!this.answeredQuestions) {
+            console.log(`No answered questions tracking - returning all ${questions.length} questions`);
             return questions; // Return all questions if no tracking system
         }
         
@@ -355,6 +560,7 @@ export default class QuizScene extends BaseScene {
         const answeredSet = this.answeredQuestions[intensityKey]?.[questionType];
         
         if (!answeredSet) {
+            console.log(`No answered questions for ${intensityKey} ${questionType} - returning all ${questions.length} questions`);
             return questions; // Return all questions if no answered questions for this category
         }
         
@@ -364,11 +570,14 @@ export default class QuizScene extends BaseScene {
             return !answeredSet.has(questionId);
         });
         
-        console.log(`Filtered questions - Total: ${questions.length}, Available: ${availableQuestions.length}, Answered: ${answeredSet.size}`);
+        console.log(`Question filtering for ${intensityKey} ${questionType}:`);
+        console.log(`  - Total questions: ${questions.length}`);
+        console.log(`  - Already answered: ${answeredSet.size}`);
+        console.log(`  - Available questions: ${availableQuestions.length}`);
         
         // If all questions have been answered, reset the answered questions for this category
-        if (availableQuestions.length === 0) {
-            console.log(`All questions answered for ${intensityKey} ${questionType}. Resetting answered questions.`);
+        if (availableQuestions.length === 0 && questions.length > 0) {
+            console.log(`All questions answered for ${intensityKey} ${questionType}. Resetting answered questions to refresh pool.`);
             answeredSet.clear();
             return questions; // Return all questions after reset
         }
@@ -393,6 +602,16 @@ export default class QuizScene extends BaseScene {
 
     getQuestionType() {
         // Determine the type of the current question
+        if (!this.currentQuestion) {
+            return 'multipleChoice';
+        }
+        
+        // Check if this question has a sourceType (from combined system)
+        if (this.currentQuestion.sourceType) {
+            return this.currentQuestion.sourceType;
+        }
+        
+        // Legacy detection for questions without sourceType
         if (this.currentQuestion.isDragDrop || this.currentQuestion.type === 'drag-and-drop') {
             return this.intensity === 3 ? 'codeArrangement' : 'dragDrop';
         } else {

@@ -105,7 +105,9 @@ export default class MainGameplay extends BaseScene {
                 dragDrop: new Set()
             },
             intensity3: {
-                codeArrangement: new Set()
+                multipleChoice: new Set(),
+                codeArrangement: new Set(),
+                combined: new Set() // For combined cycling system
             }
         };
         
@@ -168,7 +170,9 @@ export default class MainGameplay extends BaseScene {
                     dragDrop: new Set()
                 },
                 intensity3: {
-                    codeArrangement: new Set()
+                    multipleChoice: new Set(),
+                    codeArrangement: new Set(),
+                    combined: new Set() // For combined cycling system
                 }
             };
             
@@ -1971,8 +1975,24 @@ export default class MainGameplay extends BaseScene {
                 this.answeredQuestions[intensityKey].multipleChoice.add(questionId);
             }
         } else if (intensity === 3) {
-            // Intensity 3: Code arrangement
-            this.answeredQuestions[intensityKey].codeArrangement.add(questionId);
+            // Intensity 3: Enhanced tracking for combined question system
+            
+            // Track in appropriate individual category
+            if (questionType === 'codeArrangement' || questionData.type === 'drag-and-drop' || questionData.isDragDrop) {
+                this.answeredQuestions[intensityKey].codeArrangement.add(questionId);
+            } else {
+                // Multiple choice questions in intensity 3
+                if (!this.answeredQuestions[intensityKey].multipleChoice) {
+                    this.answeredQuestions[intensityKey].multipleChoice = new Set();
+                }
+                this.answeredQuestions[intensityKey].multipleChoice.add(questionId);
+            }
+            
+            // Also track in combined pool for cycling system
+            if (!this.answeredQuestions[intensityKey].combined) {
+                this.answeredQuestions[intensityKey].combined = new Set();
+            }
+            this.answeredQuestions[intensityKey].combined.add(questionId);
         }
         
         console.log(`Question tracked - Intensity ${intensity}, Type: ${questionType}, ID: ${questionId}`);
@@ -1982,7 +2002,11 @@ export default class MainGameplay extends BaseScene {
                 multipleChoice: this.answeredQuestions.intensity2.multipleChoice.size,
                 dragDrop: this.answeredQuestions.intensity2.dragDrop.size
             },
-            intensity3: this.answeredQuestions.intensity3.codeArrangement.size
+            intensity3: {
+                multipleChoice: this.answeredQuestions.intensity3.multipleChoice?.size || 0,
+                codeArrangement: this.answeredQuestions.intensity3.codeArrangement.size,
+                combined: this.answeredQuestions.intensity3.combined?.size || 0
+            }
         });
     }
 
