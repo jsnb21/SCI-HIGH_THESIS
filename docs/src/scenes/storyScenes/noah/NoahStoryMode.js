@@ -399,51 +399,47 @@ export default class NoahStoryMode extends Phaser.Scene {
             this.inlineQuizElements = null;
         }
         
-        // Show feedback briefly
-        this.showInlineQuizFeedback(isCorrect, quizData, () => {
-            // Continue to next scene after feedback
-            this.continueStoryAfterInlineQuiz();
-        });
+        if (isCorrect) {
+            this.showInlineQuizSuccessFeedback(quizData);
+        } else {
+            this.showInlineQuizFailureFeedback(quizData);
+        }
     }
 
-    showInlineQuizFeedback(isCorrect, quizData, callback) {
+    showInlineQuizSuccessFeedback(quizData) {
         const { width, height } = this.scale;
         
-        const feedbackColor = isCorrect ? 0x27ae60 : 0xe74c3c;
-        const feedbackIcon = isCorrect ? '✅' : '❌';
-        const feedbackTitle = isCorrect ? 'Correct!' : 'Not quite right';
-
-        // Feedback background (50% larger)
+        // Feedback background
         const feedbackBg = this.add.graphics();
-        feedbackBg.fillStyle(feedbackColor, 0.9);
+        feedbackBg.fillStyle(0x27ae60, 0.9);
         feedbackBg.fillRoundedRect(width/2 - 450, height/2 - 150, 900, 300, 22);
         feedbackBg.setDepth(10);
 
-        // Icon (50% larger)
-        const icon = this.add.text(width/2, height/2 - 90, feedbackIcon, {
-            fontSize: '48px' // 32px * 1.5
+        // Icon
+        const icon = this.add.text(width/2, height/2 - 90, '✅', {
+            fontSize: '48px'
         }).setOrigin(0.5);
         icon.setDepth(11);
 
-        // Title (50% larger)
-        const title = this.add.text(width/2, height/2 - 30, feedbackTitle, {
+        // Title
+        const title = this.add.text(width/2, height/2 - 30, 'Correct!', {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '30px', // 20px * 1.5
+            fontSize: '30px',
             color: '#ffffff'
         }).setOrigin(0.5);
         title.setDepth(11);
 
-        // Explanation (50% larger)
+        // Explanation
         const explanation = this.add.text(width/2, height/2 + 30, quizData.explanation || '', {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '21px', // 14px * 1.5
+            fontSize: '21px',
             color: '#ffffff',
-            wordWrap: { width: 840 }, // 560 * 1.5
+            wordWrap: { width: 840 },
             align: 'center'
         }).setOrigin(0.5);
         explanation.setDepth(11);
 
-        // Continue button (50% larger)
+        // Continue button
         const continueBtn = this.add.graphics();
         continueBtn.fillStyle(0xffffff, 1);
         continueBtn.fillRoundedRect(width/2 - 75, height/2 + 90, 150, 45, 12);
@@ -453,7 +449,7 @@ export default class NoahStoryMode extends Phaser.Scene {
 
         const continueText = this.add.text(width/2, height/2 + 112, 'Continue', {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '18px', // 12px * 1.5
+            fontSize: '18px',
             color: '#000000'
         }).setOrigin(0.5);
         continueText.setDepth(12);
@@ -465,16 +461,129 @@ export default class NoahStoryMode extends Phaser.Scene {
             // Clean up feedback
             this.feedbackElements.forEach(element => element.destroy());
             this.feedbackElements = null;
-            callback();
+            // Continue to next scene
+            this.continueStoryAfterInlineQuiz();
         });
+    }
+
+    showInlineQuizFailureFeedback(quizData) {
+        const { width, height } = this.scale;
         
-        // Auto-continue after 3 seconds if no interaction
-        this.time.delayedCall(3000, () => {
-            if (this.feedbackElements) {
-                this.feedbackElements.forEach(element => element.destroy());
-                this.feedbackElements = null;
-                callback();
-            }
+        // Background
+        const feedbackBg = this.add.graphics();
+        feedbackBg.fillStyle(0x000000, 0.8);
+        feedbackBg.fillRect(0, 0, width, height);
+        feedbackBg.setDepth(10);
+        
+        // Error icon
+        const icon = this.add.text(width/2, height/2 - 120, '✗', {
+            fontFamily: 'Arial',
+            fontSize: '64px',
+            color: '#f44336'
+        }).setOrigin(0.5);
+        icon.setDepth(11);
+        
+        // Title
+        const title = this.add.text(width/2, height/2 - 60, 'Not quite right...', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '28px',
+            color: '#f44336'
+        }).setOrigin(0.5);
+        title.setDepth(11);
+        
+        // Explanation
+        const explanation = this.add.text(width/2, height/2 - 15, quizData.explanation || 'Try again and think about what you learned!', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '18px',
+            color: '#ffffff',
+            align: 'center',
+            wordWrap: { width: width * 0.7 }
+        }).setOrigin(0.5);
+        explanation.setDepth(11);
+        
+        // Buttons
+        const buttonWidth = 120;
+        const buttonHeight = 40;
+        const buttonY = height/2 + 60;
+        const leftButtonX = width/2 - 80;
+        const rightButtonX = width/2 + 80;
+        
+        // Try Again button
+        const tryAgainBtn = this.add.graphics();
+        tryAgainBtn.fillStyle(0xff6b9d, 1);
+        tryAgainBtn.fillRoundedRect(leftButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        tryAgainBtn.setDepth(11);
+        tryAgainBtn.setInteractive(new Phaser.Geom.Rectangle(leftButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        tryAgainBtn.setData('useHandCursor', true);
+
+        const tryAgainText = this.add.text(leftButtonX, buttonY, 'Try Again', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '16px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        tryAgainText.setDepth(12);
+        
+        // Continue button
+        const continueBtn = this.add.graphics();
+        continueBtn.fillStyle(0x666666, 1);
+        continueBtn.fillRoundedRect(rightButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        continueBtn.setDepth(11);
+        continueBtn.setInteractive(new Phaser.Geom.Rectangle(rightButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        continueBtn.setData('useHandCursor', true);
+
+        const continueText = this.add.text(rightButtonX, buttonY, 'Continue', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '16px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        continueText.setDepth(12);
+
+        this.feedbackElements = [feedbackBg, icon, title, explanation, tryAgainBtn, tryAgainText, continueBtn, continueText];
+        
+        // Try Again button handler
+        tryAgainBtn.on('pointerdown', () => {
+            this.sound.play('se_confirm');
+            // Clean up feedback
+            this.feedbackElements.forEach(element => element.destroy());
+            this.feedbackElements = null;
+            // Show the quiz again
+            this.showInlineQuiz(quizData);
+        });
+
+        // Continue button handler
+        continueBtn.on('pointerdown', () => {
+            this.sound.play('se_confirm');
+            // Clean up feedback
+            this.feedbackElements.forEach(element => element.destroy());
+            this.feedbackElements = null;
+            // Continue to next scene without completing quiz
+            this.continueStoryAfterInlineQuiz();
+        });
+
+        // Hover effects for Try Again button
+        tryAgainBtn.on('pointerover', () => {
+            tryAgainBtn.clear();
+            tryAgainBtn.fillStyle(0xff8ac4, 1);
+            tryAgainBtn.fillRoundedRect(leftButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        });
+
+        tryAgainBtn.on('pointerout', () => {
+            tryAgainBtn.clear();
+            tryAgainBtn.fillStyle(0xff6b9d, 1);
+            tryAgainBtn.fillRoundedRect(leftButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        });
+
+        // Hover effects for Continue button
+        continueBtn.on('pointerover', () => {
+            continueBtn.clear();
+            continueBtn.fillStyle(0x888888, 1);
+            continueBtn.fillRoundedRect(rightButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        });
+
+        continueBtn.on('pointerout', () => {
+            continueBtn.clear();
+            continueBtn.fillStyle(0x666666, 1);
+            continueBtn.fillRoundedRect(rightButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
         });
     }
 
