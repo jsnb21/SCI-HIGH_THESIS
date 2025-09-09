@@ -129,29 +129,57 @@ export default class DamianStoryMode extends Phaser.Scene {
     showCodeExample(codeExample) {
         const { width, height } = this.scale;
         
-        // Create a much larger code display area
-        const codeBox = this.add.rectangle(width * 0.3, height * 0.4, 720, 450, 0x1e1e1e, 0.9);
-        codeBox.setStrokeStyle(4, 0xf57c00);
+        // Mobile responsive calculations
+        const isMobile = width < 768;
+        const isSmallMobile = width < 480;
+        
+        // Responsive box dimensions
+        const boxWidthRatio = isMobile ? 0.9 : 0.7; // Wider on mobile
+        const boxHeightRatio = isMobile ? 0.5 : 0.4; // Taller on mobile
+        const boxWidth = width * boxWidthRatio;
+        const boxHeight = height * boxHeightRatio;
+        
+        // Responsive positioning
+        const boxX = width * 0.5; // Center horizontally
+        const boxY = height * 0.4;
+        
+        // Create responsive code display area
+        const codeBox = this.add.rectangle(boxX, boxY, boxWidth, boxHeight, 0x1e1e1e, 0.9);
+        const strokeWidth = isMobile ? 2 : 4;
+        codeBox.setStrokeStyle(strokeWidth, 0xf57c00);
         codeBox.setDepth(5); // Above Damian (depth 1) but below dialogue (depth 10)
         
-        const codeText = this.add.text(width * 0.3, height * 0.4, codeExample.code, {
+        // Responsive font sizing
+        let fontSize = 22;
+        if (isSmallMobile) {
+            fontSize = 16;
+        } else if (isMobile) {
+            fontSize = 18;
+        }
+        
+        // Responsive text styling
+        const codeText = this.add.text(boxX, boxY, codeExample.code, {
             fontFamily: 'Courier New, monospace',
-            fontSize: '22px', // Increased from 18px
+            fontSize: `${fontSize}px`,
             color: '#00ff00',
-            wordWrap: { width: 680 }, // Adjusted for larger box
+            wordWrap: { width: boxWidth - 40 }, // Responsive word wrap with padding
             align: 'left',
-            lineSpacing: 6 // Increased line spacing for better readability with larger text
+            lineSpacing: isMobile ? 4 : 6 // Adjusted line spacing for mobile
         });
         codeText.setOrigin(0.5);
         codeText.setDepth(6); // Above code box
         
-        // Label for the code
-        const codeLabel = this.add.text(width * 0.3, height * 0.18, codeExample.title, {
+        // Responsive label
+        const labelFontSize = isSmallMobile ? 14 : (isMobile ? 16 : 22);
+        const labelY = boxY - (boxHeight / 2) - (30 * (isMobile ? 0.8 : 1));
+        const labelPadding = isMobile ? { x: 12, y: 6 } : { x: 16, y: 8 };
+        
+        const codeLabel = this.add.text(boxX, labelY, codeExample.title, {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '22px', // Increased from 18px
+            fontSize: `${labelFontSize}px`,
             color: '#ffffff',
             backgroundColor: '#f57c00',
-            padding: { x: 16, y: 8 } // Increased padding
+            padding: labelPadding
         });
         codeLabel.setOrigin(0.5);
         codeLabel.setDepth(6); // Same as code text

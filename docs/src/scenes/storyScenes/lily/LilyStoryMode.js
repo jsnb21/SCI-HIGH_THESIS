@@ -128,29 +128,57 @@ export default class LilyStoryMode extends Phaser.Scene {
     showCodeExample(codeExample) {
         const { width, height } = this.scale;
         
-        // Create a much larger code display area
-        const codeBox = this.add.rectangle(width * 0.3, height * 0.4, 720, 450, 0x1e1e1e, 0.9);
-        codeBox.setStrokeStyle(4, 0xff6b9d);
+        // Mobile responsive calculations
+        const isMobile = width < 768;
+        const isSmallMobile = width < 480;
+        
+        // Responsive box dimensions
+        const boxWidthRatio = isMobile ? 0.9 : 0.7; // Wider on mobile
+        const boxHeightRatio = isMobile ? 0.5 : 0.4; // Taller on mobile
+        const boxWidth = width * boxWidthRatio;
+        const boxHeight = height * boxHeightRatio;
+        
+        // Responsive positioning
+        const boxX = width * 0.5; // Center horizontally
+        const boxY = height * 0.4;
+        
+        // Create responsive code display area
+        const codeBox = this.add.rectangle(boxX, boxY, boxWidth, boxHeight, 0x1e1e1e, 0.9);
+        const strokeWidth = isMobile ? 2 : 4;
+        codeBox.setStrokeStyle(strokeWidth, 0xff6b9d);
         codeBox.setDepth(5); // Above Lily (depth 1) but below dialogue (depth 10)
         
-        const codeText = this.add.text(width * 0.3, height * 0.4, codeExample.code, {
+        // Responsive font sizing
+        let fontSize = 22;
+        if (isSmallMobile) {
+            fontSize = 16;
+        } else if (isMobile) {
+            fontSize = 18;
+        }
+        
+        // Responsive text styling
+        const codeText = this.add.text(boxX, boxY, codeExample.code, {
             fontFamily: 'Courier New, monospace',
-            fontSize: '22px', // Increased from 18px
+            fontSize: `${fontSize}px`,
             color: '#00ff00',
-            wordWrap: { width: 680 }, // Adjusted for larger box
+            wordWrap: { width: boxWidth - 40 }, // Responsive word wrap with padding
             align: 'left',
-            lineSpacing: 6 // Increased line spacing for better readability with larger text
+            lineSpacing: isMobile ? 4 : 6 // Adjusted line spacing for mobile
         });
         codeText.setOrigin(0.5);
         codeText.setDepth(6); // Above code box
         
-        // Label for the code
-        const codeLabel = this.add.text(width * 0.3, height * 0.18, codeExample.title, {
+        // Responsive label
+        const labelFontSize = isSmallMobile ? 14 : (isMobile ? 16 : 22);
+        const labelY = boxY - (boxHeight / 2) - (30 * (isMobile ? 0.8 : 1));
+        const labelPadding = isMobile ? { x: 12, y: 6 } : { x: 16, y: 8 };
+        
+        const codeLabel = this.add.text(boxX, labelY, codeExample.title, {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '22px', // Increased from 18px
+            fontSize: `${labelFontSize}px`,
             color: '#ffffff',
             backgroundColor: '#ff6b9d',
-            padding: { x: 16, y: 8 } // Increased padding
+            padding: labelPadding
         });
         codeLabel.setOrigin(0.5);
         codeLabel.setDepth(6); // Same as code text
@@ -670,10 +698,13 @@ for song in songs:
                         character: 'Lily',
                         dialogue: [
                             "Here's a simple class:",
-                            "class Idol:\n    def __init__(self, name, talent):\n        self.name = name\n        self.talent = talent\n    def perform(self):\n        print(f'{self.name} is showing off their {self.talent}!')",
                             "The __init__ method is like the blueprint - it sets up each new idol!",
                             "Self refers to the specific instance we're working with!"
                         ],
+                        codeExample: {
+                            title: "Basic Idol Class",
+                            code: "class Idol:\n    def __init__(self, name, talent):\n        self.name = name\n        self.talent = talent\n    \n    def perform(self):\n        print(f'{self.name} is showing off their {self.talent}!')"
+                        },
                         action: 'quiz',
                         quizData: {
                             questions: [
@@ -694,10 +725,13 @@ for song in songs:
                         character: 'Lily',
                         dialogue: [
                             "We can also use inheritance - like how different types of performers share basic skills!",
-                            "class Singer(Idol):\n    def sing(self):\n        print(f'{self.name} is singing beautifully!')",
                             "Singer inherits everything from Idol but adds its own special abilities!",
                             "This helps us build complex programs efficiently!"
                         ],
+                        codeExample: {
+                            title: "Inheritance Example - Singer Class",
+                            code: "class Singer(Idol):\n    def sing(self):\n        print(f'{self.name} is singing beautifully!')\n\n# Example usage:\n# my_singer = Singer('Lily', 'vocals')\n# my_singer.perform()  # Inherited from Idol\n# my_singer.sing()     # Singer's own method"
+                        },
                         action: 'next_chapter'
                     }
                 ]
