@@ -429,11 +429,21 @@ export default class MainHub extends Phaser.Scene {
     }
 
     createCarousel(iconKeys, iconInfo) {
-        const { width } = this.scale;
+        const { width, height } = this.scale;
+        const scale = Math.min(width / 816, height / 624); // Calculate scale factor
+        
         this.carousel = new Carousel(this, {
-            iconCenterY: 220,
+            iconCenterY: 200, // Moved up from 220 to 200 to give more room for text
             largeScale: 0.3,  
             smallScale: 0.15,
+            iconToTitleGap: 140, // Increased gap between icon and title
+            iconToDescGap: 80,   // Increased gap between title and description
+            headingStyle: {
+                fontSize: Math.max(32, 56 * scale) // Responsive font size with minimum
+            },
+            descStyle: {
+                fontSize: Math.max(24, 36 * scale) // Responsive font size with minimum
+            },
             sounds: {
                 hover: 'se_hoverSound',
                 confirm: 'se_confirmSound'
