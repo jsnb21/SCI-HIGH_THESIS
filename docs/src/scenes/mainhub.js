@@ -25,6 +25,7 @@ export default class MainHub extends Phaser.Scene {
         super({ key: 'MainHub' });
         this.uiElements = [];
         this.tutorialManager = null;
+        this.isResizing = false; // Prevent infinite resize loops
         
         // Firebase initialization properties
         this.isFirebaseInitialized = false;
@@ -226,6 +227,9 @@ export default class MainHub extends Phaser.Scene {
         
         // Then initialize UI with delay to ensure everything is ready (now async)
         this.time.delayedCall(10, async () => await this.createUI());
+        
+        // Clean up any existing resize listener before adding a new one
+        this.scale.off('resize', this.onResize, this);
         this.scale.on('resize', this.onResize, this);
     }
 
@@ -480,9 +484,18 @@ export default class MainHub extends Phaser.Scene {
                     break;
             }
         });
-    }    onResize() {
+    }
+
+    onResize() {
+        // Prevent infinite loop by checking if we're already handling a resize
+        if (this.isResizing) return;
+        this.isResizing = true;
+        
         // Just recreate the entire UI to avoid geometry issues (now async)
-        this.time.delayedCall(50, async () => await this.createUI());
+        this.time.delayedCall(50, async () => {
+            await this.createUI();
+            this.isResizing = false;
+        });
     }
 
     update() {
@@ -583,6 +596,9 @@ export default class MainHub extends Phaser.Scene {
             this.tutorialManager.destroy();
             this.tutorialManager = null;
         }
+        
+        // Clean up scale resize listener
+        this.scale.off('resize', this.onResize, this);
         
         // Clean up all UI elements and references when scene shuts down
         if (this.pointsDisplay) {
