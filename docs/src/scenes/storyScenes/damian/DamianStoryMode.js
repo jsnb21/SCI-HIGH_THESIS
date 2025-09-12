@@ -3,6 +3,7 @@ import VNDialogueBox from '/src/ui/VNDialogueBox.js';
 import { createBackButton } from '/src/components/buttons/backbutton.js';
 import { char3, onceOnlyFlags } from '/src/gameManager.js';
 import { getScaleInfo, scaleFontSize, scaleDimension } from '/src/utils/mobileUtils.js';
+import { saveStoryProgress } from '/src/save.js';
 
 export default class DamianStoryMode extends Phaser.Scene {
     constructor() {
@@ -228,6 +229,9 @@ export default class DamianStoryMode extends Phaser.Scene {
             completed: this.currentChapter >= storyData.length
         };
 
+        // Save progress to Firebase
+        this.saveProgressToFirebase();
+
         // Continue or complete
         if (this.currentChapter < storyData.length) {
             this.time.delayedCall(1000, () => {
@@ -255,6 +259,14 @@ export default class DamianStoryMode extends Phaser.Scene {
         if (progressUpdate.quest3Desc) char3.quest3Desc = progressUpdate.quest3Desc;
     }
 
+    async saveProgressToFirebase() {
+        try {
+            await saveStoryProgress('damian', char3.storyProgress);
+        } catch (error) {
+            console.error('Failed to save story progress to Firebase:', error);
+        }
+    }
+
     showStoryComplete() {
         const { width, height } = this.scale;
         
@@ -273,6 +285,9 @@ export default class DamianStoryMode extends Phaser.Scene {
                 // Mark story as completed
                 char3.storyProgress.completed = true;
                 onceOnlyFlags.setSeen('damian_story_completed');
+                
+                // Save completion to Firebase
+                this.saveProgressToFirebase();
                 
                 // Return to classroom
                 this.scene.start('Classroom');
@@ -607,6 +622,9 @@ export default class DamianStoryMode extends Phaser.Scene {
             scene: this.currentScene,
             completed: this.currentChapter >= storyData.length
         };
+
+        // Save progress to Firebase
+        this.saveProgressToFirebase();
 
         // Continue or complete
         if (this.currentChapter < storyData.length) {

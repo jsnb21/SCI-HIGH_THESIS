@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import VNDialogueBox from '/src/ui/VNDialogueBox.js';
 import { createBackButton } from '/src/components/buttons/backbutton.js';
 import { char1, onceOnlyFlags } from '/src/gameManager.js';
+import { saveStoryProgress } from '/src/save.js';
 
 export default class NoahStoryMode extends Phaser.Scene {
     constructor() {
@@ -241,6 +242,9 @@ export default class NoahStoryMode extends Phaser.Scene {
             completed: this.currentChapter >= storyData.length
         };
 
+        // Save to Firebase
+        this.saveProgressToFirebase();
+
         // Continue or complete
         if (this.currentChapter < storyData.length) {
             this.time.delayedCall(1000, () => {
@@ -286,6 +290,9 @@ export default class NoahStoryMode extends Phaser.Scene {
                 // Mark story as completed
                 char1.storyProgress.completed = true;
                 onceOnlyFlags.setSeen('noah_story_completed');
+                
+                // Save completion to Firebase
+                this.saveProgressToFirebase();
                 
                 // Return to classroom
                 this.scene.start('Classroom');
@@ -610,6 +617,9 @@ export default class NoahStoryMode extends Phaser.Scene {
             completed: this.currentChapter >= storyData.length
         };
 
+        // Save to Firebase
+        this.saveProgressToFirebase();
+
         // Continue or complete
         if (this.currentChapter < storyData.length) {
             this.time.delayedCall(1000, () => {
@@ -889,5 +899,22 @@ button.addEventListener('click', function() {
                 ]
             }
         ];
+    }
+
+    // Helper method to save progress to Firebase
+    async saveProgressToFirebase() {
+        try {
+            const progressData = {
+                chapter: this.currentChapter,
+                scene: this.currentScene,
+                completed: char1.storyProgress?.completed || false,
+                lastUpdated: new Date().toISOString()
+            };
+
+            console.log('Saving Noah story progress to Firebase:', progressData);
+            await saveStoryProgress('noah', progressData);
+        } catch (error) {
+            console.error('Failed to save Noah story progress to Firebase:', error);
+        }
     }
 }

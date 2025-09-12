@@ -1480,6 +1480,33 @@
               const studentData = Object.values(studentsSnapshot.val())[0];
               const studentKey = Object.keys(studentsSnapshot.val())[0];
 
+              // Also check for career stats data which might have additional profile info
+              let careerStatsData = null;
+              try {
+                const careerStatsSnapshot = await firebase.database().ref(`student_career_stats/${studentId}`).once('value');
+                if (careerStatsSnapshot.exists()) {
+                  careerStatsData = careerStatsSnapshot.val();
+                  console.log('Found career stats data for student:', careerStatsData);
+                }
+              } catch (error) {
+                console.log('No career stats found for student (this is normal for new students):', error.message);
+              }
+
+              // Merge career stats data with main student data if available
+              const mergedStudentData = { ...studentData };
+              if (careerStatsData) {
+                // Merge profile information from career stats
+                if (careerStatsData.firstName) mergedStudentData.firstName = careerStatsData.firstName;
+                if (careerStatsData.lastName) mergedStudentData.lastName = careerStatsData.lastName;
+                if (careerStatsData.department) mergedStudentData.department = careerStatsData.department;
+                if (careerStatsData.strandYear) mergedStudentData.strandYear = careerStatsData.strandYear;
+                
+                // Update fullName if we have both first and last name
+                if (careerStatsData.firstName && careerStatsData.lastName) {
+                  mergedStudentData.fullName = `${careerStatsData.firstName} ${careerStatsData.lastName}`;
+                }
+              }
+
               // Update last login timestamp
               await firebase.database().ref('students').child(studentKey).update({
                 lastLogin: new Date().toISOString(),
@@ -1491,7 +1518,7 @@
                 uid: studentKey,
                 studentId: studentData.studentId,
                 type: 'student',
-                profile: studentData
+                profile: mergedStudentData
               };
 
               localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
@@ -2083,7 +2110,36 @@
                 const studentKey = Object.keys(data)[0];
                 const studentData = data[studentKey];
                 console.log('Found student in Firebase:', studentData);
-                return studentData;
+                
+                // Also check for career stats data which might have additional profile info
+                let careerStatsData = null;
+                try {
+                  const careerStatsSnapshot = await firebase.database().ref(`student_career_stats/${studentId}`).once('value');
+                  if (careerStatsSnapshot.exists()) {
+                    careerStatsData = careerStatsSnapshot.val();
+                    console.log('Found career stats data for student:', careerStatsData);
+                  }
+                } catch (error) {
+                  console.log('No career stats found for student (this is normal for new students):', error.message);
+                }
+
+                // Merge career stats data with main student data if available
+                const mergedStudentData = { ...studentData };
+                if (careerStatsData) {
+                  // Merge profile information from career stats
+                  if (careerStatsData.firstName) mergedStudentData.firstName = careerStatsData.firstName;
+                  if (careerStatsData.lastName) mergedStudentData.lastName = careerStatsData.lastName;
+                  if (careerStatsData.department) mergedStudentData.department = careerStatsData.department;
+                  if (careerStatsData.strandYear) mergedStudentData.strandYear = careerStatsData.strandYear;
+                  
+                  // Update fullName if we have both first and last name
+                  if (careerStatsData.firstName && careerStatsData.lastName) {
+                    mergedStudentData.fullName = `${careerStatsData.firstName} ${careerStatsData.lastName}`;
+                  }
+                }
+                
+                console.log('Merged student data:', mergedStudentData);
+                return mergedStudentData;
               } else {
                 console.log('No student found in Firebase with studentId:', studentId);
               }

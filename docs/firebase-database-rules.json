@@ -25,6 +25,22 @@
       ".indexOn": ["studentId", "timestamp"],
       ".read": true,
       ".write": true
+    },
+    "story_progress": {
+      ".indexOn": ["studentId"],
+      ".read": true,
+      ".write": true,
+      "$studentId": {
+        "noah": {
+          ".validate": "newData.hasChildren(['chapter', 'scene', 'completed'])"
+        },
+        "lily": {
+          ".validate": "newData.hasChildren(['chapter', 'scene', 'completed'])"
+        },
+        "damian": {
+          ".validate": "newData.hasChildren(['chapter', 'scene', 'completed'])"
+        }
+      }
     }
   }
 }

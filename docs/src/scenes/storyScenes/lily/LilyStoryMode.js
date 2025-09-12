@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import VNDialogueBox from '/src/ui/VNDialogueBox.js';
 import { createBackButton } from '/src/components/buttons/backbutton.js';
 import { char2, onceOnlyFlags } from '/src/gameManager.js';
+import { saveStoryProgress } from '/src/save.js';
 
 export default class LilyStoryMode extends Phaser.Scene {
     constructor() {
@@ -233,6 +234,9 @@ export default class LilyStoryMode extends Phaser.Scene {
             completed: this.currentChapter >= storyData.length
         };
 
+        // Save progress to Firebase
+        this.saveProgressToFirebase();
+
         // Continue or complete
         if (this.currentChapter < storyData.length) {
             this.time.delayedCall(1000, () => {
@@ -260,6 +264,14 @@ export default class LilyStoryMode extends Phaser.Scene {
         if (progressUpdate.quest3Desc) char2.quest3Desc = progressUpdate.quest3Desc;
     }
 
+    async saveProgressToFirebase() {
+        try {
+            await saveStoryProgress('lily', char2.storyProgress);
+        } catch (error) {
+            console.error('Failed to save story progress to Firebase:', error);
+        }
+    }
+
     showStoryComplete() {
         const { width, height } = this.scale;
         
@@ -278,6 +290,9 @@ export default class LilyStoryMode extends Phaser.Scene {
                 // Mark story as completed
                 char2.storyProgress.completed = true;
                 onceOnlyFlags.setSeen('lily_story_completed');
+                
+                // Save completion to Firebase
+                this.saveProgressToFirebase();
                 
                 // Return to classroom
                 this.scene.start('Classroom');
@@ -620,6 +635,9 @@ export default class LilyStoryMode extends Phaser.Scene {
             scene: this.currentScene,
             completed: this.currentChapter >= storyData.length
         };
+
+        // Save progress to Firebase
+        this.saveProgressToFirebase();
 
         // Continue or complete
         if (this.currentChapter < storyData.length) {
