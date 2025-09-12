@@ -88,9 +88,9 @@ export default class ResultScreen extends BaseScene {
         gradient.fillGradientStyle(0x000000, 0x000000, 0x1a1a2e, 0x1a1a2e, 1);
         gradient.fillRect(0, 0, this.scale.width, this.scale.height);
         
-        // Responsive panel sizing - DRAMATIC changes for mobile testing
-        const panelWidth = isMobile ? Math.min(scaleInfo.width * 0.80, 300) : 700;
-        const panelHeight = isMobile ? Math.min(scaleInfo.height * 0.70, 350) : 600;
+        // Responsive panel sizing - Better desktop layout
+        const panelWidth = isMobile ? Math.min(scaleInfo.width * 0.80, 300) : 800;
+        const panelHeight = isMobile ? Math.min(scaleInfo.height * 0.70, 350) : 700;
         const panelX = this.scale.width / 2;
         const panelY = this.scale.height / 2;
         
@@ -106,34 +106,34 @@ export default class ResultScreen extends BaseScene {
         const shadow = this.add.rectangle(panelX + 5, panelY + 5, panelWidth, panelHeight, 0x000000, 0.5);
         shadow.setStrokeStyle(2, 0x333333);
         
-        // Main panel - change color for mobile testing
-        const panel = this.add.rectangle(panelX, panelY, panelWidth, panelHeight, isMobile ? 0x2a4a3a : 0x16213e);
-        panel.setStrokeStyle(3, isMobile ? 0xff0000 : 0x0f4c75); // Red border on mobile for testing
+        // Main panel - normal styling for desktop
+        const panel = this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x16213e);
+        panel.setStrokeStyle(3, 0x0f4c75);
         
         // Panel glow effect
         const panelGlow = this.add.rectangle(panelX, panelY, panelWidth + 10, panelHeight + 10, 0x0f4c75, 0.3);
         
-        // Title text with DRAMATIC mobile changes for testing
+        // Title text with proper desktop spacing
         const titleText = this.courseCompleted ? 
             `COURSE COMPLETED!` : 
             'SESSION ENDED';
         
-        const titleFontSize = isMobile ? '30px' : (this.courseCompleted ? '36px' : '40px'); // Much larger on mobile
-        const titleY = panelY - (panelHeight * 0.3); // Move title further down
+        const titleFontSize = isMobile ? '30px' : (this.courseCompleted ? '48px' : '52px');
+        const titleY = panelY - (panelHeight * 0.35);
         
         const title = this.add.text(panelX, titleY, titleText, {
             fontFamily: 'Arial',
             fontSize: titleFontSize,
             fontWeight: 'bold',
-            color: isMobile ? '#ff00ff' : (this.courseCompleted ? '#00ff88' : '#ff6600'), // Magenta on mobile for testing
+            color: this.courseCompleted ? '#00ff88' : '#ff6600',
             stroke: '#000000',
-            strokeThickness: isMobile ? 3 : 3,
+            strokeThickness: 3,
             align: 'center',
             shadow: {
-                offsetX: isMobile ? 2 : 2,
-                offsetY: isMobile ? 2 : 2,
+                offsetX: 2,
+                offsetY: 2,
                 color: '#000000',
-                blur: isMobile ? 5 : 5,
+                blur: 5,
                 fill: true
             }
         }).setOrigin(0.5);
@@ -145,10 +145,10 @@ export default class ResultScreen extends BaseScene {
             isMobile
         });
         
-        // Course name if completed - larger for mobile
+        // Course name if completed - better desktop sizing
         if (this.courseCompleted) {
-            const courseNameFontSize = isMobile ? '16px' : '28px';
-            const courseNameY = titleY + (isMobile ? 30 : 40);
+            const courseNameFontSize = isMobile ? '16px' : '32px';
+            const courseNameY = titleY + (isMobile ? 30 : 50);
             
             const courseName = this.add.text(panelX, courseNameY, this.courseTopic.toUpperCase(), {
                 fontFamily: 'Arial',
@@ -160,14 +160,14 @@ export default class ResultScreen extends BaseScene {
             }).setOrigin(0.5);
         }
         
-        // Rank display with larger sizing for mobile
-        const rankRadius = isMobile ? 35 : 50;
-        const rankFontSize = isMobile ? '36px' : '56px';
-        const rankY = panelY - (panelHeight * 0.1); // Move rank down
+        // Rank display with better desktop sizing
+        const rankRadius = isMobile ? 35 : 70;
+        const rankFontSize = isMobile ? '36px' : '72px';
+        const rankY = panelY - (panelHeight * 0.05);
         
         const rankBg = this.add.circle(panelX, rankY, rankRadius, rankColor, 0.2);
         const rankBorder = this.add.circle(panelX, rankY, rankRadius);
-        rankBorder.setStrokeStyle(isMobile ? 3 : 5, rankColor);
+        rankBorder.setStrokeStyle(isMobile ? 3 : 6, rankColor);
         
         const rankText = this.add.text(panelX, rankY, rank, {
             fontFamily: 'Arial',
@@ -175,20 +175,20 @@ export default class ResultScreen extends BaseScene {
             fontWeight: 'bold',
             color: rankColor,
             stroke: '#000000',
-            strokeThickness: isMobile ? 2 : 4,
+            strokeThickness: isMobile ? 2 : 6,
             shadow: {
                 offsetX: 0,
                 offsetY: 0,
                 color: rankGlow,
-                blur: isMobile ? 8 : 15,
+                blur: isMobile ? 8 : 20,
                 fill: true
             }
         }).setOrigin(0.5);
         
-        // Statistics section with larger mobile text for better readability
-        const statsY = panelY + (panelHeight * 0.1);
-        const lineHeight = isMobile ? 28 : 35;
-        const statsFontSize = isMobile ? '16px' : '22px';
+        // Statistics section with better desktop spacing
+        const statsY = panelY + (panelHeight * 0.12);
+        const lineHeight = isMobile ? 28 : 45;
+        const statsFontSize = isMobile ? '16px' : '26px';
         
         // Create colored stats with icons
         const statsData = [
@@ -200,9 +200,9 @@ export default class ResultScreen extends BaseScene {
         ];
         
         statsData.forEach((stat, index) => {
-            // Larger stat background for mobile
-            const statBgWidth = panelWidth - (isMobile ? 30 : 60);
-            const statBgHeight = isMobile ? 24 : 30;
+            // Better stat background sizing for desktop
+            const statBgWidth = panelWidth - (isMobile ? 30 : 100);
+            const statBgHeight = isMobile ? 24 : 36;
             const statBg = this.add.rectangle(panelX, statsY + (index * lineHeight), statBgWidth, statBgHeight, 0x0a1628, 0.5);
             
             // Better positioning for mobile
@@ -230,18 +230,18 @@ export default class ResultScreen extends BaseScene {
             }).setOrigin(1, 0.5);
         });
         
-        // Enhanced button design with larger mobile sizing and bottom positioning
-        const buttonY = isMobile ? panelY + (panelHeight * 0.42) : panelY + (panelHeight * 0.35);
-        const buttonWidth = isMobile ? 250 : 350;
-        const buttonHeight = isMobile ? 45 : 60;
-        const buttonFontSize = isMobile ? '16px' : '22px';
+        // Enhanced button design with better desktop sizing
+        const buttonY = isMobile ? panelY + (panelHeight * 0.42) : panelY + (panelHeight * 0.32);
+        const buttonWidth = isMobile ? 250 : 400;
+        const buttonHeight = isMobile ? 45 : 70;
+        const buttonFontSize = isMobile ? '16px' : '28px';
         
         const buttonBg = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x0f4c75);
         buttonBg.setStrokeStyle(isMobile ? 2 : 3, 0x3282b8);
         
         const buttonGlow = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x3282b8, 0.3);
         
-        const buttonText = this.add.text(panelX, buttonY, isMobile ? 'Back to Computer Lab' : 'Back to Computer Lab', {
+        const buttonText = this.add.text(panelX, buttonY, 'Back to Computer Lab', {
             fontFamily: 'Arial',
             fontSize: buttonFontSize,
             fontWeight: 'bold',
@@ -250,7 +250,7 @@ export default class ResultScreen extends BaseScene {
                 offsetX: 1,
                 offsetY: 1,
                 color: '#000000',
-                blur: isMobile ? 2 : 3,
+                blur: isMobile ? 2 : 4,
                 fill: true
             }
         }).setOrigin(0.5);
@@ -297,9 +297,9 @@ export default class ResultScreen extends BaseScene {
         
         // Add course name to container if it exists
         if (this.courseCompleted) {
-            // Re-create course name since it was created earlier
-            const courseNameFontSize = isMobile ? '16px' : '28px';
-            const courseNameY = titleY + (isMobile ? 30 : 40);
+            // Re-create course name with proper desktop sizing
+            const courseNameFontSize = isMobile ? '16px' : '32px';
+            const courseNameY = titleY + (isMobile ? 30 : 50);
             
             const courseName = this.add.text(panelX, courseNameY, this.courseTopic.toUpperCase(), {
                 fontFamily: 'Arial',

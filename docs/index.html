@@ -697,12 +697,6 @@
             <div class="text-center mt-6 pt-6 border-t border-gray-600">
               <p class="text-gray-400 text-sm">📋 Only your Student ID is needed - no password required!</p>
               <div class="mt-4 p-3 bg-dark/30 rounded-lg">
-                <p class="text-xs text-gray-500 mb-2">🔧 Dev Mode Test Accounts:</p>
-                <div class="text-xs text-accent space-y-1">
-                  <p>ID: 24-2024-001 (Juan - BS CS)</p>
-                  <p>ID: 24-2024-002 (Maria - BS IT)</p>
-                  <p>ID: 24-2024-003 (Pedro - SHS STEM)</p>
-                </div>
                 <hr class="my-2 border-gray-600">
                 <p class="text-cyan text-xs">💡 Or try any Student ID (XX-XXXX-XXX format) to create a new account!</p>
               </div>
@@ -2073,30 +2067,48 @@
         
         // Enhanced student profile methods
         this.getStudentProfile = async function(studentId) {
+          console.log('getStudentProfile called with studentId:', studentId);
+          
           try {
             // Try to get from Firebase first
-            if (this.database) {
-              const snapshot = await this.database.ref('students').orderByChild('studentId').equalTo(studentId).once('value');
+            if (typeof firebase !== 'undefined' && firebase.database) {
+              console.log('Querying Firebase for student:', studentId);
+              await this.ensureAuthenticated(); // Make sure we're authenticated
+              
+              const snapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
               const data = snapshot.val();
+              console.log('Firebase query result:', data);
+              
               if (data) {
                 const studentKey = Object.keys(data)[0];
-                return data[studentKey];
+                const studentData = data[studentKey];
+                console.log('Found student in Firebase:', studentData);
+                return studentData;
+              } else {
+                console.log('No student found in Firebase with studentId:', studentId);
               }
+            } else {
+              console.log('Firebase database not available');
             }
           } catch (error) {
             console.warn('Firebase getStudentProfile failed:', error);
           }
           
           // Fallback to offline storage
+          console.log('Checking offline storage...');
           const offlineStudents = JSON.parse(localStorage.getItem('sci_high_offline_students') || '[]');
-          return offlineStudents.find(s => s.studentId === studentId) || null;
+          const offlineResult = offlineStudents.find(s => s.studentId === studentId) || null;
+          console.log('Offline storage result:', offlineResult);
+          return offlineResult;
         };
         
         this.loginStudentWithProfile = async function(studentId, profileData) {
           try {
             // Try Firebase first
-            if (this.database) {
-              const studentsRef = this.database.ref('students');
+            if (typeof firebase !== 'undefined' && firebase.database) {
+              await this.ensureAuthenticated(); // Make sure we're authenticated
+              
+              const studentsRef = firebase.database().ref('students');
               
               // Check if student exists
               const snapshot = await studentsRef.orderByChild('studentId').equalTo(studentId).once('value');
@@ -2112,8 +2124,11 @@
                   fullName: `${profileData.firstName} ${profileData.lastName}`,
                   department: profileData.department,
                   strandYear: profileData.strandYear,
+                  strand: profileData.strand,
+                  year: profileData.year,
                   lastLogin: new Date().toISOString(),
-                  profileCompleted: true
+                  profileCompleted: true,
+                  needsProfileCompletion: false // Clear the flag
                 });
               } else {
                 // Create new student
@@ -2124,10 +2139,13 @@
                   fullName: `${profileData.firstName} ${profileData.lastName}`,
                   department: profileData.department,
                   strandYear: profileData.strandYear,
+                  strand: profileData.strand,
+                  year: profileData.year,
                   isActive: true,
                   createdAt: new Date().toISOString(),
                   lastLogin: new Date().toISOString(),
                   profileCompleted: true,
+                  needsProfileCompletion: false, // Profile is now complete
                   progress: {
                     completedQuizzes: [],
                     completedStories: [],
@@ -2334,15 +2352,19 @@
         currentStudentId = studentId;
         
         try {
-          // Check if student exists and profile is complete
+          // Check if student exists in the database
           const studentData = await authManager.getStudentProfile(studentId);
           
-          if (studentData && studentData.firstName && studentData.lastName && studentData.department && studentData.strandYear) {
-            // Profile is complete, show welcome screen
+          console.log('Retrieved student data:', studentData);
+          
+          if (studentData) {
+            // Student exists in database, show welcome screen
+            console.log('Student found in database, showing profile found step');
             showStudentFoundStep(studentData);
           } else {
-            // Profile incomplete or new student, show completion form
-            showStudentProfileStep(studentData);
+            // Student doesn't exist, show profile completion form
+            console.log('Student not found in database, showing profile completion form');
+            showStudentProfileStep(null);
           }
         } catch (error) {
           console.warn('Error checking student profile:', error);
@@ -2477,13 +2499,23 @@
         document.getElementById('student-profile-step').classList.add('hidden');
         document.getElementById('student-found-step').classList.remove('hidden');
         
+        // Extract student information from various possible data structures
+        const firstName = studentData.firstName || (studentData.fullName ? studentData.fullName.split(' ')[0] : 'Student');
+        const lastName = studentData.lastName || (studentData.fullName ? studentData.fullName.split(' ').slice(1).join(' ') : '');
+        const fullName = studentData.fullName || `${firstName} ${lastName}`.trim();
+        const department = studentData.department || studentData.academicInfo?.department || 'Unknown Department';
+        const strandYear = studentData.strandYear || 
+                          (studentData.strand && studentData.year ? `${studentData.year} Year ${studentData.strand}` : '') ||
+                          studentData.academicInfo?.course || 'Unknown Program';
+        const studentId = studentData.studentId || currentStudentId;
+        
         // Show student profile preview
         const preview = document.getElementById('student-profile-preview');
         preview.innerHTML = `
-          <p><strong>👤 Name:</strong> ${studentData.firstName} ${studentData.lastName}</p>
-          <p><strong>🎓 Department:</strong> ${studentData.department}</p>
-          <p><strong>📚 Strand/Year:</strong> ${studentData.strandYear}</p>
-          <p><strong>🆔 Student ID:</strong> ${studentData.studentId}</p>
+          <p><strong>👤 Name:</strong> ${fullName}</p>
+          <p><strong>🎓 Department:</strong> ${department}</p>
+          <p><strong>📚 Program:</strong> ${strandYear}</p>
+          <p><strong>🆔 Student ID:</strong> ${studentId}</p>
         `;
         
         currentStudentData = studentData;
