@@ -330,7 +330,7 @@ export default class MainMenu extends Phaser.Scene {
         // Menu button spacing and positioning - different for mobile and desktop
         if (scaleInfo.isMobile) {
             // Mobile: 2x2 grid layout with bigger buttons (moved lower)
-            const horizontalSpacing = 150 * scaleInfo.finalScale; // Increased horizontal gap between buttons in same row
+            const horizontalSpacing = 200 * scaleInfo.finalScale; // Increased horizontal gap between buttons in same row
             const verticalSpacing = 30 * scaleInfo.finalScale;    // Increased vertical gap between rows
             
             const startY = scaleInfo.isPortrait ? 
