@@ -2263,23 +2263,37 @@ export default class MainGameplay extends BaseScene {
         
         const randomQuestion = Phaser.Utils.Array.GetRandom(quizData.questions);
         
+        // Detect mobile for responsive sizing
+        const isMobile = this.scale.width < 768;
+        
+        // Set responsive dimensions
+        const containerWidth = isMobile ? Math.min(this.scale.width - 40, 500) : 600;
+        const containerHeight = isMobile ? Math.min(this.scale.height - 80, 450) : 400;
+        const questionFontSize = isMobile ? '18px' : '20px';
+        const answerFontSize = isMobile ? '14px' : '16px';
+        const titleFontSize = isMobile ? '20px' : '24px';
+        const buttonHeight = isMobile ? 45 : 50;
+        const buttonSpacing = isMobile ? 50 : 60;
+        const wordWrapWidth = containerWidth - 60;
+        
         // Create quiz container
         this.quizContainer = this.add.container(this.scale.width / 2, this.scale.height / 2);
         this.quizContainer.setDepth(2000);
         
         // Create quiz background
-        const quizBg = this.add.rectangle(0, 0, 600, 400, 0x000000, 0.9);
+        const quizBg = this.add.rectangle(0, 0, containerWidth, containerHeight, 0x000000, 0.9);
         quizBg.setStroke(0xffffff, 4);
         this.quizContainer.add(quizBg);
         
         // Create question text
-        const questionText = this.add.text(0, -120, randomQuestion.question, {
+        const questionY = isMobile ? -containerHeight/2 + 80 : -120;
+        const questionText = this.add.text(0, questionY, randomQuestion.question, {
             fontFamily: 'Arial',
-            fontSize: '20px',
+            fontSize: questionFontSize,
             fontWeight: 'bold',
             color: '#ffffff',
             align: 'center',
-            wordWrap: { width: 540 }
+            wordWrap: { width: wordWrapWidth }
         }).setOrigin(0.5);
         this.quizContainer.add(questionText);
         
@@ -2287,17 +2301,21 @@ export default class MainGameplay extends BaseScene {
         const answers = randomQuestion.options;
         const correctAnswer = randomQuestion.correct;
         
+        // Calculate starting Y position for answers
+        const startY = isMobile ? -50 : -40;
+        
         for (let i = 0; i < answers.length; i++) {
-            const answerBtn = this.add.rectangle(0, -40 + (i * 60), 500, 50, 0x333333);
+            const answerY = startY + (i * buttonSpacing);
+            const answerBtn = this.add.rectangle(0, answerY, containerWidth - 100, buttonHeight, 0x333333);
             answerBtn.setStroke(0xffffff, 2);
             answerBtn.setInteractive();
             
-            const answerText = this.add.text(0, -40 + (i * 60), `${String.fromCharCode(65 + i)}. ${answers[i]}`, {
+            const answerText = this.add.text(0, answerY, `${String.fromCharCode(65 + i)}. ${answers[i]}`, {
                 fontFamily: 'Arial',
-                fontSize: '16px',
+                fontSize: answerFontSize,
                 color: '#ffffff',
                 align: 'center',
-                wordWrap: { width: 480 }
+                wordWrap: { width: containerWidth - 120 }
             }).setOrigin(0.5);
             
             this.quizContainer.add([answerBtn, answerText]);
@@ -2318,9 +2336,10 @@ export default class MainGameplay extends BaseScene {
         }
         
         // Add title
-        const titleText = this.add.text(0, -170, 'Programming Quiz!', {
+        const titleY = isMobile ? -containerHeight/2 + 30 : -170;
+        const titleText = this.add.text(0, titleY, 'Programming Quiz!', {
             fontFamily: 'Arial',
-            fontSize: '24px',
+            fontSize: titleFontSize,
             fontWeight: 'bold',
             color: '#ffff00'
         }).setOrigin(0.5);
@@ -2378,15 +2397,24 @@ export default class MainGameplay extends BaseScene {
     }
 
     showQuizResult(isCorrect) {
+        // Get device-responsive positioning
+        const isMobile = this.scale.width < 768;
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
+        
+        // Position result text above the center on mobile, below center on desktop
+        const resultY = isMobile ? centerY - 100 : centerY + 150;
+        
         // Create result overlay
-        const resultText = this.add.text(this.scale.width / 2, this.scale.height / 2 + 150, 
+        const resultText = this.add.text(centerX, resultY, 
             isCorrect ? 'CORRECT! +100 Score, +10 Seconds!' : 'WRONG ANSWER!', {
             fontFamily: 'Arial',
-            fontSize: '28px',
+            fontSize: isMobile ? '24px' : '28px',
             fontWeight: 'bold',
             color: isCorrect ? '#00ff00' : '#ff0000',
             stroke: '#000000',
-            strokeThickness: 3
+            strokeThickness: 3,
+            align: 'center'
         }).setOrigin(0.5).setDepth(2100);
         
         // Animate result text
