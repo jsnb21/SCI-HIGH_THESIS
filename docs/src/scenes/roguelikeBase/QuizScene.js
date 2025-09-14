@@ -622,33 +622,25 @@ export default class QuizScene extends BaseScene {
     createQuizInterface() {
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2;
-        
+
         // Get mobile information for responsive design
         const scaleInfo = getScaleInfo(this);
         const isMobile = scaleInfo.width < 768;
         const isSmallMobile = scaleInfo.width < 480;
-        
-        // Check if this is a drag-and-drop question (code arrangement - intensity 3)
-        if (this.currentQuestion.isDragDrop) {
-            this.createDragDropInterface(centerX, centerY);
-            return;
-        }
-        
-        // Check if this is a drag-and-drop question (precedence order - intensity 2)
-        if (this.currentQuestion.type === 'drag-and-drop' && this.currentQuestion.options) {
-            this.createPrecedenceDragDropInterface(centerX, centerY);
-            return;
-        }
-        
-        // Create main quiz container for normal multiple choice
-        this.quizContainer = this.add.container(centerX, centerY);
-        
-        // More aggressive mobile sizing - force smaller content
-        const titleFontSize = isMobile ? '18px' : '28px';
-        const questionFontSize = isMobile ? '14px' : '22px';
-        const contentWidth = isMobile ? Math.min(scaleInfo.width * 0.90, 340) : 700;
-        const questionWrapWidth = contentWidth - 40;
-        
+
+        // --- MOBILE UI TWEAKS START ---
+        // Aggressive mobile scaling
+        let contentWidth = isMobile ? Math.min(scaleInfo.width * 0.95, 320) : 700;
+        let questionFontSize = isMobile ? (isSmallMobile ? '12px' : '14px') : '22px';
+        let titleFontSize = isMobile ? (isSmallMobile ? '14px' : '16px') : '28px';
+        let buttonHeight = isMobile ? (isSmallMobile ? 32 : 38) : 55;
+        let buttonSpacing = isMobile ? (isSmallMobile ? 38 : 44) : 70;
+        let questionPadding = isMobile ? (isSmallMobile ? 18 : 24) : 70;
+        let bottomPadding = isMobile ? (isSmallMobile ? 8 : 14) : 30;
+        let titleHeight = isMobile ? (isSmallMobile ? 24 : 30) : 60;
+        let questionNumberHeight = isMobile ? (isSmallMobile ? 12 : 16) : 30;
+        // --- MOBILE UI TWEAKS END ---
+
         // Create temporary question text to measure height
         const tempQuestionText = this.add.text(0, 0, this.currentQuestion.question, {
             fontFamily: 'Arial',
@@ -656,52 +648,35 @@ export default class QuizScene extends BaseScene {
             fontWeight: 'bold',
             color: '#ffffff',
             align: 'center',
-            wordWrap: { width: questionWrapWidth },
-            lineSpacing: isMobile ? 6 : 8
+            wordWrap: { width: contentWidth - 40 },
+            lineSpacing: isMobile ? 4 : 8
         }).setOrigin(0.5);
-        
+
         const questionHeight = tempQuestionText.height;
-        tempQuestionText.destroy(); // Remove temporary text
-        
-        // Calculate content dimensions based on actual content - mobile responsive
+        tempQuestionText.destroy();
+
         const answers = this.currentQuestion.options;
         const numAnswers = answers.length;
-        const buttonHeight = isMobile ? 40 : 55;
-        const buttonSpacing = isMobile ? 50 : 70;
-        const titleHeight = isMobile ? 40 : 60;
-        const questionNumberHeight = isMobile ? 20 : 30;
-        const questionPadding = isMobile ? 30 : 70;
-        const bottomPadding = isMobile ? 15 : 30;
-        
-        // Calculate required height based on layout type
-        let buttonsAreaHeight;
-        if (numAnswers === 2 && !isMobile) {
-            // Side-by-side layout uses less vertical space (only on desktop)
-            buttonsAreaHeight = 70 + 30;
-        } else {
-            // Vertical layout (always on mobile, optional on desktop)
-            buttonsAreaHeight = numAnswers * buttonSpacing;
-        }
-        
+        let buttonsAreaHeight = numAnswers * buttonSpacing;
         const contentHeight = titleHeight + questionNumberHeight + questionHeight + questionPadding + buttonsAreaHeight + bottomPadding;
-        
-        // Create modern quiz box with dynamic size
+
+        // Create quiz box
         const quizBox = this.add.graphics();
         quizBox.fillStyle(0x2a2a3a, 1);
-        quizBox.fillRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 20);
-        quizBox.lineStyle(4, 0x64ffda);
-        quizBox.strokeRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 20);
-        
+        quizBox.fillRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 16);
+        quizBox.lineStyle(3, 0x64ffda);
+        quizBox.strokeRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 16);
+
         // Add glow effect
         const glowBox = this.add.graphics();
-        glowBox.lineStyle(8, 0x64ffda, 0.3);
-        glowBox.strokeRoundedRect(-contentWidth/2 - 4, -contentHeight/2 - 4, contentWidth + 8, contentHeight + 8, 20);
-        
+        glowBox.lineStyle(6, 0x64ffda, 0.2);
+        glowBox.strokeRoundedRect(-contentWidth/2 - 2, -contentHeight/2 - 2, contentWidth + 4, contentHeight + 4, 16);
+
+        this.quizContainer = this.add.container(centerX, centerY);
         this.quizContainer.add([glowBox, quizBox]);
-        
-        // Title with programming language - responsive font size
-        const courseTopic = this.courseTopic || 'Programming';
-        this.titleText = this.add.text(0, -contentHeight/2 + (titleHeight/2) + 5, `${courseTopic.toUpperCase()} QUIZ CHALLENGE`, {
+
+        // Title
+        this.titleText = this.add.text(0, -contentHeight/2 + (titleHeight/2) + 2, `${(this.courseTopic || 'Programming').toUpperCase()} QUIZ`, {
             fontFamily: 'Arial',
             fontSize: titleFontSize,
             fontWeight: 'bold',
@@ -709,9 +684,9 @@ export default class QuizScene extends BaseScene {
             align: 'center'
         }).setOrigin(0.5);
         this.quizContainer.add(this.titleText);
-        
-        // Question number indicator - responsive
-        const questionNumberFontSize = isMobile ? '12px' : '18px';
+
+        // Question number
+        const questionNumberFontSize = isMobile ? (isSmallMobile ? '10px' : '12px') : '18px';
         const questionNumber = this.add.text(0, -contentHeight/2 + titleHeight + (questionNumberHeight/2), 'Question 1 of 1', {
             fontFamily: 'Arial',
             fontSize: questionNumberFontSize,
@@ -719,53 +694,42 @@ export default class QuizScene extends BaseScene {
             align: 'center'
         }).setOrigin(0.5);
         this.quizContainer.add(questionNumber);
-        
-        // Question text with better formatting - responsive
-        this.questionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + (questionHeight/2) + 10, this.currentQuestion.question, {
+
+        // Question text
+        this.questionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + (questionHeight/2) + 6, this.currentQuestion.question, {
             fontFamily: 'Arial',
             fontSize: questionFontSize,
             fontWeight: 'bold',
             color: '#ffffff',
             align: 'center',
-            wordWrap: { width: questionWrapWidth },
-            lineSpacing: isMobile ? 6 : 8
+            wordWrap: { width: contentWidth - 40 },
+            lineSpacing: isMobile ? 4 : 8
         }).setOrigin(0.5);
         this.quizContainer.add(this.questionText);
-        
-        // Calculate start position for answer buttons
+
+        // Answer buttons
         const buttonStartY = titleHeight + questionNumberHeight + questionHeight + questionPadding - contentHeight/2;
-        
-        // Create answer options with modern design - pass mobile info
-        this.createAnswerButtons(buttonStartY, isMobile, isSmallMobile);
-        
-        // Add instruction text - responsive positioning
-        const instructionFontSize = isMobile ? '10px' : '14px';
-        const instructionY = isMobile ? (contentHeight/2 - 5) : 200;
-        const instructionText = this.add.text(0, instructionY, 'Tap your answer choice', {
+        this.createAnswerButtons(buttonStartY, isMobile, isSmallMobile, buttonHeight, buttonSpacing, contentWidth);
+
+        // Instruction text
+        const instructionFontSize = isMobile ? (isSmallMobile ? '9px' : '10px') : '14px';
+        const instructionY = contentHeight/2 - (isMobile ? 8 : 16);
+        const instructionText = this.add.text(0, instructionY, 'Tap your answer', {
             fontFamily: 'Arial',
             fontSize: instructionFontSize,
             color: '#a0a0a0',
             align: 'center'
         }).setOrigin(0.5);
         this.quizContainer.add(instructionText);
-        
-        // Add entrance animation with mobile scaling
-        this.quizContainer.setScale(0.8);
+
+        // Animate in
+        this.quizContainer.setScale(isMobile ? 0.95 : 1);
         this.quizContainer.setAlpha(0);
-        
-        // Apply additional scaling for mobile if content is too large
-        let finalScale = 1;
-        if (isMobile && contentHeight > scaleInfo.height * 0.9) {
-            finalScale = Math.min(0.8, (scaleInfo.height * 0.9) / contentHeight);
-        }
-        
         this.tweens.add({
             targets: this.quizContainer,
-            scaleX: finalScale,
-            scaleY: finalScale,
             alpha: 1,
-            duration: 500,
-            ease: 'Back.easeOut'
+            duration: 350,
+            ease: 'Power2'
         });
     }
 
@@ -1328,41 +1292,26 @@ export default class QuizScene extends BaseScene {
         });
     }
 
-    createAnswerButtons(startOffset, isMobile = false, isSmallMobile = false) {
+    // Update createAnswerButtons to accept new sizing params
+    createAnswerButtons(startOffset, isMobile = false, isSmallMobile = false, buttonHeight = 40, buttonSpacing = 50, contentWidth = 320) {
         const answers = this.currentQuestion.options;
-        const startY = startOffset || -80; // Start position relative to center
-        const buttonHeight = isMobile ? 40 : 55;
-        const buttonSpacing = isMobile ? 50 : 70;
-        
+        const startY = startOffset || -80;
         this.answerButtons = [];
-        
-        // Always use vertical layout on mobile for better readability
-        // Only use side-by-side layout on desktop with 2 answers
-        if (answers.length === 2 && !isMobile) {
-            this.createTwoChoiceButtons(startY, isMobile, isSmallMobile);
-            return;
-        }
-        
-        // Vertical layout for 3+ answers or mobile devices
+
         for (let i = 0; i < answers.length; i++) {
             const buttonY = startY + (i * buttonSpacing);
-            
-            // Create button container
             const buttonContainer = this.add.container(0, buttonY);
-            
-            // Much smaller button sizing for mobile
-            const buttonWidth = isMobile ? 280 : 640;
-            const fontSize = isMobile ? '12px' : '18px';
-            const textWrapWidth = buttonWidth - 30;
-            
-            // Create button background with responsive size
+
+            const buttonWidth = isMobile ? contentWidth - 30 : 640;
+            const fontSize = isMobile ? (isSmallMobile ? '11px' : '13px') : '18px';
+            const textWrapWidth = buttonWidth - 20;
+
             const buttonBg = this.add.graphics();
             buttonBg.fillStyle(0x4a5568, 1);
-            buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
+            buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 8);
             buttonBg.lineStyle(2, 0x64ffda, 0.5);
-            buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
-            
-            // Create answer text with responsive sizing
+            buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 8);
+
             const answerText = this.add.text(0, 0, `${String.fromCharCode(65 + i)}. ${answers[i]}`, {
                 fontFamily: 'Arial',
                 fontSize: fontSize,
@@ -1370,16 +1319,14 @@ export default class QuizScene extends BaseScene {
                 align: 'center',
                 wordWrap: { width: textWrapWidth }
             }).setOrigin(0.5);
-            
-            // Create interactive area with larger touch targets for mobile
-            const hitAreaHeight = isMobile ? Math.max(buttonHeight, 50) : buttonHeight;
+
+            const hitAreaHeight = isMobile ? Math.max(buttonHeight, 36) : buttonHeight;
             const hitArea = this.add.rectangle(0, 0, buttonWidth, hitAreaHeight, 0x000000, 0);
             hitArea.setInteractive();
-            
+
             buttonContainer.add([buttonBg, answerText, hitArea]);
             this.quizContainer.add(buttonContainer);
-            
-            // Store references
+
             this.answerButtons.push({
                 container: buttonContainer,
                 background: buttonBg,
@@ -1390,29 +1337,26 @@ export default class QuizScene extends BaseScene {
                 buttonWidth: buttonWidth,
                 buttonHeight: buttonHeight
             });
-            
-            // Add hover effects
+
+            // Hover/click handlers unchanged...
             hitArea.on('pointerover', () => {
                 if (!this.answerButtons[i].isSelected) {
                     buttonBg.clear();
                     buttonBg.fillStyle(0x64ffda, 0.3);
-                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
+                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 8);
                     buttonBg.lineStyle(2, 0x64ffda);
-                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
+                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 8);
                 }
             });
-
             hitArea.on('pointerout', () => {
                 if (!this.answerButtons[i].isSelected) {
                     buttonBg.clear();
                     buttonBg.fillStyle(0x4a5568, 1);
-                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
+                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 8);
                     buttonBg.lineStyle(2, 0x64ffda, 0.5);
-                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
+                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 8);
                 }
             });
-
-            // Add click handler
             hitArea.on('pointerdown', () => {
                 this.selectAnswer(i);
             });
