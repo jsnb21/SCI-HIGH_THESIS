@@ -2375,62 +2375,15 @@ export default class MainGameplay extends BaseScene {
     getQuizData() {
         // Get quiz data based on course topic
         const topic = this.courseTopic || 'python';
-        let rawQuizData;
-        
         switch (topic.toLowerCase()) {
-            case 'python': rawQuizData = this.cache.json.get('pythonQuiz'); break;
-            case 'java': rawQuizData = this.cache.json.get('javaQuiz'); break;
-            case 'c': rawQuizData = this.cache.json.get('cQuiz'); break;
-            case 'c++': rawQuizData = this.cache.json.get('cppQuiz'); break;
-            case 'csharp': rawQuizData = this.cache.json.get('csharpQuiz'); break;
-            case 'webdesign': rawQuizData = this.cache.json.get('webdesignQuiz'); break;
-            default: rawQuizData = this.cache.json.get('pythonQuiz'); break;
+            case 'python': return this.cache.json.get('pythonQuiz');
+            case 'java': return this.cache.json.get('javaQuiz');
+            case 'c': return this.cache.json.get('cQuiz');
+            case 'c++': return this.cache.json.get('cppQuiz');
+            case 'csharp': return this.cache.json.get('csharpQuiz');
+            case 'webdesign': return this.cache.json.get('webdesignQuiz');
+            default: return this.cache.json.get('pythonQuiz');
         }
-        
-        if (!rawQuizData) {
-            console.error(`No quiz data available for topic: ${topic}`);
-            return null;
-        }
-        
-        // Get questions based on current intensity level
-        const intensityKey = `intensity${this.intensity}`;
-        const intensityData = rawQuizData[intensityKey];
-        
-        if (!intensityData) {
-            console.error(`No quiz data available for topic: ${topic} intensity: ${this.intensity}`);
-            return null;
-        }
-        
-        // For intensity 1, use only multiple choice questions
-        // For intensity 2+, we can add other question types later
-        let questions = [];
-        
-        if (intensityData.multipleChoice) {
-            questions = [...intensityData.multipleChoice];
-        }
-        
-        // Add other question types for higher intensities if they exist
-        if (this.intensity >= 2 && intensityData.dragAndDrop) {
-            questions = [...questions, ...intensityData.dragAndDrop];
-        }
-        
-        if (this.intensity >= 3 && intensityData.codeArrangement) {
-            questions = [...questions, ...intensityData.codeArrangement];
-        }
-        
-        if (questions.length === 0) {
-            console.error(`No questions found for topic: ${topic} intensity: ${this.intensity}`);
-            return null;
-        }
-        
-        // Convert to expected format for compatibility
-        return {
-            questions: questions.map(q => ({
-                question: q.question,
-                options: q.options,
-                correct: q.correctIndex || q.correct || 0
-            }))
-        };
     }
 
     handleQuizAnswer(selectedIndex, correctIndex, enemy) {
