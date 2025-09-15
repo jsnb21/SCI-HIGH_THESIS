@@ -356,7 +356,7 @@ export default class MainGameplay extends BaseScene {
         const isMobile = screenWidth < 768;
         const isSmallMobile = screenWidth < 480;
 
-        // --- Desktop: HUD moves with player and stays on top of their view ---
+        // --- Desktop: HUD follows player but stays on top of their view ---
         if (!isMobile) {
             const margin = 12;
             const scoreFontSize = 24;
@@ -409,7 +409,7 @@ export default class MainGameplay extends BaseScene {
             return;
         }
 
-        // --- Mobile HUD logic (improved for zoom consistency) ---
+        // --- Mobile HUD logic - follows player position ---
         let scoreX, scoreY, streakY, timerY;
         let scoreFontSize, streakFontSize, timerFontSize, courseFontSize;
 
@@ -435,11 +435,11 @@ export default class MainGameplay extends BaseScene {
             courseFontSize = Math.max(16, screenWidth * 0.025);
         }
 
-        // Get player position for HUD following
-        const playerX = this.player ? this.player.x : 0;
-        const playerY = this.player ? this.player.y : 0;
+        // Get player position for mobile HUD following
+        const playerX = this.playerSprite ? this.playerSprite.x : screenWidth / 2;
+        const playerY = this.playerSprite ? this.playerSprite.y : screenHeight / 2;
         
-        // Calculate HUD offset positions relative to player
+        // Calculate HUD offset positions relative to player for mobile
         const hudOffsetY = -screenHeight / 2 + margin;
         const hudCenterX = playerX;
         const hudLeftX = playerX - screenWidth / 2 + scoreX;
@@ -479,7 +479,7 @@ export default class MainGameplay extends BaseScene {
             this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
         }
     }
-
+    
     createBackground() {
         // Create animated starfield background
         this.createStarfield();
