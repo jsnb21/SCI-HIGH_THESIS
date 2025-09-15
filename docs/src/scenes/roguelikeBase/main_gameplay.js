@@ -356,7 +356,7 @@ export default class MainGameplay extends BaseScene {
         const isMobile = screenWidth < 768;
         const isSmallMobile = screenWidth < 480;
 
-        // --- Desktop: HUD sticky to top of zoomed-in camera ---
+        // --- Desktop: HUD moves with player and stays on top of their view ---
         if (!isMobile) {
             const margin = 12;
             const scoreFontSize = 24;
@@ -364,43 +364,46 @@ export default class MainGameplay extends BaseScene {
             const timerFontSize = 32;
             const courseFontSize = 18;
 
-            // Get camera worldView for correct HUD placement
-            const cam = this.cameras && this.cameras.main ? this.cameras.main : null;
-            const camX = cam ? cam.worldView.x : 0;
-            const camY = cam ? cam.worldView.y : 0;
-            const camW = cam ? cam.worldView.width : screenWidth;
+            // Get player position for HUD placement - HUD follows player
+            const playerX = this.playerSprite ? this.playerSprite.x : screenWidth / 2;
+            const playerY = this.playerSprite ? this.playerSprite.y : screenHeight / 2;
+            
+            // Calculate HUD offset from player position
+            const hudOffsetY = -150; // Position HUD above player
+            const hudCenterX = playerX;
+            const hudTopY = playerY + hudOffsetY;
 
             if (this.scoreText) {
-                this.scoreText.setPosition(camX + margin, camY + margin);
+                this.scoreText.setPosition(hudCenterX - 200, hudTopY);
                 this.scoreText.setFontSize(`${scoreFontSize}px`);
                 this.scoreText.setStroke('#000000', 3);
                 this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
-                this.scoreText.setScrollFactor(0);
+                this.scoreText.setScrollFactor(1); // Follow world movement
                 this.scoreText.setDepth(1000);
             }
             if (this.streakText) {
-                this.streakText.setPosition(camX + margin, camY + margin + scoreFontSize + 2);
+                this.streakText.setPosition(hudCenterX - 200, hudTopY + scoreFontSize + 2);
                 this.streakText.setFontSize(`${streakFontSize}px`);
                 this.streakText.setStroke('#000000', 2);
                 this.streakText.setShadow(2, 2, '#000000', 2, true, false);
-                this.streakText.setScrollFactor(0);
+                this.streakText.setScrollFactor(1); // Follow world movement
                 this.streakText.setDepth(1000);
             }
             if (this.timerText) {
-                this.timerText.setPosition(camX + camW / 2, camY + margin);
+                this.timerText.setPosition(hudCenterX, hudTopY);
                 this.timerText.setFontSize(`${timerFontSize}px`);
                 this.timerText.setStroke('#000000', 4);
                 this.timerText.setShadow(2, 2, '#000000', 3, true, false);
-                this.timerText.setScrollFactor(0);
+                this.timerText.setScrollFactor(1); // Follow world movement
                 this.timerText.setDepth(1000);
             }
             if (this.courseDisplay) {
-                this.courseDisplay.setPosition(camX + camW - margin, camY + margin);
+                this.courseDisplay.setPosition(hudCenterX + 200, hudTopY);
                 this.courseDisplay.setFontSize(`${courseFontSize}px`);
                 this.courseDisplay.setOrigin(1, 0);
                 this.courseDisplay.setStroke('#000080', 2);
                 this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
-                this.courseDisplay.setScrollFactor(0);
+                this.courseDisplay.setScrollFactor(1); // Follow world movement
                 this.courseDisplay.setDepth(1000);
             }
             return;
@@ -432,44 +435,45 @@ export default class MainGameplay extends BaseScene {
             courseFontSize = Math.max(16, screenWidth * 0.025);
         }
 
-        // Get camera worldView for correct HUD placement
-        const cam = this.cameras && this.cameras.main ? this.cameras.main : null;
-        const camX = cam ? cam.worldView.x : 0;
-        const camY = cam ? cam.worldView.y : 0;
-        const camW = cam ? cam.worldView.width : screenWidth;
+        // Get player position for HUD following
+        const playerX = this.player ? this.player.x : 0;
+        const playerY = this.player ? this.player.y : 0;
+        
+        // Calculate HUD offset positions relative to player
+        const hudOffsetY = -screenHeight / 2 + margin;
+        const hudCenterX = playerX;
+        const hudLeftX = playerX - screenWidth / 2 + scoreX;
+        const hudRightX = playerX + screenWidth / 2 - margin;
 
         if (this.scoreText) {
-            this.scoreText.setPosition(camX + scoreX, camY + scoreY);
+            this.scoreText.setPosition(hudLeftX, playerY + hudOffsetY + scoreY);
             this.scoreText.setFontSize(`${scoreFontSize}px`);
-            this.scoreText.setScrollFactor(0); // Fix: Always set scroll factor
+            this.scoreText.setScrollFactor(1); // Follow world movement
             this.scoreText.setDepth(1000);
             this.scoreText.setStroke('#000000', 3);
             this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
         }
         if (this.streakText) {
-            this.streakText.setPosition(camX + scoreX, camY + streakY);
+            this.streakText.setPosition(hudLeftX, playerY + hudOffsetY + streakY);
             this.streakText.setFontSize(`${streakFontSize}px`);
-            this.streakText.setScrollFactor(0); // Fix: Always set scroll factor
+            this.streakText.setScrollFactor(1); // Follow world movement
             this.streakText.setDepth(1000);
             this.streakText.setStroke('#000000', 2);
             this.streakText.setShadow(2, 2, '#000000', 2, true, false);
         }
         if (this.timerText) {
-            const centerX = camX + camW / 2;
-            this.timerText.setPosition(centerX, camY + timerY);
+            this.timerText.setPosition(hudCenterX, playerY + hudOffsetY + timerY);
             this.timerText.setFontSize(`${timerFontSize}px`);
-            this.timerText.setScrollFactor(0); // Fix: Always set scroll factor
+            this.timerText.setScrollFactor(1); // Follow world movement
             this.timerText.setDepth(1000);
             this.timerText.setStroke('#000080', 3);
             this.timerText.setShadow(2, 2, '#000040', 3, true, false);
         }
         if (this.courseDisplay) {
-            const courseX = camX + camW - margin;
-            const courseY = camY + margin;
-            this.courseDisplay.setPosition(courseX, courseY);
+            this.courseDisplay.setPosition(hudRightX, playerY + hudOffsetY + margin);
             this.courseDisplay.setFontSize(`${courseFontSize}px`);
             this.courseDisplay.setOrigin(1, 0);
-            this.courseDisplay.setScrollFactor(0); // Fix: Always set scroll factor
+            this.courseDisplay.setScrollFactor(1); // Follow world movement
             this.courseDisplay.setDepth(1000);
             this.courseDisplay.setStroke('#000080', 2);
             this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
