@@ -368,61 +368,13 @@ export default class MainGameplay extends BaseScene {
             const playerX = this.playerSprite ? this.playerSprite.x : screenWidth / 2;
             const playerY = this.playerSprite ? this.playerSprite.y : screenHeight / 2;
             
-            // Get camera world view for edge detection
-            const cam = this.cameras.main;
-            const camLeft = cam.worldView.x;
-            const camRight = cam.worldView.x + cam.worldView.width;
-            const camTop = cam.worldView.y;
-            const camBottom = cam.worldView.y + cam.worldView.height;
-            
             // Calculate HUD offset from player position
             const hudOffsetY = -150; // Position HUD above player
             const hudCenterX = playerX;
             const hudTopY = playerY + hudOffsetY;
-            
-            // Smart positioning: Check if HUD elements would go off-screen
-            const hudLeftOffset = 200;
-            const hudRightOffset = 200;
-            
-            // Check if left side HUD elements would be off-screen
-            const leftHudX = hudCenterX - hudLeftOffset;
-            const rightHudX = hudCenterX + hudRightOffset;
-            
-            let scoreStreakX, courseX;
-            let scoreStreakOrigin = 0;
-            let courseOrigin = 1;
-            
-            // If left side goes off-screen, move to right side
-            if (leftHudX < camLeft + margin) {
-                scoreStreakX = hudCenterX + hudLeftOffset; // Move to right side
-                scoreStreakOrigin = 1; // Right-align text
-            } else if (rightHudX > camRight - margin) {
-                // If right side goes off-screen, move to left side
-                scoreStreakX = hudCenterX - hudRightOffset; // Move to left side
-                scoreStreakOrigin = 0; // Left-align text
-            } else {
-                // Normal positioning
-                scoreStreakX = hudCenterX - hudLeftOffset;
-                scoreStreakOrigin = 0;
-            }
-            
-            // Course display positioning (opposite logic)
-            if (rightHudX > camRight - margin) {
-                courseX = hudCenterX - hudRightOffset; // Move to left side
-                courseOrigin = 0; // Left-align text
-            } else if (leftHudX < camLeft + margin) {
-                // If left side is blocked, keep course on right but adjust
-                courseX = hudCenterX + hudLeftOffset; // Move further right
-                courseOrigin = 1; // Right-align text
-            } else {
-                // Normal positioning
-                courseX = hudCenterX + hudRightOffset;
-                courseOrigin = 1;
-            }
 
             if (this.scoreText) {
-                this.scoreText.setPosition(scoreStreakX, hudTopY);
-                this.scoreText.setOrigin(scoreStreakOrigin, 0);
+                this.scoreText.setPosition(hudCenterX - 200, hudTopY);
                 this.scoreText.setFontSize(`${scoreFontSize}px`);
                 this.scoreText.setStroke('#000000', 3);
                 this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
@@ -430,8 +382,7 @@ export default class MainGameplay extends BaseScene {
                 this.scoreText.setDepth(1000);
             }
             if (this.streakText) {
-                this.streakText.setPosition(scoreStreakX, hudTopY + scoreFontSize + 2);
-                this.streakText.setOrigin(scoreStreakOrigin, 0);
+                this.streakText.setPosition(hudCenterX - 200, hudTopY + scoreFontSize + 2);
                 this.streakText.setFontSize(`${streakFontSize}px`);
                 this.streakText.setStroke('#000000', 2);
                 this.streakText.setShadow(2, 2, '#000000', 2, true, false);
@@ -440,7 +391,6 @@ export default class MainGameplay extends BaseScene {
             }
             if (this.timerText) {
                 this.timerText.setPosition(hudCenterX, hudTopY);
-                this.timerText.setOrigin(0.5, 0);
                 this.timerText.setFontSize(`${timerFontSize}px`);
                 this.timerText.setStroke('#000000', 4);
                 this.timerText.setShadow(2, 2, '#000000', 3, true, false);
@@ -448,9 +398,9 @@ export default class MainGameplay extends BaseScene {
                 this.timerText.setDepth(1000);
             }
             if (this.courseDisplay) {
-                this.courseDisplay.setPosition(courseX, hudTopY);
-                this.courseDisplay.setOrigin(courseOrigin, 0);
+                this.courseDisplay.setPosition(hudCenterX + 200, hudTopY);
                 this.courseDisplay.setFontSize(`${courseFontSize}px`);
+                this.courseDisplay.setOrigin(1, 0);
                 this.courseDisplay.setStroke('#000080', 2);
                 this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
                 this.courseDisplay.setScrollFactor(1); // Follow world movement
@@ -489,46 +439,14 @@ export default class MainGameplay extends BaseScene {
         const playerX = this.playerSprite ? this.playerSprite.x : screenWidth / 2;
         const playerY = this.playerSprite ? this.playerSprite.y : screenHeight / 2;
         
-        // Get camera world view for edge detection
-        const cam = this.cameras.main;
-        const camLeft = cam.worldView.x;
-        const camRight = cam.worldView.x + cam.worldView.width;
-        
         // Calculate HUD offset positions relative to player for mobile
         const hudOffsetY = -screenHeight / 2 + margin;
         const hudCenterX = playerX;
-        
-        // Smart edge detection for mobile
-        let hudLeftX = playerX - screenWidth / 2 + scoreX;
-        let hudRightX = playerX + screenWidth / 2 - margin;
-        let scoreOrigin = 0;
-        let courseOrigin = 1;
-        
-        // Check if HUD elements would go off camera edges
-        if (hudLeftX < camLeft + margin) {
-            // If left side goes off-screen, move to right side of player
-            hudLeftX = playerX + screenWidth / 4;
-            scoreOrigin = 1; // Right-align
-        } else if (hudRightX > camRight - margin) {
-            // If right side goes off-screen, move to left side of player  
-            hudRightX = playerX - screenWidth / 4;
-            courseOrigin = 0; // Left-align
-        }
-        
-        // Adjust course display position based on edge detection
-        if (hudRightX > camRight - margin && hudLeftX > camLeft + margin) {
-            // Right side off-screen, move course to left
-            hudRightX = playerX - screenWidth / 4;
-            courseOrigin = 0;
-        } else if (hudLeftX < camLeft + margin && hudRightX < camRight - margin) {
-            // Left side off-screen, keep course on right but move it further
-            hudRightX = playerX + screenWidth / 3;
-            courseOrigin = 1;
-        }
+        const hudLeftX = playerX - screenWidth / 2 + scoreX;
+        const hudRightX = playerX + screenWidth / 2 - margin;
 
         if (this.scoreText) {
             this.scoreText.setPosition(hudLeftX, playerY + hudOffsetY + scoreY);
-            this.scoreText.setOrigin(scoreOrigin, 0);
             this.scoreText.setFontSize(`${scoreFontSize}px`);
             this.scoreText.setScrollFactor(1); // Follow world movement
             this.scoreText.setDepth(1000);
@@ -537,7 +455,6 @@ export default class MainGameplay extends BaseScene {
         }
         if (this.streakText) {
             this.streakText.setPosition(hudLeftX, playerY + hudOffsetY + streakY);
-            this.streakText.setOrigin(scoreOrigin, 0);
             this.streakText.setFontSize(`${streakFontSize}px`);
             this.streakText.setScrollFactor(1); // Follow world movement
             this.streakText.setDepth(1000);
@@ -546,7 +463,6 @@ export default class MainGameplay extends BaseScene {
         }
         if (this.timerText) {
             this.timerText.setPosition(hudCenterX, playerY + hudOffsetY + timerY);
-            this.timerText.setOrigin(0.5, 0);
             this.timerText.setFontSize(`${timerFontSize}px`);
             this.timerText.setScrollFactor(1); // Follow world movement
             this.timerText.setDepth(1000);
@@ -555,8 +471,8 @@ export default class MainGameplay extends BaseScene {
         }
         if (this.courseDisplay) {
             this.courseDisplay.setPosition(hudRightX, playerY + hudOffsetY + margin);
-            this.courseDisplay.setOrigin(courseOrigin, 0);
             this.courseDisplay.setFontSize(`${courseFontSize}px`);
+            this.courseDisplay.setOrigin(1, 0);
             this.courseDisplay.setScrollFactor(1); // Follow world movement
             this.courseDisplay.setDepth(1000);
             this.courseDisplay.setStroke('#000080', 2);
