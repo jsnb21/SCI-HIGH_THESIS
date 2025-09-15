@@ -349,134 +349,102 @@ export default class MainGameplay extends BaseScene {
         // Update HUD positions for responsive design
         this.updateHudPositions();
     }
-    
+
     updateHudPositions() {
+        // Calculate responsive positions based on current screen size
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
         const isMobile = screenWidth < 768;
         const isSmallMobile = screenWidth < 480;
-
-        // --- Desktop: HUD moves with player and stays on top of their view ---
-        if (!isMobile) {
-            const margin = 12;
-            const scoreFontSize = 24;
-            const streakFontSize = 18;
-            const timerFontSize = 32;
-            const courseFontSize = 18;
-
-            // Get player position for HUD placement - HUD follows player
-            const playerX = this.playerSprite ? this.playerSprite.x : screenWidth / 2;
-            const playerY = this.playerSprite ? this.playerSprite.y : screenHeight / 2;
-            
-            // Calculate HUD offset from player position
-            const hudOffsetY = -150; // Position HUD above player
-            const hudCenterX = playerX;
-            const hudTopY = playerY + hudOffsetY;
-
-            if (this.scoreText) {
-                this.scoreText.setPosition(hudCenterX - 200, hudTopY);
-                this.scoreText.setFontSize(`${scoreFontSize}px`);
-                this.scoreText.setStroke('#000000', 3);
-                this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
-                this.scoreText.setScrollFactor(1); // Follow world movement
-                this.scoreText.setDepth(1000);
-            }
-            if (this.streakText) {
-                this.streakText.setPosition(hudCenterX - 200, hudTopY + scoreFontSize + 2);
-                this.streakText.setFontSize(`${streakFontSize}px`);
-                this.streakText.setStroke('#000000', 2);
-                this.streakText.setShadow(2, 2, '#000000', 2, true, false);
-                this.streakText.setScrollFactor(1); // Follow world movement
-                this.streakText.setDepth(1000);
-            }
-            if (this.timerText) {
-                this.timerText.setPosition(hudCenterX, hudTopY);
-                this.timerText.setFontSize(`${timerFontSize}px`);
-                this.timerText.setStroke('#000000', 4);
-                this.timerText.setShadow(2, 2, '#000000', 3, true, false);
-                this.timerText.setScrollFactor(1); // Follow world movement
-                this.timerText.setDepth(1000);
-            }
-            if (this.courseDisplay) {
-                this.courseDisplay.setPosition(hudCenterX + 200, hudTopY);
-                this.courseDisplay.setFontSize(`${courseFontSize}px`);
-                this.courseDisplay.setOrigin(1, 0);
-                this.courseDisplay.setStroke('#000080', 2);
-                this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
-                this.courseDisplay.setScrollFactor(1); // Follow world movement
-                this.courseDisplay.setDepth(1000);
-            }
-            return;
-        }
-
-        // --- Mobile HUD logic (improved for zoom consistency) ---
+        
+        // Enhanced mobile positioning - moved stats to very top ONLY on mobile
         let scoreX, scoreY, streakY, timerY;
         let scoreFontSize, streakFontSize, timerFontSize, courseFontSize;
-
-        const margin = isSmallMobile ? 10 : 12;
-
-        if (isSmallMobile) {
-            scoreX = margin;
-            scoreY = margin;
-            streakY = margin + 22;
-            timerY = margin;
-            scoreFontSize = Math.max(18, screenWidth * 0.032);
-            streakFontSize = Math.max(14, screenWidth * 0.028);
-            timerFontSize = Math.max(24, screenWidth * 0.04);
-            courseFontSize = Math.max(14, screenWidth * 0.028);
-        } else {
-            scoreX = margin;
-            scoreY = margin;
-            streakY = margin + 25;
-            timerY = margin;
-            scoreFontSize = Math.max(20, screenWidth * 0.028);
-            streakFontSize = Math.max(16, screenWidth * 0.025);
-            timerFontSize = Math.max(28, screenWidth * 0.036);
-            courseFontSize = Math.max(16, screenWidth * 0.025);
-        }
-
-        // Get player position for HUD following
-        const playerX = this.player ? this.player.x : 0;
-        const playerY = this.player ? this.player.y : 0;
         
-        // Calculate HUD offset positions relative to player
-        const hudOffsetY = -screenHeight / 2 + margin;
-        const hudCenterX = playerX;
-        const hudLeftX = playerX - screenWidth / 2 + scoreX;
-        const hudRightX = playerX + screenWidth / 2 - margin;
-
+        if (isSmallMobile) {
+            // Very small mobile screens - positioned at absolute top
+            scoreX = Math.min(15, screenWidth * 0.025);
+            scoreY = 5; // Absolute top
+            streakY = 30; // Just below score
+            timerY = 5; // Same level as score
+            
+            // Larger fonts for small screens to ensure readability
+            scoreFontSize = Math.max(20, screenWidth * 0.035);
+            streakFontSize = Math.max(16, screenWidth * 0.03);
+            timerFontSize = Math.max(26, screenWidth * 0.045);
+            courseFontSize = Math.max(16, screenWidth * 0.03);
+        } else if (isMobile) {
+            // Regular mobile screens - positioned at absolute top
+            scoreX = Math.min(20, screenWidth * 0.03);
+            scoreY = 5; // Absolute top
+            streakY = 35; // Just below score
+            timerY = 5; // Same level as score
+            
+            // Responsive font sizes for mobile
+            scoreFontSize = Math.max(18, screenWidth * 0.03);
+            streakFontSize = Math.max(14, screenWidth * 0.025);
+            timerFontSize = Math.max(24, screenWidth * 0.04);
+            courseFontSize = Math.max(18, screenWidth * 0.025);
+        } else {
+            // Desktop screens - keep original positioning (NOT moved to top)
+            scoreX = 20;
+            scoreY = 30; // Original desktop position
+            streakY = 65; // Original desktop position
+            timerY = 30; // Original desktop position
+            
+            scoreFontSize = 24;
+            streakFontSize = 18;
+            timerFontSize = 32;
+            courseFontSize = 20;
+        }
+        
+        // Update score text position and font size
         if (this.scoreText) {
-            this.scoreText.setPosition(hudLeftX, playerY + hudOffsetY + scoreY);
+            this.scoreText.setPosition(scoreX, scoreY);
             this.scoreText.setFontSize(`${scoreFontSize}px`);
-            this.scoreText.setScrollFactor(1); // Follow world movement
-            this.scoreText.setDepth(1000);
-            this.scoreText.setStroke('#000000', 3);
-            this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
+            // Add better visibility on mobile
+            if (isMobile) {
+                this.scoreText.setStroke('#000000', 4);
+                this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
+            }
         }
+        
+        // Update streak text position and font size
         if (this.streakText) {
-            this.streakText.setPosition(hudLeftX, playerY + hudOffsetY + streakY);
+            this.streakText.setPosition(scoreX, streakY);
             this.streakText.setFontSize(`${streakFontSize}px`);
-            this.streakText.setScrollFactor(1); // Follow world movement
-            this.streakText.setDepth(1000);
-            this.streakText.setStroke('#000000', 2);
-            this.streakText.setShadow(2, 2, '#000000', 2, true, false);
+            // Add better visibility on mobile
+            if (isMobile) {
+                this.streakText.setStroke('#000000', 3);
+                this.streakText.setShadow(2, 2, '#000000', 2, true, false);
+            }
         }
+        
+        // Update timer position and font size - centered at top
         if (this.timerText) {
-            this.timerText.setPosition(hudCenterX, playerY + hudOffsetY + timerY);
+            const centerX = screenWidth / 2;
+            this.timerText.setPosition(centerX, timerY);
             this.timerText.setFontSize(`${timerFontSize}px`);
-            this.timerText.setScrollFactor(1); // Follow world movement
-            this.timerText.setDepth(1000);
-            this.timerText.setStroke('#000080', 3);
-            this.timerText.setShadow(2, 2, '#000040', 3, true, false);
+            // Add better visibility on mobile
+            if (isMobile) {
+                this.timerText.setStroke('#000080', 4);
+                this.timerText.setShadow(2, 2, '#000040', 3, true, false);
+            }
         }
+        
+        // Update course display for mobile - top positioning only on mobile
         if (this.courseDisplay) {
-            this.courseDisplay.setPosition(hudRightX, playerY + hudOffsetY + margin);
+            const courseX = isMobile ? screenWidth - (isSmallMobile ? 15 : 20) : screenWidth - 20;
+            const courseY = isMobile ? 5 : 30; // Absolute top on mobile, original position on desktop
+            this.courseDisplay.setPosition(courseX, courseY);
             this.courseDisplay.setFontSize(`${courseFontSize}px`);
-            this.courseDisplay.setOrigin(1, 0);
-            this.courseDisplay.setScrollFactor(1); // Follow world movement
-            this.courseDisplay.setDepth(1000);
-            this.courseDisplay.setStroke('#000080', 2);
-            this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
+            this.courseDisplay.setOrigin(1, 0); // Right-align for mobile
+            
+            // Add better visibility on mobile
+            if (isMobile) {
+                this.courseDisplay.setStroke('#000080', 3);
+                this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
+            }
         }
     }
 
@@ -508,7 +476,7 @@ export default class MainGameplay extends BaseScene {
         
         // Calculate offset to center the board in available space
         const offsetX = Math.max(0, (screenWidth - boardWidth) / 2);
-        const offsetY = hudHeight + Math.max(0, (availableHeight - boardHeight) / 2);
+        const offsetY = Math.max(hudHeight, hudHeight + (availableHeight - boardHeight) / 2);
         
         // Store offsets for later use
         this.boardOffsetX = offsetX;
@@ -2381,62 +2349,15 @@ export default class MainGameplay extends BaseScene {
     getQuizData() {
         // Get quiz data based on course topic
         const topic = this.courseTopic || 'python';
-        let rawQuizData;
-        
         switch (topic.toLowerCase()) {
-            case 'python': rawQuizData = this.cache.json.get('pythonQuiz'); break;
-            case 'java': rawQuizData = this.cache.json.get('javaQuiz'); break;
-            case 'c': rawQuizData = this.cache.json.get('cQuiz'); break;
-            case 'c++': rawQuizData = this.cache.json.get('cppQuiz'); break;
-            case 'csharp': rawQuizData = this.cache.json.get('csharpQuiz'); break;
-            case 'webdesign': rawQuizData = this.cache.json.get('webdesignQuiz'); break;
-            default: rawQuizData = this.cache.json.get('pythonQuiz'); break;
+            case 'python': return this.cache.json.get('pythonQuiz');
+            case 'java': return this.cache.json.get('javaQuiz');
+            case 'c': return this.cache.json.get('cQuiz');
+            case 'c++': return this.cache.json.get('cppQuiz');
+            case 'csharp': return this.cache.json.get('csharpQuiz');
+            case 'webdesign': return this.cache.json.get('webdesignQuiz');
+            default: return this.cache.json.get('pythonQuiz');
         }
-        
-        if (!rawQuizData) {
-            console.error(`No quiz data available for topic: ${topic}`);
-            return null;
-        }
-        
-        // Get questions based on current intensity level
-        const intensityKey = `intensity${this.intensity}`;
-        const intensityData = rawQuizData[intensityKey];
-        
-        if (!intensityData) {
-            console.error(`No quiz data available for topic: ${topic} intensity: ${this.intensity}`);
-            return null;
-        }
-        
-        // For intensity 1, use only multiple choice questions
-        // For intensity 2+, we can add other question types later
-        let questions = [];
-        
-        if (intensityData.multipleChoice) {
-            questions = [...intensityData.multipleChoice];
-        }
-        
-        // Add other question types for higher intensities if they exist
-        if (this.intensity >= 2 && intensityData.dragAndDrop) {
-            questions = [...questions, ...intensityData.dragAndDrop];
-        }
-        
-        if (this.intensity >= 3 && intensityData.codeArrangement) {
-            questions = [...questions, ...intensityData.codeArrangement];
-        }
-        
-        if (questions.length === 0) {
-            console.error(`No questions found for topic: ${topic} intensity: ${this.intensity}`);
-            return null;
-        }
-        
-        // Convert to expected format for compatibility
-        return {
-            questions: questions.map(q => ({
-                question: q.question,
-                options: q.options,
-                correct: q.correctIndex || q.correct || 0
-            }))
-        };
     }
 
     handleQuizAnswer(selectedIndex, correctIndex, enemy) {
@@ -2894,78 +2815,91 @@ export default class MainGameplay extends BaseScene {
             console.warn('Camera not yet initialized, skipping setupCamera');
             return;
         }
-
+        
+        // Calculate the center of the actual board based on our offsets
         const boardWidth = this.MAP_WIDTH * this.TILE_SIZE;
         const boardHeight = this.MAP_HEIGHT * this.TILE_SIZE;
         const boardCenterX = this.boardOffsetX + boardWidth / 2;
         const boardCenterY = this.boardOffsetY + boardHeight / 2;
-
+        
+        // Calculate zoom to ensure the board is visible with padding
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
         const isMobile = screenWidth < 768;
-        const isSmallMobile = screenWidth < 480;
-
-        // --- Stronger zoom for all devices ---
+        const isSmallMobile = screenWidth < 480; // Very small screens
+        
+        // Account for HUD space when calculating available screen area - updated to match createBackground
         let hudHeight;
-        let paddingFactor, minZoom, maxZoom;
         if (isSmallMobile) {
-            hudHeight = 45;
-            paddingFactor = 0.98;
-            minZoom = 1.5; // was 1.2
-            maxZoom = 3.0;
+            hudHeight = 45; // Much smaller HUD height for very small screens
         } else if (isMobile) {
-            hudHeight = 50;
-            paddingFactor = 0.95;
-            minZoom = 1.5; // was 1.0
-            maxZoom = 3.0; // was 2.5
+            hudHeight = 50; // Much smaller HUD height for mobile
         } else {
-            // Desktop: use mobile-like zoom and HUD height!
-            hudHeight = 50;
-            paddingFactor = 0.95;
-            minZoom = 2.5; // was 1.0
-            maxZoom = 4.0; // was 2.5
+            hudHeight = 100; // Original HUD height for desktop
         }
         const availableHeight = screenHeight - hudHeight;
-
+        
+        // Enhanced mobile zoom calculation - increased zoom for better visibility
+        let paddingFactor, minZoom, maxZoom;
+        
+        if (isSmallMobile) {
+            // Very small screens (phones in portrait) - much higher zoom for visibility
+            paddingFactor = 0.98; // Use 98% of available space
+            minZoom = 1.2; // Much higher minimum zoom
+            maxZoom = 3.0; // Allow significant zoom in for better visibility
+        } else if (isMobile) {
+            // Regular mobile screens (tablets, phones in landscape) - higher zoom
+            paddingFactor = 0.95; // Use 95% of available space
+            minZoom = 1.0; // Higher minimum zoom
+            maxZoom = 2.5; // Allow more zoom in
+        } else {
+            // Desktop screens - keep original behavior
+            paddingFactor = 0.9;
+            minZoom = 0.8;
+            maxZoom = 1.0; // Don't zoom in beyond 1x on desktop
+        }
+        
+        // Calculate zoom to fit the board with dynamic padding
         const zoomX = (screenWidth * paddingFactor) / boardWidth;
         const zoomY = (availableHeight * paddingFactor) / boardHeight;
         let zoom = Math.min(zoomX, zoomY);
-
+        
+        // Apply zoom limits based on device type
         zoom = Math.max(minZoom, Math.min(zoom, maxZoom));
+        
         this.cameras.main.setZoom(zoom);
-    
+        
         // Set up camera bounds to keep it within the game board area with some padding
-        const padding = this.TILE_SIZE;
+        const padding = this.TILE_SIZE; // Add one tile worth of padding
         this.cameras.main.setBounds(
-            this.boardOffsetX - padding,
-            this.boardOffsetY - padding,
-            boardWidth + (padding * 2),
+            this.boardOffsetX - padding, 
+            this.boardOffsetY - padding, 
+            boardWidth + (padding * 2), 
             boardHeight + (padding * 2)
         );
-    
-        // Camera follow
+        
+        // Set up smooth camera following for the player
         if (this.playerSprite) {
-            const followSpeed = isMobile ? 0.15 : 0.15; // same for all
+            // Set different follow speeds based on device type for optimal experience
+            const followSpeed = isMobile ? 0.15 : 0.08; // Faster follow on mobile for better responsiveness
             this.cameras.main.startFollow(this.playerSprite, true, followSpeed, followSpeed);
-
-            // Center the camera vertically (HUD is now smaller)
-            const offsetY = -hudHeight / (6 * zoom);
+            
+            // Set camera follow offset to account for HUD space
+            const offsetY = isMobile ? -hudHeight / (6 * zoom) : -hudHeight / (3 * zoom);
             this.cameras.main.setFollowOffset(0, offsetY);
-
-            // Deadzone
-            const deadzoneWidth = this.TILE_SIZE * 1.5;
-            const deadzoneHeight = this.TILE_SIZE * 1.5;
+            
+            // Set up deadzone for smoother camera movement - smaller deadzone for mobile
+            const deadzoneWidth = isMobile ? this.TILE_SIZE * 1.5 : this.TILE_SIZE * 1.5;
+            const deadzoneHeight = isMobile ? this.TILE_SIZE * 1.5 : this.TILE_SIZE * 1.5;
             this.cameras.main.setDeadzone(deadzoneWidth, deadzoneHeight);
         }
-    
+        
+        // Store zoom level for other systems to use
         this.currentZoom = zoom;
         this.isMobileDevice = isMobile;
         this.isSmallMobileDevice = isSmallMobile;
-    
-        console.log(`Device: ${isSmallMobile ? 'SmallMobile' : isMobile ? 'Mobile' : 'Desktop'}, Board: ${boardWidth}x${boardHeight}, Screen: ${screenWidth}x${availableHeight}, Zoom: ${zoom.toFixed(2)}, Follow: enabled`);
         
-        // Update HUD positions after camera setup
-        this.updateHudPositions();
+        console.log(`Device: ${isSmallMobile ? 'SmallMobile' : isMobile ? 'Mobile' : 'Desktop'}, Board: ${boardWidth}x${boardHeight}, Screen: ${screenWidth}x${availableHeight}, Zoom: ${zoom.toFixed(2)}, Follow: enabled`);
     }
 
     addCourseDisplay() {
@@ -3263,15 +3197,12 @@ export default class MainGameplay extends BaseScene {
     update(time, delta) {
         // Always handle keyboard input and player glow
         this.handleKeyboardInput();
-
+        
         // Update player glow position
         if (this.playerGlow) {
             this.playerGlow.setPosition(this.playerSprite.x, this.playerSprite.y);
         }
-
-        // --- Always update HUD positions to follow camera ---
-        this.updateHudPositions();
-
+        
         // Only run game systems if the game has started and no quiz is active
         if (!this.gameStarted || this.quizActive) {
             return;
