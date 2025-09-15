@@ -344,16 +344,12 @@ export default class MainMenu extends Phaser.Scene {
             const topY = startY;
             const bottomY = startY + 120 * scaleInfo.finalScale + verticalSpacing; // Increased row spacing
 
-            // Menu button data for mobile 2x2 grid
+            // Menu button data for mobile - now 3 buttons in a more compact layout
             const menuButtons = [
                 // Top row
-                { label: 'Start Adventure', x: leftX, y: topY, onClick: async () => {
+                { label: 'Start Adventure', x: centerX, y: topY, onClick: async () => {
                     se_confirmSound.play();
                     await this.handleAdventureStart();
-                }},
-                { label: 'View Progress', x: rightX, y: topY, onClick: () => {
-                    se_confirmSound.play();
-                    this.showProgressSummary();
                 }},
                 // Bottom row
                 { label: 'Options', x: leftX, y: bottomY, onClick: () => {
@@ -381,15 +377,11 @@ export default class MainMenu extends Phaser.Scene {
                     se_confirmSound.play();
                     await this.handleAdventureStart();
                 }},
-                { label: 'View Progress', y: startY + buttonSpacing, onClick: () => {
-                    se_confirmSound.play();
-                    this.showProgressSummary();
-                }},
-                { label: 'Options', y: startY + (buttonSpacing * 2), onClick: () => {
+                { label: 'Options', y: startY + buttonSpacing, onClick: () => {
                     se_confirmSound.play();
                     LoadingScreen.transitionToScene(this, 'OptionsScene', 'Loading...', 800);
                 }},
-                { label: 'Quit', y: startY + (buttonSpacing * 3), onClick: () => {
+                { label: 'Quit', y: startY + (buttonSpacing * 2), onClick: () => {
                     se_confirmSound.play();
                     this.showQuitConfirmation(se_hoverSound, se_confirmSound);
                 }},
