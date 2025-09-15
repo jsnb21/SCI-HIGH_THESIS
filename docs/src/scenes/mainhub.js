@@ -270,16 +270,19 @@ export default class MainHub extends Phaser.Scene {
         }
         this.uiElements.push(this.bg);
 
+        // Calculate aligned Y position for consistent spacing
+        const topY = 40 * this.scaleFactor;
+
         // Add points display in top-right corner
-        const pointsDisplay = gameManager.createPointsDisplay(this, width - 100 * this.scaleFactor, 40 * this.scaleFactor, this.scaleFactor);
+        const pointsDisplay = gameManager.createPointsDisplay(this, width - 100 * this.scaleFactor, topY, this.scaleFactor);
         this.pointsDisplay = pointsDisplay;
         this.uiElements.push(pointsDisplay.container);
 
         this.se_hoverSound = addSE(this, 'se_select');
         this.se_confirmSound = addSE(this, 'se_confirm');
 
-        // Create back button using the reusable component before cutscene logic
-        const backButtonComponents = createBackButton(this, 'MainMenu');
+        // Create back button using the reusable component with aligned Y position
+        const backButtonComponents = createBackButton(this, 'MainMenu', { y: topY });
         this.backButtonBg = backButtonComponents.buttonBg;
         this.backButton = backButtonComponents.backButton;
         this.uiElements.push(backButtonComponents.buttonBg, backButtonComponents.backButton);

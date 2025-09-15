@@ -42,13 +42,18 @@ export default class ComputerLab extends Phaser.Scene {
         // Set up background
         this.cameras.main.setBackgroundColor('#D6C8F2');
 
-        // Use the shared back button (top-left, consistent style)
-        createBackButton(this, 'MainHub');
+        // Get responsive dimensions for alignment
+        const { width, height } = this.scale;
+        const scaleFactor = Math.min(width / 816, height / 624);
+        
+        // Calculate aligned positions for consistent spacing
+        const topY = 40 * scaleFactor; // Same Y position for both elements
+        
+        // Use the shared back button with aligned Y position
+        const backButtonElements = createBackButton(this, 'MainHub', { y: topY });
 
-        // Add points display in top-right corner
-        const { width } = this.scale;
-        const scaleFactor = Math.min(width / 816, this.scale.height / 624); // Using BASE_WIDTH and BASE_HEIGHT
-        const pointsDisplay = gameManager.createPointsDisplay(this, width - 100 * scaleFactor, 40 * scaleFactor, scaleFactor);
+        // Add points display in top-right corner, aligned with back button
+        const pointsDisplay = gameManager.createPointsDisplay(this, width - 100 * scaleFactor, topY, scaleFactor);
         this.pointsDisplay = pointsDisplay;
 
         // Add sound effects
