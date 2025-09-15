@@ -49,6 +49,9 @@ export default class VNDialogueBox {
     // Sound
     this.selectSound = scene.sound.get('se_select') || scene.sound.add('se_select');
 
+    // Create continue indicator (initially hidden)
+    this.createContinueIndicator(boxX, boxY, boxWidth, boxHeight, scale);
+
     // Input handler
     this.pointerHandler = () => {
       if (this.typingEvent) {
@@ -67,11 +70,46 @@ export default class VNDialogueBox {
     this._boxParams = { boxX, boxY, boxWidth, boxHeight, borderRadius, borderThickness };
   }
 
+  createContinueIndicator(boxX, boxY, boxWidth, boxHeight, scale) {
+    // Position indicator in bottom-right corner of dialogue box
+    const indicatorX = boxX + boxWidth - 30 * scale;
+    const indicatorY = boxY + boxHeight - 25 * scale;
+    
+    // Create arrow indicator using graphics
+    this.continueArrow = this.scene.add.graphics();
+    this.continueArrow.fillStyle(0xffffff, 1);
+    
+    // Draw a simple right-pointing triangle
+    const arrowSize = 8 * scale;
+    this.continueArrow.fillTriangle(
+      indicatorX, indicatorY - arrowSize/2,           // Top point
+      indicatorX, indicatorY + arrowSize/2,           // Bottom point  
+      indicatorX + arrowSize, indicatorY              // Right point
+    );
+    
+    this.continueArrow.setDepth(12); // Above text
+    this.continueArrow.setVisible(false); // Initially hidden
+    
+    // Create blinking animation
+    this.blinkTween = this.scene.tweens.add({
+      targets: this.continueArrow,
+      alpha: 0.3,
+      duration: 800,
+      yoyo: true,
+      repeat: -1,
+      paused: true
+    });
+  }
+
   typeText(text) {
     this.displayedText = '';
     if (this.textObject && this.textObject.setText) {
       this.textObject.setText('');
     }
+    
+    // Hide continue indicator while typing
+    this.hideContinueIndicator();
+    
     let i = 0;
     this.typingEvent = this.scene.time.addEvent({
       delay: 30,
@@ -84,6 +122,8 @@ export default class VNDialogueBox {
         i++;
         if (i === text.length) {
           this.typingEvent = null;
+          // Show continue indicator when typing is complete
+          this.showContinueIndicator();
         }
       }
     });
@@ -97,6 +137,8 @@ export default class VNDialogueBox {
       if (this.textObject && this.textObject.setText) {
         this.textObject.setText(this.displayedText);
       }
+      // Show continue indicator when typing is finished
+      this.showContinueIndicator();
     }
   }
 
@@ -107,11 +149,31 @@ export default class VNDialogueBox {
       if (this.selectSound) this.selectSound.play();
       this.typeText(this.text);
     } else {
+      // Hide the continue indicator for the final dialogue
+      this.hideContinueIndicator();
       this.scene.input.off('pointerdown', this.pointerHandler);
       this.scene.input.once('pointerdown', () => {
         this.destroy();
         if (this.onComplete) this.onComplete();
       });
+    }
+  }
+
+  showContinueIndicator() {
+    if (this.continueArrow) {
+      this.continueArrow.setVisible(true);
+      if (this.blinkTween) {
+        this.blinkTween.resume();
+      }
+    }
+  }
+
+  hideContinueIndicator() {
+    if (this.continueArrow) {
+      this.continueArrow.setVisible(false);
+      if (this.blinkTween) {
+        this.blinkTween.pause();
+      }
     }
   }
 
@@ -123,6 +185,14 @@ export default class VNDialogueBox {
     if (this.border && this.border.destroy) {
       this.border.destroy();
       this.border = null;
+    }
+    if (this.continueArrow && this.continueArrow.destroy) {
+      this.continueArrow.destroy();
+      this.continueArrow = null;
+    }
+    if (this.blinkTween) {
+      this.blinkTween.remove();
+      this.blinkTween = null;
     }
     this.scene.input.off('pointerdown', this.pointerHandler);
   }

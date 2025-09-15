@@ -44,7 +44,7 @@ class GameManager {
         this.courseProgress = {
             'Web_Design': { unlocked: true, completed: false, progress: 0 },
             'Python': { unlocked: true, completed: false, progress: 0 },
-            'Java': { unlocked: false, completed: false, progress: 0 },
+            'Java': { unlocked: true, completed: false, progress: 0 },
             'C': { unlocked: false, completed: false, progress: 0 },
             'CPlusPlus': { unlocked: false, completed: false, progress: 0 },
             'CSharp': { unlocked: false, completed: false, progress: 0 }
@@ -457,7 +457,7 @@ class GameManager {
         this.courseProgress = {
             'Web_Design': { unlocked: true, completed: false, progress: 0 },
             'Python': { unlocked: true, completed: false, progress: 0 },
-            'Java': { unlocked: false, completed: false, progress: 0 },
+            'Java': { unlocked: true, completed: false, progress: 0 },
             'C': { unlocked: false, completed: false, progress: 0 },
             'CPlusPlus': { unlocked: false, completed: false, progress: 0 },
             'CSharp': { unlocked: false, completed: false, progress: 0 }

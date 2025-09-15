@@ -363,4 +363,161 @@ function applySaveData(saveData) {
     return true;
 }
 
-export { saveGame, getAllSaveKeys, loadGame, applySaveData, hasExistingSave, clearCurrentUserSave, getCurrentUserSaveKey, syncSaveDataOnLogin };
+// Save story progress to Firebase with student ID association
+async function saveStoryProgress(characterName, progressData) {
+    const userData = getCurrentUserData();
+    
+    if (!userData || userData.userType !== 'student') {
+        console.warn('SaveService: Story progress can only be saved for students');
+        return false;
+    }
+
+    // Prepare story progress data
+    const storyProgressData = {
+        studentId: userData.user.studentId || userData.user.uid,
+        character: characterName,
+        progress: progressData,
+        lastUpdated: new Date().toISOString(),
+        timestamp: new Date().toISOString()
+    };
+
+    console.log('Saving story progress:', storyProgressData);
+
+    // Save to localStorage as backup
+    try {
+        const localKey = `story_progress_${userData.user.studentId || userData.user.uid}_${characterName}`;
+        localStorage.setItem(localKey, JSON.stringify(storyProgressData));
+        console.log('SaveService: Story progress saved to localStorage');
+    } catch (error) {
+        console.error('SaveService: Failed to save story progress to localStorage:', error);
+    }
+
+    // Save to Firebase if available
+    if (await saveService.ensureFirebaseReady()) {
+        try {
+            // Use Realtime Database (since that's what the auth system uses)
+            if (typeof window !== 'undefined' && window.firebase && window.firebase.database) {
+                const database = window.firebase.database();
+                const progressRef = database.ref('story_progress');
+                
+                // Create a unique key for this progress entry
+                const progressKey = `${userData.user.studentId || userData.user.uid}_${characterName}`;
+                
+                await progressRef.child(progressKey).set(storyProgressData);
+                console.log('SaveService: Story progress saved to Firebase Realtime Database');
+                return true;
+            } else {
+                console.warn('SaveService: Firebase Realtime Database not available');
+                return false;
+            }
+        } catch (error) {
+            console.error('SaveService: Failed to save story progress to Firebase:', error);
+            return false;
+        }
+    }
+
+    return false;
+}
+
+// Load story progress from Firebase
+async function loadStoryProgress(characterName, studentId = null) {
+    const userData = getCurrentUserData();
+    const targetStudentId = studentId || (userData?.user?.studentId || userData?.user?.uid);
+    
+    if (!targetStudentId) {
+        console.warn('SaveService: No student ID available for loading story progress');
+        return null;
+    }
+
+    // Try to load from Firebase first
+    if (await saveService.ensureFirebaseReady()) {
+        try {
+            if (typeof window !== 'undefined' && window.firebase && window.firebase.database) {
+                const database = window.firebase.database();
+                const progressKey = `${targetStudentId}_${characterName}`;
+                const snapshot = await database.ref('story_progress').child(progressKey).once('value');
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    console.log('SaveService: Story progress loaded from Firebase:', data);
+                    return data.progress;
+                }
+            }
+        } catch (error) {
+            console.error('SaveService: Failed to load story progress from Firebase:', error);
+        }
+    }
+
+    // Fallback to localStorage
+    try {
+        const localKey = `story_progress_${targetStudentId}_${characterName}`;
+        const localData = localStorage.getItem(localKey);
+        if (localData) {
+            const parsed = JSON.parse(localData);
+            console.log('SaveService: Story progress loaded from localStorage:', parsed);
+            return parsed.progress;
+        }
+    } catch (error) {
+        console.error('SaveService: Failed to load story progress from localStorage:', error);
+    }
+
+    return null;
+}
+
+// Get all story progress for a student
+async function getAllStoryProgress(studentId = null) {
+    const userData = getCurrentUserData();
+    const targetStudentId = studentId || (userData?.user?.studentId || userData?.user?.uid);
+    
+    if (!targetStudentId) {
+        console.warn('SaveService: No student ID available for loading all story progress');
+        return {};
+    }
+
+    const allProgress = {};
+
+    // Try to load from Firebase
+    if (await saveService.ensureFirebaseReady()) {
+        try {
+            if (typeof window !== 'undefined' && window.firebase && window.firebase.database) {
+                const database = window.firebase.database();
+                const snapshot = await database.ref('story_progress')
+                    .orderByChild('studentId')
+                    .equalTo(targetStudentId)
+                    .once('value');
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    Object.keys(data).forEach(key => {
+                        const progress = data[key];
+                        allProgress[progress.character] = progress.progress;
+                    });
+                    console.log('SaveService: All story progress loaded from Firebase:', allProgress);
+                    return allProgress;
+                }
+            }
+        } catch (error) {
+            console.error('SaveService: Failed to load all story progress from Firebase:', error);
+        }
+    }
+
+    // Fallback to localStorage
+    try {
+        const characters = ['noah', 'lily', 'damian']; // Add more as needed
+        characters.forEach(character => {
+            const localKey = `story_progress_${targetStudentId}_${character}`;
+            const localData = localStorage.getItem(localKey);
+            if (localData) {
+                const parsed = JSON.parse(localData);
+                allProgress[character] = parsed.progress;
+            }
+        });
+        console.log('SaveService: All story progress loaded from localStorage:', allProgress);
+    } catch (error) {
+        console.error('SaveService: Failed to load story progress from localStorage:', error);
+    }
+
+    return allProgress;
+}
+
+export { saveGame, getAllSaveKeys, loadGame, applySaveData, hasExistingSave, clearCurrentUserSave, getCurrentUserSaveKey, syncSaveDataOnLogin, saveStoryProgress, loadStoryProgress, getAllStoryProgress };

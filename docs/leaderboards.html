@@ -814,7 +814,9 @@
               <td class="py-3 px-4">
                 <div>
                   ${playerNameHtml}
-                  <div class="text-xs text-gray-400">${entry.strandYear || 'N/A'}</div>
+                  <div class="text-xs text-gray-400">
+                    ${entry.strand ? `${entry.strand}` : ''}${entry.strand && entry.year ? ' - ' : ''}${entry.year ? `${entry.year}` : ''}${!entry.strand && !entry.year && entry.strandYear ? entry.strandYear : ''}
+                  </div>
                 </div>
               </td>
               <td class="py-3 px-4">

@@ -57,6 +57,22 @@
           ".validate": "newData.hasChildren()"
         }
       }
+    },
+    "story_progress": {
+      ".indexOn": ["studentId"],
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$studentId": {
+        "noah": {
+          ".validate": "newData.hasChildren(['chapter', 'scene', 'completed']) && newData.child('chapter').isNumber() && newData.child('scene').isNumber() && newData.child('completed').isBoolean()"
+        },
+        "lily": {
+          ".validate": "newData.hasChildren(['chapter', 'scene', 'completed']) && newData.child('chapter').isNumber() && newData.child('scene').isNumber() && newData.child('completed').isBoolean()"
+        },
+        "damian": {
+          ".validate": "newData.hasChildren(['chapter', 'scene', 'completed']) && newData.child('chapter').isNumber() && newData.child('scene').isNumber() && newData.child('completed').isBoolean()"
+        }
+      }
     }
   }
 }

@@ -30,7 +30,9 @@ class Carousel {
         this.lockedStates = lockedStates || iconKeys.map(() => false); // Default all unlocked
         this._createUI();
         return this;
-    }_createUI() {
+    }
+
+    _createUI() {
         // Clean up existing elements and listeners
         if (this._inputListeners) {
             this._inputListeners.forEach(off => off());
@@ -48,14 +50,18 @@ class Carousel {
         if (this.breathingTween) {
             this.breathingTween.stop();
             this.breathingTween = null;
-        }        const scale = this.getScale();
+        }
+
+        const scale = this.getScale();
         const iconCount = this.iconKeys.length;
         this.carouselIndex = 0; // Always start with the first icon (Web Design)
 
         const iconSpacing = (this.config.iconSpacing ?? 220) * scale;
         const iconYOffset = (this.config.iconYOffset ?? 0) * scale;
-        const iconToTitleGap = (this.config.iconToTitleGap ?? 100) * scale;
-        const iconToDescGap = (this.config.iconToDescGap ?? 50) * scale;        let iconCenterX, iconCenterY;
+        const iconToTitleGap = (this.config.iconToTitleGap ?? 120) * scale; // Increased from 100 to 120
+        const iconToDescGap = (this.config.iconToDescGap ?? 70) * scale; // Increased from 50 to 70
+
+        let iconCenterX, iconCenterY;
         if (this.scene.cameras && this.scene.cameras.main) {
             iconCenterX = this.scene.cameras.main.centerX;
             iconCenterY = this.scene.cameras.main.centerY + iconYOffset;
@@ -84,7 +90,7 @@ class Carousel {
         this.bgPanel.setDepth(-1);
 
         const headingX = iconCenterX;
-        const headingY = iconCenterY + iconToTitleGap + (60 * scale);
+        const headingY = iconCenterY + iconToTitleGap + (40 * scale); // Reduced from 60 to 40
         const descX = iconCenterX;
         const descY = headingY + iconToDescGap;
 
@@ -416,7 +422,9 @@ class Carousel {
             const direction = index - this.carouselIndex;
             this.move(direction);
         }
-    }    onResize() {
+    }
+
+    onResize() {
         // Disable automatic resize to prevent conflicts with scene resize
         // The scene will handle recreating the carousel when needed
         return;

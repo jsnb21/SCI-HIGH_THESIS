@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import VNDialogueBox from '/src/ui/VNDialogueBox.js';
 import { createBackButton } from '/src/components/buttons/backbutton.js';
 import { char2, onceOnlyFlags } from '/src/gameManager.js';
+import { saveStoryProgress } from '/src/save.js';
 
 export default class LilyStoryMode extends Phaser.Scene {
     constructor() {
@@ -128,29 +129,57 @@ export default class LilyStoryMode extends Phaser.Scene {
     showCodeExample(codeExample) {
         const { width, height } = this.scale;
         
-        // Create a much larger code display area
-        const codeBox = this.add.rectangle(width * 0.3, height * 0.4, 720, 450, 0x1e1e1e, 0.9);
-        codeBox.setStrokeStyle(4, 0xff6b9d);
+        // Mobile responsive calculations
+        const isMobile = width < 768;
+        const isSmallMobile = width < 480;
+        
+        // Responsive box dimensions
+        const boxWidthRatio = isMobile ? 0.9 : 0.7; // Wider on mobile
+        const boxHeightRatio = isMobile ? 0.5 : 0.4; // Taller on mobile
+        const boxWidth = width * boxWidthRatio;
+        const boxHeight = height * boxHeightRatio;
+        
+        // Responsive positioning
+        const boxX = width * 0.5; // Center horizontally
+        const boxY = height * 0.4;
+        
+        // Create responsive code display area
+        const codeBox = this.add.rectangle(boxX, boxY, boxWidth, boxHeight, 0x1e1e1e, 0.9);
+        const strokeWidth = isMobile ? 2 : 4;
+        codeBox.setStrokeStyle(strokeWidth, 0xff6b9d);
         codeBox.setDepth(5); // Above Lily (depth 1) but below dialogue (depth 10)
         
-        const codeText = this.add.text(width * 0.3, height * 0.4, codeExample.code, {
+        // Responsive font sizing
+        let fontSize = 22;
+        if (isSmallMobile) {
+            fontSize = 16;
+        } else if (isMobile) {
+            fontSize = 18;
+        }
+        
+        // Responsive text styling
+        const codeText = this.add.text(boxX, boxY, codeExample.code, {
             fontFamily: 'Courier New, monospace',
-            fontSize: '22px', // Increased from 18px
+            fontSize: `${fontSize}px`,
             color: '#00ff00',
-            wordWrap: { width: 680 }, // Adjusted for larger box
+            wordWrap: { width: boxWidth - 40 }, // Responsive word wrap with padding
             align: 'left',
-            lineSpacing: 6 // Increased line spacing for better readability with larger text
+            lineSpacing: isMobile ? 4 : 6 // Adjusted line spacing for mobile
         });
         codeText.setOrigin(0.5);
         codeText.setDepth(6); // Above code box
         
-        // Label for the code
-        const codeLabel = this.add.text(width * 0.3, height * 0.18, codeExample.title, {
+        // Responsive label
+        const labelFontSize = isSmallMobile ? 14 : (isMobile ? 16 : 22);
+        const labelY = boxY - (boxHeight / 2) - (30 * (isMobile ? 0.8 : 1));
+        const labelPadding = isMobile ? { x: 12, y: 6 } : { x: 16, y: 8 };
+        
+        const codeLabel = this.add.text(boxX, labelY, codeExample.title, {
             fontFamily: 'Caprasimo-Regular',
-            fontSize: '22px', // Increased from 18px
+            fontSize: `${labelFontSize}px`,
             color: '#ffffff',
             backgroundColor: '#ff6b9d',
-            padding: { x: 16, y: 8 } // Increased padding
+            padding: labelPadding
         });
         codeLabel.setOrigin(0.5);
         codeLabel.setDepth(6); // Same as code text
@@ -177,6 +206,12 @@ export default class LilyStoryMode extends Phaser.Scene {
             return;
         }
 
+        // Check if this segment has a regular quiz
+        if (storySegment.action === 'quiz' && storySegment.quizData) {
+            this.showRegularQuiz(storySegment.quizData);
+            return;
+        }
+
         // Move to next scene/chapter
         this.currentScene++;
         const storyData = this.getStoryData();
@@ -198,6 +233,9 @@ export default class LilyStoryMode extends Phaser.Scene {
             scene: this.currentScene,
             completed: this.currentChapter >= storyData.length
         };
+
+        // Save progress to Firebase
+        this.saveProgressToFirebase();
 
         // Continue or complete
         if (this.currentChapter < storyData.length) {
@@ -226,6 +264,14 @@ export default class LilyStoryMode extends Phaser.Scene {
         if (progressUpdate.quest3Desc) char2.quest3Desc = progressUpdate.quest3Desc;
     }
 
+    async saveProgressToFirebase() {
+        try {
+            await saveStoryProgress('lily', char2.storyProgress);
+        } catch (error) {
+            console.error('Failed to save story progress to Firebase:', error);
+        }
+    }
+
     showStoryComplete() {
         const { width, height } = this.scale;
         
@@ -244,6 +290,9 @@ export default class LilyStoryMode extends Phaser.Scene {
                 // Mark story as completed
                 char2.storyProgress.completed = true;
                 onceOnlyFlags.setSeen('lily_story_completed');
+                
+                // Save completion to Firebase
+                this.saveProgressToFirebase();
                 
                 // Return to classroom
                 this.scene.start('Classroom');
@@ -357,11 +406,15 @@ export default class LilyStoryMode extends Phaser.Scene {
             this.inlineQuizElements = null;
         }
         
-        // Show feedback briefly
-        this.showInlineQuizFeedback(isCorrect, quizData, () => {
-            // Continue to next scene after feedback
-            this.continueStoryAfterInlineQuiz();
-        });
+        if (isCorrect) {
+            // Show success feedback and continue
+            this.showInlineQuizFeedback(isCorrect, quizData, () => {
+                this.continueStoryAfterInlineQuiz();
+            });
+        } else {
+            // Show failure feedback with retry option
+            this.showInlineQuizFailureFeedback(quizData);
+        }
     }
 
     showInlineQuizFeedback(isCorrect, quizData, callback) {
@@ -436,7 +489,561 @@ export default class LilyStoryMode extends Phaser.Scene {
         });
     }
 
+    showInlineQuizFailureFeedback(quizData) {
+        const { width, height } = this.scale;
+        
+        const feedbackColor = 0xe74c3c;
+        const feedbackIcon = '❌';
+        const feedbackTitle = 'Not quite right';
+
+        // Feedback background (50% larger)
+        const feedbackBg = this.add.graphics();
+        feedbackBg.fillStyle(feedbackColor, 0.9);
+        feedbackBg.fillRoundedRect(width/2 - 450, height/2 - 180, 900, 360, 22);
+        feedbackBg.setDepth(10);
+
+        // Icon (50% larger)
+        const icon = this.add.text(width/2, height/2 - 120, feedbackIcon, {
+            fontSize: '48px'
+        }).setOrigin(0.5);
+        icon.setDepth(11);
+
+        // Title (50% larger)
+        const title = this.add.text(width/2, height/2 - 60, feedbackTitle, {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '30px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        title.setDepth(11);
+
+        // Explanation (50% larger)
+        const explanation = this.add.text(width/2, height/2 - 15, quizData.explanation || 'Try again and think about what you learned!', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '21px',
+            color: '#ffffff',
+            wordWrap: { width: 840 },
+            align: 'center'
+        }).setOrigin(0.5);
+        explanation.setDepth(11);
+
+        // Two buttons: Try Again and Continue
+        const buttonWidth = 120;
+        const buttonHeight = 45;
+        const buttonSpacing = 40;
+        const leftButtonX = width/2 - buttonWidth/2 - buttonSpacing/2;
+        const rightButtonX = width/2 + buttonWidth/2 + buttonSpacing/2;
+        const buttonY = height/2 + 60;
+
+        // Try Again button
+        const tryAgainBtn = this.add.graphics();
+        tryAgainBtn.fillStyle(0xff6b9d, 1);
+        tryAgainBtn.fillRoundedRect(leftButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        tryAgainBtn.setDepth(11);
+        tryAgainBtn.setInteractive(new Phaser.Geom.Rectangle(leftButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        tryAgainBtn.setData('useHandCursor', true);
+
+        const tryAgainText = this.add.text(leftButtonX, buttonY, 'Try Again', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '16px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        tryAgainText.setDepth(12);
+
+        // Continue button
+        const continueBtn = this.add.graphics();
+        continueBtn.fillStyle(0x666666, 1);
+        continueBtn.fillRoundedRect(rightButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        continueBtn.setDepth(11);
+        continueBtn.setInteractive(new Phaser.Geom.Rectangle(rightButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        continueBtn.setData('useHandCursor', true);
+
+        const continueText = this.add.text(rightButtonX, buttonY, 'Continue', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '16px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        continueText.setDepth(12);
+
+        this.feedbackElements = [feedbackBg, icon, title, explanation, tryAgainBtn, tryAgainText, continueBtn, continueText];
+        
+        // Try Again button handler
+        tryAgainBtn.on('pointerdown', () => {
+            this.sound.play('se_confirm');
+            // Clean up feedback
+            this.feedbackElements.forEach(element => element.destroy());
+            this.feedbackElements = null;
+            // Show the quiz again
+            this.showInlineQuiz(quizData);
+        });
+
+        // Continue button handler
+        continueBtn.on('pointerdown', () => {
+            this.sound.play('se_confirm');
+            // Clean up feedback
+            this.feedbackElements.forEach(element => element.destroy());
+            this.feedbackElements = null;
+            // Continue to next scene without completing quiz
+            this.continueStoryAfterInlineQuiz();
+        });
+
+        // Hover effects for Try Again button
+        tryAgainBtn.on('pointerover', () => {
+            tryAgainBtn.clear();
+            tryAgainBtn.fillStyle(0xff8ac4, 1);
+            tryAgainBtn.fillRoundedRect(leftButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        });
+
+        tryAgainBtn.on('pointerout', () => {
+            tryAgainBtn.clear();
+            tryAgainBtn.fillStyle(0xff6b9d, 1);
+            tryAgainBtn.fillRoundedRect(leftButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        });
+
+        // Hover effects for Continue button
+        continueBtn.on('pointerover', () => {
+            continueBtn.clear();
+            continueBtn.fillStyle(0x888888, 1);
+            continueBtn.fillRoundedRect(rightButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        });
+
+        continueBtn.on('pointerout', () => {
+            continueBtn.clear();
+            continueBtn.fillStyle(0x666666, 1);
+            continueBtn.fillRoundedRect(rightButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        });
+    }
+
     continueStoryAfterInlineQuiz() {
+        // Move to next scene/chapter
+        this.currentScene++;
+        const storyData = this.getStoryData();
+        
+        // Check if we need to move to next chapter
+        if (this.currentScene >= storyData[this.currentChapter].scenes.length) {
+            this.currentChapter++;
+            this.currentScene = 0;
+            
+            // Setup new scene environment
+            if (this.currentChapter < storyData.length) {
+                this.setupScene();
+            }
+        }
+        
+        // Save progress
+        char2.storyProgress = {
+            chapter: this.currentChapter,
+            scene: this.currentScene,
+            completed: this.currentChapter >= storyData.length
+        };
+
+        // Save progress to Firebase
+        this.saveProgressToFirebase();
+
+        // Continue or complete
+        if (this.currentChapter < storyData.length) {
+            this.time.delayedCall(1000, () => {
+                this.startCurrentStory();
+            });
+        } else {
+            this.showStoryComplete();
+        }
+    }
+
+    showRegularQuiz(quizData) {
+        // Initialize quiz state
+        this.currentQuizData = quizData;
+        this.currentQuestionIndex = 0;
+        this.quizScore = 0;
+        this.showRegularQuizQuestion();
+    }
+
+    showRegularQuizQuestion() {
+        const question = this.currentQuizData.questions[this.currentQuestionIndex];
+        const { width, height } = this.scale;
+        
+        // Background overlay
+        const overlay = this.add.graphics();
+        overlay.fillStyle(0x000000, 0.7);
+        overlay.fillRect(0, 0, width, height);
+        overlay.setDepth(10);
+        
+        // Quiz box
+        const boxWidth = Math.min(width * 0.8, 600);
+        const boxHeight = Math.min(height * 0.7, 400);
+        const boxX = width/2 - boxWidth/2;
+        const boxY = height/2 - boxHeight/2;
+        
+        const quizBox = this.add.graphics();
+        quizBox.fillStyle(0x2a2a4a, 0.95);
+        quizBox.lineStyle(3, 0xffffff, 1);
+        quizBox.fillRoundedRect(boxX, boxY, boxWidth, boxHeight, 15);
+        quizBox.strokeRoundedRect(boxX, boxY, boxWidth, boxHeight, 15);
+        quizBox.setDepth(11);
+        
+        // Question text
+        const questionText = this.add.text(width/2, boxY + 50, 
+            `Question ${this.currentQuestionIndex + 1}/${this.currentQuizData.questions.length}\n\n${question.question}`, {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '20px',
+            color: '#ffffff',
+            align: 'center',
+            wordWrap: { width: boxWidth - 40 }
+        }).setOrigin(0.5, 0);
+        questionText.setDepth(12);
+        
+        // Option buttons
+        const optionButtons = [];
+        const buttonHeight = 45;
+        const buttonSpacing = 15;
+        const startY = questionText.y + questionText.height + 30;
+        
+        question.options.forEach((option, index) => {
+            const buttonY = startY + (buttonHeight + buttonSpacing) * index;
+            const buttonWidth = boxWidth - 60;
+            const buttonX = width/2 - buttonWidth/2;
+            
+            const button = this.add.graphics();
+            button.fillStyle(0x4a4a6a, 1);
+            button.lineStyle(2, 0xcccccc, 1);
+            button.fillRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, 8);
+            button.strokeRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, 8);
+            button.setDepth(11);
+            
+            const buttonText = this.add.text(width/2, buttonY + buttonHeight/2, option, {
+                fontFamily: 'Caprasimo-Regular',
+                fontSize: '16px',
+                color: '#ffffff',
+                align: 'center'
+            }).setOrigin(0.5);
+            buttonText.setDepth(12);
+            
+            // Make button interactive
+            button.setInteractive(new Phaser.Geom.Rectangle(buttonX, buttonY, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+            button.setData('useHandCursor', true);
+            
+            button.on('pointerdown', () => {
+                this.handleRegularQuizAnswer(index === question.correct, question, index);
+            });
+            
+            // Hover effects
+            button.on('pointerover', () => {
+                button.clear();
+                button.fillStyle(0x6a6a8a, 1);
+                button.lineStyle(2, 0xffffff, 1);
+                button.fillRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, 8);
+                button.strokeRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, 8);
+            });
+            
+            button.on('pointerout', () => {
+                button.clear();
+                button.fillStyle(0x4a4a6a, 1);
+                button.lineStyle(2, 0xcccccc, 1);
+                button.fillRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, 8);
+                button.strokeRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, 8);
+            });
+            
+            optionButtons.push({ button, text: buttonText });
+        });
+        
+        // Store elements for cleanup
+        this.regularQuizElements = [overlay, quizBox, questionText, ...optionButtons.map(ob => ob.button), ...optionButtons.map(ob => ob.text)];
+    }
+
+    handleRegularQuizAnswer(isCorrect, question, selectedIndex) {
+        // Clean up current quiz elements
+        if (this.regularQuizElements) {
+            this.regularQuizElements.forEach(element => element.destroy());
+            this.regularQuizElements = null;
+        }
+        
+        if (isCorrect) {
+            this.quizScore++;
+            this.showRegularQuizSuccessFeedback(question);
+        } else {
+            this.showRegularQuizFailureFeedback(question, selectedIndex);
+        }
+    }
+
+    showRegularQuizSuccessFeedback(question) {
+        const { width, height } = this.scale;
+        
+        // Background
+        const feedbackBg = this.add.graphics();
+        feedbackBg.fillStyle(0x000000, 0.8);
+        feedbackBg.fillRect(0, 0, width, height);
+        feedbackBg.setDepth(10);
+        
+        // Success icon (checkmark)
+        const icon = this.add.text(width/2, height/2 - 80, '✓', {
+            fontFamily: 'Arial',
+            fontSize: '64px',
+            color: '#4CAF50'
+        }).setOrigin(0.5);
+        icon.setDepth(11);
+        
+        // Title
+        const title = this.add.text(width/2, height/2 - 20, 'Correct!', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '32px',
+            color: '#4CAF50'
+        }).setOrigin(0.5);
+        title.setDepth(11);
+        
+        // Explanation
+        const explanation = this.add.text(width/2, height/2 + 30, question.explanation || 'Great job!', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '18px',
+            color: '#ffffff',
+            align: 'center',
+            wordWrap: { width: width * 0.7 }
+        }).setOrigin(0.5);
+        explanation.setDepth(11);
+        
+        // Continue button
+        const buttonWidth = 120;
+        const buttonHeight = 40;
+        const continueBtn = this.add.graphics();
+        continueBtn.fillStyle(0x4CAF50, 1);
+        continueBtn.fillRoundedRect(width/2 - buttonWidth/2, height/2 + 100, buttonWidth, buttonHeight, 12);
+        continueBtn.setDepth(11);
+        continueBtn.setInteractive(new Phaser.Geom.Rectangle(width/2 - buttonWidth/2, height/2 + 100, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        continueBtn.setData('useHandCursor', true);
+
+        const continueText = this.add.text(width/2, height/2 + 120, 'Continue', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '16px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        continueText.setDepth(12);
+
+        this.regularQuizFeedbackElements = [feedbackBg, icon, title, explanation, continueBtn, continueText];
+        
+        // Continue button handler
+        continueBtn.on('pointerdown', () => {
+            this.sound.play('se_confirm');
+            this.cleanupRegularQuizFeedback();
+            this.proceedToNextQuizQuestion();
+        });
+
+        // Hover effects
+        continueBtn.on('pointerover', () => {
+            continueBtn.clear();
+            continueBtn.fillStyle(0x66BB6A, 1);
+            continueBtn.fillRoundedRect(width/2 - buttonWidth/2, height/2 + 100, buttonWidth, buttonHeight, 12);
+        });
+
+        continueBtn.on('pointerout', () => {
+            continueBtn.clear();
+            continueBtn.fillStyle(0x4CAF50, 1);
+            continueBtn.fillRoundedRect(width/2 - buttonWidth/2, height/2 + 100, buttonWidth, buttonHeight, 12);
+        });
+    }
+
+    showRegularQuizFailureFeedback(question, selectedIndex) {
+        const { width, height } = this.scale;
+        
+        // Background
+        const feedbackBg = this.add.graphics();
+        feedbackBg.fillStyle(0x000000, 0.8);
+        feedbackBg.fillRect(0, 0, width, height);
+        feedbackBg.setDepth(10);
+        
+        // Error icon
+        const icon = this.add.text(width/2, height/2 - 120, '✗', {
+            fontFamily: 'Arial',
+            fontSize: '64px',
+            color: '#f44336'
+        }).setOrigin(0.5);
+        icon.setDepth(11);
+        
+        // Title
+        const title = this.add.text(width/2, height/2 - 60, 'Not quite right...', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '28px',
+            color: '#f44336'
+        }).setOrigin(0.5);
+        title.setDepth(11);
+        
+        // Explanation
+        const explanation = this.add.text(width/2, height/2 - 15, question.explanation || 'Try again and think about what you learned!', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '18px',
+            color: '#ffffff',
+            align: 'center',
+            wordWrap: { width: width * 0.7 }
+        }).setOrigin(0.5);
+        explanation.setDepth(11);
+        
+        // Buttons
+        const buttonWidth = 120;
+        const buttonHeight = 40;
+        const buttonY = height/2 + 60;
+        const leftButtonX = width/2 - 80;
+        const rightButtonX = width/2 + 80;
+        
+        // Try Again button
+        const tryAgainBtn = this.add.graphics();
+        tryAgainBtn.fillStyle(0xff6b9d, 1);
+        tryAgainBtn.fillRoundedRect(leftButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        tryAgainBtn.setDepth(11);
+        tryAgainBtn.setInteractive(new Phaser.Geom.Rectangle(leftButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        tryAgainBtn.setData('useHandCursor', true);
+
+        const tryAgainText = this.add.text(leftButtonX, buttonY, 'Try Again', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '16px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        tryAgainText.setDepth(12);
+        
+        // Continue button
+        const continueBtn = this.add.graphics();
+        continueBtn.fillStyle(0x666666, 1);
+        continueBtn.fillRoundedRect(rightButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        continueBtn.setDepth(11);
+        continueBtn.setInteractive(new Phaser.Geom.Rectangle(rightButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        continueBtn.setData('useHandCursor', true);
+
+        const continueText = this.add.text(rightButtonX, buttonY, 'Continue', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '16px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        continueText.setDepth(12);
+
+        this.regularQuizFeedbackElements = [feedbackBg, icon, title, explanation, tryAgainBtn, tryAgainText, continueBtn, continueText];
+        
+        // Try Again button handler
+        tryAgainBtn.on('pointerdown', () => {
+            this.sound.play('se_confirm');
+            this.cleanupRegularQuizFeedback();
+            this.showRegularQuizQuestion(); // Show the same question again
+        });
+
+        // Continue button handler
+        continueBtn.on('pointerdown', () => {
+            this.sound.play('se_confirm');
+            this.cleanupRegularQuizFeedback();
+            this.proceedToNextQuizQuestion(); // Skip to next question
+        });
+
+        // Hover effects for Try Again button
+        tryAgainBtn.on('pointerover', () => {
+            tryAgainBtn.clear();
+            tryAgainBtn.fillStyle(0xff8ac4, 1);
+            tryAgainBtn.fillRoundedRect(leftButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        });
+
+        tryAgainBtn.on('pointerout', () => {
+            tryAgainBtn.clear();
+            tryAgainBtn.fillStyle(0xff6b9d, 1);
+            tryAgainBtn.fillRoundedRect(leftButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        });
+
+        // Hover effects for Continue button
+        continueBtn.on('pointerover', () => {
+            continueBtn.clear();
+            continueBtn.fillStyle(0x888888, 1);
+            continueBtn.fillRoundedRect(rightButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        });
+
+        continueBtn.on('pointerout', () => {
+            continueBtn.clear();
+            continueBtn.fillStyle(0x666666, 1);
+            continueBtn.fillRoundedRect(rightButtonX - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight, 12);
+        });
+    }
+
+    cleanupRegularQuizFeedback() {
+        if (this.regularQuizFeedbackElements) {
+            this.regularQuizFeedbackElements.forEach(element => element.destroy());
+            this.regularQuizFeedbackElements = null;
+        }
+    }
+
+    proceedToNextQuizQuestion() {
+        this.currentQuestionIndex++;
+        
+        if (this.currentQuestionIndex < this.currentQuizData.questions.length) {
+            // Show next question
+            this.showRegularQuizQuestion();
+        } else {
+            // Quiz completed, show results and continue story
+            this.showRegularQuizResults();
+        }
+    }
+
+    showRegularQuizResults() {
+        const { width, height } = this.scale;
+        const totalQuestions = this.currentQuizData.questions.length;
+        const percentage = Math.round((this.quizScore / totalQuestions) * 100);
+        
+        // Background
+        const resultBg = this.add.graphics();
+        resultBg.fillStyle(0x000000, 0.8);
+        resultBg.fillRect(0, 0, width, height);
+        resultBg.setDepth(10);
+        
+        // Results
+        const title = this.add.text(width/2, height/2 - 60, 'Quiz Complete!', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '32px',
+            color: '#4CAF50'
+        }).setOrigin(0.5);
+        title.setDepth(11);
+        
+        const score = this.add.text(width/2, height/2, `Score: ${this.quizScore}/${totalQuestions} (${percentage}%)`, {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '24px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        score.setDepth(11);
+        
+        // Continue button
+        const buttonWidth = 150;
+        const buttonHeight = 40;
+        const continueBtn = this.add.graphics();
+        continueBtn.fillStyle(0x4CAF50, 1);
+        continueBtn.fillRoundedRect(width/2 - buttonWidth/2, height/2 + 60, buttonWidth, buttonHeight, 12);
+        continueBtn.setDepth(11);
+        continueBtn.setInteractive(new Phaser.Geom.Rectangle(width/2 - buttonWidth/2, height/2 + 60, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        continueBtn.setData('useHandCursor', true);
+
+        const continueText = this.add.text(width/2, height/2 + 80, 'Continue Story', {
+            fontFamily: 'Caprasimo-Regular',
+            fontSize: '16px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        continueText.setDepth(12);
+
+        this.regularQuizResultElements = [resultBg, title, score, continueBtn, continueText];
+        
+        // Continue button handler
+        continueBtn.on('pointerdown', () => {
+            this.sound.play('se_confirm');
+            // Clean up results
+            this.regularQuizResultElements.forEach(element => element.destroy());
+            this.regularQuizResultElements = null;
+            
+            // Continue with story progression
+            this.continueStoryAfterRegularQuiz();
+        });
+
+        // Hover effects
+        continueBtn.on('pointerover', () => {
+            continueBtn.clear();
+            continueBtn.fillStyle(0x66BB6A, 1);
+            continueBtn.fillRoundedRect(width/2 - buttonWidth/2, height/2 + 60, buttonWidth, buttonHeight, 12);
+        });
+
+        continueBtn.on('pointerout', () => {
+            continueBtn.clear();
+            continueBtn.fillStyle(0x4CAF50, 1);
+            continueBtn.fillRoundedRect(width/2 - buttonWidth/2, height/2 + 60, buttonWidth, buttonHeight, 12);
+        });
+    }
+
+    continueStoryAfterRegularQuiz() {
         // Move to next scene/chapter
         this.currentScene++;
         const storyData = this.getStoryData();
@@ -631,12 +1238,14 @@ for song in songs:
                                 {
                                     question: "What keyword is used to define a function in Python?",
                                     options: ["function", "def", "create", "make"],
-                                    correct: 1
+                                    correct: 1,
+                                    explanation: "The 'def' keyword is used to define functions in Python. It tells Python that you're creating a new function that can be called later."
                                 },
                                 {
                                     question: "What does 'return' do in a function?",
                                     options: ["Stops the function", "Gives back a value", "Prints something", "Creates a variable"],
-                                    correct: 1
+                                    correct: 1,
+                                    explanation: "The 'return' statement gives back a value from the function. It also stops the function execution and sends the result back to whoever called the function."
                                 }
                             ]
                         }
@@ -670,22 +1279,27 @@ for song in songs:
                         character: 'Lily',
                         dialogue: [
                             "Here's a simple class:",
-                            "class Idol:\n    def __init__(self, name, talent):\n        self.name = name\n        self.talent = talent\n    def perform(self):\n        print(f'{self.name} is showing off their {self.talent}!')",
                             "The __init__ method is like the blueprint - it sets up each new idol!",
                             "Self refers to the specific instance we're working with!"
                         ],
+                        codeExample: {
+                            title: "Basic Idol Class",
+                            code: "class Idol:\n    def __init__(self, name, talent):\n        self.name = name\n        self.talent = talent\n    \n    def perform(self):\n        print(f'{self.name} is showing off their {self.talent}!')"
+                        },
                         action: 'quiz',
                         quizData: {
                             questions: [
                                 {
                                     question: "What is the special method called when creating a new object?",
                                     options: ["__start__", "__init__", "__create__", "__new__"],
-                                    correct: 1
+                                    correct: 1,
+                                    explanation: "The __init__ method is automatically called when a new object is created. It's like a constructor that sets up the initial state of the object."
                                 },
                                 {
                                     question: "What does 'self' represent in a class method?",
                                     options: ["The class itself", "A global variable", "The specific instance", "All instances"],
-                                    correct: 2
+                                    correct: 2,
+                                    explanation: "'self' refers to the specific instance (object) that the method is being called on. It allows each object to have its own data and behavior."
                                 }
                             ]
                         }
@@ -694,10 +1308,13 @@ for song in songs:
                         character: 'Lily',
                         dialogue: [
                             "We can also use inheritance - like how different types of performers share basic skills!",
-                            "class Singer(Idol):\n    def sing(self):\n        print(f'{self.name} is singing beautifully!')",
                             "Singer inherits everything from Idol but adds its own special abilities!",
                             "This helps us build complex programs efficiently!"
                         ],
+                        codeExample: {
+                            title: "Inheritance Example - Singer Class",
+                            code: "class Singer(Idol):\n    def sing(self):\n        print(f'{self.name} is singing beautifully!')\n\n# Example usage:\n# my_singer = Singer('Lily', 'vocals')\n# my_singer.perform()  # Inherited from Idol\n# my_singer.sing()     # Singer's own method"
+                        },
                         action: 'next_chapter'
                     }
                 ]
@@ -729,12 +1346,14 @@ for song in songs:
                                 {
                                     question: "How do you access the first item in a list called 'songs'?",
                                     options: ["songs[1]", "songs[0]", "songs.first()", "songs(0)"],
-                                    correct: 1
+                                    correct: 1,
+                                    explanation: "Python lists are zero-indexed, meaning the first item is at index 0. So songs[0] gives you the first item in the list."
                                 },
                                 {
                                     question: "How do you get a value from a dictionary using a key?",
                                     options: ["dict.key", "dict[key]", "dict(key)", "dict->key"],
-                                    correct: 1
+                                    correct: 1,
+                                    explanation: "Dictionary values are accessed using square brackets with the key inside: dict[key]. This is how you look up values by their keys."
                                 }
                             ]
                         }

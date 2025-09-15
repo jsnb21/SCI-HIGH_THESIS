@@ -23,8 +23,8 @@ export default class MainGameplay extends BaseScene {
         this.wasdKeys = null;
         this.playerSprite = null;
         
-        // Map properties - Increased by 20%
-        this.TILE_SIZE = 58; // Increased from 48 (48 * 1.2 = 57.6, rounded to 58)
+        // Map properties - will be set responsively in create()
+        this.TILE_SIZE = 58; // Base size, will be adjusted for mobile
         this.MAP_WIDTH = 19;  // Increased from 16 (16 * 1.2 = 19.2, rounded to 19)
         this.MAP_HEIGHT = 14; // Increased from 12 (12 * 1.2 = 14.4, rounded to 14)
         
@@ -95,6 +95,22 @@ export default class MainGameplay extends BaseScene {
         this.currentQuiz = null;
         this.quizContainer = null;
         
+        // Answered questions tracking system - prevents question repetition
+        this.answeredQuestions = {
+            intensity1: {
+                multipleChoice: new Set()
+            },
+            intensity2: {
+                multipleChoice: new Set(),
+                dragDrop: new Set()
+            },
+            intensity3: {
+                multipleChoice: new Set(),
+                codeArrangement: new Set(),
+                combined: new Set() // For combined cycling system
+            }
+        };
+        
         // Power-up system
         this.powerUps = [];
         this.maxPowerUps = 2; // Maximum power-up tiles on the board
@@ -144,6 +160,22 @@ export default class MainGameplay extends BaseScene {
             this.intensity3PowerUpCounter = 0;
             this.intensity = 1;
             
+            // Reset answered questions tracking for new sessions
+            this.answeredQuestions = {
+                intensity1: {
+                    multipleChoice: new Set()
+                },
+                intensity2: {
+                    multipleChoice: new Set(),
+                    dragDrop: new Set()
+                },
+                intensity3: {
+                    multipleChoice: new Set(),
+                    codeArrangement: new Set(),
+                    combined: new Set() // For combined cycling system
+                }
+            };
+            
             // Always reset power-up system for new sessions
             this.activePowerUps = {
                 streakProtection: false,
@@ -164,6 +196,36 @@ export default class MainGameplay extends BaseScene {
         this.sessionStartTime = Date.now();
         
         console.log('MainGameplay initialized with topic:', this.courseTopic);
+    }
+
+    setResponsiveTileSize() {
+        // Calculate responsive tile size based on screen dimensions
+        const screenWidth = this.scale.width;
+        const screenHeight = this.scale.height;
+        const isMobile = screenWidth < 768;
+        const isSmallMobile = screenWidth < 480;
+        
+        // Base tile size calculations - increased for better mobile visibility
+        let baseTileSize;
+        if (isSmallMobile) {
+            // For very small screens, calculate tile size to fit screen better
+            const availableWidth = screenWidth * 0.95;
+            const availableHeight = (screenHeight * 0.8); // Account for HUD
+            const tileSizeByWidth = availableWidth / this.MAP_WIDTH;
+            const tileSizeByHeight = availableHeight / this.MAP_HEIGHT;
+            baseTileSize = Math.min(tileSizeByWidth, tileSizeByHeight);
+            baseTileSize = Math.max(baseTileSize, 40); // Increased minimum size for better visibility
+            baseTileSize = Math.min(baseTileSize, 75); // Increased maximum size
+        } else if (isMobile) {
+            // For regular mobile screens - increased size
+            baseTileSize = 60; // Increased from 52 for better visibility
+        } else {
+            // Desktop size
+            baseTileSize = 58; // Original size
+        }
+        
+        this.TILE_SIZE = Math.round(baseTileSize);
+        console.log(`Responsive tile size set to: ${this.TILE_SIZE}px for device: ${isSmallMobile ? 'SmallMobile' : isMobile ? 'Mobile' : 'Desktop'}`);
     }
 
     preload() {
@@ -203,6 +265,7 @@ export default class MainGameplay extends BaseScene {
         this.load.audio('se_hurt', 'assets/audio/se/se_hurt.wav');
         this.load.audio('se_combo', 'assets/audio/se/se_combo.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
+        this.load.audio('se_correct', 'assets/audio/se/se_correct.wav');
         this.load.audio('se_explosion', 'assets/audio/se/se_explosion.wav');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_wrong', 'assets/audio/se/se_wrong.wav');
@@ -214,6 +277,9 @@ export default class MainGameplay extends BaseScene {
 
     create() {
         super.create(); // Call BaseScene create method
+        
+        // Set responsive tile size based on screen size
+        this.setResponsiveTileSize();
         
         // Initialize sound effects and background music
         playExclusiveBGM(this, 'bgm_game1', { loop: true });
@@ -231,6 +297,9 @@ export default class MainGameplay extends BaseScene {
         // Create enemies
         this.createEnemies();
         
+        // Setup camera to follow player (must be after player creation)
+        this.setupCamera();
+        
         // Create timer (but don't start it yet)
         this.createTimer();
         
@@ -245,12 +314,14 @@ export default class MainGameplay extends BaseScene {
         
         // Setup input controls
         this.setupInput();
-        
-        // Setup camera to follow player
-        this.setupCamera();
 
         // Add course topic display
-        this.addCourseDisplay();        // Add resize listener to keep board centered
+        this.addCourseDisplay();
+        
+        // Add mobile control hint
+        this.addMobileControlHint();
+        
+        // Add resize listener to keep board centered
         this.scale.on('resize', this.onResize, this);
     }
 
@@ -272,47 +343,136 @@ export default class MainGameplay extends BaseScene {
             this.playerSprite.setPosition(this.player.x, this.player.y);
         }
         
-        // Update camera
+        // Update camera after player position is set
         this.setupCamera();
         
         // Update HUD positions for responsive design
         this.updateHudPositions();
     }
-
+    
     updateHudPositions() {
-        // Calculate responsive positions based on current screen size
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
         const isMobile = screenWidth < 768;
-        
-        // Update score and streak positions
-        const scoreX = isMobile ? Math.min(20, screenWidth * 0.03) : 20;
-        const scoreY = isMobile ? Math.min(30, screenHeight * 0.05) : 30;
-        const streakY = isMobile ? Math.min(65, screenHeight * 0.11) : 65;
-        
-        // Responsive font sizes
-        const scoreFontSize = isMobile ? Math.max(18, screenWidth * 0.03) : 24;
-        const streakFontSize = isMobile ? Math.max(14, screenWidth * 0.025) : 18;
-        const timerFontSize = isMobile ? Math.max(24, screenWidth * 0.04) : 32;
-        
-        // Update score text position and font size
+        const isSmallMobile = screenWidth < 480;
+
+        // --- Desktop: HUD sticky to top of zoomed-in camera ---
+        if (!isMobile) {
+            const margin = 12;
+            const scoreFontSize = 24;
+            const streakFontSize = 18;
+            const timerFontSize = 32;
+            const courseFontSize = 18;
+
+            // Get camera worldView for correct HUD placement
+            const cam = this.cameras && this.cameras.main ? this.cameras.main : null;
+            const camX = cam ? cam.worldView.x : 0;
+            const camY = cam ? cam.worldView.y : 0;
+            const camW = cam ? cam.worldView.width : screenWidth;
+
+            if (this.scoreText) {
+                this.scoreText.setPosition(camX + margin, camY + margin);
+                this.scoreText.setFontSize(`${scoreFontSize}px`);
+                this.scoreText.setStroke('#000000', 3);
+                this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
+                this.scoreText.setScrollFactor(0);
+                this.scoreText.setDepth(1000);
+            }
+            if (this.streakText) {
+                this.streakText.setPosition(camX + margin, camY + margin + scoreFontSize + 2);
+                this.streakText.setFontSize(`${streakFontSize}px`);
+                this.streakText.setStroke('#000000', 2);
+                this.streakText.setShadow(2, 2, '#000000', 2, true, false);
+                this.streakText.setScrollFactor(0);
+                this.streakText.setDepth(1000);
+            }
+            if (this.timerText) {
+                this.timerText.setPosition(camX + camW / 2, camY + margin);
+                this.timerText.setFontSize(`${timerFontSize}px`);
+                this.timerText.setStroke('#000000', 4);
+                this.timerText.setShadow(2, 2, '#000000', 3, true, false);
+                this.timerText.setScrollFactor(0);
+                this.timerText.setDepth(1000);
+            }
+            if (this.courseDisplay) {
+                this.courseDisplay.setPosition(camX + camW - margin, camY + margin);
+                this.courseDisplay.setFontSize(`${courseFontSize}px`);
+                this.courseDisplay.setOrigin(1, 0);
+                this.courseDisplay.setStroke('#000080', 2);
+                this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
+                this.courseDisplay.setScrollFactor(0);
+                this.courseDisplay.setDepth(1000);
+            }
+            return;
+        }
+
+        // --- Mobile HUD logic (improved for zoom consistency) ---
+        let scoreX, scoreY, streakY, timerY;
+        let scoreFontSize, streakFontSize, timerFontSize, courseFontSize;
+
+        const margin = isSmallMobile ? 10 : 12;
+
+        if (isSmallMobile) {
+            scoreX = margin;
+            scoreY = margin;
+            streakY = margin + 22;
+            timerY = margin;
+            scoreFontSize = Math.max(18, screenWidth * 0.032);
+            streakFontSize = Math.max(14, screenWidth * 0.028);
+            timerFontSize = Math.max(24, screenWidth * 0.04);
+            courseFontSize = Math.max(14, screenWidth * 0.028);
+        } else {
+            scoreX = margin;
+            scoreY = margin;
+            streakY = margin + 25;
+            timerY = margin;
+            scoreFontSize = Math.max(20, screenWidth * 0.028);
+            streakFontSize = Math.max(16, screenWidth * 0.025);
+            timerFontSize = Math.max(28, screenWidth * 0.036);
+            courseFontSize = Math.max(16, screenWidth * 0.025);
+        }
+
+        // Get camera worldView for correct HUD placement
+        const cam = this.cameras && this.cameras.main ? this.cameras.main : null;
+        const camX = cam ? cam.worldView.x : 0;
+        const camY = cam ? cam.worldView.y : 0;
+        const camW = cam ? cam.worldView.width : screenWidth;
+
         if (this.scoreText) {
-            this.scoreText.setPosition(scoreX, scoreY);
+            this.scoreText.setPosition(camX + scoreX, camY + scoreY);
             this.scoreText.setFontSize(`${scoreFontSize}px`);
+            this.scoreText.setScrollFactor(0); // Fix: Always set scroll factor
+            this.scoreText.setDepth(1000);
+            this.scoreText.setStroke('#000000', 3);
+            this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
         }
-        
-        // Update streak text position and font size
         if (this.streakText) {
-            this.streakText.setPosition(scoreX, streakY);
+            this.streakText.setPosition(camX + scoreX, camY + streakY);
             this.streakText.setFontSize(`${streakFontSize}px`);
+            this.streakText.setScrollFactor(0); // Fix: Always set scroll factor
+            this.streakText.setDepth(1000);
+            this.streakText.setStroke('#000000', 2);
+            this.streakText.setShadow(2, 2, '#000000', 2, true, false);
         }
-        
-        // Update timer position and font size
         if (this.timerText) {
-            const centerX = screenWidth / 2;
-            const timerY = isMobile ? Math.min(30, screenHeight * 0.05) : 30;
-            this.timerText.setPosition(centerX, timerY);
+            const centerX = camX + camW / 2;
+            this.timerText.setPosition(centerX, camY + timerY);
             this.timerText.setFontSize(`${timerFontSize}px`);
+            this.timerText.setScrollFactor(0); // Fix: Always set scroll factor
+            this.timerText.setDepth(1000);
+            this.timerText.setStroke('#000080', 3);
+            this.timerText.setShadow(2, 2, '#000040', 3, true, false);
+        }
+        if (this.courseDisplay) {
+            const courseX = camX + camW - margin;
+            const courseY = camY + margin;
+            this.courseDisplay.setPosition(courseX, courseY);
+            this.courseDisplay.setFontSize(`${courseFontSize}px`);
+            this.courseDisplay.setOrigin(1, 0);
+            this.courseDisplay.setScrollFactor(0); // Fix: Always set scroll factor
+            this.courseDisplay.setDepth(1000);
+            this.courseDisplay.setStroke('#000080', 2);
+            this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
         }
     }
 
@@ -328,14 +488,23 @@ export default class MainGameplay extends BaseScene {
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
         const isMobile = screenWidth < 768;
+        const isSmallMobile = screenWidth < 480;
         
-        // Account for HUD space at the top
-        const hudHeight = isMobile ? Math.max(80, screenHeight * 0.12) : 100;
+        // Account for HUD space at the top - reduced ONLY on mobile
+        let hudHeight;
+        if (isSmallMobile) {
+            hudHeight = 45; // Much smaller HUD height for very small screens
+        } else if (isMobile) {
+            hudHeight = 50; // Much smaller HUD height for mobile
+        } else {
+            hudHeight = 100; // Original HUD height for desktop
+        }
+        
         const availableHeight = screenHeight - hudHeight;
         
         // Calculate offset to center the board in available space
         const offsetX = Math.max(0, (screenWidth - boardWidth) / 2);
-        const offsetY = Math.max(hudHeight, hudHeight + (availableHeight - boardHeight) / 2);
+        const offsetY = hudHeight + Math.max(0, (availableHeight - boardHeight) / 2);
         
         // Store offsets for later use
         this.boardOffsetX = offsetX;
@@ -445,9 +614,23 @@ export default class MainGameplay extends BaseScene {
         this.player.x = this.boardOffsetX + (centerTileX * this.TILE_SIZE) + this.TILE_SIZE/2;
         this.player.y = this.boardOffsetY + (centerTileY * this.TILE_SIZE) + this.TILE_SIZE/2;
         
-        // Create player sprite
+        // Create player sprite with enhanced mobile scaling
         this.playerSprite = this.add.image(this.player.x, this.player.y, 'goblinNerd');
-        this.playerSprite.setDisplaySize(this.TILE_SIZE * 0.8, this.TILE_SIZE * 0.8);
+        
+        // Enhanced sprite scaling for mobile visibility
+        const isMobile = this.scale.width < 768;
+        const isSmallMobile = this.scale.width < 480;
+        
+        let spriteScale;
+        if (isSmallMobile) {
+            spriteScale = this.TILE_SIZE * 0.9; // Larger on very small screens
+        } else if (isMobile) {
+            spriteScale = this.TILE_SIZE * 0.85; // Slightly larger on mobile
+        } else {
+            spriteScale = this.TILE_SIZE * 0.8; // Original size for desktop
+        }
+        
+        this.playerSprite.setDisplaySize(spriteScale, spriteScale);
         this.playerSprite.setDepth(10);
         
         // Add glow effect to player
@@ -948,12 +1131,27 @@ export default class MainGameplay extends BaseScene {
         const worldX = this.boardOffsetX + (tileX * this.TILE_SIZE) + this.TILE_SIZE / 2;
         const worldY = this.boardOffsetY + (tileY * this.TILE_SIZE) + this.TILE_SIZE / 2;
         
-        // Create timer icon sprite
+        // Create timer icon sprite with enhanced mobile scaling
         const iconSprite = this.add.image(worldX, worldY, 'timerIcon');
-        iconSprite.setDisplaySize(this.TILE_SIZE * 0.6, this.TILE_SIZE * 0.6);
         
-        // Add glow effect
-        const glow = this.add.circle(worldX, worldY, this.TILE_SIZE * 0.4, 0xFFD700, 0.3);
+        // Enhanced icon scaling for mobile visibility
+        const isMobile = this.scale.width < 768;
+        const isSmallMobile = this.scale.width < 480;
+        
+        let iconScale;
+        if (isSmallMobile) {
+            iconScale = this.TILE_SIZE * 0.7; // Larger on very small screens
+        } else if (isMobile) {
+            iconScale = this.TILE_SIZE * 0.65; // Slightly larger on mobile
+        } else {
+            iconScale = this.TILE_SIZE * 0.6; // Original size for desktop
+        }
+        
+        iconSprite.setDisplaySize(iconScale, iconScale);
+        
+        // Add glow effect with responsive sizing
+        const glowSize = isMobile ? this.TILE_SIZE * 0.45 : this.TILE_SIZE * 0.4;
+        const glow = this.add.circle(worldX, worldY, glowSize, 0xFFD700, 0.3);
         
         // Add floating animation
         this.tweens.add({
@@ -1008,7 +1206,7 @@ export default class MainGameplay extends BaseScene {
 
     collectTimerIcon(icon) {
         // Play timer pickup sound
-        this.sound.play('se_select', { volume: 0.5 });
+        this.sound.play('se_select', { volume: 0.8 });
         
         // Add 5 seconds to the timer (capped at 60 seconds)
         this.addTime(5);
@@ -1199,9 +1397,23 @@ export default class MainGameplay extends BaseScene {
         const worldX = this.boardOffsetX + (tileX * this.TILE_SIZE) + this.TILE_SIZE / 2;
         const worldY = this.boardOffsetY + (tileY * this.TILE_SIZE) + this.TILE_SIZE / 2;
         
-        // Create thug sprite
+        // Create thug sprite with enhanced mobile scaling
         const thugSprite = this.add.image(worldX, worldY, 'goblinThug');
-        thugSprite.setDisplaySize(this.TILE_SIZE * 0.8, this.TILE_SIZE * 0.8);
+        
+        // Enhanced sprite scaling for mobile visibility
+        const isMobile = this.scale.width < 768;
+        const isSmallMobile = this.scale.width < 480;
+        
+        let thugSpriteScale;
+        if (isSmallMobile) {
+            thugSpriteScale = this.TILE_SIZE * 0.9; // Larger on very small screens
+        } else if (isMobile) {
+            thugSpriteScale = this.TILE_SIZE * 0.85; // Slightly larger on mobile
+        } else {
+            thugSpriteScale = this.TILE_SIZE * 0.8; // Original size for desktop
+        }
+        
+        thugSprite.setDisplaySize(thugSpriteScale, thugSpriteScale);
         thugSprite.setDepth(7); // Lower depth than enemies but higher than background
         
         // Add menacing red tint to distinguish as hazard
@@ -1355,7 +1567,7 @@ export default class MainGameplay extends BaseScene {
         
         // Check if time ran out
         if (this.gameTimer <= 0) {
-            this.handleTimeUp();
+            this.onTimerExpired();
         }
     }
 
@@ -1390,9 +1602,23 @@ export default class MainGameplay extends BaseScene {
         const worldX = this.boardOffsetX + (tileX * this.TILE_SIZE) + this.TILE_SIZE/2;
         const worldY = this.boardOffsetY + (tileY * this.TILE_SIZE) + this.TILE_SIZE/2;
         
-        // Create enemy sprite
+        // Create enemy sprite with enhanced mobile scaling
         const enemySprite = this.add.image(worldX, worldY, spriteKey);
-        enemySprite.setDisplaySize(this.TILE_SIZE * 0.7, this.TILE_SIZE * 0.7);
+        
+        // Enhanced sprite scaling for mobile visibility
+        const isMobile = this.scale.width < 768;
+        const isSmallMobile = this.scale.width < 480;
+        
+        let enemySpriteScale;
+        if (isSmallMobile) {
+            enemySpriteScale = this.TILE_SIZE * 0.8; // Larger on very small screens
+        } else if (isMobile) {
+            enemySpriteScale = this.TILE_SIZE * 0.75; // Slightly larger on mobile
+        } else {
+            enemySpriteScale = this.TILE_SIZE * 0.7; // Original size for desktop
+        }
+        
+        enemySprite.setDisplaySize(enemySpriteScale, enemySpriteScale);
         enemySprite.setDepth(8);
         
         // Add a slight red tint to distinguish from player
@@ -1511,11 +1737,12 @@ export default class MainGameplay extends BaseScene {
         this.currentQuiz = enemy;
         
         // Launch quiz scene without pausing main scene (so timer continues)
-        // Pass intensity level to determine quiz type
+        // Pass intensity level and answered questions tracker to determine quiz type and avoid repetition
         this.scene.launch('QuizScene', {
             courseTopic: this.courseTopic,
             enemyToDestroy: enemy,
-            intensity: this.intensity
+            intensity: this.intensity,
+            answeredQuestions: this.answeredQuestions
         });
     }
 
@@ -1524,6 +1751,9 @@ export default class MainGameplay extends BaseScene {
         if (this.powerUpActive || !this.gameStarted) {
             return;
         }
+        
+        // Play power-up pickup sound
+        this.sound.play('se_select', { volume: 0.8 });
         
         // Save game state and start power-up scene
         this.startPowerUpScene(powerUp);
@@ -1633,6 +1863,11 @@ export default class MainGameplay extends BaseScene {
     }
 
     handleQuizCompletion(data) {
+        // Track the answered question to prevent repetition
+        if (data.questionData) {
+            this.trackAnsweredQuestion(data.questionData, data.questionType, this.intensity);
+        }
+        
         // Handle quiz results
         if (data.correct) {
             // Increment streak for correct answer
@@ -1677,9 +1912,9 @@ export default class MainGameplay extends BaseScene {
             
             // Play sound effect based on streak
             if (this.streak >= 3) {
-                this.sound.play('se_combo', { volume: 0.6 }); // Combo sound for streaks 3+
+                this.sound.play('se_combo', { volume: 0.8 }); // Combo sound for streaks 3+
             } else {
-                this.sound.play('se_confirm', { volume: 0.5 }); // Confirm sound for correct answers
+                this.sound.play('se_correct', { volume: 0.8 }); // Correct answer sound
             }
             
             console.log(`Correct answer! Streak: ${this.streak}x, Score: +${totalScore} (+${this.baseScore} base + ${bonusScore} bonus), +10 seconds`);
@@ -1704,7 +1939,7 @@ export default class MainGameplay extends BaseScene {
             this.checkIntensityIncrease();
         } else {
             // Play wrong answer sound
-            this.sound.play('se_wrong', { volume: 0.5 });
+            this.sound.play('se_wrong', { volume: 0.8 });
             
             // Increment wrong answers counter
             this.wrongAnswers++;
@@ -1748,6 +1983,74 @@ export default class MainGameplay extends BaseScene {
         
         // Resume game
         this.quizActive = false;
+    }
+
+    trackAnsweredQuestion(questionData, questionType, intensity) {
+        // Create a unique identifier for the question based on its content
+        const questionId = this.createQuestionId(questionData);
+        
+        // Track the question based on intensity and type
+        const intensityKey = `intensity${intensity}`;
+        
+        if (intensity === 1) {
+            // Intensity 1: Only multiple choice
+            this.answeredQuestions[intensityKey].multipleChoice.add(questionId);
+        } else if (intensity === 2) {
+            // Intensity 2: Multiple choice or drag-drop
+            if (questionType === 'dragDrop' || questionData.type === 'drag-and-drop') {
+                this.answeredQuestions[intensityKey].dragDrop.add(questionId);
+            } else {
+                this.answeredQuestions[intensityKey].multipleChoice.add(questionId);
+            }
+        } else if (intensity === 3) {
+            // Intensity 3: Enhanced tracking for combined question system
+            
+            // Track in appropriate individual category
+            if (questionType === 'codeArrangement' || questionData.type === 'drag-and-drop' || questionData.isDragDrop) {
+                this.answeredQuestions[intensityKey].codeArrangement.add(questionId);
+            } else {
+                // Multiple choice questions in intensity 3
+                if (!this.answeredQuestions[intensityKey].multipleChoice) {
+                    this.answeredQuestions[intensityKey].multipleChoice = new Set();
+                }
+                this.answeredQuestions[intensityKey].multipleChoice.add(questionId);
+            }
+            
+            // Also track in combined pool for cycling system
+            if (!this.answeredQuestions[intensityKey].combined) {
+                this.answeredQuestions[intensityKey].combined = new Set();
+            }
+            this.answeredQuestions[intensityKey].combined.add(questionId);
+        }
+        
+        console.log(`Question tracked - Intensity ${intensity}, Type: ${questionType}, ID: ${questionId}`);
+        console.log('Total answered questions:', {
+            intensity1: this.answeredQuestions.intensity1.multipleChoice.size,
+            intensity2: {
+                multipleChoice: this.answeredQuestions.intensity2.multipleChoice.size,
+                dragDrop: this.answeredQuestions.intensity2.dragDrop.size
+            },
+            intensity3: {
+                multipleChoice: this.answeredQuestions.intensity3.multipleChoice?.size || 0,
+                codeArrangement: this.answeredQuestions.intensity3.codeArrangement.size,
+                combined: this.answeredQuestions.intensity3.combined?.size || 0
+            }
+        });
+    }
+
+    createQuestionId(questionData) {
+        // Create a unique identifier based on question content
+        // Use the question text as the primary identifier
+        if (questionData.question) {
+            return questionData.question;
+        } else if (questionData.prompt) {
+            return questionData.prompt;
+        } else if (questionData.description) {
+            return questionData.description;
+        } else {
+            // Fallback: use JSON string of the question
+            return JSON.stringify(questionData);
+        }
     }
 
     handlePowerUpResult(powerUpData, success, selectedPowerUp) {
@@ -1988,23 +2291,37 @@ export default class MainGameplay extends BaseScene {
         
         const randomQuestion = Phaser.Utils.Array.GetRandom(quizData.questions);
         
+        // Detect mobile for responsive sizing
+        const isMobile = this.scale.width < 768;
+        
+        // Set responsive dimensions
+        const containerWidth = isMobile ? Math.min(this.scale.width - 40, 500) : 600;
+        const containerHeight = isMobile ? Math.min(this.scale.height - 80, 450) : 400;
+        const questionFontSize = isMobile ? '18px' : '20px';
+        const answerFontSize = isMobile ? '14px' : '16px';
+        const titleFontSize = isMobile ? '20px' : '24px';
+        const buttonHeight = isMobile ? 45 : 50;
+        const buttonSpacing = isMobile ? 50 : 60;
+        const wordWrapWidth = containerWidth - 60;
+        
         // Create quiz container
         this.quizContainer = this.add.container(this.scale.width / 2, this.scale.height / 2);
         this.quizContainer.setDepth(2000);
         
         // Create quiz background
-        const quizBg = this.add.rectangle(0, 0, 600, 400, 0x000000, 0.9);
+        const quizBg = this.add.rectangle(0, 0, containerWidth, containerHeight, 0x000000, 0.9);
         quizBg.setStroke(0xffffff, 4);
         this.quizContainer.add(quizBg);
         
         // Create question text
-        const questionText = this.add.text(0, -120, randomQuestion.question, {
+        const questionY = isMobile ? -containerHeight/2 + 80 : -120;
+        const questionText = this.add.text(0, questionY, randomQuestion.question, {
             fontFamily: 'Arial',
-            fontSize: '20px',
+            fontSize: questionFontSize,
             fontWeight: 'bold',
             color: '#ffffff',
             align: 'center',
-            wordWrap: { width: 540 }
+            wordWrap: { width: wordWrapWidth }
         }).setOrigin(0.5);
         this.quizContainer.add(questionText);
         
@@ -2012,17 +2329,21 @@ export default class MainGameplay extends BaseScene {
         const answers = randomQuestion.options;
         const correctAnswer = randomQuestion.correct;
         
+        // Calculate starting Y position for answers
+        const startY = isMobile ? -50 : -40;
+        
         for (let i = 0; i < answers.length; i++) {
-            const answerBtn = this.add.rectangle(0, -40 + (i * 60), 500, 50, 0x333333);
+            const answerY = startY + (i * buttonSpacing);
+            const answerBtn = this.add.rectangle(0, answerY, containerWidth - 100, buttonHeight, 0x333333);
             answerBtn.setStroke(0xffffff, 2);
             answerBtn.setInteractive();
             
-            const answerText = this.add.text(0, -40 + (i * 60), `${String.fromCharCode(65 + i)}. ${answers[i]}`, {
+            const answerText = this.add.text(0, answerY, `${String.fromCharCode(65 + i)}. ${answers[i]}`, {
                 fontFamily: 'Arial',
-                fontSize: '16px',
+                fontSize: answerFontSize,
                 color: '#ffffff',
                 align: 'center',
-                wordWrap: { width: 480 }
+                wordWrap: { width: containerWidth - 120 }
             }).setOrigin(0.5);
             
             this.quizContainer.add([answerBtn, answerText]);
@@ -2043,9 +2364,10 @@ export default class MainGameplay extends BaseScene {
         }
         
         // Add title
-        const titleText = this.add.text(0, -170, 'Programming Quiz!', {
+        const titleY = isMobile ? -containerHeight/2 + 30 : -170;
+        const titleText = this.add.text(0, titleY, 'Programming Quiz!', {
             fontFamily: 'Arial',
-            fontSize: '24px',
+            fontSize: titleFontSize,
             fontWeight: 'bold',
             color: '#ffff00'
         }).setOrigin(0.5);
@@ -2055,15 +2377,62 @@ export default class MainGameplay extends BaseScene {
     getQuizData() {
         // Get quiz data based on course topic
         const topic = this.courseTopic || 'python';
+        let rawQuizData;
+        
         switch (topic.toLowerCase()) {
-            case 'python': return this.cache.json.get('pythonQuiz');
-            case 'java': return this.cache.json.get('javaQuiz');
-            case 'c': return this.cache.json.get('cQuiz');
-            case 'c++': return this.cache.json.get('cppQuiz');
-            case 'csharp': return this.cache.json.get('csharpQuiz');
-            case 'webdesign': return this.cache.json.get('webdesignQuiz');
-            default: return this.cache.json.get('pythonQuiz');
+            case 'python': rawQuizData = this.cache.json.get('pythonQuiz'); break;
+            case 'java': rawQuizData = this.cache.json.get('javaQuiz'); break;
+            case 'c': rawQuizData = this.cache.json.get('cQuiz'); break;
+            case 'c++': rawQuizData = this.cache.json.get('cppQuiz'); break;
+            case 'csharp': rawQuizData = this.cache.json.get('csharpQuiz'); break;
+            case 'webdesign': rawQuizData = this.cache.json.get('webdesignQuiz'); break;
+            default: rawQuizData = this.cache.json.get('pythonQuiz'); break;
         }
+        
+        if (!rawQuizData) {
+            console.error(`No quiz data available for topic: ${topic}`);
+            return null;
+        }
+        
+        // Get questions based on current intensity level
+        const intensityKey = `intensity${this.intensity}`;
+        const intensityData = rawQuizData[intensityKey];
+        
+        if (!intensityData) {
+            console.error(`No quiz data available for topic: ${topic} intensity: ${this.intensity}`);
+            return null;
+        }
+        
+        // For intensity 1, use only multiple choice questions
+        // For intensity 2+, we can add other question types later
+        let questions = [];
+        
+        if (intensityData.multipleChoice) {
+            questions = [...intensityData.multipleChoice];
+        }
+        
+        // Add other question types for higher intensities if they exist
+        if (this.intensity >= 2 && intensityData.dragAndDrop) {
+            questions = [...questions, ...intensityData.dragAndDrop];
+        }
+        
+        if (this.intensity >= 3 && intensityData.codeArrangement) {
+            questions = [...questions, ...intensityData.codeArrangement];
+        }
+        
+        if (questions.length === 0) {
+            console.error(`No questions found for topic: ${topic} intensity: ${this.intensity}`);
+            return null;
+        }
+        
+        // Convert to expected format for compatibility
+        return {
+            questions: questions.map(q => ({
+                question: q.question,
+                options: q.options,
+                correct: q.correctIndex || q.correct || 0
+            }))
+        };
     }
 
     handleQuizAnswer(selectedIndex, correctIndex, enemy) {
@@ -2103,15 +2472,24 @@ export default class MainGameplay extends BaseScene {
     }
 
     showQuizResult(isCorrect) {
+        // Get device-responsive positioning
+        const isMobile = this.scale.width < 768;
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
+        
+        // Position result text above the center on mobile, below center on desktop
+        const resultY = isMobile ? centerY - 100 : centerY + 150;
+        
         // Create result overlay
-        const resultText = this.add.text(this.scale.width / 2, this.scale.height / 2 + 150, 
+        const resultText = this.add.text(centerX, resultY, 
             isCorrect ? 'CORRECT! +100 Score, +10 Seconds!' : 'WRONG ANSWER!', {
             fontFamily: 'Arial',
-            fontSize: '28px',
+            fontSize: isMobile ? '24px' : '28px',
             fontWeight: 'bold',
             color: isCorrect ? '#00ff00' : '#ff0000',
             stroke: '#000000',
-            strokeThickness: 3
+            strokeThickness: 3,
+            align: 'center'
         }).setOrigin(0.5).setDepth(2100);
         
         // Animate result text
@@ -2512,46 +2890,114 @@ export default class MainGameplay extends BaseScene {
             console.warn('Camera not yet initialized, skipping setupCamera');
             return;
         }
-        
-        // Calculate the center of the actual board based on our offsets
+
         const boardWidth = this.MAP_WIDTH * this.TILE_SIZE;
         const boardHeight = this.MAP_HEIGHT * this.TILE_SIZE;
         const boardCenterX = this.boardOffsetX + boardWidth / 2;
         const boardCenterY = this.boardOffsetY + boardHeight / 2;
-        
-        // For a board game, we want the camera to show the entire board centered
-        // Center the camera on the actual board position
-        this.cameras.main.centerOn(boardCenterX, boardCenterY);
-        
-        // Calculate zoom to ensure the board is visible with padding
+
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
         const isMobile = screenWidth < 768;
-        
-        // Account for HUD space when calculating available screen area
-        const hudHeight = isMobile ? Math.max(80, screenHeight * 0.12) : 100;
+        const isSmallMobile = screenWidth < 480;
+
+        // --- Stronger zoom for all devices ---
+        let hudHeight;
+        let paddingFactor, minZoom, maxZoom;
+        if (isSmallMobile) {
+            hudHeight = 45;
+            paddingFactor = 0.98;
+            minZoom = 1.5; // was 1.2
+            maxZoom = 3.0;
+        } else if (isMobile) {
+            hudHeight = 50;
+            paddingFactor = 0.95;
+            minZoom = 1.5; // was 1.0
+            maxZoom = 3.0; // was 2.5
+        } else {
+            // Desktop: use mobile-like zoom and HUD height!
+            hudHeight = 50;
+            paddingFactor = 0.95;
+            minZoom = 2.5; // was 1.0
+            maxZoom = 4.0; // was 2.5
+        }
         const availableHeight = screenHeight - hudHeight;
-        
-        // Calculate zoom to fit the board with padding (90% of available screen)
-        const zoomX = (screenWidth * 0.9) / boardWidth;
-        const zoomY = (availableHeight * 0.9) / boardHeight;
-        const zoom = Math.min(zoomX, zoomY, 1); // Don't zoom in beyond 1x
-        
+
+        const zoomX = (screenWidth * paddingFactor) / boardWidth;
+        const zoomY = (availableHeight * paddingFactor) / boardHeight;
+        let zoom = Math.min(zoomX, zoomY);
+
+        zoom = Math.max(minZoom, Math.min(zoom, maxZoom));
         this.cameras.main.setZoom(zoom);
-        console.log(`Board: ${boardWidth}x${boardHeight}, Screen: ${screenWidth}x${availableHeight}, Zoom: ${zoom}, Center: ${boardCenterX},${boardCenterY}`);
+    
+        // Set up camera bounds to keep it within the game board area with some padding
+        const padding = this.TILE_SIZE;
+        this.cameras.main.setBounds(
+            this.boardOffsetX - padding,
+            this.boardOffsetY - padding,
+            boardWidth + (padding * 2),
+            boardHeight + (padding * 2)
+        );
+    
+        // Camera follow
+        if (this.playerSprite) {
+            const followSpeed = isMobile ? 0.15 : 0.15; // same for all
+            this.cameras.main.startFollow(this.playerSprite, true, followSpeed, followSpeed);
+
+            // Center the camera vertically (HUD is now smaller)
+            const offsetY = -hudHeight / (6 * zoom);
+            this.cameras.main.setFollowOffset(0, offsetY);
+
+            // Deadzone
+            const deadzoneWidth = this.TILE_SIZE * 1.5;
+            const deadzoneHeight = this.TILE_SIZE * 1.5;
+            this.cameras.main.setDeadzone(deadzoneWidth, deadzoneHeight);
+        }
+    
+        this.currentZoom = zoom;
+        this.isMobileDevice = isMobile;
+        this.isSmallMobileDevice = isSmallMobile;
+    
+        console.log(`Device: ${isSmallMobile ? 'SmallMobile' : isMobile ? 'Mobile' : 'Desktop'}, Board: ${boardWidth}x${boardHeight}, Screen: ${screenWidth}x${availableHeight}, Zoom: ${zoom.toFixed(2)}, Follow: enabled`);
+        
+        // Update HUD positions after camera setup
+        this.updateHudPositions();
     }
 
     addCourseDisplay() {
         // Add stylized course topic display in the top-right corner
         if (this.courseTopic) {
             const courseDisplayName = this.getFormattedCourseName(this.courseTopic);
-            const courseDisplay = this.add.text(this.scale.width - 20, 30, courseDisplayName, {
+            
+            // Enhanced mobile-responsive positioning and styling
+            const isMobile = this.scale.width < 768;
+            const isSmallMobile = this.scale.width < 480;
+            
+            let fontSize, strokeThickness, courseX, courseY;
+            if (isSmallMobile) {
+                fontSize = '16px';
+                strokeThickness = 3;
+                courseX = this.scale.width - 15;
+                courseY = 5; // Absolute top
+            } else if (isMobile) {
+                fontSize = '18px';
+                strokeThickness = 3;
+                courseX = this.scale.width - 20;
+                courseY = 5; // Absolute top
+            } else {
+                fontSize = '20px';
+                strokeThickness = 2;
+                courseX = this.scale.width - 20;
+                courseY = 30; // Original position for desktop
+            }
+            
+            this.courseDisplay = this.add.text(courseX, courseY, courseDisplayName, {
                 fontFamily: 'Arial',
-                fontSize: '20px',
+                fontSize: fontSize,
                 fontWeight: 'bold',
                 color: '#00ffff', // Cyan color
                 stroke: '#000080', // Dark blue stroke
-                strokeThickness: 2,
+                strokeThickness: strokeThickness,
                 shadow: {
                     offsetX: 2,
                     offsetY: 2,
@@ -2560,13 +3006,13 @@ export default class MainGameplay extends BaseScene {
                     fill: true
                 }
             });
-            courseDisplay.setOrigin(1, 0);
-            courseDisplay.setScrollFactor(0);
-            courseDisplay.setDepth(100);
+            this.courseDisplay.setOrigin(1, 0);
+            this.courseDisplay.setScrollFactor(0);
+            this.courseDisplay.setDepth(100);
             
             // Add subtle glow effect to course name
             this.tweens.add({
-                targets: courseDisplay,
+                targets: this.courseDisplay,
                 alpha: 0.7,
                 duration: 1500,
                 ease: 'Sine.easeInOut',
@@ -2576,8 +3022,70 @@ export default class MainGameplay extends BaseScene {
         }
     }
 
+    addMobileControlHint() {
+        // Only show hint on mobile devices
+        const isMobile = this.scale.width < 768;
+        if (!isMobile) return;
+        
+        // Create mobile control hint
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height * 0.75; // Lower on screen
+        
+        const hintText = this.add.text(centerX, centerY, 'Tap anywhere to move in that direction', {
+            fontFamily: 'Arial',
+            fontSize: this.scale.width < 480 ? '16px' : '18px',
+            fontWeight: 'bold',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 3,
+            shadow: {
+                offsetX: 2,
+                offsetY: 2,
+                color: '#000040',
+                blur: 2,
+                fill: true
+            },
+            align: 'center'
+        });
+        
+        hintText.setOrigin(0.5);
+        hintText.setScrollFactor(0);
+        hintText.setDepth(1000);
+        hintText.setAlpha(0);
+        
+        // Animate hint in and out
+        this.tweens.add({
+            targets: hintText,
+            alpha: 1,
+            duration: 1000,
+            ease: 'Power2',
+            yoyo: false,
+            onComplete: () => {
+                this.time.delayedCall(3000, () => {
+                    this.tweens.add({
+                        targets: hintText,
+                        alpha: 0,
+                        duration: 1000,
+                        ease: 'Power2',
+                        onComplete: () => {
+                            hintText.destroy();
+                        }
+                    });
+                });
+            }
+        });
+    }
+
     handlePointerInput(pointer) {
-        // Get world position of pointer
+        // Add click feedback for both mobile and PC
+        this.createClickFeedback(pointer.worldX, pointer.worldY);
+        
+        // Skip if quiz is active or game hasn't started
+        if (this.quizActive || !this.gameStarted) {
+            return;
+        }
+        
+        // Get world position of pointer (accounting for camera zoom)
         const worldX = pointer.worldX;
         const worldY = pointer.worldY;
         
@@ -2585,46 +3093,181 @@ export default class MainGameplay extends BaseScene {
         const deltaX = worldX - this.player.x;
         const deltaY = worldY - this.player.y;
         
+        // Enhanced touch sensitivity for mobile
+        const isMobile = this.scale.width < 768;
+        const minDistance = isMobile ? 20 : 10; // Larger minimum distance for mobile
+        
         // Normalize direction for 8-directional movement
-        const direction = this.get8DirectionalMovement(deltaX, deltaY);
+        const direction = this.get8DirectionalMovement(deltaX, deltaY, minDistance);
         
         if (direction.x !== 0 || direction.y !== 0) {
             this.movePlayer(direction.x, direction.y);
+            // Play movement sound feedback
+            this.playClickSound();
+        } else {
+            // Play invalid click sound for clicks that don't result in movement
+            this.playInvalidClickSound();
         }
     }
 
-    get8DirectionalMovement(deltaX, deltaY) {
+    get8DirectionalMovement(deltaX, deltaY, minDistance = 10) {
         // Convert any direction into one of 8 cardinal/diagonal directions
         const absX = Math.abs(deltaX);
         const absY = Math.abs(deltaY);
         
-        // If movement is too small, ignore it
-        if (absX < 10 && absY < 10) {
+        // If movement is too small, ignore it (dynamic threshold for mobile)
+        if (absX < minDistance && absY < minDistance) {
             return { x: 0, y: 0 };
         }
         
         let x = 0, y = 0;
         
         // Determine horizontal direction
-        if (deltaX > 10) x = 1;
-        else if (deltaX < -10) x = -1;
+        if (deltaX > minDistance) x = 1;
+        else if (deltaX < -minDistance) x = -1;
         
         // Determine vertical direction  
-        if (deltaY > 10) y = 1;
-        else if (deltaY < -10) y = -1;
+        if (deltaY > minDistance) y = 1;
+        else if (deltaY < -minDistance) y = -1;
         
         return { x, y };
+    }
+
+    createClickFeedback(worldX, worldY) {
+        // Create visual feedback at click/touch position
+        const isMobile = this.scale.width < 768;
+        
+        // Create ripple effect
+        const ripple = this.add.circle(worldX, worldY, 0, 0xffffff, 0.6);
+        ripple.setDepth(1000); // High depth to appear above everything
+        
+        // Create expanding ripple animation
+        this.tweens.add({
+            targets: ripple,
+            radius: isMobile ? 30 : 20, // Larger ripple on mobile
+            alpha: 0,
+            duration: 300,
+            ease: 'Power2',
+            onComplete: () => {
+                ripple.destroy();
+            }
+        });
+        
+        // Create inner pulse effect
+        const pulse = this.add.circle(worldX, worldY, isMobile ? 15 : 10, 0x00ffff, 0.8);
+        pulse.setDepth(1001);
+        
+        this.tweens.add({
+            targets: pulse,
+            scaleX: 0,
+            scaleY: 0,
+            alpha: 0,
+            duration: 200,
+            ease: 'Power2',
+            onComplete: () => {
+                pulse.destroy();
+            }
+        });
+        
+        // Add sparkle particles for extra feedback
+        const numSparkles = isMobile ? 6 : 4;
+        for (let i = 0; i < numSparkles; i++) {
+            const angle = (Math.PI * 2 * i) / numSparkles;
+            const distance = isMobile ? 25 : 20;
+            const sparkleX = worldX + Math.cos(angle) * distance;
+            const sparkleY = worldY + Math.sin(angle) * distance;
+            
+            const sparkle = this.add.circle(sparkleX, sparkleY, 3, 0xffff00, 1);
+            sparkle.setDepth(1002);
+            
+            this.tweens.add({
+                targets: sparkle,
+                alpha: 0,
+                scaleX: 0,
+                scaleY: 0,
+                duration: 400,
+                delay: i * 50,
+                ease: 'Power2',
+                onComplete: () => {
+                    sparkle.destroy();
+                }
+            });
+        }
+    }
+
+    playClickSound() {
+        // Play a subtle click sound for valid movements
+        if (this.sound && this.sound.get('se_select')) {
+            this.sound.play('se_select', { volume: 0.3 });
+        }
+    }
+
+    playInvalidClickSound() {
+        // Play a different sound for invalid clicks (optional, softer)
+        if (this.sound && this.sound.get('se_select')) {
+            this.sound.play('se_select', { volume: 0.15, rate: 0.8 }); // Lower volume and pitch
+        }
+    }
+
+    createKeyboardFeedback(directionX, directionY) {
+        // Create directional arrow feedback for keyboard input
+        const playerX = this.playerSprite.x;
+        const playerY = this.playerSprite.y;
+        
+        // Calculate target position for visual indicator
+        const targetX = playerX + (directionX * this.TILE_SIZE * 0.7);
+        const targetY = playerY + (directionY * this.TILE_SIZE * 0.7);
+        
+        // Create directional arrow
+        const arrow = this.add.triangle(playerX, playerY, 0, -8, -6, 8, 6, 8, 0x00ff00, 0.8);
+        arrow.setDepth(1000);
+        
+        // Rotate arrow to point in movement direction
+        let angle = Math.atan2(directionY, directionX) + (Math.PI / 2);
+        arrow.setRotation(angle);
+        
+        // Animate arrow moving in direction and fading
+        this.tweens.add({
+            targets: arrow,
+            x: targetX,
+            y: targetY,
+            alpha: 0,
+            duration: 250,
+            ease: 'Power2',
+            onComplete: () => {
+                arrow.destroy();
+            }
+        });
+        
+        // Add pulse effect at player position
+        const pulse = this.add.circle(playerX, playerY, 20, 0x00ff00, 0.3);
+        pulse.setDepth(999);
+        
+        this.tweens.add({
+            targets: pulse,
+            scaleX: 1.5,
+            scaleY: 1.5,
+            alpha: 0,
+            duration: 200,
+            ease: 'Power2',
+            onComplete: () => {
+                pulse.destroy();
+            }
+        });
     }
 
     update(time, delta) {
         // Always handle keyboard input and player glow
         this.handleKeyboardInput();
-        
+
         // Update player glow position
         if (this.playerGlow) {
             this.playerGlow.setPosition(this.playerSprite.x, this.playerSprite.y);
         }
-        
+
+        // --- Always update HUD positions to follow camera ---
+        this.updateHudPositions();
+
         // Only run game systems if the game has started and no quiz is active
         if (!this.gameStarted || this.quizActive) {
             return;
@@ -2684,6 +3327,8 @@ export default class MainGameplay extends BaseScene {
         
         // Execute movement if any direction is pressed
         if (moveX !== 0 || moveY !== 0) {
+            // Create visual feedback at player position for keyboard input
+            this.createKeyboardFeedback(moveX, moveY);
             this.movePlayer(moveX, moveY);
         }
     }
@@ -2693,9 +3338,6 @@ export default class MainGameplay extends BaseScene {
         
         // Don't allow movement during countdown or quiz
         if (!this.gameStarted || this.quizActive) return;
-        
-        // Play subtle movement sound
-        this.sound.play('se_select', { volume: 0.2 });
         
         // Calculate target position
         const targetX = this.player.x + (directionX * this.TILE_SIZE);
@@ -2708,13 +3350,20 @@ export default class MainGameplay extends BaseScene {
         const maxY = this.boardOffsetY + ((this.MAP_HEIGHT - 0.5) * this.TILE_SIZE);
         
         if (targetX < minX || targetX > maxX || targetY < minY || targetY > maxY) {
+            // Play invalid move sound for boundary collision
+            this.playInvalidClickSound();
             return; // Can't move outside map
         }
         
         // Check for enemy collision at target position
         if (this.checkEnemyCollision(targetX, targetY)) {
+            // Play invalid move sound for enemy collision
+            this.playInvalidClickSound();
             return; // Handle enemy collision and don't move
         }
+        
+        // Play successful movement sound
+        this.playClickSound();
         
         // Check for power-up collision at target position
         this.checkPowerUpCollision(targetX, targetY);

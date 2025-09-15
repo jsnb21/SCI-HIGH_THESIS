@@ -446,7 +446,7 @@
           <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105">
             <div class="text-3xl mb-2">🎮</div>
             <h3 class="font-gaming text-primary text-lg mb-2">Interactive Learning</h3>
-            <p class="text-gray-300 text-sm">Hands-on coding challenges and puzzles</p>
+            <p class="text-gray-300 text-sm">Hands-on coding challenges</p>
             <div class="mt-4 text-xs text-gray-400">
               <span class="bg-primary/20 text-primary px-2 py-1 rounded">5+ Languages</span>
             </div>
@@ -454,19 +454,19 @@
           
           <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105">
             <div class="text-3xl mb-2">⚔️</div>
-            <h3 class="font-gaming text-accent text-lg mb-2">Epic Adventures</h3>
-            <p class="text-gray-300 text-sm">Story-driven gameplay with RPG elements</p>
+            <h3 class="font-gaming text-accent text-lg mb-2">Fast-paced Gameplay</h3>
+            <p class="text-gray-300 text-sm">Fast Roguelike Gameplay</p>
             <div class="mt-4 text-xs text-gray-400">
-              <span class="bg-accent/20 text-accent px-2 py-1 rounded">Story Mode</span>
+              <span class="bg-accent/20 text-accent px-2 py-1 rounded">Blitz</span>
             </div>
           </div>
           
           <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105">
             <div class="text-3xl mb-2">📚</div>
-            <h3 class="font-gaming text-cyan text-lg mb-2">Skill Progression</h3>
+            <h3 class="font-gaming text-cyan text-lg mb-2">Trial-and-Error</h3>
             <p class="text-gray-300 text-sm">Level up your programming knowledge</p>
             <div class="mt-4 text-xs text-gray-400">
-              <span class="bg-cyan/20 text-cyan px-2 py-1 rounded">XP System</span>
+              <span class="bg-cyan/20 text-cyan px-2 py-1 rounded">Learning System</span>
             </div>
           </div>
         </div>
@@ -493,8 +493,8 @@
             <div class="w-16 h-16 mx-auto mb-3 flex items-center justify-center">
               <img src="public/assets/img/mainhub/COMLAB_ICON.png" alt="Computer Lab" class="w-12 h-12 object-contain" />
             </div>
-            <h4 class="font-gaming text-accent text-md mb-2">Computer Lab</h4>
-            <p class="text-gray-400 text-xs">Practice coding in virtual computer lab environments</p>
+            <h4 class="font-gaming text-accent text-md mb-2">Real-time Leaderboards</h4>
+            <p class="text-gray-400 text-xs">Compete with other players</p>
           </div>
 
           <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
@@ -602,28 +602,101 @@
             <p class="text-xs sm:text-sm text-gray-400 mt-2">✨ New student? An account will be created automatically for you!</p>
           </div>
           
-          <div class="max-w-md mx-auto px-2 sm:px-0">
-            <form id="student-login-form" class="space-y-6">
-              <div>
+          <div class="max-w-2xl mx-auto px-2 sm:px-0">
+            <!-- Step 1: Student ID Input -->
+            <div id="student-id-step" class="space-y-6">
+              <div class="max-w-md mx-auto">
                 <label class="block text-gray-300 text-sm mb-2">Student ID</label>
-                <input type="text" name="studentId" required placeholder="e.g., 24-2024-001" 
+                <input type="text" id="student-id-input" required placeholder="e.g., 24-2024-001" 
                        class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none text-center font-gaming">
                 <p class="text-xs text-gray-400 mt-1">Format: XX-XXXX-XXX (numbers and dashes only)</p>
               </div>
-              <button type="submit" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105">
-                🚀 Enter Adventure
-              </button>
-            </form>
+              <div class="text-center">
+                <button type="button" id="verify-student-id" class="px-8 py-3 font-gaming text-white bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105">
+                  🔍 Verify Student ID
+                </button>
+              </div>
+            </div>
+
+            <!-- Step 2: Profile Completion (shown only if needed) -->
+            <div id="student-profile-step" class="hidden space-y-6">
+              <div class="text-center mb-6">
+                <h3 class="font-gaming text-lg text-cyan mb-2">📝 Complete Your Profile</h3>
+                <p class="text-gray-300 text-sm">We need a bit more information to set up your account</p>
+              </div>
+              
+              <form id="student-complete-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">First Name *</label>
+                    <input type="text" name="firstName" required placeholder="Enter your first name" 
+                           class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Last Name *</label>
+                    <input type="text" name="lastName" required placeholder="Enter your last name" 
+                           class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
+                  </div>
+                </div>
+                
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Department *</label>
+                    <select name="department" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
+                      <option value="">Select your department</option>
+                      <option value="Senior High School Department">Senior High School Department</option>
+                      <option value="College Department">College Department</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Strand/Course *</label>
+                    <select name="strand" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
+                      <option value="">Select your strand/course</option>
+                      <option value="ICT">ICT</option>
+                      <option value="BSCS">BSCS</option>
+                      <option value="BSIT">BSIT</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Year *</label>
+                    <select name="year" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none">
+                      <option value="">Select your year</option>
+                      <option value="1st">1st</option>
+                      <option value="2nd">2nd</option>
+                      <option value="3rd">3rd</option>
+                      <option value="4th">4th</option>
+                      <option value="5th">5th</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="md:col-span-2 text-center pt-4">
+                  <button type="submit" class="px-8 py-3 font-gaming text-white bg-gradient-to-r from-accent to-cyan rounded-lg transform transition-all duration-300 hover:scale-105">
+                    🚀 Complete Setup & Enter Adventure
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Step 3: Profile Found (for existing users) -->
+            <div id="student-found-step" class="hidden space-y-6">
+              <div class="text-center">
+                <div class="bg-dark/30 rounded-lg p-6">
+                  <h3 class="font-gaming text-lg text-green-400 mb-4">✅ Profile Found!</h3>
+                  <div id="student-profile-preview" class="text-left space-y-2 text-gray-300 max-w-md mx-auto">
+                    <!-- Profile details will be inserted here -->
+                  </div>
+                  <button type="button" id="login-existing-student" class="mt-4 px-8 py-3 font-gaming text-white bg-gradient-to-r from-green-500 to-green-600 rounded-lg transform transition-all duration-300 hover:scale-105">
+                    🚀 Continue Adventure
+                  </button>
+                </div>
+              </div>
+            </div>
             
+            <!-- Help Section -->
             <div class="text-center mt-6 pt-6 border-t border-gray-600">
               <p class="text-gray-400 text-sm">📋 Only your Student ID is needed - no password required!</p>
               <div class="mt-4 p-3 bg-dark/30 rounded-lg">
-                <p class="text-xs text-gray-500 mb-2">🔧 Dev Mode Test Accounts:</p>
-                <div class="text-xs text-accent space-y-1">
-                  <p>ID: 24-2024-001 (Juan - BS CS)</p>
-                  <p>ID: 24-2024-002 (Maria - BS IT)</p>
-                  <p>ID: 24-2024-003 (Pedro - SHS STEM)</p>
-                </div>
                 <hr class="my-2 border-gray-600">
                 <p class="text-cyan text-xs">💡 Or try any Student ID (XX-XXXX-XXX format) to create a new account!</p>
               </div>
@@ -758,8 +831,8 @@
                 <span class="mr-3">🎯</span> Our Mission
               </h3>
               <p class="text-gray-300 text-lg leading-relaxed">
-                SCI-HIGH is an innovative thesis project that transforms programming education into an epic adventure. 
-                We're revolutionizing how students learn by combining the excitement of gaming with the power of education.
+                SCI-HIGH is a thesis project that transforms learning programming fundamentals into a roguelike-style game. 
+                The game combines the trial-and-error process of the roguelike genre with programming education, creating an engaging way for students to learn.
               </p>
             </div>
             
@@ -768,10 +841,10 @@
                 <span class="mr-3">🎮</span> Game Features
               </h3>
               <ul class="text-gray-300 space-y-2">
-                <li class="flex items-center"><span class="text-primary mr-2">▶</span> Interactive storytelling with RPG elements</li>
+                <li class="flex items-center"><span class="text-primary mr-2">▶</span> Narrative in Learning Programming Fundamentals</li>
                 <li class="flex items-center"><span class="text-primary mr-2">▶</span> Multiple programming languages and concepts</li>
-                <li class="flex items-center"><span class="text-primary mr-2">▶</span> Dungeon exploration and puzzle solving</li>
-                <li class="flex items-center"><span class="text-primary mr-2">▶</span> Adaptive learning for all skill levels</li>
+                <li class="flex items-center"><span class="text-primary mr-2">▶</span> Fast-paced, roguelike-style game.</li>
+                <li class="flex items-center"><span class="text-primary mr-2">▶</span> Increasing difficulty. </li>
                 <li class="flex items-center"><span class="text-primary mr-2">▶</span> Real-time progress tracking</li>
                 <li class="flex items-center"><span class="text-primary mr-2">▶</span> Achievement system with rewards</li>
               </ul>
@@ -1021,11 +1094,37 @@
         if (professorForm) professorForm.classList.add('hidden');
         if (studentForm) studentForm.classList.add('hidden');
         if (generalForm) generalForm.classList.add('hidden');
+        
+        // Reset student form steps when switching forms
+        resetStudentFormSteps();
+      }
+
+      function resetStudentFormSteps() {
+        // Reset all form steps to initial state
+        const studentIdStep = document.getElementById('student-id-step');
+        const studentProfileStep = document.getElementById('student-profile-step');
+        const studentFoundStep = document.getElementById('student-found-step');
+        
+        if (studentIdStep) studentIdStep.classList.remove('hidden');
+        if (studentProfileStep) studentProfileStep.classList.add('hidden');
+        if (studentFoundStep) studentFoundStep.classList.add('hidden');
+        
+        // Clear form fields
+        const studentIdInput = document.getElementById('student-id-input');
+        const completeForm = document.getElementById('student-complete-form');
+        
+        if (studentIdInput) studentIdInput.value = '';
+        if (completeForm) completeForm.reset();
+        
+        // Reset global variables
+        currentStudentId = null;
+        currentStudentData = null;
       }
 
       // Make functions globally accessible for onclick handlers
       window.showLoginModal = showLoginModal;
       window.showUserTypeSelection = showUserTypeSelection;
+      window.resetStudentFormSteps = resetStudentFormSteps;
 
       // Fallback function for modal access - for GitHub Pages compatibility
       window.ensureModalAccess = function() {
@@ -1381,6 +1480,33 @@
               const studentData = Object.values(studentsSnapshot.val())[0];
               const studentKey = Object.keys(studentsSnapshot.val())[0];
 
+              // Also check for career stats data which might have additional profile info
+              let careerStatsData = null;
+              try {
+                const careerStatsSnapshot = await firebase.database().ref(`student_career_stats/${studentId}`).once('value');
+                if (careerStatsSnapshot.exists()) {
+                  careerStatsData = careerStatsSnapshot.val();
+                  console.log('Found career stats data for student:', careerStatsData);
+                }
+              } catch (error) {
+                console.log('No career stats found for student (this is normal for new students):', error.message);
+              }
+
+              // Merge career stats data with main student data if available
+              const mergedStudentData = { ...studentData };
+              if (careerStatsData) {
+                // Merge profile information from career stats
+                if (careerStatsData.firstName) mergedStudentData.firstName = careerStatsData.firstName;
+                if (careerStatsData.lastName) mergedStudentData.lastName = careerStatsData.lastName;
+                if (careerStatsData.department) mergedStudentData.department = careerStatsData.department;
+                if (careerStatsData.strandYear) mergedStudentData.strandYear = careerStatsData.strandYear;
+                
+                // Update fullName if we have both first and last name
+                if (careerStatsData.firstName && careerStatsData.lastName) {
+                  mergedStudentData.fullName = `${careerStatsData.firstName} ${careerStatsData.lastName}`;
+                }
+              }
+
               // Update last login timestamp
               await firebase.database().ref('students').child(studentKey).update({
                 lastLogin: new Date().toISOString(),
@@ -1392,7 +1518,7 @@
                 uid: studentKey,
                 studentId: studentData.studentId,
                 type: 'student',
-                profile: studentData
+                profile: mergedStudentData
               };
 
               localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
@@ -1965,6 +2091,202 @@
           localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
           return { success: true, user: this.currentUser };
         };
+        
+        // Enhanced student profile methods
+        this.getStudentProfile = async function(studentId) {
+          console.log('getStudentProfile called with studentId:', studentId);
+          
+          try {
+            // Try to get from Firebase first
+            if (typeof firebase !== 'undefined' && firebase.database) {
+              console.log('Querying Firebase for student:', studentId);
+              await this.ensureAuthenticated(); // Make sure we're authenticated
+              
+              const snapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
+              const data = snapshot.val();
+              console.log('Firebase query result:', data);
+              
+              if (data) {
+                const studentKey = Object.keys(data)[0];
+                const studentData = data[studentKey];
+                console.log('Found student in Firebase:', studentData);
+                
+                // Also check for career stats data which might have additional profile info
+                let careerStatsData = null;
+                try {
+                  const careerStatsSnapshot = await firebase.database().ref(`student_career_stats/${studentId}`).once('value');
+                  if (careerStatsSnapshot.exists()) {
+                    careerStatsData = careerStatsSnapshot.val();
+                    console.log('Found career stats data for student:', careerStatsData);
+                  }
+                } catch (error) {
+                  console.log('No career stats found for student (this is normal for new students):', error.message);
+                }
+
+                // Merge career stats data with main student data if available
+                const mergedStudentData = { ...studentData };
+                if (careerStatsData) {
+                  // Merge profile information from career stats
+                  if (careerStatsData.firstName) mergedStudentData.firstName = careerStatsData.firstName;
+                  if (careerStatsData.lastName) mergedStudentData.lastName = careerStatsData.lastName;
+                  if (careerStatsData.department) mergedStudentData.department = careerStatsData.department;
+                  if (careerStatsData.strandYear) mergedStudentData.strandYear = careerStatsData.strandYear;
+                  
+                  // Update fullName if we have both first and last name
+                  if (careerStatsData.firstName && careerStatsData.lastName) {
+                    mergedStudentData.fullName = `${careerStatsData.firstName} ${careerStatsData.lastName}`;
+                  }
+                }
+                
+                console.log('Merged student data:', mergedStudentData);
+                return mergedStudentData;
+              } else {
+                console.log('No student found in Firebase with studentId:', studentId);
+              }
+            } else {
+              console.log('Firebase database not available');
+            }
+          } catch (error) {
+            console.warn('Firebase getStudentProfile failed:', error);
+          }
+          
+          // Fallback to offline storage
+          console.log('Checking offline storage...');
+          const offlineStudents = JSON.parse(localStorage.getItem('sci_high_offline_students') || '[]');
+          const offlineResult = offlineStudents.find(s => s.studentId === studentId) || null;
+          console.log('Offline storage result:', offlineResult);
+          return offlineResult;
+        };
+        
+        this.loginStudentWithProfile = async function(studentId, profileData) {
+          try {
+            // Try Firebase first
+            if (typeof firebase !== 'undefined' && firebase.database) {
+              await this.ensureAuthenticated(); // Make sure we're authenticated
+              
+              const studentsRef = firebase.database().ref('students');
+              
+              // Check if student exists
+              const snapshot = await studentsRef.orderByChild('studentId').equalTo(studentId).once('value');
+              const existingData = snapshot.val();
+              let studentKey;
+              
+              if (existingData) {
+                studentKey = Object.keys(existingData)[0];
+                // Update existing student with new profile data
+                await studentsRef.child(studentKey).update({
+                  firstName: profileData.firstName,
+                  lastName: profileData.lastName,
+                  fullName: `${profileData.firstName} ${profileData.lastName}`,
+                  department: profileData.department,
+                  strandYear: profileData.strandYear,
+                  strand: profileData.strand,
+                  year: profileData.year,
+                  lastLogin: new Date().toISOString(),
+                  profileCompleted: true,
+                  needsProfileCompletion: false // Clear the flag
+                });
+              } else {
+                // Create new student
+                const newStudentData = {
+                  studentId,
+                  firstName: profileData.firstName,
+                  lastName: profileData.lastName,
+                  fullName: `${profileData.firstName} ${profileData.lastName}`,
+                  department: profileData.department,
+                  strandYear: profileData.strandYear,
+                  strand: profileData.strand,
+                  year: profileData.year,
+                  isActive: true,
+                  createdAt: new Date().toISOString(),
+                  lastLogin: new Date().toISOString(),
+                  profileCompleted: true,
+                  needsProfileCompletion: false, // Profile is now complete
+                  progress: {
+                    completedQuizzes: [],
+                    completedStories: [],
+                    totalScore: 0,
+                    lastActivity: new Date().toISOString(),
+                    gameData: {
+                      currentLevel: 1,
+                      totalPoints: 0,
+                      achievements: [],
+                      courseProgress: {}
+                    }
+                  }
+                };
+                
+                const newRef = await studentsRef.push(newStudentData);
+                studentKey = newRef.key;
+              }
+              
+              // Set current user
+              this.currentUser = {
+                uid: studentKey,
+                studentId: studentId,
+                type: 'student',
+                profile: {
+                  studentId,
+                  firstName: profileData.firstName,
+                  lastName: profileData.lastName,
+                  fullName: `${profileData.firstName} ${profileData.lastName}`,
+                  department: profileData.department,
+                  strandYear: profileData.strandYear,
+                  profileCompleted: true
+                }
+              };
+              this.userType = 'student';
+              localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+              
+              return { success: true, user: this.currentUser };
+            }
+          } catch (error) {
+            console.warn('Firebase loginStudentWithProfile failed:', error);
+          }
+          
+          // Fallback to offline
+          return this.loginStudentOfflineWithProfile(studentId, profileData);
+        };
+        
+        this.loginStudentOfflineWithProfile = function(studentId, profileData) {
+          console.log('Using offline student login with profile for:', studentId);
+          
+          const studentData = {
+            studentId,
+            firstName: profileData.firstName,
+            lastName: profileData.lastName,
+            fullName: `${profileData.firstName} ${profileData.lastName}`,
+            department: profileData.department,
+            strandYear: profileData.strandYear,
+            isOffline: true,
+            profileCompleted: true,
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString()
+          };
+          
+          // Save to offline storage
+          const offlineStudents = JSON.parse(localStorage.getItem('sci_high_offline_students') || '[]');
+          const existingIndex = offlineStudents.findIndex(s => s.studentId === studentId);
+          
+          if (existingIndex >= 0) {
+            offlineStudents[existingIndex] = { ...offlineStudents[existingIndex], ...studentData };
+          } else {
+            offlineStudents.push(studentData);
+          }
+          
+          localStorage.setItem('sci_high_offline_students', JSON.stringify(offlineStudents));
+          
+          this.currentUser = {
+            uid: 'offline_' + studentId,
+            studentId: studentId,
+            type: 'student',
+            profile: studentData
+          };
+          this.userType = 'student';
+          localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+          
+          return { success: true, user: this.currentUser };
+        };
       };
       
       // Initialize offline accounts
@@ -1984,7 +2306,7 @@
           'screenshots-modal': globalScreenshotsModal,
           'start-game-btn': document.getElementById('start-game-btn'),
           'professor-login-form': document.getElementById('professor-login-form'),
-          'student-login-form': document.getElementById('student-login-form'),
+          'student-complete-form': document.getElementById('student-complete-form'),
           'general-login-form': document.getElementById('general-login-form'),
           'general-register-form': document.getElementById('general-register-form'),
           'guest-option': document.getElementById('guest-option')
@@ -2065,10 +2387,14 @@
         }
       });
 
-      document.getElementById('student-login-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const studentId = formData.get('studentId').trim();
+      // Student Login Process
+      let currentStudentId = null;
+      let currentStudentData = null;
+      
+      // Step 1: Verify Student ID
+      document.getElementById('verify-student-id').addEventListener('click', async () => {
+        const studentIdInput = document.getElementById('student-id-input');
+        const studentId = studentIdInput.value.trim();
         
         // Validate student ID format (XX-XXXX-XXX)
         const studentIdPattern = /^[0-9]{2}-[0-9]{4}-[0-9]{3}$/;
@@ -2079,34 +2405,99 @@
           return;
         }
         
+        currentStudentId = studentId;
+        
         try {
-          console.log('Attempting login with Student ID:', studentId);
-          // Use the local authManager instead of importing external service
-          const result = await authManager.loginStudent(studentId);
+          // Check if student exists in the database
+          const studentData = await authManager.getStudentProfile(studentId);
+          
+          console.log('Retrieved student data:', studentData);
+          
+          if (studentData) {
+            // Student exists in database, show welcome screen
+            console.log('Student found in database, showing profile found step');
+            showStudentFoundStep(studentData);
+          } else {
+            // Student doesn't exist, show profile completion form
+            console.log('Student not found in database, showing profile completion form');
+            showStudentProfileStep(null);
+          }
+        } catch (error) {
+          console.warn('Error checking student profile:', error);
+          // If Firebase is down, show profile completion form
+          showStudentProfileStep(null);
+        }
+      });
+      
+      // Step 2: Complete Profile Form
+      document.getElementById('student-complete-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        
+        const strand = formData.get('strand');
+        const year = formData.get('year');
+        const strandYear = `${year} Year ${strand}`; // Combine strand and year
+        
+        const profileData = {
+          studentId: currentStudentId,
+          firstName: formData.get('firstName').trim(),
+          lastName: formData.get('lastName').trim(),
+          department: formData.get('department'),
+          strandYear: strandYear,
+          strand: strand,
+          year: year
+        };
+        
+        try {
+          // Complete the student login with profile data
+          const result = await authManager.loginStudentWithProfile(currentStudentId, profileData);
           
           if (result.success) {
-            if (result.isNewAccount) {
-              showSuccess('Welcome! A new account has been created for you. Your progress will be saved automatically.', {
-                title: '🎉 Account Created!'
-              }).then(() => {
-                loginModal.classList.add('hidden');
-                authManager.redirectToGame();
-              });
-            } else {
-              showSuccess('Welcome back! Your progress has been loaded.', {
-                title: '👋 Welcome Back!'
-              }).then(() => {
-                loginModal.classList.add('hidden');
-                authManager.redirectToGame();
-              });
-            }
+            showSuccess('Welcome! Your profile has been set up successfully. Your progress will be saved automatically.', {
+              title: '🎉 Profile Complete!'
+            }).then(() => {
+              loginModal.classList.add('hidden');
+              authManager.redirectToGame();
+            });
+          } else {
+            showError('Profile setup failed: ' + result.error, { title: 'Setup Failed' });
+          }
+        } catch (error) {
+          console.warn('Firebase profile setup failed, trying offline mode:', error);
+          // Fallback to offline mode
+          const offlineResult = authManager.loginStudentOfflineWithProfile(currentStudentId, profileData);
+          if (offlineResult.success) {
+            showInfo('Welcome! Your profile has been set up in offline mode. Progress will be saved locally.', {
+              title: '📱 Offline Mode'
+            }).then(() => {
+              loginModal.classList.add('hidden');
+              authManager.redirectToGame();
+            });
+          } else {
+            showError('Profile setup failed: Unable to save profile', { title: 'Setup Error' });
+          }
+        }
+      });
+      
+      // Step 3: Login Existing Student
+      document.getElementById('login-existing-student').addEventListener('click', async () => {
+        try {
+          const result = await authManager.loginStudent(currentStudentId);
+          
+          if (result.success) {
+            showSuccess('Welcome back! Your progress has been loaded.', {
+              title: '👋 Welcome Back!'
+            }).then(() => {
+              loginModal.classList.add('hidden');
+              authManager.redirectToGame();
+            });
           } else {
             showError('Login failed: ' + result.error, { title: 'Student Login Failed' });
           }
         } catch (error) {
           console.warn('Firebase login failed, trying offline mode:', error);
           // Fallback to offline mode
-          const offlineResult = authManager.loginStudentOffline(formData.get('studentId'));
+          const offlineResult = authManager.loginStudentOffline(currentStudentId);
           if (offlineResult.success) {
             showInfo('Welcome! You are playing in offline mode. Progress will be saved locally.', {
               title: '📱 Offline Mode'
@@ -2117,6 +2508,79 @@
           } else {
             showError('Login failed: Unable to authenticate', { title: 'Authentication Error' });
           }
+        }
+      });
+      
+      // Helper functions for step management
+      function showStudentProfileStep(existingData) {
+        document.getElementById('student-id-step').classList.add('hidden');
+        document.getElementById('student-found-step').classList.add('hidden');
+        document.getElementById('student-profile-step').classList.remove('hidden');
+        
+        // Pre-fill existing data if available
+        if (existingData) {
+          const form = document.getElementById('student-complete-form');
+          if (existingData.firstName) form.querySelector('[name="firstName"]').value = existingData.firstName;
+          if (existingData.lastName) form.querySelector('[name="lastName"]').value = existingData.lastName;
+          if (existingData.department) form.querySelector('[name="department"]').value = existingData.department;
+          
+          // Handle separate strand and year fields
+          if (existingData.strand) form.querySelector('[name="strand"]').value = existingData.strand;
+          if (existingData.year) form.querySelector('[name="year"]').value = existingData.year;
+          
+          // If only strandYear exists (legacy data), try to parse it
+          if (existingData.strandYear && !existingData.strand && !existingData.year) {
+            const parseStrandYear = (strandYear) => {
+              // Try to extract year and strand from combined string
+              const yearMatch = strandYear.match(/(\d+)(st|nd|rd|th)/i);
+              const year = yearMatch ? yearMatch[1] + (yearMatch[2] || '') : '';
+              
+              let strand = '';
+              if (strandYear.includes('BSCS') || strandYear.includes('BS CS')) strand = 'BSCS';
+              else if (strandYear.includes('BSIT') || strandYear.includes('BS IT')) strand = 'BSIT';
+              else if (strandYear.includes('ICT')) strand = 'ICT';
+              
+              return { strand, year };
+            };
+            
+            const { strand, year } = parseStrandYear(existingData.strandYear);
+            if (strand) form.querySelector('[name="strand"]').value = strand;
+            if (year) form.querySelector('[name="year"]').value = year;
+          }
+        }
+      }
+      
+      function showStudentFoundStep(studentData) {
+        document.getElementById('student-id-step').classList.add('hidden');
+        document.getElementById('student-profile-step').classList.add('hidden');
+        document.getElementById('student-found-step').classList.remove('hidden');
+        
+        // Extract student information from various possible data structures
+        const firstName = studentData.firstName || (studentData.fullName ? studentData.fullName.split(' ')[0] : 'Student');
+        const lastName = studentData.lastName || (studentData.fullName ? studentData.fullName.split(' ').slice(1).join(' ') : '');
+        const fullName = studentData.fullName || `${firstName} ${lastName}`.trim();
+        const department = studentData.department || studentData.academicInfo?.department || 'Unknown Department';
+        const strandYear = studentData.strandYear || 
+                          (studentData.strand && studentData.year ? `${studentData.year} Year ${studentData.strand}` : '') ||
+                          studentData.academicInfo?.course || 'Unknown Program';
+        const studentId = studentData.studentId || currentStudentId;
+        
+        // Show student profile preview
+        const preview = document.getElementById('student-profile-preview');
+        preview.innerHTML = `
+          <p><strong>👤 Name:</strong> ${fullName}</p>
+          <p><strong>🎓 Department:</strong> ${department}</p>
+          <p><strong>📚 Program:</strong> ${strandYear}</p>
+          <p><strong>🆔 Student ID:</strong> ${studentId}</p>
+        `;
+        
+        currentStudentData = studentData;
+      }
+      
+      // Allow Enter key to trigger verification
+      document.getElementById('student-id-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          document.getElementById('verify-student-id').click();
         }
       });
 
@@ -2181,6 +2645,7 @@
         closeLoginModalBtn.addEventListener('click', () => {
           if (loginModal) {
             loginModal.classList.add('hidden');
+            resetStudentFormSteps(); // Reset student form when modal closes
           }
         });
       } else {
@@ -2190,7 +2655,10 @@
       // Close modal on outside click
       if (loginModal) {
         loginModal.addEventListener('click', (e) => {
-          if (e.target === loginModal) loginModal.classList.add('hidden');
+          if (e.target === loginModal) {
+            loginModal.classList.add('hidden');
+            resetStudentFormSteps(); // Reset student form when modal closes
+          }
         });
       } else {
         console.warn('Login modal not found for outside click handler');

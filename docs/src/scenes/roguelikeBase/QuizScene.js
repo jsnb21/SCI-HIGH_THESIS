@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import BaseScene from '../BaseScene.js';
+import { getScaleInfo } from '../../utils/mobileUtils.js';
 
 export default class QuizScene extends BaseScene {
     constructor() {
@@ -27,6 +28,11 @@ export default class QuizScene extends BaseScene {
         this.courseTopic = data.courseTopic;
         this.enemyData = data.enemyToDestroy;
         this.intensity = data.intensity || 1;
+        this.answeredQuestions = data.answeredQuestions || {
+            intensity1: { multipleChoice: new Set() },
+            intensity2: { multipleChoice: new Set(), dragDrop: new Set() },
+            intensity3: { codeArrangement: new Set() }
+        };
         this.selectedAnswer = null;
         this.currentQuestion = null;
         
@@ -56,10 +62,23 @@ export default class QuizScene extends BaseScene {
             mainScene.events.on('timer-expired', this.handleTimerExpired, this);
         }
         
-        // Create background overlay that doesn't cover the UI area
-        // Score at 30px, Streak at 65px + font height, so start overlay at 100px from top
-        const overlayHeight = this.scale.height - 100;
-        const overlayY = 100 + (overlayHeight / 2);
+        // Get mobile information for responsive overlay positioning
+        const scaleInfo = getScaleInfo(this);
+        const screenWidth = this.scale.width;
+        const screenHeight = this.scale.height;
+        const isMobile = screenWidth < 768;
+        
+        // Calculate UI element positions using the same logic as main gameplay scene
+        const scoreY = isMobile ? Math.min(30, screenHeight * 0.05) : 30;
+        const streakY = isMobile ? Math.min(65, screenHeight * 0.11) : 65;
+        const scoreFontSize = isMobile ? Math.max(18, screenWidth * 0.03) : 24;
+        const streakFontSize = isMobile ? Math.max(14, screenWidth * 0.025) : 18;
+        
+        // Calculate overlay start position based on actual UI element heights
+        // Add some padding after the streak text (use font size as height approximation)
+        const overlayStartY = Math.max(100, streakY + streakFontSize + 20);
+        const overlayHeight = this.scale.height - overlayStartY;
+        const overlayY = overlayStartY + (overlayHeight / 2);
         
         this.backgroundOverlay = this.add.rectangle(
             this.scale.width / 2, 
@@ -77,20 +96,53 @@ export default class QuizScene extends BaseScene {
         if (this.currentQuestion) {
             this.createQuizInterface();
         } else {
-            console.error('No quiz data available for topic:', this.courseTopic);
-            this.returnToGameplay(false);
+            console.error('No quiz data available for topic:', this.courseTopic, 'intensity:', this.intensity);
+            // Show a brief error message before returning to gameplay
+            const errorText = this.add.text(
+                this.scale.width / 2, 
+                this.scale.height / 2, 
+                'No quiz questions available!\nReturning to game...', 
+                {
+                    fontFamily: 'Caprasimo-Regular',
+                    fontSize: '32px',
+                    color: '#ff0000',
+                    align: 'center'
+                }
+            );
+            errorText.setOrigin(0.5);
+            errorText.setDepth(20);
+            
+            // Return to gameplay after a short delay
+            this.time.delayedCall(2000, () => {
+                this.returnToGameplay(false);
+            });
         }
     }
 
     loadQuizData() {
         // Load questions based on intensity level
         if (this.intensity >= 3) {
-            // Intensity 3: Code arrangement only
+            // Intensity 3: Try code arrangement first, then expand to all question types
             this.loadCodeArrangementQuestion();
             if (this.currentQuestion) {
-                this.currentQuestion.isDragDrop = true;
-                console.log('Loaded intensity 3 code arrangement question:', this.currentQuestion);
+                // Check if it's actually a drag-drop question or just multiple choice
+                if (this.currentQuestion.prompt || this.currentQuestion.description || 
+                    (this.currentQuestion.type && this.currentQuestion.type.includes('drag'))) {
+                    this.currentQuestion.isDragDrop = true;
+                    console.log('Loaded intensity 3 code arrangement question:', this.currentQuestion);
+                } else {
+                    // It's actually a multiple choice question in the code arrangement section
+                    console.log('Loaded intensity 3 multiple choice question (from codeArrangement):', this.currentQuestion);
+                }
                 return;
+            } else {
+                // No code arrangement questions available, try loading from combined pool
+                console.log('No code arrangement questions available, loading from combined intensity 3 pool');
+                this.loadCombinedIntensity3Question();
+                if (this.currentQuestion) {
+                    console.log('Loaded intensity 3 question from combined pool:', this.currentQuestion);
+                    return;
+                }
             }
         } else if (this.intensity === 2) {
             // Intensity 2: Mix of multiple choice and drag-drop (precedence order)
@@ -117,7 +169,8 @@ export default class QuizScene extends BaseScene {
             }
         }
         
-        // Fallback to intensity 1 multiple choice if nothing else works
+        // Final fallback to intensity 1 multiple choice if nothing else works
+        console.log('All question loading failed, falling back to intensity 1 multiple choice');
         this.loadMultipleChoiceQuestion(1);
     }
 
@@ -154,21 +207,67 @@ export default class QuizScene extends BaseScene {
         // Try to load from intensity-specific structure first
         const intensityKey = `intensity${intensityLevel}`;
         if (quizData && quizData[intensityKey] && quizData[intensityKey].multipleChoice && quizData[intensityKey].multipleChoice.length > 0) {
-            // Select a random multiple choice question from the specific intensity
-            this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData[intensityKey].multipleChoice);
+            // Filter out already answered questions
+            const availableQuestions = this.filterAnsweredQuestions(
+                quizData[intensityKey].multipleChoice, 
+                intensityLevel, 
+                'multipleChoice'
+            );
             
-            // Randomize answer choices if there are more than 2 options
-            if (this.currentQuestion.options.length > 2) {
-                this.randomizeAnswerChoices();
+            if (availableQuestions.length > 0) {
+                // Select a random multiple choice question from the available questions
+                this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+                
+                // Randomize answer choices if there are more than 2 options
+                if (this.currentQuestion.options.length > 2) {
+                    this.randomizeAnswerChoices();
+                }
+                return; // Successfully loaded
             }
-        } else if (quizData && quizData.questions && quizData.questions.length > 0) {
+        }
+        
+        // For intensity 3, also check codeArrangement section (some quizzes have multiple choice there)
+        if (intensityLevel === 3 && quizData && quizData[intensityKey] && quizData[intensityKey].codeArrangement && quizData[intensityKey].codeArrangement.length > 0) {
+            // Check if codeArrangement questions are actually multiple choice
+            const codeQuestions = quizData[intensityKey].codeArrangement.filter(q => 
+                q.options && Array.isArray(q.options) && typeof q.correctIndex === 'number'
+            );
+            
+            if (codeQuestions.length > 0) {
+                const availableQuestions = this.filterAnsweredQuestions(
+                    codeQuestions, 
+                    intensityLevel, 
+                    'codeArrangement' // Use codeArrangement tracking to avoid conflicts
+                );
+                
+                if (availableQuestions.length > 0) {
+                    this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+                    
+                    // Randomize answer choices if there are more than 2 options
+                    if (this.currentQuestion.options.length > 2) {
+                        this.randomizeAnswerChoices();
+                    }
+                    return; // Successfully loaded
+                }
+            }
+        }
+        
+        // Fallback to old structure for compatibility
+        if (quizData && quizData.questions && quizData.questions.length > 0) {
             // Fallback to old structure for compatibility
             const multipleChoiceQuestions = quizData.questions.filter(q => 
                 q.options && Array.isArray(q.options) && typeof q.correctIndex === 'number'
             );
             
-            if (multipleChoiceQuestions.length > 0) {
-                this.currentQuestion = Phaser.Utils.Array.GetRandom(multipleChoiceQuestions);
+            // Filter out already answered questions
+            const availableQuestions = this.filterAnsweredQuestions(
+                multipleChoiceQuestions, 
+                intensityLevel, 
+                'multipleChoice'
+            );
+            
+            if (availableQuestions.length > 0) {
+                this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
                 
                 // Randomize answer choices if there are more than 2 options
                 if (this.currentQuestion.options.length > 2) {
@@ -209,9 +308,18 @@ export default class QuizScene extends BaseScene {
         }
         
         if (quizData && quizData.intensity2 && quizData.intensity2.dragDrop && quizData.intensity2.dragDrop.length > 0) {
-            // Select a random drag-drop question from intensity 2
-            this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData.intensity2.dragDrop);
-            console.log('Loaded drag-drop question for', topic, ':', this.currentQuestion);
+            // Filter out already answered questions
+            const availableQuestions = this.filterAnsweredQuestions(
+                quizData.intensity2.dragDrop, 
+                2, 
+                'dragDrop'
+            );
+            
+            if (availableQuestions.length > 0) {
+                // Select a random drag-drop question from the available questions
+                this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+                console.log('Loaded drag-drop question for', topic, ':', this.currentQuestion);
+            }
         }
     }
 
@@ -247,13 +355,123 @@ export default class QuizScene extends BaseScene {
         
         // Try to load from intensity3 structure first
         if (quizData && quizData.intensity3 && quizData.intensity3.codeArrangement && quizData.intensity3.codeArrangement.length > 0) {
-            // Select a random code arrangement question from intensity 3
-            this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData.intensity3.codeArrangement);
-            console.log('Loaded intensity 3 code arrangement question for', topic, ':', this.currentQuestion);
+            // Filter out already answered questions
+            const availableQuestions = this.filterAnsweredQuestions(
+                quizData.intensity3.codeArrangement, 
+                3, 
+                'codeArrangement'
+            );
+            
+            if (availableQuestions.length > 0) {
+                // Select a random code arrangement question from the available questions
+                this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+                console.log('Loaded intensity 3 code arrangement question for', topic, ':', this.currentQuestion);
+            }
         } else if (quizData && quizData.codeArrangement && quizData.codeArrangement.length > 0) {
             // Fallback to old structure for compatibility
-            this.currentQuestion = Phaser.Utils.Array.GetRandom(quizData.codeArrangement);
-            console.log('Loaded code arrangement question for', topic, ':', this.currentQuestion);
+            const availableQuestions = this.filterAnsweredQuestions(
+                quizData.codeArrangement, 
+                3, 
+                'codeArrangement'
+            );
+            
+            if (availableQuestions.length > 0) {
+                this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+                console.log('Loaded code arrangement question for', topic, ':', this.currentQuestion);
+            }
+        }
+    }
+
+    loadCombinedIntensity3Question() {
+        // This method combines all available questions for intensity 3 when code arrangement is exhausted
+        const topic = this.courseTopic || 'python';
+        let quizData = null;
+        
+        switch (topic.toLowerCase()) {
+            case 'python':
+                quizData = this.cache.json.get('pythonQuiz');
+                break;
+            case 'java':
+                quizData = this.cache.json.get('javaQuiz');
+                break;
+            case 'c':
+                quizData = this.cache.json.get('cQuiz');
+                break;
+            case 'c++':
+                quizData = this.cache.json.get('cppQuiz');
+                break;
+            case 'c#':
+            case 'csharp':
+                quizData = this.cache.json.get('csharpQuiz');
+                break;
+            case 'webdesign':
+                quizData = this.cache.json.get('webdesignQuiz');
+                break;
+            default:
+                quizData = this.cache.json.get('pythonQuiz');
+                break;
+        }
+
+        if (!quizData) {
+            console.log('No quiz data available for combined intensity 3 questions');
+            return;
+        }
+
+        // Collect all available questions from intensity 3
+        let allQuestions = [];
+        
+        // Add intensity 3 multiple choice questions
+        if (quizData.intensity3 && quizData.intensity3.multipleChoice && quizData.intensity3.multipleChoice.length > 0) {
+            allQuestions = allQuestions.concat(quizData.intensity3.multipleChoice.map(q => ({...q, sourceType: 'multipleChoice'})));
+        }
+        
+        // Add intensity 3 code arrangement questions
+        if (quizData.intensity3 && quizData.intensity3.codeArrangement && quizData.intensity3.codeArrangement.length > 0) {
+            allQuestions = allQuestions.concat(quizData.intensity3.codeArrangement.map(q => ({...q, sourceType: 'codeArrangement'})));
+        }
+
+        // If no intensity 3 questions, fall back to other sources
+        if (allQuestions.length === 0) {
+            // Try intensity 2 questions as fallback
+            if (quizData.intensity2) {
+                if (quizData.intensity2.multipleChoice && quizData.intensity2.multipleChoice.length > 0) {
+                    allQuestions = allQuestions.concat(quizData.intensity2.multipleChoice.map(q => ({...q, sourceType: 'multipleChoice'})));
+                }
+                if (quizData.intensity2.dragDrop && quizData.intensity2.dragDrop.length > 0) {
+                    allQuestions = allQuestions.concat(quizData.intensity2.dragDrop.map(q => ({...q, sourceType: 'dragDrop'})));
+                }
+            }
+            
+            // Try intensity 1 questions as final fallback
+            if (allQuestions.length === 0 && quizData.intensity1 && quizData.intensity1.multipleChoice && quizData.intensity1.multipleChoice.length > 0) {
+                allQuestions = allQuestions.concat(quizData.intensity1.multipleChoice.map(q => ({...q, sourceType: 'multipleChoice'})));
+            }
+        }
+
+        if (allQuestions.length === 0) {
+            console.log('No questions available for combined intensity 3 pool');
+            return;
+        }
+
+        // Use special filtering for combined questions
+        const availableQuestions = this.filterCombinedQuestions(allQuestions);
+        
+        if (availableQuestions.length > 0) {
+            this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+            
+            // Set appropriate flags based on source type
+            if (this.currentQuestion.sourceType === 'codeArrangement' || this.currentQuestion.sourceType === 'dragDrop') {
+                this.currentQuestion.isDragDrop = true;
+            }
+            
+            // Randomize answer choices if applicable
+            if (this.currentQuestion.options && this.currentQuestion.options.length > 2) {
+                this.randomizeAnswerChoices();
+            }
+            
+            console.log(`Loaded combined intensity 3 question (${this.currentQuestion.sourceType}):`, this.currentQuestion);
+        } else {
+            console.log('All combined intensity 3 questions have been answered, cycling will reset automatically');
         }
     }
 
@@ -285,9 +503,130 @@ export default class QuizScene extends BaseScene {
         console.log('Randomized answer choices. New correct index:', newCorrectIndex);
     }
 
+    filterCombinedQuestions(questions) {
+        // Special filtering for combined intensity 3 questions that tracks all question types together
+        if (!this.answeredQuestions) {
+            console.log(`No answered questions tracking - returning all ${questions.length} combined questions`);
+            return questions;
+        }
+
+        // Use a special combined tracker for intensity 3
+        const intensityKey = 'intensity3';
+        if (!this.answeredQuestions[intensityKey]) {
+            this.answeredQuestions[intensityKey] = {
+                multipleChoice: new Set(),
+                dragDrop: new Set(),
+                codeArrangement: new Set(),
+                combined: new Set() // Special tracker for combined pool
+            };
+        }
+
+        const combinedSet = this.answeredQuestions[intensityKey].combined;
+
+        // Filter out questions that have already been answered in the combined pool
+        const availableQuestions = questions.filter(question => {
+            const questionId = this.createQuestionId(question);
+            return !combinedSet.has(questionId);
+        });
+
+        console.log(`Combined intensity 3 question filtering:`);
+        console.log(`  - Total questions in combined pool: ${questions.length}`);
+        console.log(`  - Already answered in combined pool: ${combinedSet.size}`);
+        console.log(`  - Available questions: ${availableQuestions.length}`);
+
+        // If all questions have been answered, reset the combined pool and all individual pools
+        if (availableQuestions.length === 0 && questions.length > 0) {
+            console.log('All combined intensity 3 questions answered. Resetting entire intensity 3 question pool for fresh cycle.');
+            
+            // Clear all intensity 3 question pools to start fresh cycle
+            this.answeredQuestions[intensityKey].multipleChoice.clear();
+            this.answeredQuestions[intensityKey].dragDrop.clear();
+            this.answeredQuestions[intensityKey].codeArrangement.clear();
+            this.answeredQuestions[intensityKey].combined.clear();
+            
+            return questions; // Return all questions after reset
+        }
+
+        return availableQuestions;
+    }
+
+    filterAnsweredQuestions(questions, intensity, questionType) {
+        if (!this.answeredQuestions) {
+            console.log(`No answered questions tracking - returning all ${questions.length} questions`);
+            return questions; // Return all questions if no tracking system
+        }
+        
+        const intensityKey = `intensity${intensity}`;
+        const answeredSet = this.answeredQuestions[intensityKey]?.[questionType];
+        
+        if (!answeredSet) {
+            console.log(`No answered questions for ${intensityKey} ${questionType} - returning all ${questions.length} questions`);
+            return questions; // Return all questions if no answered questions for this category
+        }
+        
+        // Filter out questions that have already been answered
+        const availableQuestions = questions.filter(question => {
+            const questionId = this.createQuestionId(question);
+            return !answeredSet.has(questionId);
+        });
+        
+        console.log(`Question filtering for ${intensityKey} ${questionType}:`);
+        console.log(`  - Total questions: ${questions.length}`);
+        console.log(`  - Already answered: ${answeredSet.size}`);
+        console.log(`  - Available questions: ${availableQuestions.length}`);
+        
+        // If all questions have been answered, reset the answered questions for this category
+        if (availableQuestions.length === 0 && questions.length > 0) {
+            console.log(`All questions answered for ${intensityKey} ${questionType}. Resetting answered questions to refresh pool.`);
+            answeredSet.clear();
+            return questions; // Return all questions after reset
+        }
+        
+        return availableQuestions;
+    }
+
+    createQuestionId(questionData) {
+        // Create a unique identifier based on question content
+        // Use the question text as the primary identifier
+        if (questionData.question) {
+            return questionData.question;
+        } else if (questionData.prompt) {
+            return questionData.prompt;
+        } else if (questionData.description) {
+            return questionData.description;
+        } else {
+            // Fallback: use JSON string of the question
+            return JSON.stringify(questionData);
+        }
+    }
+
+    getQuestionType() {
+        // Determine the type of the current question
+        if (!this.currentQuestion) {
+            return 'multipleChoice';
+        }
+        
+        // Check if this question has a sourceType (from combined system)
+        if (this.currentQuestion.sourceType) {
+            return this.currentQuestion.sourceType;
+        }
+        
+        // Legacy detection for questions without sourceType
+        if (this.currentQuestion.isDragDrop || this.currentQuestion.type === 'drag-and-drop') {
+            return this.intensity === 3 ? 'codeArrangement' : 'dragDrop';
+        } else {
+            return 'multipleChoice';
+        }
+    }
+
     createQuizInterface() {
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2;
+        
+        // Get mobile information for responsive design
+        const scaleInfo = getScaleInfo(this);
+        const isMobile = scaleInfo.width < 768;
+        const isSmallMobile = scaleInfo.width < 480;
         
         // Check if this is a drag-and-drop question (code arrangement - intensity 3)
         if (this.currentQuestion.isDragDrop) {
@@ -304,42 +643,47 @@ export default class QuizScene extends BaseScene {
         // Create main quiz container for normal multiple choice
         this.quizContainer = this.add.container(centerX, centerY);
         
+        // More aggressive mobile sizing - force smaller content
+        const titleFontSize = isMobile ? '18px' : '28px';
+        const questionFontSize = isMobile ? '14px' : '22px';
+        const contentWidth = isMobile ? Math.min(scaleInfo.width * 0.90, 340) : 700;
+        const questionWrapWidth = contentWidth - 40;
+        
         // Create temporary question text to measure height
         const tempQuestionText = this.add.text(0, 0, this.currentQuestion.question, {
             fontFamily: 'Arial',
-            fontSize: '22px',
+            fontSize: questionFontSize,
             fontWeight: 'bold',
             color: '#ffffff',
             align: 'center',
-            wordWrap: { width: 620 },
-            lineSpacing: 8
+            wordWrap: { width: questionWrapWidth },
+            lineSpacing: isMobile ? 6 : 8
         }).setOrigin(0.5);
         
         const questionHeight = tempQuestionText.height;
         tempQuestionText.destroy(); // Remove temporary text
         
-        // Calculate content dimensions based on actual content
+        // Calculate content dimensions based on actual content - mobile responsive
         const answers = this.currentQuestion.options;
         const numAnswers = answers.length;
-        const buttonHeight = 55;
-        const buttonSpacing = 70;
-        const titleHeight = 60;
-        const questionNumberHeight = 30;
-        const questionPadding = 70; // Increased from 40 to 70 for more space
-        const bottomPadding = 30;
+        const buttonHeight = isMobile ? 40 : 55;
+        const buttonSpacing = isMobile ? 50 : 70;
+        const titleHeight = isMobile ? 40 : 60;
+        const questionNumberHeight = isMobile ? 20 : 30;
+        const questionPadding = isMobile ? 30 : 70;
+        const bottomPadding = isMobile ? 15 : 30;
         
         // Calculate required height based on layout type
         let buttonsAreaHeight;
-        if (numAnswers === 2) {
-            // Side-by-side layout uses less vertical space
-            buttonsAreaHeight = 70 + 30; // Button height + padding
+        if (numAnswers === 2 && !isMobile) {
+            // Side-by-side layout uses less vertical space (only on desktop)
+            buttonsAreaHeight = 70 + 30;
         } else {
-            // Vertical layout
+            // Vertical layout (always on mobile, optional on desktop)
             buttonsAreaHeight = numAnswers * buttonSpacing;
         }
         
         const contentHeight = titleHeight + questionNumberHeight + questionHeight + questionPadding + buttonsAreaHeight + bottomPadding;
-        const contentWidth = 700;
         
         // Create modern quiz box with dynamic size
         const quizBox = this.add.graphics();
@@ -355,61 +699,70 @@ export default class QuizScene extends BaseScene {
         
         this.quizContainer.add([glowBox, quizBox]);
         
-        // Title with programming language
+        // Title with programming language - responsive font size
         const courseTopic = this.courseTopic || 'Programming';
-        this.titleText = this.add.text(0, -contentHeight/2 + 30, `${courseTopic.toUpperCase()} QUIZ CHALLENGE`, {
+        this.titleText = this.add.text(0, -contentHeight/2 + (titleHeight/2) + 5, `${courseTopic.toUpperCase()} QUIZ CHALLENGE`, {
             fontFamily: 'Arial',
-            fontSize: '28px',
+            fontSize: titleFontSize,
             fontWeight: 'bold',
             color: '#64ffda',
             align: 'center'
         }).setOrigin(0.5);
         this.quizContainer.add(this.titleText);
         
-        // Question number indicator
-        const questionNumber = this.add.text(0, -contentHeight/2 + titleHeight + 15, 'Question 1 of 1', {
+        // Question number indicator - responsive
+        const questionNumberFontSize = isMobile ? '12px' : '18px';
+        const questionNumber = this.add.text(0, -contentHeight/2 + titleHeight + (questionNumberHeight/2), 'Question 1 of 1', {
             fontFamily: 'Arial',
-            fontSize: '18px',
+            fontSize: questionNumberFontSize,
             color: '#a0a0a0',
             align: 'center'
         }).setOrigin(0.5);
         this.quizContainer.add(questionNumber);
         
-        // Question text with better formatting
+        // Question text with better formatting - responsive
         this.questionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + (questionHeight/2) + 10, this.currentQuestion.question, {
             fontFamily: 'Arial',
-            fontSize: '22px',
+            fontSize: questionFontSize,
             fontWeight: 'bold',
             color: '#ffffff',
             align: 'center',
-            wordWrap: { width: 620 },
-            lineSpacing: 8
+            wordWrap: { width: questionWrapWidth },
+            lineSpacing: isMobile ? 6 : 8
         }).setOrigin(0.5);
         this.quizContainer.add(this.questionText);
         
         // Calculate start position for answer buttons
         const buttonStartY = titleHeight + questionNumberHeight + questionHeight + questionPadding - contentHeight/2;
         
-        // Create answer options with modern design
-        this.createAnswerButtons(buttonStartY);
+        // Create answer options with modern design - pass mobile info
+        this.createAnswerButtons(buttonStartY, isMobile, isSmallMobile);
         
-        // Add instruction text
-        const instructionText = this.add.text(0, 200, 'Click on your answer choice', {
+        // Add instruction text - responsive positioning
+        const instructionFontSize = isMobile ? '10px' : '14px';
+        const instructionY = isMobile ? (contentHeight/2 - 5) : 200;
+        const instructionText = this.add.text(0, instructionY, 'Tap your answer choice', {
             fontFamily: 'Arial',
-            fontSize: '14px',
+            fontSize: instructionFontSize,
             color: '#a0a0a0',
             align: 'center'
         }).setOrigin(0.5);
         this.quizContainer.add(instructionText);
         
-        // Add entrance animation
+        // Add entrance animation with mobile scaling
         this.quizContainer.setScale(0.8);
         this.quizContainer.setAlpha(0);
         
+        // Apply additional scaling for mobile if content is too large
+        let finalScale = 1;
+        if (isMobile && contentHeight > scaleInfo.height * 0.9) {
+            finalScale = Math.min(0.8, (scaleInfo.height * 0.9) / contentHeight);
+        }
+        
         this.tweens.add({
             targets: this.quizContainer,
-            scaleX: 1,
-            scaleY: 1,
+            scaleX: finalScale,
+            scaleY: finalScale,
             alpha: 1,
             duration: 500,
             ease: 'Back.easeOut'
@@ -417,22 +770,33 @@ export default class QuizScene extends BaseScene {
     }
 
     createDragDropInterface(centerX, centerY) {
+        // Get mobile information for responsive design
+        const scaleInfo = getScaleInfo(this);
+        const isMobile = scaleInfo.width < 768;
+        const isSmallMobile = scaleInfo.width < 480;
+        
         // Create main quiz container
         this.quizContainer = this.add.container(centerX, centerY);
         
         // Calculate responsive dimensions
-        const maxWidth = Math.min(this.scale.width * 0.9, 1000);
-        const maxHeight = Math.min(this.scale.height * 0.8, 700);
+        const maxWidth = isMobile ? (isSmallMobile ? scaleInfo.width * 0.95 : scaleInfo.width * 0.9) : Math.min(this.scale.width * 0.9, 1000);
+        const maxHeight = isMobile ? (isSmallMobile ? scaleInfo.height * 0.85 : scaleInfo.height * 0.8) : Math.min(this.scale.height * 0.8, 700);
+        
+        // Responsive font sizes
+        const titleFontSize = isMobile ? (isSmallMobile ? '20px' : '24px') : '28px';
+        const questionFontSize = isMobile ? (isSmallMobile ? '16px' : '18px') : '22px';
+        const descriptionFontSize = isMobile ? (isSmallMobile ? '12px' : '14px') : '16px';
+        const instructionFontSize = isMobile ? (isSmallMobile ? '12px' : '14px') : '16px';
         
         // Calculate content areas based on number of blocks
         const numberOfBlocks = this.currentQuestion.blocks.length;
-        const blockSpacing = 60;
-        const titleHeight = 50;
+        const blockSpacing = isMobile ? (isSmallMobile ? 45 : 50) : 60;
+        const titleHeight = isMobile ? (isSmallMobile ? 40 : 45) : 50;
         const questionNumberHeight = 0;
-        const questionHeight = 100;
-        const instructionHeight = 120;
-        const draggableAreaHeight = numberOfBlocks * blockSpacing + 40; // Dynamic height based on blocks
-        const submitAreaHeight = 100; // Space for submit button below blocks
+        const questionHeight = isMobile ? (isSmallMobile ? 80 : 90) : 100;
+        const instructionHeight = isMobile ? (isSmallMobile ? 100 : 110) : 120;
+        const draggableAreaHeight = numberOfBlocks * blockSpacing + (isMobile ? 30 : 40);
+        const submitAreaHeight = isMobile ? (isSmallMobile ? 80 : 90) : 100;
         
         const contentHeight = titleHeight + questionNumberHeight + questionHeight + instructionHeight + draggableAreaHeight + submitAreaHeight;
         const contentWidth = maxWidth;
@@ -451,53 +815,54 @@ export default class QuizScene extends BaseScene {
         
         this.quizContainer.add([glowBox, quizBox]);
         
-        // Title with programming language - same style as multiple choice
+        // Title with programming language - responsive font size
         const courseTopic = this.courseTopic || 'Programming';
-        this.titleText = this.add.text(0, -contentHeight/2 + 30, `${courseTopic.toUpperCase()} CODE ARRANGEMENT`, {
+        this.titleText = this.add.text(0, -contentHeight/2 + (titleHeight/2) + 5, `${courseTopic.toUpperCase()} CODE ARRANGEMENT`, {
             fontFamily: 'Arial',
-            fontSize: '28px',
+            fontSize: titleFontSize,
             fontWeight: 'bold',
             color: '#64ffda',
             align: 'center'
         }).setOrigin(0.5);
         this.quizContainer.add(this.titleText);
         
-        // Question text with better formatting - same style as multiple choice
+        // Question text with better formatting - responsive
         this.questionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + (questionHeight/2) + 10, this.currentQuestion.title, {
             fontFamily: 'Arial',
-            fontSize: '22px',
+            fontSize: questionFontSize,
             fontWeight: 'bold',
             color: '#ffffff',
             align: 'center',
-            wordWrap: { width: contentWidth - 80 },
-            lineSpacing: 8
+            wordWrap: { width: contentWidth - (isMobile ? 60 : 80) },
+            lineSpacing: isMobile ? 6 : 8
         }).setOrigin(0.5);
         this.quizContainer.add(this.questionText);
         
-        // Description text
-        const descText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + 20, this.currentQuestion.description, {
+        // Description text - responsive
+        const descText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + (isMobile ? 15 : 20), this.currentQuestion.description, {
             fontFamily: 'Arial',
-            fontSize: '16px',
+            fontSize: descriptionFontSize,
             color: '#bdc3c7',
             align: 'center',
-            wordWrap: { width: contentWidth - 100 }
+            wordWrap: { width: contentWidth - (isMobile ? 80 : 100) }
         }).setOrigin(0.5);
         this.quizContainer.add(descText);
         
-        // Instruction text - same style as multiple choice
-        const instructionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + 60, 'Drag code blocks to arrange them in correct order', {
+        // Instruction text - responsive
+        const instructionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + (isMobile ? 45 : 60), 'Drag code blocks to arrange them in correct order', {
             fontFamily: 'Arial',
-            fontSize: '16px',
+            fontSize: instructionFontSize,
             color: '#64ffda',
             align: 'center',
             fontStyle: 'italic'
         }).setOrigin(0.5);
         this.quizContainer.add(instructionText);
         
-        // Add swap behavior note with more space
-        const swapNote = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + 90, 'Note: Unplaced blocks can swap with placed blocks, but placed blocks cannot be removed', {
+        // Add swap behavior note with responsive sizing
+        const swapNoteFontSize = isMobile ? '10px' : '12px';
+        const swapNote = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + (isMobile ? 75 : 90), 'Note: Unplaced blocks can swap with placed blocks, but placed blocks cannot be removed', {
             fontFamily: 'Arial',
-            fontSize: '12px',
+            fontSize: swapNoteFontSize,
             color: '#a0a0a0',
             align: 'center',
             fontStyle: 'italic'
@@ -530,6 +895,10 @@ export default class QuizScene extends BaseScene {
     }
 
     createPrecedenceDragDropInterface(centerX, centerY) {
+        // Get mobile information for responsive design
+        const scaleInfo = getScaleInfo(this);
+        const isMobile = scaleInfo.width < 768;
+        
         // For now, convert precedence questions to code arrangement format for compatibility
         const dragItems = this.currentQuestion.options.dragItems.filter(item => !item.isDecoy);
         const dropZones = this.currentQuestion.options.dropZones;
@@ -959,45 +1328,52 @@ export default class QuizScene extends BaseScene {
         });
     }
 
-    createAnswerButtons(startOffset) {
+    createAnswerButtons(startOffset, isMobile = false, isSmallMobile = false) {
         const answers = this.currentQuestion.options;
         const startY = startOffset || -80; // Start position relative to center
-        const buttonHeight = 55;
-        const buttonSpacing = 70;
+        const buttonHeight = isMobile ? 40 : 55;
+        const buttonSpacing = isMobile ? 50 : 70;
         
         this.answerButtons = [];
         
-        // Check if there are only 2 answers for side-by-side layout
-        if (answers.length === 2) {
-            this.createTwoChoiceButtons(startY);
+        // Always use vertical layout on mobile for better readability
+        // Only use side-by-side layout on desktop with 2 answers
+        if (answers.length === 2 && !isMobile) {
+            this.createTwoChoiceButtons(startY, isMobile, isSmallMobile);
             return;
         }
         
-        // Original vertical layout for 3+ answers
+        // Vertical layout for 3+ answers or mobile devices
         for (let i = 0; i < answers.length; i++) {
             const buttonY = startY + (i * buttonSpacing);
             
             // Create button container
             const buttonContainer = this.add.container(0, buttonY);
             
-            // Create button background with solid color
+            // Much smaller button sizing for mobile
+            const buttonWidth = isMobile ? 280 : 640;
+            const fontSize = isMobile ? '12px' : '18px';
+            const textWrapWidth = buttonWidth - 30;
+            
+            // Create button background with responsive size
             const buttonBg = this.add.graphics();
             buttonBg.fillStyle(0x4a5568, 1);
-            buttonBg.fillRoundedRect(-320, -30, 640, 55, 10);
+            buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
             buttonBg.lineStyle(2, 0x64ffda, 0.5);
-            buttonBg.strokeRoundedRect(-320, -30, 640, 55, 10);
+            buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
             
-            // Create answer text with better wrapping and larger font
+            // Create answer text with responsive sizing
             const answerText = this.add.text(0, 0, `${String.fromCharCode(65 + i)}. ${answers[i]}`, {
                 fontFamily: 'Arial',
-                fontSize: '18px',
+                fontSize: fontSize,
                 color: '#ffffff',
                 align: 'center',
-                wordWrap: { width: 580 }
+                wordWrap: { width: textWrapWidth }
             }).setOrigin(0.5);
             
-            // Create interactive area
-            const hitArea = this.add.rectangle(0, 0, 640, 55, 0x000000, 0);
+            // Create interactive area with larger touch targets for mobile
+            const hitAreaHeight = isMobile ? Math.max(buttonHeight, 50) : buttonHeight;
+            const hitArea = this.add.rectangle(0, 0, buttonWidth, hitAreaHeight, 0x000000, 0);
             hitArea.setInteractive();
             
             buttonContainer.add([buttonBg, answerText, hitArea]);
@@ -1010,7 +1386,9 @@ export default class QuizScene extends BaseScene {
                 text: answerText,
                 hitArea: hitArea,
                 index: i,
-                isSelected: false
+                isSelected: false,
+                buttonWidth: buttonWidth,
+                buttonHeight: buttonHeight
             });
             
             // Add hover effects
@@ -1018,9 +1396,9 @@ export default class QuizScene extends BaseScene {
                 if (!this.answerButtons[i].isSelected) {
                     buttonBg.clear();
                     buttonBg.fillStyle(0x64ffda, 0.3);
-                    buttonBg.fillRoundedRect(-320, -30, 640, 55, 10);
+                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
                     buttonBg.lineStyle(2, 0x64ffda);
-                    buttonBg.strokeRoundedRect(-320, -30, 640, 55, 10);
+                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
                 }
             });
 
@@ -1028,9 +1406,9 @@ export default class QuizScene extends BaseScene {
                 if (!this.answerButtons[i].isSelected) {
                     buttonBg.clear();
                     buttonBg.fillStyle(0x4a5568, 1);
-                    buttonBg.fillRoundedRect(-320, -30, 640, 55, 10);
+                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
                     buttonBg.lineStyle(2, 0x64ffda, 0.5);
-                    buttonBg.strokeRoundedRect(-320, -30, 640, 55, 10);
+                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
                 }
             });
 
@@ -1041,38 +1419,51 @@ export default class QuizScene extends BaseScene {
         }
     }
 
-    createTwoChoiceButtons(startY) {
+    createTwoChoiceButtons(startY, isMobile = false, isSmallMobile = false) {
         const answers = this.currentQuestion.options;
-        const buttonWidth = 280; // Narrower buttons for side-by-side
-        const buttonHeight = 70; // Slightly taller for better proportion
-        const spacing = 50; // Space between the two buttons
+        // Mobile uses vertical layout, desktop uses side-by-side
+        const buttonWidth = isMobile ? (isSmallMobile ? 280 : 320) : 280;
+        const buttonHeight = isMobile ? (isSmallMobile ? 45 : 50) : 70;
+        const spacing = isMobile ? (isSmallMobile ? 55 : 60) : 50; // Vertical spacing for mobile, horizontal for desktop
+        const fontSize = isMobile ? (isSmallMobile ? '14px' : '16px') : '20px';
         
         for (let i = 0; i < 2; i++) {
-            // Position buttons side by side
-            const buttonX = i === 0 ? -(buttonWidth/2 + spacing/2) : (buttonWidth/2 + spacing/2);
+            let buttonX, buttonY;
+            
+            if (isMobile) {
+                // Vertical layout for mobile
+                buttonX = 0;
+                buttonY = startY + (i * spacing);
+            } else {
+                // Side-by-side layout for desktop
+                buttonX = i === 0 ? -(buttonWidth/2 + spacing/2) : (buttonWidth/2 + spacing/2);
+                buttonY = startY;
+            }
             
             // Create button container
-            const buttonContainer = this.add.container(buttonX, startY);
+            const buttonContainer = this.add.container(buttonX, buttonY);
             
-            // Create button background with larger size for two-choice layout
+            // Create button background with responsive size
             const buttonBg = this.add.graphics();
             buttonBg.fillStyle(0x4a5568, 1);
             buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
             buttonBg.lineStyle(3, 0x64ffda, 0.5);
             buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
             
-            // Create answer text with larger font for two-choice layout
+            // Create answer text with responsive sizing
+            const textWrapWidth = buttonWidth - (isMobile ? 20 : 20);
             const answerText = this.add.text(0, 0, answers[i], {
                 fontFamily: 'Arial',
-                fontSize: '20px',
+                fontSize: fontSize,
                 fontWeight: 'bold',
                 color: '#ffffff',
                 align: 'center',
-                wordWrap: { width: buttonWidth - 20 }
+                wordWrap: { width: textWrapWidth }
             }).setOrigin(0.5);
             
-            // Create interactive area
-            const hitArea = this.add.rectangle(0, 0, buttonWidth, buttonHeight, 0x000000, 0);
+            // Create interactive area with larger touch targets for mobile
+            const hitAreaHeight = isMobile ? Math.max(buttonHeight, 50) : buttonHeight;
+            const hitArea = this.add.rectangle(0, 0, buttonWidth, hitAreaHeight, 0x000000, 0);
             hitArea.setInteractive();
             
             buttonContainer.add([buttonBg, answerText, hitArea]);
@@ -1085,10 +1476,12 @@ export default class QuizScene extends BaseScene {
                 text: answerText,
                 hitArea: hitArea,
                 index: i,
-                isSelected: false
+                isSelected: false,
+                buttonWidth: buttonWidth,
+                buttonHeight: buttonHeight
             });
             
-            // Add hover effects with enhanced styling for two-choice
+            // Add hover effects with enhanced styling
             hitArea.on('pointerover', () => {
                 if (!this.answerButtons[i].isSelected) {
                     buttonBg.clear();
@@ -1124,15 +1517,14 @@ export default class QuizScene extends BaseScene {
         const correctIndex = this.currentQuestion.correctIndex;
         const isCorrect = selectedIndex === correctIndex;
         
-        // Determine if we're using two-choice layout
-        const isTwoChoice = this.currentQuestion.options.length === 2;
-        const buttonWidth = isTwoChoice ? 280 : 640;
-        const buttonHeight = isTwoChoice ? 70 : 55;
-        const cornerRadius = isTwoChoice ? 15 : 10;
-        
         // Update button appearance to show selection
         this.answerButtons.forEach((button, index) => {
             button.isSelected = true;
+            
+            // Use the stored responsive dimensions from the button object
+            const buttonWidth = button.buttonWidth;
+            const buttonHeight = button.buttonHeight;
+            const cornerRadius = buttonWidth < 320 ? 10 : (buttonWidth === 280 ? 15 : 10);
             
             if (index === selectedIndex) {
                 // Selected answer
@@ -1226,7 +1618,9 @@ export default class QuizScene extends BaseScene {
         // Prepare result data to send back
         const resultData = {
             correct: isCorrect,
-            enemyToDestroy: this.enemyData
+            enemyToDestroy: this.enemyData,
+            questionData: this.currentQuestion,
+            questionType: this.getQuestionType()
         };
         
         // Animate exit
@@ -1259,7 +1653,9 @@ export default class QuizScene extends BaseScene {
             // Immediately return to gameplay without any animations or delays
             const resultData = {
                 correct: false,
-                enemyToDestroy: this.enemyData
+                enemyToDestroy: this.enemyData,
+                questionData: this.currentQuestion,
+                questionType: this.getQuestionType()
             };
             
             // Send completion event and stop scene immediately

@@ -12,6 +12,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
     <!-- Modern Notification System -->
     <script src="js/notifications.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <script>
       // Fallback functions in case notifications.js hasn't loaded yet
       window.ensureNotifications = function() {
@@ -155,10 +159,31 @@
           <div class="flex space-x-4">
             <input type="search" id="search-students" placeholder="Search students..." 
                    class="px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white placeholder-gray-400">
-            <select id="filter-course" class="px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white">
-              <option value="">All Courses</option>
-              <option value="college">College</option>
-              <option value="shs">Senior High School</option>
+            <select id="filter-strand" class="px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white">
+              <option value="">All Strands/Courses</option>
+              <option value="ICT">ICT</option>
+              <option value="BSCS">BSCS</option>
+              <option value="BSIT">BSIT</option>
+              <option value="STEM">STEM</option>
+              <option value="ABM">ABM</option>
+              <option value="HUMSS">HUMSS</option>
+            </select>
+            <select id="filter-year" class="px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white">
+              <option value="">All Years</option>
+              <option value="1st">1st Year</option>
+              <option value="2nd">2nd Year</option>
+              <option value="3rd">3rd Year</option>
+              <option value="4th">4th Year</option>
+              <option value="5th">5th Year</option>
+              <option value="Grade 11">Grade 11</option>
+              <option value="Grade 12">Grade 12</option>
+            </select>
+            <select id="sort-by" class="px-4 py-2 bg-dark/50 border border-gray-600 rounded-lg text-white">
+              <option value="name">Sort by Name</option>
+              <option value="studentId">Sort by Student ID</option>
+              <option value="progress">Sort by Progress</option>
+              <option value="lastActive">Sort by Last Active</option>
+              <option value="points">Sort by Points</option>
             </select>
           </div>
         </div>
@@ -217,10 +242,15 @@
           this.students = [];
           this.filteredStudents = [];
           this.currentUser = null;
+          this.database = null;
+          this.isFirebaseInitialized = false;
           this.init();
         }
 
         async init() {
+          // Initialize Firebase first
+          await this.initializeFirebase();
+          
           // Check if user is authenticated professor or admin
           const savedUser = localStorage.getItem('sci_high_user');
           if (!savedUser) {
@@ -271,105 +301,258 @@
             this.filterStudents();
           });
 
-          document.getElementById('filter-course').addEventListener('change', (e) => {
+          document.getElementById('filter-strand').addEventListener('change', (e) => {
+            this.filterStudents();
+          });
+
+          document.getElementById('filter-year').addEventListener('change', (e) => {
+            this.filterStudents();
+          });
+
+          document.getElementById('sort-by').addEventListener('change', (e) => {
             this.filterStudents();
           });
         }
 
+        async initializeFirebase() {
+          try {
+            const firebaseConfig = {
+              apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
+              authDomain: "sci-high-website.firebaseapp.com",
+              databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+              projectId: "sci-high-website",
+              storageBucket: "sci-high-website.appspot.com",
+              messagingSenderId: "451463202515",
+              appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
+            };
+
+            if (!firebase.apps.length) {
+              firebase.initializeApp(firebaseConfig);
+            }
+
+            this.database = firebase.database();
+            this.isFirebaseInitialized = true;
+            console.log('Firebase initialized successfully');
+            
+            // Monitor connection status
+            this.database.ref('.info/connected').on('value', (snapshot) => {
+              if (snapshot.val() === true) {
+                console.log('Connected to Firebase');
+              } else {
+                console.log('Disconnected from Firebase');
+                this.showWarning('Connection to Firebase lost. Some features may not work properly.');
+              }
+            });
+          } catch (error) {
+            console.error('Firebase initialization error:', error);
+            this.isFirebaseInitialized = false;
+          }
+        }
+
         async loadStudents() {
           try {
-            // For now, load sample students for development
-            // In production, this would connect to Firebase
-            this.students = [
-              {
-                id: 'stud_sample_001',
-                studentId: '24-2024-001',
-                fullName: 'Juan Dela Cruz',
-                academicInfo: {
-                  level: 'college',
-                  course: 'BS Computer Science',
-                  yearLevel: '3rd Year'
-                },
-                accountStatus: {
-                  createdBy: this.currentUser.uid,
-                  lastLogin: new Date('2024-01-15').toISOString(),
-                  isFirstLogin: false
-                },
-                gameData: {
-                  totalPoints: 850,
-                  courseProgress: {
-                    python: { progress: 75, completed: 8, total: 12 },
-                    javascript: { progress: 60, completed: 6, total: 10 }
-                  }
-                }
-              },
-              {
-                id: 'stud_sample_002',
-                studentId: '24-2024-002',
-                fullName: 'Maria Santos',
-                academicInfo: {
-                  level: 'college',
-                  course: 'BS Information Technology',
-                  yearLevel: '2nd Year'
-                },
-                accountStatus: {
-                  createdBy: this.currentUser.uid,
-                  lastLogin: new Date('2024-01-20').toISOString(),
-                  isFirstLogin: false
-                },
-                gameData: {
-                  totalPoints: 1200,
-                  courseProgress: {
-                    python: { progress: 90, completed: 11, total: 12 },
-                    webdesign: { progress: 85, completed: 9, total: 10 }
-                  }
-                }
-              },
-              {
-                id: 'stud_sample_003',
-                studentId: '24-2024-003',
-                fullName: 'Pedro Garcia',
-                academicInfo: {
-                  level: 'shs',
-                  strand: 'STEM',
-                  yearLevel: 'Grade 12'
-                },
-                accountStatus: {
-                  createdBy: this.currentUser.uid,
-                  lastLogin: null,
-                  isFirstLogin: true
-                },
-                gameData: {
-                  totalPoints: 300,
-                  courseProgress: {
-                    python: { progress: 30, completed: 3, total: 12 }
-                  }
-                }
-              }
-            ];
+            if (!this.isFirebaseInitialized) {
+              console.warn('Firebase not initialized, loading sample data');
+              this.loadSampleData();
+              return;
+            }
 
+            console.log('Loading students from Firebase...');
+            const studentsRef = this.database.ref('students');
+            const snapshot = await studentsRef.once('value');
+            const studentsData = snapshot.val();
+
+            if (!studentsData) {
+              console.log('No students found in Firebase');
+              this.students = [];
+              this.filteredStudents = [];
+              this.renderStudentsTable();
+              return;
+            }
+
+            // Convert Firebase data to our format
+            this.students = Object.keys(studentsData).map(studentId => {
+              const student = studentsData[studentId];
+              
+              // Parse strand and year from strandYear if needed
+              let strand = student.strand;
+              let year = student.year;
+              
+              if (!strand && !year && student.strandYear) {
+                const parseResult = this.parseStrandYear(student.strandYear);
+                strand = parseResult.strand;
+                year = parseResult.year;
+              }
+
+              return {
+                id: studentId,
+                studentId: student.studentId || studentId,
+                fullName: `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Unknown',
+                academicInfo: {
+                  level: student.department === 'College Department' ? 'college' : 'shs',
+                  strand: strand || 'N/A',
+                  year: year || 'N/A',
+                  course: student.strandYear || 'N/A', // Legacy field
+                  yearLevel: student.strandYear || 'N/A', // Legacy field
+                  department: student.department || 'N/A'
+                },
+                accountStatus: {
+                  createdBy: 'system',
+                  lastLogin: student.lastLogin || null,
+                  isFirstLogin: !student.lastLogin
+                },
+                gameData: {
+                  totalPoints: student.totalPoints || 0,
+                  courseProgress: student.courseProgress || {}
+                }
+              };
+            });
+
+            console.log(`Loaded ${this.students.length} students from Firebase`);
             this.filteredStudents = [...this.students];
             this.renderStudentsTable();
+
           } catch (error) {
-            console.error('Error loading students:', error);
-            this.showError('Failed to load students');
+            console.error('Error loading students from Firebase:', error);
+            this.showError('Failed to load students from database. Loading sample data instead.');
+            this.loadSampleData();
           }
+        }
+
+        parseStrandYear(strandYear) {
+          let strand = '';
+          let year = '';
+          
+          // Extract year
+          const yearMatch = strandYear.match(/(\d+)(st|nd|rd|th)/i);
+          if (yearMatch) {
+            year = yearMatch[1] + (yearMatch[2] || '');
+          } else if (strandYear.includes('Grade')) {
+            const gradeMatch = strandYear.match(/Grade\s*(\d+)/i);
+            if (gradeMatch) {
+              year = `Grade ${gradeMatch[1]}`;
+            }
+          }
+          
+          // Extract strand
+          if (strandYear.includes('BSCS') || strandYear.includes('BS CS') || strandYear.includes('Computer Science')) {
+            strand = 'BSCS';
+          } else if (strandYear.includes('BSIT') || strandYear.includes('BS IT') || strandYear.includes('Information Technology')) {
+            strand = 'BSIT';
+          } else if (strandYear.includes('ICT')) {
+            strand = 'ICT';
+          } else if (strandYear.includes('STEM')) {
+            strand = 'STEM';
+          } else if (strandYear.includes('ABM')) {
+            strand = 'ABM';
+          } else if (strandYear.includes('HUMSS')) {
+            strand = 'HUMSS';
+          }
+          
+          return { strand, year };
+        }
+
+        loadSampleData() {
+          // Fallback sample data when Firebase is not available
+          this.students = [
+            {
+              id: 'stud_sample_001',
+              studentId: '24-2024-001',
+              fullName: 'Juan Dela Cruz',
+              academicInfo: {
+                level: 'college',
+                strand: 'BSCS',
+                year: '3rd',
+                course: 'BS Computer Science', // Legacy field
+                yearLevel: '3rd Year' // Legacy field
+              },
+              accountStatus: {
+                createdBy: 'sample',
+                lastLogin: new Date('2024-01-15').toISOString(),
+                isFirstLogin: false
+              },
+              gameData: {
+                totalPoints: 850,
+                courseProgress: {
+                  python: { progress: 75, completed: 8, total: 12 },
+                  javascript: { progress: 60, completed: 6, total: 10 }
+                }
+              }
+            },
+            {
+              id: 'stud_sample_002',
+              studentId: '24-2024-002',
+              fullName: 'Maria Santos',
+              academicInfo: {
+                level: 'college',
+                strand: 'BSIT',
+                year: '2nd',
+                course: 'BS Information Technology', // Legacy field
+                yearLevel: '2nd Year' // Legacy field
+              },
+              accountStatus: {
+                createdBy: 'sample',
+                lastLogin: new Date('2024-01-20').toISOString(),
+                isFirstLogin: false
+              },
+              gameData: {
+                totalPoints: 1200,
+                courseProgress: {
+                  python: { progress: 90, completed: 11, total: 12 },
+                  webdesign: { progress: 85, completed: 9, total: 10 }
+                }
+              }
+            }
+          ];
+
+          this.filteredStudents = [...this.students];
+          this.renderStudentsTable();
         }
 
         // Methods for student management
         filterStudents() {
           const searchTerm = document.getElementById('search-students').value.toLowerCase();
-          const courseFilter = document.getElementById('filter-course').value;
+          const strandFilter = document.getElementById('filter-strand').value;
+          const yearFilter = document.getElementById('filter-year').value;
+          const sortBy = document.getElementById('sort-by').value;
 
           this.filteredStudents = this.students.filter(student => {
             const matchesSearch = !searchTerm || 
               student.studentId.toLowerCase().includes(searchTerm) ||
               student.fullName.toLowerCase().includes(searchTerm);
             
-            const matchesCourse = !courseFilter || 
-              student.academicInfo.level === courseFilter;
+            const matchesStrand = !strandFilter || 
+              student.academicInfo.strand === strandFilter ||
+              (student.academicInfo.course && student.academicInfo.course.includes(strandFilter));
 
-            return matchesSearch && matchesCourse;
+            const matchesYear = !yearFilter || 
+              student.academicInfo.year === yearFilter ||
+              student.academicInfo.yearLevel === yearFilter ||
+              student.academicInfo.yearLevel === `${yearFilter} Year`;
+
+            return matchesSearch && matchesStrand && matchesYear;
+          });
+
+          // Sort the filtered results
+          this.filteredStudents.sort((a, b) => {
+            switch (sortBy) {
+              case 'name':
+                return a.fullName.localeCompare(b.fullName);
+              case 'studentId':
+                return a.studentId.localeCompare(b.studentId);
+              case 'progress':
+                return this.calculateProgress(b) - this.calculateProgress(a); // Descending
+              case 'lastActive':
+                const aDate = a.accountStatus.lastLogin ? new Date(a.accountStatus.lastLogin) : new Date(0);
+                const bDate = b.accountStatus.lastLogin ? new Date(b.accountStatus.lastLogin) : new Date(0);
+                return bDate - aDate; // Most recent first
+              case 'points':
+                const aPoints = a.gameData?.totalPoints || 0;
+                const bPoints = b.gameData?.totalPoints || 0;
+                return bPoints - aPoints; // Highest first
+              default:
+                return 0;
+            }
           });
 
           this.renderStudentsTable();
@@ -394,16 +577,22 @@
               <td class="py-3 px-4 font-mono">${student.studentId}</td>
               <td class="py-3 px-4">${student.fullName}</td>
               <td class="py-3 px-4">
-                ${student.academicInfo.level === 'college' ? 
-                  student.academicInfo.course : 
-                  student.academicInfo.strand}
+                ${student.academicInfo.strand || 
+                  (student.academicInfo.level === 'college' ? 
+                    student.academicInfo.course : 
+                    student.academicInfo.strand)}
               </td>
-              <td class="py-3 px-4">${student.academicInfo.yearLevel}</td>
+              <td class="py-3 px-4">
+                ${student.academicInfo.year ? `${student.academicInfo.year} Year` : student.academicInfo.yearLevel}
+              </td>
               <td class="py-3 px-4">
                 <div class="w-full bg-gray-700 rounded-full h-2">
                   <div class="bg-primary h-2 rounded-full" style="width: ${this.calculateProgress(student)}%"></div>
                 </div>
-                <span class="text-xs text-gray-400">${this.calculateProgress(student)}%</span>
+                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>${this.calculateProgress(student)}%</span>
+                  <span>${student.gameData?.totalPoints || 0} pts</span>
+                </div>
               </td>
               <td class="py-3 px-4 text-sm text-gray-400">
                 ${student.accountStatus.lastLogin ? 
@@ -416,7 +605,7 @@
                           class="px-2 py-1 bg-cyan text-white text-xs rounded hover:bg-cyan/80">
                     View
                   </button>
-                  <button onclick="dashboard.resetPassword('${student.id}')" 
+                  <button onclick="dashboard.resetProgress('${student.id}')" 
                           class="px-2 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700">
                     Reset
                   </button>
@@ -442,14 +631,63 @@
           showError(message, { title: 'Error' });
         }
 
+        showWarning(message) {
+          showWarning(message, { title: 'Warning' });
+        }
+
         showInfo(message) {
           showInfo(message, { title: 'Information' });
         }
 
         // Global methods for inline onclick handlers
         viewStudent(studentId) {
-          console.log('Viewing student:', studentId);
-          // Implement student detail view
+          const student = this.students.find(s => s.id === studentId);
+          if (student) {
+            this.showInfo(`Student Details:\n\nName: ${student.fullName}\nID: ${student.studentId}\nStrand: ${student.academicInfo.strand}\nYear: ${student.academicInfo.year}\nTotal Points: ${student.gameData?.totalPoints || 0}\nProgress: ${this.calculateProgress(student)}%`, {
+              title: `📊 ${student.fullName}'s Profile`
+            });
+          }
+        }
+
+        async resetProgress(studentId) {
+          const confirmed = await modernConfirm('Reset all progress for this student? This action cannot be undone.', {
+            title: 'Reset Student Progress',
+            type: 'warning',
+            confirmText: 'Yes, Reset',
+            cancelText: 'Cancel'
+          });
+          
+          if (confirmed) {
+            try {
+              console.log('Resetting progress for student:', studentId);
+              
+              if (this.isFirebaseInitialized) {
+                // Update Firebase
+                const studentRef = this.database.ref(`students/${studentId}`);
+                await studentRef.update({
+                  totalPoints: 0,
+                  courseProgress: {},
+                  lastUpdated: new Date().toISOString()
+                });
+                console.log('Firebase update completed');
+              }
+              
+              // Update local data
+              const student = this.students.find(s => s.id === studentId);
+              if (student) {
+                student.gameData = {
+                  totalPoints: 0,
+                  courseProgress: {}
+                };
+                this.renderStudentsTable();
+              }
+              
+              this.showSuccess('Student progress has been reset successfully.');
+            } catch (error) {
+              console.error('Error resetting student progress:', error);
+              this.showError('Failed to reset student progress: ' + error.message);
+            }
+          }
         }
 
         async resetPassword(studentId) {

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import BaseScene from './BaseScene.js';
 import { playExclusiveBGM, updateSoundVolumes } from '../audioUtils.js';
+import { getScaleInfo } from '../utils/mobileUtils.js';
 
 export default class ResultScreen extends BaseScene {
     constructor() {
@@ -28,6 +29,19 @@ export default class ResultScreen extends BaseScene {
 
     create() {
         super.create();
+        
+        // Get mobile information for responsive design
+        const scaleInfo = getScaleInfo(this);
+        const isMobile = scaleInfo.width < 768;
+        const isSmallMobile = scaleInfo.width < 480;
+        
+        // Debug logging
+        console.log('ResultScreen - Mobile detection:', {
+            width: scaleInfo.width,
+            height: scaleInfo.height,
+            isMobile,
+            isSmallMobile
+        });
         
         // Initialize sound effects and background music
         this.se_hoverSound = this.sound.add('se_select');
@@ -74,31 +88,42 @@ export default class ResultScreen extends BaseScene {
         gradient.fillGradientStyle(0x000000, 0x000000, 0x1a1a2e, 0x1a1a2e, 1);
         gradient.fillRect(0, 0, this.scale.width, this.scale.height);
         
-        // Create main result panel
-        const panelWidth = 700;
-        const panelHeight = 600;
+        // Responsive panel sizing - Better desktop layout
+        const panelWidth = isMobile ? Math.min(scaleInfo.width * 0.80, 300) : 800;
+        const panelHeight = isMobile ? Math.min(scaleInfo.height * 0.70, 350) : 700;
         const panelX = this.scale.width / 2;
         const panelY = this.scale.height / 2;
+        
+        console.log('ResultScreen - Panel sizing:', {
+            panelWidth,
+            panelHeight,
+            isMobile,
+            screenWidth: scaleInfo.width,
+            screenHeight: scaleInfo.height
+        });
         
         // Panel shadow
         const shadow = this.add.rectangle(panelX + 5, panelY + 5, panelWidth, panelHeight, 0x000000, 0.5);
         shadow.setStrokeStyle(2, 0x333333);
         
-        // Main panel
+        // Main panel - normal styling for desktop
         const panel = this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x16213e);
         panel.setStrokeStyle(3, 0x0f4c75);
         
         // Panel glow effect
         const panelGlow = this.add.rectangle(panelX, panelY, panelWidth + 10, panelHeight + 10, 0x0f4c75, 0.3);
         
-        // Title text with better styling
+        // Title text with proper desktop spacing
         const titleText = this.courseCompleted ? 
             `COURSE COMPLETED!` : 
             'SESSION ENDED';
         
-        const title = this.add.text(panelX, panelY - 220, titleText, {
+        const titleFontSize = isMobile ? '30px' : (this.courseCompleted ? '48px' : '52px');
+        const titleY = panelY - (panelHeight * 0.35);
+        
+        const title = this.add.text(panelX, titleY, titleText, {
             fontFamily: 'Arial',
-            fontSize: this.courseCompleted ? '36px' : '40px',
+            fontSize: titleFontSize,
             fontWeight: 'bold',
             color: this.courseCompleted ? '#00ff88' : '#ff6600',
             stroke: '#000000',
@@ -113,11 +138,21 @@ export default class ResultScreen extends BaseScene {
             }
         }).setOrigin(0.5);
         
-        // Course name if completed
+        console.log('ResultScreen - Title created:', {
+            fontSize: titleFontSize,
+            color: isMobile ? '#ff00ff' : 'normal',
+            position: { x: panelX, y: titleY },
+            isMobile
+        });
+        
+        // Course name if completed - better desktop sizing
         if (this.courseCompleted) {
-            const courseName = this.add.text(panelX, panelY - 180, this.courseTopic.toUpperCase(), {
+            const courseNameFontSize = isMobile ? '16px' : '32px';
+            const courseNameY = titleY + (isMobile ? 30 : 50);
+            
+            const courseName = this.add.text(panelX, courseNameY, this.courseTopic.toUpperCase(), {
                 fontFamily: 'Arial',
-                fontSize: '28px',
+                fontSize: courseNameFontSize,
                 fontWeight: 'bold',
                 color: '#ffffff',
                 stroke: '#000000',
@@ -125,85 +160,108 @@ export default class ResultScreen extends BaseScene {
             }).setOrigin(0.5);
         }
         
-        // Rank display with special effects
-        const rankBg = this.add.circle(panelX, panelY - 120, 50, rankColor, 0.2);
-        const rankBorder = this.add.circle(panelX, panelY - 120, 50);
-        rankBorder.setStrokeStyle(5, rankColor);
+        // Rank display with better desktop sizing
+        const rankRadius = isMobile ? 35 : 70;
+        const rankFontSize = isMobile ? '36px' : '72px';
+        const rankY = panelY - (panelHeight * 0.05);
         
-        const rankText = this.add.text(panelX, panelY - 120, rank, {
+        const rankBg = this.add.circle(panelX, rankY, rankRadius, rankColor, 0.2);
+        const rankBorder = this.add.circle(panelX, rankY, rankRadius);
+        rankBorder.setStrokeStyle(isMobile ? 3 : 6, rankColor);
+        
+        const rankText = this.add.text(panelX, rankY, rank, {
             fontFamily: 'Arial',
-            fontSize: '56px',
+            fontSize: rankFontSize,
             fontWeight: 'bold',
             color: rankColor,
             stroke: '#000000',
-            strokeThickness: 4,
+            strokeThickness: isMobile ? 2 : 6,
             shadow: {
                 offsetX: 0,
                 offsetY: 0,
                 color: rankGlow,
-                blur: 15,
+                blur: isMobile ? 8 : 20,
                 fill: true
             }
         }).setOrigin(0.5);
         
-        // Statistics section
-        const statsY = panelY - 10;
-        const lineHeight = 35;
+        // Statistics section with better desktop spacing
+        const statsY = panelY + (panelHeight * 0.12);
+        const lineHeight = isMobile ? 28 : 45;
+        const statsFontSize = isMobile ? '16px' : '26px';
         
         // Create colored stats with icons
         const statsData = [
-            { label: '✓ Correct Answers', value: this.correctAnswers, color: '#00ff88' },
-            { label: '✗ Wrong Answers', value: this.wrongAnswers, color: '#ff4444' },
-            { label: '🔥 Highest Streak', value: `${this.highestStreak}x`, color: '#ffaa00' },
-            { label: '⭐ Total Score', value: this.totalScore, color: '#00ddff' },
+            { label: '✓ Correct', value: this.correctAnswers, color: '#00ff88' },
+            { label: '✗ Wrong', value: this.wrongAnswers, color: '#ff4444' },
+            { label: '🔥 Streak', value: `${this.highestStreak}x`, color: '#ffaa00' },
+            { label: '⭐ Score', value: this.totalScore, color: '#00ddff' },
             { label: '📊 Accuracy', value: `${accuracy.toFixed(1)}%`, color: accuracy >= 80 ? '#00ff88' : accuracy >= 60 ? '#ffaa00' : '#ff4444' }
         ];
         
         statsData.forEach((stat, index) => {
-            // Stat background
-            const statBg = this.add.rectangle(panelX, statsY + (index * lineHeight), panelWidth - 60, 30, 0x0a1628, 0.5);
+            // Better stat background sizing for desktop
+            const statBgWidth = panelWidth - (isMobile ? 30 : 100);
+            const statBgHeight = isMobile ? 24 : 36;
+            const statBg = this.add.rectangle(panelX, statsY + (index * lineHeight), statBgWidth, statBgHeight, 0x0a1628, 0.5);
             
-            // Stat text
-            this.add.text(panelX - 250, statsY + (index * lineHeight), stat.label, {
+            // Better positioning for mobile
+            const leftX = panelX - (statBgWidth * 0.35);
+            const rightX = panelX + (statBgWidth * 0.35);
+            
+            // Stat label - use full labels on mobile for clarity
+            const displayLabel = stat.label;
+            
+            this.add.text(leftX, statsY + (index * lineHeight), displayLabel, {
                 fontFamily: 'Arial',
-                fontSize: '22px',
+                fontSize: statsFontSize,
                 color: '#ffffff',
                 fontWeight: 'bold'
             }).setOrigin(0, 0.5);
             
-            this.add.text(panelX + 250, statsY + (index * lineHeight), stat.value.toString(), {
+            // Stat value with better styling
+            this.add.text(rightX, statsY + (index * lineHeight), stat.value.toString(), {
                 fontFamily: 'Arial',
-                fontSize: '22px',
+                fontSize: statsFontSize,
                 color: stat.color,
                 fontWeight: 'bold',
                 stroke: '#000000',
-                strokeThickness: 1
+                strokeThickness: isMobile ? 1 : 1
             }).setOrigin(1, 0.5);
         });
         
-        // Enhanced button design
-        const buttonY = panelY + 200;
-        const buttonBg = this.add.rectangle(panelX, buttonY, 350, 60, 0x0f4c75);
-        buttonBg.setStrokeStyle(3, 0x3282b8);
+        // Enhanced button design with better desktop sizing
+        const buttonY = isMobile ? panelY + (panelHeight * 0.42) : panelY + (panelHeight * 0.32);
+        const buttonWidth = isMobile ? 250 : 400;
+        const buttonHeight = isMobile ? 45 : 70;
+        const buttonFontSize = isMobile ? '16px' : '28px';
         
-        const buttonGlow = this.add.rectangle(panelX, buttonY, 350, 60, 0x3282b8, 0.3);
+        const buttonBg = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x0f4c75);
+        buttonBg.setStrokeStyle(isMobile ? 2 : 3, 0x3282b8);
+        
+        const buttonGlow = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x3282b8, 0.3);
         
         const buttonText = this.add.text(panelX, buttonY, 'Back to Computer Lab', {
             fontFamily: 'Arial',
-            fontSize: '22px',
+            fontSize: buttonFontSize,
             fontWeight: 'bold',
             color: '#ffffff',
             shadow: {
                 offsetX: 1,
                 offsetY: 1,
                 color: '#000000',
-                blur: 3,
+                blur: isMobile ? 2 : 4,
                 fill: true
             }
         }).setOrigin(0.5);
         
-        // Enhanced button interactions
-        buttonBg.setInteractive({ useHandCursor: true })
+        // Enhanced button interactions with proper mobile touch targets
+        const interactiveArea = this.add.rectangle(panelX, buttonY, 
+            isMobile ? Math.max(buttonWidth, 55) : buttonWidth, 
+            isMobile ? Math.max(buttonHeight, 55) : buttonHeight, 
+            0x000000, 0);
+        
+        interactiveArea.setInteractive({ useHandCursor: true })
             .on('pointerover', () => {
                 buttonBg.setFillStyle(0x3282b8);
                 buttonGlow.setAlpha(0.6);
@@ -232,6 +290,28 @@ export default class ResultScreen extends BaseScene {
                     this.scene.start('ComputerLab');
                 });
             });
+        
+        // Create a container for all elements - no aggressive scaling
+        const resultContainer = this.add.container(0, 0);
+        resultContainer.add([panelGlow, panel, shadow, title, rankBg, rankBorder, rankText, buttonBg, buttonGlow, buttonText, interactiveArea]);
+        
+        // Add course name to container if it exists
+        if (this.courseCompleted) {
+            // Re-create course name with proper desktop sizing
+            const courseNameFontSize = isMobile ? '16px' : '32px';
+            const courseNameY = titleY + (isMobile ? 30 : 50);
+            
+            const courseName = this.add.text(panelX, courseNameY, this.courseTopic.toUpperCase(), {
+                fontFamily: 'Arial',
+                fontSize: courseNameFontSize,
+                fontWeight: 'bold',
+                color: '#ffffff',
+                stroke: '#000000',
+                strokeThickness: 1
+            }).setOrigin(0.5);
+            
+            resultContainer.add(courseName);
+        }
         
         // Entrance animations
         const animatedElements = [panelGlow, panel, title, rankBg, rankBorder, rankText];
