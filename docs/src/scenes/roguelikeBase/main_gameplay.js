@@ -351,131 +351,63 @@ export default class MainGameplay extends BaseScene {
     }
     
     updateHudPositions() {
+        // Responsive, unified HUD for all devices (mobile & desktop)
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
-        const isMobile = screenWidth < 768;
         const isSmallMobile = screenWidth < 480;
-
-        // --- Desktop: HUD sticky to top of zoomed-in camera ---
-        if (!isMobile) {
-            const margin = 12;
-            const scoreFontSize = 24;
-            const streakFontSize = 18;
-            const timerFontSize = 32;
-            const courseFontSize = 18;
-
-            // Get camera worldView for correct HUD placement
-            const cam = this.cameras && this.cameras.main ? this.cameras.main : null;
-            const camX = cam ? cam.worldView.x : 0;
-            const camY = cam ? cam.worldView.y : 0;
-            const camW = cam ? cam.worldView.width : screenWidth;
-
-            if (this.scoreText) {
-                this.scoreText.setPosition(camX + margin, camY + margin);
-                this.scoreText.setFontSize(`${scoreFontSize}px`);
-                this.scoreText.setStroke('#000000', 3);
-                this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
-                this.scoreText.setScrollFactor(0);
-                this.scoreText.setDepth(1000);
-            }
-            if (this.streakText) {
-                this.streakText.setPosition(camX + margin, camY + margin + scoreFontSize + 2);
-                this.streakText.setFontSize(`${streakFontSize}px`);
-                this.streakText.setStroke('#000000', 2);
-                this.streakText.setShadow(2, 2, '#000000', 2, true, false);
-                this.streakText.setScrollFactor(0);
-                this.streakText.setDepth(1000);
-            }
-            if (this.timerText) {
-                this.timerText.setPosition(camX + camW / 2, camY + margin);
-                this.timerText.setFontSize(`${timerFontSize}px`);
-                this.timerText.setStroke('#000000', 4);
-                this.timerText.setShadow(2, 2, '#000000', 3, true, false);
-                this.timerText.setScrollFactor(0);
-                this.timerText.setDepth(1000);
-            }
-            if (this.courseDisplay) {
-                this.courseDisplay.setPosition(camX + camW - margin, camY + margin);
-                this.courseDisplay.setFontSize(`${courseFontSize}px`);
-                this.courseDisplay.setOrigin(1, 0);
-                this.courseDisplay.setStroke('#000080', 2);
-                this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
-                this.courseDisplay.setScrollFactor(0);
-                this.courseDisplay.setDepth(1000);
-            }
-            return;
-        }
-
-        // --- Mobile HUD logic (improved for zoom consistency) ---
-        let scoreX, scoreY, streakY, timerY;
-        let scoreFontSize, streakFontSize, timerFontSize, courseFontSize;
-
-        const margin = isSmallMobile ? 10 : 12;
-
-        if (isSmallMobile) {
-            scoreX = margin;
-            scoreY = margin;
-            streakY = margin + 22;
-            timerY = margin;
-            scoreFontSize = Math.max(18, screenWidth * 0.032);
-            streakFontSize = Math.max(14, screenWidth * 0.028);
-            timerFontSize = Math.max(24, screenWidth * 0.04);
-            courseFontSize = Math.max(14, screenWidth * 0.028);
-        } else {
-            scoreX = margin;
-            scoreY = margin;
-            streakY = margin + 25;
-            timerY = margin;
-            scoreFontSize = Math.max(20, screenWidth * 0.028);
-            streakFontSize = Math.max(16, screenWidth * 0.025);
-            timerFontSize = Math.max(28, screenWidth * 0.036);
-            courseFontSize = Math.max(16, screenWidth * 0.025);
-        }
-
-        // Get camera worldView for correct HUD placement
+    
+        // Responsive margins and font sizes
+        const margin = isSmallMobile ? 10 : 14;
+        const scoreFontSize = isSmallMobile ? Math.max(18, screenWidth * 0.032) : Math.max(20, screenWidth * 0.028);
+        const streakFontSize = isSmallMobile ? Math.max(14, screenWidth * 0.028) : Math.max(16, screenWidth * 0.025);
+        const timerFontSize = isSmallMobile ? Math.max(24, screenWidth * 0.04) : Math.max(28, screenWidth * 0.036);
+        const courseFontSize = isSmallMobile ? Math.max(14, screenWidth * 0.028) : Math.max(16, screenWidth * 0.025);
+    
+        // Get camera worldView for correct HUD placement (sticky to camera)
         const cam = this.cameras && this.cameras.main ? this.cameras.main : null;
         const camX = cam ? cam.worldView.x : 0;
         const camY = cam ? cam.worldView.y : 0;
         const camW = cam ? cam.worldView.width : screenWidth;
-
+    
+        // Score (top left)
         if (this.scoreText) {
-            this.scoreText.setPosition(camX + scoreX, camY + scoreY);
+            this.scoreText.setPosition(camX + margin, camY + margin);
             this.scoreText.setFontSize(`${scoreFontSize}px`);
-            this.scoreText.setScrollFactor(0); // Fix: Always set scroll factor
+            this.scoreText.setScrollFactor(0);
             this.scoreText.setDepth(1000);
             this.scoreText.setStroke('#000000', 3);
             this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
         }
+        // Streak (below score)
         if (this.streakText) {
-            this.streakText.setPosition(camX + scoreX, camY + streakY);
+            this.streakText.setPosition(camX + margin, camY + margin + scoreFontSize + 4);
             this.streakText.setFontSize(`${streakFontSize}px`);
-            this.streakText.setScrollFactor(0); // Fix: Always set scroll factor
+            this.streakText.setScrollFactor(0);
             this.streakText.setDepth(1000);
             this.streakText.setStroke('#000000', 2);
             this.streakText.setShadow(2, 2, '#000000', 2, true, false);
         }
+        // Timer (top center)
         if (this.timerText) {
-            const centerX = camX + camW / 2;
-            this.timerText.setPosition(centerX, camY + timerY);
+            this.timerText.setPosition(camX + camW / 2, camY + margin);
             this.timerText.setFontSize(`${timerFontSize}px`);
-            this.timerText.setScrollFactor(0); // Fix: Always set scroll factor
+            this.timerText.setScrollFactor(0);
             this.timerText.setDepth(1000);
             this.timerText.setStroke('#000080', 3);
             this.timerText.setShadow(2, 2, '#000040', 3, true, false);
         }
+        // Course display (top right)
         if (this.courseDisplay) {
-            const courseX = camX + camW - margin;
-            const courseY = camY + margin;
-            this.courseDisplay.setPosition(courseX, courseY);
+            this.courseDisplay.setPosition(camX + camW - margin, camY + margin);
             this.courseDisplay.setFontSize(`${courseFontSize}px`);
             this.courseDisplay.setOrigin(1, 0);
-            this.courseDisplay.setScrollFactor(0); // Fix: Always set scroll factor
+            this.courseDisplay.setScrollFactor(0);
             this.courseDisplay.setDepth(1000);
             this.courseDisplay.setStroke('#000080', 2);
             this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
         }
     }
-
+    
     createBackground() {
         // Create animated starfield background
         this.createStarfield();
