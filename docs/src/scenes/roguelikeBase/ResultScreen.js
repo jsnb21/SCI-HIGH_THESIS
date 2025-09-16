@@ -72,43 +72,18 @@ export default class ResultScreen extends BaseScene {
         gradient.fillGradientStyle(0x000000, 0x000000, 0x1a1a2e, 0x1a1a2e, 1);
         gradient.fillRect(0, 0, this.scale.width, this.scale.height);
         
-        // Calculate content dimensions for auto-sizing
-        const baseMargin = isMobile ? 20 : 30;
-        const titleHeight = isMobile ? 40 : 50;
-        const courseNameHeight = this.courseCompleted ? (isMobile ? 30 : 35) : 0;
-        const rankHeight = isMobile ? 80 : 100;
-        const statsCount = 5; // Number of stats we display
-        const statLineHeight = isMobile ? scaleDimension(58, scaleInfo) : 60;
-        const statsHeight = statsCount * statLineHeight;
-        const buttonContentHeight = isMobile ? scaleDimension(55, scaleInfo) : 60;
-        const spacingBetweenSections = isMobile ? 15 : 20;
-        
-        // Calculate total content height
-        const contentHeight = titleHeight + courseNameHeight + rankHeight + statsHeight + buttonContentHeight + 
-                             (spacingBetweenSections * 4) + (baseMargin * 2);
-        
-        // Calculate panel dimensions based on content with min/max constraints
-        const minPanelWidth = isMobile ? 320 : 400;
-        const maxPanelWidth = isMobile ? Math.min(scaleInfo.width * 0.95, 400) : 600;
-        const minPanelHeight = isMobile ? 400 : 500;
-        const maxPanelHeight = isMobile ? scaleInfo.height * 0.95 : scaleInfo.height * 0.9;
-        
-        // Auto-size panel based on content
-        const panelWidth = Math.max(minPanelWidth, Math.min(maxPanelWidth, 
-            isMobile ? scaleInfo.width * 0.9 : scaleDimension(500, scaleInfo)));
-        const panelHeight = Math.max(minPanelHeight, Math.min(maxPanelHeight, contentHeight));
-        
+        // Create main result panel with MUCH larger responsive dimensions for mobile
+        const panelWidth = isMobile ? Math.min(scaleInfo.width * 0.95, 380) : scaleDimension(500, scaleInfo);
+        const panelHeight = isMobile ? Math.min(scaleInfo.height * 0.90, 500) : scaleDimension(450, scaleInfo);
         const panelX = this.scale.width / 2;
         const panelY = this.scale.height / 2;
         
         console.log('ResultScreen - Panel dimensions:', {
             panelWidth,
             panelHeight,
-            contentHeight,
             isMobile,
             screenWidth: scaleInfo.width,
-            screenHeight: scaleInfo.height,
-            courseCompleted: this.courseCompleted
+            screenHeight: scaleInfo.height
         });
         
         // Panel shadow
@@ -127,13 +102,8 @@ export default class ResultScreen extends BaseScene {
             `COURSE COMPLETED!` : 
             'SESSION ENDED';
         
-        // Dynamic positioning based on actual panel height
-        const availableHeight = panelHeight - (baseMargin * 2);
-        const sectionSpacing = availableHeight / (this.courseCompleted ? 6 : 5); // Divide available space
-        
-        let currentY = panelY - panelHeight * 0.5 + baseMargin + (titleHeight / 2);
-        
-        const title = this.add.text(panelX, currentY, titleText, {
+        let titleY = isMobile ? panelY - panelHeight * 0.4 : panelY - panelHeight * 0.35;
+        const title = this.add.text(panelX, titleY, titleText, {
             fontFamily: 'Arial',
             fontSize: isMobile ? 
                 (this.courseCompleted ? scaleFontSize(28, scaleInfo) : scaleFontSize(32, scaleInfo)) :
@@ -152,11 +122,10 @@ export default class ResultScreen extends BaseScene {
             }
         }).setOrigin(0.5);
         
-        currentY += sectionSpacing;
-        
         // Course name if completed
         if (this.courseCompleted) {
-            const courseName = this.add.text(panelX, currentY, this.courseTopic.toUpperCase(), {
+            let courseNameY = isMobile ? panelY - panelHeight * 0.3 : panelY - panelHeight * 0.25;
+            const courseName = this.add.text(panelX, courseNameY, this.courseTopic.toUpperCase(), {
                 fontFamily: 'Arial',
                 fontSize: isMobile ? scaleFontSize(22, scaleInfo) : '26px',
                 fontWeight: 'bold',
@@ -164,12 +133,10 @@ export default class ResultScreen extends BaseScene {
                 stroke: '#000000',
                 strokeThickness: 1
             }).setOrigin(0.5);
-            
-            currentY += sectionSpacing;
         }
         
-        // Enhanced rank display with special effects and dynamic positioning
-        const rankY = currentY;
+        // Enhanced rank display with special effects and responsive positioning
+        let rankY = isMobile ? panelY - panelHeight * 0.25 : panelY - panelHeight * 0.2; // Moved up more
         let rankSize = isMobile ? 35 : 50;
         
         // Multi-layer rank background for depth
@@ -195,11 +162,9 @@ export default class ResultScreen extends BaseScene {
             }
         }).setOrigin(0.5);
         
-        currentY += sectionSpacing;
-        
-        // Statistics section with dynamic spacing
-        const statsStartY = currentY;
-        const lineHeight = isMobile ? scaleDimension(58, scaleInfo) : 60;
+        // Statistics section with improved spacing and moved up for better distribution
+        const statsY = isMobile ? panelY - panelHeight * 0.05 : panelY - panelHeight * 0.02; // Moved up
+        const lineHeight = isMobile ? scaleDimension(58, scaleInfo) : 60; // Even larger spacing for shadows
         
         // Create colored stats with icons and better styling
         const statsData = [
@@ -211,7 +176,7 @@ export default class ResultScreen extends BaseScene {
         ];
         
         statsData.forEach((stat, index) => {
-            const yPos = statsStartY + (index * lineHeight);
+            const yPos = statsY + (index * lineHeight);
             
             // Enhanced stat background with gradient effect
             const statBg = this.add.rectangle(panelX, yPos, panelWidth - 40, isMobile ? 32 : 34, 0x0a1628, 0.7);
@@ -259,11 +224,10 @@ export default class ResultScreen extends BaseScene {
             }).setOrigin(1, 0.5);
         });
         
-        // Update currentY after stats
-        currentY = statsStartY + (statsData.length * lineHeight) + spacingBetweenSections;
-        
-        // Enhanced button design positioned dynamically
-        const buttonY = currentY;
+        // Enhanced button design positioned lower inside the panel with larger font
+        const buttonY = isMobile ? 
+            panelY + panelHeight * 0.45 :  // Lower position to accommodate larger stats spacing
+            panelY + panelHeight * 0.45;   // Lower position for both mobile and PC
         const buttonWidth = isMobile ? scaleDimension(300, scaleInfo) : 320;
         const buttonHeight = isMobile ? scaleDimension(55, scaleInfo) : 60;
         const buttonFontSize = isMobile ? scaleFontSize(20, scaleInfo) : 24; // Larger font
@@ -351,7 +315,7 @@ export default class ResultScreen extends BaseScene {
             statsData.forEach((_, index) => {
                 this.tweens.add({
                     targets: this.children.list.filter(child => 
-                        child.y === statsStartY + (index * lineHeight) && 
+                        child.y === statsY + (index * lineHeight) && 
                         (child.type === 'Rectangle' || child.type === 'Text')
                     ),
                     alpha: { from: 0, to: 1 },
@@ -391,7 +355,7 @@ export default class ResultScreen extends BaseScene {
         
         // Add particle effects for high ranks
         if (rank === 'S' || rank === 'A') {
-            this.createParticleEffects(panelX, rankY - 40, rankColor);
+            this.createParticleEffects(panelX, panelY - 80, rankColor);
         }
         
         console.log('ResultScreen created successfully');

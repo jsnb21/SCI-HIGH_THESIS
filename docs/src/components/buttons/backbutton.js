@@ -3,7 +3,7 @@ import { createDebouncedClickHandler, getScaleInfo, scaleFontSize, scaleDimensio
 
 // This file is for the back button component in the game, separated to reduce lines of code in the main file
 
-export function createBackButton(scene, targetScene = 'ComputerLab', options = {}) {
+export function createBackButton(scene, targetScene = 'ComputerLab') {
     // Get mobile scaling information
     const scaleInfo = getScaleInfo(scene);
     
@@ -17,16 +17,10 @@ export function createBackButton(scene, targetScene = 'ComputerLab', options = {
     const fontSize = scaleFontSize(baseFontSize, scaleInfo);
     
     // Position button in top-left with appropriate offset (moved right by 150px total)
-    // Allow override of Y position for alignment purposes
-    const basePosition = getResponsivePosition(scaleInfo, 'top-left', { 
+    const buttonPosition = getResponsivePosition(scaleInfo, 'top-left', { 
         x: buttonWidth/2 + 170, // 20 + 150 = 170
         y: buttonHeight/2 + 20 
     });
-    
-    const buttonPosition = {
-        x: options.x || basePosition.x,
-        y: options.y || basePosition.y
-    };
     
     // Create button background (rectangle with stroke)
     const buttonBg = scene.add.rectangle(
