@@ -279,14 +279,16 @@ class CareerStatsService {
             const updatedStats = {
                 studentInfo: {
                     studentId: studentId,
-                    fullName: studentName,
+                    fullName: studentName, // Always store the complete name here
                     lastUpdated: new Date().toISOString()
                 },
                 careerStats: newCareerStats,
                 recentSessions: newRecentSessions,
-                // Include additional form data
-                firstName: additionalData.firstName || studentName.split(' ')[0] || '',
-                lastName: additionalData.lastName || studentName.split(' ').slice(1).join(' ') || '',
+                // Enhanced name handling for additional form data
+                firstName: additionalData.firstName || (studentName ? studentName.split(' ')[0] : '') || '',
+                lastName: additionalData.lastName || (studentName ? studentName.split(' ').slice(1).join(' ') : '') || '',
+                middleName: additionalData.middleName || '', // Add support for middle names
+                fullName: additionalData.fullName || studentName || '', // Ensure fullName is always stored
                 department: additionalData.department || 'Unknown',
                 strandYear: additionalData.strandYear || 'Unknown'
             };

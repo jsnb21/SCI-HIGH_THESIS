@@ -3433,10 +3433,12 @@ export default class MainGameplay extends BaseScene {
                 const parsedStudentInfo = JSON.parse(studentInfo);
                 console.log('Found existing student info, going directly to ResultScreen:', parsedStudentInfo);
                 
-                // Add student info to result data
-                resultData.studentName = `${parsedStudentInfo.firstName} ${parsedStudentInfo.lastName}`;
+                // Add student info to result data - prioritize fullName if available
+                resultData.studentName = parsedStudentInfo.fullName || 
+                                        `${parsedStudentInfo.firstName} ${parsedStudentInfo.lastName}`;
                 resultData.firstName = parsedStudentInfo.firstName;
                 resultData.lastName = parsedStudentInfo.lastName;
+                resultData.fullName = parsedStudentInfo.fullName; // Include fullName for career stats
                 resultData.department = parsedStudentInfo.department;
                 resultData.strandYear = parsedStudentInfo.strandYear;
                 
@@ -3522,11 +3524,12 @@ export default class MainGameplay extends BaseScene {
                     const { default: careerStatsService } = await import('../../services/careerStatsService.js');
                     await careerStatsService.updateCareerStats(
                         gameplayData.studentId, 
-                        resultData.studentName,
+                        resultData.fullName || resultData.studentName, // Use fullName if available
                         gameplayData.sessionData,
                         {
                             firstName: resultData.firstName,
                             lastName: resultData.lastName,
+                            fullName: resultData.fullName, // Pass fullName specifically
                             department: resultData.department,
                             strandYear: resultData.strandYear
                         }

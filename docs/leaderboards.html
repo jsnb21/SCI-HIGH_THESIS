@@ -716,7 +716,46 @@
             
             // Get correct student name from main database, fallback to career stats
             const studentInfo = studentNameMap[studentId];
-            const studentName = studentInfo?.name || info.fullName || statsData.firstName + ' ' + statsData.lastName || 'Unknown Student';
+            
+            // Enhanced name construction with better fallback logic
+            let studentName = 'Unknown Student';
+            
+            if (studentInfo?.name) {
+              // Use name from main students database
+              studentName = studentInfo.name;
+            } else if (info.fullName) {
+              // Use fullName from career stats studentInfo
+              studentName = info.fullName;
+            } else if (statsData.firstName || statsData.lastName) {
+              // Construct name from firstName and lastName, handling missing parts
+              const firstName = statsData.firstName || '';
+              const lastName = statsData.lastName || '';
+              const middleName = statsData.middleName || '';
+              
+              if (firstName && lastName) {
+                // If we have both first and last name
+                studentName = middleName ? `${firstName} ${middleName} ${lastName}` : `${firstName} ${lastName}`;
+              } else if (firstName) {
+                // Only first name available
+                studentName = firstName;
+              } else if (lastName) {
+                // Only last name available
+                studentName = lastName;
+              }
+            } else if (statsData.studentInfo?.studentName) {
+              // Check for alternative name field
+              studentName = statsData.studentInfo.studentName;
+            }
+            
+            // Ensure we don't have empty or just whitespace names
+            studentName = studentName.trim() || `Student ${studentId}`;
+            
+            console.log(`Student ${studentId} name resolved as: "${studentName}"`, {
+              fromMainDB: studentInfo?.name,
+              fromCareerInfo: info.fullName,
+              fromFirstLast: statsData.firstName + ' ' + statsData.lastName,
+              final: studentName
+            });
             
             // Determine department from main database first, then fallback
             let department = studentInfo?.department || statsData.department || 'Unknown';

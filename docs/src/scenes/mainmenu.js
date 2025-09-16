@@ -187,6 +187,7 @@ export default class MainMenu extends Phaser.Scene {
                         const extractedStudentInfo = {
                             firstName: firstRecord.firstName,
                             lastName: firstRecord.lastName,
+                            fullName: firstRecord.fullName || `${firstRecord.firstName} ${firstRecord.lastName}`, // Include fullName
                             department: firstRecord.department || '',
                             strandYear: firstRecord.strandYear || '',
                             timestamp: Date.now()
