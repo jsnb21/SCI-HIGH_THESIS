@@ -278,6 +278,9 @@ export default class MainGameplay extends BaseScene {
     create() {
         super.create(); // Call BaseScene create method
         
+        // Check and upload any pending scores from previous sessions
+        this.checkAndUploadPendingScores();
+        
         // Set responsive tile size based on screen size
         this.setResponsiveTileSize();
         
@@ -3468,7 +3471,8 @@ export default class MainGameplay extends BaseScene {
 
     async uploadGameplayDataInBackground(resultData) {
         try {
-            console.log('Uploading gameplay data in background...');
+            console.log('=== STARTING SCORE UPLOAD PROCESS ===');
+            console.log('Result data received:', resultData);
             
             // Get student data from localStorage (same way authService stores it)
             let studentId = 'unknown';
@@ -3476,12 +3480,17 @@ export default class MainGameplay extends BaseScene {
             
             try {
                 const userDataStr = localStorage.getItem('sci_high_user');
+                console.log('Raw user data from localStorage:', userDataStr);
                 if (userDataStr) {
                     currentUser = JSON.parse(userDataStr);
                     studentId = currentUser.studentId || currentUser.uid || 'unknown';
+                    console.log('Parsed user data:', currentUser);
+                    console.log('Student ID extracted:', studentId);
+                } else {
+                    console.warn('No user data found in localStorage - sci_high_user key is empty');
                 }
             } catch (e) {
-                console.warn('Could not parse user data from localStorage:', e);
+                console.error('Could not parse user data from localStorage:', e);
             }
             
             // Prepare gameplay data for upload
@@ -3508,19 +3517,42 @@ export default class MainGameplay extends BaseScene {
                 }
             };
             
-            console.log('Background upload - Prepared gameplay data:', gameplayData);
+            console.log('=== PREPARED GAMEPLAY DATA FOR UPLOAD ===');
+            console.log('Full gameplay data object:', JSON.stringify(gameplayData, null, 2));
+            
+            // Check network connectivity before attempting upload
+            if (!navigator.onLine) {
+                console.error('=== NO INTERNET CONNECTION - STORING DATA LOCALLY ===');
+                this.storeScoreLocally(gameplayData);
+                return;
+            }
+            
+            console.log('=== NETWORK CONNECTION DETECTED - PROCEEDING WITH FIREBASE ===');
             
             // Ensure Firebase is initialized
-            await this.ensureFirebaseInitialized();
+            console.log('=== ATTEMPTING FIREBASE INITIALIZATION ===');
+            const firebaseInitialized = await this.ensureFirebaseInitialized();
+            
+            if (!firebaseInitialized) {
+                console.error('=== FIREBASE INITIALIZATION FAILED - STORING DATA LOCALLY ===');
+                this.storeScoreLocally(gameplayData);
+                return;
+            }
+            
+            console.log('=== FIREBASE INITIALIZED SUCCESSFULLY ===');
             
             // Upload to Firebase
             if (this.database) {
+                console.log('=== UPLOADING TO FIREBASE DATABASE ===');
                 const gameplayRef = this.database.ref('gameplay_data');
                 const result = await gameplayRef.push(gameplayData);
-                console.log('Background gameplay data upload successful:', result.key);
+                console.log('=== FIREBASE UPLOAD SUCCESSFUL ===');
+                console.log('Upload result key:', result.key);
+                console.log('Upload timestamp:', new Date().toISOString());
                 
                 // Also update career stats if available
                 try {
+                    console.log('=== UPDATING CAREER STATS ===');
                     const { default: careerStatsService } = await import('../../services/careerStatsService.js');
                     await careerStatsService.updateCareerStats(
                         gameplayData.studentId, 
@@ -3534,41 +3566,151 @@ export default class MainGameplay extends BaseScene {
                             strandYear: resultData.strandYear
                         }
                     );
-                    console.log('Background career stats update successful');
+                    console.log('=== CAREER STATS UPDATE SUCCESSFUL ===');
                 } catch (careerError) {
-                    console.warn('Background career stats update failed:', careerError.message);
+                    console.error('=== CAREER STATS UPDATE FAILED ===');
+                    console.error('Career stats error:', careerError);
+                    // Continue even if career stats fail
                 }
             } else {
-                console.warn('Firebase database not available for background upload');
+                console.error('=== FIREBASE DATABASE NOT AVAILABLE ===');
+                console.error('Database object is null or undefined');
+                this.storeScoreLocally(gameplayData);
             }
             
         } catch (error) {
-            console.error('Background gameplay data upload failed:', error);
-            // Don't throw error since this is background operation
+            console.error('=== CRITICAL ERROR IN SCORE UPLOAD PROCESS ===');
+            console.error('Error details:', error);
+            console.error('Error stack:', error.stack);
+            
+            // Try to store locally as fallback
+            try {
+                const fallbackData = {
+                    studentId: 'error_fallback',
+                    studentName: resultData.studentName || 'Unknown',
+                    courseTopic: resultData.courseTopic || 'Unknown',
+                    totalScore: resultData.totalScore || 0,
+                    correctAnswers: resultData.correctAnswers || 0,
+                    wrongAnswers: resultData.wrongAnswers || 0,
+                    timestamp: new Date().toISOString(),
+                    errorOccurred: true,
+                    errorMessage: error.message
+                };
+                this.storeScoreLocally(fallbackData);
+                console.log('=== FALLBACK LOCAL STORAGE COMPLETED ===');
+            } catch (fallbackError) {
+                console.error('=== EVEN FALLBACK STORAGE FAILED ===');
+                console.error('Fallback error:', fallbackError);
+            }
+        }
+    }
+
+    // Store score data locally when Firebase upload fails
+    storeScoreLocally(gameplayData) {
+        try {
+            console.log('=== STORING SCORE DATA LOCALLY ===');
+            const localScores = JSON.parse(localStorage.getItem('pendingScores') || '[]');
+            localScores.push({
+                ...gameplayData,
+                storedLocally: true,
+                localStorageTimestamp: new Date().toISOString()
+            });
+            localStorage.setItem('pendingScores', JSON.stringify(localScores));
+            console.log('=== LOCAL STORAGE SUCCESSFUL ===');
+            console.log('Stored scores count:', localScores.length);
+            
+            // Try to upload pending scores on next network connection
+            this.schedulePendingUpload();
+        } catch (localError) {
+            console.error('=== LOCAL STORAGE FAILED ===');
+            console.error('Local storage error:', localError);
+        }
+    }
+
+    // Schedule upload of pending scores when network becomes available
+    schedulePendingUpload() {
+        if (navigator.onLine) {
+            setTimeout(() => this.uploadPendingScores(), 5000); // Try after 5 seconds
+        } else {
+            // Listen for online event
+            const onlineHandler = () => {
+                window.removeEventListener('online', onlineHandler);
+                setTimeout(() => this.uploadPendingScores(), 2000);
+            };
+            window.addEventListener('online', onlineHandler);
+        }
+    }
+
+    // Upload any scores that were stored locally
+    async uploadPendingScores() {
+        try {
+            const pendingScores = JSON.parse(localStorage.getItem('pendingScores') || '[]');
+            if (pendingScores.length === 0) return;
+            
+            console.log('=== UPLOADING PENDING SCORES ===');
+            console.log('Pending scores count:', pendingScores.length);
+            
+            const firebaseInitialized = await this.ensureFirebaseInitialized();
+            if (!firebaseInitialized || !this.database) {
+                console.log('Firebase not available, keeping scores for later');
+                return;
+            }
+            
+            const gameplayRef = this.database.ref('gameplay_data');
+            const uploadedScores = [];
+            
+            for (const score of pendingScores) {
+                try {
+                    await gameplayRef.push(score);
+                    uploadedScores.push(score);
+                    console.log('Uploaded pending score for:', score.studentName);
+                } catch (uploadError) {
+                    console.error('Failed to upload pending score:', uploadError);
+                }
+            }
+            
+            // Remove successfully uploaded scores
+            if (uploadedScores.length > 0) {
+                const remainingScores = pendingScores.filter(score => 
+                    !uploadedScores.some(uploaded => 
+                        uploaded.sessionData.timestamp === score.sessionData.timestamp
+                    )
+                );
+                localStorage.setItem('pendingScores', JSON.stringify(remainingScores));
+                console.log('=== PENDING SCORES UPLOAD COMPLETED ===');
+                console.log('Uploaded:', uploadedScores.length, 'Remaining:', remainingScores.length);
+            }
+        } catch (error) {
+            console.error('Error uploading pending scores:', error);
         }
     }
 
     async ensureFirebaseInitialized() {
         if (this.isFirebaseInitialized) {
+            console.log('Firebase already initialized');
             return true;
         }
         
         if (!this.initializationPromise) {
+            console.log('Starting new Firebase initialization...');
             this.initializationPromise = this.initializeFirebase();
         }
         
         try {
             await this.initializationPromise;
+            console.log('Firebase initialization completed successfully');
             return this.isFirebaseInitialized;
         } catch (error) {
-            console.warn('Firebase initialization failed:', error.message);
+            console.error('Firebase initialization failed:', error);
+            this.isFirebaseInitialized = false;
+            this.initializationPromise = null; // Reset for retry
             return false;
         }
     }
 
     async initializeFirebase() {
         try {
-            console.log('Starting Firebase initialization for MainGameplay...');
+            console.log('=== FIREBASE INITIALIZATION STARTING ===');
             
             // Firebase config
             const firebaseConfig = {
@@ -3581,45 +3723,60 @@ export default class MainGameplay extends BaseScene {
                 appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
             };
             
+            console.log('Firebase config:', firebaseConfig);
+            
             // First check if we have internet connectivity
             if (!navigator.onLine) {
                 throw new Error('No internet connection detected');
             }
+            console.log('Internet connection confirmed');
             
             // Check if Firebase is already loaded
             if (typeof window.firebase === 'undefined') {
-                console.log('Loading Firebase scripts...');
+                console.log('Firebase not loaded, attempting to load scripts...');
                 await this.loadFirebaseScripts();
+                console.log('Firebase scripts loading completed');
+            } else {
+                console.log('Firebase already loaded globally');
             }
             
             // Wait a bit for Firebase to be available
             let retries = 0;
             while (typeof window.firebase === 'undefined' && retries < 10) {
                 console.log(`Waiting for Firebase to load... (attempt ${retries + 1})`);
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise(resolve => setTimeout(resolve, 500)); // Increased wait time
                 retries++;
             }
             
             if (typeof window.firebase === 'undefined') {
                 throw new Error('Firebase failed to load after multiple attempts - check your internet connection');
             }
+            console.log('Firebase is now available globally');
             
             // Initialize Firebase app if not already done
             if (!window.firebase.apps.length) {
                 console.log('Initializing Firebase app...');
                 window.firebase.initializeApp(firebaseConfig);
+                console.log('Firebase app initialized');
+            } else {
+                console.log('Firebase app already initialized');
             }
             
             // Test Firebase connection
+            console.log('Setting up database connection...');
             this.database = window.firebase.database();
             
             // Try a simple connection test
+            console.log('Testing Firebase connection...');
             await this.database.ref('.info/connected').once('value');
+            console.log('Firebase connection test successful');
             
             this.isFirebaseInitialized = true;
-            console.log('Firebase Database initialized successfully for MainGameplay');
+            console.log('=== FIREBASE INITIALIZATION COMPLETED SUCCESSFULLY ===');
         } catch (error) {
-            console.error('Failed to initialize Firebase for MainGameplay:', error);
+            console.error('=== FIREBASE INITIALIZATION FAILED ===');
+            console.error('Error details:', error);
+            console.error('Error stack:', error.stack);
             this.isFirebaseInitialized = false;
             throw error;
         }
@@ -3628,37 +3785,68 @@ export default class MainGameplay extends BaseScene {
     async loadFirebaseScripts() {
         return new Promise((resolve, reject) => {
             if (typeof window.firebase !== 'undefined') {
+                console.log('Firebase already loaded, skipping script loading');
                 resolve();
                 return;
             }
 
+            console.log('Loading Firebase scripts dynamically...');
             const scripts = [
                 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
                 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js'
             ];
             
             let loaded = 0;
-            const timeout = setTimeout(() => {
-                reject(new Error('Firebase script loading timeout'));
-            }, 10000);
+            let failed = false;
             
-            scripts.forEach(src => {
+            const timeout = setTimeout(() => {
+                if (!failed) {
+                    failed = true;
+                    console.error('Firebase script loading timeout after 15 seconds');
+                    reject(new Error('Firebase script loading timeout'));
+                }
+            }, 15000); // Increased timeout to 15 seconds
+            
+            scripts.forEach((src, index) => {
+                console.log(`Loading Firebase script ${index + 1}/${scripts.length}: ${src}`);
                 const script = document.createElement('script');
                 script.src = src;
+                
                 script.onload = () => {
                     loaded++;
-                    if (loaded === scripts.length) {
+                    console.log(`Firebase script ${index + 1} loaded successfully (${loaded}/${scripts.length})`);
+                    if (loaded === scripts.length && !failed) {
                         clearTimeout(timeout);
+                        console.log('All Firebase scripts loaded successfully');
                         resolve();
                     }
                 };
-                script.onerror = () => {
-                    clearTimeout(timeout);
-                    reject(new Error(`Failed to load Firebase script: ${src}`));
+                
+                script.onerror = (error) => {
+                    if (!failed) {
+                        failed = true;
+                        clearTimeout(timeout);
+                        console.error(`Failed to load Firebase script: ${src}`, error);
+                        reject(new Error(`Failed to load Firebase script: ${src}`));
+                    }
                 };
-                document.head.appendChild(script);
+                
+                // Add some delay between script loads for mobile reliability
+                setTimeout(() => {
+                    document.head.appendChild(script);
+                }, index * 100);
             });
         });
+    }
+
+    // Add this method to check and upload pending scores when the scene starts
+    checkAndUploadPendingScores() {
+        // Try to upload any pending scores when the game starts
+        const pendingScores = JSON.parse(localStorage.getItem('pendingScores') || '[]');
+        if (pendingScores.length > 0) {
+            console.log(`Found ${pendingScores.length} pending scores to upload`);
+            this.uploadPendingScores();
+        }
     }
 
     // Clean up when scene is shutdown
