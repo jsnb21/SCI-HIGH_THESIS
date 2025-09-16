@@ -30,14 +30,14 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'npm'
         cache-dependency-path: docs/package.json
         
     - name: Install dependencies
       run: |
         cd docs
-        npm ci
+        npm install --prefer-offline --no-audit
         
     - name: Build Development
       run: |
