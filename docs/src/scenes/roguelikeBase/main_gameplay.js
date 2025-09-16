@@ -3440,22 +3440,30 @@ export default class MainGameplay extends BaseScene {
                 resultData.department = parsedStudentInfo.department;
                 resultData.strandYear = parsedStudentInfo.strandYear;
                 
-                // Go directly to ResultScreen since we have student info
-                this.scene.start('ResultScreen', resultData);
-                
-                // Also upload the data to Firebase in the background
-                this.uploadGameplayDataInBackground(resultData);
-                
             } catch (error) {
-                console.error('Error parsing student info, falling back to DataCollectionScreen:', error);
-                // Fall back to DataCollectionScreen if parsing fails
-                this.scene.start('DataCollectionScreen', resultData);
+                console.error('Error parsing student info, using default values:', error);
+                // Use default values if parsing fails
+                resultData.studentName = 'Anonymous Student';
+                resultData.firstName = 'Anonymous';
+                resultData.lastName = 'Student';
+                resultData.department = 'Unknown Department';
+                resultData.strandYear = 'Unknown';
             }
         } else {
-            console.log('No existing student info found, showing DataCollectionScreen');
-            // No student info found, show DataCollectionScreen as before
-            this.scene.start('DataCollectionScreen', resultData);
+            console.log('No existing student info found, using default values');
+            // Use default values if no student info found
+            resultData.studentName = 'Anonymous Student';
+            resultData.firstName = 'Anonymous';
+            resultData.lastName = 'Student';
+            resultData.department = 'Unknown Department';
+            resultData.strandYear = 'Unknown';
         }
+        
+        // Always go to ResultScreen
+        this.scene.start('ResultScreen', resultData);
+        
+        // Upload the data to Firebase in the background
+        this.uploadGameplayDataInBackground(resultData);
     }
 
     async uploadGameplayDataInBackground(resultData) {
@@ -3476,7 +3484,7 @@ export default class MainGameplay extends BaseScene {
                 console.warn('Could not parse user data from localStorage:', e);
             }
             
-            // Prepare gameplay data for upload (similar to DataCollectionScreen)
+            // Prepare gameplay data for upload
             const gameplayData = {
                 studentId: studentId,
                 studentName: resultData.studentName,
@@ -3561,7 +3569,7 @@ export default class MainGameplay extends BaseScene {
         try {
             console.log('Starting Firebase initialization for MainGameplay...');
             
-            // Firebase config (same as DataCollectionScreen)
+            // Firebase configuration
             const firebaseConfig = {
                 apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
                 authDomain: "sci-high-website.firebaseapp.com",

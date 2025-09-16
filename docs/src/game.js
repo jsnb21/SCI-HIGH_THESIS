@@ -45,7 +45,6 @@ import MainGameplay from '/src/scenes/roguelikeBase/main_gameplay.js';
 import QuizScene from '/src/scenes/roguelikeBase/QuizScene.js';
 import PowerUpScene from '/src/scenes/roguelikeBase/PowerUpScene.js';
 import ResultScreen from './scenes/roguelikeBase/ResultScreen.js';
-import DataCollectionScreen from './scenes/DataCollectionScreen.js';
 
 // Quiz Scenes
 import BaseQuizScene from '/src/scenes/quizscenes/BaseQuizScene.js';
@@ -136,7 +135,6 @@ const config = {
     MainGameplay,
     QuizScene,
     PowerUpScene,
-    DataCollectionScreen,
     ResultScreen,
     /* Quiz Scenes */
     BaseQuizScene,
