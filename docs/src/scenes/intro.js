@@ -201,7 +201,7 @@ export default class VNScene extends Phaser.Scene {
       7: 'Finley',   // Finley introduction
       8: 'Richard',  // About tutors helping with exams
       9: 'Richard',  // Finding them in classroom
-      10: 'Richard', // Fill up details line - show data collection after this
+      10: 'Richard', // Fill up details line - proceed to gameplay
       11: 'Richard', // Go to Computer Lab
       12: 'Richard'  // Good luck
     };

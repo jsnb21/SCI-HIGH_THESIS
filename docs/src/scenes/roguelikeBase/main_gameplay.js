@@ -3447,14 +3447,20 @@ export default class MainGameplay extends BaseScene {
                 this.uploadGameplayDataInBackground(resultData);
                 
             } catch (error) {
-                console.error('Error parsing student info, falling back to DataCollectionScreen:', error);
-                // Fall back to DataCollectionScreen if parsing fails
-                this.scene.start('DataCollectionScreen', resultData);
+                console.error('Error parsing student info, going to ResultScreen anyway:', error);
+                // Go to ResultScreen even if parsing fails
+                this.scene.start('ResultScreen', resultData);
+                
+                // Still try to upload data in background
+                this.uploadGameplayDataInBackground(resultData);
             }
         } else {
-            console.log('No existing student info found, showing DataCollectionScreen');
-            // No student info found, show DataCollectionScreen as before
-            this.scene.start('DataCollectionScreen', resultData);
+            console.log('No existing student info found, going to ResultScreen');
+            // Go directly to ResultScreen without student data collection
+            this.scene.start('ResultScreen', resultData);
+            
+            // Upload data in background
+            this.uploadGameplayDataInBackground(resultData);
         }
     }
 
@@ -3476,7 +3482,7 @@ export default class MainGameplay extends BaseScene {
                 console.warn('Could not parse user data from localStorage:', e);
             }
             
-            // Prepare gameplay data for upload (similar to DataCollectionScreen)
+            // Prepare gameplay data for upload
             const gameplayData = {
                 studentId: studentId,
                 studentName: resultData.studentName,
@@ -3561,7 +3567,7 @@ export default class MainGameplay extends BaseScene {
         try {
             console.log('Starting Firebase initialization for MainGameplay...');
             
-            // Firebase config (same as DataCollectionScreen)
+            // Firebase config
             const firebaseConfig = {
                 apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
                 authDomain: "sci-high-website.firebaseapp.com",

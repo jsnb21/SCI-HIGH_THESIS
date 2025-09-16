@@ -370,8 +370,8 @@
             this.careerStats = careerSnapshot.val();
 
             if (!this.careerStats) {
-              console.log('No career stats found, user needs to complete data collection');
-              this.showError('Please complete the in-game data collection first.');
+              console.log('No career stats found, user needs to play the game first');
+              this.showError('Please play the game first to see your statistics.');
               return;
             }
 
