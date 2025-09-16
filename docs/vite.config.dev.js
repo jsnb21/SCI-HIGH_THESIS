@@ -42,6 +42,16 @@ export default defineConfig({
           console.error('[DEV] Failed to copy notifications.js:', error);
         }
       }
+    },
+    {
+      name: 'handle-external-scripts',
+      transformIndexHtml: {
+        enforce: 'pre',
+        transform(html, ctx) {
+          // Don't bundle the notifications.js script - keep it as external
+          return html;
+        }
+      }
     }
   ]
 });

@@ -8,7 +8,7 @@ export default defineConfig({
     outDir: './dist-prod',
     emptyOutDir: true,
     sourcemap: false, // No source maps for production
-    minify: 'terser',  // Minify for production
+    minify: 'esbuild',  // Use esbuild instead of terser for better compatibility
     rollupOptions: {
       input: {
         main: './index.html',
@@ -40,6 +40,16 @@ export default defineConfig({
           console.log('✓ [PROD] Copied notifications.js to dist-prod/js/');
         } catch (error) {
           console.error('[PROD] Failed to copy notifications.js:', error);
+        }
+      }
+    },
+    {
+      name: 'handle-external-scripts',
+      transformIndexHtml: {
+        enforce: 'pre',
+        transform(html, ctx) {
+          // Don't bundle the notifications.js script - keep it as external
+          return html;
         }
       }
     }
