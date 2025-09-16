@@ -202,30 +202,23 @@ export default class MainGameplay extends BaseScene {
         // Calculate responsive tile size based on screen dimensions
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
-        const isMobile = screenWidth < 768;
+        // Mobile-first base tile size for all devices
         const isSmallMobile = screenWidth < 480;
-        
-        // Base tile size calculations - increased for better mobile visibility
-        let baseTileSize;
+        let baseTileSize = 60; // Mobile base size
+
         if (isSmallMobile) {
-            // For very small screens, calculate tile size to fit screen better
+            // Fit small screens better
             const availableWidth = screenWidth * 0.95;
-            const availableHeight = (screenHeight * 0.8); // Account for HUD
+            const availableHeight = screenHeight * 0.8; // Account for HUD
             const tileSizeByWidth = availableWidth / this.MAP_WIDTH;
             const tileSizeByHeight = availableHeight / this.MAP_HEIGHT;
             baseTileSize = Math.min(tileSizeByWidth, tileSizeByHeight);
-            baseTileSize = Math.max(baseTileSize, 40); // Increased minimum size for better visibility
-            baseTileSize = Math.min(baseTileSize, 75); // Increased maximum size
-        } else if (isMobile) {
-            // For regular mobile screens - increased size
-            baseTileSize = 60; // Increased from 52 for better visibility
-        } else {
-            // Desktop size
-            baseTileSize = 58; // Original size
+            baseTileSize = Math.max(baseTileSize, 40);
+            baseTileSize = Math.min(baseTileSize, 75);
         }
-        
+
         this.TILE_SIZE = Math.round(baseTileSize);
-        console.log(`Responsive tile size set to: ${this.TILE_SIZE}px for device: ${isSmallMobile ? 'SmallMobile' : isMobile ? 'Mobile' : 'Desktop'}`);
+        console.log(`Responsive tile size set to: ${this.TILE_SIZE}px (mobile-first)`);
     }
 
     preload() {
@@ -288,23 +281,26 @@ export default class MainGameplay extends BaseScene {
         // Listen for quiz completion
         this.events.on('quiz-completed', this.handleQuizCompletion, this);
         
-        // Create background
-        this.createBackground();
-        
-        // Create player sprite
-        this.createPlayer();
-        
-        // Create enemies
-        this.createEnemies();
-        
-        // Setup camera to follow player (must be after player creation)
-        this.setupCamera();
-        
-        // Create timer (but don't start it yet)
-        this.createTimer();
-        
-        // Create score display
-        this.createScoreDisplay();
+    // Create background
+    this.createBackground();
+
+    // Create player sprite
+    this.createPlayer();
+
+    // Create enemies
+    this.createEnemies();
+
+    // Setup camera to follow player (must be after player creation)
+    this.setupCamera();
+
+    // HUD group to collect UI elements that should not be affected by world camera
+    this.hudGroup = this.add.group();
+
+    // Create timer (but don't start it yet)
+    this.createTimer();
+
+    // Create score display
+    this.createScoreDisplay();
         
         // Initialize timer icons
         this.initializeTimerIcons();
@@ -320,6 +316,43 @@ export default class MainGameplay extends BaseScene {
         
         // Add mobile control hint
         this.addMobileControlHint();
+
+        // Create a UI camera for HUD so it stays fixed while the main camera zooms/follows
+        // Create after HUD elements are created so we can ignore HUD on the main camera
+        try {
+            // Create UI camera covering the whole game area
+            this.uiCamera = this.cameras.add(0, 0, this.scale.width, this.scale.height);
+            this.uiCamera.setScroll(0, 0);
+            this.uiCamera.setZoom(1);
+            this.uiCamera.setName('uiCamera');
+            this.uiCamera.setDepth(10000); // Ensure UI camera renders on top
+
+            // Make main camera ignore HUD objects so HUD is only rendered by uiCamera
+            if (this.hudGroup) {
+                this.hudGroup.getChildren().forEach(child => {
+                    try { this.cameras.main.ignore(child); } catch (e) { /* ignore if unsupported */ }
+                    try { this.uiCamera.ignore(child._worldLayer || child); } catch (e) { /* ui camera should render HUD */ }
+                });
+            }
+        } catch (e) {
+            console.warn('UI camera creation failed, falling back to single camera HUD (error):', e);
+        }
+
+        // Helper to refresh ignores when HUD children change or on resize
+        this.refreshHudCameraIgnores = () => {
+            if (!this.hudGroup || !this.cameras || !this.cameras.main || !this.uiCamera) return;
+            this.hudGroup.getChildren().forEach(child => {
+                try { this.cameras.main.ignore(child); } catch (e) {}
+                try { this.uiCamera.ignore(child._worldLayer || child); } catch (e) {}
+            });
+            // Ensure UI camera covers the viewport after resize
+            try { this.uiCamera.setViewport(0, 0, this.scale.width, this.scale.height); } catch (e) {}
+            try { this.uiCamera.setScroll(0, 0); } catch (e) {}
+            try { this.uiCamera.setZoom(1); } catch (e) {}
+        };
+
+        // Immediately refresh ignores in case HUD elements were added earlier
+        if (this.refreshHudCameraIgnores) this.refreshHudCameraIgnores();
         
         // Add resize listener to keep board centered
         this.scale.on('resize', this.onResize, this);
@@ -348,76 +381,45 @@ export default class MainGameplay extends BaseScene {
         
         // Update HUD positions for responsive design
         this.updateHudPositions();
+        // Refresh camera ignore lists so HUD remains on UI camera
+        if (this.refreshHudCameraIgnores) this.refreshHudCameraIgnores();
     }
 
     updateHudPositions() {
         // Calculate responsive positions based on current screen size
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
-        const isMobile = screenWidth < 768;
+        // Mobile-first HUD positions for all devices
+        const isMobile = true; // Treat all devices as mobile-first
         const isSmallMobile = screenWidth < 480;
-        
-        // Enhanced mobile positioning - moved stats to very top ONLY on mobile
-        let scoreX, scoreY, streakY, timerY;
-        let scoreFontSize, streakFontSize, timerFontSize, courseFontSize;
-        
-        if (isSmallMobile) {
-            // Very small mobile screens - positioned at absolute top
-            scoreX = Math.min(15, screenWidth * 0.025);
-            scoreY = 5; // Absolute top
-            streakY = 30; // Just below score
-            timerY = 5; // Same level as score
-            
-            // Larger fonts for small screens to ensure readability
-            scoreFontSize = Math.max(20, screenWidth * 0.035);
-            streakFontSize = Math.max(16, screenWidth * 0.03);
-            timerFontSize = Math.max(26, screenWidth * 0.045);
-            courseFontSize = Math.max(16, screenWidth * 0.03);
-        } else if (isMobile) {
-            // Regular mobile screens - positioned at absolute top
-            scoreX = Math.min(20, screenWidth * 0.03);
-            scoreY = 5; // Absolute top
-            streakY = 35; // Just below score
-            timerY = 5; // Same level as score
-            
-            // Responsive font sizes for mobile
-            scoreFontSize = Math.max(18, screenWidth * 0.03);
-            streakFontSize = Math.max(14, screenWidth * 0.025);
-            timerFontSize = Math.max(24, screenWidth * 0.04);
-            courseFontSize = Math.max(18, screenWidth * 0.025);
-        } else {
-            // Desktop screens - keep original positioning (NOT moved to top)
-            scoreX = 20;
-            scoreY = 30; // Original desktop position
-            streakY = 65; // Original desktop position
-            timerY = 30; // Original desktop position
-            
-            scoreFontSize = 24;
-            streakFontSize = 18;
-            timerFontSize = 32;
-            courseFontSize = 20;
-        }
+        let scoreX = Math.min(20, screenWidth * 0.03);
+        let scoreY = Math.max(5, Math.round(screenHeight * 0.03));
+        let streakY = scoreY + 30;
+        let timerY = scoreY;
+
+        // Mobile-first font sizes
+        const baseFontScale = screenWidth >= 768 ? 1.1 : 1.0;
+        const scoreFontSize = Math.max(18, screenWidth * 0.03) * baseFontScale;
+        const streakFontSize = Math.max(14, screenWidth * 0.025) * baseFontScale;
+        const timerFontSize = Math.max(24, screenWidth * 0.04) * baseFontScale;
+        const courseFontSize = Math.max(18, screenWidth * 0.025) * baseFontScale;
         
         // Update score text position and font size
         if (this.scoreText) {
             this.scoreText.setPosition(scoreX, scoreY);
             this.scoreText.setFontSize(`${scoreFontSize}px`);
-            // Add better visibility on mobile
-            if (isMobile) {
-                this.scoreText.setStroke('#000000', 4);
-                this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
-            }
+            // Add better visibility on all devices (mobile-first styling)
+            this.scoreText.setStroke('#000000', 4);
+            this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
         }
         
         // Update streak text position and font size
         if (this.streakText) {
             this.streakText.setPosition(scoreX, streakY);
             this.streakText.setFontSize(`${streakFontSize}px`);
-            // Add better visibility on mobile
-            if (isMobile) {
-                this.streakText.setStroke('#000000', 3);
-                this.streakText.setShadow(2, 2, '#000000', 2, true, false);
-            }
+            // Add better visibility on all devices (mobile-first styling)
+            this.streakText.setStroke('#000000', 3);
+            this.streakText.setShadow(2, 2, '#000000', 2, true, false);
         }
         
         // Update timer position and font size - centered at top
@@ -425,26 +427,20 @@ export default class MainGameplay extends BaseScene {
             const centerX = screenWidth / 2;
             this.timerText.setPosition(centerX, timerY);
             this.timerText.setFontSize(`${timerFontSize}px`);
-            // Add better visibility on mobile
-            if (isMobile) {
-                this.timerText.setStroke('#000080', 4);
-                this.timerText.setShadow(2, 2, '#000040', 3, true, false);
-            }
+            // Add better visibility (mobile-first)
+            this.timerText.setStroke('#000080', 4);
+            this.timerText.setShadow(2, 2, '#000040', 3, true, false);
         }
         
-        // Update course display for mobile - top positioning only on mobile
+        // Update course display (mobile-first top-right)
         if (this.courseDisplay) {
-            const courseX = isMobile ? screenWidth - (isSmallMobile ? 15 : 20) : screenWidth - 20;
-            const courseY = isMobile ? 5 : 30; // Absolute top on mobile, original position on desktop
+            const courseX = screenWidth - (isSmallMobile ? 15 : 20);
+            const courseY = 5; // Absolute top
             this.courseDisplay.setPosition(courseX, courseY);
             this.courseDisplay.setFontSize(`${courseFontSize}px`);
-            this.courseDisplay.setOrigin(1, 0); // Right-align for mobile
-            
-            // Add better visibility on mobile
-            if (isMobile) {
-                this.courseDisplay.setStroke('#000080', 3);
-                this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
-            }
+            this.courseDisplay.setOrigin(1, 0); // Right-align
+            this.courseDisplay.setStroke('#000080', 3);
+            this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
         }
     }
 
@@ -459,7 +455,7 @@ export default class MainGameplay extends BaseScene {
         // Get screen dimensions
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
-        const isMobile = screenWidth < 768;
+    const isMobile = true; // Force mobile-first layout on all devices
         const isSmallMobile = screenWidth < 480;
         
         // Account for HUD space at the top - reduced ONLY on mobile
@@ -590,7 +586,7 @@ export default class MainGameplay extends BaseScene {
         this.playerSprite = this.add.image(this.player.x, this.player.y, 'goblinNerd');
         
         // Enhanced sprite scaling for mobile visibility
-        const isMobile = this.scale.width < 768;
+    const isMobile = true; // Force mobile-first layout on all devices
         const isSmallMobile = this.scale.width < 480;
         
         let spriteScale;
@@ -759,7 +755,7 @@ export default class MainGameplay extends BaseScene {
         // Calculate responsive positions based on screen size
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
-        const isMobile = screenWidth < 768;
+    const isMobile = true; // Force mobile-first layout on all devices
         
         // Center the timer horizontally
         const centerX = screenWidth / 2;
@@ -783,6 +779,7 @@ export default class MainGameplay extends BaseScene {
                 fill: true
             }
         }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(1000);
+    if (this.hudGroup) this.hudGroup.add(this.timerText);
         
         // Don't start the timer event yet - will be started after countdown
         this.timerEvent = null;
@@ -790,9 +787,9 @@ export default class MainGameplay extends BaseScene {
 
     createScoreDisplay() {
         // Calculate responsive positions based on screen size
-        const screenWidth = this.scale.width;
-        const screenHeight = this.scale.height;
-        const isMobile = screenWidth < 768;
+    const screenWidth = this.scale.width;
+    const screenHeight = this.scale.height;
+    const isMobile = true; // Force mobile-first layout on all devices
         
         // Use responsive positioning
         const scoreX = isMobile ? Math.min(20, screenWidth * 0.03) : 20;
@@ -819,6 +816,7 @@ export default class MainGameplay extends BaseScene {
                 fill: true
             }
         }).setOrigin(0, 0).setScrollFactor(0).setDepth(1000);
+    if (this.hudGroup) this.hudGroup.add(this.scoreText);
         
         // Create streak display below the score
         this.streakText = this.add.text(scoreX, streakY, 'Streak: 0', {
@@ -836,6 +834,7 @@ export default class MainGameplay extends BaseScene {
                 fill: true
             }
         }).setOrigin(0, 0).setScrollFactor(0).setDepth(1000);
+    if (this.hudGroup) this.hudGroup.add(this.streakText);
     }
 
     getFormattedCourseName(topic) {
@@ -964,6 +963,7 @@ export default class MainGameplay extends BaseScene {
                 fill: true
             }
         }).setOrigin(0.5).setScrollFactor(0).setDepth(1000);
+    if (this.hudGroup) this.hudGroup.add(this.countdownText);
         
         // Add countdown instruction text
         this.instructionText = this.add.text(centerX, centerY + 100, 'Get Ready!', {
@@ -974,6 +974,7 @@ export default class MainGameplay extends BaseScene {
             stroke: '#000000',
             strokeThickness: 3
         }).setOrigin(0.5).setScrollFactor(0).setDepth(1000);
+    if (this.hudGroup) this.hudGroup.add(this.instructionText);
         
         // Create countdown event
         this.countdownEvent = this.time.addEvent({
@@ -2823,9 +2824,9 @@ export default class MainGameplay extends BaseScene {
         const boardCenterY = this.boardOffsetY + boardHeight / 2;
         
         // Calculate zoom to ensure the board is visible with padding
-        const screenWidth = this.scale.width;
-        const screenHeight = this.scale.height;
-        const isMobile = screenWidth < 768;
+    const screenWidth = this.scale.width;
+    const screenHeight = this.scale.height;
+    const isMobile = true; // Force mobile-first layout on all devices
         const isSmallMobile = screenWidth < 480; // Very small screens
         
         // Account for HUD space when calculating available screen area - updated to match createBackground
@@ -2947,6 +2948,7 @@ export default class MainGameplay extends BaseScene {
             this.courseDisplay.setOrigin(1, 0);
             this.courseDisplay.setScrollFactor(0);
             this.courseDisplay.setDepth(100);
+            if (this.hudGroup) this.hudGroup.add(this.courseDisplay);
             
             // Add subtle glow effect to course name
             this.tweens.add({
@@ -2961,9 +2963,8 @@ export default class MainGameplay extends BaseScene {
     }
 
     addMobileControlHint() {
-        // Only show hint on mobile devices
-        const isMobile = this.scale.width < 768;
-        if (!isMobile) return;
+    // Mobile-first: show hint on all devices
+    const isMobile = true;
         
         // Create mobile control hint
         const centerX = this.scale.width / 2;
@@ -2986,10 +2987,11 @@ export default class MainGameplay extends BaseScene {
             align: 'center'
         });
         
-        hintText.setOrigin(0.5);
-        hintText.setScrollFactor(0);
-        hintText.setDepth(1000);
-        hintText.setAlpha(0);
+    hintText.setOrigin(0.5);
+    hintText.setScrollFactor(0);
+    hintText.setDepth(1000);
+    hintText.setAlpha(0);
+    if (this.hudGroup) this.hudGroup.add(hintText);
         
         // Animate hint in and out
         this.tweens.add({
@@ -3428,33 +3430,73 @@ export default class MainGameplay extends BaseScene {
         // Check if student information already exists from intro
         const studentInfo = localStorage.getItem('studentInfo');
         
+        // Also check for current user data from sci_high_user
+        let currentUserData = null;
+        try {
+            const userDataStr = localStorage.getItem('sci_high_user');
+            if (userDataStr) {
+                currentUserData = JSON.parse(userDataStr);
+            }
+        } catch (e) {
+            console.warn('Could not parse sci_high_user data:', e);
+        }
+        
+        // Determine if we have sufficient student data from either source
+        let hasStudentData = false;
+        let studentData = null;
+        
         if (studentInfo) {
             try {
                 const parsedStudentInfo = JSON.parse(studentInfo);
-                console.log('Found existing student info, going directly to ResultScreen:', parsedStudentInfo);
-                
-                // Add student info to result data
-                resultData.studentName = `${parsedStudentInfo.firstName} ${parsedStudentInfo.lastName}`;
-                resultData.firstName = parsedStudentInfo.firstName;
-                resultData.lastName = parsedStudentInfo.lastName;
-                resultData.department = parsedStudentInfo.department;
-                resultData.strandYear = parsedStudentInfo.strandYear;
-                
-                // Go directly to ResultScreen since we have student info
-                this.scene.start('ResultScreen', resultData);
-                
-                // Also upload the data to Firebase in the background
-                this.uploadGameplayDataInBackground(resultData);
-                
+                if (parsedStudentInfo.firstName && parsedStudentInfo.lastName) {
+                    hasStudentData = true;
+                    studentData = parsedStudentInfo;
+                    console.log('Found existing student info from studentInfo:', parsedStudentInfo);
+                }
             } catch (error) {
-                console.error('Error parsing student info, falling back to DataCollectionScreen:', error);
-                // Fall back to DataCollectionScreen if parsing fails
-                this.scene.start('DataCollectionScreen', resultData);
+                console.error('Error parsing studentInfo:', error);
             }
+        }
+        
+        // If no studentInfo, check sci_high_user data
+        if (!hasStudentData && currentUserData && currentUserData.firstName && currentUserData.lastName) {
+            hasStudentData = true;
+            studentData = {
+                firstName: currentUserData.firstName,
+                lastName: currentUserData.lastName,
+                department: currentUserData.department || '',
+                strandYear: currentUserData.strandYear || ''
+            };
+            console.log('Found existing student info from sci_high_user:', studentData);
+        }
+        
+        if (hasStudentData && studentData) {
+            // Add student info to result data
+            resultData.studentName = `${studentData.firstName} ${studentData.lastName}`;
+            resultData.firstName = studentData.firstName;
+            resultData.lastName = studentData.lastName;
+            resultData.department = studentData.department;
+            resultData.strandYear = studentData.strandYear;
+            
+            // Go directly to ResultScreen since we have student info
+            this.scene.start('ResultScreen', resultData);
+            
+            // Also upload the data to Firebase in the background
+            this.uploadGameplayDataInBackground(resultData);
         } else {
-            console.log('No existing student info found, showing DataCollectionScreen');
-            // No student info found, show DataCollectionScreen as before
-            this.scene.start('DataCollectionScreen', resultData);
+            console.log('No existing student info found, going to ResultScreen anyway');
+            // No student info found, but we'll go to ResultScreen anyway since DataCollectionScreen is removed
+            // The ResultScreen can handle missing student data gracefully
+            resultData.studentName = 'Unknown Student';
+            resultData.firstName = 'Unknown';
+            resultData.lastName = 'Student';
+            resultData.department = '';
+            resultData.strandYear = '';
+            
+            this.scene.start('ResultScreen', resultData);
+            
+            // Still upload the data to Firebase in the background
+            this.uploadGameplayDataInBackground(resultData);
         }
     }
 
@@ -3465,25 +3507,40 @@ export default class MainGameplay extends BaseScene {
             // Get student data from localStorage (same way authService stores it)
             let studentId = 'unknown';
             let currentUser = null;
+            let finalStudentName = resultData.studentName;
+            let finalFirstName = resultData.firstName;
+            let finalLastName = resultData.lastName;
+            let finalDepartment = resultData.department;
+            let finalStrandYear = resultData.strandYear;
             
             try {
                 const userDataStr = localStorage.getItem('sci_high_user');
                 if (userDataStr) {
                     currentUser = JSON.parse(userDataStr);
                     studentId = currentUser.studentId || currentUser.uid || 'unknown';
+                    
+                    // Use current user data if available to override potentially stale resultData
+                    if (currentUser.firstName && currentUser.lastName) {
+                        finalFirstName = currentUser.firstName;
+                        finalLastName = currentUser.lastName;
+                        finalStudentName = `${currentUser.firstName} ${currentUser.lastName}`;
+                        finalDepartment = currentUser.department || resultData.department;
+                        finalStrandYear = currentUser.strandYear || resultData.strandYear;
+                        console.log(`Using current user data: ${finalStudentName}`);
+                    }
                 }
             } catch (e) {
                 console.warn('Could not parse user data from localStorage:', e);
             }
             
-            // Prepare gameplay data for upload (similar to DataCollectionScreen)
+            // Prepare gameplay data for upload (similar to how DataCollectionScreen used to do it)
             const gameplayData = {
                 studentId: studentId,
-                studentName: resultData.studentName,
-                firstName: resultData.firstName,
-                lastName: resultData.lastName,
-                department: resultData.department,
-                strandYear: resultData.strandYear,
+                studentName: finalStudentName,
+                firstName: finalFirstName,
+                lastName: finalLastName,
+                department: finalDepartment,
+                strandYear: finalStrandYear,
                 courseTopic: resultData.courseTopic,
                 sessionData: {
                     courseTopic: resultData.courseTopic,
@@ -3516,13 +3573,13 @@ export default class MainGameplay extends BaseScene {
                     const { default: careerStatsService } = await import('../../services/careerStatsService.js');
                     await careerStatsService.updateCareerStats(
                         gameplayData.studentId, 
-                        resultData.studentName,
+                        finalStudentName,
                         gameplayData.sessionData,
                         {
-                            firstName: resultData.firstName,
-                            lastName: resultData.lastName,
-                            department: resultData.department,
-                            strandYear: resultData.strandYear
+                            firstName: finalFirstName,
+                            lastName: finalLastName,
+                            department: finalDepartment,
+                            strandYear: finalStrandYear
                         }
                     );
                     console.log('Background career stats update successful');
@@ -3561,7 +3618,7 @@ export default class MainGameplay extends BaseScene {
         try {
             console.log('Starting Firebase initialization for MainGameplay...');
             
-            // Firebase config (same as DataCollectionScreen)
+            // Firebase config (same as other Firebase integrations)
             const firebaseConfig = {
                 apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
                 authDomain: "sci-high-website.firebaseapp.com",
