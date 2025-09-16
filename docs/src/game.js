@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { devLog, devOnly, envInfo } from './utils/devUtils.js';
 import Intro from '/src/scenes/intro.js';
 import MainMenu from './scenes/mainmenu';
 import OptionsScene from './scenes/options.js';
@@ -179,11 +180,14 @@ export const DEFAULT_TEXT_STYLE = {
 };
 
 // Add error handling and debugging
-console.log('Script loaded, checking environment...');
+devLog.log('Script loaded, checking environment...');
+devOnly(() => {
+    devLog.info('Environment info:', envInfo);
+});
 
 // Check if we're in a problematic environment
 if (typeof window.SES !== 'undefined') {
-    console.warn('SES detected - this may cause conflicts');
+    devLog.warn('SES detected - this may cause conflicts');
 }
 
 window.addEventListener('resize', () => {
@@ -204,9 +208,9 @@ window.addEventListener('orientationchange', () => {
 // Add error handling for game initialization
 let game;
 try {
-    console.log('Creating Phaser Game instance...');
+    devLog.log('Creating Phaser Game instance...');
     game = new Phaser.Game(config);
-    console.log('Phaser Game created successfully:', game);
+    devLog.log('Phaser Game created successfully:', game);
     
     // Make game globally accessible for debugging
     window.game = game;

@@ -1,6 +1,8 @@
 // Leaderboard Service for SCI-HIGH Game
 // Handles communication between the game and Firebase leaderboard
 
+import { devLog, reportError, devPerf } from '../utils/devUtils.js';
+
 class LeaderboardService {
     constructor() {
         this.firebaseConfig = {
@@ -38,7 +40,7 @@ class LeaderboardService {
 
     async initializeFirebase() {
         try {
-            console.log('Starting Firebase initialization...');
+            devLog.log('Starting Firebase initialization...');
             
             // First check if we have internet connectivity
             if (!navigator.onLine) {
@@ -47,14 +49,14 @@ class LeaderboardService {
             
             // Check if Firebase is already loaded
             if (typeof window.firebase === 'undefined') {
-                console.log('Loading Firebase scripts...');
+                devLog.log('Loading Firebase scripts...');
                 await this.loadFirebaseScripts();
             }
             
             // Wait a bit for Firebase to be available
             let retries = 0;
             while (typeof window.firebase === 'undefined' && retries < 10) {
-                console.log(`Waiting for Firebase to load... (attempt ${retries + 1})`);
+                devLog.debug(`Waiting for Firebase to load... (attempt ${retries + 1})`);
                 await new Promise(resolve => setTimeout(resolve, 300));
                 retries++;
             }
@@ -65,7 +67,7 @@ class LeaderboardService {
             
             // Initialize Firebase if not already done
             if (!window.firebase.apps.length) {
-                console.log('Initializing Firebase app...');
+                devLog.log('Initializing Firebase app...');
                 window.firebase.initializeApp(this.firebaseConfig);
             }
             
@@ -76,9 +78,9 @@ class LeaderboardService {
             await this.db.ref('.info/connected').once('value');
             
             this.isFirebaseInitialized = true;
-            console.log('Firebase initialized successfully for leaderboard service');
+            devLog.log('Firebase initialized successfully for leaderboard service');
         } catch (error) {
-            console.error('Failed to initialize Firebase:', error);
+            reportError(error, 'Firebase initialization');
             this.isFirebaseInitialized = false;
             throw error;
         }

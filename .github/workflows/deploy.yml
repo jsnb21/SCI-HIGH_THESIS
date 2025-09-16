@@ -39,10 +39,24 @@ jobs:
         cd docs
         npm ci
         
-    - name: Build
+    - name: Build Development
       run: |
         cd docs
-        npm run build
+        npm run build:dev
+        
+    - name: Build Production
+      run: |
+        cd docs
+        npm run build:prod
+        
+    - name: Prepare Deploy Structure
+      run: |
+        cd docs
+        mkdir -p deploy-dist/dev
+        # Deploy production to root (default access)
+        cp -r dist-prod/* deploy-dist/
+        # Deploy development to /dev/ subdirectory (developer access only)
+        cp -r dist-dev/* deploy-dist/dev/
         
     - name: Setup Pages
       uses: actions/configure-pages@v4
@@ -50,7 +64,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
-        path: './docs/dist'
+        path: './docs/deploy-dist'
         
     - name: Deploy to GitHub Pages
       id: deployment
