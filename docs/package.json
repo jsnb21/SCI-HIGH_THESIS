@@ -5,10 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build:dev": "vite build --config vite.config.dev.js",
-    "build:prod": "vite build --config vite.config.prod.js",
-    "preview": "vite preview",
-    "clean": "rimraf dist-dev dist-prod"
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "devDependencies": {
     "vite": "^6.3.5"
