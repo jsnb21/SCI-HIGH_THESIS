@@ -278,6 +278,9 @@ export default class MainGameplay extends BaseScene {
     create() {
         super.create(); // Call BaseScene create method
         
+        // Clear any old/conflicting student data to ensure fresh names
+        this.clearOldStudentData();
+        
         // Check and upload any pending scores from previous sessions
         this.checkAndUploadPendingScores();
         
@@ -3426,47 +3429,94 @@ export default class MainGameplay extends BaseScene {
             startTime: this.sessionStartTime
         };
         
-        console.log('Checking for existing student information...');
+        console.log('=== COLLECTING STUDENT INFORMATION ===');
         
-        // Check if student information already exists from intro
-        const studentInfo = localStorage.getItem('studentInfo');
-        
-        if (studentInfo) {
-            try {
-                const parsedStudentInfo = JSON.parse(studentInfo);
-                console.log('Found existing student info, going directly to ResultScreen:', parsedStudentInfo);
-                
-                // Add student info to result data - prioritize fullName if available
-                resultData.studentName = parsedStudentInfo.fullName || 
-                                        `${parsedStudentInfo.firstName} ${parsedStudentInfo.lastName}`;
-                resultData.firstName = parsedStudentInfo.firstName;
-                resultData.lastName = parsedStudentInfo.lastName;
-                resultData.fullName = parsedStudentInfo.fullName; // Include fullName for career stats
-                resultData.department = parsedStudentInfo.department;
-                resultData.strandYear = parsedStudentInfo.strandYear;
-                
-                // Go directly to ResultScreen since we have student info
-                this.scene.start('ResultScreen', resultData);
-                
-                // Also upload the data to Firebase in the background
-                this.uploadGameplayDataInBackground(resultData);
-                
-            } catch (error) {
-                console.error('Error parsing student info, going to ResultScreen anyway:', error);
-                // Go to ResultScreen even if parsing fails
-                this.scene.start('ResultScreen', resultData);
-                
-                // Still try to upload data in background
-                this.uploadGameplayDataInBackground(resultData);
+        // PRIORITY 1: Check for fresh user input from current session (sci_high_user)
+        let currentUserData = null;
+        try {
+            const userDataStr = localStorage.getItem('sci_high_user');
+            console.log('Current user data from sci_high_user:', userDataStr);
+            if (userDataStr) {
+                currentUserData = JSON.parse(userDataStr);
+                console.log('Parsed current user:', currentUserData);
             }
-        } else {
-            console.log('No existing student info found, going to ResultScreen');
-            // Go directly to ResultScreen without student data collection
-            this.scene.start('ResultScreen', resultData);
-            
-            // Upload data in background
-            this.uploadGameplayDataInBackground(resultData);
+        } catch (e) {
+            console.error('Error parsing current user data:', e);
         }
+        
+        // PRIORITY 2: Check for stored student info (older format)
+        let storedStudentInfo = null;
+        try {
+            const studentInfoStr = localStorage.getItem('studentInfo');
+            console.log('Stored student info:', studentInfoStr);
+            if (studentInfoStr) {
+                storedStudentInfo = JSON.parse(studentInfoStr);
+                console.log('Parsed stored student info:', storedStudentInfo);
+            }
+        } catch (e) {
+            console.error('Error parsing stored student info:', e);
+        }
+        
+        // DETERMINE BEST DATA SOURCE
+        let finalStudentData = null;
+        
+        if (currentUserData && currentUserData.profile) {
+            // Use current user data (most recent/fresh)
+            console.log('Using CURRENT USER data as priority');
+            finalStudentData = {
+                studentName: currentUserData.profile.fullName || currentUserData.profile.displayName || 'Unknown User',
+                firstName: currentUserData.profile.firstName || (currentUserData.profile.fullName ? currentUserData.profile.fullName.split(' ')[0] : 'Unknown'),
+                lastName: currentUserData.profile.lastName || (currentUserData.profile.fullName ? currentUserData.profile.fullName.split(' ').slice(1).join(' ') : 'User'),
+                fullName: currentUserData.profile.fullName || currentUserData.profile.displayName,
+                department: currentUserData.profile.department || 'General',
+                strandYear: currentUserData.profile.strandYear || 'N/A',
+                studentId: currentUserData.studentId || currentUserData.uid || 'unknown'
+            };
+        } else if (storedStudentInfo) {
+            // Fall back to stored student info
+            console.log('Using STORED STUDENT INFO as fallback');
+            finalStudentData = {
+                studentName: storedStudentInfo.fullName || `${storedStudentInfo.firstName} ${storedStudentInfo.lastName}`,
+                firstName: storedStudentInfo.firstName,
+                lastName: storedStudentInfo.lastName,
+                fullName: storedStudentInfo.fullName,
+                department: storedStudentInfo.department,
+                strandYear: storedStudentInfo.strandYear,
+                studentId: 'stored_user'
+            };
+        } else {
+            // No student data found
+            console.log('NO STUDENT DATA FOUND - using defaults');
+            finalStudentData = {
+                studentName: 'Anonymous Player',
+                firstName: 'Anonymous',
+                lastName: 'Player',
+                fullName: 'Anonymous Player',
+                department: 'Unknown',
+                strandYear: 'Unknown',
+                studentId: 'anonymous_' + Date.now()
+            };
+        }
+        
+        console.log('=== FINAL STUDENT DATA SELECTED ===');
+        console.log('Final student data:', finalStudentData);
+        
+        // Add student info to result data
+        resultData.studentName = finalStudentData.studentName;
+        resultData.firstName = finalStudentData.firstName;
+        resultData.lastName = finalStudentData.lastName;
+        resultData.fullName = finalStudentData.fullName;
+        resultData.department = finalStudentData.department;
+        resultData.strandYear = finalStudentData.strandYear;
+        
+        console.log('=== GOING TO RESULT SCREEN ===');
+        console.log('Result data being passed:', resultData);
+        
+        // Go to ResultScreen
+        this.scene.start('ResultScreen', resultData);
+        
+        // Also upload the data to Firebase in the background
+        this.uploadGameplayDataInBackground(resultData);
     }
 
     async uploadGameplayDataInBackground(resultData) {
@@ -3474,23 +3524,41 @@ export default class MainGameplay extends BaseScene {
             console.log('=== STARTING SCORE UPLOAD PROCESS ===');
             console.log('Result data received:', resultData);
             
-            // Get student data from localStorage (same way authService stores it)
+            // Get student data from localStorage (prioritize current user data)
             let studentId = 'unknown';
             let currentUser = null;
             
             try {
                 const userDataStr = localStorage.getItem('sci_high_user');
-                console.log('Raw user data from localStorage:', userDataStr);
+                console.log('Raw current user data from localStorage:', userDataStr);
                 if (userDataStr) {
                     currentUser = JSON.parse(userDataStr);
                     studentId = currentUser.studentId || currentUser.uid || 'unknown';
-                    console.log('Parsed user data:', currentUser);
+                    console.log('Parsed current user data:', currentUser);
                     console.log('Student ID extracted:', studentId);
+                    
+                    // If we have current user data and it differs from result data, update result data
+                    if (currentUser.profile && currentUser.profile.fullName && 
+                        currentUser.profile.fullName !== resultData.studentName) {
+                        console.log('=== UPDATING RESULT DATA WITH CURRENT USER INFO ===');
+                        console.log('Old name:', resultData.studentName);
+                        console.log('New name from current user:', currentUser.profile.fullName);
+                        
+                        resultData.studentName = currentUser.profile.fullName;
+                        resultData.fullName = currentUser.profile.fullName;
+                        if (currentUser.profile.fullName.includes(' ')) {
+                            const nameParts = currentUser.profile.fullName.split(' ');
+                            resultData.firstName = nameParts[0];
+                            resultData.lastName = nameParts.slice(1).join(' ');
+                        }
+                        resultData.department = currentUser.profile.department || resultData.department;
+                        resultData.strandYear = currentUser.profile.strandYear || resultData.strandYear;
+                    }
                 } else {
-                    console.warn('No user data found in localStorage - sci_high_user key is empty');
+                    console.warn('No current user data found in localStorage - sci_high_user key is empty');
                 }
             } catch (e) {
-                console.error('Could not parse user data from localStorage:', e);
+                console.error('Could not parse current user data from localStorage:', e);
             }
             
             // Prepare gameplay data for upload
@@ -3549,6 +3617,22 @@ export default class MainGameplay extends BaseScene {
                 console.log('=== FIREBASE UPLOAD SUCCESSFUL ===');
                 console.log('Upload result key:', result.key);
                 console.log('Upload timestamp:', new Date().toISOString());
+                console.log('Database path: gameplay_data/' + result.key);
+                console.log('Full database URL: https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app/gameplay_data/' + result.key);
+                
+                // Verify the upload by reading it back
+                try {
+                    console.log('=== VERIFYING UPLOAD BY READING BACK ===');
+                    const verifySnapshot = await gameplayRef.child(result.key).once('value');
+                    if (verifySnapshot.exists()) {
+                        console.log('✅ UPLOAD VERIFIED - Data exists in database');
+                        console.log('Uploaded data verification:', verifySnapshot.val());
+                    } else {
+                        console.error('❌ UPLOAD VERIFICATION FAILED - Data not found in database');
+                    }
+                } catch (verifyError) {
+                    console.error('❌ UPLOAD VERIFICATION ERROR:', verifyError);
+                }
                 
                 // Also update career stats if available
                 try {
@@ -3840,6 +3924,39 @@ export default class MainGameplay extends BaseScene {
     }
 
     // Add this method to check and upload pending scores when the scene starts
+    // Clear old/conflicting student data to ensure fresh user input is used
+    clearOldStudentData() {
+        try {
+            // Check if we have current user data
+            const currentUserStr = localStorage.getItem('sci_high_user');
+            if (currentUserStr) {
+                const currentUser = JSON.parse(currentUserStr);
+                console.log('Current user found:', currentUser.profile?.fullName || currentUser.uid);
+                
+                // Check if there's old studentInfo that might conflict
+                const oldStudentInfoStr = localStorage.getItem('studentInfo');
+                if (oldStudentInfoStr) {
+                    const oldStudentInfo = JSON.parse(oldStudentInfoStr);
+                    console.log('Old student info found:', oldStudentInfo.fullName || `${oldStudentInfo.firstName} ${oldStudentInfo.lastName}`);
+                    
+                    // If the names don't match, clear the old data
+                    const currentName = currentUser.profile?.fullName || currentUser.profile?.displayName;
+                    const oldName = oldStudentInfo.fullName || `${oldStudentInfo.firstName} ${oldStudentInfo.lastName}`;
+                    
+                    if (currentName && oldName && currentName !== oldName) {
+                        console.log('=== CLEARING OLD STUDENT DATA ===');
+                        console.log('Current user name:', currentName);
+                        console.log('Old stored name:', oldName);
+                        localStorage.removeItem('studentInfo');
+                        console.log('Old student data cleared');
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Error clearing old student data:', error);
+        }
+    }
+
     checkAndUploadPendingScores() {
         // Try to upload any pending scores when the game starts
         const pendingScores = JSON.parse(localStorage.getItem('pendingScores') || '[]');
