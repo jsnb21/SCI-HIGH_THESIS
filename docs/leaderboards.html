@@ -685,21 +685,59 @@
           const leaderboardData = [];
           
           Object.entries(data).forEach(([studentId, statsData]) => {
-            if (!statsData.careerStats || !statsData.studentInfo) {
-              return; // Skip incomplete records
+            // Handle both old and new data structure formats
+            let career, info, department, firstName, lastName, fullName, strandYear;
+            
+            if (statsData.careerStats && statsData.studentInfo) {
+              // Old structure: nested careerStats and studentInfo
+              career = statsData.careerStats;
+              info = statsData.studentInfo;
+              department = statsData.department || 'Unknown Department';
+              firstName = statsData.firstName || '';
+              lastName = statsData.lastName || '';
+              fullName = info.fullName || '';
+              strandYear = statsData.strandYear || 'Unknown';
+            } else {
+              // New structure: direct properties from students table
+              career = {
+                totalPoints: statsData.score || 0,
+                totalSessions: statsData.totalSessions || 0,
+                averageAccuracy: statsData.averageAccuracy || 0,
+                highestStreak: statsData.highestStreak || 0,
+                courseCompletionStatus: statsData.courseCompletionStatus || {}
+              };
+              
+              // Map student table fields directly with better fallbacks
+              department = statsData.department || 'Unknown Department';
+              firstName = statsData.firstName || '';
+              lastName = statsData.lastName || '';
+              fullName = statsData.fullName || 
+                        statsData.name || 
+                        `${firstName} ${lastName}`.trim() || 
+                        'Anonymous Student';
+              strandYear = statsData.strandYear || 'Unknown';
+              
+              // Create a mock info object for compatibility
+              info = {
+                fullName: fullName,
+                lastUpdated: statsData.lastUpdated || new Date().toISOString()
+              };
             }
 
-            const career = statsData.careerStats;
-            const info = statsData.studentInfo;
+            // Skip if essential data is missing
+            if (!career && !statsData.score) {
+              console.warn(`Skipping incomplete record for studentId: ${studentId}`);
+              return;
+            }
             
-            // Determine department from the new form structure
-            let department = 'Unknown';
+            // Determine department type for filtering
             let departmentType = 'other';
-            
-            if (statsData.department) {
-              department = statsData.department;
-              departmentType = statsData.department.toLowerCase().includes('college') ? 'college' : 
-                              statsData.department.toLowerCase().includes('senior') ? 'seniorhigh' : 'other';
+            if (department.toLowerCase().includes('college')) {
+              departmentType = 'college';
+            } else if (department.toLowerCase().includes('senior')) {
+              departmentType = 'seniorhigh';
+            } else if (department.toLowerCase().includes('junior')) {
+              departmentType = 'juniorhigh';
             }
 
             // Apply filter
@@ -711,27 +749,27 @@
 
             // Calculate completion percentage
             const completionStatus = career.courseCompletionStatus || {};
-            const totalCourses = Object.keys(completionStatus).length;
+            const totalCourses = Object.keys(completionStatus).length || 6; // Default to 6 courses
             const completedCourses = Object.values(completionStatus).filter(Boolean).length;
             const completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
 
             leaderboardData.push({
               studentId: studentId,
               userId: studentId, // For compatibility
-              name: info.fullName || 'Unknown Student',
-              firstName: statsData.firstName || '',
-              lastName: statsData.lastName || '',
+              name: fullName,
+              firstName: firstName,
+              lastName: lastName,
               department: department,
-              strandYear: statsData.strandYear || '',
-              score: career.totalPoints || 0,
-              totalSessions: career.totalSessions || 0,
-              averageAccuracy: career.averageAccuracy || 0,
-              highestStreak: career.highestStreak || 0,
+              strandYear: strandYear,
+              score: career.totalPoints || statsData.score || 0,
+              totalSessions: career.totalSessions || statsData.totalSessions || 0,
+              averageAccuracy: career.averageAccuracy || statsData.averageAccuracy || 0,
+              highestStreak: career.highestStreak || statsData.highestStreak || 0,
               completedCourses: completedCourses,
               totalCourses: totalCourses,
               completionPercentage: completionPercentage,
               courseCompletionStatus: completionStatus,
-              lastUpdated: info.lastUpdated || '',
+              lastUpdated: info.lastUpdated || statsData.lastUpdated || new Date().toISOString(),
               recentSessions: statsData.recentSessions || {}
             });
           });
@@ -740,6 +778,15 @@
           leaderboardData.sort((a, b) => b.score - a.score);
           
           console.log(`Loaded ${leaderboardData.length} career stats records`);
+          if (leaderboardData.length > 0) {
+            console.log('Sample record structure:', leaderboardData[0]);
+            console.log('Data structure validation:');
+            console.log('- Has name:', !!leaderboardData[0].name);
+            console.log('- Has firstName:', !!leaderboardData[0].firstName);
+            console.log('- Has lastName:', !!leaderboardData[0].lastName);
+            console.log('- Has department:', !!leaderboardData[0].department);
+            console.log('- Has score:', !!leaderboardData[0].score);
+          }
           return leaderboardData;
 
         } catch (error) {
@@ -1112,8 +1159,33 @@
           const careerStatsSnapshot = await db.ref('student_career_stats/' + userId).once('value');
           const careerStatsData = careerStatsSnapshot.val();
           
-          if (careerStatsData && careerStatsData.careerStats && careerStatsData.studentInfo) {
-            await renderPlayerProfileWithCareerStats(careerStatsData, userId);
+          if (careerStatsData) {
+            // Check if it's the old nested structure or new flat structure
+            if (careerStatsData.careerStats && careerStatsData.studentInfo) {
+              // Old structure - use as is
+              await renderPlayerProfileWithCareerStats(careerStatsData, userId);
+            } else {
+              // New structure - transform it to the expected format
+              const transformedData = {
+                careerStats: {
+                  totalPoints: careerStatsData.score || 0,
+                  totalSessions: careerStatsData.totalSessions || 0,
+                  averageAccuracy: careerStatsData.averageAccuracy || 0,
+                  highestStreak: careerStatsData.highestStreak || 0,
+                  courseCompletionStatus: careerStatsData.courseCompletionStatus || {},
+                  totalQuestions: careerStatsData.totalQuestions || 0,
+                  totalPlayTime: careerStatsData.totalPlayTime || 0
+                },
+                studentInfo: {
+                  fullName: careerStatsData.fullName || careerStatsData.name || `${careerStatsData.firstName || ''} ${careerStatsData.lastName || ''}`.trim() || 'Unknown Student',
+                  lastUpdated: careerStatsData.lastUpdated || new Date().toISOString()
+                },
+                department: careerStatsData.department || 'Unknown Department',
+                strandYear: careerStatsData.strandYear || 'Unknown',
+                recentSessions: careerStatsData.recentSessions || {}
+              };
+              await renderPlayerProfileWithCareerStats(transformedData, userId);
+            }
           } else {
             document.getElementById('profile-content').innerHTML = `
               <div class="text-center py-8">

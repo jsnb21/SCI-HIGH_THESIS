@@ -88,11 +88,32 @@ export default class ResultScreen extends BaseScene {
         gradient.fillGradientStyle(0x000000, 0x000000, 0x1a1a2e, 0x1a1a2e, 1);
         gradient.fillRect(0, 0, this.scale.width, this.scale.height);
         
-        // Responsive panel sizing - Better desktop layout
-        const panelWidth = isMobile ? Math.min(scaleInfo.width * 0.80, 300) : 800;
-        const panelHeight = isMobile ? Math.min(scaleInfo.height * 0.70, 350) : 700;
+        // Calculate dynamic panel dimensions based on content
+        const calculatedWidth = this.calculateRequiredWidth(isMobile, isSmallMobile);
+        const maxAllowedWidth = scaleInfo.width * 0.9;
+        const panelWidth = Math.min(Math.max(calculatedWidth, isMobile ? 280 : 600), maxAllowedWidth);
         const panelX = this.scale.width / 2;
+        
+        // Calculate required height for all content elements
+        const calculatedHeight = this.calculateRequiredHeight(isMobile, isSmallMobile);
+        
+        // Ensure panel doesn't exceed 90% of screen dimensions
+        const maxAllowedHeight = scaleInfo.height * 0.9;
+        const panelHeight = Math.min(Math.max(calculatedHeight, isMobile ? 300 : 400), maxAllowedHeight);
         const panelY = this.scale.height / 2;
+        
+        console.log('ResultScreen - Panel sizing details:', {
+            calculatedHeight,
+            calculatedWidth,
+            maxAllowedHeight,
+            maxAllowedWidth,
+            finalPanelHeight: panelHeight,
+            finalPanelWidth: panelWidth,
+            screenHeight: scaleInfo.height,
+            screenWidth: scaleInfo.width,
+            wasHeightCapped: panelHeight === maxAllowedHeight,
+            wasWidthCapped: panelWidth === maxAllowedWidth
+        });
         
         console.log('ResultScreen - Panel sizing:', {
             panelWidth,
@@ -113,13 +134,14 @@ export default class ResultScreen extends BaseScene {
         // Panel glow effect
         const panelGlow = this.add.rectangle(panelX, panelY, panelWidth + 10, panelHeight + 10, 0x0f4c75, 0.3);
         
-        // Title text with proper desktop spacing
-        const titleText = this.courseCompleted ? 
-            `COURSE COMPLETED!` : 
-            'SESSION ENDED';
+        // Calculate element positions based on content flow
+        let currentY = panelY - (panelHeight / 2) + 40; // Start from top of panel with margin
         
+        // Title position
         const titleFontSize = isMobile ? '30px' : (this.courseCompleted ? '48px' : '52px');
-        const titleY = panelY - (panelHeight * 0.35);
+        const titleHeight = parseInt(titleFontSize) * 1.2;
+        const titleY = currentY + (titleHeight / 2);
+        currentY += titleHeight + (isMobile ? 20 : 30);
         
         const title = this.add.text(panelX, titleY, titleText, {
             fontFamily: 'Arial',
@@ -145,12 +167,15 @@ export default class ResultScreen extends BaseScene {
             isMobile
         });
         
-        // Course name if completed - better desktop sizing
+        // Course name if completed - positioned below title
+        let courseName;
         if (this.courseCompleted) {
             const courseNameFontSize = isMobile ? '16px' : '32px';
-            const courseNameY = titleY + (isMobile ? 30 : 50);
+            const courseNameHeight = parseInt(courseNameFontSize) * 1.2;
+            const courseNameY = currentY + (courseNameHeight / 2);
+            currentY += courseNameHeight + (isMobile ? 25 : 40);
             
-            const courseName = this.add.text(panelX, courseNameY, this.courseTopic.toUpperCase(), {
+            courseName = this.add.text(panelX, courseNameY, this.courseTopic.toUpperCase(), {
                 fontFamily: 'Arial',
                 fontSize: courseNameFontSize,
                 fontWeight: 'bold',
@@ -160,10 +185,11 @@ export default class ResultScreen extends BaseScene {
             }).setOrigin(0.5);
         }
         
-        // Rank display with better desktop sizing
+        // Rank display positioned below course name or title
         const rankRadius = isMobile ? 35 : 70;
         const rankFontSize = isMobile ? '36px' : '72px';
-        const rankY = panelY - (panelHeight * 0.05);
+        const rankY = currentY + rankRadius;
+        currentY += (rankRadius * 2) + (isMobile ? 25 : 40);
         
         const rankBg = this.add.circle(panelX, rankY, rankRadius, rankColor, 0.2);
         const rankBorder = this.add.circle(panelX, rankY, rankRadius);
@@ -185,10 +211,13 @@ export default class ResultScreen extends BaseScene {
             }
         }).setOrigin(0.5);
         
-        // Statistics section with better desktop spacing
-        const statsY = panelY + (panelHeight * 0.12);
+        // Statistics section positioned below rank
+        const statsY = currentY;
         const lineHeight = isMobile ? 28 : 45;
         const statsFontSize = isMobile ? '16px' : '26px';
+        
+        // Update currentY to account for stats section
+        currentY += (statsData.length * lineHeight) + (isMobile ? 30 : 50);
         
         // Create colored stats with icons
         const statsData = [
@@ -230,8 +259,8 @@ export default class ResultScreen extends BaseScene {
             }).setOrigin(1, 0.5);
         });
         
-        // Enhanced button design with better desktop sizing
-        const buttonY = isMobile ? panelY + (panelHeight * 0.42) : panelY + (panelHeight * 0.32);
+        // Enhanced button design positioned at the bottom
+        const buttonY = currentY + (isMobile ? 22 : 35); // Center button in remaining space
         const buttonWidth = isMobile ? 250 : 400;
         const buttonHeight = isMobile ? 45 : 70;
         const buttonFontSize = isMobile ? '16px' : '28px';
@@ -291,27 +320,16 @@ export default class ResultScreen extends BaseScene {
                 });
             });
         
-        // Create a container for all elements - no aggressive scaling
+        // Create a container for all elements
         const resultContainer = this.add.container(0, 0);
-        resultContainer.add([panelGlow, panel, shadow, title, rankBg, rankBorder, rankText, buttonBg, buttonGlow, buttonText, interactiveArea]);
+        const containerElements = [panelGlow, panel, shadow, title, rankBg, rankBorder, rankText, buttonBg, buttonGlow, buttonText, interactiveArea];
         
         // Add course name to container if it exists
-        if (this.courseCompleted) {
-            // Re-create course name with proper desktop sizing
-            const courseNameFontSize = isMobile ? '16px' : '32px';
-            const courseNameY = titleY + (isMobile ? 30 : 50);
-            
-            const courseName = this.add.text(panelX, courseNameY, this.courseTopic.toUpperCase(), {
-                fontFamily: 'Arial',
-                fontSize: courseNameFontSize,
-                fontWeight: 'bold',
-                color: '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 1
-            }).setOrigin(0.5);
-            
-            resultContainer.add(courseName);
+        if (this.courseCompleted && courseName) {
+            containerElements.push(courseName);
         }
+        
+        resultContainer.add(containerElements);
         
         // Entrance animations
         const animatedElements = [panelGlow, panel, title, rankBg, rankBorder, rankText];
@@ -366,6 +384,115 @@ export default class ResultScreen extends BaseScene {
         }
         
         console.log('ResultScreen created successfully');
+    }
+    
+    calculateRequiredHeight(isMobile, isSmallMobile) {
+        // Calculate the total height needed for all content elements
+        let totalHeight = 0;
+        
+        // Title height and spacing
+        const titleFontSize = isMobile ? 30 : (this.courseCompleted ? 48 : 52);
+        const titleHeight = titleFontSize * 1.2; // Text height with line spacing
+        const titleTopMargin = 40; // Space from top of panel
+        const titleBottomMargin = isMobile ? 20 : 30; // Space below title
+        
+        totalHeight += titleTopMargin + titleHeight + titleBottomMargin;
+        
+        // Course name height (if course completed)
+        if (this.courseCompleted) {
+            const courseNameFontSize = isMobile ? 16 : 32;
+            const courseNameHeight = courseNameFontSize * 1.2;
+            const courseNameBottomMargin = isMobile ? 25 : 40;
+            
+            totalHeight += courseNameHeight + courseNameBottomMargin;
+        }
+        
+        // Rank circle height and spacing
+        const rankRadius = isMobile ? 35 : 70;
+        const rankHeight = rankRadius * 2;
+        const rankBottomMargin = isMobile ? 25 : 40;
+        
+        totalHeight += rankHeight + rankBottomMargin;
+        
+        // Statistics section height
+        const statsCount = 5; // Number of statistics displayed
+        const lineHeight = isMobile ? 28 : 45;
+        const statsHeight = statsCount * lineHeight;
+        const statsBottomMargin = isMobile ? 30 : 50;
+        
+        totalHeight += statsHeight + statsBottomMargin;
+        
+        // Button height and spacing
+        const buttonHeight = isMobile ? 45 : 70;
+        const buttonBottomMargin = 40; // Space from bottom of panel
+        
+        totalHeight += buttonHeight + buttonBottomMargin;
+        
+        // Add some padding for visual breathing room
+        const extraPadding = isMobile ? 20 : 40;
+        totalHeight += extraPadding;
+        
+        console.log('Calculated panel height:', {
+            totalHeight,
+            isMobile,
+            courseCompleted: this.courseCompleted,
+            breakdown: {
+                title: titleTopMargin + titleHeight + titleBottomMargin,
+                courseName: this.courseCompleted ? (16 * 1.2 + (isMobile ? 25 : 40)) : 0,
+                rank: rankHeight + rankBottomMargin,
+                stats: statsHeight + statsBottomMargin,
+                button: buttonHeight + buttonBottomMargin,
+                padding: extraPadding
+            }
+        });
+        
+        return totalHeight;
+    }
+    
+    calculateRequiredWidth(isMobile, isSmallMobile) {
+        // Calculate the minimum width needed for content
+        let maxRequiredWidth = 0;
+        
+        // Title width estimation (conservative approach)
+        const titleText = this.courseCompleted ? 'COURSE COMPLETED!' : 'SESSION ENDED';
+        const titleFontSize = isMobile ? 30 : (this.courseCompleted ? 48 : 52);
+        const titleWidth = titleText.length * (titleFontSize * 0.6); // Rough estimation
+        
+        maxRequiredWidth = Math.max(maxRequiredWidth, titleWidth + 40); // Add padding
+        
+        // Course name width (if present)
+        if (this.courseCompleted) {
+            const courseNameFontSize = isMobile ? 16 : 32;
+            const courseNameWidth = this.courseTopic.length * (courseNameFontSize * 0.6);
+            maxRequiredWidth = Math.max(maxRequiredWidth, courseNameWidth + 40);
+        }
+        
+        // Stats section width (longest content)
+        const statsFontSize = isMobile ? 16 : 26;
+        const estimatedStatsWidth = 350; // Conservative estimate for stats layout
+        maxRequiredWidth = Math.max(maxRequiredWidth, estimatedStatsWidth);
+        
+        // Button width
+        const buttonWidth = isMobile ? 250 : 400;
+        maxRequiredWidth = Math.max(maxRequiredWidth, buttonWidth + 40);
+        
+        // Ensure minimum comfortable width
+        const minWidth = isMobile ? 280 : 600;
+        const calculatedWidth = Math.max(maxRequiredWidth, minWidth);
+        
+        console.log('Calculated panel width:', {
+            calculatedWidth,
+            isMobile,
+            breakdown: {
+                title: titleWidth + 40,
+                courseName: this.courseCompleted ? (this.courseTopic.length * (isMobile ? 16 : 32) * 0.6 + 40) : 0,
+                stats: estimatedStatsWidth,
+                button: buttonWidth + 40,
+                minimum: minWidth
+            }
+        });
+        
+        return calculatedWidth;
     }
     
     createParticleEffects(x, y, color) {
