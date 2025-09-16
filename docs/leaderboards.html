@@ -681,113 +681,25 @@
             return [];
           }
 
-          // Also fetch current student data to get latest names
-          const studentsSnapshot = await db.ref('students').once('value');
-          const studentsData = studentsSnapshot.val() || {};
-          
-          console.log('Fetched students data for name updates:', Object.keys(studentsData));
-
           // Convert to array and process data
           const leaderboardData = [];
           
           Object.entries(data).forEach(([studentId, statsData]) => {
-            console.log(`Processing studentId: ${studentId}`);
-            console.log('Raw statsData:', statsData);
-            
-            // First, try to get current student data from students table
-            let currentStudentData = null;
-            if (studentsData) {
-              // Look for the student by studentId in the students table
-              Object.values(studentsData).forEach(student => {
-                if (student.studentId === studentId || student.uid === studentId) {
-                  currentStudentData = student;
-                  console.log(`Found current student data for ${studentId}:`, currentStudentData);
-                }
-              });
-            }
-            
-            // Handle both old and new data structure formats
-            let career, info, department, firstName, lastName, fullName, strandYear;
-            
-            if (statsData.careerStats && statsData.studentInfo) {
-              // Old structure: nested careerStats and studentInfo
-              career = statsData.careerStats;
-              info = statsData.studentInfo;
-              
-              // Prioritize current student data from students table if available
-              if (currentStudentData) {
-                firstName = currentStudentData.firstName || '';
-                lastName = currentStudentData.lastName || '';
-                fullName = currentStudentData.fullName || 
-                          `${firstName} ${lastName}`.trim() || 
-                          'Anonymous Student';
-                department = currentStudentData.department || 'Unknown Department';
-                strandYear = currentStudentData.strandYear || 'Unknown';
-                console.log(`Using current student data for old structure ${studentId}: ${fullName}`);
-              } else {
-                // Fallback to cached data in career stats
-                firstName = statsData.firstName || '';
-                lastName = statsData.lastName || '';
-                fullName = info.fullName || '';
-                department = statsData.department || 'Unknown Department';
-                strandYear = statsData.strandYear || 'Unknown';
-                console.log(`Using cached data for old structure ${studentId}: ${fullName}`);
-              }
-            } else {
-              // New structure: direct properties from students table
-              career = {
-                totalPoints: statsData.score || 0,
-                totalSessions: statsData.totalSessions || 0,
-                averageAccuracy: statsData.averageAccuracy || 0,
-                highestStreak: statsData.highestStreak || 0,
-                courseCompletionStatus: statsData.courseCompletionStatus || {}
-              };
-              
-              // Map student table fields directly with better fallbacks
-              // Prioritize current student data from students table
-              if (currentStudentData) {
-                firstName = currentStudentData.firstName || '';
-                lastName = currentStudentData.lastName || '';
-                fullName = currentStudentData.fullName || 
-                          `${firstName} ${lastName}`.trim() || 
-                          'Anonymous Student';
-                department = currentStudentData.department || 'Unknown Department';
-                strandYear = currentStudentData.strandYear || 'Unknown';
-                console.log(`Using current student data for ${studentId}: ${fullName}`);
-              } else {
-                // Fallback to cached career stats data
-                firstName = statsData.firstName || '';
-                lastName = statsData.lastName || '';
-                fullName = statsData.fullName || 
-                          statsData.name || 
-                          `${firstName} ${lastName}`.trim() || 
-                          'Anonymous Student';
-                department = statsData.department || 'Unknown Department';
-                strandYear = statsData.strandYear || 'Unknown';
-                console.log(`Using cached career stats data for ${studentId}: ${fullName}`);
-              }
-              
-              // Create a mock info object for compatibility
-              info = {
-                fullName: fullName,
-                lastUpdated: statsData.lastUpdated || new Date().toISOString()
-              };
+            if (!statsData.careerStats || !statsData.studentInfo) {
+              return; // Skip incomplete records
             }
 
-            // Skip if essential data is missing
-            if (!career && !statsData.score) {
-              console.warn(`Skipping incomplete record for studentId: ${studentId}`);
-              return;
-            }
+            const career = statsData.careerStats;
+            const info = statsData.studentInfo;
             
-            // Determine department type for filtering
+            // Determine department from the new form structure
+            let department = 'Unknown';
             let departmentType = 'other';
-            if (department.toLowerCase().includes('college')) {
-              departmentType = 'college';
-            } else if (department.toLowerCase().includes('senior')) {
-              departmentType = 'seniorhigh';
-            } else if (department.toLowerCase().includes('junior')) {
-              departmentType = 'juniorhigh';
+            
+            if (statsData.department) {
+              department = statsData.department;
+              departmentType = statsData.department.toLowerCase().includes('college') ? 'college' : 
+                              statsData.department.toLowerCase().includes('senior') ? 'seniorhigh' : 'other';
             }
 
             // Apply filter
@@ -799,29 +711,27 @@
 
             // Calculate completion percentage
             const completionStatus = career.courseCompletionStatus || {};
-            const totalCourses = Object.keys(completionStatus).length || 6; // Default to 6 courses
+            const totalCourses = Object.keys(completionStatus).length;
             const completedCourses = Object.values(completionStatus).filter(Boolean).length;
             const completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
-
-            console.log(`Final name for ${studentId}: "${fullName}" (from firstName:"${firstName}", lastName:"${lastName}", statsData.fullName:"${statsData.fullName}", statsData.name:"${statsData.name}")`);
 
             leaderboardData.push({
               studentId: studentId,
               userId: studentId, // For compatibility
-              name: fullName,
-              firstName: firstName,
-              lastName: lastName,
+              name: info.fullName || 'Unknown Student',
+              firstName: statsData.firstName || '',
+              lastName: statsData.lastName || '',
               department: department,
-              strandYear: strandYear,
-              score: career.totalPoints || statsData.score || 0,
-              totalSessions: career.totalSessions || statsData.totalSessions || 0,
-              averageAccuracy: career.averageAccuracy || statsData.averageAccuracy || 0,
-              highestStreak: career.highestStreak || statsData.highestStreak || 0,
+              strandYear: statsData.strandYear || '',
+              score: career.totalPoints || 0,
+              totalSessions: career.totalSessions || 0,
+              averageAccuracy: career.averageAccuracy || 0,
+              highestStreak: career.highestStreak || 0,
               completedCourses: completedCourses,
               totalCourses: totalCourses,
               completionPercentage: completionPercentage,
               courseCompletionStatus: completionStatus,
-              lastUpdated: info.lastUpdated || statsData.lastUpdated || new Date().toISOString(),
+              lastUpdated: info.lastUpdated || '',
               recentSessions: statsData.recentSessions || {}
             });
           });
@@ -830,15 +740,6 @@
           leaderboardData.sort((a, b) => b.score - a.score);
           
           console.log(`Loaded ${leaderboardData.length} career stats records`);
-          if (leaderboardData.length > 0) {
-            console.log('Sample record structure:', leaderboardData[0]);
-            console.log('Data structure validation:');
-            console.log('- Has name:', !!leaderboardData[0].name);
-            console.log('- Has firstName:', !!leaderboardData[0].firstName);
-            console.log('- Has lastName:', !!leaderboardData[0].lastName);
-            console.log('- Has department:', !!leaderboardData[0].department);
-            console.log('- Has score:', !!leaderboardData[0].score);
-          }
           return leaderboardData;
 
         } catch (error) {
@@ -1211,33 +1112,8 @@
           const careerStatsSnapshot = await db.ref('student_career_stats/' + userId).once('value');
           const careerStatsData = careerStatsSnapshot.val();
           
-          if (careerStatsData) {
-            // Check if it's the old nested structure or new flat structure
-            if (careerStatsData.careerStats && careerStatsData.studentInfo) {
-              // Old structure - use as is
-              await renderPlayerProfileWithCareerStats(careerStatsData, userId);
-            } else {
-              // New structure - transform it to the expected format
-              const transformedData = {
-                careerStats: {
-                  totalPoints: careerStatsData.score || 0,
-                  totalSessions: careerStatsData.totalSessions || 0,
-                  averageAccuracy: careerStatsData.averageAccuracy || 0,
-                  highestStreak: careerStatsData.highestStreak || 0,
-                  courseCompletionStatus: careerStatsData.courseCompletionStatus || {},
-                  totalQuestions: careerStatsData.totalQuestions || 0,
-                  totalPlayTime: careerStatsData.totalPlayTime || 0
-                },
-                studentInfo: {
-                  fullName: careerStatsData.fullName || careerStatsData.name || `${careerStatsData.firstName || ''} ${careerStatsData.lastName || ''}`.trim() || 'Unknown Student',
-                  lastUpdated: careerStatsData.lastUpdated || new Date().toISOString()
-                },
-                department: careerStatsData.department || 'Unknown Department',
-                strandYear: careerStatsData.strandYear || 'Unknown',
-                recentSessions: careerStatsData.recentSessions || {}
-              };
-              await renderPlayerProfileWithCareerStats(transformedData, userId);
-            }
+          if (careerStatsData && careerStatsData.careerStats && careerStatsData.studentInfo) {
+            await renderPlayerProfileWithCareerStats(careerStatsData, userId);
           } else {
             document.getElementById('profile-content').innerHTML = `
               <div class="text-center py-8">

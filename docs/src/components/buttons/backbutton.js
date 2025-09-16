@@ -7,18 +7,18 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
     // Get mobile scaling information
     const scaleInfo = getScaleInfo(scene);
     
-    // Responsive button parameters (increased by 50% total)
-    const baseButtonWidth = 180; // 120 * 1.5
-    const baseButtonHeight = 60; // 40 * 1.5
-    const baseFontSize = 36; // 24 * 1.5
+    // Responsive button parameters
+    const baseButtonWidth = 120;
+    const baseButtonHeight = 40;
+    const baseFontSize = 24;
     
     const buttonWidth = scaleDimension(baseButtonWidth, scaleInfo);
     const buttonHeight = scaleDimension(baseButtonHeight, scaleInfo);
     const fontSize = scaleFontSize(baseFontSize, scaleInfo);
     
-    // Position button in top-left with appropriate offset (moved right by 150px total)
+    // Position button in top-left with appropriate offset
     const buttonPosition = getResponsivePosition(scaleInfo, 'top-left', { 
-        x: buttonWidth/2 + 170, // 20 + 150 = 170
+        x: buttonWidth/2 + 20, 
         y: buttonHeight/2 + 20 
     });
     

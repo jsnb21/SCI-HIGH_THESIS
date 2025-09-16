@@ -3,202 +3,102 @@
     "multipleChoice": [
       {
         "question": "Which is a valid integer declaration?",
-        "options": ["x int = 10;", "int = x;", "integer x = 10;", "int x = 10;"],
-        "correctIndex": 3
+        "options": ["int x = 10;", "int = x;", "integer x = 10;", "x int = 10;"],
+        "correctIndex": 0
       },
       {
         "question": "Default value of a boolean in Java?",
-        "options": ["0", "true", "null", "false"],
-        "correctIndex": 3
+        "options": ["false", "true", "0", "null"],
+        "correctIndex": 0
       },
       {
         "question": "Which operator is used for addition?",
-        "options": ["&", "++", "+", "+="],
-        "correctIndex": 2
+        "options": ["+", "+=", "++", "&"],
+        "correctIndex": 0
       },
       {
         "question": "Which keyword creates a new object?",
-        "options": ["make", "this", "new", "create"],
-        "correctIndex": 2
+        "options": ["new", "create", "make", "this"],
+        "correctIndex": 0
       },
       {
         "question": "What does \"Java\".length() return?",
-        "options": ["error", "\"Java\"", "5", "4"],
-        "correctIndex": 3
+        "options": ["4", "5", "\"Java\"", "error"],
+        "correctIndex": 0
       },
       {
         "question": "Correct way to convert \"123\" to int?",
-        "options": ["int(\"123\")", "String.parseInt(\"123\")", "Integer.parseInt(\"123\")", "parseInt(\"123\")"],
-        "correctIndex": 2
+        "options": ["Integer.parseInt(\"123\")", "parseInt(\"123\")", "int(\"123\")", "String.parseInt(\"123\")"],
+        "correctIndex": 0
       },
       {
         "question": "Which finds the position of a char?",
-        "options": ["charAt()", "contains()", "substring()", "indexOf()"],
-        "correctIndex": 3
+        "options": ["indexOf()", "charAt()", "substring()", "contains()"],
+        "correctIndex": 0
       },
       {
         "question": "Logical AND operator in Java?",
-        "options": ["AND", "&&", "∧", "||"],
-        "correctIndex": 1
+        "options": ["&&", "||", "AND", "&and;"],
+        "correctIndex": 0
       },
       {
         "question": "Result of true && false?",
-        "options": ["null", "true", "0", "false"],
-        "correctIndex": 3
+        "options": ["false", "true", "0", "null"],
+        "correctIndex": 0
       },
       {
         "question": "Which is a valid if statement?",
-        "options": ["if (x == 10);", "if (x == 10) { }", "if (x 10) { }", "if x = 10 { }"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Which loop always runs once?",
-        "options": ["while", "foreach", "for", "do…while"],
-        "correctIndex": 3
-      },
-      {
-        "question": "In for (int i = 0; i < 4; i++), how many times does it run?",
-        "options": ["0", "4", "3", "5"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Control variable in for (int i = 0; i < 5; i++)?",
-        "options": ["for", "int", "5", "i"],
-        "correctIndex": 3
-      },
-      {
-        "question": "Best loop when number of repetitions is known?",
-        "options": ["while", "if", "do-while", "for"],
-        "correctIndex": 3
+        "options": ["if (x == 10) { }", "if x = 10 { }", "if (x 10) { }", "if (x == 10);"],
+        "correctIndex": 0
       },
       {
         "question": "Method with no return uses:",
-        "options": ["void", "int", "null", "none"],
+        "options": ["void", "null", "int", "none"],
         "correctIndex": 0
       },
       {
         "question": "Correct method header?",
-        "options": ["public void getData()", "getData public void()", "public void getData;", "void getData public()"],
+        "options": ["public void getData()", "public void getData;", "getData public void()", "void getData public()"],
         "correctIndex": 0
       },
       {
         "question": "Role of method parameters?",
-        "options": ["define return types", "provide input values", "create objects", "store attributes"],
-        "correctIndex": 1
+        "options": ["provide input values", "create objects", "store attributes", "define return types"],
+        "correctIndex": 0
       },
       {
         "question": "Which defines a constructor?",
-        "options": ["public void MyClass()", "constructor MyClass()", "class MyClass()", "public MyClass()"],
-        "correctIndex": 3
+        "options": ["public MyClass()", "public void MyClass()", "constructor MyClass()", "class MyClass()"],
+        "correctIndex": 0
       },
       {
         "question": "What does this mean?",
-        "options": ["superclass", "null", "current object", "static variable"],
-        "correctIndex": 2
+        "options": ["current object", "superclass", "static variable", "null"],
+        "correctIndex": 0
       },
       {
         "question": "Which gets a private variable?",
-        "options": ["static", "accessor", "local", "mutator"],
-        "correctIndex": 1
-      },
-            {
-        "question": "In Java, // is used for single-line comments.",
-        "options": ["True", "False"],
+        "options": ["accessor", "mutator", "static", "local"],
         "correctIndex": 0
       },
       {
-        "question": "Multi-line comments in Java use /* and */.",
-        "options": ["True", "False"],
+        "question": "Correct int array declaration?",
+        "options": ["int[] arr = new int[5];", "int arr(5);", "int arr = int[5];", "arr int[5];"],
         "correctIndex": 0
       },
       {
-        "question": "The # symbol can be used for comments in Java.",
-        "options": ["True", "False"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Variable names in Java can start with numbers.",
-        "options": ["True", "False"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Java identifiers are case-sensitive.",
-        "options": ["True", "False"],
+        "question": "What does arr.length give?",
+        "options": ["number of elements", "last index", "max value", "size in bytes"],
         "correctIndex": 0
       },
       {
-        "question": "The keyword int is used to declare integer variables.",
-        "options": ["True", "False"],
+        "question": "Which adds an item?",
+        "options": ["add()", "put()", "insert()", "append()"],
         "correctIndex": 0
       },
       {
-        "question": "The double data type can store decimal numbers.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "The char data type can store many characters.",
-        "options": ["True", "False"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Boolean values in Java are written as true and false.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "The == operator is used to compare two values.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "The = operator is used for assignment.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "The ++ operator increases a number by one.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "The System.out.println() method shows output.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "Java uses cin and cout for input and output.",
-        "options": ["True", "False"],
-        "correctIndex": 1
-      },
-      {
-        "question": "The Scanner class can be used to get input from the user.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "The if statement is used for decision making.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "The switch statement can only work with numbers.",
-        "options": ["True", "False"],
-        "correctIndex": 1
-      },
-      {
-        "question": "A while loop checks the condition before running.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "A do…while loop runs at least once.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "The break statement stops a loop or switch.",
-        "options": ["True", "False"],
+        "question": "list.get(0) gives:",
+        "options": ["first element", "last element", "size of list", "null"],
         "correctIndex": 0
       }
     ]
@@ -206,439 +106,59 @@
   "intensity2": {
     "multipleChoice": [
       {
-        "question": "Correct int array declaration?",
-        "options": ["int arr = int[5];", "arr int[5];", "int arr(5);", "int[] arr = new int[5];"],
-        "correctIndex": 3
+        "question": "Which loop always runs once?",
+        "options": ["do…while", "while", "for", "foreach"],
+        "correctIndex": 0
       },
       {
-        "question": "What does arr.length give?",
-        "options": ["size in bytes", "number of elements", "last index", "max value"],
-        "correctIndex": 1
+        "question": "In for (int i = 0; i < 4; i++), how many times does it run?",
+        "options": ["4", "3", "5", "0"],
+        "correctIndex": 0
       },
       {
-        "question": "Which adds an item?",
-        "options": ["put()", "append()", "add()", "insert()"],
-        "correctIndex": 2
+        "question": "Control variable in for (int i = 0; i < 5; i++)?",
+        "options": ["i", "int", "for", "5"],
+        "correctIndex": 0
       },
       {
-        "question": "list.get(0) gives:",
-        "options": ["last element", "null", "first element", "size of list"],
-        "correctIndex": 2
+        "question": "Best loop when number of repetitions is known?",
+        "options": ["for", "while", "do-while", "if"],
+        "correctIndex": 0
       },
       {
         "question": "First row, second column of arr?",
-        "options": ["arr[0,1]", "arr[1][0]", "arr[0][1]", "arr[1][1]"],
-        "correctIndex": 2
+        "options": ["arr[0][1]", "arr[1][0]", "arr[1][1]", "arr[0,1]"],
+        "correctIndex": 0
       },
       {
         "question": "A 2D array in Java is:",
-        "options": ["grid", "list of lists", "array of arrays", "matrix"],
-        "correctIndex": 2
+        "options": ["array of arrays", "matrix", "grid", "list of lists"],
+        "correctIndex": 0
       },
       {
         "question": "Keyword to create subclass?",
-        "options": ["inherits", "implements", "extends", "super"],
-        "correctIndex": 2
+        "options": ["extends", "implements", "super", "inherits"],
+        "correctIndex": 0
       },
       {
         "question": "Method overriding is:",
-        "options": ["renaming method", "redefining parent method", "deleting method", "copying method"],
-        "correctIndex": 1
+        "options": ["redefining parent method", "renaming method", "copying method", "deleting method"],
+        "correctIndex": 0
       },
       {
         "question": "Recursive method must have:",
-        "options": ["static keyword", "parameter", "base case", "loop"],
-        "correctIndex": 2
+        "options": ["base case", "static keyword", "loop", "parameter"],
+        "correctIndex": 0
       },
       {
         "question": "Recursion is when:",
-        "options": ["no return", "loop repeats", "subclass calls superclass", "method calls itself"],
-        "correctIndex": 3
-      },
-            {
-        "question": "Array indexes in Java start at 0.",
-        "options": ["True", "False"],
+        "options": ["method calls itself", "loop repeats", "no return", "subclass calls superclass"],
         "correctIndex": 0
-      },
-      {
-        "question": "The size of an array in Java can be changed after creation.",
-        "options": ["True", "False"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Arrays in Java can store many values of the same data type.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "The keyword void means a method does not return a value.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "Two methods in Java can have the same name if they have different parameters.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "Every method in Java must return a value.",
-        "options": ["True", "False"],
-        "correctIndex": 1
-      },
-      {
-        "question": "A class in Java is a blueprint for making objects.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "An object is created from a class.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "The keyword extends is used for inheritance in Java.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "Java allows multiple inheritance using classes.",
-        "options": ["True", "False"],
-        "correctIndex": 1
       }
     ]
   },
   "intensity3": {
     "codeArrangement": [
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Fill in the blanks to declare an integer variable x with value 10:",
-        "blocks": [
-          "int",
-          "10", 
-          "String",
-          "\"10\""
-        ],
-        "correctOrder": [0, 1]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Complete the code to create a String and find its length:",
-        "blocks": [
-          "new String",
-          "length()",
-          "size()",
-          "getLength()"
-        ],
-        "correctOrder": [0, 1]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Check if x is between 10 and 20:",
-        "blocks": [
-          ">=",
-          "&&",
-          "<=",
-          "||"
-        ],
-        "correctOrder": [0, 1, 2]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Complete the for-loop to print numbers 1 to 5:",
-        "blocks": [
-          "1",
-          "i <= 5",
-          "i++",
-          "i < 5"
-        ],
-        "correctOrder": [0, 1, 2]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Write a method that squares a number:",
-        "blocks": [
-          "static",
-          "return",
-          "void",
-          "System.out.println"
-        ],
-        "correctOrder": [0, 1]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Complete the constructor for a Person class:",
-        "blocks": [
-          "this.name",
-          "name",
-          "String",
-          "void"
-        ],
-        "correctOrder": [0, 1]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Complete the loop to print array values:",
-        "blocks": [
-          "length",
-          "arr[i]",
-          "i++",
-          "num"
-        ],
-        "correctOrder": [0, 1]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Create an ArrayList and add an element:",
-        "blocks": [
-          "ArrayList",
-          "add",
-          "append",
-          "insert"
-        ],
-        "correctOrder": [0, 1]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Access element in second row, third column:",
-        "blocks": [
-          "1",
-          "2",
-          "0",
-          "3"
-        ],
-        "correctOrder": [0, 1]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Create a subclass and call superclass constructor:",
-        "blocks": [
-          "extends",
-          "super",
-          "implements",
-          "this"
-        ],
-        "correctOrder": [0, 1]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Base case of factorial recursion:",
-        "blocks": [
-          "1",
-          "0",
-          "n",
-          "null"
-        ],
-        "correctOrder": [0]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Order the factorial recursion steps:",
-        "blocks": [
-          "Base case check",
-          "Recursive call",
-          "Multiply result",
-          "Return"
-        ],
-        "correctOrder": [0, 1, 2, 3]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Complete method to sum array values:",
-        "blocks": [
-          "length",
-          "arr[i]",
-          "i++",
-          "num"
-        ],
-        "correctOrder": [0, 1]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Complete class with constructor:",
-        "blocks": [
-          "String name",
-          "this.name",
-          "Student",
-          "void"
-        ],
-        "correctOrder": [0, 1]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Implement interface Animal:",
-        "blocks": [
-          "implements",
-          "extends",
-          "interface",
-          "public"
-        ],
-        "correctOrder": [0]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Label object creation:",
-        "blocks": [
-          "Car → Class",
-          "myCar → Object", 
-          "new Car('Red') → Instantiation",
-          "\"Red\" → Argument"
-        ],
-        "correctOrder": [0, 1, 2, 3]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Label for-loop parts:",
-        "blocks": [
-          "Initialization",
-          "Condition",
-          "Update",
-          "Body"
-        ],
-        "correctOrder": [0, 1, 2, 3]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Steps of recursion:",
-        "blocks": [
-          "Base case",
-          "Recursive call",
-          "Combine results",
-          "Return"
-        ],
-        "correctOrder": [0, 1, 2, 3]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Fill in common ArrayList methods:",
-        "blocks": [
-          "add",
-          "remove",
-          "set",
-          "get"
-        ],
-        "correctOrder": [0, 1]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Complete 2D array declaration:",
-        "blocks": [
-          "4",
-          "3",
-          "2", 
-          "5"
-        ],
-        "correctOrder": [0]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Complete String operations:",
-        "blocks": [
-          "toUpperCase",
-          "uppercase",
-          "makeUpper",
-          "Upper"
-        ],
-        "correctOrder": [0]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Complete boolean expression:",
-        "blocks": [
-          "&&",
-          "||",
-          "==",
-          "!"
-        ],
-        "correctOrder": [0]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Complete while loop:",
-        "blocks": [
-          "<",
-          "<=",
-          ">",
-          "=="
-        ],
-        "correctOrder": [0]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Order method definition steps:",
-        "blocks": [
-          "Declare method",
-          "Add parameters",
-          "Write body",
-          "Call method"
-        ],
-        "correctOrder": [0, 1, 2, 3]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Fill in class terms in code:",
-        "blocks": [
-          "Field",
-          "Constructor",
-          "Method",
-          "Object"
-        ],
-        "correctOrder": [0, 1, 2]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Complete enhanced for loop:",
-        "blocks": [
-          "int",
-          "arr",
-          "String",
-          "double"
-        ],
-        "correctOrder": [0]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Access the first element of ArrayList:",
-        "blocks": [
-          "get",
-          "set",
-          "add",
-          "remove"
-        ],
-        "correctOrder": [0]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Traverse 2D array with nested loops:",
-        "blocks": [
-          "length",
-          "size",
-          "count",
-          "len"
-        ],
-        "correctOrder": [0]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Override method in subclass:",
-        "blocks": [
-          "speak",
-          "talk",
-          "say",
-          "sound"
-        ],
-        "correctOrder": [0]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Complete recursive sum of numbers 1..n:",
-        "blocks": [
-          "sum(n - 1)",
-          "n - 1",
-          "sum(n)",
-          "return"
-        ],
-        "correctOrder": [0]
-      },
       {
         "title": "Arrange the Java code blocks in correct order:",
         "description": "Create a complete Java class with constructor and methods",

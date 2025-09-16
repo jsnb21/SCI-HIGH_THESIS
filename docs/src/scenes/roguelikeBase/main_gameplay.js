@@ -3427,74 +3427,34 @@ export default class MainGameplay extends BaseScene {
         
         // Check if student information already exists from intro
         const studentInfo = localStorage.getItem('studentInfo');
-
-             // Also check for current user data from sci_high_user
-        let currentUserData = null;
-        try {
-            const userDataStr = localStorage.getItem('sci_high_user');
-            if (userDataStr) {
-                currentUserData = JSON.parse(userDataStr);
-            }
-        } catch (e) {
-            console.warn('Could not parse sci_high_user data:', e);
-        }
-        
-        // Determine if we have sufficient student data from either source
-        let hasStudentData = false;
-        let studentData = null;
         
         if (studentInfo) {
             try {
                 const parsedStudentInfo = JSON.parse(studentInfo);
-                if (parsedStudentInfo.firstName && parsedStudentInfo.lastName) {
-                    hasStudentData = true;
-                    studentData = parsedStudentInfo;
-                    console.log('Found existing student info from studentInfo:', parsedStudentInfo);
-                }
+                console.log('Found existing student info, going directly to ResultScreen:', parsedStudentInfo);
+                
+                // Add student info to result data
+                resultData.studentName = `${parsedStudentInfo.firstName} ${parsedStudentInfo.lastName}`;
+                resultData.firstName = parsedStudentInfo.firstName;
+                resultData.lastName = parsedStudentInfo.lastName;
+                resultData.department = parsedStudentInfo.department;
+                resultData.strandYear = parsedStudentInfo.strandYear;
+                
+                // Go directly to ResultScreen since we have student info
+                this.scene.start('ResultScreen', resultData);
+                
+                // Also upload the data to Firebase in the background
+                this.uploadGameplayDataInBackground(resultData);
+                
             } catch (error) {
-                console.error('Error parsing studentInfo:', error);
+                console.error('Error parsing student info, falling back to DataCollectionScreen:', error);
+                // Fall back to DataCollectionScreen if parsing fails
+                this.scene.start('DataCollectionScreen', resultData);
             }
-        }
-        
-        // If no studentInfo, check sci_high_user data
-        if (!hasStudentData && currentUserData && currentUserData.firstName && currentUserData.lastName) {
-            hasStudentData = true;
-            studentData = {
-                firstName: currentUserData.firstName,
-                lastName: currentUserData.lastName,
-                department: currentUserData.department || '',
-                strandYear: currentUserData.strandYear || ''
-            };
-            console.log('Found existing student info from sci_high_user:', studentData);
-        }
-        
-        if (hasStudentData && studentData) {
-            // Add student info to result data
-            resultData.studentName = `${studentData.firstName} ${studentData.lastName}`;
-            resultData.firstName = studentData.firstName;
-            resultData.lastName = studentData.lastName;
-            resultData.department = studentData.department;
-            resultData.strandYear = studentData.strandYear;
-            
-            // Go directly to ResultScreen since we have student info
-            this.scene.start('ResultScreen', resultData);
-            
-            // Also upload the data to Firebase in the background
-            this.uploadGameplayDataInBackground(resultData);
         } else {
-            console.log('No existing student info found, going to ResultScreen anyway');
-            // No student info found, but we'll go to ResultScreen anyway since DataCollectionScreen is removed
-            // The ResultScreen can handle missing student data gracefully
-            resultData.studentName = 'Unknown Student';
-            resultData.firstName = 'Unknown';
-            resultData.lastName = 'Student';
-            resultData.department = '';
-            resultData.strandYear = '';
-            
-            this.scene.start('ResultScreen', resultData);
-            
-            // Still upload the data to Firebase in the background
-            this.uploadGameplayDataInBackground(resultData);
+            console.log('No existing student info found, showing DataCollectionScreen');
+            // No student info found, show DataCollectionScreen as before
+            this.scene.start('DataCollectionScreen', resultData);
         }
     }
 
@@ -3505,40 +3465,25 @@ export default class MainGameplay extends BaseScene {
             // Get student data from localStorage (same way authService stores it)
             let studentId = 'unknown';
             let currentUser = null;
-            let finalStudentName = resultData.studentName;
-            let finalFirstName = resultData.firstName;
-            let finalLastName = resultData.lastName;
-            let finalDepartment = resultData.department;
-            let finalStrandYear = resultData.strandYear;
             
             try {
                 const userDataStr = localStorage.getItem('sci_high_user');
                 if (userDataStr) {
                     currentUser = JSON.parse(userDataStr);
                     studentId = currentUser.studentId || currentUser.uid || 'unknown';
-                    
-                    // Use current user data if available to override potentially stale resultData
-                    if (currentUser.firstName && currentUser.lastName) {
-                        finalFirstName = currentUser.firstName;
-                        finalLastName = currentUser.lastName;
-                        finalStudentName = `${currentUser.firstName} ${currentUser.lastName}`;
-                        finalDepartment = currentUser.department || resultData.department;
-                        finalStrandYear = currentUser.strandYear || resultData.strandYear;
-                        console.log(`Using current user data: ${finalStudentName}`);
-                    }
                 }
             } catch (e) {
                 console.warn('Could not parse user data from localStorage:', e);
             }
             
-            // Prepare gameplay data for upload (similar to how DataCollectionScreen used to do it)
+            // Prepare gameplay data for upload (similar to DataCollectionScreen)
             const gameplayData = {
                 studentId: studentId,
-                studentName: finalStudentName,
-                firstName: finalFirstName,
-                lastName: finalLastName,
-                department: finalDepartment,
-                strandYear: finalStrandYear,
+                studentName: resultData.studentName,
+                firstName: resultData.firstName,
+                lastName: resultData.lastName,
+                department: resultData.department,
+                strandYear: resultData.strandYear,
                 courseTopic: resultData.courseTopic,
                 sessionData: {
                     courseTopic: resultData.courseTopic,
@@ -3571,13 +3516,13 @@ export default class MainGameplay extends BaseScene {
                     const { default: careerStatsService } = await import('../../services/careerStatsService.js');
                     await careerStatsService.updateCareerStats(
                         gameplayData.studentId, 
-                        finalStudentName,
+                        resultData.studentName,
                         gameplayData.sessionData,
                         {
-                            firstName: finalFirstName,
-                            lastName: finalLastName,
-                            department: finalDepartment,
-                            strandYear: finalStrandYear
+                            firstName: resultData.firstName,
+                            lastName: resultData.lastName,
+                            department: resultData.department,
+                            strandYear: resultData.strandYear
                         }
                     );
                     console.log('Background career stats update successful');
@@ -3616,7 +3561,7 @@ export default class MainGameplay extends BaseScene {
         try {
             console.log('Starting Firebase initialization for MainGameplay...');
             
-            // Firebase config (same as other Firebase integrations)
+            // Firebase config (same as DataCollectionScreen)
             const firebaseConfig = {
                 apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
                 authDomain: "sci-high-website.firebaseapp.com",
