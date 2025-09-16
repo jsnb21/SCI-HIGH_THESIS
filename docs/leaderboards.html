@@ -673,18 +673,40 @@
         try {
           console.log('Loading career stats data with filter:', filter);
           
-          const snapshot = await db.ref('student_career_stats').once('value');
-          const data = snapshot.val();
+          // Get career stats data
+          const careerSnapshot = await db.ref('student_career_stats').once('value');
+          const careerData = careerSnapshot.val();
           
-          if (!data) {
+          if (!careerData) {
             console.log('No career stats data found');
             return [];
           }
 
-          // Convert to array and process data
-          const leaderboardData = [];
+          // Try to get main student data for correct names (fallback if permission denied)
+          let studentNameMap = {};
+          try {
+            const studentsSnapshot = await db.ref('students').once('value');
+            const studentsData = studentsSnapshot.val();
+            
+            if (studentsData) {
+              Object.values(studentsData).forEach(student => {
+                if (student.studentId) {
+                  studentNameMap[student.studentId] = {
+                    name: student.name || student.fullName || 'Unknown Student',
+                    department: student.department || 'Unknown'
+                  };
+                }
+              });
+            }
+          } catch (error) {
+            console.warn('Could not access students database (permission denied), using career stats names:', error.message);
+            // Continue without student names map - will use career stats names
+          }
+
+          // Use Map to accumulate data for students (to handle duplicates)
+          const studentAccumulator = new Map();
           
-          Object.entries(data).forEach(([studentId, statsData]) => {
+          Object.entries(careerData).forEach(([studentId, statsData]) => {
             if (!statsData.careerStats || !statsData.studentInfo) {
               return; // Skip incomplete records
             }
@@ -692,14 +714,18 @@
             const career = statsData.careerStats;
             const info = statsData.studentInfo;
             
-            // Determine department from the new form structure
-            let department = 'Unknown';
+            // Get correct student name from main database, fallback to career stats
+            const studentInfo = studentNameMap[studentId];
+            const studentName = studentInfo?.name || info.fullName || statsData.firstName + ' ' + statsData.lastName || 'Unknown Student';
+            
+            // Determine department from main database first, then fallback
+            let department = studentInfo?.department || statsData.department || 'Unknown';
             let departmentType = 'other';
             
-            if (statsData.department) {
-              department = statsData.department;
-              departmentType = statsData.department.toLowerCase().includes('college') ? 'college' : 
-                              statsData.department.toLowerCase().includes('senior') ? 'seniorhigh' : 'other';
+            if (department) {
+              departmentType = department.toLowerCase().includes('college') ? 'college' : 
+                              department.toLowerCase().includes('senior') ? 'seniorhigh' : 
+                              department.toLowerCase().includes('junior') ? 'juniorhigh' : 'other';
             }
 
             // Apply filter
@@ -709,37 +735,84 @@
               if (filter === 'juniorhigh' && departmentType !== 'juniorhigh') return;
             }
 
-            // Calculate completion percentage
-            const completionStatus = career.courseCompletionStatus || {};
-            const totalCourses = Object.keys(completionStatus).length;
-            const completedCourses = Object.values(completionStatus).filter(Boolean).length;
-            const completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
+            // Use student name as key to accumulate data for same students
+            const accumulatorKey = `${studentName}_${department}`.toLowerCase();
+            
+            if (studentAccumulator.has(accumulatorKey)) {
+              // Accumulate existing student data
+              const existing = studentAccumulator.get(accumulatorKey);
+              
+              // Add up scores and sessions
+              existing.score += career.totalPoints || 0;
+              existing.totalSessions += career.totalSessions || 0;
+              
+              // Calculate weighted average for accuracy
+              const totalQuestions = existing.totalQuestions + (career.totalQuestions || 0);
+              const totalCorrectAnswers = existing.totalCorrectAnswers + (career.totalCorrectAnswers || 0);
+              existing.averageAccuracy = totalQuestions > 0 ? Math.round((totalCorrectAnswers / totalQuestions) * 100) : 0;
+              existing.totalQuestions = totalQuestions;
+              existing.totalCorrectAnswers = totalCorrectAnswers;
+              
+              // Keep highest streak
+              existing.highestStreak = Math.max(existing.highestStreak, career.highestStreak || 0);
+              
+              // Merge course completion status
+              const existingCompletion = existing.courseCompletionStatus;
+              const newCompletion = career.courseCompletionStatus || {};
+              Object.entries(newCompletion).forEach(([course, completed]) => {
+                if (completed) existingCompletion[course] = true;
+              });
+              
+              // Update completion percentage
+              const totalCourses = Object.keys(existingCompletion).length;
+              const completedCourses = Object.values(existingCompletion).filter(Boolean).length;
+              existing.completedCourses = completedCourses;
+              existing.totalCourses = totalCourses;
+              existing.completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
+              
+              // Update last updated time
+              if (info.lastUpdated && (!existing.lastUpdated || new Date(info.lastUpdated) > new Date(existing.lastUpdated))) {
+                existing.lastUpdated = info.lastUpdated;
+              }
+              
+            } else {
+              // First time seeing this student
+              const completionStatus = career.courseCompletionStatus || {};
+              const totalCourses = Object.keys(completionStatus).length;
+              const completedCourses = Object.values(completionStatus).filter(Boolean).length;
+              const completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
 
-            leaderboardData.push({
-              studentId: studentId,
-              userId: studentId, // For compatibility
-              name: info.fullName || 'Unknown Student',
-              firstName: statsData.firstName || '',
-              lastName: statsData.lastName || '',
-              department: department,
-              strandYear: statsData.strandYear || '',
-              score: career.totalPoints || 0,
-              totalSessions: career.totalSessions || 0,
-              averageAccuracy: career.averageAccuracy || 0,
-              highestStreak: career.highestStreak || 0,
-              completedCourses: completedCourses,
-              totalCourses: totalCourses,
-              completionPercentage: completionPercentage,
-              courseCompletionStatus: completionStatus,
-              lastUpdated: info.lastUpdated || '',
-              recentSessions: statsData.recentSessions || {}
-            });
+              studentAccumulator.set(accumulatorKey, {
+                studentId: studentId,
+                userId: studentId, // For compatibility
+                name: studentName,
+                firstName: statsData.firstName || '',
+                lastName: statsData.lastName || '',
+                department: department,
+                strandYear: statsData.strandYear || '',
+                score: career.totalPoints || 0,
+                totalSessions: career.totalSessions || 0,
+                averageAccuracy: career.averageAccuracy || 0,
+                totalQuestions: career.totalQuestions || 0,
+                totalCorrectAnswers: career.totalCorrectAnswers || 0,
+                highestStreak: career.highestStreak || 0,
+                completedCourses: completedCourses,
+                totalCourses: totalCourses,
+                completionPercentage: completionPercentage,
+                courseCompletionStatus: completionStatus,
+                lastUpdated: info.lastUpdated || '',
+                recentSessions: statsData.recentSessions || {}
+              });
+            }
           });
 
-          // Sort by total points (descending)
+          // Convert Map back to array
+          const leaderboardData = Array.from(studentAccumulator.values());
+
+          // Sort by total accumulated points (descending)
           leaderboardData.sort((a, b) => b.score - a.score);
           
-          console.log(`Loaded ${leaderboardData.length} career stats records`);
+          console.log(`Loaded and consolidated ${leaderboardData.length} unique student records`);
           return leaderboardData;
 
         } catch (error) {

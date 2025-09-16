@@ -756,33 +756,91 @@ Error: ${error.message}
         }
 
         try {
+          // Enhanced duplicate check before creating student
+          devAuthManager.log(`Checking for existing student with ID: ${studentId}`);
+          
+          const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+          
+          // Check if student already exists
+          const existingStudentRef = ref(devAuthManager.database, 'students/' + studentId);
+          const existingSnapshot = await get(existingStudentRef);
+          
+          if (existingSnapshot.exists()) {
+            const existingData = existingSnapshot.val();
+            devAuthManager.log(`ERROR: Student with ID ${studentId} already exists: ${existingData.name || existingData.fullName || 'Unknown Name'}`);
+            alert(`Error: Student account already exists!\n\nStudent ID: ${studentId}\nName: ${existingData.name || existingData.fullName || 'Unknown Name'}\nCreated: ${existingData.createdAt || 'Unknown Date'}\n\nPlease use a different Student ID or update the existing record.`);
+            return;
+          }
+          
+          // Also check if student exists in career stats
+          const careerStatsRef = ref(devAuthManager.database, 'student_career_stats/' + studentId);
+          const careerSnapshot = await get(careerStatsRef);
+          
+          if (careerSnapshot.exists()) {
+            const careerData = careerSnapshot.val();
+            const studentName = careerData.studentInfo?.fullName || careerData.firstName + ' ' + careerData.lastName || 'Unknown';
+            devAuthManager.log(`WARNING: Student ${studentId} has existing career stats: ${studentName}`);
+            
+            if (!confirm(`Warning: Student ${studentId} has existing game progress data (${studentName}).\n\nThis might indicate they already have an account. Creating a new account might cause data conflicts.\n\nDo you want to continue anyway?`)) {
+              return;
+            }
+          }
+          
+          devAuthManager.log(`No duplicates found, creating new student: ${name} (${studentId})`);
+
           const studentData = {
             studentId: studentId,
             name: name,
+            fullName: name, // Add fullName for consistency
             level: level,
             course: level === 'college' ? course : '',
             strand: level === 'shs' ? strand : '',
             year: year,
+            academicInfo: {
+              level: level,
+              course: level === 'college' ? course : null,
+              yearLevel: year,
+              strand: level === 'shs' ? strand : null
+            },
+            accountStatus: {
+              isActive: true,
+              isFirstLogin: true,
+              createdBy: 'developer-tools',
+              createdAt: new Date().toISOString(),
+              lastLogin: null
+            },
             progress: {
               completedQuizzes: [],
               completedStories: [],
               totalScore: 0,
               lastActivity: new Date().toISOString()
             },
+            gameData: {
+              totalPoints: 0,
+              achievements: [],
+              currentLevel: 1,
+              courseProgress: {
+                'Web_Design': { unlocked: true, completed: false, progress: 0 },
+                'Python': { unlocked: true, completed: false, progress: 0 },
+                'Java': { unlocked: false, completed: false, progress: 0 },
+                'C': { unlocked: false, completed: false, progress: 0 },
+                'CPlusPlus': { unlocked: false, completed: false, progress: 0 },
+                'CSharp': { unlocked: false, completed: false, progress: 0 }
+              }
+            },
             createdAt: new Date().toISOString(),
             isActive: true
           };
 
-          const { ref } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
           const studentRef = ref(devAuthManager.database, 'students/' + studentId);
           await devAuthManager.setData(studentRef, studentData);
           
-          devAuthManager.log(`Student created: ${name} (${studentId})`);
+          devAuthManager.log(`✅ Student created successfully: ${name} (${studentId})`);
           clearStudentForm();
           updateStudentAnalytics();
-          alert('Student created successfully!');
+          alert(`Student created successfully!\n\nName: ${name}\nStudent ID: ${studentId}\nLevel: ${level}\n\nThe student can now log in using their Student ID.`);
         } catch (error) {
-          devAuthManager.log('Error creating student: ' + error.message);
+          devAuthManager.log('❌ Error creating student: ' + error.message);
           alert('Error creating student: ' + error.message);
         }
       }

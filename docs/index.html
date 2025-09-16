@@ -1582,6 +1582,45 @@
             // Ensure authentication before database operations
             await this.ensureAuthenticated();
             
+            // Enhanced duplicate check - check multiple ways student might already exist
+            console.log('Performing comprehensive duplicate check...');
+            
+            // Check 1: Query by studentId (primary check)
+            const existingByIdSnapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
+            if (existingByIdSnapshot.exists()) {
+              console.log('Student already exists with this Student ID:', studentId);
+              throw new Error(`Student account already exists for ID: ${studentId}. Please contact administrator if you cannot access your account.`);
+            }
+            
+            // Check 2: Check career stats to see if student has been playing
+            const careerStatsSnapshot = await firebase.database().ref('student_career_stats').child(studentId).once('value');
+            if (careerStatsSnapshot.exists()) {
+              const careerData = careerStatsSnapshot.val();
+              console.log('Found existing career stats for student:', studentId);
+              
+              // If career stats exist but no main student record, this might be a data inconsistency
+              console.warn('Career stats exist but no main student record found. Creating main record...');
+              // Continue with creation but use info from career stats if available
+            }
+            
+            // Check 3: Additional safety check for recent students (last 24 hours)
+            const recentStudentsSnapshot = await firebase.database().ref('students')
+              .orderByChild('accountStatus/createdAt')
+              .startAt(new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+              .once('value');
+            
+            if (recentStudentsSnapshot.exists()) {
+              const recentStudents = recentStudentsSnapshot.val();
+              for (const [key, student] of Object.entries(recentStudents)) {
+                if (student.studentId === studentId) {
+                  console.log('Found duplicate student created in last 24 hours:', studentId);
+                  throw new Error(`Student account for ID ${studentId} was recently created. Please try logging in instead.`);
+                }
+              }
+            }
+            
+            console.log('No duplicates found, proceeding with account creation...');
+            
             const studentData = {
               studentId,
               fullName: `Student ${studentId}`, // Default name, can be updated later
@@ -1621,15 +1660,15 @@
               accountType: 'student'
             };
 
-            // Save to Realtime Database
-            const newStudentRef = firebase.database().ref('students').push();
-            await newStudentRef.set(studentData);
+            // Use studentId as the key instead of auto-generated key for better consistency
+            const studentRef = firebase.database().ref('students').child(studentId);
+            await studentRef.set(studentData);
             
-            console.log('Student account created successfully with ID:', newStudentRef.key);
+            console.log('Student account created successfully with key:', studentId);
             
             return { 
               success: true, 
-              docId: newStudentRef.key,
+              docId: studentId, // Return the studentId as the document ID
               studentData: studentData
             };
           } catch (error) {

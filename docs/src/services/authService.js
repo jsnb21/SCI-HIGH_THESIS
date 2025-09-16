@@ -480,6 +480,42 @@ class AuthService {
         try {
             console.log('AuthService: Creating new student account for ID:', studentId);
             
+            // Enhanced duplicate checking before creating account
+            console.log('AuthService: Performing duplicate check...');
+            
+            // Check 1: Query by studentId in main students database
+            const studentsRef = this.database.ref('students');
+            const existingByIdQuery = await studentsRef.orderByChild('studentId').equalTo(studentId).once('value');
+            
+            if (existingByIdQuery.exists()) {
+                console.log('AuthService: Student already exists with ID:', studentId);
+                const existingData = Object.values(existingByIdQuery.val())[0];
+                throw new Error(`Student account already exists for ID: ${studentId}. Student name: ${existingData.fullName || existingData.name || 'Unknown'}. Please try logging in instead.`);
+            }
+            
+            // Check 2: Check if student exists with this studentId as key
+            const directStudentRef = this.database.ref('students').child(studentId);
+            const directSnapshot = await directStudentRef.once('value');
+            
+            if (directSnapshot.exists()) {
+                console.log('AuthService: Student exists with studentId as key:', studentId);
+                const existingData = directSnapshot.val();
+                throw new Error(`Student account already exists for ID: ${studentId}. Student name: ${existingData.fullName || existingData.name || 'Unknown'}. Please try logging in instead.`);
+            }
+            
+            // Check 3: Check career stats for existing game progress
+            const careerStatsRef = this.database.ref('student_career_stats').child(studentId);
+            const careerSnapshot = await careerStatsRef.once('value');
+            
+            if (careerSnapshot.exists()) {
+                const careerData = careerSnapshot.val();
+                const studentName = careerData.studentInfo?.fullName || 'Unknown';
+                console.log('AuthService: Found existing career stats for student:', studentId, studentName);
+                console.warn('AuthService: Career stats exist but no main record - possible data inconsistency');
+            }
+            
+            console.log('AuthService: No duplicates found, proceeding with account creation...');
+            
             const studentData = {
                 studentId,
                 fullName: `Student ${studentId}`, // Default name, can be updated later  
@@ -487,6 +523,19 @@ class AuthService {
                 course: '',
                 strand: '',
                 year: '',
+                academicInfo: {
+                    level: 'unknown',
+                    course: null,
+                    yearLevel: null,
+                    strand: null
+                },
+                accountStatus: {
+                    isActive: true,
+                    isFirstLogin: true,
+                    createdBy: 'auto-created',
+                    createdAt: new Date().toISOString(),
+                    lastLogin: new Date().toISOString()
+                },
                 progress: {
                     completedQuizzes: [],
                     completedStories: [],
@@ -499,6 +548,19 @@ class AuthService {
                         courseProgress: {}
                     }
                 },
+                gameData: {
+                    totalPoints: 0,
+                    achievements: [],
+                    currentLevel: 1,
+                    courseProgress: {
+                        'Web_Design': { unlocked: true, completed: false, progress: 0 },
+                        'Python': { unlocked: true, completed: false, progress: 0 },
+                        'Java': { unlocked: false, completed: false, progress: 0 },
+                        'C': { unlocked: false, completed: false, progress: 0 },
+                        'CPlusPlus': { unlocked: false, completed: false, progress: 0 },
+                        'CSharp': { unlocked: false, completed: false, progress: 0 }
+                    }
+                },
                 createdAt: new Date().toISOString(),
                 lastLogin: new Date().toISOString(),
                 isActive: true,
@@ -507,16 +569,15 @@ class AuthService {
                 accountType: 'student'
             };
 
-            // Save to Realtime Database
-            const studentsRef = this.database.ref('students');
-            const newStudentRef = studentsRef.push();
-            await newStudentRef.set(studentData);
+            // Use studentId as the key for consistency and easier lookups
+            const studentRef = this.database.ref('students').child(studentId);
+            await studentRef.set(studentData);
             
-            console.log('AuthService: Student account created successfully with ID:', newStudentRef.key);
+            console.log('AuthService: Student account created successfully with key:', studentId);
             
             return { 
                 success: true, 
-                docId: newStudentRef.key,
+                docId: studentId, // Return studentId as the document ID
                 studentData: studentData
             };
         } catch (error) {
