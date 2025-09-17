@@ -1318,7 +1318,7 @@
         }
 
         async loadFirebase() {
-          return new Promise((resolve, reject) => {
+          return new Promise(async (resolve, reject) => {
             if (typeof firebase !== 'undefined') {
               resolve();
               return;
@@ -1336,12 +1336,20 @@
             scripts.forEach(src => {
               const script = document.createElement('script');
               script.src = src;
-              script.onload = () => {
+              script.onload = async () => {
                 loaded++;
                 if (loaded === scripts.length) {
-                  // Initialize Firebase with secure configuration
-                  this.initializeFirebaseWithConfig();
+                  try {
+                    // Initialize Firebase with secure configuration
+                    await this.initializeFirebaseWithConfig();
+                    resolve();
+                  } catch (error) {
+                    reject(error);
+                  }
                 }
+              };
+              script.onerror = () => {
+                reject(new Error(`Failed to load Firebase script: ${src}`));
               };
               document.head.appendChild(script);
             });
@@ -1368,11 +1376,15 @@
               firebase.auth().onAuthStateChanged(() => {
                 console.log('Firebase Auth initialized');
               });
+              
+              return true;
             } else {
               console.error('Firebase configuration not loaded');
+              throw new Error('Firebase configuration not loaded');
             }
           } catch (error) {
             console.error('Error loading Firebase configuration:', error);
+            throw error;
           }
         }
 
