@@ -1343,28 +1343,58 @@
 
         async initializeFirebaseWithConfig() {
           try {
-            // Load the Firebase configuration module
-            const script = document.createElement('script');
-            script.src = './config/firebase-config.js';
-            
-            await new Promise((resolve, reject) => {
-              script.onload = resolve;
-              script.onerror = reject;
-              document.head.appendChild(script);
-            });
+            // Embed Firebase configuration directly to avoid GitHub Pages path issues
+            if (!window.firebaseConfig) {
+              // Define Firebase configuration inline
+              class FirebaseConfig {
+                constructor() {
+                  this.config = {
+                    apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
+                    authDomain: "sci-high-website.firebaseapp.com",
+                    databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+                    projectId: "sci-high-website",
+                    storageBucket: "sci-high-website.appspot.com",
+                    messagingSenderId: "123456789",
+                    appId: "1:123456789:web:abcdef"
+                  };
+                }
 
-            if (window.firebaseConfig) {
-              await window.firebaseConfig.initializeFirebase();
-              
-              // Ensure auth is ready
-              firebase.auth().onAuthStateChanged(() => {
-              });
-              
-              return true;
-            } else {
-              console.error('Firebase configuration not loaded');
-              throw new Error('Firebase configuration not loaded');
+                getConfig() {
+                  return this.config;
+                }
+
+                async initializeFirebase() {
+                  if (typeof firebase !== 'undefined') {
+                    if (firebase.apps.length === 0) {
+                      firebase.initializeApp(this.getConfig());
+                    }
+                    return firebase;
+                  } else {
+                    throw new Error('Firebase SDK not loaded');
+                  }
+                }
+
+                setApiKey(apiKey) {
+                  if (this.config) {
+                    this.config.apiKey = apiKey;
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('firebase_api_key', apiKey);
+                    }
+                  }
+                }
+              }
+
+              window.firebaseConfig = new FirebaseConfig();
             }
+
+            // Initialize Firebase
+            await window.firebaseConfig.initializeFirebase();
+            
+            // Ensure auth is ready
+            firebase.auth().onAuthStateChanged(() => {
+            });
+            
+            return true;
           } catch (error) {
             console.error('Error loading Firebase configuration:', error);
             throw error;
@@ -3640,25 +3670,45 @@ Always provide helpful, encouraging responses that match the gaming theme. Use a
         
         async loadApiKeyFromFile() {
           try {
-            const response = await fetch(this.configFile);
-            if (response.ok) {
-              const content = await response.text();
-              // Extract API key from file (skip comments and empty lines)
-              const lines = content.split('\n');
-              for (const line of lines) {
-                const trimmed = line.trim();
-                if (trimmed && !trimmed.startsWith('#')) {
-                  if (this.validateApiKey(trimmed)) {
-                    this.apiKey = trimmed;
-                    this.keyExpiry = Date.now() + this.maxKeyAge;
-                    
-                    // Update UI to show AI is available
-                    this.updateAIStatus(true);
-                    return;
+            // Try multiple possible paths for GitHub Pages compatibility
+            const possiblePaths = [
+              this.configFile,
+              './config/api-key.txt',
+              '/SCI-HIGH_THESIS/config/api-key.txt',
+              'config/api-key.txt'
+            ];
+            
+            let loadSuccess = false;
+            for (const path of possiblePaths) {
+              try {
+                const response = await fetch(path);
+                if (response.ok) {
+                  const content = await response.text();
+                  // Extract API key from file (skip comments and empty lines)
+                  const lines = content.split('\n');
+                  for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (trimmed && !trimmed.startsWith('#') && trimmed !== 'YOUR_API_KEY_HERE') {
+                      if (this.validateApiKey(trimmed)) {
+                        this.apiKey = trimmed;
+                        this.keyExpiry = Date.now() + this.maxKeyAge;
+                        loadSuccess = true;
+                        break;
+                      }
+                    }
                   }
+                  if (loadSuccess) break;
                 }
+              } catch (e) {
+                // Continue to next path
+                continue;
               }
-              console.warn('⚠️ No valid API key found in config file');
+            }
+            
+            if (loadSuccess) {
+              // Update UI to show AI is available
+              this.updateAIStatus(true);
+              return;
             } else {
               console.warn('⚠️ Could not load API key config file. Manual entry will be required.');
             }
