@@ -30,6 +30,29 @@ export default defineConfig({
           console.error('Failed to copy notifications.js:', error);
         }
       }
+    },
+    {
+      name: 'copy-config',
+      writeBundle() {
+        // Copy config directory to maintain the same path structure
+        try {
+          mkdirSync('./dist/config', { recursive: true });
+          copyFileSync('./config/firebase-config.js', './dist/config/firebase-config.js');
+          copyFileSync('./config/env-config.json', './dist/config/env-config.json');
+          copyFileSync('./config/api-key.txt', './dist/config/api-key.txt');
+          console.log('✅ Config files copied to dist/config/');
+        } catch (error) {
+          console.warn('Some config files could not be copied:', error.message);
+          // Still try to copy the essential firebase config
+          try {
+            copyFileSync('./config/firebase-config.js', './dist/config/firebase-config.js');
+            copyFileSync('./config/env-config.json', './dist/config/env-config.json');
+            console.log('✅ Essential config files copied');
+          } catch (essentialError) {
+            console.error('Failed to copy essential config files:', essentialError);
+          }
+        }
+      }
     }
   ]
 });
