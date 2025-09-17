@@ -80,14 +80,16 @@ class FirebaseConfig {
             if (firebase.apps.length === 0) {
                 const config = this.getConfig();
                 
-                // If no API key is available, try anonymous authentication
+                // If no API key is available, provide helpful error message
                 if (!config.apiKey) {
-                    console.warn('No API key available. Firebase will use minimal functionality.');
-                    // Initialize without API key for read-only access
-                    config.apiKey = 'minimal-access-key'; // Placeholder
+                    console.error('❌ Firebase API key is required but not configured.');
+                    console.error('Please add your Firebase API key to docs/config/env-config.json');
+                    console.error('Expected format: { "apiKey": "your-firebase-api-key-here" }');
+                    throw new Error('Firebase API key not configured. Please add your API key to env-config.json');
                 }
                 
                 firebase.initializeApp(config);
+                console.log('✅ Firebase initialized successfully');
             }
             return firebase;
         } else {

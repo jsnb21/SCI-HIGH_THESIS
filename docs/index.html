@@ -1220,7 +1220,6 @@
           if (!firebase.auth || typeof firebase.auth !== 'function') {
             throw new Error('Firebase Auth failed to load after 5 seconds');
           }
-          
         }
 
         // Helper method to ensure authentication before database operations
@@ -1375,33 +1374,19 @@
             }
             
             if (!configLoaded) {
-              // Initialize with minimal public configuration (no API key exposed)
-              if (typeof firebase !== 'undefined' && firebase.apps.length === 0) {
-                const publicConfig = {
-                  authDomain: "sci-high-website.firebaseapp.com",
-                  databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-                  projectId: "sci-high-website",
-                  storageBucket: "sci-high-website.appspot.com"
-                  // Note: API key should be loaded securely
-                };
-                
-                try {
-                  firebase.initializeApp(publicConfig);
-                  console.warn('Firebase initialized with minimal config. Some features may be limited.');
-                } catch (initError) {
-                  console.error('Failed to initialize Firebase with minimal config:', initError);
-                  throw new Error('Firebase initialization failed completely');
-                }
-              }
+              throw new Error('Firebase configuration could not be loaded from any path');
             }
             
             // Ensure auth is ready
-            firebase.auth().onAuthStateChanged(() => {
-            });
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+              firebase.auth().onAuthStateChanged(() => {
+                // Auth state changed
+              });
+            }
             
             return true;
           } catch (error) {
-            console.error('Error loading Firebase configuration:', error);
+            console.error('Firebase initialization failed:', error.message);
             throw error;
           }
         }
