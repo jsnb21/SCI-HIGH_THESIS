@@ -1,4 +1,5 @@
 {
+  "FIREBASE_API_KEY": "AIzaSyD-EXAMPLEKEY1234567890",
   "FIREBASE_AUTH_DOMAIN": "sci-high-website.firebaseapp.com",
   "FIREBASE_DATABASE_URL": "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
   "FIREBASE_PROJECT_ID": "sci-high-website",
