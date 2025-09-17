@@ -396,20 +396,34 @@ authManager.userType                                // View current user type</p
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
     <script>
-      // Initialize Firebase
-      const firebaseConfig = {
-        apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
-        authDomain: "sci-high-website.firebaseapp.com",
-        databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "sci-high-website",
-        storageBucket: "sci-high-website.appspot.com",
-        messagingSenderId: "451463202515",
-        appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
-      };
-      
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+      // Initialize Firebase with external config
+      async function initializeFirebase() {
+        try {
+          const configResponse = await fetch('./config/env-config.json');
+          const envConfig = await configResponse.json();
+          
+          const firebaseConfig = {
+            apiKey: envConfig.FIREBASE_API_KEY,
+            authDomain: envConfig.FIREBASE_AUTH_DOMAIN,
+            databaseURL: envConfig.FIREBASE_DATABASE_URL,
+            projectId: envConfig.FIREBASE_PROJECT_ID,
+            storageBucket: envConfig.FIREBASE_STORAGE_BUCKET,
+            messagingSenderId: envConfig.FIREBASE_MESSAGING_SENDER_ID,
+            appId: envConfig.FIREBASE_APP_ID
+          };
+          
+          if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+          }
+          
+          console.log('Firebase initialized successfully');
+        } catch (error) {
+          console.error('Error initializing Firebase:', error);
+        }
       }
+      
+      // Initialize Firebase when page loads
+      initializeFirebase();
 
       // Developer access key (in production, this should be more secure)
       const DEV_ACCESS_KEY = "sci-high-dev-2025";

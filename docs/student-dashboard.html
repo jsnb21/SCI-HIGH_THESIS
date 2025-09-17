@@ -329,10 +329,29 @@
         }
       }
 
-      // Initialize Firebase when page loads
-      initializeFirebase();
-      const db = firebase.database();
-      const auth = firebase.auth();
+      // Initialize Firebase when page loads and wait for completion
+      let db, auth;
+      let firebaseInitialized = false;
+      const firebaseInitPromise = initializeFirebase().then(() => {
+        db = firebase.database();
+        auth = firebase.auth();
+        firebaseInitialized = true;
+        console.log('Firebase services ready for use');
+      }).catch(error => {
+        console.error('Failed to initialize Firebase:', error);
+        throw error;
+      });
+
+      // Helper function to ensure Firebase is ready before using database
+      async function ensureFirebaseReady() {
+        if (!firebaseInitialized) {
+          await firebaseInitPromise;
+        }
+        if (!db) {
+          throw new Error('Firebase database not available');
+        }
+        return { db, auth };
+      }
 
       class StudentDashboard {
         constructor() {

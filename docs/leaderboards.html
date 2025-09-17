@@ -651,6 +651,10 @@
           if (window.firebaseConfig) {
             await window.firebaseConfig.initializeFirebase();
             console.log('Firebase initialized securely');
+            
+            // Initialize Firebase services after successful initialization
+            window.db = firebase.database();
+            console.log('Firebase database service ready');
           } else {
             console.error('Firebase configuration not loaded');
           }
@@ -659,9 +663,28 @@
         }
       }
 
-      // Initialize Firebase when page loads
-      initializeFirebase();
-      const db = firebase.database();
+      // Initialize Firebase when page loads and wait for completion
+      let db;
+      let firebaseInitialized = false;
+      const firebaseInitPromise = initializeFirebase().then(() => {
+        db = window.db; // Use the database instance created after initialization
+        firebaseInitialized = true;
+        console.log('Firebase services ready for use');
+      }).catch(error => {
+        console.error('Failed to initialize Firebase:', error);
+        throw error;
+      });
+
+      // Helper function to ensure Firebase is ready before using database
+      async function ensureFirebaseReady() {
+        if (!firebaseInitialized) {
+          await firebaseInitPromise;
+        }
+        if (!db) {
+          throw new Error('Firebase database not available');
+        }
+        return db;
+      }
 
       // Helper function to format course names properly
       function formatCourseName(courseTopic) {
@@ -686,8 +709,11 @@
         try {
           console.log('Loading career stats data with filter:', filter);
           
+          // Ensure Firebase is ready before using database
+          const database = await ensureFirebaseReady();
+          
           // Get career stats data
-          const careerSnapshot = await db.ref('student_career_stats').once('value');
+          const careerSnapshot = await database.ref('student_career_stats').once('value');
           const careerData = careerSnapshot.val();
           
           if (!careerData) {
@@ -698,7 +724,7 @@
           // Try to get main student data for correct names (fallback if permission denied)
           let studentNameMap = {};
           try {
-            const studentsSnapshot = await db.ref('students').once('value');
+            const studentsSnapshot = await database.ref('students').once('value');
             const studentsData = studentsSnapshot.val();
             
             if (studentsData) {
@@ -1144,6 +1170,9 @@
       // Add missing functions for leaderboard API
       async function addScore(userId, playerName, score, department = 'Unknown', gameData = {}) {
         try {
+          // Ensure Firebase is ready before using database
+          const database = await ensureFirebaseReady();
+          
           const scoreData = {
             name: playerName,
             score: score,
@@ -1153,7 +1182,7 @@
             gameData: gameData
           };
 
-          await db.ref('leaderboards/' + userId).set(scoreData);
+          await database.ref('leaderboards/' + userId).set(scoreData);
           console.log('Score added successfully:', scoreData);
           return { success: true, data: scoreData };
         } catch (error) {
@@ -1164,7 +1193,10 @@
 
       async function updateBestScore(userId, playerName, score, department = 'Unknown', gameData = {}) {
         try {
-          const snapshot = await db.ref('leaderboards/' + userId).once('value');
+          // Ensure Firebase is ready before using database
+          const database = await ensureFirebaseReady();
+          
+          const snapshot = await database.ref('leaderboards/' + userId).once('value');
           const existingData = snapshot.val();
           
           if (!existingData || score > existingData.score) {
@@ -1191,7 +1223,10 @@
 
       async function getPlayerBestScore(userId) {
         try {
-          const snapshot = await db.ref('leaderboards/' + userId).once('value');
+          // Ensure Firebase is ready before using database
+          const database = await ensureFirebaseReady();
+          
+          const snapshot = await database.ref('leaderboards/' + userId).once('value');
           const data = snapshot.val();
           return data ? data.score : 0;
         } catch (error) {
@@ -1233,8 +1268,11 @@
         `;
         
         try {
+          // Ensure Firebase is ready before using database
+          const database = await ensureFirebaseReady();
+          
           // Fetch career stats data
-          const careerStatsSnapshot = await db.ref('student_career_stats/' + userId).once('value');
+          const careerStatsSnapshot = await database.ref('student_career_stats/' + userId).once('value');
           const careerStatsData = careerStatsSnapshot.val();
           
           if (careerStatsData && careerStatsData.careerStats && careerStatsData.studentInfo) {
@@ -2148,7 +2186,7 @@
         
         console.log('Simulating game integration with data:', gameData);
         
-        // Use addScore with enhanced data structure
+        // Use addScore with enhanced data structure (with Firebase ready check)
         const userId = gameData.userId;
         const scoreData = {
           name: gameData.playerName,
@@ -2165,7 +2203,9 @@
           }
         };
         
-        db.ref('leaderboards/' + userId).set(scoreData)
+        // Ensure Firebase is ready before using database
+        ensureFirebaseReady()
+          .then(database => database.ref('leaderboards/' + userId).set(scoreData))
           .then(() => {
             console.log('Game integration successful:', scoreData);
             showSuccess(`Game Integration Test: Advanced player created!\nScore: ${gameData.score}\nClick the player name to view detailed profile with charts.`, {
@@ -2182,8 +2222,11 @@
       // Function to test student score submission (for development)
       async function testStudentScore(studentId, score) {
         try {
+          // Ensure Firebase is ready before using database
+          const database = await ensureFirebaseReady();
+          
           // Check if student exists first
-          const studentsSnapshot = await db.ref('students').orderByChild('studentId').equalTo(studentId).once('value');
+          const studentsSnapshot = await database.ref('students').orderByChild('studentId').equalTo(studentId).once('value');
           
           if (!studentsSnapshot.exists()) {
             console.error('Student not found:', studentId);

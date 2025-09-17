@@ -316,14 +316,18 @@
 
         async initializeFirebase() {
           try {
+            // Load Firebase config from external file
+            const configResponse = await fetch('./config/env-config.json');
+            const envConfig = await configResponse.json();
+            
             const firebaseConfig = {
-              apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
-              authDomain: "sci-high-website.firebaseapp.com",
-              databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-              projectId: "sci-high-website",
-              storageBucket: "sci-high-website.appspot.com",
-              messagingSenderId: "451463202515",
-              appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
+              apiKey: envConfig.FIREBASE_API_KEY,
+              authDomain: envConfig.FIREBASE_AUTH_DOMAIN,
+              databaseURL: envConfig.FIREBASE_DATABASE_URL,
+              projectId: envConfig.FIREBASE_PROJECT_ID,
+              storageBucket: envConfig.FIREBASE_STORAGE_BUCKET,
+              messagingSenderId: envConfig.FIREBASE_MESSAGING_SENDER_ID,
+              appId: envConfig.FIREBASE_APP_ID
             };
 
             if (!firebase.apps.length) {
