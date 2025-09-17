@@ -178,10 +178,7 @@ export const DEFAULT_TEXT_STYLE = {
     strokeThickness: 6 // Increased for better visibility on mobile
 };
 
-// Add error handling and debugging
-console.log('Script loaded, checking environment...');
-
-// Check if we're in a problematic environment
+// Add error handling and debugging// Check if we're in a problematic environment
 if (typeof window.SES !== 'undefined') {
     console.warn('SES detected - this may cause conflicts');
 }
@@ -203,12 +200,7 @@ window.addEventListener('orientationchange', () => {
 
 // Add error handling for game initialization
 let game;
-try {
-    console.log('Creating Phaser Game instance...');
-    game = new Phaser.Game(config);
-    console.log('Phaser Game created successfully:', game);
-    
-    // Make game globally accessible for debugging
+try {game = new Phaser.Game(config);// Make game globally accessible for debugging
     window.game = game;
 } catch (error) {
     console.error('Failed to create Phaser Game:', error);

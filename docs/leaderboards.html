@@ -649,13 +649,8 @@
           });
 
           if (window.firebaseConfig) {
-            await window.firebaseConfig.initializeFirebase();
-            console.log('Firebase initialized securely');
-            
-            // Initialize Firebase services after successful initialization
-            window.db = firebase.database();
-            console.log('Firebase database service ready');
-          } else {
+            await window.firebaseConfig.initializeFirebase();// Initialize Firebase services after successful initialization
+            window.db = firebase.database();} else {
             console.error('Firebase configuration not loaded');
           }
         } catch (error) {
@@ -668,9 +663,7 @@
       let firebaseInitialized = false;
       const firebaseInitPromise = initializeFirebase().then(() => {
         db = window.db; // Use the database instance created after initialization
-        firebaseInitialized = true;
-        console.log('Firebase services ready for use');
-      }).catch(error => {
+        firebaseInitialized = true;}).catch(error => {
         console.error('Failed to initialize Firebase:', error);
         throw error;
       });
@@ -706,19 +699,14 @@
 
       // Load Career Stats Data from Firebase
       async function loadCareerStatsData(filter = 'overall') {
-        try {
-          console.log('Loading career stats data with filter:', filter);
-          
-          // Ensure Firebase is ready before using database
+        try {// Ensure Firebase is ready before using database
           const database = await ensureFirebaseReady();
           
           // Get career stats data
           const careerSnapshot = await database.ref('student_career_stats').once('value');
           const careerData = careerSnapshot.val();
           
-          if (!careerData) {
-            console.log('No career stats data found');
-            return [];
+          if (!careerData) {return [];
           }
 
           // Try to get main student data for correct names (fallback if permission denied)
@@ -787,16 +775,7 @@
             }
             
             // Ensure we don't have empty or just whitespace names
-            studentName = studentName.trim() || `Student ${studentId}`;
-            
-            console.log(`Student ${studentId} name resolved as: "${studentName}"`, {
-              fromMainDB: studentInfo?.name,
-              fromCareerInfo: info.fullName,
-              fromFirstLast: statsData.firstName + ' ' + statsData.lastName,
-              final: studentName
-            });
-            
-            // Determine department from main database first, then fallback
+            studentName = studentName.trim() || `Student ${studentId}`;// Determine department from main database first, then fallback
             let department = studentInfo?.department || statsData.department || 'Unknown';
             let departmentType = 'other';
             
@@ -888,10 +867,7 @@
           const leaderboardData = Array.from(studentAccumulator.values());
 
           // Sort by total accumulated points (descending)
-          leaderboardData.sort((a, b) => b.score - a.score);
-          
-          console.log(`Loaded and consolidated ${leaderboardData.length} unique student records`);
-          return leaderboardData;
+          leaderboardData.sort((a, b) => b.score - a.score);return leaderboardData;
 
         } catch (error) {
           console.error('Error loading career stats data:', error);
@@ -994,9 +970,7 @@
       }
 
       // Enhanced Player Cards with Career Stats
-      function renderPlayerCards(data) {
-        console.log('renderPlayerCards called with career stats data:', data);
-        const container = document.getElementById('player-cards-grid');
+      function renderPlayerCards(data) {const container = document.getElementById('player-cards-grid');
         const loading = document.getElementById('player-cards-loading');
         
         if (!container) {
@@ -1004,17 +978,12 @@
           return;
         }
         
-        if (!data || data.length === 0) {
-          console.log('No career stats data for cards');
-          if (loading) {
+        if (!data || data.length === 0) {if (loading) {
             loading.innerHTML = '<p class="text-gray-400 text-center font-gaming">No students with career stats found</p>';
             loading.style.display = 'block';
           }
           return;
-        }
-        
-        console.log('Rendering', Math.min(data.length, 3), 'career stats cards');
-        // Hide loading and show cards
+        }// Hide loading and show cards
         if (loading) {
           loading.style.display = 'none';
         }
@@ -1121,20 +1090,8 @@
 
       // Enhanced Fetch Leaderboard using Career Stats
       async function fetchLeaderboard(filter) {
-        try {
-          console.log('Starting fetchLeaderboard with filter:', filter);
-          
-          // Load career stats data using the new function
-          const careerStatsData = await loadCareerStatsData(filter);
-          
-          console.log(`Loaded ${careerStatsData.length} career stats entries for filter:`, filter);
-          
-          // Render results
-          console.log('Calling renderPlayerCards with top 3...');
-          renderPlayerCards(careerStatsData.slice(0, 3));
-          
-          console.log('Calling renderLeaderboard with career stats data...');
-          renderLeaderboard(careerStatsData);
+        try {// Load career stats data using the new function
+          const careerStatsData = await loadCareerStatsData(filter);// Render resultsrenderPlayerCards(careerStatsData.slice(0, 3));renderLeaderboard(careerStatsData);
           
         } catch (error) {
           console.error('Error fetching career stats leaderboard:', error);
@@ -1182,9 +1139,7 @@
             gameData: gameData
           };
 
-          await database.ref('leaderboards/' + userId).set(scoreData);
-          console.log('Score added successfully:', scoreData);
-          return { success: true, data: scoreData };
+          await database.ref('leaderboards/' + userId).set(scoreData);return { success: true, data: scoreData };
         } catch (error) {
           console.error('Error adding score:', error);
           throw error;
@@ -1244,10 +1199,7 @@
       };
 
       // Enhanced Player Profile with Career Stats
-      async function showPlayerProfile(userId) {
-        console.log('Loading career stats profile for user:', userId);
-        
-        // Show modal with animation
+      async function showPlayerProfile(userId) {// Show modal with animation
         const modal = document.getElementById('player-profile-modal');
         modal.classList.remove('hidden');
         
@@ -1481,11 +1433,7 @@
         `;
         
         // Initialize charts with career stats data
-        setTimeout(() => {
-          console.log('⏰ Chart initialization timeout triggered');
-          console.log('📊 Chart data check - career:', career);
-          console.log('✅ Chart data check - completionStatus:', completionStatus);
-          initializeCareerStatsCharts(career, completionStatus, recentSessions);
+        setTimeout(() => {initializeCareerStatsCharts(career, completionStatus, recentSessions);
         }, 100);
       }
 
@@ -2182,11 +2130,7 @@
               'machine_learning': Math.random() > 0.8
             }
           }
-        };
-        
-        console.log('Simulating game integration with data:', gameData);
-        
-        // Use addScore with enhanced data structure (with Firebase ready check)
+        };// Use addScore with enhanced data structure (with Firebase ready check)
         const userId = gameData.userId;
         const scoreData = {
           name: gameData.playerName,
@@ -2206,9 +2150,7 @@
         // Ensure Firebase is ready before using database
         ensureFirebaseReady()
           .then(database => database.ref('leaderboards/' + userId).set(scoreData))
-          .then(() => {
-            console.log('Game integration successful:', scoreData);
-            showSuccess(`Game Integration Test: Advanced player created!\nScore: ${gameData.score}\nClick the player name to view detailed profile with charts.`, {
+          .then(() => {showSuccess(`Game Integration Test: Advanced player created!\nScore: ${gameData.score}\nClick the player name to view detailed profile with charts.`, {
               title: '🎮 Game Integration Test'
             });
             fetchLeaderboard('overall');
@@ -2238,9 +2180,7 @@
           
           const studentData = Object.values(studentsSnapshot.val())[0];
           
-          await addScore(studentId, studentData.name, score, 'Test Department');
-          console.log(`Score ${score} submitted for student ${studentId}`);
-          showSuccess(`Score submitted successfully for ${studentData.name}!`, {
+          await addScore(studentId, studentData.name, score, 'Test Department');showSuccess(`Score submitted successfully for ${studentData.name}!`, {
             title: 'Score Submitted'
           });
           fetchLeaderboard('overall');
@@ -2379,18 +2319,11 @@
         }).join('');
       }
       
-      function initializeCareerStatsCharts(career, completionStatus, recentSessions) {
-        console.log('🎨 Initializing lightweight custom charts...');
-        console.log('📊 Career data:', career);
-        
-        // Create Career Performance Line Chart
+      function initializeCareerStatsCharts(career, completionStatus, recentSessions) {// Create Career Performance Line Chart
         createCareerLineChart(career);
         
         // Create Performance Radar Chart
-        createPerformanceRadarChart(career, completionStatus);
-        
-        console.log('✅ Custom charts initialized');
-      }
+        createPerformanceRadarChart(career, completionStatus);}
 
       // Lightweight Line Chart for Career Performance
       function createCareerLineChart(career) {
@@ -2495,10 +2428,7 @@
         
         // Hide fallback
         const fallback = document.getElementById('careerChartFallback');
-        if (fallback) fallback.style.display = 'none';
-        
-        console.log('✅ Career line chart created');
-      }
+        if (fallback) fallback.style.display = 'none';}
 
       // Lightweight Radar Chart for Performance Metrics
       function createPerformanceRadarChart(career, completionStatus) {
@@ -2617,10 +2547,7 @@
         
         // Hide fallback
         const fallback = document.getElementById('radarChartFallback');
-        if (fallback) fallback.style.display = 'none';
-        
-        console.log('✅ Performance radar chart created');
-      }
+        if (fallback) fallback.style.display = 'none';}
 
       // Enhanced API for external access
       window.leaderboardAPI = {

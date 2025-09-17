@@ -188,12 +188,7 @@ export default class DungeonScene extends Phaser.Scene {
         this.setupTutorialSystem();
 
         // Place quiz boxes
-        const boxCount = 3;
-        console.log('About to place quiz boxes...');
-        this.quizBoxes = this.placeQuizBoxes(boxCount);
-        console.log('Quiz boxes placed:', this.quizBoxes);
-        
-        // Place special tiles for more fun gameplay
+        const boxCount = 3;this.quizBoxes = this.placeQuizBoxes(boxCount);// Place special tiles for more fun gameplay
         this.placeSpecialTiles();
         
         // Validate quiz box positions
@@ -212,13 +207,8 @@ export default class DungeonScene extends Phaser.Scene {
             }
         }
         
-        // Draw grid with quiz boxes immediately - no pathfinding delays
-        console.log('About to draw grid with quiz boxes...');
-        this.drawGrid();
-        this.updateLightingEffects();
-        console.log('Grid drawn, quiz box sprites:', this.quizBoxSprites.length);
-          
-        // Add resume event handler
+        // Draw grid with quiz boxes immediately - no pathfinding delaysthis.drawGrid();
+        this.updateLightingEffects();// Add resume event handler
         this.events.on('resume', this.onResume, this);
         
         // Check and show tutorial immediately - don't wait
@@ -636,10 +626,7 @@ export default class DungeonScene extends Phaser.Scene {
                 glowColor = 0xfde047;
             }            // Draw quiz box if present with enhanced effects
             const quizBox = this.quizBoxes.find(pos => pos.x === x && pos.y === y);
-            if (quizBox) {
-                console.log(`Rendering quiz box at (${x}, ${y}) with difficulty: ${quizBox.difficulty}`);
-                
-                // Get difficulty colors
+            if (quizBox) {// Get difficulty colors
                 let difficultyColors = this.getDifficultyColors(quizBox.difficulty);
                 
                 // Multi-layered vibrant background for quiz box with difficulty color
@@ -790,9 +777,7 @@ export default class DungeonScene extends Phaser.Scene {
                         difficulty: 'boss', // Special boss difficulty
                         sprite: this.getRandomEnemySprite(),
                         isBoss: true
-                    };
-                    console.log(`Created BOSS at (${x}, ${y}) with sprite: ${newPos.sprite}`);
-                    positions.push(newPos);
+                    };positions.push(newPos);
                 }
             }
         } else {
@@ -817,9 +802,7 @@ export default class DungeonScene extends Phaser.Scene {
                         difficulty: difficulties[difficultyIndex % difficulties.length], // Cycle through difficulties
                         sprite: this.getRandomEnemySprite(),
                         isBoss: false
-                    };
-                    console.log(`Created quiz box at (${x}, ${y}) with difficulty: ${newPos.difficulty}, sprite: ${newPos.sprite}`);
-                    positions.push(newPos);
+                    };positions.push(newPos);
                     difficultyIndex++; // Move to next difficulty
                 }
             }
@@ -868,9 +851,7 @@ export default class DungeonScene extends Phaser.Scene {
                     color: 0x9966FF, // All tiles appear as mystery tiles (purple)
                     icon: '❓', // All tiles show question mark
                     triggered: false
-                };
-                console.log(`Created mystery tile with hidden '${selectedTile.type}' effect at (${x}, ${y})`);
-                positions.push(newTile);
+                };positions.push(newTile);
             }
         }
         

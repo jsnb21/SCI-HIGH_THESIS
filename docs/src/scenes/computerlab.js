@@ -91,9 +91,7 @@ export default class ComputerLab extends Phaser.Scene {
 
         this.input.keyboard.on('keydown-R', () => {
             if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
-                onceOnlyFlags.flags['computerlab_tutorial'] = false;
-                console.log('Computer Lab tutorial flag reset');
-            }
+                onceOnlyFlags.flags['computerlab_tutorial'] = false;}
         });
     }
 
@@ -124,9 +122,7 @@ export default class ComputerLab extends Phaser.Scene {
         });
 
         // Create the carousel with selection callback and locked states
-        this.carousel.create(iconKeys, iconInfo, (selectedItem, index) => {
-            console.log('Selected:', selectedItem.heading);
-            // Transition to the roguelike game based on the selected course
+        this.carousel.create(iconKeys, iconInfo, (selectedItem, index) => {// Transition to the roguelike game based on the selected course
             if (selectedItem.heading === "Web Design") {
                 LoadingScreen.transitionToCourse(this, 'MainGameplay', 'Web Design Course - Roguelike Mode', { topic: 'webdesign' });
             } else if (selectedItem.heading === "Python") {
@@ -185,13 +181,9 @@ export default class ComputerLab extends Phaser.Scene {
 
         this.tutorialManager.init(tutorialSteps, {
             onComplete: () => {
-                onceOnlyFlags.setSeen('computerlab_tutorial');
-                console.log('Computer Lab tutorial completed!');
-            },
+                onceOnlyFlags.setSeen('computerlab_tutorial');},
             onSkip: () => {
-                onceOnlyFlags.setSeen('computerlab_tutorial');
-                console.log('Computer Lab tutorial skipped!');
-            }
+                onceOnlyFlags.setSeen('computerlab_tutorial');}
         });
     }
 

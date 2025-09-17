@@ -13,9 +13,7 @@ class SaveService {
             // Check if Firebase is available (it should be initialized by authService)
             if (typeof window !== 'undefined' && window.firebase && window.firebase.firestore) {
                 this.firestore = window.firebase.firestore();
-                this.isFirebaseAvailable = true;
-                console.log('SaveService: Firebase Firestore initialized');
-            } else {
+                this.isFirebaseAvailable = true;} else {
                 console.warn('SaveService: Firebase not available, using localStorage only');
             }
         } catch (error) {
@@ -129,9 +127,7 @@ async function saveGame() {
 
     // Always save to localStorage first (immediate backup)
     try {
-        localStorage.setItem(saveKey, JSON.stringify(saveData));
-        console.log('SaveService: Game saved to localStorage');
-    } catch (error) {
+        localStorage.setItem(saveKey, JSON.stringify(saveData));} catch (error) {
         console.error('SaveService: Failed to save to localStorage:', error);
     }
 
@@ -144,9 +140,7 @@ async function saveGame() {
                 .collection('gameData')
                 .doc('saveData');
 
-            await docRef.set(saveData);
-            console.log('SaveService: Game saved to Firebase');
-        } catch (error) {
+            await docRef.set(saveData);} catch (error) {
             console.error('SaveService: Failed to save to Firebase:', error);
             // Firebase save failed, but localStorage save succeeded, so continue
         }
@@ -167,9 +161,7 @@ async function hasExistingSave() {
                 .doc('saveData');
                 
             const doc = await docRef.get();
-            if (doc.exists) {
-                console.log('SaveService: Found save data in Firebase');
-                return true;
+            if (doc.exists) {return true;
             }
         } catch (error) {
             console.error('SaveService: Error checking Firebase save:', error);
@@ -179,9 +171,7 @@ async function hasExistingSave() {
     // Fall back to localStorage check
     const saveKey = getCurrentUserSaveKey();
     const hasLocal = localStorage.getItem(saveKey) !== null;
-    if (hasLocal) {
-        console.log('SaveService: Found save data in localStorage');
-    }
+    if (hasLocal) {}
     return hasLocal;
 }
 
@@ -201,10 +191,7 @@ async function loadGame() {
                 
             const doc = await docRef.get();
             if (doc.exists) {
-                saveData = doc.data();
-                console.log('SaveService: Loaded save data from Firebase');
-                
-                // Update localStorage with Firebase data (sync)
+                saveData = doc.data();// Update localStorage with Firebase data (sync)
                 const saveKey = getCurrentUserSaveKey();
                 localStorage.setItem(saveKey, JSON.stringify(saveData));
             }
@@ -219,9 +206,7 @@ async function loadGame() {
         const saveStr = localStorage.getItem(saveKey);
         if (saveStr) {
             try {
-                saveData = JSON.parse(saveStr);
-                console.log('SaveService: Loaded save data from localStorage');
-            } catch (e) {
+                saveData = JSON.parse(saveStr);} catch (e) {
                 console.error('SaveService: Error parsing localStorage save data:', e);
                 return null;
             }
@@ -237,10 +222,7 @@ async function clearCurrentUserSave() {
     const userData = getCurrentUserData();
     
     // Remove from localStorage
-    localStorage.removeItem(saveKey);
-    console.log('SaveService: Save data cleared from localStorage');
-    
-    // Remove from Firebase if available
+    localStorage.removeItem(saveKey);// Remove from Firebase if available
     if (userData && await saveService.ensureFirebaseReady()) {
         try {
             const docRef = saveService.firestore
@@ -249,9 +231,7 @@ async function clearCurrentUserSave() {
                 .collection('gameData')
                 .doc('saveData');
                 
-            await docRef.delete();
-            console.log('SaveService: Save data cleared from Firebase');
-        } catch (error) {
+            await docRef.delete();} catch (error) {
             console.error('SaveService: Failed to clear Firebase save data:', error);
         }
     }
@@ -261,9 +241,7 @@ async function clearCurrentUserSave() {
 async function syncSaveDataOnLogin() {
     const userData = getCurrentUserData();
     
-    if (!userData || !await saveService.ensureFirebaseReady()) {
-        console.log('SaveService: Cannot sync - user not authenticated or Firebase unavailable');
-        return false;
+    if (!userData || !await saveService.ensureFirebaseReady()) {return false;
     }
     
     try {
@@ -291,9 +269,7 @@ async function syncSaveDataOnLogin() {
                     
                     // Use whichever is more recent
                     if (localTime > firebaseTime) {
-                        shouldUseFirebaseData = false;
-                        console.log('SaveService: Local data is more recent, uploading to Firebase');
-                        // Upload local data to Firebase
+                        shouldUseFirebaseData = false;// Upload local data to Firebase
                         await docRef.set(localData);
                     }
                 } catch (error) {
@@ -302,9 +278,7 @@ async function syncSaveDataOnLogin() {
             }
             
             if (shouldUseFirebaseData) {
-                localStorage.setItem(saveKey, JSON.stringify(firebaseData));
-                console.log('SaveService: Synced Firebase data to localStorage');
-            }
+                localStorage.setItem(saveKey, JSON.stringify(firebaseData));}
             
             return true;
         } else {
@@ -314,9 +288,7 @@ async function syncSaveDataOnLogin() {
             
             if (localDataStr) {
                 const localData = JSON.parse(localDataStr);
-                await docRef.set(localData);
-                console.log('SaveService: Uploaded local save data to Firebase');
-                return true;
+                await docRef.set(localData);return true;
             }
         }
     } catch (error) {
@@ -379,16 +351,10 @@ async function saveStoryProgress(characterName, progressData) {
         progress: progressData,
         lastUpdated: new Date().toISOString(),
         timestamp: new Date().toISOString()
-    };
-
-    console.log('Saving story progress:', storyProgressData);
-
-    // Save to localStorage as backup
+    };// Save to localStorage as backup
     try {
         const localKey = `story_progress_${userData.user.studentId || userData.user.uid}_${characterName}`;
-        localStorage.setItem(localKey, JSON.stringify(storyProgressData));
-        console.log('SaveService: Story progress saved to localStorage');
-    } catch (error) {
+        localStorage.setItem(localKey, JSON.stringify(storyProgressData));} catch (error) {
         console.error('SaveService: Failed to save story progress to localStorage:', error);
     }
 
@@ -403,9 +369,7 @@ async function saveStoryProgress(characterName, progressData) {
                 // Create a unique key for this progress entry
                 const progressKey = `${userData.user.studentId || userData.user.uid}_${characterName}`;
                 
-                await progressRef.child(progressKey).set(storyProgressData);
-                console.log('SaveService: Story progress saved to Firebase Realtime Database');
-                return true;
+                await progressRef.child(progressKey).set(storyProgressData);return true;
             } else {
                 console.warn('SaveService: Firebase Realtime Database not available');
                 return false;
@@ -438,9 +402,7 @@ async function loadStoryProgress(characterName, studentId = null) {
                 const snapshot = await database.ref('story_progress').child(progressKey).once('value');
                 
                 if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    console.log('SaveService: Story progress loaded from Firebase:', data);
-                    return data.progress;
+                    const data = snapshot.val();return data.progress;
                 }
             }
         } catch (error) {
@@ -453,9 +415,7 @@ async function loadStoryProgress(characterName, studentId = null) {
         const localKey = `story_progress_${targetStudentId}_${characterName}`;
         const localData = localStorage.getItem(localKey);
         if (localData) {
-            const parsed = JSON.parse(localData);
-            console.log('SaveService: Story progress loaded from localStorage:', parsed);
-            return parsed.progress;
+            const parsed = JSON.parse(localData);return parsed.progress;
         }
     } catch (error) {
         console.error('SaveService: Failed to load story progress from localStorage:', error);
@@ -491,9 +451,7 @@ async function getAllStoryProgress(studentId = null) {
                     Object.keys(data).forEach(key => {
                         const progress = data[key];
                         allProgress[progress.character] = progress.progress;
-                    });
-                    console.log('SaveService: All story progress loaded from Firebase:', allProgress);
-                    return allProgress;
+                    });return allProgress;
                 }
             }
         } catch (error) {
@@ -511,9 +469,7 @@ async function getAllStoryProgress(studentId = null) {
                 const parsed = JSON.parse(localData);
                 allProgress[character] = parsed.progress;
             }
-        });
-        console.log('SaveService: All story progress loaded from localStorage:', allProgress);
-    } catch (error) {
+        });} catch (error) {
         console.error('SaveService: Failed to load story progress from localStorage:', error);
     }
 

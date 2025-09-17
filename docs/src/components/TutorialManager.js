@@ -577,33 +577,25 @@ export default class TutorialManager {
         if (this.scene && this.scene.input && this.scene.input.keyboard) {
             // T key - show first time tutorial
             this.scene.input.keyboard.on('keydown-T', () => {
-                if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {
-                    console.log('Showing first time tutorial (Ctrl+T)');
-                    this.scene.forceTutorial('firstTime');
+                if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {this.scene.forceTutorial('firstTime');
                 }
             });
             
             // C key - show combo tutorial
             this.scene.input.keyboard.on('keydown-C', () => {
-                if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {
-                    console.log('Showing combo tutorial (Ctrl+C)');
-                    this.scene.forceTutorial('combo');
+                if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {this.scene.forceTutorial('combo');
                 }
             });
             
             // H key - show low health tutorial
             this.scene.input.keyboard.on('keydown-H', () => {
-                if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {
-                    console.log('Showing low health tutorial (Ctrl+H)');
-                    this.scene.forceTutorial('lowHealth');
+                if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {this.scene.forceTutorial('lowHealth');
                 }
             });
             
             // R key - reset tutorial flags
             this.scene.input.keyboard.on('keydown-R', () => {
-                if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {
-                    console.log('Resetting tutorial flags (Ctrl+R)');
-                    this.scene.resetTutorialFlags();
+                if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {this.scene.resetTutorialFlags();
                     
                     // Reset Python-specific flags if available
                     if (this.scene.resetPythonTutorialFlags) {
@@ -616,9 +608,7 @@ export default class TutorialManager {
             if (this.scene.topic === 'python' || this.scene.courseTopic === 'Python') {
                 // S key - show Python syntax tutorial
                 this.scene.input.keyboard.on('keydown-S', () => {
-                    if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {
-                        console.log('Showing Python syntax tutorial (Ctrl+S)');
-                        if (this.scene.showPythonTutorial) {
+                    if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {if (this.scene.showPythonTutorial) {
                             this.scene.showPythonTutorial('syntaxError');
                         }
                     }
@@ -626,9 +616,7 @@ export default class TutorialManager {
                 
                 // P key - show Python concepts tutorial
                 this.scene.input.keyboard.on('keydown-P', () => {
-                    if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {
-                        console.log('Showing Python concepts tutorial (Ctrl+P)');
-                        if (this.scene.showPythonTutorial) {
+                    if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {if (this.scene.showPythonTutorial) {
                             this.scene.showPythonTutorial('pythonConcepts');
                         }
                     }
@@ -636,9 +624,7 @@ export default class TutorialManager {
                 
                 // M key - show Python timer tutorial
                 this.scene.input.keyboard.on('keydown-M', () => {
-                    if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {
-                        console.log('Showing Python timer tutorial (Ctrl+M)');
-                        if (this.scene.showPythonTutorial) {
+                    if (this.scene.input.keyboard.checkDown(this.scene.input.keyboard.addKey('CTRL'))) {if (this.scene.showPythonTutorial) {
                             this.scene.showPythonTutorial('timer');
                         }
                     }
@@ -680,10 +666,7 @@ export default class TutorialManager {
         
         // Don't completely disable scene input - let tutorial elements work
         // Instead, disable specific interactive objects
-        this.disableQuizElements();
-        
-        console.log('Tutorial: Scene interactions disabled (selective)');
-    }
+        this.disableQuizElements();}
     
     /**
      * Re-enable all scene interactions after tutorial
@@ -700,10 +683,7 @@ export default class TutorialManager {
         }
         
         // Re-enable quiz elements
-        this.enableQuizElements();
-        
-        console.log('Tutorial: Scene interactions enabled');
-    }
+        this.enableQuizElements();}
     
     /**
      * Disable specific quiz scene elements
@@ -760,10 +740,7 @@ export default class TutorialManager {
                     }
                 }
             });
-        }
-        
-        console.log(`Tutorial: Disabled ${this.disabledElements.length} interactive elements`);
-    }
+        }}
     
     /**
      * Check if an element is part of the tutorial system
@@ -864,10 +841,7 @@ export default class TutorialManager {
                     console.warn(`Could not re-enable ${type} element interaction:`, e);
                 }
             }
-        });
-        
-        console.log(`Tutorial: Re-enabled ${enabledCount} interactive elements`);
-        this.disabledElements = [];
+        });this.disabledElements = [];
     }
     
 }

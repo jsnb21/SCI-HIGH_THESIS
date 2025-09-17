@@ -98,7 +98,6 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.maxComboReached = 0;
         this.difficulty = 'medium'; // Default difficulty
 
-
         this.playerConfig = {
             maxHP: 100,
             currentHP: gameManager.getPlayerHP(), // Initialize from GameManager
@@ -160,10 +159,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             maxHP: 100,
             currentHP: gameManager.getPlayerHP(), // This should now be 100 after reset
             label: 'Player'
-        };
-        
-        console.log(`Player HP initialized for quiz: ${this.playerConfig.currentHP}/${this.playerConfig.maxHP}`);
-        this.enemyHPState = {
+        };this.enemyHPState = {
             currentHP: this.enemyConfig.maxHP,
             maxHP: this.enemyConfig.maxHP        };
         this.gameTimer = new GameTimer(this);
@@ -281,17 +277,11 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         this.currentQuestionStartTime = Date.now();
         
         // Sync playerConfig HP from GameManager before showing question
-        this.playerConfig.currentHP = gameManager.getPlayerHP();
-        console.log(`showQuestion: synced HP from GameManager: ${this.playerConfig.currentHP}`);
-        
-        if (!this.questions || this.currentQuestionIndex >= this.questions.length) {
+        this.playerConfig.currentHP = gameManager.getPlayerHP();if (!this.questions || this.currentQuestionIndex >= this.questions.length) {
             showVictory(this);
             return;
         }
-        const currentQuestion = this.questions[this.currentQuestionIndex];
-        console.log('Current question data:', currentQuestion);
-        
-        // Handle both "options" and "choices" property names
+        const currentQuestion = this.questions[this.currentQuestionIndex];// Handle both "options" and "choices" property names
         let { question, options, choices, type = 'multiple-choice' } = currentQuestion;
         
         // Handle true/false questions
@@ -300,19 +290,11 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             // Convert correctAnswer boolean to correctIndex
             if (typeof currentQuestion.correctAnswer === 'boolean') {
                 currentQuestion.correctIndex = currentQuestion.correctAnswer ? 0 : 1; // True = 0, False = 1
-            }
-            console.log('True/False question detected. Correct answer:', currentQuestion.correctAnswer, 'Correct index:', currentQuestion.correctIndex);
-        } else {
+            }} else {
             // Use choices if options is not available (for backward compatibility)
             if (!options && choices) {
-                options = choices;
-                console.log('Using "choices" property as options:', options);
-            }
-        }
-        
-        console.log('Destructured values - question:', question, 'options:', options, 'type:', type);
-        
-        // Validate question structure
+                options = choices;}
+        }// Validate question structure
         if (!question) {
             console.error('Invalid question structure - missing question text:', currentQuestion);
             return;
@@ -321,19 +303,11 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         // Validate and fix options for multiple choice questions
         if (type === 'multiple-choice') {
             if (!options || !Array.isArray(options) || options.length === 0) {
-                console.error('Invalid options for multiple choice question. Original options:', options);
-                console.log('Creating fallback options for question');
-                options = ['Option A', 'Option B', 'Option C', 'Option D'];
+                console.error('Invalid options for multiple choice question. Original options:', options);options = ['Option A', 'Option B', 'Option C', 'Option D'];
                 // Update the current question with fallback options
                 currentQuestion.options = options;
-                currentQuestion.correctIndex = 0; // Default to first option
-                console.log('Assigned fallback options:', options);
-            }
-        }
-        
-        console.log('Final options being passed:', options);
-        
-        this.cleanupQuestionElements();// Layout
+                currentQuestion.correctIndex = 0; // Default to first option}
+        }this.cleanupQuestionElements();// Layout
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2 + 100 * sf; // Move box further down (80 + 20)
         const boxWidth = 600 * sf;
@@ -409,26 +383,10 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
     }    damageCharacter(container, amount) {
         const sf = this.scaleFactor;
         let hp = container.getData('currentHP');
-        const maxHP = container.getData('maxHP');
-        
-        console.log(`Damage before: HP=${hp}, damage=${amount}, isPlayer=${container.getData('label') === 'Player'}`);
-        
-        hp = Phaser.Math.Clamp(hp - amount, 0, maxHP);
-        container.setData('currentHP', hp);
-        
-        console.log(`Damage after: HP=${hp}`);
-
-        const isPlayer = container.getData('label') === 'Player';        if (isPlayer) {
-            this.playerConfig.currentHP = hp;
-            
-            console.log(`Player HP updated: playerConfig.currentHP=${this.playerConfig.currentHP}, GameManager HP=${gameManager.getPlayerHP()}`);
-            
-            // Save HP to GameManager for persistence across scenes
-            gameManager.setPlayerHP(hp);
-            
-            console.log(`After saving to GameManager: ${gameManager.getPlayerHP()}`);
-            
-            // Update hearts for player
+        const maxHP = container.getData('maxHP');hp = Phaser.Math.Clamp(hp - amount, 0, maxHP);
+        container.setData('currentHP', hp);const isPlayer = container.getData('label') === 'Player';        if (isPlayer) {
+            this.playerConfig.currentHP = hp;// Save HP to GameManager for persistence across scenes
+            gameManager.setPlayerHP(hp);// Update hearts for player
             const hearts = container.getData('hearts');
             const maxHearts = 5;
             const currentHearts = Math.ceil(hp / 20); // 20 HP per heart
@@ -596,10 +554,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             // Check if enemy HP reached 0
             if (this.enemyContainer && this.enemyContainer.getData('currentHP') <= 0) {
                 this.battleWon = true;
-                this.enemyDefeated = true;
-                console.log('Enemy defeated in quiz scene! Flag set to true.');
-
-                this.awardQuizPoints();
+                this.enemyDefeated = true;this.awardQuizPoints();
                 
                 // Play death animation before showing victory screen
                 this.playEnemyDeathAnimation(() => {
@@ -916,12 +871,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         };
         
         // Award points through GameManager
-        const pointsEarned = gameManager.awardQuizPoints(quizResults);
-        
-        console.log(`Quiz completed! Earned ${pointsEarned} points.`);
-        console.log(`Stats: ${this.correctAnswers}/${this.questions.length} correct, Max combo: ${this.maxComboReached}, Avg time: ${averageAnswerTime.toFixed(1)}s`);
-        
-        return pointsEarned;
+        const pointsEarned = gameManager.awardQuizPoints(quizResults);return pointsEarned;
     }
     
     /**
@@ -977,10 +927,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
         const steps = prepareTutorialSteps(this, tutorialType);
         
         const callbacks = {
-            onComplete: () => {
-                console.log(`Tutorial '${tutorialType}' completed`);
-                
-                // Mark first-time tutorial as seen in localStorage
+            onComplete: () => {// Mark first-time tutorial as seen in localStorage
                 if (tutorialType === 'firstTime') {
                     localStorage.setItem('sci-high-tutorial-seen', 'true');
                 }
@@ -990,10 +937,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                     this.gameTimer.resume();
                 }
             },
-            onSkip: () => {
-                console.log(`Tutorial '${tutorialType}' skipped`);
-                
-                // Mark as seen even if skipped
+            onSkip: () => {// Mark as seen even if skipped
                 if (tutorialType === 'firstTime') {
                     localStorage.setItem('sci-high-tutorial-seen', 'true');
                 }
@@ -1003,9 +947,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
                     this.gameTimer.resume();
                 }
             },
-            onStepComplete: (stepIndex) => {
-                console.log(`Tutorial step ${stepIndex} completed`);
-            }
+            onStepComplete: (stepIndex) => {}
         };
         
         this.tutorialManager.init(steps, callbacks);
@@ -1043,23 +985,13 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
     /**
      * Override checkAnswer to respect tutorial state
      */
-    checkAnswer(selectedIndex, userAnswer = null) {
-        console.log('checkAnswer called with:', { selectedIndex, userAnswer, gameOverState: this.gameOverState, isTutorialBlocking: this.isTutorialBlocking() });
-        
-        // Block answer processing during tutorial
-        if (this.isTutorialBlocking()) {
-            console.log('Answer blocked: Tutorial is active');
-            return;
+    checkAnswer(selectedIndex, userAnswer = null) {// Block answer processing during tutorial
+        if (this.isTutorialBlocking()) {return;
         }
         
         // Block answer processing if game is over
-        if (this.gameOverState) {
-            console.log('Answer blocked: Game is over');
-            return;
-        }
-        
-        console.log('Processing answer...');
-        // Continue with normal answer processing
+        if (this.gameOverState) {return;
+        }// Continue with normal answer processing
         return super.checkAnswer ? super.checkAnswer(selectedIndex, userAnswer) : this.processAnswerLogic(selectedIndex, userAnswer);
     }
     
@@ -1139,10 +1071,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
             // Check if enemy HP reached 0
             if (this.enemyContainer && this.enemyContainer.getData('currentHP') <= 0) {
                 this.battleWon = true;
-                this.enemyDefeated = true;
-                console.log('Enemy defeated in quiz scene! Flag set to true.');
-
-                this.awardQuizPoints();
+                this.enemyDefeated = true;this.awardQuizPoints();
                 
                 // Play death animation before showing victory screen
                 this.playEnemyDeathAnimation(() => {
@@ -1244,15 +1173,11 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
     
     // Override any fill-in-the-blank answer submission
     submitAnswer(answer) {
-        if (this.isTutorialBlocking()) {
-            console.log('Answer submission blocked: Tutorial is active');
-            return;
+        if (this.isTutorialBlocking()) {return;
         }
         
         // Block answer submission if game is over
-        if (this.gameOverState) {
-            console.log('Answer submission blocked: Game is over');
-            return;
+        if (this.gameOverState) {return;
         }
         
         // Continue with normal answer submission
@@ -1266,9 +1191,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
     
     // Override drag and drop handling
     handleDragDrop(dragObject, dropZone) {
-        if (this.isTutorialBlocking()) {
-            console.log('Drag and drop blocked: Tutorial is active');
-            return;
+        if (this.isTutorialBlocking()) {return;
         }
         
         // Continue with normal drag and drop processing
@@ -1279,9 +1202,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
     
     // Override power-up usage
     usePowerUp(powerUpType) {
-        if (this.isTutorialBlocking()) {
-            console.log('Power-up usage blocked: Tutorial is active');
-            return;
+        if (this.isTutorialBlocking()) {return;
         }
         
         // Continue with normal power-up usage
@@ -1292,9 +1213,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
     
     // Override pause/resume functionality
     pauseGame() {
-        if (this.isTutorialBlocking()) {
-            console.log('Game pause blocked: Tutorial is active');
-            return;
+        if (this.isTutorialBlocking()) {return;
         }
         
         // Continue with normal pause
@@ -1304,9 +1223,7 @@ export default class BaseQuizScene extends Phaser.Scene {    constructor(config)
     }
     
     resumeGame() {
-        if (this.isTutorialBlocking()) {
-            console.log('Game resume blocked: Tutorial is active');
-            return;
+        if (this.isTutorialBlocking()) {return;
         }
         
         // Continue with normal resume

@@ -410,10 +410,7 @@ function initializeNotifications() {
 
   // Additional global aliases to ensure compatibility
   window.notify = notifications;
-  window.notificationSystem = notifications;
-
-  console.log('✅ Notification system initialized');
-}
+  window.notificationSystem = notifications;}
 
 // Initialize immediately or when DOM is ready
 if (document.readyState === 'loading') {

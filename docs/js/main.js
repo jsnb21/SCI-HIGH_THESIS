@@ -1,11 +1,7 @@
 // SCI-HIGH Main Application Logic
 
 // Global Modal Functions
-function showLoginModal() {
-  console.log('showLoginModal called');
-  const loginModal = document.getElementById('login-modal');
-  console.log('Login modal element:', loginModal);
-  if (loginModal) {
+function showLoginModal() {const loginModal = document.getElementById('login-modal');if (loginModal) {
     loginModal.classList.remove('hidden');
     showUserTypeSelection();
   } else {
@@ -42,9 +38,7 @@ function showRegistrationSuccessModal(fullName, studentId, academicLevel) {
   backToIndexBtn.parentNode.replaceChild(newBackToIndexBtn, backToIndexBtn);
   
   // Add fresh event listeners
-  newStartGameBtn.addEventListener('click', () => {
-    console.log('Start Game clicked');
-    modal.classList.add('hidden');
+  newStartGameBtn.addEventListener('click', () => {modal.classList.add('hidden');
     if (window.authManager && typeof window.authManager.redirectToGame === 'function') {
       window.authManager.redirectToGame();
     } else {
@@ -54,9 +48,7 @@ function showRegistrationSuccessModal(fullName, studentId, academicLevel) {
     }
   });
   
-  newBackToIndexBtn.addEventListener('click', () => {
-    console.log('Back to Index clicked');
-    modal.classList.add('hidden');
+  newBackToIndexBtn.addEventListener('click', () => {modal.classList.add('hidden');
     // Stay on the current page
   });
 }

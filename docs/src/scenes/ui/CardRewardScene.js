@@ -76,10 +76,7 @@ export default class CardRewardScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(10);
 
         // Add keyboard input
-        this.input.keyboard.on('keydown-ESC', this.skipReward, this);
-        
-        console.log('CardRewardScene created - ready for selection');
-    }    generateCardOptions() {
+        this.input.keyboard.on('keydown-ESC', this.skipReward, this);}    generateCardOptions() {
         const cardTypes = ['quiz', 'heal'];
         const numCards = this.isBossReward ? 4 : 3;
         
@@ -234,21 +231,10 @@ export default class CardRewardScene extends Phaser.Scene {
         const spacing = 20;
         const totalWidth = (cardWidth * this.cardData.length) + (spacing * (this.cardData.length - 1));
         const startX = (this.scale.width - totalWidth) / 2 + cardWidth / 2;
-        const cardY = this.scale.height / 2;
-
-        console.log(`Creating ${this.cardData.length} cards:`);
-        console.log(`Screen size: ${this.scale.width} x ${this.scale.height}`);
-        console.log(`Card dimensions: ${cardWidth} x ${cardHeight}`);
-        console.log(`Total width needed: ${totalWidth}`);
-        console.log(`Start X: ${startX}, Card Y: ${cardY}`);
-
-        this.cards = [];
+        const cardY = this.scale.height / 2;this.cards = [];
 
         this.cardData.forEach((cardData, index) => {
-            const cardX = startX + (cardWidth + spacing) * index;
-            console.log(`Card ${index} position: (${cardX}, ${cardY})`);
-            
-            // Ensure card positions are valid
+            const cardX = startX + (cardWidth + spacing) * index;// Ensure card positions are valid
             if (cardX < cardWidth / 2 || cardX > this.scale.width - cardWidth / 2) {
                 console.warn(`Card ${index} X position ${cardX} is out of bounds!`);
             }
@@ -352,11 +338,7 @@ export default class CardRewardScene extends Phaser.Scene {
 
         // Store card data reference
         container.cardData = cardData;
-        container.cardIndex = index;
-
-        console.log(`Created card ${index}: ${cardData.name} at position (${x}, ${y})`);
-
-        // Add entrance animation
+        container.cardIndex = index;// Add entrance animation
         container.setAlpha(0);
         container.setScale(0.5);
         this.tweens.add({
@@ -388,11 +370,7 @@ export default class CardRewardScene extends Phaser.Scene {
         };
         return icons[effect] || '⭐';
     }onCardHover(container, isHovering) {
-        if (this.isSelecting) return;
-
-        console.log(`Card hover: ${isHovering ? 'enter' : 'exit'} - Card ${container.cardIndex}`);
-
-        if (isHovering) {
+        if (this.isSelecting) return;if (isHovering) {
             // Play hover sound
             if (this.sound.get('cardHover')) {
                 this.sound.play('cardHover', { volume: 0.3 });
@@ -410,17 +388,8 @@ export default class CardRewardScene extends Phaser.Scene {
             duration: 200,
             ease: 'Back.easeOut'
         });
-    }    selectCard(index) {
-        console.log(`selectCard called with index ${index}, isSelecting: ${this.isSelecting}`);
-        
-        if (this.isSelecting) {
-            console.log('Selection blocked - already selecting');
-            return;
-        }
-        
-        console.log(`Selecting card ${index}: ${this.cardData[index].name}`);
-        
-        this.isSelecting = true;
+    }    selectCard(index) {if (this.isSelecting) {return;
+        }this.isSelecting = true;
         this.selectedCard = this.cardData[index];
 
         // Play selection sound
@@ -521,10 +490,7 @@ export default class CardRewardScene extends Phaser.Scene {
             case 'double_score':
                 gameManager.addPlayerBuff('double_score', card.value);
                 break;
-        }
-        
-        console.log(`Applied card effect: ${card.name} - ${card.description}`);
-    }
+        }}
 
     skipReward() {
         if (this.isSelecting) return;
@@ -550,8 +516,5 @@ export default class CardRewardScene extends Phaser.Scene {
         this.cardData = [];
         
         // Remove any event listeners
-        this.input.keyboard.off('keydown-ESC', this.skipReward, this);
-        
-        console.log('CardRewardScene shutdown - state reset');
-    }
+        this.input.keyboard.off('keydown-ESC', this.skipReward, this);}
 }

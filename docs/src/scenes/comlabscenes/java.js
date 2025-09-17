@@ -49,7 +49,6 @@ export default class JavaScene extends Phaser.Scene {
                 resetTimer: true   // Set to false to continue from previous time
                  });
 
-                
             },
         });
 

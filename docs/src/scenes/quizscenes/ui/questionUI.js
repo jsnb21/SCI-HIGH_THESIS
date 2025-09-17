@@ -7,11 +7,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
     if (!scene || !scene.add) {
         console.error('Scene is not properly initialized in createQuestionAndOptions');
         return null;
-    }
-    
-    console.log('createQuestionAndOptions called with options:', options, 'questionType:', questionType);
-    
-    // Container for question and options
+    }// Container for question and options
     const container = scene.add.container(0, 0).setDepth(121);
 
     // Enhanced question text with background
@@ -60,9 +56,7 @@ export function createQuestionAndOptions(scene, centerX, centerY, boxWidth, boxH
         if (!options || !Array.isArray(options)) {
             console.warn('Invalid options in questionUI, creating fallback:', options);
             options = ['Option A', 'Option B', 'Option C', 'Option D'];
-        }
-        console.log('Calling createMultipleChoiceOptions with options:', options);
-        createMultipleChoiceOptions(scene, container, centerX, centerY, boxWidth, boxHeight, questionTextY, options, sf, onSelect);
+        }createMultipleChoiceOptions(scene, container, centerX, centerY, boxWidth, boxHeight, questionTextY, options, sf, onSelect);
     }
 
     scene.quizElements.push(container);

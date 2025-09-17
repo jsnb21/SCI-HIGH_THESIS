@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import CourseSelectionUI from '/src/ui/CourseSelectionUI.js';
 import { createBackButton } from '/src/components/buttons/backbutton.js';
 
-
 export default class CSProgrammingScene extends Phaser.Scene {
     constructor() {
         super({ key: 'CSProgrammingScene' });

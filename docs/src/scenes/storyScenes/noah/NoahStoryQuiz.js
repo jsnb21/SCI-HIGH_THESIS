@@ -15,11 +15,7 @@ export default class NoahStoryQuiz extends Phaser.Scene {
         this.dialogueBox = null;
     }
 
-    init(data) {
-        console.log('NoahStoryQuiz init called with data:', data);
-        this.chapterType = data?.chapter || 'html';
-        console.log('Chapter type set to:', this.chapterType);
-        this.loadQuestions();
+    init(data) {this.chapterType = data?.chapter || 'html';this.loadQuestions();
     }
 
     preload() {
@@ -134,9 +130,7 @@ export default class NoahStoryQuiz extends Phaser.Scene {
             ]
         };
         
-        this.questions = questionSets[this.chapterType] || questionSets.html;
-        console.log('Questions loaded for chapter:', this.chapterType, 'Count:', this.questions.length);
-    }
+        this.questions = questionSets[this.chapterType] || questionSets.html;}
 
     showQuestion() {
         const { width, height } = this.scale;

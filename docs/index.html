@@ -1063,12 +1063,8 @@
       let globalScreenshotsModal = null;
 
       // Global Modal Functions (defined early for immediate onclick access)
-      function showLoginModal() {
-        console.log('showLoginModal called');
-        // Use global variable or find element
-        const loginModal = globalLoginModal || document.getElementById('login-modal');
-        console.log('Login modal element:', loginModal);
-        if (loginModal) {
+      function showLoginModal() {// Use global variable or find element
+        const loginModal = globalLoginModal || document.getElementById('login-modal');if (loginModal) {
           loginModal.classList.remove('hidden');
           showUserTypeSelection();
         } else {
@@ -1142,9 +1138,7 @@
 
       // Additional safety check for GitHub Pages
       if (typeof window !== 'undefined') {
-        window.addEventListener('load', function() {
-          console.log('Window loaded, ensuring modal access...');
-          window.ensureModalAccess();
+        window.addEventListener('load', function() {window.ensureModalAccess();
         });
       }
 
@@ -1193,13 +1187,7 @@
         async ensureAuthenticated() {
           try {
             if (typeof firebase !== 'undefined' && firebase.auth) {
-              if (!firebase.auth().currentUser) {
-                console.log('No authenticated user found, signing in anonymously...');
-                await firebase.auth().signInAnonymously();
-                console.log('✅ Anonymous authentication successful');
-              } else {
-                console.log('✅ User already authenticated:', firebase.auth().currentUser.uid);
-              }
+              if (!firebase.auth().currentUser) {await firebase.auth().signInAnonymously();} else {}
               return true;
             } else {
               console.warn('⚠️ Firebase Auth not available');
@@ -1213,10 +1201,7 @@
 
         // Debug function to test Firebase connectivity
         async testFirebaseConnection() {
-          try {
-            console.log('Testing Firebase connection...');
-            
-            if (typeof firebase === 'undefined') {
+          try {if (typeof firebase === 'undefined') {
               throw new Error('Firebase not loaded');
             }
             
@@ -1233,12 +1218,7 @@
                 await firebase.database().ref('test/connection').set({
                   timestamp: new Date().toISOString(),
                   test: true
-                });
-                console.log('✅ Realtime Database write test successful');
-                
-                const snapshot = await firebase.database().ref('test/connection').once('value');
-                console.log('✅ Realtime Database read test successful:', snapshot.val());
-              } catch (dbError) {
+                });const snapshot = await firebase.database().ref('test/connection').once('value');} catch (dbError) {
                 console.warn('❌ Realtime Database test failed:', dbError);
               }
             } else {
@@ -1248,23 +1228,15 @@
             // Test Firestore (optional)
             if (firebase.firestore) {
               try {
-                const testDoc = await firebase.firestore().collection('test').doc('connection').get();
-                console.log('✅ Firestore read test successful');
-                
-                await firebase.firestore().collection('test').doc('connection').set({
+                const testDoc = await firebase.firestore().collection('test').doc('connection').get();await firebase.firestore().collection('test').doc('connection').set({
                   timestamp: new Date().toISOString(),
                   test: true
-                });
-                console.log('✅ Firestore write test successful');
-              } catch (firestoreError) {
+                });} catch (firestoreError) {
                 console.warn('❌ Firestore test failed (likely security rules):', firestoreError);
               }
             } else {
               console.warn('Firestore not available');
-            }
-            
-            console.log('Firebase connection test completed');
-            return { success: true };
+            }return { success: true };
             
           } catch (error) {
             console.error('Firebase connection test failed:', error);
@@ -1316,13 +1288,8 @@
             });
 
             if (window.firebaseConfig) {
-              await window.firebaseConfig.initializeFirebase();
-              console.log('Firebase initialized securely');
-              
-              // Ensure auth is ready
-              firebase.auth().onAuthStateChanged(() => {
-                console.log('Firebase Auth initialized');
-              });
+              await window.firebaseConfig.initializeFirebase();// Ensure auth is ready
+              firebase.auth().onAuthStateChanged(() => {});
             } else {
               console.error('Firebase configuration not loaded');
             }
@@ -1397,10 +1364,7 @@
         }
 
         async loginStudent(studentId, password = null) {
-          try {
-            console.log('Attempting student login for ID:', studentId);
-            
-            // Sample student accounts for development
+          try {// Sample student accounts for development
             const sampleStudents = {
               '24-2024-001': {
                 profile: {
@@ -1432,9 +1396,7 @@
             };
 
             // Check sample accounts first (no password needed - only student ID)
-            if (sampleStudents[studentId]) {
-              console.log('Found sample student, logging in...');
-              this.currentUser = {
+            if (sampleStudents[studentId]) {this.currentUser = {
                 uid: 'stud_' + studentId.replace(/-/g, '_'),
                 studentId: studentId,
                 type: 'student',
@@ -1450,22 +1412,15 @@
             }
 
             // Production Firebase login (using Realtime Database when available)
-            if (typeof firebase !== 'undefined' && firebase.database) {
-              console.log('Using Firebase for student login...');
-              
-              // Ensure authentication before database access
+            if (typeof firebase !== 'undefined' && firebase.database) {// Ensure authentication before database access
               await this.ensureAuthenticated();
               
               // Query student by student ID in Realtime Database
               const studentsSnapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
               
-              if (!studentsSnapshot.exists()) {
-                console.log('Student not found in database, creating new account...');
-                // Student doesn't exist, create a new account automatically
+              if (!studentsSnapshot.exists()) {// Student doesn't exist, create a new account automatically
                 const newStudent = await this.createStudentAccount(studentId);
-                if (newStudent.success) {
-                  console.log('New student account created successfully');
-                  this.currentUser = {
+                if (newStudent.success) {this.currentUser = {
                     uid: newStudent.docId,
                     studentId: studentId,
                     type: 'student',
@@ -1481,10 +1436,7 @@
                 } else {
                   throw new Error(newStudent.error);
                 }
-              }
-
-              console.log('Found existing student in database, loading data...');
-              // Get the first (and should be only) student with this ID
+              }// Get the first (and should be only) student with this ID
               const studentData = Object.values(studentsSnapshot.val())[0];
               const studentKey = Object.keys(studentsSnapshot.val())[0];
 
@@ -1493,12 +1445,8 @@
               try {
                 const careerStatsSnapshot = await firebase.database().ref(`student_career_stats/${studentId}`).once('value');
                 if (careerStatsSnapshot.exists()) {
-                  careerStatsData = careerStatsSnapshot.val();
-                  console.log('Found career stats data for student:', careerStatsData);
-                }
-              } catch (error) {
-                console.log('No career stats found for student (this is normal for new students):', error.message);
-              }
+                  careerStatsData = careerStatsSnapshot.val();}
+              } catch (error) {}
 
               // Merge career stats data with main student data if available
               const mergedStudentData = { ...studentData };
@@ -1535,14 +1483,10 @@
               this.updateUserInterface();
 
               return { success: true, user: this.currentUser };
-            } else {
-              console.log('Firebase not available, using local storage fallback...');
-              // Fallback: Create account locally if Firebase not available
+            } else {// Fallback: Create account locally if Firebase not available
               const localStudents = JSON.parse(localStorage.getItem('sci_high_local_students') || '{}');
               
-              if (!localStudents[studentId]) {
-                console.log('Creating new local student account...');
-                // Create new local account
+              if (!localStudents[studentId]) {// Create new local account
                 localStudents[studentId] = this.createLocalStudentAccount(studentId);
                 localStorage.setItem('sci_high_local_students', JSON.stringify(localStudents));
                 
@@ -1559,9 +1503,7 @@
                 this.updateUserInterface();
 
                 return { success: true, user: this.currentUser, isNewAccount: true };
-              } else {
-                console.log('Found existing local student account...');
-                // Login with existing local account
+              } else {// Login with existing local account
                 this.currentUser = {
                   uid: 'local_' + studentId.replace(/-/g, '_'),
                   studentId: studentId,
@@ -1584,29 +1526,18 @@
 
         // Create a new student account in Firebase
         async createStudentAccount(studentId) {
-          try {
-            console.log('Creating new student account for ID:', studentId);
-            
-            // Ensure authentication before database operations
+          try {// Ensure authentication before database operations
             await this.ensureAuthenticated();
             
-            // Enhanced duplicate check - check multiple ways student might already exist
-            console.log('Performing comprehensive duplicate check...');
-            
-            // Check 1: Query by studentId (primary check)
+            // Enhanced duplicate check - check multiple ways student might already exist// Check 1: Query by studentId (primary check)
             const existingByIdSnapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
-            if (existingByIdSnapshot.exists()) {
-              console.log('Student already exists with this Student ID:', studentId);
-              throw new Error(`Student account already exists for ID: ${studentId}. Please contact administrator if you cannot access your account.`);
+            if (existingByIdSnapshot.exists()) {throw new Error(`Student account already exists for ID: ${studentId}. Please contact administrator if you cannot access your account.`);
             }
             
             // Check 2: Check career stats to see if student has been playing
             const careerStatsSnapshot = await firebase.database().ref('student_career_stats').child(studentId).once('value');
             if (careerStatsSnapshot.exists()) {
-              const careerData = careerStatsSnapshot.val();
-              console.log('Found existing career stats for student:', studentId);
-              
-              // If career stats exist but no main student record, this might be a data inconsistency
+              const careerData = careerStatsSnapshot.val();// If career stats exist but no main student record, this might be a data inconsistency
               console.warn('Career stats exist but no main student record found. Creating main record...');
               // Continue with creation but use info from career stats if available
             }
@@ -1620,16 +1551,10 @@
             if (recentStudentsSnapshot.exists()) {
               const recentStudents = recentStudentsSnapshot.val();
               for (const [key, student] of Object.entries(recentStudents)) {
-                if (student.studentId === studentId) {
-                  console.log('Found duplicate student created in last 24 hours:', studentId);
-                  throw new Error(`Student account for ID ${studentId} was recently created. Please try logging in instead.`);
+                if (student.studentId === studentId) {throw new Error(`Student account for ID ${studentId} was recently created. Please try logging in instead.`);
                 }
               }
-            }
-            
-            console.log('No duplicates found, proceeding with account creation...');
-            
-            const studentData = {
+            }const studentData = {
               studentId,
               fullName: `Student ${studentId}`, // Default name, can be updated later
               academicInfo: {
@@ -1670,11 +1595,7 @@
 
             // Use studentId as the key instead of auto-generated key for better consistency
             const studentRef = firebase.database().ref('students').child(studentId);
-            await studentRef.set(studentData);
-            
-            console.log('Student account created successfully with key:', studentId);
-            
-            return { 
+            await studentRef.set(studentData);return { 
               success: true, 
               docId: studentId, // Return the studentId as the document ID
               studentData: studentData
@@ -1916,13 +1837,9 @@
             // Save to Firebase if available (using Realtime Database)
             if (typeof firebase !== 'undefined' && firebase.database) {
               const adminRef = firebase.database().ref('professors').child('admin_system');
-              await adminRef.set(adminData);
-              console.log('Admin user saved to Realtime Database');
-            } else if (typeof firebase !== 'undefined' && firebase.firestore) {
+              await adminRef.set(adminData);} else if (typeof firebase !== 'undefined' && firebase.firestore) {
               const adminRef = firebase.firestore().collection('professors').doc('admin_system');
-              await adminRef.set(adminData);
-              console.log('Admin user saved to Firestore (fallback)');
-            }
+              await adminRef.set(adminData);}
 
             this.currentUser = {
               uid: 'admin_system',
@@ -1968,17 +1885,9 @@
             
             if (!firebase.auth || !firebase.database) {
               throw new Error('Firebase services not available');
-            }
-
-            console.log('Creating professor user:', { email, fullName, institution });
-
-            // Create Firebase Auth user
+            }// Create Firebase Auth user
             const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-            const user = userCredential.user;
-            
-            console.log('Firebase Auth user created:', user.uid);
-
-            // Create professor profile in Realtime Database
+            const user = userCredential.user;// Create professor profile in Realtime Database
             const professorData = {
               fullName: fullName,
               email: email,
@@ -1990,17 +1899,11 @@
               permissions: ['read', 'write'],
               classes: [],
               students: []
-            };
-
-            console.log('Saving professor data to Realtime Database...');
-            
-            // Add retry logic for Database write
+            };// Add retry logic for Database write
             let retries = 3;
             while (retries > 0) {
               try {
-                await firebase.database().ref('professors').child(user.uid).set(professorData);
-                console.log('Professor data saved successfully');
-                break;
+                await firebase.database().ref('professors').child(user.uid).set(professorData);break;
               } catch (databaseError) {
                 console.error(`Database write attempt failed (${4-retries}/3):`, databaseError);
                 retries--;
@@ -2010,15 +1913,7 @@
                 // Wait 1 second before retry
                 await new Promise(resolve => setTimeout(resolve, 1000));
               }
-            }
-
-            console.log('Professor user created successfully:', {
-              uid: user.uid,
-              email: email,
-              fullName: fullName
-            });
-
-            return {
+            }return {
               success: true,
               uid: user.uid,
               email: email,
@@ -2046,51 +1941,23 @@
       }
 
       // Global debug function for testing authentication
-      window.debugAuth = async () => {
-        console.log('🔍 Debugging Authentication...');
-        
-        try {
-          // Test Firebase availability
-          console.log('Firebase available:', typeof firebase !== 'undefined');
-          if (typeof firebase !== 'undefined') {
-            console.log('Firebase Auth available:', !!firebase.auth);
-            console.log('Firebase Database available:', !!firebase.database);
-            
-            if (firebase.auth) {
-              console.log('Current user:', firebase.auth().currentUser);
-              
-              // Test authentication
-              if (!firebase.auth().currentUser) {
-                console.log('Attempting anonymous authentication...');
-                await firebase.auth().signInAnonymously();
-                console.log('✅ Authentication successful');
-              }
+      window.debugAuth = async () => {try {
+          // Test Firebase availabilityif (typeof firebase !== 'undefined') {if (firebase.auth) {// Test authentication
+              if (!firebase.auth().currentUser) {await firebase.auth().signInAnonymously();}
               
               // Test database access
-              if (firebase.database) {
-                console.log('Testing database read access...');
-                const testRef = firebase.database().ref('test/debug');
+              if (firebase.database) {const testRef = firebase.database().ref('test/debug');
                 await testRef.set({ timestamp: new Date().toISOString() });
-                const snapshot = await testRef.once('value');
-                console.log('✅ Database access successful:', snapshot.val());
-              }
+                const snapshot = await testRef.once('value');}
             }
-          }
-          
-          console.log('🎉 Debug completed successfully!');
-        } catch (error) {
+          }} catch (error) {
           console.error('❌ Debug failed:', error);
         }
       };
 
       // Test student login function for debugging
-      window.debugStudentLogin = async (studentId = '20-0774-140') => {
-        console.log(`🔍 Debugging student login for ID: ${studentId}`);
-        
-        try {
-          const result = await authManager.loginStudent(studentId);
-          console.log('Login result:', result);
-          return result;
+      window.debugStudentLogin = async (studentId = '20-0774-140') => {try {
+          const result = await authManager.loginStudent(studentId);return result;
         } catch (error) {
           console.error('❌ Student login debug failed:', error);
           return { success: false, error: error.message };
@@ -2101,13 +1968,8 @@
       const authManager = new AuthManager();
       
       // Add offline fallback for localhost testing
-      authManager.createOfflineTestAccounts = function() {
-        console.log('Creating offline test accounts for localhost development');
-        
-        // Add a simple offline authentication fallback
-        this.loginStudentOffline = function(studentId) {
-          console.log('Using offline student login for:', studentId);
-          this.currentUser = {
+      authManager.createOfflineTestAccounts = function() {// Add a simple offline authentication fallback
+        this.loginStudentOffline = function(studentId) {this.currentUser = {
             uid: 'offline_' + studentId,
             studentId: studentId,
             type: 'student',
@@ -2122,9 +1984,7 @@
           return { success: true, user: this.currentUser, isNewAccount: true };
         };
         
-        this.loginGeneralOffline = function(email) {
-          console.log('Using offline general login for:', email);
-          this.currentUser = {
+        this.loginGeneralOffline = function(email) {this.currentUser = {
             uid: 'offline_' + email.replace('@', '_'),
             email: email,
             type: 'general',
@@ -2140,35 +2000,20 @@
         };
         
         // Enhanced student profile methods
-        this.getStudentProfile = async function(studentId) {
-          console.log('getStudentProfile called with studentId:', studentId);
-          
-          try {
+        this.getStudentProfile = async function(studentId) {try {
             // Try to get from Firebase first
-            if (typeof firebase !== 'undefined' && firebase.database) {
-              console.log('Querying Firebase for student:', studentId);
-              await this.ensureAuthenticated(); // Make sure we're authenticated
+            if (typeof firebase !== 'undefined' && firebase.database) {await this.ensureAuthenticated(); // Make sure we're authenticated
               
               const snapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
-              const data = snapshot.val();
-              console.log('Firebase query result:', data);
-              
-              if (data) {
+              const data = snapshot.val();if (data) {
                 const studentKey = Object.keys(data)[0];
-                const studentData = data[studentKey];
-                console.log('Found student in Firebase:', studentData);
-                
-                // Also check for career stats data which might have additional profile info
+                const studentData = data[studentKey];// Also check for career stats data which might have additional profile info
                 let careerStatsData = null;
                 try {
                   const careerStatsSnapshot = await firebase.database().ref(`student_career_stats/${studentId}`).once('value');
                   if (careerStatsSnapshot.exists()) {
-                    careerStatsData = careerStatsSnapshot.val();
-                    console.log('Found career stats data for student:', careerStatsData);
-                  }
-                } catch (error) {
-                  console.log('No career stats found for student (this is normal for new students):', error.message);
-                }
+                    careerStatsData = careerStatsSnapshot.val();}
+                } catch (error) {}
 
                 // Merge career stats data with main student data if available
                 const mergedStudentData = { ...studentData };
@@ -2183,26 +2028,15 @@
                   if (careerStatsData.firstName && careerStatsData.lastName) {
                     mergedStudentData.fullName = `${careerStatsData.firstName} ${careerStatsData.lastName}`;
                   }
-                }
-                
-                console.log('Merged student data:', mergedStudentData);
-                return mergedStudentData;
-              } else {
-                console.log('No student found in Firebase with studentId:', studentId);
-              }
-            } else {
-              console.log('Firebase database not available');
-            }
+                }return mergedStudentData;
+              } else {}
+            } else {}
           } catch (error) {
             console.warn('Firebase getStudentProfile failed:', error);
           }
           
-          // Fallback to offline storage
-          console.log('Checking offline storage...');
-          const offlineStudents = JSON.parse(localStorage.getItem('sci_high_offline_students') || '[]');
-          const offlineResult = offlineStudents.find(s => s.studentId === studentId) || null;
-          console.log('Offline storage result:', offlineResult);
-          return offlineResult;
+          // Fallback to offline storageconst offlineStudents = JSON.parse(localStorage.getItem('sci_high_offline_students') || '[]');
+          const offlineResult = offlineStudents.find(s => s.studentId === studentId) || null;return offlineResult;
         };
         
         this.loginStudentWithProfile = async function(studentId, profileData) {
@@ -2295,10 +2129,7 @@
           return this.loginStudentOfflineWithProfile(studentId, profileData);
         };
         
-        this.loginStudentOfflineWithProfile = function(studentId, profileData) {
-          console.log('Using offline student login with profile for:', studentId);
-          
-          const studentData = {
+        this.loginStudentOfflineWithProfile = function(studentId, profileData) {const studentData = {
             studentId,
             firstName: profileData.firstName,
             lastName: profileData.lastName,
@@ -2340,10 +2171,7 @@
       authManager.createOfflineTestAccounts();
 
       // DOM-dependent initialization (run after DOM loads)
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOMContentLoaded fired');
-        
-        // Initialize global modal variables
+      document.addEventListener('DOMContentLoaded', function() {// Initialize global modal variables
         globalLoginModal = document.getElementById('login-modal');
         globalScreenshotsModal = document.getElementById('screenshots-modal');
         
@@ -2357,25 +2185,12 @@
           'general-login-form': document.getElementById('general-login-form'),
           'general-register-form': document.getElementById('general-register-form'),
           'guest-option': document.getElementById('guest-option')
-        };
-        
-        console.log('Critical elements check:');
-        Object.entries(criticalElements).forEach(([id, element]) => {
-          console.log(`${id}:`, element ? '✅ Found' : '❌ Missing');
-        });
+        };Object.entries(criticalElements).forEach(([id, element]) => {});
         
         // Modal Management - Use global variables
         const loginModal = globalLoginModal;
         const screenshotsModal = globalScreenshotsModal;
-        const startGameBtn = document.getElementById('start-game-btn');
-
-        console.log('Elements found:', {
-          loginModal: !!loginModal,
-          screenshotsModal: !!screenshotsModal,
-          startGameBtn: !!startGameBtn
-        });
-
-      // User Type Selection Elements
+        const startGameBtn = document.getElementById('start-game-btn');// User Type Selection Elements
       const userTypeSelection = document.getElementById('user-type-selection');
       const professorForm = document.getElementById('professor-form');
       const studentForm = document.getElementById('student-form');
@@ -2456,18 +2271,10 @@
         
         try {
           // Check if student exists in the database
-          const studentData = await authManager.getStudentProfile(studentId);
-          
-          console.log('Retrieved student data:', studentData);
-          
-          if (studentData) {
-            // Student exists in database, show welcome screen
-            console.log('Student found in database, showing profile found step');
-            showStudentFoundStep(studentData);
+          const studentData = await authManager.getStudentProfile(studentId);if (studentData) {
+            // Student exists in database, show welcome screenshowStudentFoundStep(studentData);
           } else {
-            // Student doesn't exist, show profile completion form
-            console.log('Student not found in database, showing profile completion form');
-            showStudentProfileStep(null);
+            // Student doesn't exist, show profile completion formshowStudentProfileStep(null);
           }
         } catch (error) {
           console.warn('Error checking student profile:', error);
@@ -2745,31 +2552,16 @@
       }
 
       // Updated Start Game Button Event Listener
-      if (startGameBtn) {
-        console.log('Start game button found, adding event listener');
-        startGameBtn.addEventListener('click', () => {
-          console.log('Start game button clicked');
-          console.log('Auth manager:', authManager);
-          console.log('Is authenticated:', authManager.isAuthenticated());
-          
-          // Check if user is already authenticated
-          if (authManager.isAuthenticated()) {
-            console.log('User is authenticated, redirecting to game');
-            authManager.redirectToGame();
+      if (startGameBtn) {startGameBtn.addEventListener('click', () => {// Check if user is already authenticated
+          if (authManager.isAuthenticated()) {authManager.redirectToGame();
           } else {
-            // Show login modal first
-            console.log('User not authenticated, showing login modal');
-            showLoginModal();
+            // Show login modal firstshowLoginModal();
           }
         });
       } else {
         console.error('Start game button not found - ID: start-game-btn');
         // Try to find button with a more generic search
-        const allButtons = document.querySelectorAll('button');
-        console.log('All buttons found:', allButtons.length);
-        allButtons.forEach((btn, index) => {
-          console.log(`Button ${index}:`, btn.id, btn.textContent?.trim());
-        });
+        const allButtons = document.querySelectorAll('button');allButtons.forEach((btn, index) => {});
       }
       
       // Screenshots modal close handlers with error handling  
@@ -2896,9 +2688,7 @@
       // DEV MODE: Console functions for testing
       // Usage in browser console: createAdminUser()
       window.createAdminUser = async () => {
-        const admin = await authManager.createAdminUser();
-        console.log('Admin user created:', admin);
-        showSuccess('Admin user created! Professor tab should now be visible.', {
+        const admin = await authManager.createAdminUser();showSuccess('Admin user created! Professor tab should now be visible.', {
           title: '🔧 Admin Created'
         });
         return admin;
@@ -2914,9 +2704,7 @@
         }
         
         const result = await authManager.createProfessorUser(email, password, fullName, institution);
-        if (result.success) {
-          console.log('Professor user created successfully:', result);
-          showSuccess(`Professor user created!\nEmail: ${email}\nUID: ${result.uid}\nThe professor can now login with their email and password.`, {
+        if (result.success) {showSuccess(`Professor user created!\nEmail: ${email}\nUID: ${result.uid}\nThe professor can now login with their email and password.`, {
             title: '✅ Professor Created'
           });
         } else {
@@ -2931,9 +2719,7 @@
       // Debug function to test Firebase connectivity
       window.testFirebase = async () => {
         const result = await authManager.testFirebaseConnection();
-        if (result.success) {
-          console.log('✅ Firebase connection test passed');
-          showSuccess('Firebase connection test passed! Check console for details.', {
+        if (result.success) {showSuccess('Firebase connection test passed! Check console for details.', {
             title: '✅ Connection Test Passed'
           });
         } else {
@@ -2961,10 +2747,7 @@
         authManager.userType = 'professor';
         localStorage.setItem('sci_high_user', JSON.stringify(professor));
         authManager.updateProfessorTabVisibility();
-        authManager.updateUserInterface();
-        
-        console.log('Sample professor created:', professor);
-        showSuccess('Sample professor created!\nEmail: professor@sci-high.edu\nPassword: Prof123!', {
+        authManager.updateUserInterface();showSuccess('Sample professor created!\nEmail: professor@sci-high.edu\nPassword: Prof123!', {
           title: '👨‍🏫 Sample Professor Created'
         });
         return professor;
@@ -3003,10 +2786,7 @@
         authManager.userType = 'student';
         localStorage.setItem('sci_high_user', JSON.stringify(student));
         authManager.updateProfessorTabVisibility();
-        authManager.updateUserInterface();
-        
-        console.log('Sample student created:', student);
-        showSuccess('Sample student created!\nStudent ID: 24-2024-001\nNo password needed!\n\nOther test accounts:\n- 24-2024-002 (Maria Santos)\n- 24-2024-003 (Pedro Garcia)', {
+        authManager.updateUserInterface();showSuccess('Sample student created!\nStudent ID: 24-2024-001\nNo password needed!\n\nOther test accounts:\n- 24-2024-002 (Maria Santos)\n- 24-2024-003 (Pedro Garcia)', {
           title: '🎓 Sample Student Created'
         });
         return student;
@@ -3035,10 +2815,7 @@
         authManager.userType = 'general';
         localStorage.setItem('sci_high_user', JSON.stringify(generalUser));
         authManager.updateProfessorTabVisibility();
-        authManager.updateUserInterface();
-        
-        console.log('Sample general user created:', generalUser);
-        showSuccess('Sample general user created!\nEmail: maria@example.com\nPassword: General123!', {
+        authManager.updateUserInterface();showSuccess('Sample general user created!\nEmail: maria@example.com\nPassword: General123!', {
           title: '🌟 General User Created'
         });
         return generalUser;
@@ -3046,10 +2823,7 @@
 
       // Create 3 sample career stats entries
       window.createSampleCareerStats = async () => {
-        try {
-          console.log('Creating 3 sample career stats entries...');
-          
-          const sampleCareerStats = [
+        try {const sampleCareerStats = [
             {
               studentId: 'student_001',
               careerStats: {
@@ -3229,23 +3003,9 @@
           // Upload each sample career stat to Firebase
           const db = firebase.database();
           const promises = sampleCareerStats.map(async (careerData, index) => {
-            const studentId = careerData.studentId;
-            console.log(`Uploading career stats for ${careerData.studentInfo.fullName}...`);
-            
-            await db.ref(`student_career_stats/${studentId}`).set(careerData);
-            console.log(`✅ Career stats uploaded for ${careerData.studentInfo.fullName}`);
-          });
+            const studentId = careerData.studentId;await db.ref(`student_career_stats/${studentId}`).set(careerData);});
 
-          await Promise.all(promises);
-          
-          console.log('🎉 Successfully created 3 sample career stats entries!');
-          console.log('📊 Sample data includes:');
-          console.log('   • Maria Santos (College CS, Rank #1): 2450 pts, 87.5% accuracy, 4/6 courses');
-          console.log('   • John Carlo Reyes (SHS STEM, Rank #2): 1890 pts, 78.2% accuracy, 3/6 courses');
-          console.log('   • Anna Mae Garcia (SHS ICT, Rank #3): 1230 pts, 73.8% accuracy, 2/6 courses');
-          console.log('🔗 View results at: leaderboards.html');
-          
-          return sampleCareerStats;
+          await Promise.all(promises);return sampleCareerStats;
         } catch (error) {
           console.error('❌ Error creating sample career stats:', error);
           throw error;
@@ -3257,36 +3017,7 @@
       };
 
       // Helper function to show all available console commands
-      window.showDevCommands = () => {
-        console.log(`
-🔧 SCI-HIGH DEV MODE COMMANDS:
-================================
-
-USER MANAGEMENT:
-1. createAdminUser()                    - Create admin account (can access professor dashboard)
-2. createProfessorUser(email, password, fullName, institution) - Create professor in Firebase
-3. createSampleProfessor()              - Create local professor account  
-4. createSampleStudent()                - Create student account  
-5. createSampleGeneral()                - Create general user account
-6. createSampleCareerStats()            - Create 3 sample career stats entries for leaderboards
-7. logoutUser()                        - Logout current user
-
-
-DEBUGGING & TOOLS:
-8. debugFirebaseConnection()           - Check Firebase connection and data storage
-9. createRealFirebaseStudent(id)       - Force create student in Firebase (bypasses samples)
-10. openDeveloperTools()                - Open advanced developer tools page
-11. showDevCommands()                  - Show this help
-
-USAGE:  
-------
-Open console (F12) and type any command, e.g.:
-debugFirebaseConnection()              // Check why data isn't in Firebase
-createRealFirebaseStudent("2024-YOUR-001")  // Create real Firebase student
-
-For advanced tools: openDeveloperTools()
-        `);
-        showInfo('Dev commands shown in console! Press F12 to see all available commands.', {
+      window.showDevCommands = () => {showInfo('Dev commands shown in console! Press F12 to see all available commands.', {
           title: '📋 Developer Commands'
         });
       };
@@ -3304,126 +3035,35 @@ For advanced tools: openDeveloperTools()
       };
 
       // Debug Firebase connection and data storage
-      window.debugFirebaseConnection = async () => {
-        console.log('🔍 FIREBASE DEBUG REPORT');
-        console.log('========================');
-        
-        // Check if Firebase is loaded
-        if (typeof firebase === 'undefined') {
-          console.log('❌ Firebase SDK not loaded');
-          return;
-        }
-        console.log('✅ Firebase SDK loaded');
-        
-        // Check if Firebase is initialized
-        if (!firebase.apps.length) {
-          console.log('❌ Firebase not initialized');
-          return;
-        }
-        console.log('✅ Firebase initialized');
-        console.log('📊 Project ID:', firebase.app().options.projectId);
-        console.log('📊 Auth Domain:', firebase.app().options.authDomain);
-        
-        // Check authentication
-        const user = firebase.auth().currentUser;
-        console.log('👤 Current Auth User:', user ? user.uid : 'None');
-        
-        // Test Firestore connection with detailed error handling
-        try {
-          console.log('🔗 Testing Firestore READ access...');
-          const testDoc = await firebase.firestore().collection('test').limit(1).get();
-          console.log('✅ Firestore READ successful');
-          
-          // Test WRITE access
-          console.log('🔗 Testing Firestore WRITE access...');
-          const testRef = firebase.firestore().collection('test').doc('debug-test');
+      window.debugFirebaseConnection = async () => {// Check if Firebase is loaded
+        if (typeof firebase === 'undefined') {return;
+        }// Check if Firebase is initialized
+        if (!firebase.apps.length) {return;
+        }// Check authentication
+        const user = firebase.auth().currentUser;// Test Firestore connection with detailed error handling
+        try {const testDoc = await firebase.firestore().collection('test').limit(1).get();// Test WRITE accessconst testRef = firebase.firestore().collection('test').doc('debug-test');
           await testRef.set({
             timestamp: new Date().toISOString(),
             test: true,
             source: 'debug-script'
-          });
-          console.log('✅ Firestore WRITE successful');
-          
-          // Clean up test document
-          await testRef.delete();
-          console.log('✅ Test cleanup successful');
-          
-          // Check existing data
-          console.log('📋 Checking existing collections...');
-          
-          const professors = await firebase.firestore().collection('professors').get();
-          console.log(`👨‍🏫 Professors: ${professors.size} documents`);
-          
-          const students = await firebase.firestore().collection('students').get();
-          console.log(`🎓 Students: ${students.size} documents`);
-          
-          const generalUsers = await firebase.firestore().collection('general_users').get();
-          console.log(`👤 General Users: ${generalUsers.size} documents`);
-          
-        } catch (error) {
-          console.log('❌ Firestore error:', error);
-          console.log('❌ Error code:', error.code);
-          console.log('❌ Error message:', error.message);
-          
-          if (error.code === 'permission-denied') {
-            console.log('� PERMISSION DENIED - This is likely a Firestore security rules issue');
-            console.log('💡 Solution: Update your Firestore security rules in Firebase Console');
-            console.log('💡 For development, try these rules:');
-            console.log(`
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}
-            `);
-          } else if (error.code === 'failed-precondition') {
-            console.log('🚫 FAILED PRECONDITION - Database might not be properly set up');
-          } else if (error.code === 'unauthenticated') {
-            console.log('🔐 UNAUTHENTICATED - User needs to be signed in');
-          }
+          });// Clean up test document
+          await testRef.delete();// Check existing dataconst professors = await firebase.firestore().collection('professors').get();const students = await firebase.firestore().collection('students').get();const generalUsers = await firebase.firestore().collection('general_users').get();} catch (error) {if (error.code === 'permission-denied') {} else if (error.code === 'failed-precondition') {} else if (error.code === 'unauthenticated') {}
         }
         
-        // Check local storage
-        console.log('💾 Local Storage Data:');
-        const localUser = localStorage.getItem('sci_high_user');
-        const localStudents = localStorage.getItem('sci_high_local_students');
-        console.log('Current User:', localUser ? JSON.parse(localUser) : 'None');
-        console.log('Local Students:', localStudents ? Object.keys(JSON.parse(localStudents)) : 'None');
-        
-        console.log('========================');
-        console.log('🎯 Use this info to identify the exact issue!');
-      };
+        // Check local storageconst localUser = localStorage.getItem('sci_high_user');
+        const localStudents = localStorage.getItem('sci_high_local_students');};
 
       // Force create real Firebase student (bypasses sample data)
       window.createRealFirebaseStudent = async (studentId) => {
-        if (!studentId) {
-          console.log('Usage: createRealFirebaseStudent("YOUR-STUDENT-ID")');
-          return;
+        if (!studentId) {return;
         }
         
-        try {
-          console.log(`🔥 Creating real Firebase student: ${studentId}`);
-          const result = await authManager.createStudentAccount(studentId);
-          if (result.success) {
-            console.log('✅ Student created in Firebase!');
-            console.log('Document ID:', result.docId);
-            console.log('Data:', result.studentData);
-          } else {
-            console.log('❌ Failed:', result.error);
-          }
-        } catch (error) {
-          console.log('❌ Error:', error.message);
-        }
+        try {const result = await authManager.createStudentAccount(studentId);
+          if (result.success) {} else {}
+        } catch (error) {}
       };
 
-      // Auto-show dev commands on page load
-      console.log('🎮 SCI-HIGH DEV MODE ACTIVE! Type showDevCommands() for help.');
-      console.log('🛠️ Developer Tools: Type openDeveloperTools() to access advanced tools.');
-      
-      }); // Close DOMContentLoaded event listener
+      // Auto-show dev commands on page load}); // Close DOMContentLoaded event listener
     </script>
 
     <!-- Virtual AI Assistant with improved positioning -->
@@ -3721,10 +3361,7 @@ Always provide helpful, encouraging responses that match the gaming theme. Use a
                 if (trimmed && !trimmed.startsWith('#')) {
                   if (this.validateApiKey(trimmed)) {
                     this.apiKey = trimmed;
-                    this.keyExpiry = Date.now() + this.maxKeyAge;
-                    console.log('✅ API key loaded successfully from config file');
-                    
-                    // Update UI to show AI is available
+                    this.keyExpiry = Date.now() + this.maxKeyAge;// Update UI to show AI is available
                     this.updateAIStatus(true);
                     return;
                   }

@@ -473,20 +473,12 @@ export const TUTORIAL_ELEMENT_SELECTORS = {
                 y: timerY,
                 width: 120,
                 height: 40
-            };
-            
-            console.log('Using custom timer bounds:', timerMockElement.getBounds());
-            return timerMockElement;
+            };return timerMockElement;
         }
         
         // Fallback to timerText if available
-        if (scene.gameTimer?.timerText) {
-            console.log('Using timerText for timer highlight');
-            return scene.gameTimer.timerText;
-        }
-        
-        console.log('No proper timer element found');
-        return null;
+        if (scene.gameTimer?.timerText) {return scene.gameTimer.timerText;
+        }return null;
     },
     
     comboMeter: (scene) => {
@@ -511,15 +503,11 @@ export const TUTORIAL_ELEMENT_SELECTORS = {
     
     carousel: (scene) => {
         // Try to target the carousel background panel first (computer lab uses scene.carousel)
-        if (scene.carousel?.bgPanel) {
-            console.log('Using carousel bgPanel for highlight');
-            return scene.carousel.bgPanel;
+        if (scene.carousel?.bgPanel) {return scene.carousel.bgPanel;
         }
         
         // Try to target the character carousel background panel (classroom uses scene.characterCarousel)
-        if (scene.characterCarousel?.bgPanel) {
-            console.log('Using characterCarousel bgPanel for highlight');
-            return scene.characterCarousel.bgPanel;
+        if (scene.characterCarousel?.bgPanel) {return scene.characterCarousel.bgPanel;
         }
         
         // Create a custom bounds object for the carousel area based on scene dimensions
@@ -542,30 +530,17 @@ export const TUTORIAL_ELEMENT_SELECTORS = {
                 y: centerY,
                 width: carouselWidth,
                 height: carouselHeight
-            };
-            
-            console.log('Using custom carousel bounds:', carouselMockElement.getBounds());
-            return carouselMockElement;
+            };return carouselMockElement;
         }
         
-        // Last fallback to carousel object itself
-        console.log('Using carousel object as fallback');
-        return scene.carousel || scene.characterCarousel || scene.carouselContainer;
+        // Last fallback to carousel object itselfreturn scene.carousel || scene.characterCarousel || scene.carouselContainer;
     }
 };
 
 // Debug helper function to log available elements (development only)
 export function debugLogElements(scene) {
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-        console.group('=== Tutorial Element Debug ===');
-        console.log('playerContainer:', scene.playerContainer);
-        console.log('gameTimer.timerBackground:', scene.gameTimer?.timerBackground);
-        console.log('gameTimer.timerText:', scene.gameTimer?.timerText);
-        console.log('comboMeter.comboBackground:', scene.comboMeter?.comboBackground);
-        console.log('questionText:', scene.questionText);
-        console.log('quizBox:', scene.quizBox);
-        console.log('optionTexts:', scene.optionTexts);
-        console.groupEnd();
+        console.group('=== Tutorial Element Debug ===');console.groupEnd();
     }
 }
 
@@ -632,39 +607,19 @@ export function prepareTutorialSteps(scene, stepType) {
             } else {
                 // Handle quiz scene targeting (existing logic)
                 if (step.target === 'carousel' || step.title.includes('Programming Languages') || step.title.includes('Your Classmates') || step.title.includes('Library Sections') || step.title.includes('Office Sections')) {
-                    targetElement = elementSelectors.carousel(scene);
-                    console.log(`Tutorial targeting carousel for step: "${step.title}":`, targetElement);
-                } else if (step.title.includes('Player Health') || step.title.includes('Your Health') || step.title.includes('coding stamina') || step.title.includes('coding energy')) {
-                    targetElement = elementSelectors.playerHealth(scene);
-                    console.log(`Tutorial targeting player health for step: "${step.title}":`, targetElement);
-                } else if (step.title.includes('Enemy Health') || step.title.includes('Challenge Enemy') || step.title.includes('Python Challenge') || step.title.includes('Enemy Web Bug') || step.title.includes('web bug')) {
-                    targetElement = elementSelectors.enemyHealth(scene);
-                    console.log(`Tutorial targeting enemy health for step: "${step.title}":`, targetElement);
-                } else if (step.title.includes('Timer') || step.title.includes('Coding Timer') || step.title.includes('Development Timer')) {
-                    targetElement = elementSelectors.timer(scene);
-                    console.log(`Tutorial targeting timer for step: "${step.title}":`, targetElement);
-                } else if (step.title.includes('Combo') || step.title.includes('Mastery') || step.title.includes('Code Combo') || step.title.includes('Coding Flow')) {
-                    targetElement = elementSelectors.comboMeter(scene);
-                    console.log(`Tutorial targeting combo meter for step: "${step.title}":`, targetElement);
-                } else if (step.title.includes('Question') || step.title.includes('Challenge') || step.title.includes('Code Challenge') || step.title.includes('Web Development Questions')) {
-                    targetElement = elementSelectors.questionArea(scene);
-                    console.log(`Tutorial targeting question area for step: "${step.title}":`, targetElement);
-                } else if (step.title.includes('Answer') || step.title.includes('Choose') || step.title.includes('Code Answer')) {
-                    targetElement = elementSelectors.answerOptions(scene);
-                    console.log(`Tutorial targeting answer options for step: "${step.title}":`, targetElement);
-                } else if (step.title.includes('Power-Up')) {
-                    targetElement = elementSelectors.powerUpButton(scene);
-                    console.log(`Tutorial targeting power-up button for step: "${step.title}":`, targetElement);
-                } else if (step.title.includes('Syntax')) {
-                    targetElement = elementSelectors.questionArea(scene);
-                    console.log(`Tutorial targeting question area for syntax step: "${step.title}":`, targetElement);
-                }
+                    targetElement = elementSelectors.carousel(scene);} else if (step.title.includes('Player Health') || step.title.includes('Your Health') || step.title.includes('coding stamina') || step.title.includes('coding energy')) {
+                    targetElement = elementSelectors.playerHealth(scene);} else if (step.title.includes('Enemy Health') || step.title.includes('Challenge Enemy') || step.title.includes('Python Challenge') || step.title.includes('Enemy Web Bug') || step.title.includes('web bug')) {
+                    targetElement = elementSelectors.enemyHealth(scene);} else if (step.title.includes('Timer') || step.title.includes('Coding Timer') || step.title.includes('Development Timer')) {
+                    targetElement = elementSelectors.timer(scene);} else if (step.title.includes('Combo') || step.title.includes('Mastery') || step.title.includes('Code Combo') || step.title.includes('Coding Flow')) {
+                    targetElement = elementSelectors.comboMeter(scene);} else if (step.title.includes('Question') || step.title.includes('Challenge') || step.title.includes('Code Challenge') || step.title.includes('Web Development Questions')) {
+                    targetElement = elementSelectors.questionArea(scene);} else if (step.title.includes('Answer') || step.title.includes('Choose') || step.title.includes('Code Answer')) {
+                    targetElement = elementSelectors.answerOptions(scene);} else if (step.title.includes('Power-Up')) {
+                    targetElement = elementSelectors.powerUpButton(scene);} else if (step.title.includes('Syntax')) {
+                    targetElement = elementSelectors.questionArea(scene);}
             }
             
             if (targetElement) {
-                step.target = targetElement;
-                console.log(`Dungeon tutorial targeting element for step: "${step.title}":`, targetElement);
-            }
+                step.target = targetElement;}
         }
     });
     
@@ -678,15 +633,7 @@ export const PYTHON_TUTORIAL_TRIGGERS = {
         const hasSeenPythonTutorial = localStorage.getItem('sci-high-python-tutorial-seen');
         const isPythonTopic = scene.topic && scene.topic.toLowerCase() === 'python';
         
-        // Debug logging
-        console.log('Python tutorial firstTime check:', {
-            hasSeenPythonTutorial,
-            sceneTopic: scene.topic,
-            isPythonTopic,
-            willShowTutorial: !hasSeenPythonTutorial && isPythonTopic
-        });
-        
-        return !hasSeenPythonTutorial && isPythonTopic;
+        // Debug loggingreturn !hasSeenPythonTutorial && isPythonTopic;
     },
     
     timer: (scene) => {
@@ -696,16 +643,7 @@ export const PYTHON_TUTORIAL_TRIGGERS = {
         const hasntSeenTimerTutorial = !scene.tutorialFlags?.timerTutorialShown;
         const hasSeenFirstTime = scene.tutorialFlags?.firstTimeTutorialShown;
         
-        // Debug logging
-        console.log('Python tutorial timer check:', {
-            hasTimer: !!hasTimer,
-            isRunning,
-            hasntSeenTimerTutorial,
-            hasSeenFirstTime,
-            willShowTutorial: hasTimer && isRunning && hasntSeenTimerTutorial && hasSeenFirstTime
-        });
-        
-        // Show timer tutorial only after first-time tutorial is done
+        // Debug logging// Show timer tutorial only after first-time tutorial is done
         return hasTimer && 
                isRunning && 
                hasntSeenTimerTutorial && 

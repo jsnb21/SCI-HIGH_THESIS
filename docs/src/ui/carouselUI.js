@@ -364,9 +364,7 @@ class Carousel {
 
     showLockedMessage(courseIndex) {
         const courseName = this.iconInfo[courseIndex]?.heading || "Course";
-        // You can customize this message or create a proper dialog
-        console.log(`${courseName} is locked! Complete other courses to unlock it.`);
-        // Optionally add a visual feedback or sound effect
+        // You can customize this message or create a proper dialog// Optionally add a visual feedback or sound effect
     }
 
     selectCurrentItem() {

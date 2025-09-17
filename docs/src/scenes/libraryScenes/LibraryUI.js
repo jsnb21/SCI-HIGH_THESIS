@@ -357,12 +357,7 @@ export default class LibraryUI {
         scene.popupContent.removeAll(true);
         
         scene._libraryBookElements = [];
-        scene._libraryCategoryHeaders = [];
-        
-        console.log('Books data structure:', scene.libraryData.books);
-        console.log('Categories found:', scene.libraryData.books.categories.length);
-        
-        // Calculate improved grid layout with better spacing
+        scene._libraryCategoryHeaders = [];// Calculate improved grid layout with better spacing
         const booksPerRow = isSmallScreen ? 2 : 3;
         const cardPadding = 15 * sf; // Reduced padding to fit better
         const cardWidth = (popupWidth - (cardPadding * (booksPerRow + 1))) / booksPerRow;
@@ -372,10 +367,7 @@ export default class LibraryUI {
         
         let globalY = startY; // Track global Y position across all categories
         
-        scene.libraryData.books.categories.forEach((category, categoryIndex) => {
-            console.log(`Category ${categoryIndex}: ${category.name}, Books: ${category.books.length}`);
-            
-            // Category header positioned ABOVE the books
+        scene.libraryData.books.categories.forEach((category, categoryIndex) => {// Category header positioned ABOVE the books
             const categoryHeaderBg = scene.add.graphics();
             const headerWidth = popupWidth * 0.95;
             const headerHeight = 35 * sf; // Reduced header height
@@ -418,10 +410,7 @@ export default class LibraryUI {
             const rowsNeeded = Math.ceil(category.books.length / booksPerRow);
             
             // Display books in organized grid
-            category.books.forEach((book, bookIndex) => {
-                console.log(`Processing book ${bookIndex + 1}: ${book.title} by ${book.author}`);
-                
-                const currentRow = Math.floor(bookIndex / booksPerRow);
+            category.books.forEach((book, bookIndex) => {const currentRow = Math.floor(bookIndex / booksPerRow);
                 const currentCol = bookIndex % booksPerRow;
                 
                 const x = startX + (currentCol * (cardWidth + cardPadding));

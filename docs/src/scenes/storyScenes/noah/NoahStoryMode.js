@@ -16,9 +16,7 @@ export default class NoahStoryMode extends Phaser.Scene {
 
     init(data) {
         // Reset any previous state
-        this.quizJustCompleted = false;
-        console.log('NoahStoryMode initialized');
-    }
+        this.quizJustCompleted = false;}
 
     preload() {
         // Load character sprite (using same path as carousel)
@@ -48,11 +46,7 @@ export default class NoahStoryMode extends Phaser.Scene {
         }
 
         this.currentChapter = char1.storyProgress.chapter || 0;
-        this.currentScene = char1.storyProgress.scene || 0;
-
-        console.log('Starting story:', { chapter: this.currentChapter, scene: this.currentScene });
-
-        // Set up the scene based on current progress
+        this.currentScene = char1.storyProgress.scene || 0;// Set up the scene based on current progress
         this.setupScene();
         
         // Back button
@@ -93,29 +87,17 @@ export default class NoahStoryMode extends Phaser.Scene {
 
     startCurrentStory() {
         const storyData = this.getStoryData();
-        const currentStorySegment = storyData[this.currentChapter]?.scenes[this.currentScene];
-        
-        console.log(`Starting story: Chapter ${this.currentChapter}, Scene ${this.currentScene}`);
-        console.log(`Total chapters: ${storyData.length}`);
-        console.log(`Current segment exists:`, !!currentStorySegment);
-        
-        if (currentStorySegment) {
+        const currentStorySegment = storyData[this.currentChapter]?.scenes[this.currentScene];if (currentStorySegment) {
             this.showDialogue(currentStorySegment);
         } else {
             // Story completed or invalid chapter/scene
-            if (this.currentChapter >= storyData.length) {
-                console.log('Story completed - showing completion screen');
-                this.showStoryComplete();
+            if (this.currentChapter >= storyData.length) {this.showStoryComplete();
             } else {
-                // Invalid scene, reset to start of current chapter
-                console.log('Invalid scene, resetting to start of chapter');
-                this.currentScene = 0;
+                // Invalid scene, reset to start of current chapterthis.currentScene = 0;
                 const resetStorySegment = storyData[this.currentChapter]?.scenes[this.currentScene];
                 if (resetStorySegment) {
                     this.showDialogue(resetStorySegment);
-                } else {
-                    console.log('No valid scenes found, showing completion');
-                    this.showStoryComplete();
+                } else {this.showStoryComplete();
                 }
             }
         }
@@ -831,8 +813,7 @@ function greetUser(name) {
 }
 
 // Using the function
-let greeting = greetUser("Noah");
-console.log(greeting);`
+let greeting = greetUser("Noah");`
                         },
                         progressUpdate: {
                             quest3: 25,
@@ -909,10 +890,7 @@ button.addEventListener('click', function() {
                 scene: this.currentScene,
                 completed: char1.storyProgress?.completed || false,
                 lastUpdated: new Date().toISOString()
-            };
-
-            console.log('Saving Noah story progress to Firebase:', progressData);
-            await saveStoryProgress('noah', progressData);
+            };await saveStoryProgress('noah', progressData);
         } catch (error) {
             console.error('Failed to save Noah story progress to Firebase:', error);
         }
