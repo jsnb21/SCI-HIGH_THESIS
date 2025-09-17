@@ -1,120 +1,94 @@
-// Firebase Configuration
-// This file manages Firebase configuration and API keys
+// Firebase Configuration Manager
+(function() {
+  'use strict';
+  
+  // Prevent multiple initializations
+  if (window.firebaseConfig) {
+    console.log('Firebase config already loaded');
+    return;
+  }
 
-class FirebaseConfig {
+  class FirebaseConfig {
     constructor() {
-        this.config = null;
-        this.loadConfig();
+      this.config = null;
+      this.initialized = false;
     }
 
-    // Load configuration from environment or external file
     async loadConfig() {
-        try {
-            // Try to load from external config file first
-            const response = await fetch('./config/env-config.json');
-            if (response.ok) {
-                const envConfig = await response.json();
-                this.config = {
-                    apiKey: envConfig.FIREBASE_API_KEY,
-                    authDomain: envConfig.FIREBASE_AUTH_DOMAIN || "sci-high-website.firebaseapp.com",
-                    databaseURL: envConfig.FIREBASE_DATABASE_URL || "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-                    projectId: envConfig.FIREBASE_PROJECT_ID || "sci-high-website",
-                    storageBucket: envConfig.FIREBASE_STORAGE_BUCKET || "sci-high-website.appspot.com",
-                    messagingSenderId: envConfig.FIREBASE_MESSAGING_SENDER_ID || "123456789",
-                    appId: envConfig.FIREBASE_APP_ID || "1:123456789:web:abcdef"
-                };
-                return;
-            }
-        } catch (error) {
-            console.warn('Could not load external config file, using minimal public config');
+      try {
+        // Try to load from env-config.json
+        const response = await fetch('./config/env-config.json');
+        if (response.ok) {
+          const envConfig = await response.json();
+          if (envConfig.apiKey) {
+            this.config = {
+              apiKey: envConfig.apiKey,
+              authDomain: "sci-high-website.firebaseapp.com",
+              databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+              projectId: "sci-high-website",
+              storageBucket: "sci-high-website.appspot.com",
+              messagingSenderId: "949069635878",
+              appId: "1:949069635878:web:dcf4d6e8c4f1b8f8b8e7c2"
+            };
+            console.log('✅ Firebase configuration loaded from env-config.json');
+            return this.config;
+          }
         }
+      } catch (error) {
+        console.warn('⚠️ Could not load API key config file. Manual entry will be required.');
+      }
 
-        // Minimal public configuration (no sensitive API key)
-        this.config = {
-            apiKey: this.getApiKeyFromEnv() || null, // Don't hardcode API key
-            authDomain: "sci-high-website.firebaseapp.com",
-            databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "sci-high-website",
-            storageBucket: "sci-high-website.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef"
-        };
+      // If no config found, config will remain null
+      this.config = null;
+      return null;
     }
 
-    // Try to get API key from various sources
-    getApiKeyFromEnv() {
-        // In a browser environment, check for global variables
-        if (typeof window !== 'undefined') {
-            return window.FIREBASE_API_KEY || 
-                   localStorage.getItem('firebase_api_key') ||
-                   sessionStorage.getItem('firebase_api_key');
-        }
-        
-        // For Node.js environments
-        if (typeof process !== 'undefined' && process.env) {
-            return process.env.FIREBASE_API_KEY;
-        }
-        
-        return null;
-    }
-
-    // Get the Firebase configuration
-    getConfig() {
-        if (!this.config) {
-            throw new Error('Firebase configuration not loaded. Please ensure API keys are properly configured.');
-        }
-        
-        if (this.config.apiKey === "YOUR_API_KEY_HERE") {
-            console.error('Firebase API key not configured. Please set up your API key in the configuration.');
-        }
-        
-        return this.config;
-    }
-
-    // Initialize Firebase with the configuration
     async initializeFirebase() {
-        await this.loadConfig();
-        
-        if (typeof firebase !== 'undefined') {
-            // Check if Firebase is already initialized
-            if (firebase.apps.length === 0) {
-                const config = this.getConfig();
-                
-                // If no API key is available, provide helpful error message
-                if (!config.apiKey) {
-                    console.error('❌ Firebase API key is required but not configured.');
-                    console.error('Please add your Firebase API key to docs/config/env-config.json');
-                    console.error('Expected format: { "apiKey": "your-firebase-api-key-here" }');
-                    throw new Error('Firebase API key not configured. Please add your API key to env-config.json');
-                }
-                
-                firebase.initializeApp(config);
-                console.log('✅ Firebase initialized successfully');
-            }
-            return firebase;
+      if (this.initialized) {
+        console.log('Firebase already initialized');
+        return;
+      }
+
+      const config = await this.loadConfig();
+      
+      if (!config) {
+        console.error('❌ Firebase API key is required but not configured.');
+        console.error('Please add your Firebase API key to docs/config/env-config.json');
+        console.error('Expected format: { "apiKey": "your-firebase-api-key-here" }');
+        throw new Error('Firebase API key not configured. Please add your API key to env-config.json');
+      }
+
+      try {
+        // Check if Firebase is available
+        if (typeof firebase === 'undefined') {
+          throw new Error('Firebase SDK not loaded');
+        }
+
+        // Initialize Firebase app if not already initialized
+        if (firebase.apps.length === 0) {
+          firebase.initializeApp(config);
+          console.log('✅ Firebase initialized successfully');
         } else {
-            throw new Error('Firebase SDK not loaded');
+          console.log('✅ Firebase app already exists');
         }
+
+        this.initialized = true;
+      } catch (error) {
+        console.error('❌ Failed to initialize Firebase:', error);
+        throw error;
+      }
     }
 
-    // Set API key at runtime (for development/testing)
-    setApiKey(apiKey) {
-        if (this.config) {
-            this.config.apiKey = apiKey;
-            // Optionally store in localStorage for persistence
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('firebase_api_key', apiKey);
-            }
-        }
+    getConfig() {
+      return this.config;
     }
-}
 
-// Create a singleton instance
-const firebaseConfig = new FirebaseConfig();
+    isInitialized() {
+      return this.initialized;
+    }
+  }
 
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = firebaseConfig;
-} else if (typeof window !== 'undefined') {
-    window.firebaseConfig = firebaseConfig;
-}
+  // Create global instance
+  window.firebaseConfig = new FirebaseConfig();
+
+})();

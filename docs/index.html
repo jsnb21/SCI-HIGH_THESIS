@@ -1342,6 +1342,17 @@
 
         async initializeFirebaseWithConfig() {
           try {
+            // Check if config is already loaded
+            if (window.firebaseConfig) {
+              try {
+                await window.firebaseConfig.initializeFirebase();
+                return true;
+              } catch (error) {
+                console.warn('Firebase config exists but initialization failed:', error.message);
+                return false;
+              }
+            }
+            
             // Try multiple paths for GitHub Pages compatibility
             const configPaths = [
               './config/firebase-config.js',
@@ -1349,45 +1360,46 @@
               'config/firebase-config.js'
             ];
             
-            let configLoaded = false;
-            
             for (const configPath of configPaths) {
               try {
+                // Check if script already exists to prevent redeclaration
+                const existingScript = document.querySelector(`script[src="${configPath}"]`);
+                if (existingScript) {
+                  continue;
+                }
+                
                 const script = document.createElement('script');
                 script.src = configPath;
                 
                 await new Promise((resolve, reject) => {
-                  script.onload = resolve;
+                  script.onload = () => {
+                    if (window.firebaseConfig) {
+                      resolve();
+                    } else {
+                      reject(new Error('Config loaded but firebaseConfig not available'));
+                    }
+                  };
                   script.onerror = reject;
                   document.head.appendChild(script);
                 });
                 
+                // Try to initialize
                 if (window.firebaseConfig) {
                   await window.firebaseConfig.initializeFirebase();
-                  configLoaded = true;
-                  break;
+                  return true;
                 }
               } catch (error) {
-                console.warn(`Failed to load config from ${configPath}:`, error);
+                console.warn(`Failed to load config from ${configPath}:`, error.message);
                 continue;
               }
             }
             
-            if (!configLoaded) {
-              throw new Error('Firebase configuration could not be loaded from any path');
-            }
+            console.warn('Firebase configuration could not be loaded from any path');
+            return false;
             
-            // Ensure auth is ready
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-              firebase.auth().onAuthStateChanged(() => {
-                // Auth state changed
-              });
-            }
-            
-            return true;
           } catch (error) {
-            console.error('Firebase initialization failed:', error.message);
-            throw error;
+            console.warn('Firebase initialization failed:', error.message);
+            return false;
           }
         }
 
