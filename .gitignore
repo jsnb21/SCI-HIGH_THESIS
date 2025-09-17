@@ -16,6 +16,10 @@ build/
 .env.test.local
 .env.production.local
 
+# Firebase configuration with sensitive data
+docs/config/env-config.json
+config/env-config.json
+
 # IDE files
 .vscode/
 .idea/

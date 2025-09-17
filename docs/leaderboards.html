@@ -635,19 +635,32 @@
       </div>
     </footer>
     <script>
-      // Firebase Configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
-        authDomain: "sci-high-website.firebaseapp.com",
-        databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "sci-high-website",
-        storageBucket: "sci-high-website.appspot.com",
-        messagingSenderId: "451463202515",
-        appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
-      };
+      // Secure Firebase initialization
+      async function initializeFirebase() {
+        try {
+          // Load the Firebase configuration module
+          const script = document.createElement('script');
+          script.src = './config/firebase-config.js';
+          
+          await new Promise((resolve, reject) => {
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
 
-      // Initialize Firebase
-      firebase.initializeApp(firebaseConfig);
+          if (window.firebaseConfig) {
+            await window.firebaseConfig.initializeFirebase();
+            console.log('Firebase initialized securely');
+          } else {
+            console.error('Firebase configuration not loaded');
+          }
+        } catch (error) {
+          console.error('Error loading Firebase configuration:', error);
+        }
+      }
+
+      // Initialize Firebase when page loads
+      initializeFirebase();
       const db = firebase.database();
 
       // Helper function to format course names properly

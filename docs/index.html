@@ -1294,33 +1294,41 @@
               script.onload = () => {
                 loaded++;
                 if (loaded === scripts.length) {
-                  // Initialize Firebase
-                  const firebaseConfig = {
-                    apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
-                    authDomain: "sci-high-website.firebaseapp.com",
-                    databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-                    projectId: "sci-high-website",
-                    storageBucket: "sci-high-website.appspot.com",
-                    messagingSenderId: "451463202515",
-                    appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
-                  };
-                  
-                  if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                  }
-                  
-                  // Ensure auth is ready
-                  firebase.auth().onAuthStateChanged(() => {
-                    console.log('Firebase Auth initialized');
-                  });
-                  
-                  resolve();
+                  // Initialize Firebase with secure configuration
+                  this.initializeFirebaseWithConfig();
                 }
               };
-              script.onerror = reject;
               document.head.appendChild(script);
             });
           });
+        }
+
+        async initializeFirebaseWithConfig() {
+          try {
+            // Load the Firebase configuration module
+            const script = document.createElement('script');
+            script.src = './config/firebase-config.js';
+            
+            await new Promise((resolve, reject) => {
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+
+            if (window.firebaseConfig) {
+              await window.firebaseConfig.initializeFirebase();
+              console.log('Firebase initialized securely');
+              
+              // Ensure auth is ready
+              firebase.auth().onAuthStateChanged(() => {
+                console.log('Firebase Auth initialized');
+              });
+            } else {
+              console.error('Firebase configuration not loaded');
+            }
+          } catch (error) {
+            console.error('Error loading Firebase configuration:', error);
+          }
         }
 
         async loginProfessor(email, password) {
