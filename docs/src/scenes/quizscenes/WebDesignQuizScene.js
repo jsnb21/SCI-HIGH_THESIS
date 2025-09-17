@@ -93,7 +93,6 @@ export default class WebDesignQuizScene extends BaseQuizScene {
             
             const callbacks = {
                 onComplete: async () => {
-                    console.log(`Web Design tutorial '${tutorialType}' completed`);
                     
                     // Mark Web Design tutorial as seen in localStorage
                     if (tutorialType === 'firstTime') {
@@ -116,7 +115,6 @@ export default class WebDesignQuizScene extends BaseQuizScene {
                     }
                 },
                 onSkip: async () => {
-                    console.log(`Web Design tutorial '${tutorialType}' skipped`);
                     
                     // Mark as seen even if skipped
                     if (tutorialType === 'firstTime') {

@@ -16,7 +16,6 @@ export default class ResultScreen extends BaseScene {
         this.courseTopic = data.courseTopic || 'Unknown';
         this.courseCompleted = data.courseCompleted || false;
         
-        console.log('ResultScreen initialized with:', data);
     }
 
     create() {
@@ -25,13 +24,6 @@ export default class ResultScreen extends BaseScene {
         // Get scale information for mobile responsiveness
         const scaleInfo = getScaleInfo(this);
         const isMobile = scaleInfo.width < 768;
-        
-        // Debug logging
-        console.log('ResultScreen (roguelikeBase) - Mobile detection:', {
-            width: scaleInfo.width,
-            height: scaleInfo.height,
-            isMobile
-        });
         
         // Calculate ranking based on correct/wrong ratio
         const totalQuestions = this.correctAnswers + this.wrongAnswers;
@@ -77,14 +69,6 @@ export default class ResultScreen extends BaseScene {
         const panelHeight = isMobile ? Math.min(scaleInfo.height * 0.90, 500) : scaleDimension(450, scaleInfo);
         const panelX = this.scale.width / 2;
         const panelY = this.scale.height / 2;
-        
-        console.log('ResultScreen - Panel dimensions:', {
-            panelWidth,
-            panelHeight,
-            isMobile,
-            screenWidth: scaleInfo.width,
-            screenHeight: scaleInfo.height
-        });
         
         // Panel shadow
         const shadow = this.add.rectangle(panelX + 5, panelY + 5, panelWidth, panelHeight, 0x000000, 0.5);
@@ -358,7 +342,6 @@ export default class ResultScreen extends BaseScene {
             this.createParticleEffects(panelX, panelY - 80, rankColor);
         }
         
-        console.log('ResultScreen created successfully');
     }
     
     createParticleEffects(x, y, color) {

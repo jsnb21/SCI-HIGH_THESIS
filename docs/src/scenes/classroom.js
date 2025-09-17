@@ -56,7 +56,6 @@ export default class Classroom extends Phaser.Scene {
 
     async initializeFirebase() {
         try {
-            console.log('Starting Firebase initialization for Classroom...');
             
             // First check if we have internet connectivity
             if (!navigator.onLine) {
@@ -65,14 +64,12 @@ export default class Classroom extends Phaser.Scene {
             
             // Check if Firebase is already loaded
             if (typeof window.firebase === 'undefined') {
-                console.log('Loading Firebase scripts...');
                 await this.loadFirebaseScripts();
             }
             
             // Wait a bit for Firebase to be available
             let retries = 0;
             while (typeof window.firebase === 'undefined' && retries < 10) {
-                console.log(`Waiting for Firebase to load... (attempt ${retries + 1})`);
                 await new Promise(resolve => setTimeout(resolve, 300));
                 retries++;
             }
@@ -83,7 +80,6 @@ export default class Classroom extends Phaser.Scene {
             
             // Initialize Firebase app if not already done
             if (!window.firebase.apps.length) {
-                console.log('Initializing Firebase app...');
                 window.firebase.initializeApp(this.firebaseConfig);
             }
             
@@ -94,7 +90,6 @@ export default class Classroom extends Phaser.Scene {
             await this.database.ref('.info/connected').once('value');
             
             this.isFirebaseInitialized = true;
-            console.log('Firebase Database initialized successfully for Classroom');
         } catch (error) {
             console.error('Failed to initialize Firebase for Classroom:', error);
             this.isFirebaseInitialized = false;
@@ -118,7 +113,6 @@ export default class Classroom extends Phaser.Scene {
                     document.head.appendChild(script);
                 });
             }
-            console.log('Firebase scripts loaded successfully');
         } catch (error) {
             console.error('Error loading Firebase scripts:', error);
             throw error;
@@ -127,12 +121,10 @@ export default class Classroom extends Phaser.Scene {
 
     async checkStudentDataInFirebase() {
         try {
-            console.log('🔍 Classroom: Checking for existing student data in Firebase...');
             
             // Get current user from localStorage
             const userDataStr = localStorage.getItem('sci_high_user');
             if (!userDataStr) {
-                console.log('ℹ️ Classroom: No user data found in localStorage');
                 return false;
             }
             
@@ -140,16 +132,13 @@ export default class Classroom extends Phaser.Scene {
             const studentId = currentUser.studentId || currentUser.uid;
             
             if (!studentId) {
-                console.log('ℹ️ Classroom: No student ID found in user data');
                 return false;
             }
             
-            console.log('🔍 Classroom: Searching for student data with ID:', studentId);
             
             // Ensure Firebase is initialized
             const isInitialized = await this.ensureFirebaseInitialized();
             if (!isInitialized) {
-                console.log('⚠️ Classroom: Firebase not initialized, cannot check student data');
                 return false;
             }
             
@@ -158,7 +147,6 @@ export default class Classroom extends Phaser.Scene {
             const snapshot = await gameplayRef.orderByChild('studentId').equalTo(studentId).limitToFirst(1).once('value');
             
             const hasData = snapshot.exists();
-            console.log(`${hasData ? '✅' : 'ℹ️'} Classroom: Student ${studentId} ${hasData ? 'has' : 'does not have'} existing data in Firebase`);
             
             return hasData;
             
@@ -192,7 +180,6 @@ export default class Classroom extends Phaser.Scene {
         
         this.load.on('filecomplete', (key, type, data) => {
             if (type === 'image') {
-                console.log('Successfully loaded image:', key);
             }
         });
     }
@@ -352,7 +339,6 @@ export default class Classroom extends Phaser.Scene {
         const shouldSkipIntro = hasFirebaseData || onceOnlyFlags.hasSeen('classroom_intro');
         
         if (!shouldSkipIntro) {
-            console.log('🎬 Classroom: Showing intro cutscene for new student');
             // Hide UI elements during cutscene
             this.hideUIElementsForCutscene();
             
@@ -382,11 +368,9 @@ export default class Classroom extends Phaser.Scene {
             });
         } else {
             if (hasFirebaseData) {
-                console.log('✅ Classroom: Skipping intro - student has existing Firebase data');
                 // Auto-mark intro as seen for returning students
                 onceOnlyFlags.setSeen('classroom_intro');
             } else {
-                console.log('✅ Classroom: Skipping intro - already seen before');
             }
             
             this.createClassroomCarousel(charKeys, charInfo, carouselConfig);
@@ -394,7 +378,6 @@ export default class Classroom extends Phaser.Scene {
             // Skip tutorial as well for returning students with Firebase data
             if (hasFirebaseData) {
                 onceOnlyFlags.setSeen('classroom_tutorial');
-                console.log('✅ Classroom: Skipping tutorial - returning student');
             } else if (!onceOnlyFlags.hasSeen('classroom_tutorial')) {
                 // Start tutorial after carousel is created (if first time visiting classroom)
                 this.time.delayedCall(300, () => {
@@ -418,7 +401,6 @@ export default class Classroom extends Phaser.Scene {
         this.input.keyboard.on('keydown-R', () => {
             if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
                 onceOnlyFlags.flags['classroom_tutorial'] = false;
-                console.log('Classroom tutorial flag reset - tutorial will show on next visit');
             }
         });
     }
@@ -441,7 +423,6 @@ export default class Classroom extends Phaser.Scene {
             if (!this.textures.exists(key)) {
                 console.error(`Image not loaded: ${key}`);
             } else {
-                console.log(`Image loaded successfully: ${key}`);
             }
         });
 
@@ -1015,11 +996,9 @@ export default class Classroom extends Phaser.Scene {
         this.tutorialManager.init(tutorialSteps, {
             onComplete: () => {
                 onceOnlyFlags.setSeen('classroom_tutorial');
-                console.log('Classroom tutorial completed!');
             },
             onSkip: () => {
                 onceOnlyFlags.setSeen('classroom_tutorial');
-                console.log('Classroom tutorial skipped!');
             }
         });
     }

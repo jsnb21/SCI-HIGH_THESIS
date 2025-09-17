@@ -21,7 +21,6 @@
         }
         
         // Log user access for analytics
-        console.log(`Game accessed by ${userType} user`);
         return true;
       }
       
@@ -316,7 +315,6 @@
       // Try to lock to landscape on mobile if Screen Orientation API is available
       if (screen.orientation && screen.orientation.lock) {
         screen.orientation.lock('landscape').catch(err => {
-          console.log('Could not lock orientation:', err);
         });
       }
     </script>

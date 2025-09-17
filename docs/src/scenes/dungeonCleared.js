@@ -42,7 +42,6 @@ export default class DungeonCleared extends Phaser.Scene {
     }
 
     showResultsScreen() {
-        console.log('DungeonCleared: showResultsScreen called with stats:', this.courseStats);
         
         const sf = this.scaleFactor;
         const centerX = this.scale.width / 2;
@@ -71,7 +70,6 @@ export default class DungeonCleared extends Phaser.Scene {
             rankColor = '#A0522D'; // Dark bronze
         }
         
-        console.log(`Calculated rank: ${rank}, Score: ${this.courseStats.totalScore}, Mistakes: ${mistakes}`);
         
         // Create overlay
         const overlay = this.add.graphics();
@@ -221,7 +219,6 @@ export default class DungeonCleared extends Phaser.Scene {
             .setOrigin(0.5)
             .setDepth(203)
             .on('pointerdown', () => {
-                console.log('Returning to Main Hub');
                 this.scene.start('MainHub');
             })
             .on('pointerover', () => {

@@ -185,17 +185,14 @@ export default class MainGameplay extends BaseScene {
             };
             this.player.speed = this.originalPlayerSpeed;
             
-            console.log('Fresh game session - timer reset to:', this.gameTimer, 'seconds');
         } else {
             // Resuming from quiz - load saved state
             this.loadGameState(data.gameState);
-            console.log('Resuming game session - timer restored to:', this.gameTimer, 'seconds');
         }
         
         // Track session start time
         this.sessionStartTime = Date.now();
         
-        console.log('MainGameplay initialized with topic:', this.courseTopic);
     }
 
     setResponsiveTileSize() {
@@ -225,7 +222,6 @@ export default class MainGameplay extends BaseScene {
         }
         
         this.TILE_SIZE = Math.round(baseTileSize);
-        console.log(`Responsive tile size set to: ${this.TILE_SIZE}px for device: ${isSmallMobile ? 'SmallMobile' : isMobile ? 'Mobile' : 'Desktop'}`);
     }
 
     preload() {
@@ -488,7 +484,6 @@ export default class MainGameplay extends BaseScene {
         this.boardOffsetX = offsetX;
         this.boardOffsetY = offsetY;
         
-        console.log(`Screen: ${screenWidth}x${screenHeight}, Board: ${boardWidth}x${boardHeight}, Offset: ${offsetX},${offsetY}`);
         
         // Create a tiled background
         this.backgroundGroup = this.add.group();
@@ -681,7 +676,6 @@ export default class MainGameplay extends BaseScene {
             }
         }
         
-        console.log(`Created ${this.enemies.length} enemies`);
     }
 
     createPowerUps() {
@@ -720,13 +714,11 @@ export default class MainGameplay extends BaseScene {
             }
         }
         
-        console.log(`Created ${this.powerUps.length} power-ups`);
     }
 
     spawnSinglePowerUp() {
         // Don't spawn if we already have maximum power-ups
         if (this.powerUps.length >= this.maxPowerUps) {
-            console.log('Maximum power-ups already on board, skipping spawn');
             return;
         }
         
@@ -755,9 +747,7 @@ export default class MainGameplay extends BaseScene {
         if (attempts < 50) {
             const powerUp = this.createPowerUp(powerUpTileX, powerUpTileY);
             this.powerUps.push(powerUp);
-            console.log(`Power-up spawned at (${powerUpTileX}, ${powerUpTileY})`);
         } else {
-            console.log('Could not find valid position for power-up spawn');
         }
     }
 
@@ -1066,7 +1056,6 @@ export default class MainGameplay extends BaseScene {
         // Mark game as started
         this.gameStarted = true;
         
-        console.log('Game started! Timer and enemy movement activated.');
     }
 
     initializeTimerIcons() {
@@ -1159,7 +1148,6 @@ export default class MainGameplay extends BaseScene {
         };
         
         this.timerIcons.push(timerIcon);
-        console.log(`Spawned timer icon at (${tileX}, ${tileY})`);
     }
 
     checkTimerIconCollision(worldX, worldY) {
@@ -1244,7 +1232,6 @@ export default class MainGameplay extends BaseScene {
             }
         });
         
-        console.log(`Collected timer icon! Added 5 seconds. New time: ${this.gameTimer}s`);
     }
 
     showSpawnIndicators() {
@@ -1269,7 +1256,6 @@ export default class MainGameplay extends BaseScene {
             }
         }
 
-        console.log(`Showing spawn indicators for ${this.nextSpawnPositions.length} positions`);
     }
 
     generateSpawnPosition() {
@@ -1364,7 +1350,6 @@ export default class MainGameplay extends BaseScene {
             this.createGoblinThug(position.x, position.y);
         });
 
-        console.log(`Spawned ${this.nextSpawnPositions.length} goblin thugs for intensity ${this.intensity}`);
         
         // Clear spawn positions for next cycle
         this.nextSpawnPositions = [];
@@ -1440,7 +1425,6 @@ export default class MainGameplay extends BaseScene {
         // Check for goblin immunity power-up
         if (this.activePowerUps.goblinImmunityActive) {
             // Player is immune - destroy thug without penalty
-            console.log('Goblin immunity active! No damage taken.');
             
             // Deactivate immunity after blocking one thug
             this.activePowerUps.goblinImmunityActive = false;
@@ -1538,7 +1522,6 @@ export default class MainGameplay extends BaseScene {
             }
         });
         
-        console.log(`Hit goblin thug! Lost ${this.goblinThugTimePenalty} seconds. Time remaining: ${this.gameTimer}s`);
         
         // Remove the thug
         this.removeGoblinThug(thug);
@@ -1673,7 +1656,6 @@ export default class MainGameplay extends BaseScene {
         );
         
         if (collidedEnemy) {
-            console.log(`Player collided with ${collidedEnemy.type} at (${playerTileX}, ${playerTileY})`);
             this.handleEnemyCollision(collidedEnemy);
             return true;
         }
@@ -1692,7 +1674,6 @@ export default class MainGameplay extends BaseScene {
         );
         
         if (collidedPowerUp) {
-            console.log(`Player collided with power-up at (${playerTileX}, ${playerTileY})`);
             this.handlePowerUpCollision(collidedPowerUp);
             return true;
         }
@@ -1863,7 +1844,6 @@ export default class MainGameplay extends BaseScene {
                 if (this.intensity3PowerUpCounter >= 5) {
                     this.spawnSinglePowerUp();
                     this.intensity3PowerUpCounter = 0; // Reset counter
-                    console.log('Power-up spawned after 5 correct answers in intensity 3!');
                 }
                 
                 // Check if course is completed (10 correct answers in intensity 3)
@@ -1895,7 +1875,6 @@ export default class MainGameplay extends BaseScene {
                 this.sound.play('se_correct', { volume: 0.8 }); // Correct answer sound
             }
             
-            console.log(`Correct answer! Streak: ${this.streak}x, Score: +${totalScore} (+${this.baseScore} base + ${bonusScore} bonus), +10 seconds`);
             
             // Update player speed if speed boost is active
             this.updatePlayerSpeed();
@@ -1904,7 +1883,6 @@ export default class MainGameplay extends BaseScene {
             if (this.activePowerUps.goblinImmunityReady) {
                 this.activePowerUps.goblinImmunityReady = false; // Consume the ready state
                 this.activePowerUps.goblinImmunityActive = true; // Activate protection
-                console.log('Goblin immunity activated! Next goblin thug will be blocked.');
                 
                 // Show activation notification
                 this.showPowerUpNotification({
@@ -1930,17 +1908,14 @@ export default class MainGameplay extends BaseScene {
                     icon: '🛡️',
                     name: 'Streak Protected!'
                 });
-                console.log('Streak protection activated! Streak preserved.');
             } else {
                 // Reset streak on wrong answer
                 this.streak = 0;
-                console.log('Wrong answer! Streak reset.');
                 
                 // Reset goblin immunity on wrong answer
                 if (this.activePowerUps.goblinImmunityReady || this.activePowerUps.goblinImmunityActive) {
                     this.activePowerUps.goblinImmunityReady = false;
                     this.activePowerUps.goblinImmunityActive = false;
-                    console.log('Goblin immunity lost due to wrong answer.');
                 }
             }
             
@@ -2000,20 +1975,6 @@ export default class MainGameplay extends BaseScene {
             }
             this.answeredQuestions[intensityKey].combined.add(questionId);
         }
-        
-        console.log(`Question tracked - Intensity ${intensity}, Type: ${questionType}, ID: ${questionId}`);
-        console.log('Total answered questions:', {
-            intensity1: this.answeredQuestions.intensity1.multipleChoice.size,
-            intensity2: {
-                multipleChoice: this.answeredQuestions.intensity2.multipleChoice.size,
-                dragDrop: this.answeredQuestions.intensity2.dragDrop.size
-            },
-            intensity3: {
-                multipleChoice: this.answeredQuestions.intensity3.multipleChoice?.size || 0,
-                codeArrangement: this.answeredQuestions.intensity3.codeArrangement.size,
-                combined: this.answeredQuestions.intensity3.combined?.size || 0
-            }
-        });
     }
 
     createQuestionId(questionData) {
@@ -2032,7 +1993,6 @@ export default class MainGameplay extends BaseScene {
     }
 
     handlePowerUpResult(powerUpData, success, selectedPowerUp) {
-        console.log('Power-up result:', { success, selectedPowerUp });
         
         if (success && selectedPowerUp) {
             // Apply the selected power-up effect
@@ -2044,7 +2004,6 @@ export default class MainGameplay extends BaseScene {
             // Play confirmation sound
             this.sound.play('se_confirm', { volume: 0.6 });
             
-            console.log(`Power-up activated: ${selectedPowerUp.name}`);
         }
         
         // Remove the collected power-up from the board
@@ -2129,7 +2088,6 @@ export default class MainGameplay extends BaseScene {
             // Spawn power-up on intensity increase
             this.spawnSinglePowerUp();
             
-            console.log(`INTENSITY INCREASED! Level ${this.intensity} - Code arrangement quizzes activated! (${this.correctAnswers} correct answers)`);
         } else if (this.correctAnswers >= this.intensityThreshold && this.intensity === 1) {
             this.intensity = 2;
             
@@ -2142,7 +2100,6 @@ export default class MainGameplay extends BaseScene {
             // Spawn power-up on intensity increase
             this.spawnSinglePowerUp();
             
-            console.log(`INTENSITY INCREASED! Level ${this.intensity} - Drag-and-Drop quizzes activated! (${this.correctAnswers} correct answers)`);
         }
     }
 
@@ -2390,9 +2347,7 @@ export default class MainGameplay extends BaseScene {
                 this.timerText.setColor('#ffff00');
             }
             
-            console.log('Correct answer! +100 score, +10 seconds');
         } else {
-            console.log('Wrong answer!');
         }
         
         // Destroy enemy after quiz
@@ -2486,7 +2441,6 @@ export default class MainGameplay extends BaseScene {
             this.spawnNewEnemy();
         }
         
-        console.log(`Enemy destroyed! Remaining enemies: ${this.enemies.length}`);
     }
 
     destroyPowerUp(powerUp) {
@@ -2523,7 +2477,6 @@ export default class MainGameplay extends BaseScene {
         // Create collection effect
         this.createPowerUpCollectEffect(powerUp.worldX, powerUp.worldY);
         
-        console.log(`Power-up collected! Remaining power-ups: ${this.powerUps.length}`);
     }
 
     createEnemyDestroyEffect(x, y) {
@@ -2593,7 +2546,6 @@ export default class MainGameplay extends BaseScene {
     }
 
     activatePowerUp(powerUpId) {
-        console.log(`Activating power-up: ${powerUpId}`);
         
         switch (powerUpId) {
             case 'streakProtection':
@@ -2601,7 +2553,6 @@ export default class MainGameplay extends BaseScene {
                 break;
             case 'goblinImmunity':
                 this.activePowerUps.goblinImmunityReady = true;
-                console.log('Goblin Ward selected! Answer correctly to activate immunity.');
                 break;
             case 'speedBoost':
                 this.activePowerUps.speedBoost = true;
@@ -2619,7 +2570,6 @@ export default class MainGameplay extends BaseScene {
             // Calculate speed based on current streak (max 2x speed)
             const speedMultiplier = Math.min(1 + (this.streak * 0.2), 2.0);
             this.player.speed = this.originalPlayerSpeed * speedMultiplier;
-            console.log(`Player speed updated: ${this.player.speed} (${speedMultiplier}x multiplier based on ${this.streak} streak)`);
         } else {
             this.player.speed = this.originalPlayerSpeed;
         }
@@ -2677,7 +2627,6 @@ export default class MainGameplay extends BaseScene {
             const enemyType = Phaser.Utils.Array.GetRandom(enemyTypes);
             const enemy = this.createEnemy(enemyTileX, enemyTileY, enemyType);
             this.enemies.push(enemy);
-            console.log(`Spawned new ${enemyType} enemy at (${enemyTileX}, ${enemyTileY})`);
         }
     }
 
@@ -2905,7 +2854,6 @@ export default class MainGameplay extends BaseScene {
         this.isMobileDevice = isMobile;
         this.isSmallMobileDevice = isSmallMobile;
         
-        console.log(`Device: ${isSmallMobile ? 'SmallMobile' : isMobile ? 'Mobile' : 'Desktop'}, Board: ${boardWidth}x${boardHeight}, Screen: ${screenWidth}x${availableHeight}, Zoom: ${zoom.toFixed(2)}, Follow: enabled`);
     }
 
     addCourseDisplay() {
@@ -3429,16 +3377,13 @@ export default class MainGameplay extends BaseScene {
             startTime: this.sessionStartTime
         };
         
-        console.log('=== COLLECTING STUDENT INFORMATION ===');
         
         // PRIORITY 1: Check for fresh user input from current session (sci_high_user)
         let currentUserData = null;
         try {
             const userDataStr = localStorage.getItem('sci_high_user');
-            console.log('Current user data from sci_high_user:', userDataStr);
             if (userDataStr) {
                 currentUserData = JSON.parse(userDataStr);
-                console.log('Parsed current user:', currentUserData);
             }
         } catch (e) {
             console.error('Error parsing current user data:', e);
@@ -3448,10 +3393,8 @@ export default class MainGameplay extends BaseScene {
         let storedStudentInfo = null;
         try {
             const studentInfoStr = localStorage.getItem('studentInfo');
-            console.log('Stored student info:', studentInfoStr);
             if (studentInfoStr) {
                 storedStudentInfo = JSON.parse(studentInfoStr);
-                console.log('Parsed stored student info:', storedStudentInfo);
             }
         } catch (e) {
             console.error('Error parsing stored student info:', e);
@@ -3462,7 +3405,6 @@ export default class MainGameplay extends BaseScene {
         
         if (currentUserData && currentUserData.profile) {
             // Use current user data (most recent/fresh)
-            console.log('Using CURRENT USER data as priority');
             finalStudentData = {
                 studentName: currentUserData.profile.fullName || currentUserData.profile.displayName || 'Unknown User',
                 firstName: currentUserData.profile.firstName || (currentUserData.profile.fullName ? currentUserData.profile.fullName.split(' ')[0] : 'Unknown'),
@@ -3474,7 +3416,6 @@ export default class MainGameplay extends BaseScene {
             };
         } else if (storedStudentInfo) {
             // Fall back to stored student info
-            console.log('Using STORED STUDENT INFO as fallback');
             finalStudentData = {
                 studentName: storedStudentInfo.fullName || `${storedStudentInfo.firstName} ${storedStudentInfo.lastName}`,
                 firstName: storedStudentInfo.firstName,
@@ -3486,7 +3427,6 @@ export default class MainGameplay extends BaseScene {
             };
         } else {
             // No student data found
-            console.log('NO STUDENT DATA FOUND - using defaults');
             finalStudentData = {
                 studentName: 'Anonymous Player',
                 firstName: 'Anonymous',
@@ -3498,8 +3438,6 @@ export default class MainGameplay extends BaseScene {
             };
         }
         
-        console.log('=== FINAL STUDENT DATA SELECTED ===');
-        console.log('Final student data:', finalStudentData);
         
         // Add student info to result data
         resultData.studentName = finalStudentData.studentName;
@@ -3509,8 +3447,6 @@ export default class MainGameplay extends BaseScene {
         resultData.department = finalStudentData.department;
         resultData.strandYear = finalStudentData.strandYear;
         
-        console.log('=== GOING TO RESULT SCREEN ===');
-        console.log('Result data being passed:', resultData);
         
         // Go to ResultScreen
         this.scene.start('ResultScreen', resultData);
@@ -3521,8 +3457,6 @@ export default class MainGameplay extends BaseScene {
 
     async uploadGameplayDataInBackground(resultData) {
         try {
-            console.log('=== STARTING SCORE UPLOAD PROCESS ===');
-            console.log('Result data received:', resultData);
             
             // Get student data from localStorage (prioritize current user data)
             let studentId = 'unknown';
@@ -3530,19 +3464,13 @@ export default class MainGameplay extends BaseScene {
             
             try {
                 const userDataStr = localStorage.getItem('sci_high_user');
-                console.log('Raw current user data from localStorage:', userDataStr);
                 if (userDataStr) {
                     currentUser = JSON.parse(userDataStr);
                     studentId = currentUser.studentId || currentUser.uid || 'unknown';
-                    console.log('Parsed current user data:', currentUser);
-                    console.log('Student ID extracted:', studentId);
                     
                     // If we have current user data and it differs from result data, update result data
                     if (currentUser.profile && currentUser.profile.fullName && 
                         currentUser.profile.fullName !== resultData.studentName) {
-                        console.log('=== UPDATING RESULT DATA WITH CURRENT USER INFO ===');
-                        console.log('Old name:', resultData.studentName);
-                        console.log('New name from current user:', currentUser.profile.fullName);
                         
                         resultData.studentName = currentUser.profile.fullName;
                         resultData.fullName = currentUser.profile.fullName;
@@ -3585,8 +3513,6 @@ export default class MainGameplay extends BaseScene {
                 }
             };
             
-            console.log('=== PREPARED GAMEPLAY DATA FOR UPLOAD ===');
-            console.log('Full gameplay data object:', JSON.stringify(gameplayData, null, 2));
             
             // Check network connectivity before attempting upload
             if (!navigator.onLine) {
@@ -3595,10 +3521,8 @@ export default class MainGameplay extends BaseScene {
                 return;
             }
             
-            console.log('=== NETWORK CONNECTION DETECTED - PROCEEDING WITH FIREBASE ===');
             
             // Ensure Firebase is initialized
-            console.log('=== ATTEMPTING FIREBASE INITIALIZATION ===');
             const firebaseInitialized = await this.ensureFirebaseInitialized();
             
             if (!firebaseInitialized) {
@@ -3607,26 +3531,16 @@ export default class MainGameplay extends BaseScene {
                 return;
             }
             
-            console.log('=== FIREBASE INITIALIZED SUCCESSFULLY ===');
             
             // Upload to Firebase
             if (this.database) {
-                console.log('=== UPLOADING TO FIREBASE DATABASE ===');
                 const gameplayRef = this.database.ref('gameplay_data');
                 const result = await gameplayRef.push(gameplayData);
-                console.log('=== FIREBASE UPLOAD SUCCESSFUL ===');
-                console.log('Upload result key:', result.key);
-                console.log('Upload timestamp:', new Date().toISOString());
-                console.log('Database path: gameplay_data/' + result.key);
-                console.log('Full database URL: https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app/gameplay_data/' + result.key);
                 
                 // Verify the upload by reading it back
                 try {
-                    console.log('=== VERIFYING UPLOAD BY READING BACK ===');
                     const verifySnapshot = await gameplayRef.child(result.key).once('value');
                     if (verifySnapshot.exists()) {
-                        console.log('✅ UPLOAD VERIFIED - Data exists in database');
-                        console.log('Uploaded data verification:', verifySnapshot.val());
                     } else {
                         console.error('❌ UPLOAD VERIFICATION FAILED - Data not found in database');
                     }
@@ -3636,7 +3550,6 @@ export default class MainGameplay extends BaseScene {
                 
                 // Also update career stats if available
                 try {
-                    console.log('=== UPDATING CAREER STATS ===');
                     const { default: careerStatsService } = await import('../../services/careerStatsService.js');
                     await careerStatsService.updateCareerStats(
                         gameplayData.studentId, 
@@ -3650,7 +3563,6 @@ export default class MainGameplay extends BaseScene {
                             strandYear: resultData.strandYear
                         }
                     );
-                    console.log('=== CAREER STATS UPDATE SUCCESSFUL ===');
                 } catch (careerError) {
                     console.error('=== CAREER STATS UPDATE FAILED ===');
                     console.error('Career stats error:', careerError);
@@ -3681,7 +3593,6 @@ export default class MainGameplay extends BaseScene {
                     errorMessage: error.message
                 };
                 this.storeScoreLocally(fallbackData);
-                console.log('=== FALLBACK LOCAL STORAGE COMPLETED ===');
             } catch (fallbackError) {
                 console.error('=== EVEN FALLBACK STORAGE FAILED ===');
                 console.error('Fallback error:', fallbackError);
@@ -3692,7 +3603,6 @@ export default class MainGameplay extends BaseScene {
     // Store score data locally when Firebase upload fails
     storeScoreLocally(gameplayData) {
         try {
-            console.log('=== STORING SCORE DATA LOCALLY ===');
             const localScores = JSON.parse(localStorage.getItem('pendingScores') || '[]');
             localScores.push({
                 ...gameplayData,
@@ -3700,8 +3610,6 @@ export default class MainGameplay extends BaseScene {
                 localStorageTimestamp: new Date().toISOString()
             });
             localStorage.setItem('pendingScores', JSON.stringify(localScores));
-            console.log('=== LOCAL STORAGE SUCCESSFUL ===');
-            console.log('Stored scores count:', localScores.length);
             
             // Try to upload pending scores on next network connection
             this.schedulePendingUpload();
@@ -3731,12 +3639,9 @@ export default class MainGameplay extends BaseScene {
             const pendingScores = JSON.parse(localStorage.getItem('pendingScores') || '[]');
             if (pendingScores.length === 0) return;
             
-            console.log('=== UPLOADING PENDING SCORES ===');
-            console.log('Pending scores count:', pendingScores.length);
             
             const firebaseInitialized = await this.ensureFirebaseInitialized();
             if (!firebaseInitialized || !this.database) {
-                console.log('Firebase not available, keeping scores for later');
                 return;
             }
             
@@ -3747,7 +3652,6 @@ export default class MainGameplay extends BaseScene {
                 try {
                     await gameplayRef.push(score);
                     uploadedScores.push(score);
-                    console.log('Uploaded pending score for:', score.studentName);
                 } catch (uploadError) {
                     console.error('Failed to upload pending score:', uploadError);
                 }
@@ -3761,8 +3665,6 @@ export default class MainGameplay extends BaseScene {
                     )
                 );
                 localStorage.setItem('pendingScores', JSON.stringify(remainingScores));
-                console.log('=== PENDING SCORES UPLOAD COMPLETED ===');
-                console.log('Uploaded:', uploadedScores.length, 'Remaining:', remainingScores.length);
             }
         } catch (error) {
             console.error('Error uploading pending scores:', error);
@@ -3771,18 +3673,15 @@ export default class MainGameplay extends BaseScene {
 
     async ensureFirebaseInitialized() {
         if (this.isFirebaseInitialized) {
-            console.log('Firebase already initialized');
             return true;
         }
         
         if (!this.initializationPromise) {
-            console.log('Starting new Firebase initialization...');
             this.initializationPromise = this.initializeFirebase();
         }
         
         try {
             await this.initializationPromise;
-            console.log('Firebase initialization completed successfully');
             return this.isFirebaseInitialized;
         } catch (error) {
             console.error('Firebase initialization failed:', error);
@@ -3794,7 +3693,6 @@ export default class MainGameplay extends BaseScene {
 
     async initializeFirebase() {
         try {
-            console.log('=== FIREBASE INITIALIZATION STARTING ===');
             
             // Firebase config
             const firebaseConfig = {
@@ -3807,27 +3705,21 @@ export default class MainGameplay extends BaseScene {
                 appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
             };
             
-            console.log('Firebase config:', firebaseConfig);
             
             // First check if we have internet connectivity
             if (!navigator.onLine) {
                 throw new Error('No internet connection detected');
             }
-            console.log('Internet connection confirmed');
             
             // Check if Firebase is already loaded
             if (typeof window.firebase === 'undefined') {
-                console.log('Firebase not loaded, attempting to load scripts...');
                 await this.loadFirebaseScripts();
-                console.log('Firebase scripts loading completed');
             } else {
-                console.log('Firebase already loaded globally');
             }
             
             // Wait a bit for Firebase to be available
             let retries = 0;
             while (typeof window.firebase === 'undefined' && retries < 10) {
-                console.log(`Waiting for Firebase to load... (attempt ${retries + 1})`);
                 await new Promise(resolve => setTimeout(resolve, 500)); // Increased wait time
                 retries++;
             }
@@ -3835,28 +3727,20 @@ export default class MainGameplay extends BaseScene {
             if (typeof window.firebase === 'undefined') {
                 throw new Error('Firebase failed to load after multiple attempts - check your internet connection');
             }
-            console.log('Firebase is now available globally');
             
             // Initialize Firebase app if not already done
             if (!window.firebase.apps.length) {
-                console.log('Initializing Firebase app...');
                 window.firebase.initializeApp(firebaseConfig);
-                console.log('Firebase app initialized');
             } else {
-                console.log('Firebase app already initialized');
             }
             
             // Test Firebase connection
-            console.log('Setting up database connection...');
             this.database = window.firebase.database();
             
             // Try a simple connection test
-            console.log('Testing Firebase connection...');
             await this.database.ref('.info/connected').once('value');
-            console.log('Firebase connection test successful');
             
             this.isFirebaseInitialized = true;
-            console.log('=== FIREBASE INITIALIZATION COMPLETED SUCCESSFULLY ===');
         } catch (error) {
             console.error('=== FIREBASE INITIALIZATION FAILED ===');
             console.error('Error details:', error);
@@ -3869,12 +3753,10 @@ export default class MainGameplay extends BaseScene {
     async loadFirebaseScripts() {
         return new Promise((resolve, reject) => {
             if (typeof window.firebase !== 'undefined') {
-                console.log('Firebase already loaded, skipping script loading');
                 resolve();
                 return;
             }
 
-            console.log('Loading Firebase scripts dynamically...');
             const scripts = [
                 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
                 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js'
@@ -3892,16 +3774,13 @@ export default class MainGameplay extends BaseScene {
             }, 15000); // Increased timeout to 15 seconds
             
             scripts.forEach((src, index) => {
-                console.log(`Loading Firebase script ${index + 1}/${scripts.length}: ${src}`);
                 const script = document.createElement('script');
                 script.src = src;
                 
                 script.onload = () => {
                     loaded++;
-                    console.log(`Firebase script ${index + 1} loaded successfully (${loaded}/${scripts.length})`);
                     if (loaded === scripts.length && !failed) {
                         clearTimeout(timeout);
-                        console.log('All Firebase scripts loaded successfully');
                         resolve();
                     }
                 };
@@ -3931,24 +3810,18 @@ export default class MainGameplay extends BaseScene {
             const currentUserStr = localStorage.getItem('sci_high_user');
             if (currentUserStr) {
                 const currentUser = JSON.parse(currentUserStr);
-                console.log('Current user found:', currentUser.profile?.fullName || currentUser.uid);
                 
                 // Check if there's old studentInfo that might conflict
                 const oldStudentInfoStr = localStorage.getItem('studentInfo');
                 if (oldStudentInfoStr) {
                     const oldStudentInfo = JSON.parse(oldStudentInfoStr);
-                    console.log('Old student info found:', oldStudentInfo.fullName || `${oldStudentInfo.firstName} ${oldStudentInfo.lastName}`);
                     
                     // If the names don't match, clear the old data
                     const currentName = currentUser.profile?.fullName || currentUser.profile?.displayName;
                     const oldName = oldStudentInfo.fullName || `${oldStudentInfo.firstName} ${oldStudentInfo.lastName}`;
                     
                     if (currentName && oldName && currentName !== oldName) {
-                        console.log('=== CLEARING OLD STUDENT DATA ===');
-                        console.log('Current user name:', currentName);
-                        console.log('Old stored name:', oldName);
                         localStorage.removeItem('studentInfo');
-                        console.log('Old student data cleared');
                     }
                 }
             }
@@ -3961,7 +3834,6 @@ export default class MainGameplay extends BaseScene {
         // Try to upload any pending scores when the game starts
         const pendingScores = JSON.parse(localStorage.getItem('pendingScores') || '[]');
         if (pendingScores.length > 0) {
-            console.log(`Found ${pendingScores.length} pending scores to upload`);
             this.uploadPendingScores();
         }
     }

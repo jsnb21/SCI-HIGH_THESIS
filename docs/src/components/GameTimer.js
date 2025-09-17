@@ -128,8 +128,6 @@ export default class GameTimer {
         this.progressBar.fillRoundedRect(this.timerX - 53, this.timerY + 17, barWidth, 1, 1);
     }    // Update timer position
     updatePosition(x, y) {
-        console.log('=== UPDATE TIMER POSITION ===');
-        console.log('New position:', x, y);
         
         // Store new position
         this.timerX = x;
@@ -161,10 +159,8 @@ export default class GameTimer {
             this.secondsLabel.setPosition(x, y + 8);
         }
         
-        console.log('=== END UPDATE TIMER POSITION ===');
     }    // Recreate timer elements if they were destroyed
     recreateElements(x, y) {
-        console.log('=== RECREATING TIMER ELEMENTS ===');
         
         // Clean up any destroyed references
         this.timerBackground = null;
@@ -214,8 +210,6 @@ export default class GameTimer {
         // Apply current timer state
         this.updateTimerColor();
 
-        console.log('Timer elements recreated');
-        console.log('=== END RECREATION ===');
     }    // Update timer display and handle countdown
     updateTimer() {
         if (this.isPaused) return; // Skip update if paused
@@ -339,7 +333,6 @@ export default class GameTimer {
 
     // Handle when time runs out
     handleTimeUp() {
-        console.log('=== TIME UP ===');
         
         // Show time up message briefly
         const timeUpText = this.scene.add.text(612, 100, "TIME'S UP!", {
@@ -366,7 +359,6 @@ export default class GameTimer {
             }
         });
         
-        console.log('=== END TIME UP ===');
     }    // Add time (for correct answers)
     addTime(seconds, maxTime = 30) {
         this.timeLeft = Math.min(this.timeLeft + seconds, maxTime);

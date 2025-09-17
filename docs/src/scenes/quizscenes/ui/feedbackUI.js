@@ -232,12 +232,10 @@ export function showVictory(scene) {
                     // Import gameManager here to avoid circular dependencies
                     import('/src/gameManager.js').then(({ default: gameManager }) => {
                         gameManager.setCourseCompleted(courseKey, true);
-                        console.log(`Course ${courseKey} marked as completed!`);
                     });
                 }
             }            // Pass enemy defeat status and quiz stats to the dungeon scene
             const wasEnemyDefeated = scene.enemyDefeated || false;
-            console.log('Victory screen: Enemy was defeated?', wasEnemyDefeated);
             
             scene.scene.stop();
             // Try to resume DungeonScene, but with better error handling
@@ -265,7 +263,6 @@ export function showVictory(scene) {
                             dungeonScene.courseStats.comboScore += scene.comboMeter.getTotalComboScore();
                         }
                         
-                        console.log('Stats passed to dungeon:', dungeonScene.courseStats);
                     }
                     scene.scene.resume('DungeonScene');
                 } else if (scene.scene.manager.isActive('DungeonScene')) {

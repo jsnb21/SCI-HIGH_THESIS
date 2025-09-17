@@ -56,7 +56,6 @@ export default class MainMenu extends Phaser.Scene {
 
     async initializeFirebase() {
         try {
-            console.log('Starting Firebase initialization for MainMenu...');
             
             // First check if we have internet connectivity
             if (!navigator.onLine) {
@@ -65,14 +64,12 @@ export default class MainMenu extends Phaser.Scene {
             
             // Check if Firebase is already loaded
             if (typeof window.firebase === 'undefined') {
-                console.log('Loading Firebase scripts...');
                 await this.loadFirebaseScripts();
             }
             
             // Wait a bit for Firebase to be available
             let retries = 0;
             while (typeof window.firebase === 'undefined' && retries < 10) {
-                console.log(`Waiting for Firebase to load... (attempt ${retries + 1})`);
                 await new Promise(resolve => setTimeout(resolve, 300));
                 retries++;
             }
@@ -83,7 +80,6 @@ export default class MainMenu extends Phaser.Scene {
             
             // Initialize Firebase app if not already done
             if (!window.firebase.apps.length) {
-                console.log('Initializing Firebase app...');
                 window.firebase.initializeApp(this.firebaseConfig);
             }
             
@@ -94,7 +90,6 @@ export default class MainMenu extends Phaser.Scene {
             await this.database.ref('.info/connected').once('value');
             
             this.isFirebaseInitialized = true;
-            console.log('Firebase Database initialized successfully for MainMenu');
         } catch (error) {
             console.error('Failed to initialize Firebase for MainMenu:', error);
             this.isFirebaseInitialized = false;
@@ -140,12 +135,10 @@ export default class MainMenu extends Phaser.Scene {
 
     async checkStudentDataInFirebase() {
         try {
-            console.log('🔍 Checking for existing student data in Firebase...');
             
             // Get current user from localStorage
             const userDataStr = localStorage.getItem('sci_high_user');
             if (!userDataStr) {
-                console.log('ℹ️ No user data found in localStorage');
                 return false;
             }
             
@@ -153,16 +146,13 @@ export default class MainMenu extends Phaser.Scene {
             const studentId = currentUser.studentId || currentUser.uid;
             
             if (!studentId) {
-                console.log('ℹ️ No student ID found in user data');
                 return false;
             }
             
-            console.log('🔍 Searching for student data with ID:', studentId);
             
             // Ensure Firebase is initialized
             const isInitialized = await this.ensureFirebaseInitialized();
             if (!isInitialized) {
-                console.log('⚠️ Firebase not initialized, cannot check student data');
                 return false;
             }
             
@@ -171,19 +161,16 @@ export default class MainMenu extends Phaser.Scene {
             const snapshot = await gameplayRef.orderByChild('studentId').equalTo(studentId).limitToFirst(1).once('value');
             
             const hasData = snapshot.exists();
-            console.log(`${hasData ? '✅' : 'ℹ️'} Student ${studentId} ${hasData ? 'has' : 'does not have'} existing data in Firebase`);
             
             if (hasData) {
                 // Also check if student info exists in localStorage
                 const studentInfo = localStorage.getItem('studentInfo');
                 if (studentInfo) {
-                    console.log('✅ Student info also found in localStorage');
                     return true;
                 } else {
                     // If Firebase data exists but no localStorage info, extract it from Firebase
                     const firstRecord = Object.values(snapshot.val())[0];
                     if (firstRecord.firstName && firstRecord.lastName) {
-                        console.log('📋 Extracting student info from Firebase data');
                         const extractedStudentInfo = {
                             firstName: firstRecord.firstName,
                             lastName: firstRecord.lastName,
@@ -194,7 +181,6 @@ export default class MainMenu extends Phaser.Scene {
                         };
                         localStorage.setItem('studentInfo', JSON.stringify(extractedStudentInfo));
                         localStorage.setItem('recentStudentData', JSON.stringify(extractedStudentInfo));
-                        console.log('✅ Student info extracted and saved to localStorage');
                     }
                     return true;
                 }
@@ -222,12 +208,10 @@ export default class MainMenu extends Phaser.Scene {
     }
 
     async create() {
-        console.log('MainMenu create() called');
         
         // Sync save data with Firebase on scene load
         try {
             await syncSaveDataOnLogin();
-            console.log('MainMenu: Save data synced successfully');
         } catch (error) {
             console.warn('MainMenu: Failed to sync save data:', error);
         }
@@ -235,7 +219,6 @@ export default class MainMenu extends Phaser.Scene {
         let scaleInfo;
         try {
             scaleInfo = getScaleInfo(this);
-            console.log('ScaleInfo:', scaleInfo);
         } catch (error) {
             console.warn('Mobile utils failed, using fallback:', error);
             const { width, height } = this.scale;
@@ -265,8 +248,6 @@ export default class MainMenu extends Phaser.Scene {
             };
         }
         
-        console.log('Screen size:', width, 'x', height);
-        console.log('Is mobile:', scaleInfo.isMobile);
         
         const se_hoverSound = this.sound.add('se_select');
         const se_confirmSound = this.sound.add('se_confirm');
@@ -731,12 +712,10 @@ export default class MainMenu extends Phaser.Scene {
         const userType = sessionStorage.getItem('sci_high_user_type') || localStorage.getItem('sci_high_user_type');
         
         if (userType === 'student') {
-            console.log('Auto-loading student progress...');
             
             // Sync save data on login
             syncSaveDataOnLogin()
                 .then(() => {
-                    console.log('Student progress synced successfully');
                 })
                 .catch(error => {
                     console.error('Failed to sync student progress:', error);
@@ -745,7 +724,6 @@ export default class MainMenu extends Phaser.Scene {
     }
 
     showProgressSummary() {
-        console.log('Showing progress summary...');
         
         // Get current save data
         const saveData = JSON.parse(localStorage.getItem('sci_high_save_data') || '{}');
@@ -953,7 +931,6 @@ export default class MainMenu extends Phaser.Scene {
     }
 
     async handleAdventureStart() {
-        console.log('Starting adventure...');
         
         // Get save data to determine where to start
         const saveData = JSON.parse(localStorage.getItem('sci_high_save_data') || '{}');
@@ -967,9 +944,7 @@ export default class MainMenu extends Phaser.Scene {
         if (hasLocalProgress || hasFirebaseData) {
             // Player has existing progress or Firebase data, continue from main hub
             if (hasFirebaseData && !hasLocalProgress) {
-                console.log('Player has Firebase data but no local progress, skipping intro to MainHub');
             } else {
-                console.log('Player has local progress, continuing to MainHub');
             }
             
             // Load the save data into gameManager before transitioning
@@ -985,7 +960,6 @@ export default class MainMenu extends Phaser.Scene {
             LoadingScreen.transitionToScene(this, 'MainHub', 'Loading your progress...', 800);
         } else {
             // New player with no local progress and no Firebase data, start with intro
-            console.log('Starting new adventure from intro');
             LoadingScreen.transitionToScene(this, 'VNScene', 'Starting your journey...', 800);
         }
     }
@@ -1021,12 +995,6 @@ export default class MainMenu extends Phaser.Scene {
         
         // Return true if any meaningful progress indicator is found
         const hasProgress = progressIndicators.some(indicator => indicator === true);
-        
-        console.log('Progress check results:', {
-            saveData,
-            progressIndicators,
-            hasProgress
-        });
         
         return hasProgress;
     }

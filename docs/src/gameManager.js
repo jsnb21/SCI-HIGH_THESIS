@@ -83,7 +83,6 @@ class GameManager {
             totalAfter: this.totalPoints
         });
         
-        console.log(`+${roundedPoints} points: ${description} (Total: ${this.totalPoints})`);
         
         // Check for achievements
         this.checkPointAchievements();
@@ -187,12 +186,10 @@ class GameManager {
             if (points >= milestone.points && !this.achievements.has(milestone.id)) {
                 this.achievements.add(milestone.id);
                 newAchievements.push(milestone);
-                console.log(`🏆 Achievement Unlocked: ${milestone.name} - ${milestone.description}`);
                 
                 // Suggest leaderboard submission for significant milestones
                 if (milestone.points >= 1000) {
                     this.suggestLeaderboardSubmission = true;
-                    console.log('💡 Consider submitting your score to the leaderboard!');
                 }
             }
         });
@@ -207,7 +204,6 @@ class GameManager {
                     name: `${topic} Master`,
                     description: `Earned 1,000 points in ${topic}`
                 });
-                console.log(`🏆 Achievement Unlocked: ${topic} Master`);
             }
         });
 
@@ -271,7 +267,6 @@ class GameManager {
         };
         this.pointsHistory = [];
         this.achievements.clear();
-        console.log('Point system reset');
     }
 
     // Create points display UI element
@@ -326,7 +321,6 @@ class GameManager {
     // Reset player HP to maximum (useful for starting new quizzes)
     resetPlayerHP() {
         this.playerHP = this.maxPlayerHP;
-        console.log(`Player HP reset to full: ${this.playerHP}/${this.maxPlayerHP}`);
     }
 
     // Player HP and Health Management
@@ -352,7 +346,6 @@ class GameManager {
     
     healPlayer(amount) {
         this.setPlayerHP(this.playerHP + amount);
-        console.log(`Player healed for ${amount}. Current HP: ${this.playerHP}/${this.maxPlayerHP}`);
     }
     
     damagePlayer(amount) {
@@ -360,7 +353,6 @@ class GameManager {
         const reduction = this.getPlayerBuff('armor') || 0;
         const actualDamage = Math.max(1, amount - reduction);
         this.setPlayerHP(this.playerHP - actualDamage);
-        console.log(`Player took ${actualDamage} damage (${amount} - ${reduction} armor). Current HP: ${this.playerHP}/${this.maxPlayerHP}`);
     }
 
     // Permanent Damage System
@@ -370,7 +362,6 @@ class GameManager {
     
     increasePermanentDamage(amount) {
         this.permanentDamage += amount;
-        console.log(`Permanent damage increased by ${amount}. New damage: ${this.permanentDamage}`);
     }
 
     // Buff System
@@ -379,7 +370,6 @@ class GameManager {
             this.playerBuffs[buffType] = 0;
         }
         this.playerBuffs[buffType] += value;
-        console.log(`Added ${buffType} buff: +${value} (total: ${this.playerBuffs[buffType]})`);
     }
     
     getPlayerBuff(buffType) {
@@ -401,7 +391,6 @@ class GameManager {
     
     clearPlayerBuffs() {
         this.playerBuffs = {};
-        console.log('All player buffs cleared');
     }
     
     getAllPlayerBuffs() {
@@ -570,14 +559,12 @@ class GameManager {
     applyScoreMultiplier(baseScore) {
         const multiplier = 1 + this.getPlayerBuff('score_multiplier');
         const finalScore = Math.round(baseScore * multiplier);
-        console.log(`Score multiplier applied: ${baseScore} * ${multiplier} = ${finalScore}`);
         return finalScore;
     }
     
     applyComboBoost(baseCombo) {
         const boost = this.getPlayerBuff('combo_boost');
         const finalCombo = baseCombo + boost;
-        console.log(`Combo boost applied: ${baseCombo} + ${boost} = ${finalCombo}`);
         return finalCombo;
     }
     
@@ -589,7 +576,6 @@ class GameManager {
         if (correctStreak >= 3 && this.getPlayerBuff('streak_bonus')) {
             const bonus = this.getPlayerBuff('streak_bonus');
             const bonusScore = Math.round(baseScore * bonus);
-            console.log(`Streak bonus applied (${correctStreak} streak): +${bonusScore} points`);
             return baseScore + bonusScore;
         }
         return baseScore;
@@ -599,7 +585,6 @@ class GameManager {
         if (this.getPlayerBuff('speed_bonus') && answerTime < timeLimit * 0.5) {
             const bonus = this.getPlayerBuff('speed_bonus');
             const bonusScore = Math.round(baseScore * bonus);
-            console.log(`Speed bonus applied (fast answer): +${bonusScore} points`);
             return baseScore + bonusScore;
         }
         return baseScore;
@@ -612,7 +597,6 @@ class GameManager {
     checkSecondChance() {
         const chance = this.getPlayerBuff('second_chance');
         if (chance > 0 && Math.random() < chance) {
-            console.log('Second chance activated! Wrong answer ignored.');
             return true;
         }
         return false;
@@ -625,7 +609,6 @@ class GameManager {
     useAnswerHint() {
         if (this.hasAnswerHint()) {
             this.removePlayerBuff('answer_hint', 1);
-            console.log('Answer hint used');
             return true;
         }
         return false;
@@ -638,7 +621,6 @@ class GameManager {
     useDoubleScore() {
         if (this.hasDoubleScore()) {
             this.removePlayerBuff('double_score', 1);
-            console.log('Double score used');
             return true;
         }
         return false;
@@ -648,7 +630,6 @@ class GameManager {
         if (isPerfect && this.getPlayerBuff('perfect_bonus')) {
             const bonus = this.getPlayerBuff('perfect_bonus');
             const bonusScore = Math.round(baseScore * bonus);
-            console.log(`Perfect quiz bonus applied: +${bonusScore} points`);
             return baseScore + bonusScore;
         }
         return baseScore;
@@ -658,7 +639,6 @@ class GameManager {
         if (this.getPlayerBuff('scholar_focus')) {
             const timeBonus = this.getPlayerBuff('scholar_focus');
             const scoreBonus = this.getPlayerBuff('scholar_focus_score') || 0.25;
-            console.log(`Scholar's Focus applied: +${timeBonus} time, +${scoreBonus * 100}% score`);
             return { timeBonus, scoreBonus };
         }
         return { timeBonus: 0, scoreBonus: 0 };
@@ -690,7 +670,6 @@ class GameManager {
         if (this.hasDoubleScore() && options.useDoubleScore) {
             this.useDoubleScore();
             finalScore *= 2;
-            console.log(`Double score applied: final score = ${finalScore}`);
         }
         
         return finalScore;
@@ -729,18 +708,15 @@ class GameManager {
             const result = await leaderboardService.updateBestScore(playerData);
             
             if (result.isNewBest) {
-                console.log('🏆 NEW HIGH SCORE! Submitted to leaderboard:', result.newBest);
                 
                 // Add achievement for submitting to leaderboard
                 if (!this.achievements.has('leaderboard_submission')) {
                     this.achievements.add('leaderboard_submission');
-                    console.log('🏆 Achievement Unlocked: Leaderboard Climber - First score submission!');
                 }
                 
                 // Add achievement for high scores
                 if (result.newBest >= 1000 && !this.achievements.has('score_master')) {
                     this.achievements.add('score_master');
-                    console.log('🏆 Achievement Unlocked: Score Master - Reached 1000 points!');
                 }
             }
 

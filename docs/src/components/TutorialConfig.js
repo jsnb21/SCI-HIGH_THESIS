@@ -475,17 +475,14 @@ export const TUTORIAL_ELEMENT_SELECTORS = {
                 height: 40
             };
             
-            console.log('Using custom timer bounds:', timerMockElement.getBounds());
             return timerMockElement;
         }
         
         // Fallback to timerText if available
         if (scene.gameTimer?.timerText) {
-            console.log('Using timerText for timer highlight');
             return scene.gameTimer.timerText;
         }
         
-        console.log('No proper timer element found');
         return null;
     },
     
@@ -512,13 +509,11 @@ export const TUTORIAL_ELEMENT_SELECTORS = {
     carousel: (scene) => {
         // Try to target the carousel background panel first (computer lab uses scene.carousel)
         if (scene.carousel?.bgPanel) {
-            console.log('Using carousel bgPanel for highlight');
             return scene.carousel.bgPanel;
         }
         
         // Try to target the character carousel background panel (classroom uses scene.characterCarousel)
         if (scene.characterCarousel?.bgPanel) {
-            console.log('Using characterCarousel bgPanel for highlight');
             return scene.characterCarousel.bgPanel;
         }
         
@@ -544,12 +539,10 @@ export const TUTORIAL_ELEMENT_SELECTORS = {
                 height: carouselHeight
             };
             
-            console.log('Using custom carousel bounds:', carouselMockElement.getBounds());
             return carouselMockElement;
         }
         
         // Last fallback to carousel object itself
-        console.log('Using carousel object as fallback');
         return scene.carousel || scene.characterCarousel || scene.carouselContainer;
     }
 };
@@ -558,13 +551,6 @@ export const TUTORIAL_ELEMENT_SELECTORS = {
 export function debugLogElements(scene) {
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
         console.group('=== Tutorial Element Debug ===');
-        console.log('playerContainer:', scene.playerContainer);
-        console.log('gameTimer.timerBackground:', scene.gameTimer?.timerBackground);
-        console.log('gameTimer.timerText:', scene.gameTimer?.timerText);
-        console.log('comboMeter.comboBackground:', scene.comboMeter?.comboBackground);
-        console.log('questionText:', scene.questionText);
-        console.log('quizBox:', scene.quizBox);
-        console.log('optionTexts:', scene.optionTexts);
         console.groupEnd();
     }
 }
@@ -633,37 +619,27 @@ export function prepareTutorialSteps(scene, stepType) {
                 // Handle quiz scene targeting (existing logic)
                 if (step.target === 'carousel' || step.title.includes('Programming Languages') || step.title.includes('Your Classmates') || step.title.includes('Library Sections') || step.title.includes('Office Sections')) {
                     targetElement = elementSelectors.carousel(scene);
-                    console.log(`Tutorial targeting carousel for step: "${step.title}":`, targetElement);
                 } else if (step.title.includes('Player Health') || step.title.includes('Your Health') || step.title.includes('coding stamina') || step.title.includes('coding energy')) {
                     targetElement = elementSelectors.playerHealth(scene);
-                    console.log(`Tutorial targeting player health for step: "${step.title}":`, targetElement);
                 } else if (step.title.includes('Enemy Health') || step.title.includes('Challenge Enemy') || step.title.includes('Python Challenge') || step.title.includes('Enemy Web Bug') || step.title.includes('web bug')) {
                     targetElement = elementSelectors.enemyHealth(scene);
-                    console.log(`Tutorial targeting enemy health for step: "${step.title}":`, targetElement);
                 } else if (step.title.includes('Timer') || step.title.includes('Coding Timer') || step.title.includes('Development Timer')) {
                     targetElement = elementSelectors.timer(scene);
-                    console.log(`Tutorial targeting timer for step: "${step.title}":`, targetElement);
                 } else if (step.title.includes('Combo') || step.title.includes('Mastery') || step.title.includes('Code Combo') || step.title.includes('Coding Flow')) {
                     targetElement = elementSelectors.comboMeter(scene);
-                    console.log(`Tutorial targeting combo meter for step: "${step.title}":`, targetElement);
                 } else if (step.title.includes('Question') || step.title.includes('Challenge') || step.title.includes('Code Challenge') || step.title.includes('Web Development Questions')) {
                     targetElement = elementSelectors.questionArea(scene);
-                    console.log(`Tutorial targeting question area for step: "${step.title}":`, targetElement);
                 } else if (step.title.includes('Answer') || step.title.includes('Choose') || step.title.includes('Code Answer')) {
                     targetElement = elementSelectors.answerOptions(scene);
-                    console.log(`Tutorial targeting answer options for step: "${step.title}":`, targetElement);
                 } else if (step.title.includes('Power-Up')) {
                     targetElement = elementSelectors.powerUpButton(scene);
-                    console.log(`Tutorial targeting power-up button for step: "${step.title}":`, targetElement);
                 } else if (step.title.includes('Syntax')) {
                     targetElement = elementSelectors.questionArea(scene);
-                    console.log(`Tutorial targeting question area for syntax step: "${step.title}":`, targetElement);
                 }
             }
             
             if (targetElement) {
                 step.target = targetElement;
-                console.log(`Dungeon tutorial targeting element for step: "${step.title}":`, targetElement);
             }
         }
     });

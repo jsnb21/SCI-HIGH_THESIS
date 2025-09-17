@@ -320,7 +320,6 @@
 
           if (window.firebaseConfig) {
             await window.firebaseConfig.initializeFirebase();
-            console.log('Firebase initialized securely');
           } else {
             console.error('Firebase configuration not loaded');
           }
@@ -336,7 +335,6 @@
         db = firebase.database();
         auth = firebase.auth();
         firebaseInitialized = true;
-        console.log('Firebase services ready for use');
       }).catch(error => {
         console.error('Failed to initialize Firebase:', error);
         throw error;
@@ -402,12 +400,10 @@
             this.careerStats = careerSnapshot.val();
 
             if (!this.careerStats) {
-              console.log('No career stats found, user needs to play the game first');
               this.showError('Please play the game first to see your statistics.');
               return;
             }
 
-            console.log('Loaded career stats:', this.careerStats);
           } catch (error) {
             console.error('Error loading student data:', error);
             throw error;

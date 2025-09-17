@@ -2058,12 +2058,6 @@
               }
             }
 
-            console.log('Professor user created successfully:', {
-              uid: user.uid,
-              email: email,
-              fullName: fullName
-            });
-
             return {
               success: true,
               uid: user.uid,
@@ -2387,12 +2381,6 @@
         const loginModal = globalLoginModal;
         const screenshotsModal = globalScreenshotsModal;
         const startGameBtn = document.getElementById('start-game-btn');
-
-        console.log('Elements found:', {
-          loginModal: !!loginModal,
-          screenshotsModal: !!screenshotsModal,
-          startGameBtn: !!startGameBtn
-        });
 
       // User Type Selection Elements
       const userTypeSelection = document.getElementById('user-type-selection');
@@ -3257,34 +3245,6 @@
 
       // Helper function to show all available console commands
       window.showDevCommands = () => {
-        console.log(`
-🔧 SCI-HIGH DEV MODE COMMANDS:
-================================
-
-USER MANAGEMENT:
-1. createAdminUser()                    - Create admin account (can access professor dashboard)
-2. createProfessorUser(email, password, fullName, institution) - Create professor in Firebase
-3. createSampleProfessor()              - Create local professor account  
-4. createSampleStudent()                - Create student account  
-5. createSampleGeneral()                - Create general user account
-6. createSampleCareerStats()            - Create 3 sample career stats entries for leaderboards
-7. logoutUser()                        - Logout current user
-
-
-DEBUGGING & TOOLS:
-8. debugFirebaseConnection()           - Check Firebase connection and data storage
-9. createRealFirebaseStudent(id)       - Force create student in Firebase (bypasses samples)
-10. openDeveloperTools()                - Open advanced developer tools page
-11. showDevCommands()                  - Show this help
-
-USAGE:  
-------
-Open console (F12) and type any command, e.g.:
-debugFirebaseConnection()              // Check why data isn't in Firebase
-createRealFirebaseStudent("2024-YOUR-001")  // Create real Firebase student
-
-For advanced tools: openDeveloperTools()
-        `);
         showInfo('Dev commands shown in console! Press F12 to see all available commands.', {
           title: '📋 Developer Commands'
         });
@@ -3344,16 +3304,7 @@ For advanced tools: openDeveloperTools()
         } catch (error) {
           
           if (error.code === 'permission-denied') {
-            console.log(`
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}
-            `);
+            
           } else if (error.code === 'failed-precondition') {
           } else if (error.code === 'unauthenticated') {
           }

@@ -416,7 +416,6 @@ authManager.userType                                // View current user type</p
             firebase.initializeApp(firebaseConfig);
           }
           
-          console.log('Firebase initialized successfully');
         } catch (error) {
           console.error('Error initializing Firebase:', error);
         }
@@ -588,7 +587,6 @@ Error: ${error.message}
           const timestamp = new Date().toLocaleTimeString();
           logViewer.innerHTML += `\n[${timestamp}] ${message}`;
           logViewer.scrollTop = logViewer.scrollHeight;
-          console.log(`[DEV] ${message}`);
         }
       }
 
@@ -682,7 +680,6 @@ Error: ${error.message}
           snapshot.forEach(doc => {
             professors.push({ id: doc.id, ...doc.data() });
           });
-          console.log('Professors:', professors);
           devAuthManager.log(`Found ${professors.length} professor records`);
           alert(`Found ${professors.length} professor records. Check console for details.`);
         } catch (error) {
@@ -698,7 +695,6 @@ Error: ${error.message}
           snapshot.forEach(doc => {
             students.push({ id: doc.id, ...doc.data() });
           });
-          console.log('Students:', students);
           devAuthManager.log(`Found ${students.length} student records`);
           alert(`Found ${students.length} student records. Check console for details.`);
         } catch (error) {
@@ -714,7 +710,6 @@ Error: ${error.message}
           snapshot.forEach(doc => {
             users.push({ id: doc.id, ...doc.data() });
           });
-          console.log('General Users:', users);
           devAuthManager.log(`Found ${users.length} general user records`);
           alert(`Found ${users.length} general user records. Check console for details.`);
         } catch (error) {

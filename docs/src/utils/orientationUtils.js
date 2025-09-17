@@ -27,9 +27,7 @@ export function handleOrientationOverlay() {
 export function tryLockLandscape() {
     if (screen.orientation && screen.orientation.lock) {
         screen.orientation.lock('landscape-primary').catch(err => {
-            console.log('Could not lock orientation to landscape-primary, trying landscape:', err);
             screen.orientation.lock('landscape').catch(err2 => {
-                console.log('Could not lock orientation to landscape:', err2);
             });
         });
     } else if (screen.lockOrientation) {

@@ -2,9 +2,7 @@
 
 // Global Modal Functions
 function showLoginModal() {
-  console.log('showLoginModal called');
   const loginModal = document.getElementById('login-modal');
-  console.log('Login modal element:', loginModal);
   if (loginModal) {
     loginModal.classList.remove('hidden');
     showUserTypeSelection();
@@ -43,7 +41,6 @@ function showRegistrationSuccessModal(fullName, studentId, academicLevel) {
   
   // Add fresh event listeners
   newStartGameBtn.addEventListener('click', () => {
-    console.log('Start Game clicked');
     modal.classList.add('hidden');
     if (window.authManager && typeof window.authManager.redirectToGame === 'function') {
       window.authManager.redirectToGame();
@@ -55,7 +52,6 @@ function showRegistrationSuccessModal(fullName, studentId, academicLevel) {
   });
   
   newBackToIndexBtn.addEventListener('click', () => {
-    console.log('Back to Index clicked');
     modal.classList.add('hidden');
     // Stay on the current page
   });

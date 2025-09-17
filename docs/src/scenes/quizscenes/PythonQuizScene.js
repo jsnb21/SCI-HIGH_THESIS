@@ -120,7 +120,6 @@ export default class PythonQuizScene extends BaseQuizScene {
         
         const callbacks = {
             onComplete: () => {
-                console.log(`Python tutorial '${tutorialType}' completed`);
                 
                 // Mark Python tutorial as seen in localStorage
                 if (tutorialType === 'firstTime') {
@@ -133,7 +132,6 @@ export default class PythonQuizScene extends BaseQuizScene {
                 }
             },
             onSkip: () => {
-                console.log(`Python tutorial '${tutorialType}' skipped`);
                 
                 // Mark as seen even if skipped
                 if (tutorialType === 'firstTime') {
@@ -146,7 +144,6 @@ export default class PythonQuizScene extends BaseQuizScene {
                 }
             },
             onStepComplete: (stepIndex) => {
-                console.log(`Python tutorial step ${stepIndex} completed`);
             }
         };
         

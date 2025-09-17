@@ -78,7 +78,6 @@ export default class CardRewardScene extends Phaser.Scene {
         // Add keyboard input
         this.input.keyboard.on('keydown-ESC', this.skipReward, this);
         
-        console.log('CardRewardScene created - ready for selection');
     }    generateCardOptions() {
         const cardTypes = ['quiz', 'heal'];
         const numCards = this.isBossReward ? 4 : 3;
@@ -236,17 +235,11 @@ export default class CardRewardScene extends Phaser.Scene {
         const startX = (this.scale.width - totalWidth) / 2 + cardWidth / 2;
         const cardY = this.scale.height / 2;
 
-        console.log(`Creating ${this.cardData.length} cards:`);
-        console.log(`Screen size: ${this.scale.width} x ${this.scale.height}`);
-        console.log(`Card dimensions: ${cardWidth} x ${cardHeight}`);
-        console.log(`Total width needed: ${totalWidth}`);
-        console.log(`Start X: ${startX}, Card Y: ${cardY}`);
 
         this.cards = [];
 
         this.cardData.forEach((cardData, index) => {
             const cardX = startX + (cardWidth + spacing) * index;
-            console.log(`Card ${index} position: (${cardX}, ${cardY})`);
             
             // Ensure card positions are valid
             if (cardX < cardWidth / 2 || cardX > this.scale.width - cardWidth / 2) {
@@ -354,7 +347,6 @@ export default class CardRewardScene extends Phaser.Scene {
         container.cardData = cardData;
         container.cardIndex = index;
 
-        console.log(`Created card ${index}: ${cardData.name} at position (${x}, ${y})`);
 
         // Add entrance animation
         container.setAlpha(0);
@@ -390,7 +382,6 @@ export default class CardRewardScene extends Phaser.Scene {
     }onCardHover(container, isHovering) {
         if (this.isSelecting) return;
 
-        console.log(`Card hover: ${isHovering ? 'enter' : 'exit'} - Card ${container.cardIndex}`);
 
         if (isHovering) {
             // Play hover sound
@@ -411,14 +402,11 @@ export default class CardRewardScene extends Phaser.Scene {
             ease: 'Back.easeOut'
         });
     }    selectCard(index) {
-        console.log(`selectCard called with index ${index}, isSelecting: ${this.isSelecting}`);
         
         if (this.isSelecting) {
-            console.log('Selection blocked - already selecting');
             return;
         }
         
-        console.log(`Selecting card ${index}: ${this.cardData[index].name}`);
         
         this.isSelecting = true;
         this.selectedCard = this.cardData[index];
@@ -523,7 +511,6 @@ export default class CardRewardScene extends Phaser.Scene {
                 break;
         }
         
-        console.log(`Applied card effect: ${card.name} - ${card.description}`);
     }
 
     skipReward() {
@@ -552,6 +539,5 @@ export default class CardRewardScene extends Phaser.Scene {
         // Remove any event listeners
         this.input.keyboard.off('keydown-ESC', this.skipReward, this);
         
-        console.log('CardRewardScene shutdown - state reset');
     }
 }

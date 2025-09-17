@@ -24,7 +24,6 @@ export default class ResultScreen extends BaseScene {
         this.courseTopic = data.courseTopic || 'Unknown';
         this.courseCompleted = data.courseCompleted || false;
         
-        console.log('ResultScreen initialized with:', data);
     }
 
     create() {
@@ -34,14 +33,7 @@ export default class ResultScreen extends BaseScene {
         const scaleInfo = getScaleInfo(this);
         const isMobile = scaleInfo.width < 768;
         const isSmallMobile = scaleInfo.width < 480;
-        
-        // Debug logging
-        console.log('ResultScreen - Mobile detection:', {
-            width: scaleInfo.width,
-            height: scaleInfo.height,
-            isMobile,
-            isSmallMobile
-        });
+    
         
         // Initialize sound effects and background music
         this.se_hoverSound = this.sound.add('se_select');
@@ -94,14 +86,6 @@ export default class ResultScreen extends BaseScene {
         const panelX = this.scale.width / 2;
         const panelY = this.scale.height / 2;
         
-        console.log('ResultScreen - Panel sizing:', {
-            panelWidth,
-            panelHeight,
-            isMobile,
-            screenWidth: scaleInfo.width,
-            screenHeight: scaleInfo.height
-        });
-        
         // Panel shadow
         const shadow = this.add.rectangle(panelX + 5, panelY + 5, panelWidth, panelHeight, 0x000000, 0.5);
         shadow.setStrokeStyle(2, 0x333333);
@@ -137,13 +121,6 @@ export default class ResultScreen extends BaseScene {
                 fill: true
             }
         }).setOrigin(0.5);
-        
-        console.log('ResultScreen - Title created:', {
-            fontSize: titleFontSize,
-            color: isMobile ? '#ff00ff' : 'normal',
-            position: { x: panelX, y: titleY },
-            isMobile
-        });
         
         // Course name if completed - better desktop sizing
         if (this.courseCompleted) {
@@ -365,7 +342,6 @@ export default class ResultScreen extends BaseScene {
             this.createParticleEffects(panelX, panelY - 120, rankColor);
         }
         
-        console.log('ResultScreen created successfully');
     }
     
     createParticleEffects(x, y, color) {

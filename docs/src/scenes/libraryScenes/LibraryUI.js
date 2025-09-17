@@ -359,8 +359,6 @@ export default class LibraryUI {
         scene._libraryBookElements = [];
         scene._libraryCategoryHeaders = [];
         
-        console.log('Books data structure:', scene.libraryData.books);
-        console.log('Categories found:', scene.libraryData.books.categories.length);
         
         // Calculate improved grid layout with better spacing
         const booksPerRow = isSmallScreen ? 2 : 3;
@@ -373,7 +371,6 @@ export default class LibraryUI {
         let globalY = startY; // Track global Y position across all categories
         
         scene.libraryData.books.categories.forEach((category, categoryIndex) => {
-            console.log(`Category ${categoryIndex}: ${category.name}, Books: ${category.books.length}`);
             
             // Category header positioned ABOVE the books
             const categoryHeaderBg = scene.add.graphics();
@@ -419,7 +416,6 @@ export default class LibraryUI {
             
             // Display books in organized grid
             category.books.forEach((book, bookIndex) => {
-                console.log(`Processing book ${bookIndex + 1}: ${book.title} by ${book.author}`);
                 
                 const currentRow = Math.floor(bookIndex / booksPerRow);
                 const currentCol = bookIndex % booksPerRow;

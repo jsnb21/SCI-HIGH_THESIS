@@ -57,14 +57,12 @@ class BaseLibraryScene extends Phaser.Scene {
             const iconKey = `book_${book.id}`;
             const sourceIconKey = book.icon; // This will be like 'python_logo', 'java_logo', etc.
             
-            console.log(`Creating icon for book: ${book.title}, using source: ${sourceIconKey}`);
             
             // Check if the source icon exists in the texture manager
             if (this.textures.exists(sourceIconKey)) {
                 // Create a copy of the texture with our book-specific key
                 const sourceTexture = this.textures.get(sourceIconKey);
                 this.textures.addImage(iconKey, sourceTexture.source[0].image);
-                console.log(`Successfully created icon: ${iconKey} from ${sourceIconKey}`);
             } else {
                 console.warn(`Source icon ${sourceIconKey} not found for book ${book.title}`);
                 // Fallback: create a simple colored rectangle as backup
@@ -149,7 +147,6 @@ class BaseLibraryScene extends Phaser.Scene {
             };
         }
         
-        console.log('Loaded books data:', this.booksData);
     }
 
     setupBackground() {
@@ -187,7 +184,6 @@ class BaseLibraryScene extends Phaser.Scene {
         
         books.forEach((book, index) => {
             const iconKey = `book_${book.id}`;
-            console.log(`Creating icon for book: ${book.title}, key: ${iconKey}`);
             iconKeys.push(iconKey);
             iconInfo.push({
                 heading: book.title, // Use 'heading' for carousel compatibility
@@ -198,8 +194,6 @@ class BaseLibraryScene extends Phaser.Scene {
             });
         });
 
-        console.log('Icon keys:', iconKeys);
-        console.log('Icon info:', iconInfo);
 
         // Create carousel
         this.carousel = new Carousel(this, {
@@ -329,7 +323,6 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     onBookSelected(selectedData) {
-        console.log('Book selected data:', selectedData);
         
         let selectedBook = null;
         
@@ -342,7 +335,6 @@ class BaseLibraryScene extends Phaser.Scene {
             selectedBook = books[selectedData];
         }
         
-        console.log('Selected book:', selectedBook);
         
         if (selectedBook) {
             this.openEbook(selectedBook);
@@ -352,10 +344,8 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     openEbook(book) {
-        console.log('OpenEbook called with:', book);
         
         if (book.link) {
-            console.log('Opening link:', book.link);
             
             // Play confirmation sound
             if (this.se_confirmSound) {
@@ -375,7 +365,6 @@ class BaseLibraryScene extends Phaser.Scene {
                 return;
             }
             
-            console.log(`Successfully opened ebook: ${book.title} at ${book.link}`);
             
             // Mark as reading and save progress
             if (book.status === 'available') {
@@ -563,7 +552,6 @@ class BaseLibraryScene extends Phaser.Scene {
     createBackButton() {
         // Add a custom back handler method to the scene
         this.goBackToPreviousScene = () => {
-            console.log('Returning to previous scene:', this.previousScene);
             this.scene.start(this.previousScene, {
                 playerData: this.playerData,
                 gameProgress: this.gameProgress
@@ -595,11 +583,9 @@ class BaseLibraryScene extends Phaser.Scene {
         this.tutorialManager.init(tutorialSteps, {
             onComplete: () => {
                 onceOnlyFlags.setSeen('library_tutorial');
-                console.log('Library tutorial completed!');
             },
             onSkip: () => {
                 onceOnlyFlags.setSeen('library_tutorial');
-                console.log('Library tutorial skipped!');
             }
         });
     }

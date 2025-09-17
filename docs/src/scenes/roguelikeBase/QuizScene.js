@@ -36,7 +36,6 @@ export default class QuizScene extends BaseScene {
         this.selectedAnswer = null;
         this.currentQuestion = null;
         
-        console.log('QuizScene initialized with:', data);
     }
 
     preload() {
@@ -129,18 +128,14 @@ export default class QuizScene extends BaseScene {
                 if (this.currentQuestion.prompt || this.currentQuestion.description || 
                     (this.currentQuestion.type && this.currentQuestion.type.includes('drag'))) {
                     this.currentQuestion.isDragDrop = true;
-                    console.log('Loaded intensity 3 code arrangement question:', this.currentQuestion);
                 } else {
                     // It's actually a multiple choice question in the code arrangement section
-                    console.log('Loaded intensity 3 multiple choice question (from codeArrangement):', this.currentQuestion);
                 }
                 return;
             } else {
                 // No code arrangement questions available, try loading from combined pool
-                console.log('No code arrangement questions available, loading from combined intensity 3 pool');
                 this.loadCombinedIntensity3Question();
                 if (this.currentQuestion) {
-                    console.log('Loaded intensity 3 question from combined pool:', this.currentQuestion);
                     return;
                 }
             }
@@ -150,13 +145,11 @@ export default class QuizScene extends BaseScene {
             if (questionType === 'dragDrop') {
                 this.loadDragDropQuestion();
                 if (this.currentQuestion) {
-                    console.log('Loaded intensity 2 drag-drop question:', this.currentQuestion);
                     return;
                 }
             } else {
                 this.loadMultipleChoiceQuestion(2);
                 if (this.currentQuestion) {
-                    console.log('Loaded intensity 2 multiple choice question:', this.currentQuestion);
                     return;
                 }
             }
@@ -164,13 +157,11 @@ export default class QuizScene extends BaseScene {
             // Intensity 1: Multiple choice only
             this.loadMultipleChoiceQuestion(1);
             if (this.currentQuestion) {
-                console.log('Loaded intensity 1 multiple choice question:', this.currentQuestion);
                 return;
             }
         }
         
         // Final fallback to intensity 1 multiple choice if nothing else works
-        console.log('All question loading failed, falling back to intensity 1 multiple choice');
         this.loadMultipleChoiceQuestion(1);
     }
 
@@ -318,7 +309,6 @@ export default class QuizScene extends BaseScene {
             if (availableQuestions.length > 0) {
                 // Select a random drag-drop question from the available questions
                 this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
-                console.log('Loaded drag-drop question for', topic, ':', this.currentQuestion);
             }
         }
     }
@@ -365,7 +355,6 @@ export default class QuizScene extends BaseScene {
             if (availableQuestions.length > 0) {
                 // Select a random code arrangement question from the available questions
                 this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
-                console.log('Loaded intensity 3 code arrangement question for', topic, ':', this.currentQuestion);
             }
         } else if (quizData && quizData.codeArrangement && quizData.codeArrangement.length > 0) {
             // Fallback to old structure for compatibility
@@ -377,7 +366,6 @@ export default class QuizScene extends BaseScene {
             
             if (availableQuestions.length > 0) {
                 this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
-                console.log('Loaded code arrangement question for', topic, ':', this.currentQuestion);
             }
         }
     }
@@ -413,7 +401,6 @@ export default class QuizScene extends BaseScene {
         }
 
         if (!quizData) {
-            console.log('No quiz data available for combined intensity 3 questions');
             return;
         }
 
@@ -449,7 +436,6 @@ export default class QuizScene extends BaseScene {
         }
 
         if (allQuestions.length === 0) {
-            console.log('No questions available for combined intensity 3 pool');
             return;
         }
 
@@ -469,9 +455,7 @@ export default class QuizScene extends BaseScene {
                 this.randomizeAnswerChoices();
             }
             
-            console.log(`Loaded combined intensity 3 question (${this.currentQuestion.sourceType}):`, this.currentQuestion);
         } else {
-            console.log('All combined intensity 3 questions have been answered, cycling will reset automatically');
         }
     }
 
@@ -500,13 +484,11 @@ export default class QuizScene extends BaseScene {
         this.currentQuestion.options = shuffledOptions;
         this.currentQuestion.correctIndex = newCorrectIndex;
         
-        console.log('Randomized answer choices. New correct index:', newCorrectIndex);
     }
 
     filterCombinedQuestions(questions) {
         // Special filtering for combined intensity 3 questions that tracks all question types together
         if (!this.answeredQuestions) {
-            console.log(`No answered questions tracking - returning all ${questions.length} combined questions`);
             return questions;
         }
 
@@ -529,14 +511,9 @@ export default class QuizScene extends BaseScene {
             return !combinedSet.has(questionId);
         });
 
-        console.log(`Combined intensity 3 question filtering:`);
-        console.log(`  - Total questions in combined pool: ${questions.length}`);
-        console.log(`  - Already answered in combined pool: ${combinedSet.size}`);
-        console.log(`  - Available questions: ${availableQuestions.length}`);
 
         // If all questions have been answered, reset the combined pool and all individual pools
         if (availableQuestions.length === 0 && questions.length > 0) {
-            console.log('All combined intensity 3 questions answered. Resetting entire intensity 3 question pool for fresh cycle.');
             
             // Clear all intensity 3 question pools to start fresh cycle
             this.answeredQuestions[intensityKey].multipleChoice.clear();
@@ -552,7 +529,6 @@ export default class QuizScene extends BaseScene {
 
     filterAnsweredQuestions(questions, intensity, questionType) {
         if (!this.answeredQuestions) {
-            console.log(`No answered questions tracking - returning all ${questions.length} questions`);
             return questions; // Return all questions if no tracking system
         }
         
@@ -560,7 +536,6 @@ export default class QuizScene extends BaseScene {
         const answeredSet = this.answeredQuestions[intensityKey]?.[questionType];
         
         if (!answeredSet) {
-            console.log(`No answered questions for ${intensityKey} ${questionType} - returning all ${questions.length} questions`);
             return questions; // Return all questions if no answered questions for this category
         }
         
@@ -570,14 +545,9 @@ export default class QuizScene extends BaseScene {
             return !answeredSet.has(questionId);
         });
         
-        console.log(`Question filtering for ${intensityKey} ${questionType}:`);
-        console.log(`  - Total questions: ${questions.length}`);
-        console.log(`  - Already answered: ${answeredSet.size}`);
-        console.log(`  - Available questions: ${availableQuestions.length}`);
         
         // If all questions have been answered, reset the answered questions for this category
         if (availableQuestions.length === 0 && questions.length > 0) {
-            console.log(`All questions answered for ${intensityKey} ${questionType}. Resetting answered questions to refresh pool.`);
             answeredSet.clear();
             return questions; // Return all questions after reset
         }
@@ -1267,9 +1237,6 @@ export default class QuizScene extends BaseScene {
         
         const isCorrect = userOrder.every((text, index) => text === correctTexts[index]);
         
-        console.log('User order:', userOrder);
-        console.log('Correct order:', correctTexts);
-        console.log('Is correct:', isCorrect);
         
         // Visual feedback for drag and drop blocks
         this.currentOrder.forEach((block, index) => {

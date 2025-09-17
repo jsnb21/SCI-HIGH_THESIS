@@ -179,7 +179,6 @@ export const DEFAULT_TEXT_STYLE = {
 };
 
 // Add error handling and debugging
-console.log('Script loaded, checking environment...');
 
 // Check if we're in a problematic environment
 if (typeof window.SES !== 'undefined') {
@@ -204,9 +203,7 @@ window.addEventListener('orientationchange', () => {
 // Add error handling for game initialization
 let game;
 try {
-    console.log('Creating Phaser Game instance...');
     game = new Phaser.Game(config);
-    console.log('Phaser Game created successfully:', game);
     
     // Make game globally accessible for debugging
     window.game = game;

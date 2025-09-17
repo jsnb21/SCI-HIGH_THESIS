@@ -38,7 +38,6 @@ export default class OptionsScene extends Phaser.Scene {    constructor() {
             : 'MainMenu';
         
         // Don't update gameManager here, as it might override needed history
-        console.log('Options opened from:', this.prevScene);        // Set up event listeners using fullscreen utility
         this.fullscreenManager = FullscreenUtils.setupScene(this);
         this.time.delayedCall(10, () => this.createUI());
         this.scale.on('resize', this.onResize, this);

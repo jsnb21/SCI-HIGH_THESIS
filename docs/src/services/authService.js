@@ -41,7 +41,6 @@ class AuthService {
 
     async initializeFirebase() {
         try {
-            console.log('Starting Firebase initialization for Auth Service...');
             
             // Check if Firebase is already loaded
             if (typeof window.firebase === 'undefined') {
@@ -67,7 +66,6 @@ class AuthService {
             });
             
             this.isFirebaseInitialized = true;
-            console.log('Firebase Auth Service initialized successfully');
         } catch (error) {
             console.error('Failed to initialize Firebase Auth Service:', error);
             this.isFirebaseInitialized = false;
@@ -118,7 +116,6 @@ class AuthService {
             try {
                 // If already authenticated, resolve immediately
                 if (this.auth.currentUser) {
-                    console.log('AuthService: Already authenticated with user:', this.auth.currentUser.uid);
                     resolve();
                     return;
                 }
@@ -126,20 +123,17 @@ class AuthService {
                 // Set up a one-time auth state listener
                 const unsubscribe = this.auth.onAuthStateChanged(async (user) => {
                     if (user) {
-                        console.log('AuthService: Auth state changed - user authenticated:', user.uid);
                         unsubscribe(); // Remove listener
                         resolve();
                     }
                 });
 
                 // Start anonymous authentication
-                console.log('AuthService: Starting anonymous authentication...');
                 await this.auth.signInAnonymously();
                 
                 // If auth state doesn't change within 3 seconds, resolve anyway
                 setTimeout(() => {
                     if (this.auth.currentUser) {
-                        console.log('AuthService: Authentication timeout reached but user exists');
                         unsubscribe();
                         resolve();
                     } else {
@@ -162,7 +156,6 @@ class AuthService {
             try {
                 // If already authenticated, resolve immediately
                 if (this.auth.currentUser) {
-                    console.log('AuthService: Already authenticated with user:', this.auth.currentUser.uid);
                     resolve();
                     return;
                 }
@@ -170,20 +163,17 @@ class AuthService {
                 // Set up a one-time auth state listener
                 const unsubscribe = this.auth.onAuthStateChanged(async (user) => {
                     if (user) {
-                        console.log('AuthService: Auth state changed - user authenticated:', user.uid);
                         unsubscribe(); // Remove listener
                         resolve();
                     }
                 });
 
                 // Start anonymous authentication
-                console.log('AuthService: Starting anonymous authentication...');
                 await this.auth.signInAnonymously();
                 
                 // If auth state doesn't change within 3 seconds, resolve anyway
                 setTimeout(() => {
                     if (this.auth.currentUser) {
-                        console.log('AuthService: Authentication timeout reached but user exists');
                         unsubscribe();
                         resolve();
                     } else {
@@ -204,7 +194,6 @@ class AuthService {
         try {
             // For anonymous users (students), we don't need to load profile from professors/general collections
             if (firebaseUser.isAnonymous) {
-                console.log('AuthService: Anonymous user authenticated, skipping profile load');
                 return;
             }
 
@@ -251,7 +240,6 @@ class AuthService {
         }
 
         try {
-            console.log('AuthService: Attempting professor login with email:', email);
             
             // Validate input
             if (!email || !password) {
@@ -261,7 +249,6 @@ class AuthService {
             const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
             const user = userCredential.user;
             
-            console.log('AuthService: Firebase auth successful, verifying professor status...');
             
             // Check if professor exists in Realtime Database (updated to use realtime DB)
             const professorSnapshot = await this.database.ref('professors').child(user.uid).once('value');
@@ -336,13 +323,11 @@ class AuthService {
     async loginStudent(studentId, password = null) {
         const isInitialized = await this.ensureFirebaseInitialized();
         if (!isInitialized) {
-            console.log('AuthService: Firebase not available, using offline mode');
             // Fallback to local storage for offline mode
             return this.loginStudentOffline(studentId);
         }
 
         try {
-            console.log('AuthService: Attempting to login student with ID:', studentId);
             
             // Validate student ID
             if (!studentId || typeof studentId !== 'string' || studentId.trim() === '') {
@@ -350,23 +335,18 @@ class AuthService {
             }
 
             // First, ensure we have authentication
-            console.log('AuthService: Ensuring authentication...');
             await this.ensureAuthenticated();
 
             // Query student by student ID using Realtime Database
-            console.log('AuthService: Querying Realtime Database for student...');
             const studentsRef = this.database.ref('students');
             const studentQuery = await studentsRef.orderByChild('studentId').equalTo(studentId.trim()).once('value');
             const studentsData = studentQuery.val();
 
-            console.log('AuthService: Query completed - data:', studentsData);
 
             if (!studentsData) {
-                console.log('AuthService: Student not found, creating new account');
                 // Student doesn't exist, create a new account
                 const newStudent = await this.createStudentAccount(studentId.trim());
                 if (newStudent.success) {
-                    console.log('AuthService: New student account created successfully');
                     this.currentUser = {
                         uid: newStudent.docId,
                         studentId: studentId.trim(),
@@ -382,7 +362,6 @@ class AuthService {
                 }
             }
 
-            console.log('AuthService: Found existing student, loading data...');
             
             // Get the first (and should be only) student record
             const studentKey = Object.keys(studentsData)[0];
@@ -392,7 +371,6 @@ class AuthService {
                 throw new Error('Student data is corrupted or inaccessible');
             }
 
-            console.log('AuthService: Student data loaded successfully for:', studentData.studentId);
 
             // No password verification needed - just student ID
             
@@ -410,19 +388,16 @@ class AuthService {
             this.userType = 'student';
 
             // Update last login
-            console.log('AuthService: Updating last login timestamp...');
             try {
                 await studentsRef.child(studentKey).update({
                     lastLogin: new Date().toISOString()
                 });
-                console.log('AuthService: Last login timestamp updated');
             } catch (updateError) {
                 console.warn('AuthService: Failed to update last login timestamp:', updateError);
                 // Don't fail login just because timestamp update failed
             }
 
             this.saveUserSession();
-            console.log('AuthService: Student login successful');
             return { success: true, user: this.currentUser };
         } catch (error) {
             console.error('AuthService: Student login error:', error);
@@ -432,7 +407,6 @@ class AuthService {
             if (error.message.includes('permission-denied') || 
                 error.message.includes('unavailable') || 
                 error.message.includes('network')) {
-                console.log('AuthService: Firebase error detected, falling back to offline mode');
                 return this.loginStudentOffline(studentId);
             }
             
@@ -478,17 +452,14 @@ class AuthService {
     // Create a new student account automatically
     async createStudentAccount(studentId) {
         try {
-            console.log('AuthService: Creating new student account for ID:', studentId);
             
             // Enhanced duplicate checking before creating account
-            console.log('AuthService: Performing duplicate check...');
             
             // Check 1: Query by studentId in main students database
             const studentsRef = this.database.ref('students');
             const existingByIdQuery = await studentsRef.orderByChild('studentId').equalTo(studentId).once('value');
             
             if (existingByIdQuery.exists()) {
-                console.log('AuthService: Student already exists with ID:', studentId);
                 const existingData = Object.values(existingByIdQuery.val())[0];
                 throw new Error(`Student account already exists for ID: ${studentId}. Student name: ${existingData.fullName || existingData.name || 'Unknown'}. Please try logging in instead.`);
             }
@@ -498,7 +469,6 @@ class AuthService {
             const directSnapshot = await directStudentRef.once('value');
             
             if (directSnapshot.exists()) {
-                console.log('AuthService: Student exists with studentId as key:', studentId);
                 const existingData = directSnapshot.val();
                 throw new Error(`Student account already exists for ID: ${studentId}. Student name: ${existingData.fullName || existingData.name || 'Unknown'}. Please try logging in instead.`);
             }
@@ -510,11 +480,9 @@ class AuthService {
             if (careerSnapshot.exists()) {
                 const careerData = careerSnapshot.val();
                 const studentName = careerData.studentInfo?.fullName || 'Unknown';
-                console.log('AuthService: Found existing career stats for student:', studentId, studentName);
                 console.warn('AuthService: Career stats exist but no main record - possible data inconsistency');
             }
             
-            console.log('AuthService: No duplicates found, proceeding with account creation...');
             
             const studentData = {
                 studentId,
@@ -573,7 +541,6 @@ class AuthService {
             const studentRef = this.database.ref('students').child(studentId);
             await studentRef.set(studentData);
             
-            console.log('AuthService: Student account created successfully with key:', studentId);
             
             return { 
                 success: true, 
@@ -747,7 +714,6 @@ class AuthService {
             // Dynamic import to avoid circular dependencies
             const { syncSaveDataOnLogin } = await import('../save.js');
             await syncSaveDataOnLogin();
-            console.log('AuthService: Save data synced after login');
         } catch (error) {
             console.warn('AuthService: Failed to sync save data after login:', error);
         }

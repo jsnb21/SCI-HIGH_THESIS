@@ -412,7 +412,6 @@ function initializeNotifications() {
   window.notify = notifications;
   window.notificationSystem = notifications;
 
-  console.log('✅ Notification system initialized');
 }
 
 // Initialize immediately or when DOM is ready
