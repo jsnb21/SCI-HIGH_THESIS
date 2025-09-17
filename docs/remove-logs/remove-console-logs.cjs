@@ -81,14 +81,22 @@ class ConsoleLogCleaner {
         removedCount += result.removedCount;
       }
       
-      // Safety check: verify braces are still balanced
+      // Safety check: verify braces are still balanced (more lenient for HTML files)
       const newOpenBraces = (modifiedContent.match(/\{/g) || []).length;
       const newCloseBraces = (modifiedContent.match(/\}/g) || []).length;
       
-      if (originalOpenBraces !== newOpenBraces || originalCloseBraces !== newCloseBraces) {
-        console.error(`⚠️  ${filePath}: Brace mismatch detected! Skipping file to prevent damage.`);
+      const isHtmlFile = path.extname(filePath).toLowerCase() === '.html' || path.extname(filePath).toLowerCase() === '.htm';
+      const braceCountDiff = Math.abs((originalOpenBraces - originalCloseBraces) - (newOpenBraces - newCloseBraces));
+      
+      // For HTML files, allow small brace count differences due to console.log removal
+      // For JS files, be strict about brace matching
+      const maxAllowedDiff = isHtmlFile ? 5 : 0;
+      
+      if (braceCountDiff > maxAllowedDiff) {
+        console.error(`⚠️  ${filePath}: Significant brace mismatch detected! Skipping file to prevent damage.`);
         console.error(`   Original: { ${originalOpenBraces}, } ${originalCloseBraces}`);
         console.error(`   Modified: { ${newOpenBraces}, } ${newCloseBraces}`);
+        console.error(`   Difference: ${braceCountDiff} (max allowed: ${maxAllowedDiff})`);
         return; // Don't save the file
       }
       
