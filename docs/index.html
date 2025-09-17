@@ -1343,52 +1343,57 @@
 
         async initializeFirebaseWithConfig() {
           try {
-            // Embed Firebase configuration directly to avoid GitHub Pages path issues
-            if (!window.firebaseConfig) {
-              // Define Firebase configuration inline
-              class FirebaseConfig {
-                constructor() {
-                  this.config = {
-                    apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
-                    authDomain: "sci-high-website.firebaseapp.com",
-                    databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-                    projectId: "sci-high-website",
-                    storageBucket: "sci-high-website.appspot.com",
-                    messagingSenderId: "123456789",
-                    appId: "1:123456789:web:abcdef"
-                  };
+            // Try multiple paths for GitHub Pages compatibility
+            const configPaths = [
+              './config/firebase-config.js',
+              '/SCI-HIGH_THESIS/config/firebase-config.js',
+              'config/firebase-config.js'
+            ];
+            
+            let configLoaded = false;
+            
+            for (const configPath of configPaths) {
+              try {
+                const script = document.createElement('script');
+                script.src = configPath;
+                
+                await new Promise((resolve, reject) => {
+                  script.onload = resolve;
+                  script.onerror = reject;
+                  document.head.appendChild(script);
+                });
+                
+                if (window.firebaseConfig) {
+                  await window.firebaseConfig.initializeFirebase();
+                  configLoaded = true;
+                  break;
                 }
-
-                getConfig() {
-                  return this.config;
-                }
-
-                async initializeFirebase() {
-                  if (typeof firebase !== 'undefined') {
-                    if (firebase.apps.length === 0) {
-                      firebase.initializeApp(this.getConfig());
-                    }
-                    return firebase;
-                  } else {
-                    throw new Error('Firebase SDK not loaded');
-                  }
-                }
-
-                setApiKey(apiKey) {
-                  if (this.config) {
-                    this.config.apiKey = apiKey;
-                    if (typeof window !== 'undefined') {
-                      localStorage.setItem('firebase_api_key', apiKey);
-                    }
-                  }
+              } catch (error) {
+                console.warn(`Failed to load config from ${configPath}:`, error);
+                continue;
+              }
+            }
+            
+            if (!configLoaded) {
+              // Initialize with minimal public configuration (no API key exposed)
+              if (typeof firebase !== 'undefined' && firebase.apps.length === 0) {
+                const publicConfig = {
+                  authDomain: "sci-high-website.firebaseapp.com",
+                  databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+                  projectId: "sci-high-website",
+                  storageBucket: "sci-high-website.appspot.com"
+                  // Note: API key should be loaded securely
+                };
+                
+                try {
+                  firebase.initializeApp(publicConfig);
+                  console.warn('Firebase initialized with minimal config. Some features may be limited.');
+                } catch (initError) {
+                  console.error('Failed to initialize Firebase with minimal config:', initError);
+                  throw new Error('Firebase initialization failed completely');
                 }
               }
-
-              window.firebaseConfig = new FirebaseConfig();
             }
-
-            // Initialize Firebase
-            await window.firebaseConfig.initializeFirebase();
             
             // Ensure auth is ready
             firebase.auth().onAuthStateChanged(() => {
@@ -3304,7 +3309,7 @@
         } catch (error) {
           
           if (error.code === 'permission-denied') {
-            
+
           } else if (error.code === 'failed-precondition') {
           } else if (error.code === 'unauthenticated') {
           }

@@ -26,12 +26,12 @@ class FirebaseConfig {
                 return;
             }
         } catch (error) {
-            console.warn('Could not load external config file, falling back to defaults');
+            console.warn('Could not load external config file, using minimal public config');
         }
 
-        // Fallback configuration (you should replace these with your actual values)
+        // Minimal public configuration (no sensitive API key)
         this.config = {
-            apiKey: this.getApiKeyFromEnv() || "YOUR_API_KEY_HERE",
+            apiKey: this.getApiKeyFromEnv() || null, // Don't hardcode API key
             authDomain: "sci-high-website.firebaseapp.com",
             databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "sci-high-website",
@@ -78,7 +78,16 @@ class FirebaseConfig {
         if (typeof firebase !== 'undefined') {
             // Check if Firebase is already initialized
             if (firebase.apps.length === 0) {
-                firebase.initializeApp(this.getConfig());
+                const config = this.getConfig();
+                
+                // If no API key is available, try anonymous authentication
+                if (!config.apiKey) {
+                    console.warn('No API key available. Firebase will use minimal functionality.');
+                    // Initialize without API key for read-only access
+                    config.apiKey = 'minimal-access-key'; // Placeholder
+                }
+                
+                firebase.initializeApp(config);
             }
             return firebase;
         } else {

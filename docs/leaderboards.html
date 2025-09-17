@@ -635,29 +635,67 @@
       </div>
     </footer>
     <script>
-      // Secure Firebase initialization
+      // Secure Firebase initialization with fallback configuration
       async function initializeFirebase() {
         try {
-          // Load the Firebase configuration module
-          const script = document.createElement('script');
-          script.src = './config/firebase-config.js';
+          // Try multiple paths for GitHub Pages compatibility
+          const configPaths = [
+            './config/firebase-config.js',
+            '/SCI-HIGH_THESIS/config/firebase-config.js',
+            'config/firebase-config.js'
+          ];
           
-          await new Promise((resolve, reject) => {
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-          });
-
-          if (window.firebaseConfig) {
-            await window.firebaseConfig.initializeFirebase();
-            
-            // Initialize Firebase services after successful initialization
-            window.db = firebase.database();
-          } else {
-            console.error('Firebase configuration not loaded');
+          let configLoaded = false;
+          
+          for (const configPath of configPaths) {
+            try {
+              const script = document.createElement('script');
+              script.src = configPath;
+              
+              await new Promise((resolve, reject) => {
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+              });
+              
+              if (window.firebaseConfig) {
+                await window.firebaseConfig.initializeFirebase();
+                configLoaded = true;
+                break;
+              }
+            } catch (error) {
+              console.warn(`Failed to load config from ${configPath}:`, error);
+              continue;
+            }
           }
+          
+          if (!configLoaded) {
+            // Initialize with minimal public configuration (no sensitive data)
+            if (typeof firebase !== 'undefined' && firebase.apps.length === 0) {
+              // Use environment variables or minimal public config
+              const publicConfig = {
+                authDomain: "sci-high-website.firebaseapp.com",
+                databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+                projectId: "sci-high-website",
+                storageBucket: "sci-high-website.appspot.com"
+                // Note: API key should be loaded securely or use Firebase Anonymous Auth
+              };
+              
+              try {
+                firebase.initializeApp(publicConfig);
+                console.warn('Firebase initialized with minimal config. Some features may be limited.');
+              } catch (initError) {
+                console.error('Failed to initialize Firebase with minimal config:', initError);
+                throw new Error('Firebase initialization failed completely');
+              }
+            }
+          }
+          
+          // Initialize Firebase services after successful initialization
+          window.db = firebase.database();
         } catch (error) {
           console.error('Error loading Firebase configuration:', error);
+          throw error;
         }
       }
 
