@@ -1167,44 +1167,89 @@
         constructor() {
           this.currentUser = null;
           this.userType = null; // 'professor', 'student', 'general', 'guest'
-          this.initializeAuth();
+          this.firebaseInitialized = false;
+          this.firebaseInitPromise = this.initializeAuth();
         }
 
         async initializeAuth() {
-          // Initialize Firebase if not already done
-          if (typeof firebase === 'undefined') {
-            await this.loadFirebase();
+          try {
+            // Initialize Firebase if not already done
+            if (typeof firebase === 'undefined') {
+              await this.loadFirebase();
+            }
+            
+            // Wait for Firebase to be ready
+            await this.ensureFirebaseReady();
+            
+            // Check if user is already logged in
+            const savedUser = localStorage.getItem('sci_high_user');
+            if (savedUser) {
+              this.currentUser = JSON.parse(savedUser);
+              this.userType = this.currentUser.type;
+            }
+
+            // Update professor tab visibility
+            this.updateProfessorTabVisibility();
+            // Update user interface
+            this.updateUserInterface();
+            
+            this.firebaseInitialized = true;
+            console.log('✅ AuthManager initialized successfully');
+          } catch (error) {
+            console.error('❌ AuthManager initialization failed:', error);
+            this.firebaseInitialized = false;
+          }
+        }
+
+        // Helper to ensure Firebase is fully ready
+        async ensureFirebaseReady() {
+          // Wait for firebase to be available
+          let attempts = 0;
+          while (typeof firebase === 'undefined' && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
           }
           
-          // Check if user is already logged in
-          const savedUser = localStorage.getItem('sci_high_user');
-          if (savedUser) {
-            this.currentUser = JSON.parse(savedUser);
-            this.userType = this.currentUser.type;
+          if (typeof firebase === 'undefined') {
+            throw new Error('Firebase failed to load after 5 seconds');
           }
-
-          // Update professor tab visibility
-          this.updateProfessorTabVisibility();
-          // Update user interface
-          this.updateUserInterface();
+          
+          // Wait for firebase.auth to be available
+          attempts = 0;
+          while ((!firebase.auth || typeof firebase.auth !== 'function') && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+          }
+          
+          if (!firebase.auth || typeof firebase.auth !== 'function') {
+            throw new Error('Firebase Auth failed to load after 5 seconds');
+          }
+          
+          console.log('✅ Firebase is ready');
         }
 
         // Helper method to ensure authentication before database operations
         async ensureAuthenticated() {
           try {
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-              if (!firebase.auth().currentUser) {
-                console.log('No authenticated user found, signing in anonymously...');
-                await firebase.auth().signInAnonymously();
-                console.log('✅ Anonymous authentication successful');
-              } else {
-                console.log('✅ User already authenticated:', firebase.auth().currentUser.uid);
-              }
-              return true;
-            } else {
-              console.warn('⚠️ Firebase Auth not available');
-              return false;
+            // First, ensure Firebase is properly initialized
+            if (!this.firebaseInitialized) {
+              console.log('⏳ Waiting for Firebase to initialize...');
+              await this.firebaseInitPromise;
             }
+            
+            // Double-check Firebase is available
+            if (typeof firebase === 'undefined' || !firebase.auth) {
+              throw new Error('Firebase or Firebase Auth not available');
+            }
+            
+            if (!firebase.auth().currentUser) {
+              console.log('No authenticated user found, signing in anonymously...');
+              await firebase.auth().signInAnonymously();
+              console.log('✅ Anonymous authentication successful');
+            } else {
+              console.log('✅ User already authenticated:', firebase.auth().currentUser.uid);
+            }
+            return true;
           } catch (error) {
             console.error('❌ Authentication failed:', error);
             throw new Error(`Authentication failed: ${error.message}`);
@@ -2100,6 +2145,9 @@
       // Initialize AuthManager and ensure Firebase is ready
       const authManager = new AuthManager();
       
+      // Ensure any immediate auth calls wait for initialization
+      window.authManager = authManager; // Make it globally available for debugging
+      
       // Add offline fallback for localhost testing
       authManager.createOfflineTestAccounts = function() {
         console.log('Creating offline test accounts for localhost development');
@@ -2496,6 +2544,9 @@
         };
         
         try {
+          // Ensure AuthManager is fully initialized
+          await authManager.firebaseInitPromise;
+          
           // Complete the student login with profile data
           const result = await authManager.loginStudentWithProfile(currentStudentId, profileData);
           
@@ -2529,6 +2580,9 @@
       // Step 3: Login Existing Student
       document.getElementById('login-existing-student').addEventListener('click', async () => {
         try {
+          // Ensure AuthManager is fully initialized
+          await authManager.firebaseInitPromise;
+          
           const result = await authManager.loginStudent(currentStudentId);
           
           if (result.success) {
