@@ -3,12 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="public/assets/img/logo/SCI-HIGH_LOGO.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="description" content="SCI-HIGH Gaming Leaderboards - Track your programming skills and compete with other students" />
+    <meta name="theme-color" content="#F4CE14" />
     <title>SCI-HIGH: Global Leaderboards</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts for Gaming Feel -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Exo+2:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Exo+2:wght@400;600&display=swap"></noscript>
+    
     <!-- Modern Notification System -->
     <script src="js/notifications.js"></script>
     <script>
@@ -75,11 +78,11 @@
               body: ['Exo 2', 'sans-serif'],
             },
             animation: {
-              'pulse-glow': 'pulse-glow 2s ease-in-out infinite alternate',
-              'float': 'float 6s ease-in-out infinite',
+              'pulse-glow': 'pulse-glow 4s ease-in-out infinite alternate',
+              'float': 'float 12s ease-in-out infinite',
               'slide-in': 'slide-in 0.8s ease-out',
               'bounce-in': 'bounce-in 1s ease-out',
-              'rank-glow': 'rank-glow 3s ease-in-out infinite',
+              'rank-glow': 'rank-glow 6s ease-in-out infinite',
             }
           }
         }
@@ -87,31 +90,31 @@
     </script>
     <style>
       @keyframes pulse-glow {
-        from { box-shadow: 0 0 20px #F4CE14; }
-        to { box-shadow: 0 0 30px #F4CE14, 0 0 40px #F4CE14; }
+        from { box-shadow: 0 0 15px rgba(244, 206, 20, 0.4); }
+        to { box-shadow: 0 0 25px rgba(244, 206, 20, 0.6); }
       }
       @keyframes float {
         0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
+        50% { transform: translateY(-10px); }
       }
       @keyframes slide-in {
         from { transform: translateX(-100%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
       }
       @keyframes bounce-in {
-        0% { transform: scale(0); opacity: 0; }
-        50% { transform: scale(1.1); }
+        0% { transform: scale(0.8); opacity: 0; }
         100% { transform: scale(1); opacity: 1; }
       }
       @keyframes rank-glow {
-        0%, 100% { box-shadow: 0 0 10px rgba(244, 206, 20, 0.3); }
-        50% { box-shadow: 0 0 20px rgba(244, 206, 20, 0.8); }
+        0%, 100% { box-shadow: 0 0 8px rgba(244, 206, 20, 0.2); }
+        50% { box-shadow: 0 0 15px rgba(244, 206, 20, 0.5); }
       }
       
       .game-bg {
         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
         position: relative;
         overflow-x: hidden;
+        contain: layout style paint;
       }
       
       .game-bg::before {
@@ -122,12 +125,13 @@
         right: 0;
         bottom: 0;
         background-image: 
-          radial-gradient(circle at 20% 80%, rgba(244, 206, 20, 0.1) 0%, transparent 50%),
-          radial-gradient(circle at 80% 20%, rgba(55, 151, 119, 0.1) 0%, transparent 50%),
-          radial-gradient(circle at 40% 40%, rgba(156, 39, 176, 0.1) 0%, transparent 50%);
-        animation: float 8s ease-in-out infinite;
+          radial-gradient(circle at 20% 80%, rgba(244, 206, 20, 0.05) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(55, 151, 119, 0.05) 0%, transparent 50%),
+          radial-gradient(circle at 40% 40%, rgba(156, 39, 176, 0.05) 0%, transparent 50%);
+        animation: float 16s ease-in-out infinite;
         pointer-events: none;
         z-index: -1;
+        will-change: transform;
       }
       
       .neon-border {
@@ -160,11 +164,39 @@
       /* Hover effects for clickable names */
       .player-name-link {
         transition: all 0.2s ease;
+        will-change: transform;
       }
       
       .player-name-link:hover {
         transform: translateY(-1px);
         text-shadow: 0 2px 4px rgba(244, 206, 20, 0.5);
+      }
+      
+      /* Performance optimizations */
+      * {
+        box-sizing: border-box;
+      }
+      
+      /* Optimize animations with hardware acceleration */
+      .animate-spin,
+      .animate-pulse,
+      .animate-bounce-in,
+      .animate-slide-in,
+      .animate-float,
+      .animate-pulse-glow,
+      .animate-rank-glow {
+        will-change: transform, opacity;
+        transform-style: preserve-3d;
+      }
+      
+      /* Reduce layout thrashing */
+      .neon-border {
+        contain: layout style paint;
+      }
+      
+      /* Optimize heavy elements */
+      .backdrop-blur-md {
+        contain: layout style;
       }
     </style>
     <!-- Firebase -->
@@ -299,7 +331,7 @@
                 <div class="bg-gradient-to-r from-dark via-light to-dark text-white p-6 border-b-2 border-primary/30">
                   <div class="flex items-center space-x-4">
                     <div class="w-12 h-12 bg-gradient-to-br from-primary to-yellow-300 rounded-lg flex items-center justify-center neon-border">
-                      <img src="public/assets/img/icons/office/achievements.png" alt="Featured" class="w-8 h-8 object-contain" />
+                      <img src="public/assets/img/icons/office/achievements.png" alt="Featured" class="w-8 h-8 object-contain" loading="lazy" />
                     </div>
                     <div>
                       <h2 class="font-gaming text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Top Champions</h2>
@@ -334,7 +366,7 @@
                     <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                       <div class="flex items-center space-x-4">
                         <div class="w-16 h-16 bg-gradient-to-br from-primary to-yellow-300 rounded-xl flex items-center justify-center neon-border animate-float">
-                          <img src="public/assets/img/icons/office/achievements.png" alt="Achievements" class="w-10 h-10 object-contain" />
+                          <img src="public/assets/img/icons/office/achievements.png" alt="Achievements" class="w-10 h-10 object-contain" loading="lazy" />
                         </div>
                         <div>
                           <h2 class="font-gaming text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Global Champions</h2>
@@ -409,7 +441,7 @@
                   <div id="global-empty" class="text-center py-16 hidden">
                     <div class="flex flex-col items-center space-y-4">
                       <div class="w-24 h-24 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl flex items-center justify-center">
-                        <img src="public/assets/img/mainhub/PLAY_BUTTON.png" alt="Play" class="w-16 h-16 object-contain" />
+                        <img src="public/assets/img/mainhub/PLAY_BUTTON.png" alt="Play" class="w-16 h-16 object-contain" loading="lazy" />
                       </div>
                       <h3 class="text-xl font-gaming font-bold text-gray-300">No Champions Yet</h3>
                       <p class="text-gray-400 font-body">Be the first to join the leaderboard!</p>
@@ -426,7 +458,7 @@
                     <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                       <div class="flex items-center space-x-4">
                         <div class="w-16 h-16 bg-gradient-to-br from-accent to-cyan-400 rounded-xl flex items-center justify-center neon-border animate-float">
-                          <img src="public/assets/img/mainhub/office_icon.png" alt="Office" class="w-10 h-10 object-contain" />
+                          <img src="public/assets/img/mainhub/office_icon.png" alt="Office" class="w-10 h-10 object-contain" loading="lazy" />
                         </div>
                         <div>
                           <h2 class="font-gaming text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-accent to-cyan-400">Department Leaders</h2>
@@ -501,7 +533,7 @@
                   <div id="department-empty" class="text-center py-16 hidden">
                     <div class="flex flex-col items-center space-y-4">
                       <div class="w-24 h-24 bg-gradient-to-br from-accent/20 to-cyan-400/20 rounded-xl flex items-center justify-center">
-                        <img src="public/assets/img/mainhub/office_icon.png" alt="Office" class="w-16 h-16 object-contain" />
+                        <img src="public/assets/img/mainhub/office_icon.png" alt="Office" class="w-16 h-16 object-contain" loading="lazy" />
                       </div>
                       <h3 class="text-xl font-gaming font-bold text-gray-300">No Department Champions</h3>
                       <p class="text-gray-400 font-body">Rise up and claim your department's glory!</p>
@@ -624,7 +656,7 @@
     <footer class="relative z-10 bg-gradient-to-r from-dark to-light border-t-2 border-primary/30 py-12 mt-auto">
       <div class="max-w-6xl mx-auto px-6 text-center">
         <div class="flex items-center justify-center space-x-4 mb-6">
-          <img src="public/assets/img/buko_productions-logo.png" alt="Buko Productions" class="w-16 h-16" />
+          <img src="public/assets/img/buko_productions-logo.png" alt="Buko Productions" class="w-16 h-16" loading="lazy" />
           <div>
             <h3 class="font-gaming text-2xl font-bold text-primary">SCI-HIGH</h3>
             <p class="text-gray-400 text-sm">Level up your knowledge!</p>
