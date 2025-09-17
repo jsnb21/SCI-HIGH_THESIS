@@ -1363,21 +1363,31 @@
             for (const configPath of configPaths) {
               try {
                 // Check if script already exists to prevent redeclaration
-                const existingScript = document.querySelector(`script[src="${configPath}"]`);
+                const existingScript = document.querySelector(`script[src*="firebase-config.js"]`);
                 if (existingScript) {
+                  // Wait a bit for the script to load if it exists
+                  await new Promise(resolve => setTimeout(resolve, 500));
+                  if (window.firebaseConfig) {
+                    await window.firebaseConfig.initializeFirebase();
+                    return true;
+                  }
                   continue;
                 }
                 
                 const script = document.createElement('script');
                 script.src = configPath;
+                script.id = 'firebase-config-script'; // Add ID to identify
                 
                 await new Promise((resolve, reject) => {
                   script.onload = () => {
-                    if (window.firebaseConfig) {
-                      resolve();
-                    } else {
-                      reject(new Error('Config loaded but firebaseConfig not available'));
-                    }
+                    // Give some time for the script to execute
+                    setTimeout(() => {
+                      if (window.firebaseConfig) {
+                        resolve();
+                      } else {
+                        reject(new Error('Config loaded but firebaseConfig not available'));
+                      }
+                    }, 100);
                   };
                   script.onerror = reject;
                   document.head.appendChild(script);
@@ -3400,9 +3410,9 @@
               </div>
               
               <div class="bg-dark/30 p-3 rounded-lg">
-                <h4 class="text-xs font-bold text-primary mb-2">� Config File Method:</h4>
+                <h4 class="text-xs font-bold text-primary mb-2">🔧 Config File Method:</h4>
                 <ul class="text-xs text-gray-300 space-y-1">
-                  <li>• Auto-loads from <code class="text-accent">config/api-key.txt</code></li>
+                  <li>• Auto-loads from <code class="text-accent">config/env-config.json</code></li>
                   <li>• No manual entry needed each time</li>
                   <li>• Keep file secure and private</li>
                   <li>• Add to .gitignore if using Git</li>
@@ -3512,7 +3522,7 @@
           this.apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
           this.keyExpiry = null; // Auto-clear API key after time limit
           this.maxKeyAge = 30 * 60 * 1000; // 30 minutes in milliseconds
-          this.configFile = 'config/api-key.txt'; // Path to API key file
+          this.configFile = 'config/env-config.json'; // Path to API key file
           this.conversationHistory = []; // Store conversation for context
           this.maxHistoryLength = 10; // Limit conversation history
           this.userPreferences = {
@@ -3623,12 +3633,12 @@ Always provide helpful, encouraging responses that match the gaming theme. Use a
         
         async loadApiKeyFromFile() {
           try {
-            // Try multiple possible paths for GitHub Pages compatibility
+            // Try to load from env-config.json
             const possiblePaths = [
               this.configFile,
-              './config/api-key.txt',
-              '/SCI-HIGH_THESIS/config/api-key.txt',
-              'config/api-key.txt'
+              './config/env-config.json',
+              '/SCI-HIGH_THESIS/config/env-config.json',
+              'config/env-config.json'
             ];
             
             let loadSuccess = false;
@@ -3636,21 +3646,17 @@ Always provide helpful, encouraging responses that match the gaming theme. Use a
               try {
                 const response = await fetch(path);
                 if (response.ok) {
-                  const content = await response.text();
-                  // Extract API key from file (skip comments and empty lines)
-                  const lines = content.split('\n');
-                  for (const line of lines) {
-                    const trimmed = line.trim();
-                    if (trimmed && !trimmed.startsWith('#') && trimmed !== 'YOUR_API_KEY_HERE') {
-                      if (this.validateApiKey(trimmed)) {
-                        this.apiKey = trimmed;
-                        this.keyExpiry = Date.now() + this.maxKeyAge;
-                        loadSuccess = true;
-                        break;
-                      }
+                  const config = await response.json();
+                  
+                  // Look for geminiApiKey in the config
+                  if (config.geminiApiKey && config.geminiApiKey !== 'YOUR_GEMINI_API_KEY_HERE') {
+                    if (this.validateApiKey(config.geminiApiKey)) {
+                      this.apiKey = config.geminiApiKey;
+                      this.keyExpiry = Date.now() + this.maxKeyAge;
+                      loadSuccess = true;
+                      break;
                     }
                   }
-                  if (loadSuccess) break;
                 }
               } catch (e) {
                 // Continue to next path
@@ -3772,7 +3778,7 @@ ${key}`;
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'api-key.txt';
+            a.download = 'env-config.json';
             a.style.display = 'none';
             document.body.appendChild(a);
             a.click();

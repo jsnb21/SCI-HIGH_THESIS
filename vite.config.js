@@ -23,7 +23,6 @@ export default defineConfig({
           mkdirSync('./dist/config', { recursive: true });
           copyFileSync('./docs/config/firebase-config.js', './dist/config/firebase-config.js');
           copyFileSync('./docs/config/env-config.json', './dist/config/env-config.json');
-          copyFileSync('./docs/config/api-key.txt', './dist/config/api-key.txt');
           console.log('✅ Config files copied to dist/config/');
         } catch (error) {
           console.warn('Some config files could not be copied:', error.message);
