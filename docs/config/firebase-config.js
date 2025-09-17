@@ -4,7 +4,6 @@
   
   // Prevent multiple initializations
   if (window.firebaseConfig) {
-    console.log('Firebase config already loaded');
     return;
   }
 
@@ -60,7 +59,6 @@
 
           this.config = cfg;
           const masked = apiKey.slice(0, 6) + '...' + apiKey.slice(-4);
-          console.log(`✅ Firebase configuration loaded from ${url} (apiKey: ${masked})`);
           // Detect obviously placeholder / example keys so we fail fast with guidance
           if (/EXAMPLE|YOUR-|REPLACE|sample/i.test(apiKey)) {
             console.error('❌ Detected a placeholder Firebase API key in env-config.json.');
@@ -87,7 +85,6 @@
 
     async initializeFirebase() {
       if (this.initialized) {
-        console.log('Firebase already initialized');
         return;
       }
 
@@ -111,9 +108,7 @@
         // Initialize Firebase app if not already initialized
         if (firebase.apps.length === 0) {
           firebase.initializeApp(config);
-          console.log('✅ Firebase initialized successfully');
         } else {
-          console.log('✅ Firebase app already exists');
         }
 
         this.initialized = true;
