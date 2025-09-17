@@ -61,6 +61,13 @@
           this.config = cfg;
           const masked = apiKey.slice(0, 6) + '...' + apiKey.slice(-4);
           console.log(`✅ Firebase configuration loaded from ${url} (apiKey: ${masked})`);
+          // Detect obviously placeholder / example keys so we fail fast with guidance
+          if (/EXAMPLE|YOUR-|REPLACE|sample/i.test(apiKey)) {
+            console.error('❌ Detected a placeholder Firebase API key in env-config.json.');
+            console.error('Update env-config.json with the real Web API Key from: Firebase Console > Project Settings > General > Your apps (Web) > SDK setup and configuration.');
+            this.config = null; // invalidate
+            return null;
+          }
           return this.config;
         } catch (err) {
           lastError = err;
