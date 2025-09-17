@@ -127,7 +127,11 @@ export default class GameTimer {
         this.progressBar.fillStyle(0xffffff, 0.3);
         this.progressBar.fillRoundedRect(this.timerX - 53, this.timerY + 17, barWidth, 1, 1);
     }    // Update timer position
-    updatePosition(x, y) {// Store new position
+    updatePosition(x, y) {
+        console.log('=== UPDATE TIMER POSITION ===');
+        console.log('New position:', x, y);
+        
+        // Store new position
         this.timerX = x;
         this.timerY = y;
         
@@ -155,8 +159,14 @@ export default class GameTimer {
         // Update seconds label
         if (this.secondsLabel && this.secondsLabel.active) {
             this.secondsLabel.setPosition(x, y + 8);
-        }}    // Recreate timer elements if they were destroyed
-    recreateElements(x, y) {// Clean up any destroyed references
+        }
+        
+        console.log('=== END UPDATE TIMER POSITION ===');
+    }    // Recreate timer elements if they were destroyed
+    recreateElements(x, y) {
+        console.log('=== RECREATING TIMER ELEMENTS ===');
+        
+        // Clean up any destroyed references
         this.timerBackground = null;
         this.timerText = null;
         this.progressBar = null;
@@ -202,7 +212,11 @@ export default class GameTimer {
         this.secondsLabel.setDepth(130);
 
         // Apply current timer state
-        this.updateTimerColor();}    // Update timer display and handle countdown
+        this.updateTimerColor();
+
+        console.log('Timer elements recreated');
+        console.log('=== END RECREATION ===');
+    }    // Update timer display and handle countdown
     updateTimer() {
         if (this.isPaused) return; // Skip update if paused
 
@@ -324,7 +338,10 @@ export default class GameTimer {
     }
 
     // Handle when time runs out
-    handleTimeUp() {// Show time up message briefly
+    handleTimeUp() {
+        console.log('=== TIME UP ===');
+        
+        // Show time up message briefly
         const timeUpText = this.scene.add.text(612, 100, "TIME'S UP!", {
             fontSize: '32px',
             fill: '#ff0000',
@@ -347,7 +364,10 @@ export default class GameTimer {
                     this.scene.handleTimeUp();
                 }
             }
-        });}    // Add time (for correct answers)
+        });
+        
+        console.log('=== END TIME UP ===');
+    }    // Add time (for correct answers)
     addTime(seconds, maxTime = 30) {
         this.timeLeft = Math.min(this.timeLeft + seconds, maxTime);
         

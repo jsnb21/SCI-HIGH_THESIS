@@ -175,7 +175,9 @@ export default class Office extends Phaser.Scene {
 
         this.input.keyboard.on('keydown-R', () => {
             if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
-                onceOnlyFlags.flags['office_tutorial'] = false;}
+                onceOnlyFlags.flags['office_tutorial'] = false;
+                console.log('Office tutorial flag reset');
+            }
         });
 
         // Add shutdown and destroy event listeners to clean up the carousel
@@ -393,9 +395,13 @@ export default class Office extends Phaser.Scene {
 
         this.tutorialManager.init(tutorialSteps, {
             onComplete: () => {
-                onceOnlyFlags.setSeen('office_tutorial');},
+                onceOnlyFlags.setSeen('office_tutorial');
+                console.log('Office tutorial completed!');
+            },
             onSkip: () => {
-                onceOnlyFlags.setSeen('office_tutorial');}
+                onceOnlyFlags.setSeen('office_tutorial');
+                console.log('Office tutorial skipped!');
+            }
         });
     }
 }

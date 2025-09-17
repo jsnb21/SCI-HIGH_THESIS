@@ -37,7 +37,10 @@ class CareerStatsService {
     }
 
     async initializeFirebase() {
-        try {if (!navigator.onLine) {
+        try {
+            console.log('Starting Firebase initialization for CareerStatsService...');
+            
+            if (!navigator.onLine) {
                 throw new Error('No internet connection detected');
             }
             
@@ -46,7 +49,9 @@ class CareerStatsService {
             }
             
             let retries = 0;
-            while (typeof window.firebase === 'undefined' && retries < 10) {await new Promise(resolve => setTimeout(resolve, 300));
+            while (typeof window.firebase === 'undefined' && retries < 10) {
+                console.log(`Waiting for Firebase to load... (attempt ${retries + 1})`);
+                await new Promise(resolve => setTimeout(resolve, 300));
                 retries++;
             }
             
@@ -61,7 +66,9 @@ class CareerStatsService {
             this.database = window.firebase.database();
             await this.database.ref('.info/connected').once('value');
             
-            this.isFirebaseInitialized = true;} catch (error) {
+            this.isFirebaseInitialized = true;
+            console.log('Firebase initialized successfully for CareerStatsService');
+        } catch (error) {
             console.error('Failed to initialize Firebase for CareerStatsService:', error);
             this.isFirebaseInitialized = false;
             throw error;
@@ -106,7 +113,11 @@ class CareerStatsService {
 
     // Update student career stats with new session data
     async updateCareerStats(studentId, studentName, sessionData, additionalData = {}) {
-        try {// Validate and sanitize sessionData to prevent NaN values
+        try {
+            console.log('🔄 CareerStatsService: Starting updateCareerStats...');
+            console.log('📊 Input data:', { studentId, studentName, sessionData, additionalData });
+            
+            // Validate and sanitize sessionData to prevent NaN values
             if (!sessionData) {
                 throw new Error('Session data is required');
             }
@@ -128,11 +139,26 @@ class CareerStatsService {
             // Ensure timestamp exists
             if (!sessionData.timestamp) {
                 sessionData.timestamp = new Date().toISOString();
-            }const isInitialized = await this.ensureFirebaseInitialized();
+            }
+            
+            console.log('✅ CareerStatsService: Session data validated:', sessionData);
+            
+            const isInitialized = await this.ensureFirebaseInitialized();
             if (!isInitialized) {
                 throw new Error('Firebase not initialized');
-            }const statsRef = this.database.ref(`student_career_stats/${studentId}`);// Get current statsconst currentStatsSnapshot = await statsRef.once('value');
-            const currentStats = currentStatsSnapshot.val() || {};// Initialize default structure if first time
+            }
+            console.log('✅ CareerStatsService: Firebase initialized');
+
+            const statsRef = this.database.ref(`student_career_stats/${studentId}`);
+            console.log('🔗 CareerStatsService: Database reference created for:', `student_career_stats/${studentId}`);
+            
+            // Get current stats
+            console.log('🔄 CareerStatsService: Fetching current stats...');
+            const currentStatsSnapshot = await statsRef.once('value');
+            const currentStats = currentStatsSnapshot.val() || {};
+            console.log('📊 CareerStatsService: Current stats:', currentStats);
+            
+            // Initialize default structure if first time
             if (!currentStats.careerStats) {
                 currentStats.careerStats = {
                     totalSessions: 0,
@@ -214,12 +240,16 @@ class CareerStatsService {
                 courseStats.lastCompleted = sessionData.timestamp;
 
                 // Only set course completion to true if the course was actually completed (reached Intensity 3)
-                if (sessionData.courseCompleted === true) {if (newCareerStats.courseCompletionStatus.hasOwnProperty(normalizedCourse)) {
+                if (sessionData.courseCompleted === true) {
+                    console.log(`Course ${courseTopic} fully completed (Intensity 3) - marking as complete`);
+                    if (newCareerStats.courseCompletionStatus.hasOwnProperty(normalizedCourse)) {
                         newCareerStats.courseCompletionStatus[normalizedCourse] = true;
                     } else if (newCareerStats.courseCompletionStatus.hasOwnProperty(courseTopic.toLowerCase())) {
                         newCareerStats.courseCompletionStatus[courseTopic.toLowerCase()] = true;
                     }
-                } else {}
+                } else {
+                    console.log(`Course ${courseTopic} session completed but not fully finished (not Intensity 3)`);
+                }
             }
 
             // Update recent sessions (keep only last 3)
@@ -266,7 +296,13 @@ class CareerStatsService {
             // Sanitize the data to remove any NaN values before saving
             const sanitizedStats = this.sanitizeDataForFirebase(updatedStats);
             
-            // Save to Firebaseawait statsRef.set(sanitizedStats);return { success: true, data: sanitizedStats };
+            // Save to Firebase
+            console.log('🔄 CareerStatsService: Saving to Firebase...');
+            await statsRef.set(sanitizedStats);
+            console.log('✅ CareerStatsService: Career stats updated successfully!');
+            console.log('📊 CareerStatsService: Final stats:', sanitizedStats);
+            
+            return { success: true, data: sanitizedStats };
 
         } catch (error) {
             console.error('❌ CareerStatsService: Error updating career stats:', error);

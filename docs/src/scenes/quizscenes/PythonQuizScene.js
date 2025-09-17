@@ -67,7 +67,15 @@ export default class PythonQuizScene extends BaseQuizScene {
             return;
         }
         
-        // Debug: Log current state// Check for Python-specific first-time tutorial
+        // Debug: Log current state
+        console.log('PythonQuizScene tutorial check:', {
+            topic: this.topic,
+            tutorialFlags: this.tutorialFlags,
+            pythonTutorialFlags: this.pythonTutorialFlags,
+            localStorage: localStorage.getItem('sci-high-python-tutorial-seen')
+        });
+        
+        // Check for Python-specific first-time tutorial
         if (PYTHON_TUTORIAL_TRIGGERS.firstTime(this) && !this.tutorialFlags.firstTimeTutorialShown) {
             this.showPythonTutorial('firstTime');
             this.tutorialFlags.firstTimeTutorialShown = true;
@@ -111,7 +119,10 @@ export default class PythonQuizScene extends BaseQuizScene {
         const steps = prepareTutorialSteps(this, tutorialType);
         
         const callbacks = {
-            onComplete: () => {// Mark Python tutorial as seen in localStorage
+            onComplete: () => {
+                console.log(`Python tutorial '${tutorialType}' completed`);
+                
+                // Mark Python tutorial as seen in localStorage
                 if (tutorialType === 'firstTime') {
                     localStorage.setItem('sci-high-python-tutorial-seen', 'true');
                 }
@@ -121,7 +132,10 @@ export default class PythonQuizScene extends BaseQuizScene {
                     this.gameTimer.resume();
                 }
             },
-            onSkip: () => {// Mark as seen even if skipped
+            onSkip: () => {
+                console.log(`Python tutorial '${tutorialType}' skipped`);
+                
+                // Mark as seen even if skipped
                 if (tutorialType === 'firstTime') {
                     localStorage.setItem('sci-high-python-tutorial-seen', 'true');
                 }
@@ -131,7 +145,9 @@ export default class PythonQuizScene extends BaseQuizScene {
                     this.gameTimer.resume();
                 }
             },
-            onStepComplete: (stepIndex) => {}
+            onStepComplete: (stepIndex) => {
+                console.log(`Python tutorial step ${stepIndex} completed`);
+            }
         };
         
         this.tutorialManager.init(steps, callbacks);

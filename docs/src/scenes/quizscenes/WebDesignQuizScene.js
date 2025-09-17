@@ -92,7 +92,10 @@ export default class WebDesignQuizScene extends BaseQuizScene {
             const steps = module.prepareTutorialSteps(this, tutorialType);
             
             const callbacks = {
-                onComplete: async () => {// Mark Web Design tutorial as seen in localStorage
+                onComplete: async () => {
+                    console.log(`Web Design tutorial '${tutorialType}' completed`);
+                    
+                    // Mark Web Design tutorial as seen in localStorage
                     if (tutorialType === 'firstTime') {
                         localStorage.setItem('sci-high-webdesign-tutorial-seen', 'true');
                     } else if (tutorialType === 'combo') {
@@ -112,7 +115,10 @@ export default class WebDesignQuizScene extends BaseQuizScene {
                         this.gameTimer.resume();
                     }
                 },
-                onSkip: async () => {// Mark as seen even if skipped
+                onSkip: async () => {
+                    console.log(`Web Design tutorial '${tutorialType}' skipped`);
+                    
+                    // Mark as seen even if skipped
                     if (tutorialType === 'firstTime') {
                         localStorage.setItem('sci-high-webdesign-tutorial-seen', 'true');
                     } else if (tutorialType === 'combo') {

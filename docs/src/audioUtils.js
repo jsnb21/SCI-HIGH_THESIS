@@ -62,7 +62,10 @@ function loadVolumeSettings() {
         }
         if (savedSeVolume !== null) {
             seVolume = parseFloat(savedSeVolume);
-        }} catch (error) {
+        }
+        
+        console.log('Volume settings loaded from localStorage:', { bgmVolume, seVolume });
+    } catch (error) {
         console.warn('Failed to load volume settings from localStorage:', error);
     }
 }
@@ -71,7 +74,9 @@ function loadVolumeSettings() {
 function saveVolumeSettings() {
     try {
         localStorage.setItem('sci_high_bgm_volume', bgmVolume.toString());
-        localStorage.setItem('sci_high_se_volume', seVolume.toString());} catch (error) {
+        localStorage.setItem('sci_high_se_volume', seVolume.toString());
+        console.log('Volume settings saved to localStorage:', { bgmVolume, seVolume });
+    } catch (error) {
         console.warn('Failed to save volume settings to localStorage:', error);
     }
 }

@@ -47,7 +47,10 @@ export default class PowerUpScene extends BaseScene {
     init(data) {
         // Receive data from main gameplay scene
         this.powerUpData = data.powerUpToCollect;
-        this.selectedPowerUp = null;}
+        this.selectedPowerUp = null;
+        
+        console.log('PowerUpScene initialized with:', data);
+    }
 
     create() {
         super.create();
@@ -265,7 +268,11 @@ export default class PowerUpScene extends BaseScene {
         }
         
         this.powerUpSelected = true;
-        this.selectedPowerUp = powerUp;// Visual feedback
+        this.selectedPowerUp = powerUp;
+        
+        console.log('Selected power-up:', powerUp.name);
+        
+        // Visual feedback
         this.showSelectionFeedback(powerUp);
         
         // Apply the power-up effect
@@ -345,10 +352,16 @@ export default class PowerUpScene extends BaseScene {
         }
         
         // Since the game is paused during power-up selection, this should not happen
-        // But if it does, log it and continue normally// Don't auto-select since game is paused - let player choose
+        // But if it does, log it and continue normally
+        console.log('Timer expired during power-up selection (unexpected since game should be paused)');
+        
+        // Don't auto-select since game is paused - let player choose
     }
 
-    returnToGameplay(success) {// Clean up timer event listener
+    returnToGameplay(success) {
+        console.log('Returning to gameplay, power-up collection success:', success);
+        
+        // Clean up timer event listener
         const mainScene = this.scene.get('MainGameplay');
         if (mainScene) {
             mainScene.events.off('timer-expired', this.handleTimerExpired, this);

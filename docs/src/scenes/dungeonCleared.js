@@ -41,7 +41,10 @@ export default class DungeonCleared extends Phaser.Scene {
         this.showResultsScreen();
     }
 
-    showResultsScreen() {const sf = this.scaleFactor;
+    showResultsScreen() {
+        console.log('DungeonCleared: showResultsScreen called with stats:', this.courseStats);
+        
+        const sf = this.scaleFactor;
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2;
         
@@ -66,7 +69,11 @@ export default class DungeonCleared extends Phaser.Scene {
         } else if (this.courseStats.totalScore >= 200 && mistakes <= 5) {
             rank = 'C';
             rankColor = '#A0522D'; // Dark bronze
-        }// Create overlay
+        }
+        
+        console.log(`Calculated rank: ${rank}, Score: ${this.courseStats.totalScore}, Mistakes: ${mistakes}`);
+        
+        // Create overlay
         const overlay = this.add.graphics();
         overlay.fillStyle(0x000000, 0.8);
         overlay.fillRect(0, 0, this.scale.width, this.scale.height);
@@ -213,7 +220,9 @@ export default class DungeonCleared extends Phaser.Scene {
             .setInteractive({ useHandCursor: true })
             .setOrigin(0.5)
             .setDepth(203)
-            .on('pointerdown', () => {this.scene.start('MainHub');
+            .on('pointerdown', () => {
+                console.log('Returning to Main Hub');
+                this.scene.start('MainHub');
             })
             .on('pointerover', () => {
                 continueButton.setScale(1.1);

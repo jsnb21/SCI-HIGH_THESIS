@@ -25,7 +25,9 @@ export default defineConfig({
         // Copy notifications.js to maintain the same path structure
         try {
           mkdirSync('./dist/js', { recursive: true });
-          copyFileSync('./js/notifications.js', './dist/js/notifications.js');} catch (error) {
+          copyFileSync('./js/notifications.js', './dist/js/notifications.js');
+          console.log('✓ Copied notifications.js to dist/js/');
+        } catch (error) {
           console.error('Failed to copy notifications.js:', error);
         }
       }

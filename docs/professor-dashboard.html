@@ -335,9 +335,16 @@
             }
 
             this.database = firebase.database();
-            this.isFirebaseInitialized = true;// Monitor connection status
+            this.isFirebaseInitialized = true;
+            console.log('Firebase initialized successfully');
+            
+            // Monitor connection status
             this.database.ref('.info/connected').on('value', (snapshot) => {
-              if (snapshot.val() === true) {} else {this.showWarning('Connection to Firebase lost. Some features may not work properly.');
+              if (snapshot.val() === true) {
+                console.log('Connected to Firebase');
+              } else {
+                console.log('Disconnected from Firebase');
+                this.showWarning('Connection to Firebase lost. Some features may not work properly.');
               }
             });
           } catch (error) {
@@ -352,11 +359,16 @@
               console.warn('Firebase not initialized, loading sample data');
               this.loadSampleData();
               return;
-            }const studentsRef = this.database.ref('students');
+            }
+
+            console.log('Loading students from Firebase...');
+            const studentsRef = this.database.ref('students');
             const snapshot = await studentsRef.once('value');
             const studentsData = snapshot.val();
 
-            if (!studentsData) {this.students = [];
+            if (!studentsData) {
+              console.log('No students found in Firebase');
+              this.students = [];
               this.filteredStudents = [];
               this.renderStudentsTable();
               return;
@@ -398,7 +410,10 @@
                   courseProgress: student.courseProgress || {}
                 }
               };
-            });this.filteredStudents = [...this.students];
+            });
+
+            console.log(`Loaded ${this.students.length} students from Firebase`);
+            this.filteredStudents = [...this.students];
             this.renderStudentsTable();
 
           } catch (error) {
@@ -647,14 +662,19 @@
           });
           
           if (confirmed) {
-            try {if (this.isFirebaseInitialized) {
+            try {
+              console.log('Resetting progress for student:', studentId);
+              
+              if (this.isFirebaseInitialized) {
                 // Update Firebase
                 const studentRef = this.database.ref(`students/${studentId}`);
                 await studentRef.update({
                   totalPoints: 0,
                   courseProgress: {},
                   lastUpdated: new Date().toISOString()
-                });}
+                });
+                console.log('Firebase update completed');
+              }
               
               // Update local data
               const student = this.students.find(s => s.id === studentId);
@@ -686,7 +706,10 @@
             try {
               const newPassword = 'Student123!';
               
-              // In production, this would update Firebasethis.showSuccess(`Password reset! New password: ${newPassword}`);
+              // In production, this would update Firebase
+              console.log(`Password reset for student ${studentId}: ${newPassword}`);
+              
+              this.showSuccess(`Password reset! New password: ${newPassword}`);
             } catch (error) {
               this.showError('Failed to reset password: ' + error.message);
             }

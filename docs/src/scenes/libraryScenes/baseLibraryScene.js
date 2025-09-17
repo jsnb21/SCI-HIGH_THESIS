@@ -55,11 +55,17 @@ class BaseLibraryScene extends Phaser.Scene {
 
         this.booksData.books.forEach((book, index) => {
             const iconKey = `book_${book.id}`;
-            const sourceIconKey = book.icon; // This will be like 'python_logo', 'java_logo', etc.// Check if the source icon exists in the texture manager
+            const sourceIconKey = book.icon; // This will be like 'python_logo', 'java_logo', etc.
+            
+            console.log(`Creating icon for book: ${book.title}, using source: ${sourceIconKey}`);
+            
+            // Check if the source icon exists in the texture manager
             if (this.textures.exists(sourceIconKey)) {
                 // Create a copy of the texture with our book-specific key
                 const sourceTexture = this.textures.get(sourceIconKey);
-                this.textures.addImage(iconKey, sourceTexture.source[0].image);} else {
+                this.textures.addImage(iconKey, sourceTexture.source[0].image);
+                console.log(`Successfully created icon: ${iconKey} from ${sourceIconKey}`);
+            } else {
                 console.warn(`Source icon ${sourceIconKey} not found for book ${book.title}`);
                 // Fallback: create a simple colored rectangle as backup
                 const graphics = this.add.graphics();
@@ -141,7 +147,10 @@ class BaseLibraryScene extends Phaser.Scene {
                     }
                 ]
             };
-        }}
+        }
+        
+        console.log('Loaded books data:', this.booksData);
+    }
 
     setupBackground() {
         // Add library background
@@ -177,7 +186,9 @@ class BaseLibraryScene extends Phaser.Scene {
         const iconInfo = [];
         
         books.forEach((book, index) => {
-            const iconKey = `book_${book.id}`;iconKeys.push(iconKey);
+            const iconKey = `book_${book.id}`;
+            console.log(`Creating icon for book: ${book.title}, key: ${iconKey}`);
+            iconKeys.push(iconKey);
             iconInfo.push({
                 heading: book.title, // Use 'heading' for carousel compatibility
                 desc: `by ${book.author}`, // Use 'desc' for carousel compatibility
@@ -185,7 +196,12 @@ class BaseLibraryScene extends Phaser.Scene {
                 description: `by ${book.author}`,
                 book: book
             });
-        });// Create carousel
+        });
+
+        console.log('Icon keys:', iconKeys);
+        console.log('Icon info:', iconInfo);
+
+        // Create carousel
         this.carousel = new Carousel(this, {
             iconYOffset: 50,
             iconSpacing: 200,
@@ -312,7 +328,10 @@ class BaseLibraryScene extends Phaser.Scene {
         });
     }
 
-    onBookSelected(selectedData) {let selectedBook = null;
+    onBookSelected(selectedData) {
+        console.log('Book selected data:', selectedData);
+        
+        let selectedBook = null;
         
         if (typeof selectedData === 'object' && selectedData.book) {
             // If selectedData is the iconInfo object with book property
@@ -321,14 +340,24 @@ class BaseLibraryScene extends Phaser.Scene {
             // If selectedData is an index
             const books = this.booksData.books || [];
             selectedBook = books[selectedData];
-        }if (selectedBook) {
+        }
+        
+        console.log('Selected book:', selectedBook);
+        
+        if (selectedBook) {
             this.openEbook(selectedBook);
         } else {
             console.error('No book found from selection:', selectedData);
         }
     }
 
-    openEbook(book) {if (book.link) {// Play confirmation sound
+    openEbook(book) {
+        console.log('OpenEbook called with:', book);
+        
+        if (book.link) {
+            console.log('Opening link:', book.link);
+            
+            // Play confirmation sound
             if (this.se_confirmSound) {
                 this.se_confirmSound.play();
             }
@@ -344,7 +373,11 @@ class BaseLibraryScene extends Phaser.Scene {
                 console.warn('Popup blocked for:', book.link);
                 this.showPopupBlockedMessage(book);
                 return;
-            }// Mark as reading and save progress
+            }
+            
+            console.log(`Successfully opened ebook: ${book.title} at ${book.link}`);
+            
+            // Mark as reading and save progress
             if (book.status === 'available') {
                 book.status = 'reading';
                 this.saveReadingProgress(book);
@@ -529,7 +562,9 @@ class BaseLibraryScene extends Phaser.Scene {
 
     createBackButton() {
         // Add a custom back handler method to the scene
-        this.goBackToPreviousScene = () => {this.scene.start(this.previousScene, {
+        this.goBackToPreviousScene = () => {
+            console.log('Returning to previous scene:', this.previousScene);
+            this.scene.start(this.previousScene, {
                 playerData: this.playerData,
                 gameProgress: this.gameProgress
             });
@@ -559,9 +594,13 @@ class BaseLibraryScene extends Phaser.Scene {
 
         this.tutorialManager.init(tutorialSteps, {
             onComplete: () => {
-                onceOnlyFlags.setSeen('library_tutorial');},
+                onceOnlyFlags.setSeen('library_tutorial');
+                console.log('Library tutorial completed!');
+            },
             onSkip: () => {
-                onceOnlyFlags.setSeen('library_tutorial');}
+                onceOnlyFlags.setSeen('library_tutorial');
+                console.log('Library tutorial skipped!');
+            }
         });
     }
 

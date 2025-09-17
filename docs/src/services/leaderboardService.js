@@ -37,18 +37,25 @@ class LeaderboardService {
     }
 
     async initializeFirebase() {
-        try {// First check if we have internet connectivity
+        try {
+            console.log('Starting Firebase initialization...');
+            
+            // First check if we have internet connectivity
             if (!navigator.onLine) {
                 throw new Error('No internet connection detected');
             }
             
             // Check if Firebase is already loaded
-            if (typeof window.firebase === 'undefined') {await this.loadFirebaseScripts();
+            if (typeof window.firebase === 'undefined') {
+                console.log('Loading Firebase scripts...');
+                await this.loadFirebaseScripts();
             }
             
             // Wait a bit for Firebase to be available
             let retries = 0;
-            while (typeof window.firebase === 'undefined' && retries < 10) {await new Promise(resolve => setTimeout(resolve, 300));
+            while (typeof window.firebase === 'undefined' && retries < 10) {
+                console.log(`Waiting for Firebase to load... (attempt ${retries + 1})`);
+                await new Promise(resolve => setTimeout(resolve, 300));
                 retries++;
             }
             
@@ -57,7 +64,9 @@ class LeaderboardService {
             }
             
             // Initialize Firebase if not already done
-            if (!window.firebase.apps.length) {window.firebase.initializeApp(this.firebaseConfig);
+            if (!window.firebase.apps.length) {
+                console.log('Initializing Firebase app...');
+                window.firebase.initializeApp(this.firebaseConfig);
             }
             
             // Test Firebase connection
@@ -66,7 +75,9 @@ class LeaderboardService {
             // Try a simple connection test
             await this.db.ref('.info/connected').once('value');
             
-            this.isFirebaseInitialized = true;} catch (error) {
+            this.isFirebaseInitialized = true;
+            console.log('Firebase initialized successfully for leaderboard service');
+        } catch (error) {
             console.error('Failed to initialize Firebase:', error);
             this.isFirebaseInitialized = false;
             throw error;
@@ -76,7 +87,9 @@ class LeaderboardService {
     async loadFirebaseScripts() {
         return new Promise((resolve, reject) => {
             // Check if Firebase is already loaded
-            if (typeof window.firebase !== 'undefined') {resolve();
+            if (typeof window.firebase !== 'undefined') {
+                console.log('Firebase scripts already loaded');
+                resolve();
                 return;
             }
 
@@ -98,7 +111,9 @@ class LeaderboardService {
             const handleLoad = () => {
                 loaded++;
                 if (loaded === scripts.length && !hasError) {
-                    clearTimeout(timeout);// Wait a bit for Firebase to initialize
+                    clearTimeout(timeout);
+                    console.log('All Firebase scripts loaded successfully');
+                    // Wait a bit for Firebase to initialize
                     setTimeout(() => resolve(), 200);
                 }
             };
@@ -215,7 +230,9 @@ class LeaderboardService {
                 }
             };
 
-            await this.db.ref('leaderboards/' + userId).set(scoreData);return { success: true, data: scoreData };
+            await this.db.ref('leaderboards/' + userId).set(scoreData);
+            console.log('Score submitted successfully:', scoreData);
+            return { success: true, data: scoreData };
         } catch (error) {
             console.error('Error submitting score:', error);
             throw error;

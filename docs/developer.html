@@ -414,7 +414,10 @@ authManager.userType                                // View current user type</p
           
           if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
-          }} catch (error) {
+          }
+          
+          console.log('Firebase initialized successfully');
+        } catch (error) {
           console.error('Error initializing Firebase:', error);
         }
       }
@@ -584,7 +587,9 @@ Error: ${error.message}
           const logViewer = document.getElementById('log-viewer');
           const timestamp = new Date().toLocaleTimeString();
           logViewer.innerHTML += `\n[${timestamp}] ${message}`;
-          logViewer.scrollTop = logViewer.scrollHeight;}
+          logViewer.scrollTop = logViewer.scrollHeight;
+          console.log(`[DEV] ${message}`);
+        }
       }
 
       // Initialize Developer Auth Manager
@@ -676,7 +681,9 @@ Error: ${error.message}
           const professors = [];
           snapshot.forEach(doc => {
             professors.push({ id: doc.id, ...doc.data() });
-          });devAuthManager.log(`Found ${professors.length} professor records`);
+          });
+          console.log('Professors:', professors);
+          devAuthManager.log(`Found ${professors.length} professor records`);
           alert(`Found ${professors.length} professor records. Check console for details.`);
         } catch (error) {
           alert('Error fetching professors: ' + error.message);
@@ -690,7 +697,9 @@ Error: ${error.message}
           const students = [];
           snapshot.forEach(doc => {
             students.push({ id: doc.id, ...doc.data() });
-          });devAuthManager.log(`Found ${students.length} student records`);
+          });
+          console.log('Students:', students);
+          devAuthManager.log(`Found ${students.length} student records`);
           alert(`Found ${students.length} student records. Check console for details.`);
         } catch (error) {
           alert('Error fetching students: ' + error.message);
@@ -704,7 +713,9 @@ Error: ${error.message}
           const users = [];
           snapshot.forEach(doc => {
             users.push({ id: doc.id, ...doc.data() });
-          });devAuthManager.log(`Found ${users.length} general user records`);
+          });
+          console.log('General Users:', users);
+          devAuthManager.log(`Found ${users.length} general user records`);
           alert(`Found ${users.length} general user records. Check console for details.`);
         } catch (error) {
           alert('Error fetching general users: ' + error.message);

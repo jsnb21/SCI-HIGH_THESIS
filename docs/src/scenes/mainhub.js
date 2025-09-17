@@ -63,18 +63,25 @@ export default class MainHub extends Phaser.Scene {
     }
 
     async initializeFirebase() {
-        try {// First check if we have internet connectivity
+        try {
+            console.log('Starting Firebase initialization for MainHub...');
+            
+            // First check if we have internet connectivity
             if (!navigator.onLine) {
                 throw new Error('No internet connection detected');
             }
             
             // Check if Firebase is already loaded
-            if (typeof window.firebase === 'undefined') {await this.loadFirebaseScripts();
+            if (typeof window.firebase === 'undefined') {
+                console.log('Loading Firebase scripts...');
+                await this.loadFirebaseScripts();
             }
             
             // Wait a bit for Firebase to be available
             let retries = 0;
-            while (typeof window.firebase === 'undefined' && retries < 10) {await new Promise(resolve => setTimeout(resolve, 300));
+            while (typeof window.firebase === 'undefined' && retries < 10) {
+                console.log(`Waiting for Firebase to load... (attempt ${retries + 1})`);
+                await new Promise(resolve => setTimeout(resolve, 300));
                 retries++;
             }
             
@@ -83,7 +90,9 @@ export default class MainHub extends Phaser.Scene {
             }
             
             // Initialize Firebase app if not already done
-            if (!window.firebase.apps.length) {window.firebase.initializeApp(this.firebaseConfig);
+            if (!window.firebase.apps.length) {
+                console.log('Initializing Firebase app...');
+                window.firebase.initializeApp(this.firebaseConfig);
             }
             
             // Test Firebase connection
@@ -92,7 +101,9 @@ export default class MainHub extends Phaser.Scene {
             // Try a simple connection test
             await this.database.ref('.info/connected').once('value');
             
-            this.isFirebaseInitialized = true;} catch (error) {
+            this.isFirebaseInitialized = true;
+            console.log('Firebase Database initialized successfully for MainHub');
+        } catch (error) {
             console.error('Failed to initialize Firebase for MainHub:', error);
             this.isFirebaseInitialized = false;
             throw error;
@@ -136,25 +147,41 @@ export default class MainHub extends Phaser.Scene {
     }
 
     async checkStudentDataInFirebase() {
-        try {// Get current user from localStorage
+        try {
+            console.log('🔍 MainHub: Checking for existing student data in Firebase...');
+            
+            // Get current user from localStorage
             const userDataStr = localStorage.getItem('sci_high_user');
-            if (!userDataStr) {return false;
+            if (!userDataStr) {
+                console.log('ℹ️ MainHub: No user data found in localStorage');
+                return false;
             }
             
             const currentUser = JSON.parse(userDataStr);
             const studentId = currentUser.studentId || currentUser.uid;
             
-            if (!studentId) {return false;
-            }// Ensure Firebase is initialized
+            if (!studentId) {
+                console.log('ℹ️ MainHub: No student ID found in user data');
+                return false;
+            }
+            
+            console.log('🔍 MainHub: Searching for student data with ID:', studentId);
+            
+            // Ensure Firebase is initialized
             const isInitialized = await this.ensureFirebaseInitialized();
-            if (!isInitialized) {return false;
+            if (!isInitialized) {
+                console.log('⚠️ MainHub: Firebase not initialized, cannot check student data');
+                return false;
             }
             
             // Search for any gameplay data for this student
             const gameplayRef = this.database.ref('gameplay_data');
             const snapshot = await gameplayRef.orderByChild('studentId').equalTo(studentId).limitToFirst(1).once('value');
             
-            const hasData = snapshot.exists();return hasData;
+            const hasData = snapshot.exists();
+            console.log(`${hasData ? '✅' : 'ℹ️'} MainHub: Student ${studentId} ${hasData ? 'has' : 'does not have'} existing data in Firebase`);
+            
+            return hasData;
             
         } catch (error) {
             console.error('❌ MainHub: Error checking student data in Firebase:', error);
@@ -271,7 +298,9 @@ export default class MainHub extends Phaser.Scene {
         // Skip intro if student has Firebase data OR if they've already seen it
         const shouldSkipIntro = hasFirebaseData || onceOnlyFlags.hasSeen('mainhub_intro');
         
-        if (!shouldSkipIntro) {// Hide UI elements during cutscene
+        if (!shouldSkipIntro) {
+            console.log('🎬 MainHub: Showing intro cutscene for new student');
+            // Hide UI elements during cutscene
             this.hideUIElementsForCutscene();
             
             // Show Secretary character image
@@ -300,15 +329,21 @@ export default class MainHub extends Phaser.Scene {
             });
             this.uiElements.push(this.vnBox);
         } else {
-            if (hasFirebaseData) {// Auto-mark intro as seen for returning students
+            if (hasFirebaseData) {
+                console.log('✅ MainHub: Skipping intro - student has existing Firebase data');
+                // Auto-mark intro as seen for returning students
                 onceOnlyFlags.setSeen('mainhub_intro');
-            } else {}
+            } else {
+                console.log('✅ MainHub: Skipping intro - already seen before');
+            }
             
             this.createCarousel(iconKeys, iconInfo);
             
             // Skip tutorial as well for returning students with Firebase data
             if (hasFirebaseData) {
-                onceOnlyFlags.setSeen('mainhub_tutorial');} else if (!onceOnlyFlags.hasSeen('mainhub_tutorial')) {
+                onceOnlyFlags.setSeen('mainhub_tutorial');
+                console.log('✅ MainHub: Skipping tutorial - returning student');
+            } else if (!onceOnlyFlags.hasSeen('mainhub_tutorial')) {
                 // Start tutorial after carousel is created (if first time visiting hub)
                 this.time.delayedCall(300, () => {
                     this.startHubTutorial();
@@ -330,7 +365,9 @@ export default class MainHub extends Phaser.Scene {
         // Debug feature: Reset tutorial flag with Shift+R for testing
         this.input.keyboard.on('keydown-R', () => {
             if (this.input.keyboard.checkDown(this.input.keyboard.addKey('SHIFT'))) {
-                onceOnlyFlags.flags['mainhub_tutorial'] = false;}
+                onceOnlyFlags.flags['mainhub_tutorial'] = false;
+                console.log('Main hub tutorial flag reset - tutorial will show on next visit');
+            }
         });
     }
 
@@ -385,9 +422,13 @@ export default class MainHub extends Phaser.Scene {
         // Start the tutorial
         this.tutorialManager.init(tutorialSteps, {
             onComplete: () => {
-                onceOnlyFlags.setSeen('mainhub_tutorial');},
+                onceOnlyFlags.setSeen('mainhub_tutorial');
+                console.log('Main hub tutorial completed!');
+            },
             onSkip: () => {
-                onceOnlyFlags.setSeen('mainhub_tutorial');}
+                onceOnlyFlags.setSeen('mainhub_tutorial');
+                console.log('Main hub tutorial skipped!');
+            }
         });
     }
 
@@ -421,7 +462,10 @@ export default class MainHub extends Phaser.Scene {
             if (this.carousel) this.carousel.destroy();
         });
 
-        this.carousel.create(iconKeys, iconInfo, (selectedItem, index) => {switch (selectedItem.heading) {
+        this.carousel.create(iconKeys, iconInfo, (selectedItem, index) => {
+            console.log('Selected:', selectedItem.heading);
+
+            switch (selectedItem.heading) {
                 case "Computer Lab":
                     this.scene.start('ComputerLab');
                     break;
