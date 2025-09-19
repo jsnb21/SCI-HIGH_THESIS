@@ -17,7 +17,30 @@ export function createDragAndDropOptions(scene, container, centerX, centerY, box
     const padding = 12 * sf;
     const minWidth = 50 * sf;
     const maxItemWidth = Math.max(maxTextWidth + padding * 2, minWidth);
-    const itemSpacing = Math.max(maxItemWidth + 30 * sf, 120 * sf); // Increased spacing from 90 to 120
+    let itemSpacing = Math.max(maxItemWidth + 30 * sf, 120 * sf); // Base spacing
+
+    // Available horizontal space inside the quiz box (leave some side padding)
+    const horizontalPadding = 40 * sf;
+    const availableWidth = Math.max(100 * sf, boxWidth - horizontalPadding);
+
+    // --- RESPONSIVE WRAPPING LOGIC FOR MANY ITEMS (e.g., 7) ON NARROW SCREENS ---
+    // Determine how many columns can fit without overflowing. If items exceed, wrap into multiple rows.
+    let maxColumns = Math.max(1, Math.floor(availableWidth / itemSpacing));
+    if (maxColumns < 1) maxColumns = 1;
+
+    // If we only get 1 column but have many items, gently reduce spacing (but not below maxItemWidth + 10)
+    if (maxColumns === 1 && dragItems.length > 3) {
+        const minSpacing = maxItemWidth + 10 * sf;
+        itemSpacing = Math.max(minSpacing, itemSpacing * 0.75);
+        maxColumns = Math.max(1, Math.floor(availableWidth / itemSpacing));
+    }
+
+    // Cap columns to number of items
+    maxColumns = Math.min(maxColumns, dragItems.length);
+    const itemColumns = maxColumns;
+    const itemRows = Math.ceil(dragItems.length / itemColumns);
+    const itemRowSpacing = 70 * sf; // vertical gap between item rows
+
     
     // Store original positions and states
     scene.dragAndDropState = {
@@ -28,28 +51,14 @@ export function createDragAndDropOptions(scene, container, centerX, centerY, box
         isAutoSubmitting: false
     };
     
-    // Create drop zones first - position them higher to stay within the quiz box
-    const zoneStartX = centerX - ((dropZones.length - 1) * itemSpacing) / 2;
-    dropZones.forEach((zone, index) => {
-        const zoneX = zoneStartX + index * itemSpacing;
-        const zoneY = optionsStartY + 80 * sf; // Reduced from 120 to 80 to move zones higher
-        
-        const dropZone = createDropZone(scene, zoneX, zoneY, sf, zone.label, zone.id);
-        scene.dragAndDropState.zones.push({
-            zone: dropZone,
-            id: zone.id,
-            correctItemId: zone.correctItemId,
-            currentItem: null
-        });
-        container.add(dropZone);
-    });
-    
-    // Create draggable items
-    const itemStartX = centerX - ((dragItems.length - 1) * itemSpacing) / 2;
+    // Create draggable items (multi-row if needed)
+    const firstRowStartX = centerX - ((itemColumns - 1) * itemSpacing) / 2;
     dragItems.forEach((item, index) => {
-        const itemX = itemStartX + index * itemSpacing;
-        const itemY = optionsStartY;
-        
+        const col = index % itemColumns;
+        const row = Math.floor(index / itemColumns);
+        const itemX = firstRowStartX + col * itemSpacing;
+        const itemY = optionsStartY + row * itemRowSpacing;
+
         const dragItem = createDragItem(scene, itemX, itemY, sf, item.text, item.id, item.isDecoy || false);
         scene.dragAndDropState.items.push({
             item: dragItem,
@@ -61,6 +70,39 @@ export function createDragAndDropOptions(scene, container, centerX, centerY, box
             isDecoy: item.isDecoy || false
         });
         container.add(dragItem);
+    });
+
+    // --- DROP ZONES LAYOUT (also wrap if they overflow) ---
+    let zoneSpacing = itemSpacing; // reuse spacing baseline
+    let zoneMaxColumns = Math.max(1, Math.floor(availableWidth / zoneSpacing));
+    if (zoneMaxColumns === 1 && dropZones.length > 3) {
+        const minZoneSpacing = maxItemWidth + 10 * sf;
+        zoneSpacing = Math.max(minZoneSpacing, zoneSpacing * 0.75);
+        zoneMaxColumns = Math.max(1, Math.floor(availableWidth / zoneSpacing));
+    }
+    zoneMaxColumns = Math.min(zoneMaxColumns, dropZones.length);
+    const zoneColumns = zoneMaxColumns;
+    const zoneRows = Math.ceil(dropZones.length / zoneColumns);
+    const zoneRowSpacing = 90 * sf; // a bit more space for zones
+
+    // Place zones below the last row of items with sufficient gap
+    const zonesStartYBase = optionsStartY + (itemRows * itemRowSpacing) + 80 * sf;
+    const zonesFirstRowStartX = centerX - ((zoneColumns - 1) * zoneSpacing) / 2;
+
+    dropZones.forEach((zone, index) => {
+        const col = index % zoneColumns;
+        const row = Math.floor(index / zoneColumns);
+        const zoneX = zonesFirstRowStartX + col * zoneSpacing;
+        const zoneY = zonesStartYBase + row * zoneRowSpacing;
+
+        const dropZone = createDropZone(scene, zoneX, zoneY, sf, zone.label, zone.id);
+        scene.dragAndDropState.zones.push({
+            zone: dropZone,
+            id: zone.id,
+            correctItemId: zone.correctItemId,
+            currentItem: null
+        });
+        container.add(dropZone);
     });
     
     // Set up drag and drop interactions
