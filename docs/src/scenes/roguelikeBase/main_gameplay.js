@@ -223,8 +223,15 @@ export default class MainGameplay extends BaseScene {
             // For regular mobile screens - increased size
             baseTileSize = 60; // Increased from 52 for better visibility
         } else {
-            // Desktop size
-            baseTileSize = 58; // Original size
+            // Desktop / large screens: expand board to use height and a target width percentage
+            const hudHeight = 50; // unified HUD height
+            const availableHeight = screenHeight - hudHeight - 20; // small bottom margin
+            const tileSizeByHeight = availableHeight / this.MAP_HEIGHT;
+            const targetWidthPortion = 0.9; // occupy 90% of screen width if possible
+            const tileSizeByWidth = (screenWidth * targetWidthPortion) / this.MAP_WIDTH;
+            baseTileSize = Math.min(tileSizeByHeight, tileSizeByWidth);
+            // Allow a chunkier board on desktop so we can lean less on zoom for fill
+            baseTileSize = Math.max(60, Math.min(baseTileSize, 110)); // expanded upper clamp
         }
         
         this.TILE_SIZE = Math.round(baseTileSize);
@@ -260,8 +267,12 @@ export default class MainGameplay extends BaseScene {
         this.load.json('csharpQuiz', 'data/quizzes/csharp.json');
         this.load.json('webdesignQuiz', 'data/quizzes/webdesign.json');
         
-        // Load background tiles (optional - you can add your own)
-        this.load.image('grassTile', 'assets/img/bg/grass.png');
+        // Load background tile; if it fails we'll fallback to generated default in createBackground
+        try {
+            this.load.image('grassTile', 'assets/img/bg/grass.png');
+        } catch (e) {
+            console.warn('Could not queue grassTile image, will use procedural rectangles.', e);
+        }
         
         // Load audio effects
         this.load.audio('se_hurt', 'assets/audio/se/se_hurt.wav');
@@ -311,14 +322,14 @@ export default class MainGameplay extends BaseScene {
         // Create timer (but don't start it yet)
         this.createTimer();
         
-        // Create score display
-        this.createScoreDisplay();
-        
-        // Initialize timer icons
-        this.initializeTimerIcons();
-        
-        // Start countdown before game begins
-        this.startCountdown();
+    // Create score display (mobile / base HUD first)
+    this.createScoreDisplay();
+
+    // Initialize timer icons
+    this.initializeTimerIcons();
+
+    // Start countdown before game begins
+    this.startCountdown();
         
         // Setup input controls
         this.setupInput();
@@ -328,6 +339,20 @@ export default class MainGameplay extends BaseScene {
         
         // Add mobile control hint
         this.addMobileControlHint();
+
+        // Desktop-only HUD overlay (new approach: DOM HUD; keep Phaser texts hidden not destroyed to avoid null refs)
+        if (this.scale.width >= 768) {
+            if (this.scoreText) this.scoreText.setVisible(false);
+            if (this.streakText) this.streakText.setVisible(false);
+            if (this.timerText) this.timerText.setVisible(false);
+            if (this.courseDisplay) this.courseDisplay.setVisible(false);
+            this.time.delayedCall(0, () => {
+                this.ensureDomHud();
+                this.syncDomHud();
+                requestAnimationFrame(() => this.syncDomHud());
+            });
+            this.time.delayedCall(150, () => this.syncDomHud());
+        }
         
         // Add resize listener to keep board centered
         this.scale.on('resize', this.onResize, this);
@@ -338,6 +363,8 @@ export default class MainGameplay extends BaseScene {
         if (this.backgroundGroup) {
             this.backgroundGroup.destroy();
         }
+        // Recalculate tile size on resize for consistent scaling
+        this.setResponsiveTileSize();
         this.createBackground();
         
         // Update player position
@@ -354,106 +381,226 @@ export default class MainGameplay extends BaseScene {
         // Update camera after player position is set
         this.setupCamera();
         
-        // Update HUD positions for responsive design
+        // Legacy desktopHudContainer no longer used; remove if exists
+        if (this.desktopHudContainer) { this.desktopHudContainer.destroy(); this.desktopHudContainer = null; }
+
+        // Desktop: ensure DOM HUD; Mobile: show Phaser HUD
+        if (this.scale.width >= 768) {
+            if (this.scoreText) this.scoreText.setVisible(false);
+            if (this.streakText) this.streakText.setVisible(false);
+            if (this.timerText) this.timerText.setVisible(false);
+            if (this.courseDisplay) this.courseDisplay.setVisible(false);
+            this.ensureDomHud();
+            this.syncDomHud();
+        } else {
+            if (this.scoreText) this.scoreText.setVisible(true);
+            if (this.streakText) this.streakText.setVisible(true);
+            if (this.timerText) this.timerText.setVisible(true);
+            if (this.courseDisplay) this.courseDisplay.setVisible(true);
+        }
+        // Update HUD positions for responsive design (mobile or after recreation)
         this.updateHudPositions();
     }
 
     updateHudPositions() {
-        // Calculate responsive positions based on current screen size
+        // Legacy desktopHudContainer (deprecated path). Keep pinned if still present.
+        if (this.desktopHudContainer) {
+            this.desktopHudContainer.setPosition(0, 0);
+            if (this.desktopHudBar && this.desktopHudBar.width !== this.scale.width) {
+                this.desktopHudBar.width = this.scale.width;
+            }
+            // DOM HUD supersedes this; proceed no further
+            return;
+        }
+        // If DOM HUD active we may still keep Phaser texts hidden; skip heavy reposition if texts missing
+        const texts = [this.scoreText, this.streakText, this.timerText, this.courseDisplay];
+        const anyDestroyed = texts.some(t => t && (t._destroyed || t.active === false));
+        if (anyDestroyed) {
+            if (!this._hudWarned) {
+                console.warn('HUD texts were destroyed before reposition. Skipping updateHudPositions this frame.');
+                this._hudWarned = true;
+            }
+            return;
+        }
+        // Desktop now uses a camera-anchored HUD (independent overlay)
+        const cam = this.cameras.main;
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
-        const isMobile = screenWidth < 768;
-        const isSmallMobile = screenWidth < 480;
-        
-        // Enhanced mobile positioning - moved stats to very top ONLY on mobile
-        let scoreX, scoreY, streakY, timerY;
-        let scoreFontSize, streakFontSize, timerFontSize, courseFontSize;
-        
-        if (isSmallMobile) {
-            // Very small mobile screens - positioned at absolute top
-            scoreX = Math.min(15, screenWidth * 0.025);
-            scoreY = 5; // Absolute top
-            streakY = 30; // Just below score
-            timerY = 5; // Same level as score
-            
-            // Larger fonts for small screens to ensure readability
-            scoreFontSize = Math.max(20, screenWidth * 0.035);
-            streakFontSize = Math.max(16, screenWidth * 0.03);
-            timerFontSize = Math.max(26, screenWidth * 0.045);
-            courseFontSize = Math.max(16, screenWidth * 0.03);
-        } else if (isMobile) {
-            // Regular mobile screens - positioned at absolute top
-            scoreX = Math.min(20, screenWidth * 0.03);
-            scoreY = 5; // Absolute top
-            streakY = 35; // Just below score
-            timerY = 5; // Same level as score
-            
-            // Responsive font sizes for mobile
-            scoreFontSize = Math.max(18, screenWidth * 0.03);
-            streakFontSize = Math.max(14, screenWidth * 0.025);
-            timerFontSize = Math.max(24, screenWidth * 0.04);
-            courseFontSize = Math.max(18, screenWidth * 0.025);
-        } else {
-            // Desktop screens - keep original positioning (NOT moved to top)
-            scoreX = 20;
-            scoreY = 30; // Original desktop position
-            streakY = 65; // Original desktop position
-            timerY = 30; // Original desktop position
-            
-            scoreFontSize = 24;
-            streakFontSize = 18;
-            timerFontSize = 32;
-            courseFontSize = 20;
+        const isVerySmall = screenWidth < 480;
+        const isDesktop = screenWidth >= 768; // treat tablets as mobile style
+
+        // Base margins (screen-space intent)
+        const marginX = Math.min(20, screenWidth * 0.035);
+        const topMargin = 6;
+
+        // Font sizes remain responsive to raw screen width
+        const scoreFontSize = Math.max(20, screenWidth * 0.03);
+        const streakFontSize = Math.max(16, screenWidth * 0.025);
+        const timerFontSize = Math.max(26, screenWidth * 0.04);
+        const courseFontSize = Math.max(18, screenWidth * 0.028);
+
+        // For desktop we anchor using camera worldView (so zoom has no shrinking effect)
+        let originX = 0;
+        let originY = 0;
+        if (isDesktop) {
+            originX = cam.worldView.x;
+            originY = cam.worldView.y; // top edge of visible world after zoom
         }
+        // For mobile we keep the prior absolute approach
+        const scoreX = isDesktop ? originX + marginX : marginX;
+        const scoreY = isDesktop ? originY + topMargin : topMargin;
+        const streakY = scoreY + (isVerySmall ? 25 : 30);
+        const timerY = scoreY; // top aligned
+        const courseY = scoreY;
+        const centerX = isDesktop ? originX + (cam.worldView.width / 2) : screenWidth / 2;
+        const courseX = isDesktop ? originX + cam.worldView.width - marginX : screenWidth - marginX;
         
         // Update score text position and font size
-        if (this.scoreText) {
-            this.scoreText.setPosition(scoreX, scoreY);
-            this.scoreText.setFontSize(`${scoreFontSize}px`);
-            // Add better visibility on mobile
-            if (isMobile) {
+        try {
+            if (this.scoreText) {
+                this.scoreText.setPosition(scoreX, scoreY);
+                this.scoreText.setFontSize(`${scoreFontSize}px`);
                 this.scoreText.setStroke('#000000', 4);
                 this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
             }
-        }
+        } catch (e) { /* swallow to avoid crashing draw cycle */ }
         
         // Update streak text position and font size
-        if (this.streakText) {
-            this.streakText.setPosition(scoreX, streakY);
-            this.streakText.setFontSize(`${streakFontSize}px`);
-            // Add better visibility on mobile
-            if (isMobile) {
+        try {
+            if (this.streakText) {
+                this.streakText.setPosition(scoreX, streakY);
+                this.streakText.setFontSize(`${streakFontSize}px`);
                 this.streakText.setStroke('#000000', 3);
                 this.streakText.setShadow(2, 2, '#000000', 2, true, false);
             }
-        }
+        } catch (e) {}
         
         // Update timer position and font size - centered at top
-        if (this.timerText) {
-            const centerX = screenWidth / 2;
-            this.timerText.setPosition(centerX, timerY);
-            this.timerText.setFontSize(`${timerFontSize}px`);
-            // Add better visibility on mobile
-            if (isMobile) {
+        try {
+            if (this.timerText) {
+                this.timerText.setPosition(centerX, timerY);
+                this.timerText.setFontSize(`${timerFontSize}px`);
                 this.timerText.setStroke('#000080', 4);
                 this.timerText.setShadow(2, 2, '#000040', 3, true, false);
             }
-        }
+        } catch (e) {}
         
         // Update course display for mobile - top positioning only on mobile
-        if (this.courseDisplay) {
-            const courseX = isMobile ? screenWidth - (isSmallMobile ? 15 : 20) : screenWidth - 20;
-            const courseY = isMobile ? 5 : 30; // Absolute top on mobile, original position on desktop
-            this.courseDisplay.setPosition(courseX, courseY);
-            this.courseDisplay.setFontSize(`${courseFontSize}px`);
-            this.courseDisplay.setOrigin(1, 0); // Right-align for mobile
-            
-            // Add better visibility on mobile
-            if (isMobile) {
+        try {
+            if (this.courseDisplay) {
+                this.courseDisplay.setPosition(courseX, courseY);
+                this.courseDisplay.setFontSize(`${courseFontSize}px`);
+                this.courseDisplay.setOrigin(1, 0);
                 this.courseDisplay.setStroke('#000080', 3);
                 this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
             }
+        } catch (e) {}
+
+        // Safety clamp: ensure none of the texts drift outside (rare but defensive)
+        // Clamp only for mobile where absolute screen bounds apply
+        if (!isDesktop) {
+            const clampMargin = 2;
+            const maxX = screenWidth - clampMargin;
+            const maxY = screenHeight - clampMargin;
+            [this.scoreText, this.streakText, this.timerText, this.courseDisplay].forEach(txt => {
+                if (txt) {
+                    if (txt.x < clampMargin) txt.x = clampMargin;
+                    if (txt.y < clampMargin) txt.y = clampMargin;
+                    if (txt.x > maxX) txt.x = maxX;
+                    if (txt.y > maxY) txt.y = maxY;
+                }
+            });
         }
+    }
+
+    createDesktopHUD() { /* deprecated: replaced by DOM HUD */ }
+
+    ensureDomHud() {
+        // Create a DOM-based HUD overlay for desktop to bypass any Phaser zoom/visibility issues
+        if (this.scale.width < 768) return; // Only desktop
+        if (document.getElementById('desktop-game-hud')) return; // Already exists
+
+        const wrapper = document.createElement('div');
+        wrapper.id = 'desktop-game-hud';
+        Object.assign(wrapper.style, {
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '54px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            padding: '6px 20px 4px 20px',
+            boxSizing: 'border-box',
+            fontFamily: 'Arial, sans-serif',
+            zIndex: '9999',
+            pointerEvents: 'none',
+            background: 'linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.15))'
+        });
+
+        // Left stack (score + streak)
+        const left = document.createElement('div');
+        left.style.display = 'flex';
+        left.style.flexDirection = 'column';
+        left.style.gap = '4px';
+
+        this.domScoreEl = document.createElement('div');
+        this.domScoreEl.style.cssText = 'font-weight:bold;font-size:22px;color:#fff;text-shadow:2px 2px 3px #000';
+        this.domScoreEl.textContent = `Score: ${this.score || 0}`;
+
+        this.domStreakEl = document.createElement('div');
+        this.domStreakEl.style.cssText = 'font-weight:bold;font-size:18px;color:#ff0;text-shadow:2px 2px 3px #000';
+        this.domStreakEl.textContent = `Streak: ${this.streak || 0}`;
+
+        left.appendChild(this.domScoreEl);
+        left.appendChild(this.domStreakEl);
+
+        // Center (timer)
+        const center = document.createElement('div');
+        center.style.cssText = 'position:absolute;left:50%;top:6px;transform:translateX(-50%);font-weight:bold;font-size:30px;color:#fff;text-shadow:2px 2px 4px #000';
+        this.domTimerEl = document.createElement('div');
+        this.domTimerEl.textContent = this.timerText ? this.timerText.text : '1:00';
+        center.appendChild(this.domTimerEl);
+
+        // Right (course)
+        const right = document.createElement('div');
+        right.style.cssText = 'font-weight:bold;font-size:20px;color:#0ff;text-shadow:2px 2px 3px #000;';
+        this.domCourseEl = document.createElement('div');
+        this.domCourseEl.textContent = this.getFormattedCourseName(this.courseTopic);
+        right.appendChild(this.domCourseEl);
+
+        wrapper.appendChild(left);
+        wrapper.appendChild(center);
+        wrapper.appendChild(right);
+
+        const parent = this.game.canvas.parentNode || document.body;
+        parent.style.position = parent.style.position || 'relative';
+        parent.appendChild(wrapper);
+        this.domHudActive = true;
+
+        // Hide Phaser HUD (texts already hidden) and mark active
+        if (this.desktopHudContainer) this.desktopHudContainer.setVisible(false);
+        this.domHudActive = true;
+        // Immediate syncs to guarantee visibility
+        this.syncDomHud();
+        setTimeout(() => this.syncDomHud(), 0);
+        requestAnimationFrame(() => this.syncDomHud());
+    }
+
+    syncDomHud() {
+        if (!this.domHudActive) return;
+        if (this.domScoreEl) this.domScoreEl.textContent = `Score: ${this.score || 0}`;
+        if (this.domStreakEl) this.domStreakEl.textContent = `Streak: ${this.streak || 0}`;
+        if (this.domTimerEl) this.domTimerEl.textContent = this.getCurrentTimeString ? this.getCurrentTimeString() : (this.timerText ? this.timerText.text : '1:00');
+        if (this.domCourseEl) this.domCourseEl.textContent = this.getFormattedCourseName(this.courseTopic);
+    }
+
+    getCurrentTimeString() {
+        // Always compute from numeric state so DOM HUD stays accurate even if Phaser text hidden
+        const minutes = Math.floor(this.gameTimer / 60);
+        const seconds = this.gameTimer % 60;
+        return `${minutes}:${seconds.toString().padStart(2,'0')}`;
     }
 
     createBackground() {
@@ -470,21 +617,14 @@ export default class MainGameplay extends BaseScene {
         const isMobile = screenWidth < 768;
         const isSmallMobile = screenWidth < 480;
         
-        // Account for HUD space at the top - reduced ONLY on mobile
-        let hudHeight;
-        if (isSmallMobile) {
-            hudHeight = 45; // Much smaller HUD height for very small screens
-        } else if (isMobile) {
-            hudHeight = 50; // Much smaller HUD height for mobile
-        } else {
-            hudHeight = 100; // Original HUD height for desktop
-        }
+        // Unified mobile-style HUD height
+        const hudHeight = 50;
         
         const availableHeight = screenHeight - hudHeight;
         
-        // Calculate offset to center the board in available space
-        const offsetX = Math.max(0, (screenWidth - boardWidth) / 2);
-        const offsetY = Math.max(hudHeight, hudHeight + (availableHeight - boardHeight) / 2);
+    // Keep board nearer top (mobile style) with small gap
+    const offsetX = Math.max(0, (screenWidth - boardWidth) / 2);
+    const offsetY = hudHeight + 10;
         
         // Store offsets for later use
         this.boardOffsetX = offsetX;
@@ -561,27 +701,6 @@ export default class MainGameplay extends BaseScene {
             delay: 50, // Update every 50ms
             callback: this.updateStars,
             callbackScope: this,
-            loop: true
-        });
-    }
-
-    updateStars() {
-        this.stars.forEach(star => {
-            // Move star
-            star.x += star.speedX * 0.05;
-            star.y += star.speedY * 0.05;
-            
-            // Wrap around screen
-            if (star.x < -10) {
-                star.x = this.scale.width + 10;
-                star.y = Phaser.Math.Between(0, this.scale.height);
-            }
-            if (star.y < -10) {
-                star.y = this.scale.height + 10;
-            }
-            if (star.y > this.scale.height + 10) {
-                star.y = -10;
-            }
         });
     }
 
@@ -881,7 +1000,8 @@ export default class MainGameplay extends BaseScene {
 
     updateScore(points) {
         this.score += points;
-        this.scoreText.setText(`Score: ${this.score}`);
+        if (this.scoreText && !this.domHudActive) this.scoreText.setText(`Score: ${this.score}`);
+        this.syncDomHud();
         
         // Add visual effect for score increase
         this.tweens.add({
@@ -903,28 +1023,27 @@ export default class MainGameplay extends BaseScene {
         const seconds = this.gameTimer % 60;
         const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         
-        this.timerText.setText(timeString);
+    if (this.timerText && !this.domHudActive) this.timerText.setText(timeString);
+    // Always sync DOM HUD (it computes from gameTimer directly)
+    this.syncDomHud();
         
         // Change color when time is running out
-        if (this.gameTimer <= 10) {
-            this.timerText.setColor('#ff0000'); // Red for last 10 seconds
-            
-            // Add shake animation for last 10 seconds
-            this.tweens.add({
-                targets: this.timerText,
-                x: this.timerText.x + Phaser.Math.Between(-5, 5),
-                y: this.timerText.y + Phaser.Math.Between(-3, 3),
-                duration: 50,
-                ease: 'Power2',
-                yoyo: true,
-                repeat: 3,
-                onComplete: () => {
-                    // Reset position to center after shake
-                    this.timerText.setPosition(this.scale.width / 2, 30);
-                }
-            });
-        } else if (this.gameTimer <= 30) {
-            this.timerText.setColor('#ffff00'); // Yellow for last 30 seconds
+        if (!this.domHudActive && this.timerText) {
+            if (this.gameTimer <= 10) {
+                this.timerText.setColor('#ff0000');
+                this.tweens.add({
+                    targets: this.timerText,
+                    x: this.timerText.x + Phaser.Math.Between(-5, 5),
+                    y: this.timerText.y + Phaser.Math.Between(-3, 3),
+                    duration: 50,
+                    ease: 'Power2',
+                    yoyo: true,
+                    repeat: 3,
+                    onComplete: () => { this.timerText.setPosition(this.scale.width / 2, 30); }
+                });
+            } else if (this.gameTimer <= 30) {
+                this.timerText.setColor('#ffff00');
+            }
         }
         
         // Handle timer expiration
@@ -1061,6 +1180,7 @@ export default class MainGameplay extends BaseScene {
         
         // Mark game as started
         this.gameStarted = true;
+        this.syncDomHud();
         
     }
 
@@ -1187,17 +1307,22 @@ export default class MainGameplay extends BaseScene {
         const minutes = Math.floor(this.gameTimer / 60);
         const seconds = this.gameTimer % 60;
         const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        this.timerText.setText(timeString);
+    if (this.timerText && !this.domHudActive) this.timerText.setText(timeString);
+    this.syncDomHud();
         
         // Reset timer color if it was red/yellow
-        if (this.gameTimer > 30) {
-            this.timerText.setColor('#ffffff');
-        } else if (this.gameTimer > 10) {
-            this.timerText.setColor('#ffff00');
+        if (!this.domHudActive && this.timerText) {
+            if (this.gameTimer > 30) {
+                this.timerText.setColor('#ffffff');
+            } else if (this.gameTimer > 10) {
+                this.timerText.setColor('#ffff00');
+            }
         }
         
         // Show +5s effect at timer location
-        const effectText = this.add.text(this.timerText.x, this.timerText.y + 40, '+5s', {
+        const baseTimerX = this.timerText ? this.timerText.x : (this.scale.width / 2);
+        const baseTimerY = this.timerText ? this.timerText.y : 30;
+        const effectText = this.add.text(baseTimerX, baseTimerY + 40, '+5s', {
             fontFamily: 'Arial',
             fontSize: '24px',
             fontWeight: 'bold',
@@ -1218,6 +1343,9 @@ export default class MainGameplay extends BaseScene {
             }
         });
         
+        // Ensure DOM HUD reflects added time immediately (already synced above, but extra safety)
+        this.syncDomHud();
+
         // Remove icon from array
         const iconIndex = this.timerIcons.indexOf(icon);
         if (iconIndex > -1) {
@@ -2791,45 +2919,26 @@ export default class MainGameplay extends BaseScene {
         const isMobile = screenWidth < 768;
         const isSmallMobile = screenWidth < 480; // Very small screens
         
-        // Account for HUD space when calculating available screen area - updated to match createBackground
-        let hudHeight;
-        if (isSmallMobile) {
-            hudHeight = 45; // Much smaller HUD height for very small screens
-        } else if (isMobile) {
-            hudHeight = 50; // Much smaller HUD height for mobile
-        } else {
-            hudHeight = 100; // Original HUD height for desktop
-        }
+        // Unified HUD height across all devices (mobile style)
+        const hudHeight = 50;
         const availableHeight = screenHeight - hudHeight;
         
-        // Enhanced mobile zoom calculation - increased zoom for better visibility
-        let paddingFactor, minZoom, maxZoom;
-        
-        if (isSmallMobile) {
-            // Very small screens (phones in portrait) - much higher zoom for visibility
-            paddingFactor = 0.98; // Use 98% of available space
-            minZoom = 1.2; // Much higher minimum zoom
-            maxZoom = 3.0; // Allow significant zoom in for better visibility
-        } else if (isMobile) {
-            // Regular mobile screens (tablets, phones in landscape) - higher zoom
-            paddingFactor = 0.95; // Use 95% of available space
-            minZoom = 1.0; // Higher minimum zoom
-            maxZoom = 2.5; // Allow more zoom in
-        } else {
-            // Desktop screens - keep original behavior
-            paddingFactor = 0.9;
-            minZoom = 0.8;
-            maxZoom = 1.0; // Don't zoom in beyond 1x on desktop
-        }
-        
-        // Calculate zoom to fit the board with dynamic padding
+        // Aggressive unified zoom strategy (Option A)
+        // 1. Compute fit-based zoom with modest padding
+        const paddingFactor = isSmallMobile ? 0.98 : 0.94; // slightly tighter than before
         const zoomX = (screenWidth * paddingFactor) / boardWidth;
         const zoomY = (availableHeight * paddingFactor) / boardHeight;
         let zoom = Math.min(zoomX, zoomY);
-        
-        // Apply zoom limits based on device type
-        zoom = Math.max(minZoom, Math.min(zoom, maxZoom));
-        
+
+        // 2. Apply aggressive multiplier (desktop stronger)
+        const aggressiveMultiplier = isMobile ? (isSmallMobile ? 1.15 : 1.18) : 1.32;
+        zoom *= aggressiveMultiplier;
+
+        // 3. Clamp within new bounds
+        const minZoom = isMobile ? (isSmallMobile ? 1.35 : 1.25) : 1.45;
+        const maxZoom = 2.2; // cap to avoid excessive pixelation
+        zoom = Phaser.Math.Clamp(zoom, minZoom, maxZoom);
+
         this.cameras.main.setZoom(zoom);
         
         // Set up camera bounds to keep it within the game board area with some padding
@@ -2841,26 +2950,25 @@ export default class MainGameplay extends BaseScene {
             boardHeight + (padding * 2)
         );
         
-        // Set up smooth camera following for the player
+        // Set up smooth camera following for the player (single unified behavior)
         if (this.playerSprite) {
-            // Set different follow speeds based on device type for optimal experience
-            const followSpeed = isMobile ? 0.15 : 0.08; // Faster follow on mobile for better responsiveness
+            const followSpeed = 0.16; // consistent smooth follow
             this.cameras.main.startFollow(this.playerSprite, true, followSpeed, followSpeed);
-            
-            // Set camera follow offset to account for HUD space
-            const offsetY = isMobile ? -hudHeight / (6 * zoom) : -hudHeight / (3 * zoom);
-            this.cameras.main.setFollowOffset(0, offsetY);
-            
-            // Set up deadzone for smoother camera movement - smaller deadzone for mobile
-            const deadzoneWidth = isMobile ? this.TILE_SIZE * 1.5 : this.TILE_SIZE * 1.5;
-            const deadzoneHeight = isMobile ? this.TILE_SIZE * 1.5 : this.TILE_SIZE * 1.5;
-            this.cameras.main.setDeadzone(deadzoneWidth, deadzoneHeight);
+            // Remove upward offset so HUD stays fully visible at higher zoom
+            this.cameras.main.setFollowOffset(0, 0);
+            const deadzoneSize = this.TILE_SIZE * 1.5;
+            this.cameras.main.setDeadzone(deadzoneSize, deadzoneSize);
         }
         
         // Store zoom level for other systems to use
         this.currentZoom = zoom;
         this.isMobileDevice = isMobile;
         this.isSmallMobileDevice = isSmallMobile;
+
+        // Reposition HUD elements after zoom change if function exists
+        if (typeof this.updateHudPositions === 'function') {
+            this.updateHudPositions();
+        }
         
     }
 
@@ -3384,6 +3492,9 @@ export default class MainGameplay extends BaseScene {
             intensity3CorrectAnswers: this.intensity3CorrectAnswers,
             startTime: this.sessionStartTime
         };
+
+        // Remove desktop DOM HUD (and reveal Phaser HUD again for other scenes) before switching
+        this.removeDesktopHud();
         
         
         // PRIORITY 1: Check for fresh user input from current session (sci_high_user)
@@ -3461,6 +3572,20 @@ export default class MainGameplay extends BaseScene {
         
         // Also upload the data to Firebase in the background
         this.uploadGameplayDataInBackground(resultData);
+    }
+
+    removeDesktopHud() {
+        // Remove DOM HUD if present
+        const domHud = typeof document !== 'undefined' ? document.getElementById('desktop-game-hud') : null;
+        if (domHud) {
+            domHud.remove();
+        }
+        this.domHudActive = false;
+        // Re-show Phaser HUD texts (in case we return to gameplay later without full reload)
+        if (this.scoreText) this.scoreText.setVisible(true);
+        if (this.streakText) this.streakText.setVisible(true);
+        if (this.timerText) this.timerText.setVisible(true);
+        if (this.courseDisplay) this.courseDisplay.setVisible(true);
     }
 
     async uploadGameplayDataInBackground(resultData) {

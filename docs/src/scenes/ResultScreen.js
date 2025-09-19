@@ -28,11 +28,28 @@ export default class ResultScreen extends BaseScene {
 
     create() {
         super.create();
+
+        // Safety: remove any lingering desktop gameplay HUD overlay if it exists
+        if (typeof document !== 'undefined') {
+            const domHud = document.getElementById('desktop-game-hud');
+            if (domHud) domHud.remove();
+        }
         
-        // Get mobile information for responsive design
+        // Build layout initially and on resize
+        this.buildResultLayout();
+        this.scale.on('resize', () => {
+            // Clear existing children and rebuild
+            this.children.removeAll(true);
+            this.buildResultLayout();
+        });
+    }
+
+    buildResultLayout() {
+        // Get sizing info
         const scaleInfo = getScaleInfo(this);
         const isMobile = scaleInfo.width < 768;
         const isSmallMobile = scaleInfo.width < 480;
+        const isWideDesktop = scaleInfo.width >= 1100;
     
         
         // Initialize sound effects and background music
@@ -75,14 +92,15 @@ export default class ResultScreen extends BaseScene {
             rankGlow = '#ff6600';
         }
         
-        // Create gradient background
-        const gradient = this.add.graphics();
-        gradient.fillGradientStyle(0x000000, 0x000000, 0x1a1a2e, 0x1a1a2e, 1);
-        gradient.fillRect(0, 0, this.scale.width, this.scale.height);
+    // Background gradient
+    const gradient = this.add.graphics();
+    gradient.fillGradientStyle(0x000000, 0x000000, 0x0f141f, 0x121a29, 1);
+    gradient.fillRect(0, 0, this.scale.width, this.scale.height);
         
-        // Responsive panel sizing - Better desktop layout
-        const panelWidth = isMobile ? Math.min(scaleInfo.width * 0.80, 300) : 800;
-        const panelHeight = isMobile ? Math.min(scaleInfo.height * 0.70, 350) : 700;
+    // Responsive panel sizing with dynamic height
+    const panelWidth = isMobile ? Math.min(scaleInfo.width * 0.9, 360) : (isWideDesktop ? Math.min(scaleInfo.width * 0.75, 1000) : 780);
+    const basePanelHeight = isMobile ? Math.min(scaleInfo.height * 0.75, 420) : (isWideDesktop ? 560 : 600);
+    let panelHeight = basePanelHeight;
         const panelX = this.scale.width / 2;
         const panelY = this.scale.height / 2;
         
@@ -102,7 +120,7 @@ export default class ResultScreen extends BaseScene {
             `COURSE COMPLETED!` : 
             'SESSION ENDED';
         
-        const titleFontSize = isMobile ? '30px' : (this.courseCompleted ? '48px' : '52px');
+    const titleFontSize = isMobile ? (isSmallMobile ? '26px' : '32px') : (this.courseCompleted ? '50px' : '48px');
         const titleY = panelY - (panelHeight * 0.35);
         
         const title = this.add.text(panelX, titleY, titleText, {
@@ -138,9 +156,9 @@ export default class ResultScreen extends BaseScene {
         }
         
         // Rank display with better desktop sizing
-        const rankRadius = isMobile ? 35 : 70;
-        const rankFontSize = isMobile ? '36px' : '72px';
-        const rankY = panelY - (panelHeight * 0.05);
+    const rankRadius = isMobile ? (isSmallMobile ? 32 : 40) : (isWideDesktop ? 78 : 68);
+    const rankFontSize = isMobile ? (isSmallMobile ? '34px' : '40px') : (isWideDesktop ? '80px' : '72px');
+    const rankY = panelY - (panelHeight * 0.08);
         
         const rankBg = this.add.circle(panelX, rankY, rankRadius, rankColor, 0.2);
         const rankBorder = this.add.circle(panelX, rankY, rankRadius);
@@ -162,10 +180,11 @@ export default class ResultScreen extends BaseScene {
             }
         }).setOrigin(0.5);
         
-        // Statistics section with better desktop spacing
-        const statsY = panelY + (panelHeight * 0.12);
-        const lineHeight = isMobile ? 28 : 45;
-        const statsFontSize = isMobile ? '16px' : '26px';
+    // Stats layout configuration
+    // Stats start just below the rank circle so button always sits beneath stats
+    const statsTopY = rankY + rankRadius + (isMobile ? (isSmallMobile ? 16 : 28) : 40); // added extra padding below rank
+    const statsFontSize = isMobile ? (isSmallMobile ? '14px' : '16px') : (isWideDesktop ? '24px' : '22px');
+    const lineHeight = isMobile ? (isSmallMobile ? 24 : 28) : 40; // retained for potential future use
         
         // Create colored stats with icons
         const statsData = [
@@ -175,44 +194,60 @@ export default class ResultScreen extends BaseScene {
             { label: '⭐ Score', value: this.totalScore, color: '#00ddff' },
             { label: '📊 Accuracy', value: `${accuracy.toFixed(1)}%`, color: accuracy >= 80 ? '#00ff88' : accuracy >= 60 ? '#ffaa00' : '#ff4444' }
         ];
-        
-        statsData.forEach((stat, index) => {
-            // Better stat background sizing for desktop
-            const statBgWidth = panelWidth - (isMobile ? 30 : 100);
-            const statBgHeight = isMobile ? 24 : 36;
-            const statBg = this.add.rectangle(panelX, statsY + (index * lineHeight), statBgWidth, statBgHeight, 0x0a1628, 0.5);
-            
-            // Better positioning for mobile
-            const leftX = panelX - (statBgWidth * 0.35);
-            const rightX = panelX + (statBgWidth * 0.35);
-            
-            // Stat label - use full labels on mobile for clarity
-            const displayLabel = stat.label;
-            
-            this.add.text(leftX, statsY + (index * lineHeight), displayLabel, {
+        // Decide columns
+        const columns = (isMobile || !isWideDesktop) ? 1 : 2;
+        const colGap = 40;
+        const colWidth = (panelWidth - (isMobile ? 40 : (columns === 2 ? 120 : 80)) - (columns === 2 ? colGap : 0)) / columns;
+        const statBgHeight = isMobile ? 26 : 34;
+        const statVerticalStart = statsTopY;
+        const statsElements = []; // collect for staggered animation
+        let maxStatBottom = statsTopY; // track actual bottom
+
+        statsData.forEach((stat, idx) => {
+            const targetCol = columns === 1 ? 0 : (idx % columns);
+            const rowIndex = columns === 1 ? idx : Math.floor(idx / columns);
+            const xBase = panelX - (panelWidth / 2) + (columns === 1 ? 20 : 60) + targetCol * (colWidth + colGap);
+            const y = statVerticalStart + rowIndex * (statBgHeight + (isMobile ? 8 : 14));
+
+            const bg = this.add.rectangle(xBase + colWidth / 2, y, colWidth, statBgHeight, 0x0a1628, 0.55);
+            bg.setStrokeStyle(1, 0x17324d, 0.9);
+            bg.setOrigin(0.5, 0);
+
+            const label = this.add.text(xBase + 8, y + statBgHeight / 2, stat.label, {
                 fontFamily: 'Arial',
                 fontSize: statsFontSize,
                 color: '#ffffff',
                 fontWeight: 'bold'
             }).setOrigin(0, 0.5);
-            
-            // Stat value with better styling
-            this.add.text(rightX, statsY + (index * lineHeight), stat.value.toString(), {
+
+            const value = this.add.text(xBase + colWidth - 8, y + statBgHeight / 2, stat.value.toString(), {
                 fontFamily: 'Arial',
                 fontSize: statsFontSize,
                 color: stat.color,
                 fontWeight: 'bold',
                 stroke: '#000000',
-                strokeThickness: isMobile ? 1 : 1
+                strokeThickness: 1
             }).setOrigin(1, 0.5);
+
+            statsElements.push(bg, label, value);
+            maxStatBottom = Math.max(maxStatBottom, y + statBgHeight);
         });
         
         // Enhanced button design with better desktop sizing
-        const buttonY = isMobile ? panelY + (panelHeight * 0.42) : panelY + (panelHeight * 0.32);
-        const buttonWidth = isMobile ? 250 : 400;
-        const buttonHeight = isMobile ? 45 : 70;
-        const buttonFontSize = isMobile ? '16px' : '28px';
+        // Compute button placement after stats (dynamic)
+    const lastStatBottom = maxStatBottom;
+    const buttonSpacing = isMobile ? 40 : 70; // increased spacing to push button lower
+    let buttonY = lastStatBottom + buttonSpacing;
+    const minGap = isMobile ? 14 : 20; // required gap between last stat bottom and button top
+        const buttonWidth = isMobile ? Math.min(panelWidth * 0.8, 260) : (isWideDesktop ? 420 : 360);
+        const buttonHeight = isMobile ? 48 : (isWideDesktop ? 74 : 68);
+        const buttonFontSize = isMobile ? (isSmallMobile ? '15px' : '18px') : (isWideDesktop ? '30px' : '26px');
         
+        // If overlap would occur (button top too close), push button further down
+        if ((buttonY - buttonHeight / 2) < (lastStatBottom + minGap)) {
+            buttonY = lastStatBottom + minGap + buttonHeight / 2;
+        }
+
         const buttonBg = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x0f4c75);
         buttonBg.setStrokeStyle(isMobile ? 2 : 3, 0x3282b8);
         
@@ -264,13 +299,36 @@ export default class ResultScreen extends BaseScene {
                 buttonBg.setScale(0.95);
                 buttonText.setScale(0.95);
                 this.time.delayedCall(100, () => {
+                    // Ensure HUD is gone before leaving
+                    if (typeof document !== 'undefined') {
+                        const domHud = document.getElementById('desktop-game-hud');
+                        if (domHud) domHud.remove();
+                    }
                     this.scene.start('ComputerLab');
                 });
             });
         
+        // Auto-extend panel height if content exceeds current panel bottom
+    const contentBottom = buttonY + buttonHeight / 2 + (isMobile ? 36 : 48); // extra breathing room at bottom
+        const panelTop = panelY - panelHeight / 2;
+        let requiredPanelHeight = contentBottom - panelTop;
+        if (requiredPanelHeight > panelHeight) {
+            panelHeight = requiredPanelHeight;
+            // Update rectangle sizes
+            panel.setSize(panelWidth, panelHeight);
+            panel.setDisplaySize(panelWidth, panelHeight);
+            shadow.setSize(panelWidth, panelHeight);
+            shadow.setDisplaySize(panelWidth, panelHeight);
+            panelGlow.setSize(panelWidth + 10, panelHeight + 10);
+            panelGlow.setDisplaySize(panelWidth + 10, panelHeight + 10);
+            // Keep centers consistent (we only extended downward so top stays same)
+        }
+
         // Create a container for all elements - no aggressive scaling
-        const resultContainer = this.add.container(0, 0);
-        resultContainer.add([panelGlow, panel, shadow, title, rankBg, rankBorder, rankText, buttonBg, buttonGlow, buttonText, interactiveArea]);
+    const resultContainer = this.add.container(0, 0);
+    // Insert stats elements before button so button naturally sits after them visually
+    resultContainer.add([gradient, panelGlow, panel, shadow, title, rankBg, rankBorder, rankText, ...statsElements, buttonBg, buttonGlow, buttonText, interactiveArea]);
+    console.log('[ResultScreen] Layout v2 applied: rankY', rankY, 'statsTopY', statsTopY, 'lastStatBottom', lastStatBottom, 'buttonY', buttonY);
         
         // Add course name to container if it exists
         if (this.courseCompleted) {
@@ -291,7 +349,7 @@ export default class ResultScreen extends BaseScene {
         }
         
         // Entrance animations
-        const animatedElements = [panelGlow, panel, title, rankBg, rankBorder, rankText];
+    const animatedElements = [panelGlow, panel, title, rankBg, rankBorder, rankText];
         
         animatedElements.forEach((element, index) => {
             element.setAlpha(0);
@@ -308,20 +366,16 @@ export default class ResultScreen extends BaseScene {
             });
         });
         
-        // Animate stats with stagger
-        this.time.delayedCall(800, () => {
-            statsData.forEach((_, index) => {
-                this.tweens.add({
-                    targets: this.children.list.filter(child => 
-                        child.y === statsY + (index * lineHeight) && 
-                        (child.type === 'Rectangle' || child.type === 'Text')
-                    ),
-                    alpha: { from: 0, to: 1 },
-                    x: { from: '+=50', to: '-=50' },
-                    duration: 400,
-                    delay: index * 100,
-                    ease: 'Power2.out'
-                });
+        // Animate stats with stagger (fade + slight upward motion)
+        statsElements.forEach(el => el.setAlpha(0).setY(el.y + 20));
+        statsElements.forEach((el, i) => {
+            this.tweens.add({
+                targets: el,
+                alpha: 1,
+                y: el.y - 20,
+                duration: 300,
+                delay: 700 + i * 60,
+                ease: 'Power2.out'
             });
         });
         
