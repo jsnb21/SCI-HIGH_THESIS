@@ -1761,6 +1761,8 @@ export default class MainGameplay extends BaseScene {
     startQuizScene(enemy) {
         this.quizActive = true;
         this.currentQuiz = enemy;
+    // Reset reward guard so this question can grant rewards exactly once
+    this.quizRewardApplied = false;
         
         // Launch quiz scene without pausing main scene (so timer continues)
         // Pass intensity level and answered questions tracker to determine quiz type and avoid repetition
@@ -2411,6 +2413,8 @@ export default class MainGameplay extends BaseScene {
     showQuizPopup(enemy) {
         this.quizActive = true;
         this.currentQuiz = enemy;
+    // Reset reward guard for inline popup path
+    this.quizRewardApplied = false;
         
         // Get random quiz question based on course topic
         const quizData = this.getQuizData();
@@ -2426,24 +2430,41 @@ export default class MainGameplay extends BaseScene {
         const isMobile = this.scale.width < 768;
         const isSmallMobile = this.scale.width < 500;
 
-        // Dynamic dimensions with safe padding
+        // Dynamic dimensions with safe padding (compressed for very small heights)
         const maxPopupWidth = 640;
-        const horizontalPadding = isMobile ? 24 : 40;
-        const verticalPadding = isMobile ? 24 : 40;
-        const containerWidth = Math.min(maxPopupWidth, this.scale.width - horizontalPadding);
-        const maxHeightAvailable = this.scale.height - (isMobile ? 80 : 120);
-        const baseHeight = isMobile ? 480 : 420;
-        const containerHeight = Math.min(baseHeight, maxHeightAvailable);
+        const horizontalPadding = isMobile ? 20 : 40;
+        const maxHeightAvailable = this.scale.height - (isMobile ? 60 : 120);
+        const baseHeight = isMobile ? 440 : 420;
+        let containerWidth = Math.min(maxPopupWidth, this.scale.width - horizontalPadding);
+        let containerHeight = Math.min(baseHeight, maxHeightAvailable);
 
-        // Font sizes scale with width
-        const questionFontSize = isSmallMobile ? '16px' : (isMobile ? '18px' : '20px');
-        const answerFontSize = isSmallMobile ? '13px' : (isMobile ? '15px' : '16px');
-        const titleFontSize = isSmallMobile ? '18px' : (isMobile ? '22px' : '26px');
-        const buttonHeight = isSmallMobile ? 42 : (isMobile ? 48 : 54);
-        const buttonSpacing = isSmallMobile ? 46 : (isMobile ? 54 : 62);
-        const wordWrapWidth = containerWidth - (isMobile ? 50 : 80);
-        const maxAnswerWidth = containerWidth - (isMobile ? 70 : 120);
-        const scrollAreaHeight = containerHeight - (isMobile ? 170 : 180); // space for title + question + margins
+        // Apply further compression if still tall relative to viewport
+        const heightRatio = containerHeight / this.scale.height;
+        if (heightRatio > 0.8) {
+            containerHeight = Math.floor(this.scale.height * 0.78);
+        }
+
+        // Font sizes adaptive
+        let questionFontSize = isSmallMobile ? 15 : (isMobile ? 17 : 20);
+        let answerFontSize = isSmallMobile ? 13 : (isMobile ? 15 : 16);
+        let titleFontSize = isSmallMobile ? 18 : (isMobile ? 22 : 26);
+        let buttonHeight = isSmallMobile ? 40 : (isMobile ? 46 : 54);
+        let buttonSpacing = isSmallMobile ? 44 : (isMobile ? 50 : 60);
+
+        // Additional squeeze for ultra narrow / short
+        if (this.scale.height < 560) {
+            questionFontSize -= 1; answerFontSize -= 1; titleFontSize -= 1; buttonHeight -= 2; buttonSpacing -= 4;
+        }
+        if (this.scale.height < 520) {
+            questionFontSize -= 1; answerFontSize -= 1; buttonSpacing -= 4; containerHeight -= 20;
+        }
+
+        const wordWrapWidth = containerWidth - (isMobile ? 48 : 80);
+        const maxAnswerWidth = containerWidth - (isMobile ? 64 : 120);
+
+        // Reserve a max space for question; if it exceeds, we'll scroll it
+        const reservedTop = (isMobile ? 140 : 150); // title+question approx
+        const scrollAreaHeight = containerHeight - reservedTop - 30; // rest for answers
         
         // Create quiz container
         this.quizContainer = this.add.container(this.scale.width / 2, this.scale.height / 2);
@@ -2470,7 +2491,7 @@ export default class MainGameplay extends BaseScene {
         const titleY = -containerHeight/2 + (isMobile ? 32 : 36);
         const titleText = this.add.text(0, titleY, 'Programming Quiz!', {
             fontFamily: 'Arial',
-            fontSize: titleFontSize,
+            fontSize: `${titleFontSize}px`,
             fontWeight: 'bold',
             color: '#ffff66',
             stroke: '#000000',
@@ -2483,7 +2504,7 @@ export default class MainGameplay extends BaseScene {
         const questionY = titleY + (isMobile ? 40 : 50);
         const questionText = this.add.text(0, questionY, randomQuestion.question, {
             fontFamily: 'Arial',
-            fontSize: questionFontSize,
+            fontSize: `${questionFontSize}px`,
             fontStyle: 'bold',
             color: '#ffffff',
             align: 'center',
@@ -2491,8 +2512,27 @@ export default class MainGameplay extends BaseScene {
         }).setOrigin(0.5, 0.5);
         this.quizContainer.add(questionText);
 
+        // If question taller than allowed slice, apply mask + allow touch scroll on question
+        const maxQuestionHeight = isMobile ? 110 : 140;
+        let questionScrollable = false;
+        if (questionText.height > maxQuestionHeight) {
+            const qMaskGfx = this.add.graphics();
+            qMaskGfx.fillStyle(0xffffff, 0.0001);
+            qMaskGfx.fillRect(-wordWrapWidth/2, questionY - maxQuestionHeight/2, wordWrapWidth, maxQuestionHeight);
+            const qMask = qMaskGfx.createGeometryMask();
+            questionText.setMask(qMask);
+            questionScrollable = true;
+            // Enable vertical drag on overlay for question region if pointer within bounds
+            let qDragStartY = null; let qStartOffset = 0;
+            const qUpper = questionY - maxQuestionHeight/2;
+            const qLower = questionY + maxQuestionHeight/2;
+            this.input.on('pointerdown', (p)=>{ if(p.y >= this.scale.height/2 + qUpper - containerHeight/2 && p.y <= this.scale.height/2 + qLower - containerHeight/2){ qDragStartY = p.y; qStartOffset = questionText.y; }});
+            this.input.on('pointermove', (p)=>{ if(qDragStartY!==null){ const dy = p.y - qDragStartY; questionText.y = Phaser.Math.Clamp(qStartOffset + dy, questionY - (questionText.height - maxQuestionHeight)/2, questionY + (questionText.height - maxQuestionHeight)/2); }});
+            this.input.on('pointerup', ()=>{ qDragStartY=null; });
+        }
+
         // Scroll container for answer buttons (simulate by grouping and clipping via mask)
-        const answersGroupY = questionY + (isMobile ? 60 : 70);
+    const answersGroupY = questionY + (isMobile ? 60 : 70) + (questionScrollable ? (Math.min(questionText.height - maxQuestionHeight, 40)) : 0);
         const answersContainer = this.add.container(0, answersGroupY);
         this.quizContainer.add(answersContainer);
 
@@ -2517,7 +2557,7 @@ export default class MainGameplay extends BaseScene {
             const label = `${String.fromCharCode(65 + i)}. ${answers[i]}`;
             const answerText = this.add.text(0, btnY, label, {
                 fontFamily: 'Arial',
-                fontSize: answerFontSize,
+                fontSize: `${answerFontSize}px`,
                 color: '#ffffff',
                 align: 'left',
                 wordWrap: { width: btnWidth - 30 }
@@ -2593,31 +2633,62 @@ export default class MainGameplay extends BaseScene {
         // Show result
         this.showQuizResult(isCorrect);
         
-        if (isCorrect) {
-            // Correct answer - give rewards
-            this.updateScore(100);
-            this.addTime(10);
-            
-            // Update timer display
-            const minutes = Math.floor(this.gameTimer / 60);
-            const seconds = this.gameTimer % 60;
-            const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-            this.timerText.setText(timeString);
-            
-            // Reset timer color if it was red/yellow
-            if (this.gameTimer > 30) {
-                this.timerText.setColor('#ffffff');
-            } else if (this.gameTimer > 10) {
-                this.timerText.setColor('#ffff00');
+        // Unified guard to prevent duplicate rewards (e.g., with handleQuizCompletion)
+        if (!this.quizRewardApplied) {
+            this.quizRewardApplied = true;
+            if (isCorrect) {
+                // Minimal correct reward path mirrors handleQuizCompletion base reward
+                const bonusScore = (this.streak > 0 ? (this.streak) * 50 : 0); // approximate streak bonus if already built
+                this.streak++;
+                if (this.streak > this.highestStreak) this.highestStreak = this.streak;
+                this.updateScore(this.baseScore + bonusScore);
+                this.addTime(10);
+                this.updateTimerDisplay();
+                this.updateStreakDisplay();
+                // Sound
+                if (this.streak >= 3) {
+                    this.sound.play('se_combo', { volume: 0.8 });
+                } else {
+                    this.sound.play('se_correct', { volume: 0.8 });
+                }
+            } else {
+                // Wrong answer path with streak protection respect
+                this.sound.play('se_wrong', { volume: 0.8 });
+                this.wrongAnswers++;
+                if (this.activePowerUps.streakProtection) {
+                    this.activePowerUps.streakProtection = false;
+                    this.showPowerUpNotification({ icon: '🛡️', name: 'Streak Protected!' });
+                    if (this.streakText) {
+                        this.tweens.add({ targets: this.streakText, scale: 1.4, duration: 180, ease: 'Back.Out', yoyo: true });
+                        this.streakText.setTint(0x2ecc71);
+                        this.time.delayedCall(800, () => { if (this.streakText) this.streakText.clearTint(); });
+                    }
+                } else {
+                    this.streak = 0;
+                    // Cancel goblin immunity if active (mirrors main logic)
+                    if (this.activePowerUps.goblinImmunityReady || this.activePowerUps.goblinImmunityActive) {
+                        this.activePowerUps.goblinImmunityReady = false;
+                        this.activePowerUps.goblinImmunityActive = false;
+                    }
+                }
+                this.updateStreakDisplay();
             }
-            
-        } else {
         }
         
         // Destroy enemy after quiz
         setTimeout(() => {
             this.destroyEnemy(enemy);
             this.closeQuizPopup();
+        // Guard: avoid double reward application if inline path already processed
+        if (this.quizRewardApplied) {
+            // Still destroy enemy if provided and not yet removed
+            if (data.enemyToDestroy) {
+                this.destroyEnemy(data.enemyToDestroy);
+            }
+            this.quizActive = false;
+            return;
+        }
+        this.quizRewardApplied = true;
         }, 2000);
     }
 

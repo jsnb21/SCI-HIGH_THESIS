@@ -39,7 +39,14 @@ export function createDragAndDropOptions(scene, container, centerX, centerY, box
     maxColumns = Math.min(maxColumns, dragItems.length);
     const itemColumns = maxColumns;
     const itemRows = Math.ceil(dragItems.length / itemColumns);
-    const itemRowSpacing = 70 * sf; // vertical gap between item rows
+    let itemRowSpacing = 70 * sf; // vertical gap between item rows
+
+    // If only 4-5 items and screen height is tight, enable compact mode to keep question visible
+    const isHeightTight = scene.scale.height < 600; // heuristic for small mobile
+    if (isHeightTight && dragItems.length <= 5) {
+        itemSpacing *= 0.9; // slightly reduce horizontal spacing
+        itemRowSpacing = 54 * sf; // tighten vertical spacing
+    }
 
     
     // Store original positions and states
@@ -86,7 +93,11 @@ export function createDragAndDropOptions(scene, container, centerX, centerY, box
     const zoneRowSpacing = 90 * sf; // a bit more space for zones
 
     // Place zones below the last row of items with sufficient gap
-    const zonesStartYBase = optionsStartY + (itemRows * itemRowSpacing) + 80 * sf;
+    let zonesStartYBase = optionsStartY + (itemRows * itemRowSpacing) + 80 * sf;
+    // If height tight, pull zones closer
+    if (isHeightTight && dragItems.length <= 5) {
+        zonesStartYBase = optionsStartY + (itemRows * itemRowSpacing) + 60 * sf;
+    }
     const zonesFirstRowStartX = centerX - ((zoneColumns - 1) * zoneSpacing) / 2;
 
     dropZones.forEach((zone, index) => {
