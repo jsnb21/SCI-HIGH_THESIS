@@ -54,6 +54,10 @@ import PythonQuizScene from './scenes/quizscenes/PythonQuizScene.js';
 import CQuizScene from './scenes/quizscenes/CQuizScene.js';
 import CSharpQuizScene from './scenes/quizscenes/CSharpQuizScene.js';
 import CplusplusQuizScene from './scenes/quizscenes/CplusplusQuizScene.js';
+// Add Custom Quiz Scene import
+import CustomQuizScene from './scenes/quizscenes/CustomQuizScene.js';
+// Custom Quiz Selection Scene
+import CustomQuizSelectScene from './scenes/quizscenes/CustomQuizSelectScene.js';
 
 //Library Scenes
 import BaseLibraryScene from './scenes/libraryScenes/baseLibraryScene.js';
@@ -144,6 +148,9 @@ const config = {
     CplusplusQuizScene,
     CQuizScene,
     CSharpQuizScene,
+    // Register custom quiz scene
+    CustomQuizScene,
+  CustomQuizSelectScene,
     /* Library Scenes */
     BaseLibraryScene
   ],

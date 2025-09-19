@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SCI-HIGH</title>
+  <meta http-equiv="refresh" content="0; url=./index.html" />
+  <script>
+    // GitHub Pages SPA redirect fallback
+    (function(){
+      var redirect = sessionStorage.getItem('redirect');
+      if (redirect) {
+        sessionStorage.removeItem('redirect');
+        var path = redirect.replace(/\/+/, '/');
+        if (path && path !== '/' && !path.endsWith('.html')) {
+          // Map '/professor-dashboard' -> '/professor-dashboard.html'
+          var maybe = path.replace(/\/$/, '') + '.html';
+          window.location.replace(maybe);
+          return;
+        }
+      }
+      // Default
+      window.location.replace('./index.html');
+    })();
+  </script>
+</head>
+<body style="background:#0f172a; color:#fff; font-family:Arial; display:flex; align-items:center; justify-content:center; height:100vh;">
+  <div>
+    <h1 style="font-size:20px; margin-bottom:10px;">Redirecting...</h1>
+    <p>If you're not redirected, <a href="index.html" style="color:#F4CE14;">click here</a>.</p>
+  </div>
+</body>
+</html>

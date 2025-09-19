@@ -2,31 +2,47 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>SCI-HIGH: Playing!</title>
+  <title>SCI-HIGH: Playing!</title>
+  <link rel="icon" type="image/png" href="assets/img/logo/SCI-HIGH_LOGO.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     
+    <!-- Firebase Config Manager FIRST -->
+    <script src="config/firebase-config.js"></script>
+    <!-- Firebase Compat SDKs (static order to avoid race) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script>
+      (async function(){
+        try {
+          if(!window.firebaseConfig){ console.error('firebaseConfig manager missing'); return; }
+          if(!window.firebaseConfig.isInitialized()) {
+            await window.firebaseConfig.initializeFirebase();
+          }
+          // Optional: ensure some auth state (anonymous) so rules with auth != null work
+          if (firebase && firebase.auth && !firebase.auth().currentUser) {
+            try { await firebase.auth().signInAnonymously(); } catch(_) {}
+          }
+          console.log('[Game] Firebase initialized for DB URL:', firebase.app().options.databaseURL);
+        } catch (e) {
+          console.error('Firebase init sequence failed', e);
+        }
+      })();
+    </script>
+
     <!-- Authentication Check -->
     <script>
-      // Check authentication before loading the game
       function checkAuthentication() {
         const isAuthenticated = sessionStorage.getItem('sci_high_authenticated');
-        const userType = sessionStorage.getItem('sci_high_user_type');
         const savedUser = localStorage.getItem('sci_high_user');
-        
         if (!isAuthenticated || !savedUser) {
-          // Redirect to login page
           alert('Please log in to access the game.');
           window.location.href = 'index.html';
           return false;
         }
-        
-        // Log user access for analytics
         return true;
       }
-      
-      // Run check immediately
       if (!checkAuthentication()) {
-        // Stop page loading if not authenticated
         document.documentElement.innerHTML = '<body style="background: #1a1a2e; color: white; text-align: center; padding: 50px;"><h1>Redirecting to login...</h1></body>';
       }
     </script>

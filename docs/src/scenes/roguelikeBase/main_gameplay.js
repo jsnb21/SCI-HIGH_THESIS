@@ -129,6 +129,8 @@ export default class MainGameplay extends BaseScene {
     init(data) {
         // Receive data from the computer lab scene
         this.courseTopic = data?.topic || 'python';
+        // Inject custom quiz questions if provided (for topic 'custom')
+        this.customQuiz = data?.customQuiz || null; // { ownerId, quizId, meta, questions }
         
         // Initialize/reset timer system - ONLY if not resuming from quiz
         if (!data?.gameState) {
@@ -139,6 +141,10 @@ export default class MainGameplay extends BaseScene {
             this.quizActive = false; // Reset quiz state
             this.currentQuiz = null;
             this.isMoving = false; // Reset movement state
+            // Reset custom quiz answered tracking if custom quiz session
+            if (this.customQuiz) {
+                this.customQuizAnswered = new Set();
+            }
             
             // Reset enemy movement timers but NOT the movement state flags
             this.enemyMoveTimer = 0;
@@ -1701,7 +1707,9 @@ export default class MainGameplay extends BaseScene {
             courseTopic: this.courseTopic,
             enemyToDestroy: enemy,
             intensity: this.intensity,
-            answeredQuestions: this.answeredQuestions
+            answeredQuestions: this.answeredQuestions,
+            customQuiz: this.customQuiz || null,
+            customQuizAnswered: this.customQuizAnswered ? Array.from(this.customQuizAnswered) : []
         });
     }
 

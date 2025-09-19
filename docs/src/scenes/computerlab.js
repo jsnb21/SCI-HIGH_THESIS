@@ -23,7 +23,9 @@ export default class ComputerLab extends Phaser.Scene {
         this.load.image('Java', 'assets/img/comlab/icons/java_logo.png');
         this.load.image('C', 'assets/img/comlab/icons/c_logo.png');
         this.load.image('C++', 'assets/img/comlab/icons/cplus_logo.png');
-        this.load.image('C#', 'assets/img/comlab/icons/csharp_logo.png');
+    this.load.image('C#', 'assets/img/comlab/icons/csharp_logo.png');
+    // Placeholder icon for custom quizzes (reuse an existing or add a new asset path if available)
+    this.load.image('CustomQuiz', 'assets/img/comlab/icons/web-design_logo.png');
 
         // Load sound effects
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
@@ -58,14 +60,15 @@ export default class ComputerLab extends Phaser.Scene {
         // Play computer lab background music
         playExclusiveBGM(this, 'bgm_computer-lab', { loop: true });
         updateSoundVolumes(this);        // Define carousel data
-        const iconKeys = ['Web_Design', 'Python', 'Java', 'C', 'C++', 'C#'];
+        const iconKeys = ['Web_Design', 'Python', 'Java', 'C', 'C++', 'C#', 'CustomQuiz'];
         const iconInfo = [
             { heading: "Web Design", desc: "Learn HTML, CSS & JavaScript", courseKey: "Web_Design" },
             { heading: "Python", desc: "Learn Python", courseKey: "Python" },
             { heading: "Java", desc: "Learn Java", courseKey: "Java" },
             { heading: "C", desc: "Learn about C", courseKey: "C" },
             { heading: "C++", desc: "Learn about C++", courseKey: "C++" },
-            { heading: "C#", desc: "Learn about C#", courseKey: "C#" }
+            { heading: "C#", desc: "Learn about C#", courseKey: "C#" },
+            { heading: "Custom Quiz", desc: "Play a professor-made quiz", courseKey: "CustomQuiz" }
         ];
 
         // Create the carousel with the icon keys and info
@@ -119,6 +122,7 @@ export default class ComputerLab extends Phaser.Scene {
 
         // Determine locked states based on game progress
         const lockedStates = iconInfo.map(info => {
+            if(info.courseKey === 'CustomQuiz') return false; // always unlocked
             return !gameManager.isCourseUnlocked(info.courseKey);
         });
 
@@ -137,6 +141,9 @@ export default class ComputerLab extends Phaser.Scene {
                 LoadingScreen.transitionToCourse(this, 'MainGameplay', 'C++ Course - Roguelike Mode', { topic: 'cpp' });
             } else if (selectedItem.heading === "C#"){
                 LoadingScreen.transitionToCourse(this, 'MainGameplay', 'C# Course - Roguelike Mode', { topic: 'csharp' });
+            } else if (selectedItem.heading === "Custom Quiz") {
+                // Go to selection scene first so player can choose which custom quiz
+                LoadingScreen.transitionToCourse(this, 'CustomQuizSelectScene', 'Custom Quiz Selection', {});
             }
         }, lockedStates);
     }

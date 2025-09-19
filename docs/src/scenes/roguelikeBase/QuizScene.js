@@ -35,6 +35,8 @@ export default class QuizScene extends BaseScene {
         };
         this.selectedAnswer = null;
         this.currentQuestion = null;
+        this.customQuiz = data.customQuiz || null;
+        this.customQuizAnswered = new Set(data.customQuizAnswered || []);
         
     }
 
@@ -89,7 +91,11 @@ export default class QuizScene extends BaseScene {
         );
         
         // Load appropriate quiz data based on course topic
-        this.loadQuizData();
+        if (this.courseTopic === 'custom' && this.customQuiz) {
+            this.loadCustomQuizQuestion();
+        } else {
+            this.loadQuizData();
+        }
         
         // Validate that we have quiz data and create interface
         if (this.currentQuestion) {
@@ -163,6 +169,31 @@ export default class QuizScene extends BaseScene {
         
         // Final fallback to intensity 1 multiple choice if nothing else works
         this.loadMultipleChoiceQuestion(1);
+    }
+
+    loadCustomQuizQuestion() {
+        if (!this.customQuiz || !Array.isArray(this.customQuiz.questions)) return;
+        const remaining = this.customQuiz.questions.filter((q, idx) => !this.customQuizAnswered.has(idx));
+        if (remaining.length === 0) {
+            // All answered; simple recycle or end early
+            this.customQuizAnswered.clear();
+        }
+        const pool = this.customQuiz.questions.filter((q, idx) => !this.customQuizAnswered.has(idx));
+        if (pool.length === 0) return; // Still nothing
+        const idxInPool = Math.floor(Math.random() * pool.length);
+        const question = pool[idxInPool];
+        // Track index globally
+        const globalIndex = this.customQuiz.questions.indexOf(question);
+        this.customQuizAnswered.add(globalIndex);
+        // Normalize shape expected by existing UI
+        this.currentQuestion = {
+            question: question.question || 'Untitled Question',
+            options: question.options || [],
+            correctIndex: typeof question.correctIndex === 'number' ? question.correctIndex : 0,
+            type: 'multiple-choice'
+        };
+        // Build minimal quizData format used by createQuizInterface / answer handlers
+        this.quizData = { questions: [ this.currentQuestion ] };
     }
 
     loadMultipleChoiceQuestion(intensityLevel) {

@@ -1,0 +1,106 @@
+{
+  "rules": {
+    "students": {
+      ".indexOn": ["studentId"],
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$studentKey": {
+        "studentId": { ".validate": "newData.isString() && newData.val().length > 0" },
+        "fullName": { ".validate": "newData.isString()" },
+        "academicInfo": { ".validate": "newData.hasChildren()" },
+        "accountStatus": { ".validate": "newData.hasChildren(['isActive', 'createdAt'])" },
+        "gameData": { ".validate": "newData.hasChildren()" }
+      }
+    },
+
+"customQuizzes": {
+  "$profUid": {
+    "$quizId": {
+      ".read": "auth != null && auth.uid === $profUid && (auth.token.role === 'professor' || auth.token.roles.professor === true || auth.token.role === 'admin' || auth.token.roles.admin === true)",
+      ".write": "auth != null && auth.uid === $profUid && (auth.token.role === 'professor' || auth.token.roles.professor === true || auth.token.role === 'admin' || auth.token.roles.admin === true)",
+
+      "meta": {
+        "title":    { ".validate": "newData.isString() && newData.val().length > 0" },
+        "subject":  { ".validate": "newData.isString()" },
+        "createdAt":{ ".validate": "newData.isString()" },
+        "createdBy":{ ".validate": "newData.isString() && newData.val() === $profUid" },
+        "format":   { ".validate": "newData.val() === 'intensity-schema-v1'" }
+      },
+
+      "intensity1": {
+        "multipleChoice": {
+          "$qIndex": {
+            "question": { ".validate": "newData.isString() && newData.val().length > 0" },
+
+            "options": {
+              // Require at least first two indices to ensure >=2 choices.
+              ".validate": "newData.hasChildren(['0','1'])",
+              "$optIndex": {
+                ".validate": "newData.isString() && newData.val().length > 0"
+              }
+            },
+
+            "correctIndex": {
+              // Ensure number >= 0 AND that an option with that index exists.
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.parent().child('options').child(newData.val()).exists()"
+            }
+          }
+        }
+      }
+    }
+  }
+},
+
+    "professors": {
+      ".indexOn": ["email"],
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "general_users": {
+      ".indexOn": ["email"],
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "leaderboard": {
+      ".indexOn": ["score", "timestamp", "department"],
+      ".read": true,
+      ".write": "auth != null"
+    },
+
+    "gameplay_data": {
+      ".indexOn": ["studentId", "timestamp"],
+      ".read": true,
+      ".write": true
+    },
+
+    "student_career_stats": {
+      ".indexOn": ["studentId"],
+      ".read": true,
+      ".write": true,
+      "$studentId": {
+        "studentInfo": { ".validate": "newData.hasChildren(['studentId', 'fullName'])" },
+        "careerStats": { ".validate": "newData.hasChildren(['totalSessions', 'totalPoints'])" },
+        "recentSessions": { ".validate": "newData.hasChildren()" }
+      }
+    },
+
+    "story_progress": {
+      ".indexOn": ["studentId"],
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$studentId": {
+        "noah": {
+          ".validate": "newData.hasChildren(['chapter','scene','completed']) && newData.child('chapter').isNumber() && newData.child('scene').isNumber() && newData.child('completed').isBoolean()"
+        },
+        "lily": {
+          ".validate": "newData.hasChildren(['chapter','scene','completed']) && newData.child('chapter').isNumber() && newData.child('scene').isNumber() && newData.child('completed').isBoolean()"
+        },
+        "damian": {
+          ".validate": "newData.hasChildren(['chapter','scene','completed']) && newData.child('chapter').isNumber() && newData.child('scene').isNumber() && newData.child('completed').isBoolean()"
+        }
+      }
+    }
+  }
+}
