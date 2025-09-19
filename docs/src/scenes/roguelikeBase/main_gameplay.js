@@ -1293,7 +1293,10 @@ export default class MainGameplay extends BaseScene {
 
     addTime(seconds) {
         // Add time but cap at 60 seconds (1 minute)
-        this.gameTimer = Math.min(this.gameTimer + seconds, 60);
+           const before = this.gameTimer;
+           this.gameTimer = Math.min(this.gameTimer + seconds, 60);
+           const gained = this.gameTimer - before;
+           if (gained !== 0) this.animateTimeDelta(gained);
     }
 
     collectTimerIcon(icon) {
@@ -1303,48 +1306,9 @@ export default class MainGameplay extends BaseScene {
         // Add 5 seconds to the timer (capped at 60 seconds)
         this.addTime(5);
         
-        // Update timer display immediately
-        const minutes = Math.floor(this.gameTimer / 60);
-        const seconds = this.gameTimer % 60;
-        const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    if (this.timerText && !this.domHudActive) this.timerText.setText(timeString);
-    this.syncDomHud();
-        
-        // Reset timer color if it was red/yellow
-        if (!this.domHudActive && this.timerText) {
-            if (this.gameTimer > 30) {
-                this.timerText.setColor('#ffffff');
-            } else if (this.gameTimer > 10) {
-                this.timerText.setColor('#ffff00');
-            }
-        }
-        
-        // Show +5s effect at timer location
-        const baseTimerX = this.timerText ? this.timerText.x : (this.scale.width / 2);
-        const baseTimerY = this.timerText ? this.timerText.y : 30;
-        const effectText = this.add.text(baseTimerX, baseTimerY + 40, '+5s', {
-            fontFamily: 'Arial',
-            fontSize: '24px',
-            fontWeight: 'bold',
-            color: '#00ff00',
-            stroke: '#000000',
-            strokeThickness: 2
-        }).setOrigin(0.5).setScrollFactor(0);
-        
-        // Animate the +5s effect
-        this.tweens.add({
-            targets: effectText,
-            y: effectText.y - 30,
-            alpha: 0,
-            duration: 1000,
-            ease: 'Power2',
-            onComplete: () => {
-                effectText.destroy();
-            }
-        });
-        
-        // Ensure DOM HUD reflects added time immediately (already synced above, but extra safety)
-        this.syncDomHud();
+            // Timer delta animation handled by addTime -> animateTimeDelta
+            this.updateTimerDisplay();
+            this.syncDomHud();
 
         // Remove icon from array
         const iconIndex = this.timerIcons.indexOf(icon);
@@ -1618,43 +1582,12 @@ export default class MainGameplay extends BaseScene {
             this.cameras.main.shake(200, 0.02);
         }
         
-        // Reduce game timer
+        // Reduce game timer and animate delta
+        const before = this.gameTimer;
         this.gameTimer = Math.max(0, this.gameTimer - this.goblinThugTimePenalty);
-        
-        // Update timer display immediately
-        const minutes = Math.floor(this.gameTimer / 60);
-        const seconds = this.gameTimer % 60;
-        const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        this.timerText.setText(timeString);
-        
-        // Update timer color based on remaining time
-        if (this.gameTimer <= 10) {
-            this.timerText.setColor('#ff0000'); // Red for critical time
-        } else if (this.gameTimer <= 30) {
-            this.timerText.setColor('#ffff00'); // Yellow for low time
-        }
-        
-        // Show time penalty effect
-        const effectText = this.add.text(this.timerText.x, this.timerText.y + 40, `-${this.goblinThugTimePenalty}s`, {
-            fontFamily: 'Arial',
-            fontSize: '24px',
-            fontWeight: 'bold',
-            color: '#ff0000',
-            stroke: '#000000',
-            strokeThickness: 2
-        }).setOrigin(0.5).setScrollFactor(0);
-        
-        // Animate the penalty effect
-        this.tweens.add({
-            targets: effectText,
-            y: effectText.y - 30,
-            alpha: 0,
-            duration: 1000,
-            ease: 'Power2',
-            onComplete: () => {
-                effectText.destroy();
-            }
-        });
+        const lost = before - this.gameTimer;
+        if (lost !== 0) this.animateTimeDelta(-lost);
+        this.updateTimerDisplay();
         
         
         // Remove the thug
@@ -2348,6 +2281,133 @@ export default class MainGameplay extends BaseScene {
         }
     }
 
+    startTimerShake() {
+        // Prevent duplicate tweens
+        if (!this.timerText) return;
+        if (this.timerShake && this.timerShake.isPlaying()) return;
+        const originalX = this.timerText.x;
+        const originalY = this.timerText.y;
+        this.timerShake = this.tweens.add({
+            targets: this.timerText,
+            x: originalX + 2,
+            y: originalY,
+            duration: 80,
+            yoyo: true,
+            repeat: -1
+        });
+    }
+
+    stopTimerShake() {
+        if (this.timerShake) {
+            this.timerShake.stop();
+            this.timerShake = null;
+        }
+    }
+
+    // --- TIMER DELTA ANIMATIONS ---
+    animateTimeDelta(delta) {
+        // delta > 0 => gained time, delta < 0 => lost time
+        const sign = delta > 0 ? '+' : '';
+        const color = delta > 0 ? '#00ff66' : '#ff3333';
+        const textStr = `${sign}${delta}s`;
+
+        // If DOM HUD is active (desktop), create a floating DOM element instead of Phaser text (since timerText is hidden)
+        if (this.domHudActive && this.domTimerEl) {
+            const label = document.createElement('div');
+            label.textContent = textStr;
+            Object.assign(label.style, {
+                position: 'absolute',
+                left: '50%',
+                top: '54px', // just under the HUD bar
+                transform: 'translateX(-50%)',
+                fontFamily: 'Arial, sans-serif',
+                fontWeight: 'bold',
+                fontSize: '26px',
+                color: color,
+                textShadow: '2px 2px 4px #000',
+                opacity: '1',
+                pointerEvents: 'none',
+                zIndex: '10000'
+            });
+            const parent = document.getElementById('desktop-game-hud')?.parentNode || document.body;
+            parent.appendChild(label);
+
+            // Simple JS animation (no Phaser tween for DOM element)
+            const start = performance.now();
+            const duration = 900;
+            const startY = 54;
+            const endY = 20; // float upward
+            const animate = (now) => {
+                const t = Math.min(1, (now - start) / duration);
+                const ease = 1 - Math.pow(1 - t, 3);
+                const currentY = startY + (endY - startY) * ease;
+                const currentScale = 1 + 0.3 * ease;
+                label.style.top = currentY + 'px';
+                label.style.transform = `translateX(-50%) scale(${currentScale})`;
+                label.style.opacity = (1 - t).toString();
+                if (t < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    label.remove();
+                }
+            };
+            requestAnimationFrame(animate);
+            return; // Skip Phaser-based floating text
+        }
+
+        // Phaser text fallback (mobile or when DOM HUD not active)
+        const baseX = this.timerText ? this.timerText.x : this.scale.width / 2;
+        // Place below timer so it doesn't overlap the digits, then rises past them
+        const baseY = (this.timerText ? this.timerText.y : 30) + 42;
+        const floatText = this.add.text(baseX, baseY, textStr, {
+            fontFamily: 'Arial',
+            fontSize: '30px',
+            fontWeight: 'bold',
+            color,
+            stroke: '#000000',
+            strokeThickness: 4,
+            shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 4, fill: true }
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(1500);
+
+        this.tweens.add({
+            targets: floatText,
+            y: baseY - 32,
+            alpha: 0,
+            scaleX: 1.4,
+            scaleY: 1.4,
+            duration: 900,
+            ease: 'Power2.out',
+            onComplete: () => floatText.destroy()
+        });
+
+        if (this.timerText) {
+            this.flashTimerColor(color, 300);
+            this.tweens.add({
+                targets: this.timerText,
+                scaleX: 1.25,
+                scaleY: 1.25,
+                yoyo: true,
+                duration: 260,
+                ease: 'Back.out'
+            });
+        }
+    }
+
+    flashTimerColor(color, duration=380) {
+        if (!this.timerText || this.domHudActive) return; // DOM HUD uses its own style
+        this.timerText.setColor(color);
+        this.time.delayedCall(duration, () => {
+            if (this.gameTimer <= 10) {
+                this.timerText.setColor('#ff0000');
+            } else if (this.gameTimer <= 30) {
+                this.timerText.setColor('#ffff00');
+            } else {
+                this.timerText.setColor('#ffffff');
+            }
+        });
+    }
+    // --- END TIMER DELTA ANIMATIONS ---
+
     showQuizPopup(enemy) {
         this.quizActive = true;
         this.currentQuiz = enemy;
@@ -2364,85 +2424,153 @@ export default class MainGameplay extends BaseScene {
         
         // Detect mobile for responsive sizing
         const isMobile = this.scale.width < 768;
-        
-        // Set responsive dimensions
-        const containerWidth = isMobile ? Math.min(this.scale.width - 40, 500) : 600;
-        const containerHeight = isMobile ? Math.min(this.scale.height - 80, 450) : 400;
-        const questionFontSize = isMobile ? '18px' : '20px';
-        const answerFontSize = isMobile ? '14px' : '16px';
-        const titleFontSize = isMobile ? '20px' : '24px';
-        const buttonHeight = isMobile ? 45 : 50;
-        const buttonSpacing = isMobile ? 50 : 60;
-        const wordWrapWidth = containerWidth - 60;
+        const isSmallMobile = this.scale.width < 500;
+
+        // Dynamic dimensions with safe padding
+        const maxPopupWidth = 640;
+        const horizontalPadding = isMobile ? 24 : 40;
+        const verticalPadding = isMobile ? 24 : 40;
+        const containerWidth = Math.min(maxPopupWidth, this.scale.width - horizontalPadding);
+        const maxHeightAvailable = this.scale.height - (isMobile ? 80 : 120);
+        const baseHeight = isMobile ? 480 : 420;
+        const containerHeight = Math.min(baseHeight, maxHeightAvailable);
+
+        // Font sizes scale with width
+        const questionFontSize = isSmallMobile ? '16px' : (isMobile ? '18px' : '20px');
+        const answerFontSize = isSmallMobile ? '13px' : (isMobile ? '15px' : '16px');
+        const titleFontSize = isSmallMobile ? '18px' : (isMobile ? '22px' : '26px');
+        const buttonHeight = isSmallMobile ? 42 : (isMobile ? 48 : 54);
+        const buttonSpacing = isSmallMobile ? 46 : (isMobile ? 54 : 62);
+        const wordWrapWidth = containerWidth - (isMobile ? 50 : 80);
+        const maxAnswerWidth = containerWidth - (isMobile ? 70 : 120);
+        const scrollAreaHeight = containerHeight - (isMobile ? 170 : 180); // space for title + question + margins
         
         // Create quiz container
         this.quizContainer = this.add.container(this.scale.width / 2, this.scale.height / 2);
         this.quizContainer.setDepth(2000);
         
-        // Create quiz background
-        const quizBg = this.add.rectangle(0, 0, containerWidth, containerHeight, 0x000000, 0.9);
-        quizBg.setStroke(0xffffff, 4);
+        // Dim overlay behind popup (captures taps)
+        const overlay = this.add.rectangle(0, 0, this.scale.width * 2, this.scale.height * 2, 0x000000, 0.55)
+            .setOrigin(0.5)
+            .setScrollFactor(0)
+            .setInteractive();
+        this.quizContainer.add(overlay);
+
+        // Create quiz background (rounded look via graphics for nicer mobile feel)
+        const quizBg = this.add.rectangle(0, 0, containerWidth, containerHeight, 0x0b1a2a, 0.92);
+        quizBg.setStroke(0x4a90e2, 3);
         this.quizContainer.add(quizBg);
+
+        // Subtle inner glow frame
+        const innerFrame = this.add.rectangle(0, 0, containerWidth - 12, containerHeight - 12, 0x12283d, 0.95)
+            .setStrokeStyle(2, 0x255d85, 0.8);
+        this.quizContainer.add(innerFrame);
         
-        // Create question text
-        const questionY = isMobile ? -containerHeight/2 + 80 : -120;
-        const questionText = this.add.text(0, questionY, randomQuestion.question, {
-            fontFamily: 'Arial',
-            fontSize: questionFontSize,
-            fontWeight: 'bold',
-            color: '#ffffff',
-            align: 'center',
-            wordWrap: { width: wordWrapWidth }
-        }).setOrigin(0.5);
-        this.quizContainer.add(questionText);
-        
-        // Create answer buttons
-        const answers = randomQuestion.options;
-        const correctAnswer = randomQuestion.correct;
-        
-        // Calculate starting Y position for answers
-        const startY = isMobile ? -50 : -40;
-        
-        for (let i = 0; i < answers.length; i++) {
-            const answerY = startY + (i * buttonSpacing);
-            const answerBtn = this.add.rectangle(0, answerY, containerWidth - 100, buttonHeight, 0x333333);
-            answerBtn.setStroke(0xffffff, 2);
-            answerBtn.setInteractive();
-            
-            const answerText = this.add.text(0, answerY, `${String.fromCharCode(65 + i)}. ${answers[i]}`, {
-                fontFamily: 'Arial',
-                fontSize: answerFontSize,
-                color: '#ffffff',
-                align: 'center',
-                wordWrap: { width: containerWidth - 120 }
-            }).setOrigin(0.5);
-            
-            this.quizContainer.add([answerBtn, answerText]);
-            
-            // Add hover effects
-            answerBtn.on('pointerover', () => {
-                answerBtn.setFillStyle(0x555555);
-            });
-            
-            answerBtn.on('pointerout', () => {
-                answerBtn.setFillStyle(0x333333);
-            });
-            
-            // Add click handler
-            answerBtn.on('pointerdown', () => {
-                this.handleQuizAnswer(i, correctAnswer, enemy);
-            });
-        }
-        
-        // Add title
-        const titleY = isMobile ? -containerHeight/2 + 30 : -170;
+        // Title (top)
+        const titleY = -containerHeight/2 + (isMobile ? 32 : 36);
         const titleText = this.add.text(0, titleY, 'Programming Quiz!', {
             fontFamily: 'Arial',
             fontSize: titleFontSize,
             fontWeight: 'bold',
-            color: '#ffff00'
+            color: '#ffff66',
+            stroke: '#000000',
+            strokeThickness: 3,
+            shadow: { offsetX:1, offsetY:1, color:'#000000', blur:3, fill:true }
         }).setOrigin(0.5);
         this.quizContainer.add(titleText);
+
+        // Question text block
+        const questionY = titleY + (isMobile ? 40 : 50);
+        const questionText = this.add.text(0, questionY, randomQuestion.question, {
+            fontFamily: 'Arial',
+            fontSize: questionFontSize,
+            fontStyle: 'bold',
+            color: '#ffffff',
+            align: 'center',
+            wordWrap: { width: wordWrapWidth }
+        }).setOrigin(0.5, 0.5);
+        this.quizContainer.add(questionText);
+
+        // Scroll container for answer buttons (simulate by grouping and clipping via mask)
+        const answersGroupY = questionY + (isMobile ? 60 : 70);
+        const answersContainer = this.add.container(0, answersGroupY);
+        this.quizContainer.add(answersContainer);
+
+        // Add rectangular mask for scroll area
+        const maskGfx = this.add.graphics();
+        maskGfx.fillStyle(0xffffff, 0.0001);
+        maskGfx.fillRect(-containerWidth/2 + 20, -scrollAreaHeight/2, containerWidth - 40, scrollAreaHeight);
+        const answersMask = maskGfx.createGeometryMask();
+        answersContainer.setMask(answersMask);
+        
+        // Create answer buttons
+        const answers = randomQuestion.options;
+        const correctAnswer = randomQuestion.correct;
+        let cumulativeY = -scrollAreaHeight/2 + buttonHeight/2;
+        const answerButtons = [];
+        for (let i = 0; i < answers.length; i++) {
+            const btnY = cumulativeY;
+            const btnWidth = maxAnswerWidth;
+            const answerBtn = this.add.rectangle(0, btnY, btnWidth, buttonHeight, 0x1f3347, 0.95)
+                .setStrokeStyle(2, 0x4a90e2)
+                .setInteractive({ useHandCursor: true });
+            const label = `${String.fromCharCode(65 + i)}. ${answers[i]}`;
+            const answerText = this.add.text(0, btnY, label, {
+                fontFamily: 'Arial',
+                fontSize: answerFontSize,
+                color: '#ffffff',
+                align: 'left',
+                wordWrap: { width: btnWidth - 30 }
+            }).setOrigin(0.5);
+            answersContainer.add(answerBtn);
+            answersContainer.add(answerText);
+            answerButtons.push({answerBtn, answerText});
+
+            // Hover / press feedback (desktop only for hover)
+            answerBtn.on('pointerover', () => { if (!isMobile) answerBtn.setFillStyle(0x2d4b63); });
+            answerBtn.on('pointerout', () => { if (!isMobile) answerBtn.setFillStyle(0x1f3347); });
+            answerBtn.on('pointerdown', () => {
+                answerBtn.setFillStyle(0x356a8f);
+                this.handleQuizAnswer(i, correctAnswer, enemy);
+            });
+            cumulativeY += buttonSpacing;
+        }
+
+        // Enable vertical scrolling for long lists (touch drag)
+        let dragStartY = null;
+        let containerStartY = 0;
+        overlay.on('pointerdown', (p) => { dragStartY = p.y; containerStartY = answersContainer.y; });
+        overlay.on('pointermove', (p) => {
+            if (dragStartY !== null) {
+                const delta = p.y - dragStartY;
+                answersContainer.y = Phaser.Math.Clamp(containerStartY + delta, answersGroupY - 40, answersGroupY + 40);
+            }
+        });
+        overlay.on('pointerup', () => { dragStartY = null; });
+        overlay.on('pointerout', () => { dragStartY = null; });
+
+        // Close button (optional for mobile)
+        const closeBtnSize = isMobile ? 34 : 36;
+        const closeBtn = this.add.rectangle(containerWidth/2 - closeBtnSize, -containerHeight/2 + closeBtnSize, closeBtnSize, closeBtnSize, 0x741111, 0.85)
+            .setStrokeStyle(2, 0xffffff)
+            .setInteractive({ useHandCursor: true });
+        const closeText = this.add.text(closeBtn.x, closeBtn.y, '✕', { fontFamily:'Arial', fontSize: isMobile ? '18px':'20px', color:'#ffffff' }).setOrigin(0.5);
+        this.quizContainer.add(closeBtn);
+        this.quizContainer.add(closeText);
+        closeBtn.on('pointerdown', () => {
+            this.closeQuizPopup();
+            this.quizActive = false;
+        });
+
+        // Entrance animation
+        this.quizContainer.setScale(0.8).setAlpha(0);
+        this.tweens.add({
+            targets: this.quizContainer,
+            scale: 1,
+            alpha: 1,
+            duration: 280,
+            ease: 'Back.Out'
+        });
     }
 
     getQuizData() {

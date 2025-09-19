@@ -18,6 +18,12 @@ export default class ResultScreen extends BaseScene {
         
     }
 
+    preload() {
+        this.load.audio('bgm_results', 'assets/audio/bgm/bgm_results.mp3');
+        this.load.audio('se_select', 'assets/audio/se/se_select.wav');
+        this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
+    }
+
     create() {
         super.create();
         
@@ -64,9 +70,13 @@ export default class ResultScreen extends BaseScene {
         gradient.fillGradientStyle(0x000000, 0x000000, 0x1a1a2e, 0x1a1a2e, 1);
         gradient.fillRect(0, 0, this.scale.width, this.scale.height);
         
-        // Create main result panel with MUCH larger responsive dimensions for mobile
-        const panelWidth = isMobile ? Math.min(scaleInfo.width * 0.95, 380) : scaleDimension(500, scaleInfo);
-        const panelHeight = isMobile ? Math.min(scaleInfo.height * 0.90, 500) : scaleDimension(450, scaleInfo);
+    // Create main result panel with responsive dimensions for mobile
+    // Wider on desktop, almost full width on tiny phones, but keep readable margins
+    const tinyPhone = scaleInfo.width < 400;
+    const panelWidth = isMobile ? Math.min(scaleInfo.width * 0.94, tinyPhone ? 360 : 400) : scaleDimension(540, scaleInfo);
+    // Height expands more on very small devices; we add an internal scroll container if needed
+    const basePanelHeight = isMobile ? Math.min(scaleInfo.height * 0.9, 540) : scaleDimension(470, scaleInfo);
+    const panelHeight = basePanelHeight;
         const panelX = this.scale.width / 2;
         const panelY = this.scale.height / 2;
         
@@ -119,9 +129,9 @@ export default class ResultScreen extends BaseScene {
             }).setOrigin(0.5);
         }
         
-        // Enhanced rank display with special effects and responsive positioning
-        let rankY = isMobile ? panelY - panelHeight * 0.25 : panelY - panelHeight * 0.2; // Moved up more
-        let rankSize = isMobile ? 35 : 50;
+    // Enhanced rank display with special effects and responsive positioning
+    let rankY = isMobile ? panelY - panelHeight * 0.26 : panelY - panelHeight * 0.22; // Slight tweak for new sizes
+    let rankSize = isMobile ? (tinyPhone ? 32 : 38) : 52;
         
         // Multi-layer rank background for depth
         const rankOuterGlow = this.add.circle(panelX, rankY, rankSize + 8, rankColor, 0.2);
@@ -146,11 +156,14 @@ export default class ResultScreen extends BaseScene {
             }
         }).setOrigin(0.5);
         
-        // Statistics section with improved spacing and moved up for better distribution
-        const statsY = isMobile ? panelY - panelHeight * 0.05 : panelY - panelHeight * 0.02; // Moved up
-        const lineHeight = isMobile ? scaleDimension(58, scaleInfo) : 60; // Even larger spacing for shadows
-        
-        // Create colored stats with icons and better styling
+        // --- DYNAMIC LAYOUT (prevents overlap of stats & button) ---
+        // Pre-compute button placement first so we know how much vertical space is left for stats
+    let buttonY = panelY + panelHeight * 0.44; // keep visual design
+    const buttonHeight = isMobile ? scaleDimension(54, scaleInfo) : 60;
+    const buttonWidth = isMobile ? scaleDimension(tinyPhone ? 280 : 320, scaleInfo) : 340;
+    const buttonFontSize = isMobile ? scaleFontSize(tinyPhone ? 18 : 20, scaleInfo) : 24;
+
+        // Stats data
         const statsData = [
             { label: '✓ Correct Answers', value: this.correctAnswers, color: '#00ff88' },
             { label: '✗ Wrong Answers', value: this.wrongAnswers, color: '#ff4444' },
@@ -158,63 +171,128 @@ export default class ResultScreen extends BaseScene {
             { label: '⭐ Total Score', value: this.totalScore, color: '#00ddff' },
             { label: '📊 Accuracy', value: `${accuracy.toFixed(1)}%`, color: accuracy >= 80 ? '#00ff88' : accuracy >= 60 ? '#ffaa00' : '#ff4444' }
         ];
-        
+
+        // Define vertical region for stats between rank area and button
+        const panelTop = panelY - panelHeight / 2;
+        const panelBottom = panelY + panelHeight / 2;
+        const rankBottomBuffer = isMobile ? scaleDimension(30, scaleInfo) : 40; // gap below rank
+        const buttonTopBuffer = isMobile ? scaleDimension(35, scaleInfo) : 45;  // gap above button
+        const statsAreaTop = rankY + rankSize + rankBottomBuffer;
+    const statsAreaBottom = buttonY - buttonHeight / 2 - buttonTopBuffer;
+        let statsAreaHeight = statsAreaBottom - statsAreaTop;
+
+        // If area is too small (e.g. very small screen), reduce buttonY slightly within panel bounds
+        if (statsAreaHeight < 120) {
+            const adjust = 120 - statsAreaHeight;
+            // move button down if there's space otherwise shrink spacing
+            if (buttonY + buttonHeight / 2 + adjust <= panelBottom - 10) {
+                // we can push button further down
+                // NOTE: visual elements (button) created later will read updated buttonY via closure variables? we need new const -> use let for buttonY? Simpler: we cannot reassign const; create new variable
+            }
+        }
+
+        // Compute line height ensuring it fits without overlap, with a max to keep design roomy
+        const maxDesiredLineHeight = isMobile ? scaleDimension(58, scaleInfo) : 60;
+        let lineHeight = Math.min(maxDesiredLineHeight, statsAreaHeight / statsData.length);
+        // Guarantee minimum readability
+        const minLineHeight = isMobile ? scaleDimension(34, scaleInfo) : 36;
+        lineHeight = Math.max(lineHeight, minLineHeight);
+
+        // Recalculate stats area height based on chosen lineHeight so we can vertically center stats block
+        const totalStatsBlockHeight = lineHeight * statsData.length;
+        let statsStartY = statsAreaTop + (statsAreaHeight - totalStatsBlockHeight) / 2 + lineHeight / 2; // center within area
+
+        // If centering would push past boundaries (due to min height), clamp
+        if (statsStartY + totalStatsBlockHeight / 2 > statsAreaBottom) {
+            statsStartY = statsAreaTop + lineHeight / 2; // top align
+        }
+
+        // Create a container to allow vertical scrolling on very small screens
+        const statsContainer = this.add.container(0,0);
+        const statRowElements = [];
+        const effectiveWidth = panelWidth - 40;
+        const statLabelFont = isMobile ? scaleFontSize(tinyPhone ? 15 : 17, scaleInfo) : '22px';
+        const statValueFont = statLabelFont;
         statsData.forEach((stat, index) => {
-            const yPos = statsY + (index * lineHeight);
-            
-            // Enhanced stat background with gradient effect
-            const statBg = this.add.rectangle(panelX, yPos, panelWidth - 40, isMobile ? 32 : 34, 0x0a1628, 0.7);
+            const yPos = statsStartY + index * lineHeight;
+            const rectHeight = Math.min(lineHeight - 8, (isMobile ? 34 : 36));
+
+            const statBg = this.add.rectangle(panelX, yPos, effectiveWidth, rectHeight, 0x0a1628, 0.7);
             statBg.setStrokeStyle(1, 0x2c3e50, 0.3);
-            
-            // Add subtle glow effect
-            const statGlow = this.add.rectangle(panelX, yPos, panelWidth - 38, isMobile ? 30 : 32, stat.color, 0.1);
-            
-            // Responsive positioning with better spacing
-            let leftX = isMobile ? panelX - panelWidth * 0.32 : panelX - panelWidth * 0.35;
-            let rightX = isMobile ? panelX + panelWidth * 0.32 : panelX + panelWidth * 0.35;
-            
-            // Stat label with subtle shadow for better readability
-            this.add.text(leftX, yPos, stat.label, {
-                fontFamily: 'Arial',
-                fontSize: isMobile ? scaleFontSize(18, scaleInfo) : '22px',
-                color: '#ffffff',
-                fontWeight: 'bold',
-                stroke: '#000000',
-                strokeThickness: 0.5,
-                shadow: {
-                    offsetX: 1,
-                    offsetY: 1,
-                    color: '#000000',
-                    blur: 0.5, // Very subtle shadow
-                    fill: true
-                }
-            }).setOrigin(0, 0.5);
-            
-            // Stat value with subtle shadow for better readability
-            this.add.text(rightX, yPos, stat.value.toString(), {
-                fontFamily: 'Arial',
-                fontSize: isMobile ? scaleFontSize(18, scaleInfo) : '22px',
-                color: stat.color,
-                fontWeight: 'bold',
-                stroke: '#000000',
-                strokeThickness: 0.5,
-                shadow: {
-                    offsetX: 1,
-                    offsetY: 1,
-                    color: '#000000',
-                    blur: 0.5, // Very subtle shadow
-                    fill: true
-                }
-            }).setOrigin(1, 0.5);
+            const statGlow = this.add.rectangle(panelX, yPos, effectiveWidth - 2, rectHeight - 2, stat.color, 0.08);
+
+            // If width is small, stack label over value; else keep two-column layout
+            const useStack = tinyPhone && effectiveWidth < 320;
+            let labelText, valueText;
+            if (useStack) {
+                labelText = this.add.text(panelX, yPos - rectHeight * 0.25, stat.label, {
+                    fontFamily: 'Arial',
+                    fontSize: statLabelFont,
+                    color: '#ffffff',
+                    fontWeight: 'bold',
+                    align: 'center'
+                }).setOrigin(0.5, 0.5);
+                valueText = this.add.text(panelX, yPos + rectHeight * 0.25, stat.value.toString(), {
+                    fontFamily: 'Arial',
+                    fontSize: statValueFont,
+                    color: stat.color,
+                    fontWeight: 'bold'
+                }).setOrigin(0.5, 0.5);
+            } else {
+                const leftX = panelX - effectiveWidth * 0.46;
+                const rightX = panelX + effectiveWidth * 0.46;
+                labelText = this.add.text(leftX, yPos, stat.label, {
+                    fontFamily: 'Arial',
+                    fontSize: statLabelFont,
+                    color: '#ffffff',
+                    fontWeight: 'bold'
+                }).setOrigin(0, 0.5);
+                valueText = this.add.text(rightX, yPos, stat.value.toString(), {
+                    fontFamily: 'Arial',
+                    fontSize: statValueFont,
+                    color: stat.color,
+                    fontWeight: 'bold'
+                }).setOrigin(1, 0.5);
+            }
+            statsContainer.add([statBg, statGlow, labelText, valueText]);
+            statRowElements.push([statBg, statGlow, labelText, valueText]);
         });
-        
-        // Enhanced button design positioned lower inside the panel with larger font
-        const buttonY = isMobile ? 
-            panelY + panelHeight * 0.45 :  // Lower position to accommodate larger stats spacing
-            panelY + panelHeight * 0.45;   // Lower position for both mobile and PC
-        const buttonWidth = isMobile ? scaleDimension(300, scaleInfo) : 320;
-        const buttonHeight = isMobile ? scaleDimension(55, scaleInfo) : 60;
-        const buttonFontSize = isMobile ? scaleFontSize(20, scaleInfo) : 24; // Larger font
+
+        // If stats extend beyond usable area, apply a crop mask and enable wheel scroll
+        const needsScroll = (statsStartY + lineHeight * statsData.length / 2) > statsAreaBottom;
+        if (needsScroll) {
+            const maskHeight = statsAreaBottom - statsAreaTop;
+            const maskShape = this.add.rectangle(panelX, statsAreaTop + maskHeight / 2, panelWidth - 20, maskHeight, 0xffffff, 0.01);
+            const geoMask = maskShape.createGeometryMask();
+            statsContainer.setMask(geoMask);
+            // Track scroll offset
+            let scrollOffset = 0;
+            const maxScroll = Math.max(0, (lineHeight * statsData.length) - maskHeight + 20);
+            const updateScroll = () => {
+                statsContainer.y = -scrollOffset;
+            };
+            this.input.on('wheel', (p, over, dx, dy) => {
+                if (Math.abs(dy) > Math.abs(dx)) {
+                    scrollOffset = Phaser.Math.Clamp(scrollOffset + dy * 0.5, 0, maxScroll);
+                    updateScroll();
+                }
+            });
+            // Touch drag for mobile
+            let dragging = false; let lastY = 0;
+            this.input.on('pointerdown', (pointer) => { dragging = true; lastY = pointer.y; });
+            this.input.on('pointerup', () => { dragging = false; });
+            this.input.on('pointermove', (pointer) => {
+                if (dragging) {
+                    const delta = pointer.y - lastY;
+                    lastY = pointer.y;
+                    scrollOffset = Phaser.Math.Clamp(scrollOffset - delta, 0, maxScroll);
+                    updateScroll();
+                }
+            });
+        }
+        // --- END DYNAMIC LAYOUT ---
+
+        // Enhanced button design positioned after stats (now guaranteed not to overlap)
         
         // Enhanced button design with better mobile styling
         const buttonBg = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x2c3e50);
@@ -276,7 +354,8 @@ export default class ResultScreen extends BaseScene {
         const animatedElements = [
             panelGlow, panel, title, 
             rankOuterGlow, rankBg, rankBorder, rankInnerGlow, rankText,
-            buttonBg, buttonGlow, buttonInner, buttonText
+            buttonBg, buttonGlow, buttonInner, buttonText,
+            statsContainer
         ];
         
         animatedElements.forEach((element, index) => {
@@ -294,14 +373,11 @@ export default class ResultScreen extends BaseScene {
             });
         });
         
-        // Animate stats with stagger
+        // Animate stats with stagger (using stored row elements)
         this.time.delayedCall(800, () => {
-            statsData.forEach((_, index) => {
+            statRowElements.forEach((row, index) => {
                 this.tweens.add({
-                    targets: this.children.list.filter(child => 
-                        child.y === statsY + (index * lineHeight) && 
-                        (child.type === 'Rectangle' || child.type === 'Text')
-                    ),
+                    targets: row,
                     alpha: { from: 0, to: 1 },
                     x: { from: '+=50', to: '-=50' },
                     duration: 400,
