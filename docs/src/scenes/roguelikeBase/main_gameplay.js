@@ -340,19 +340,17 @@ export default class MainGameplay extends BaseScene {
         // Add mobile control hint
         this.addMobileControlHint();
 
-        // Desktop-only HUD overlay (new approach: DOM HUD; keep Phaser texts hidden not destroyed to avoid null refs)
-        if (this.scale.width >= 768) {
-            if (this.scoreText) this.scoreText.setVisible(false);
-            if (this.streakText) this.streakText.setVisible(false);
-            if (this.timerText) this.timerText.setVisible(false);
-            if (this.courseDisplay) this.courseDisplay.setVisible(false);
-            this.time.delayedCall(0, () => {
-                this.ensureDomHud();
-                this.syncDomHud();
-                requestAnimationFrame(() => this.syncDomHud());
-            });
-            this.time.delayedCall(150, () => this.syncDomHud());
-        }
+        // Unified HUD (DOM for all devices)
+        if (this.scoreText) this.scoreText.setVisible(false);
+        if (this.streakText) this.streakText.setVisible(false);
+        if (this.timerText) this.timerText.setVisible(false);
+        if (this.courseDisplay) this.courseDisplay.setVisible(false);
+        this.time.delayedCall(0, () => {
+            this.ensureDomHud();
+            this.syncDomHud();
+            requestAnimationFrame(() => this.syncDomHud());
+        });
+        this.time.delayedCall(150, () => this.syncDomHud());
         
         // Add resize listener to keep board centered
         this.scale.on('resize', this.onResize, this);
@@ -384,20 +382,13 @@ export default class MainGameplay extends BaseScene {
         // Legacy desktopHudContainer no longer used; remove if exists
         if (this.desktopHudContainer) { this.desktopHudContainer.destroy(); this.desktopHudContainer = null; }
 
-        // Desktop: ensure DOM HUD; Mobile: show Phaser HUD
-        if (this.scale.width >= 768) {
-            if (this.scoreText) this.scoreText.setVisible(false);
-            if (this.streakText) this.streakText.setVisible(false);
-            if (this.timerText) this.timerText.setVisible(false);
-            if (this.courseDisplay) this.courseDisplay.setVisible(false);
-            this.ensureDomHud();
-            this.syncDomHud();
-        } else {
-            if (this.scoreText) this.scoreText.setVisible(true);
-            if (this.streakText) this.streakText.setVisible(true);
-            if (this.timerText) this.timerText.setVisible(true);
-            if (this.courseDisplay) this.courseDisplay.setVisible(true);
-        }
+        // Always use DOM HUD; keep Phaser text HUD hidden
+        if (this.scoreText) this.scoreText.setVisible(false);
+        if (this.streakText) this.streakText.setVisible(false);
+        if (this.timerText) this.timerText.setVisible(false);
+        if (this.courseDisplay) this.courseDisplay.setVisible(false);
+        this.ensureDomHud();
+        this.syncDomHud();
         // Update HUD positions for responsive design (mobile or after recreation)
         this.updateHudPositions();
     }
@@ -516,9 +507,12 @@ export default class MainGameplay extends BaseScene {
     createDesktopHUD() { /* deprecated: replaced by DOM HUD */ }
 
     ensureDomHud() {
-        // Create a DOM-based HUD overlay for desktop to bypass any Phaser zoom/visibility issues
-        if (this.scale.width < 768) return; // Only desktop
+        // Unified DOM HUD overlay for all devices (desktop + mobile)
         if (document.getElementById('desktop-game-hud')) return; // Already exists
+
+        const vw = (typeof window !== 'undefined') ? window.innerWidth : this.scale.width;
+        const isMobileLike = vw < 768;
+        const baseHeight = isMobileLike ? 66 : 54;
 
         const wrapper = document.createElement('div');
         wrapper.id = 'desktop-game-hud';
@@ -527,16 +521,16 @@ export default class MainGameplay extends BaseScene {
             top: '0',
             left: '0',
             width: '100%',
-            height: '54px',
+            height: baseHeight + 'px',
             display: 'flex',
             alignItems: 'flex-start',
             justifyContent: 'space-between',
-            padding: '6px 20px 4px 20px',
+            padding: (isMobileLike ? '8px 12px 4px 12px' : '6px 20px 4px 20px'),
             boxSizing: 'border-box',
             fontFamily: 'Arial, sans-serif',
             zIndex: '9999',
             pointerEvents: 'none',
-            background: 'linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.15))'
+            background: 'linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.25))'
         });
 
         // Basic text row builder (no icon) for score, streak, timer
@@ -573,14 +567,18 @@ export default class MainGameplay extends BaseScene {
         left.style.flexDirection = 'column';
         left.style.gap = '4px';
 
-    this.domScoreEl = buildTextRow(`Score: ${this.score || 0}`, 'hud-score', 22, '#ffffff');
-    this.domStreakEl = buildTextRow(`Streak: ${this.streak || 0}`, 'hud-streak', 18, '#ffff00');
+    const scoreFs = isMobileLike ? 18 : 22;
+    const streakFs = isMobileLike ? 14 : 18;
+    this.domScoreEl = buildTextRow(`Score: ${this.score || 0}`, 'hud-score', scoreFs, '#ffffff');
+    this.domStreakEl = buildTextRow(`Streak: ${this.streak || 0}`, 'hud-streak', streakFs, '#ffff00');
     left.appendChild(this.domScoreEl);
     left.appendChild(this.domStreakEl);
 
         // Center (timer)
     const center = document.createElement('div');
     center.style.cssText = 'position:absolute;left:50%;top:6px;transform:translateX(-50%);font-weight:bold;font-size:30px;color:#fff;text-shadow:2px 2px 4px #000';
+    const timerFs = isMobileLike ? 24 : 30;
+    center.style.cssText = `position:absolute;left:50%;top:${isMobileLike ? 4 : 6}px;transform:translateX(-50%);font-weight:bold;font-size:${timerFs}px;color:#fff;text-shadow:2px 2px 4px #000`;
     this.domTimerEl = document.createElement('div');
     this.domTimerEl.textContent = this.timerText ? this.timerText.text : '1:00';
     center.appendChild(this.domTimerEl);
@@ -591,8 +589,11 @@ export default class MainGameplay extends BaseScene {
     const courseIcon = document.createElement('img');
     courseIcon.src = iconBase + courseIconFile;
     courseIcon.alt = 'Course';
-    courseIcon.style.width = '28px';
-    courseIcon.style.height = '28px';
+    const courseFs = isMobileLike ? 16 : 20;
+    right.style.cssText = `display:flex;align-items:center;gap:6px;font-weight:bold;font-size:${courseFs}px;color:#0ff;text-shadow:2px 2px 3px #000;`;
+    const iconSize = isMobileLike ? 24 : 28;
+    courseIcon.style.width = iconSize + 'px';
+    courseIcon.style.height = iconSize + 'px';
     courseIcon.style.objectFit = 'contain';
     courseIcon.style.filter = 'drop-shadow(0 0 3px rgba(0,0,0,0.6))';
     this.domCourseEl = document.createElement('div');
