@@ -3133,10 +3133,30 @@ export default class MainGameplay extends BaseScene {
         const aggressiveMultiplier = isMobile ? (isSmallMobile ? 1.15 : 1.18) : 1.32;
         zoom *= aggressiveMultiplier;
 
-        // 3. Clamp within new bounds
+        // 3. Clamp within new bounds (initial clamp)
         const minZoom = isMobile ? (isSmallMobile ? 1.35 : 1.25) : 1.45;
         const maxZoom = 2.2; // cap to avoid excessive pixelation
         zoom = Phaser.Math.Clamp(zoom, minZoom, maxZoom);
+
+        // 4. Additional tall portrait reduction (e.g., 1220x2712 devices). Make player see more field.
+        const aspect = screenHeight / (screenWidth || 1);
+        const TALL_MOBILE_ASPECT = 1.85; // threshold for tall phones
+        const TALL_MOBILE_REDUCE = 0.88; // reduce by 12%
+        if (isMobile && aspect > TALL_MOBILE_ASPECT) {
+            zoom *= TALL_MOBILE_REDUCE;
+            // Re-clamp but allow slightly below minZoom (down to 90% of min) so reduction applies
+            const softMin = minZoom * 0.9;
+            zoom = Phaser.Math.Clamp(zoom, softMin, maxZoom);
+        }
+
+        // 5. Universal zoom reduction (user request: "make the lesser zoom for all devices")
+        // Apply a modest global reduction so every device sees a bit more of the board.
+        // Tweak UNIVERSAL_ZOOM_REDUCE (0.90–0.95 typical range) if you want more/less field of view.
+        const UNIVERSAL_ZOOM_REDUCE = 0.92; // current: reduce zoom by 8%
+        zoom *= UNIVERSAL_ZOOM_REDUCE;
+        // Allow zoom to dip further below the original min so the reduction isn't negated.
+        const universalSoftMin = minZoom * 0.82; // permit extra headroom
+        zoom = Phaser.Math.Clamp(zoom, universalSoftMin, maxZoom);
 
         this.cameras.main.setZoom(zoom);
         

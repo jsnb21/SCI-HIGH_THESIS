@@ -644,10 +644,23 @@ export default class QuizScene extends BaseScene {
         // Create main quiz container for normal multiple choice
         this.quizContainer = this.add.container(centerX, centerY);
         
+        // Tall mobile detection (e.g., Poco X6 Pro 1220x2712 ~ aspect 2.22)
+        const aspect = this.scale.height / (this.scale.width || 1);
+        const isTallMobile = isMobile && aspect > 1.85;
+        const TALL_MOBILE_FONT_REDUCE = 0.9; // 10% font reduction
+        const TALL_MOBILE_EXTRA_SCALE = 0.75; // final container scale multiplier
+        
         // More aggressive mobile sizing - force smaller content
-        const titleFontSize = isMobile ? '18px' : '28px';
-        const questionFontSize = isMobile ? '14px' : '22px';
-        const contentWidth = isMobile ? Math.min(scaleInfo.width * 0.90, 340) : 700;
+        let titleFontPx = isMobile ? 18 : 28;
+        let questionFontPx = isMobile ? 14 : 22;
+        let contentWidth = isMobile ? Math.min(scaleInfo.width * 0.88, 330) : 700;
+        if (isTallMobile) {
+            titleFontPx = Math.round(titleFontPx * TALL_MOBILE_FONT_REDUCE);
+            questionFontPx = Math.round(questionFontPx * TALL_MOBILE_FONT_REDUCE);
+            contentWidth = Math.min(contentWidth, scaleInfo.width * 0.8);
+        }
+        const titleFontSize = `${titleFontPx}px`;
+        const questionFontSize = `${questionFontPx}px`;
         const questionWrapWidth = contentWidth - 40;
         
         // Create temporary question text to measure height
@@ -667,12 +680,20 @@ export default class QuizScene extends BaseScene {
         // Calculate content dimensions based on actual content - mobile responsive
         const answers = this.currentQuestion.options;
         const numAnswers = answers.length;
-        const buttonHeight = isMobile ? 40 : 55;
-        const buttonSpacing = isMobile ? 50 : 70;
-        const titleHeight = isMobile ? 40 : 60;
-        const questionNumberHeight = isMobile ? 20 : 30;
-        const questionPadding = isMobile ? 30 : 70;
-        const bottomPadding = isMobile ? 15 : 30;
+        let buttonHeight = isMobile ? 40 : 55;
+        let buttonSpacing = isMobile ? 50 : 70;
+        let titleHeight = isMobile ? 40 : 60;
+        let questionNumberHeight = isMobile ? 20 : 30;
+        let questionPadding = isMobile ? 30 : 70;
+        let bottomPadding = isMobile ? 15 : 30;
+        if (isTallMobile) {
+            buttonHeight = 36;
+            buttonSpacing = 42;
+            titleHeight = 34;
+            questionNumberHeight = 16;
+            questionPadding = 22;
+            bottomPadding = 10;
+        }
         
         // Calculate required height based on layout type
         let buttonsAreaHeight;
@@ -751,13 +772,16 @@ export default class QuizScene extends BaseScene {
         this.quizContainer.add(instructionText);
         
         // Add entrance animation with mobile scaling
-        this.quizContainer.setScale(0.8);
+        this.quizContainer.setScale(isTallMobile ? 0.65 : 0.8);
         this.quizContainer.setAlpha(0);
         
         // Apply additional scaling for mobile if content is too large
         let finalScale = 1;
         if (isMobile && contentHeight > scaleInfo.height * 0.9) {
             finalScale = Math.min(0.8, (scaleInfo.height * 0.9) / contentHeight);
+        }
+        if (isTallMobile) {
+            finalScale *= TALL_MOBILE_EXTRA_SCALE; // additional shrink for tall phones
         }
         
         this.tweens.add({
@@ -775,29 +799,54 @@ export default class QuizScene extends BaseScene {
         const scaleInfo = getScaleInfo(this);
         const isMobile = scaleInfo.width < 768;
         const isSmallMobile = scaleInfo.width < 480;
+        const aspect = this.scale.height / (this.scale.width || 1);
+        const isTallMobile = isMobile && aspect > 1.85;
+        const TALL_MOBILE_SCALE = 0.75;
+        const TALL_MOBILE_FONT_REDUCE = 0.9;
         
         // Create main quiz container
         this.quizContainer = this.add.container(centerX, centerY);
         
         // Calculate responsive dimensions
-        const maxWidth = isMobile ? (isSmallMobile ? scaleInfo.width * 0.95 : scaleInfo.width * 0.9) : Math.min(this.scale.width * 0.9, 1000);
-        const maxHeight = isMobile ? (isSmallMobile ? scaleInfo.height * 0.85 : scaleInfo.height * 0.8) : Math.min(this.scale.height * 0.8, 700);
+        let maxWidth = isMobile ? (isSmallMobile ? scaleInfo.width * 0.95 : scaleInfo.width * 0.9) : Math.min(this.scale.width * 0.9, 1000);
+        let maxHeight = isMobile ? (isSmallMobile ? scaleInfo.height * 0.85 : scaleInfo.height * 0.8) : Math.min(this.scale.height * 0.8, 700);
+        if (isTallMobile) {
+            maxWidth = scaleInfo.width * 0.82;
+            maxHeight = scaleInfo.height * 0.75;
+        }
         
         // Responsive font sizes
-        const titleFontSize = isMobile ? (isSmallMobile ? '20px' : '24px') : '28px';
-        const questionFontSize = isMobile ? (isSmallMobile ? '16px' : '18px') : '22px';
-        const descriptionFontSize = isMobile ? (isSmallMobile ? '12px' : '14px') : '16px';
-        const instructionFontSize = isMobile ? (isSmallMobile ? '12px' : '14px') : '16px';
+        let titleFontPx = isMobile ? (isSmallMobile ? 20 : 24) : 28;
+        let questionFontPx = isMobile ? (isSmallMobile ? 16 : 18) : 22;
+        let descriptionFontPx = isMobile ? (isSmallMobile ? 12 : 14) : 16;
+        let instructionFontPx = isMobile ? (isSmallMobile ? 12 : 14) : 16;
+        if (isTallMobile) {
+            titleFontPx = Math.round(titleFontPx * TALL_MOBILE_FONT_REDUCE);
+            questionFontPx = Math.round(questionFontPx * TALL_MOBILE_FONT_REDUCE);
+            descriptionFontPx = Math.round(descriptionFontPx * TALL_MOBILE_FONT_REDUCE);
+            instructionFontPx = Math.round(instructionFontPx * TALL_MOBILE_FONT_REDUCE);
+        }
+        const titleFontSize = `${titleFontPx}px`;
+        const questionFontSize = `${questionFontPx}px`;
+        const descriptionFontSize = `${descriptionFontPx}px`;
+        const instructionFontSize = `${instructionFontPx}px`;
         
         // Calculate content areas based on number of blocks
         const numberOfBlocks = this.currentQuestion.blocks.length;
-        const blockSpacing = isMobile ? (isSmallMobile ? 45 : 50) : 60;
-        const titleHeight = isMobile ? (isSmallMobile ? 40 : 45) : 50;
+        let blockSpacing = isMobile ? (isSmallMobile ? 45 : 50) : 60;
+        let titleHeight = isMobile ? (isSmallMobile ? 40 : 45) : 50;
         const questionNumberHeight = 0;
-        const questionHeight = isMobile ? (isSmallMobile ? 80 : 90) : 100;
-        const instructionHeight = isMobile ? (isSmallMobile ? 100 : 110) : 120;
+        let questionHeight = isMobile ? (isSmallMobile ? 80 : 90) : 100;
+        let instructionHeight = isMobile ? (isSmallMobile ? 100 : 110) : 120;
         const draggableAreaHeight = numberOfBlocks * blockSpacing + (isMobile ? 30 : 40);
-        const submitAreaHeight = isMobile ? (isSmallMobile ? 80 : 90) : 100;
+        let submitAreaHeight = isMobile ? (isSmallMobile ? 80 : 90) : 100;
+        if (isTallMobile) {
+            blockSpacing = Math.max(38, blockSpacing - 8);
+            questionHeight = Math.max(70, questionHeight - 12);
+            instructionHeight = Math.max(85, instructionHeight - 20);
+            submitAreaHeight = Math.max(70, submitAreaHeight - 15);
+            titleHeight = Math.max(34, titleHeight - 8);
+        }
         
         const contentHeight = titleHeight + questionNumberHeight + questionHeight + instructionHeight + draggableAreaHeight + submitAreaHeight;
         const contentWidth = maxWidth;
@@ -882,13 +931,13 @@ export default class QuizScene extends BaseScene {
         this.createSubmitButton();
         
         // Add entrance animation
-        this.quizContainer.setScale(0.8);
+    this.quizContainer.setScale(isTallMobile ? 0.65 : 0.8);
         this.quizContainer.setAlpha(0);
         
         this.tweens.add({
             targets: this.quizContainer,
-            scaleX: 1,
-            scaleY: 1,
+            scaleX: isTallMobile ? TALL_MOBILE_SCALE : 1,
+            scaleY: isTallMobile ? TALL_MOBILE_SCALE : 1,
             alpha: 1,
             duration: 500,
             ease: 'Back.easeOut'
