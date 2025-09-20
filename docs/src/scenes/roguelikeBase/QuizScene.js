@@ -641,7 +641,7 @@ export default class QuizScene extends BaseScene {
             return;
         }
         
-        // Create main quiz container for normal multiple choice
+    // Create main quiz container for normal multiple choice
         this.quizContainer = this.add.container(centerX, centerY);
         
         // Tall mobile detection (e.g., Poco X6 Pro 1220x2712 ~ aspect 2.22)
@@ -651,13 +651,18 @@ export default class QuizScene extends BaseScene {
         const TALL_MOBILE_EXTRA_SCALE = 0.75; // final container scale multiplier
         
         // More aggressive mobile sizing - force smaller content
-        let titleFontPx = isMobile ? 18 : 28;
-        let questionFontPx = isMobile ? 14 : 22;
-        let contentWidth = isMobile ? Math.min(scaleInfo.width * 0.88, 330) : 700;
+        const MOBILE_MAX_WIDTH_RATIO = 0.8; // previously 0.88
+        const MOBILE_MAX_WIDTH_PX = 300;    // hard cap to keep narrow
+        const MOBILE_FONT_REDUCE = 0.92;    // global mobile font shrink
+        const MOBILE_MAX_HEIGHT_RATIO = 0.55; // popup may use up to 55% of screen height
+
+        let titleFontPx = isMobile ? Math.round(18 * MOBILE_FONT_REDUCE) : 28;
+        let questionFontPx = isMobile ? Math.round(14 * MOBILE_FONT_REDUCE) : 22;
+        let contentWidth = isMobile ? Math.min(scaleInfo.width * MOBILE_MAX_WIDTH_RATIO, MOBILE_MAX_WIDTH_PX) : 700;
         if (isTallMobile) {
             titleFontPx = Math.round(titleFontPx * TALL_MOBILE_FONT_REDUCE);
             questionFontPx = Math.round(questionFontPx * TALL_MOBILE_FONT_REDUCE);
-            contentWidth = Math.min(contentWidth, scaleInfo.width * 0.8);
+            contentWidth = Math.min(contentWidth, scaleInfo.width * 0.75);
         }
         const titleFontSize = `${titleFontPx}px`;
         const questionFontSize = `${questionFontPx}px`;
@@ -706,6 +711,24 @@ export default class QuizScene extends BaseScene {
         }
         
         const contentHeight = titleHeight + questionNumberHeight + questionHeight + questionPadding + buttonsAreaHeight + bottomPadding;
+
+        // Determine scaling based on viewport bounds (height & width constraints)
+        let targetScale = 1;
+        if (isMobile) {
+            const maxHeight = scaleInfo.height * MOBILE_MAX_HEIGHT_RATIO;
+            if (contentHeight > maxHeight) {
+                targetScale = Math.min(targetScale, maxHeight / contentHeight);
+            }
+            // Extra safety: never exceed 90% width visually
+            const visualWidth = contentWidth; // unscaled width
+            const maxVisualWidth = scaleInfo.width * 0.9;
+            if (visualWidth > maxVisualWidth) {
+                targetScale = Math.min(targetScale, maxVisualWidth / visualWidth);
+            }
+        }
+        if (isTallMobile) {
+            targetScale *= 0.9; // additional shrink for tall devices
+        }
         
         // Create modern quiz box with dynamic size
         const quizBox = this.add.graphics();
@@ -771,25 +794,16 @@ export default class QuizScene extends BaseScene {
         }).setOrigin(0.5);
         this.quizContainer.add(instructionText);
         
-        // Add entrance animation with mobile scaling
-        this.quizContainer.setScale(isTallMobile ? 0.65 : 0.8);
+        // Add entrance animation with refined scaling
+        const INITIAL_SCALE_MULTIPLIER = 0.85; // slight pop-in grow effect
+        this.quizContainer.setScale(targetScale * INITIAL_SCALE_MULTIPLIER);
         this.quizContainer.setAlpha(0);
-        
-        // Apply additional scaling for mobile if content is too large
-        let finalScale = 1;
-        if (isMobile && contentHeight > scaleInfo.height * 0.9) {
-            finalScale = Math.min(0.8, (scaleInfo.height * 0.9) / contentHeight);
-        }
-        if (isTallMobile) {
-            finalScale *= TALL_MOBILE_EXTRA_SCALE; // additional shrink for tall phones
-        }
-        
         this.tweens.add({
             targets: this.quizContainer,
-            scaleX: finalScale,
-            scaleY: finalScale,
+            scaleX: targetScale,
+            scaleY: targetScale,
             alpha: 1,
-            duration: 500,
+            duration: 450,
             ease: 'Back.easeOut'
         });
     }
@@ -801,18 +815,20 @@ export default class QuizScene extends BaseScene {
         const isSmallMobile = scaleInfo.width < 480;
         const aspect = this.scale.height / (this.scale.width || 1);
         const isTallMobile = isMobile && aspect > 1.85;
-        const TALL_MOBILE_SCALE = 0.75;
+        const TALL_MOBILE_SCALE = 0.65; // stronger shrink than before
         const TALL_MOBILE_FONT_REDUCE = 0.9;
+        const DD_MOBILE_MAX_WIDTH_RATIO = 0.9;
+        const DD_MOBILE_MAX_HEIGHT_RATIO = 0.68; // cap drag/drop at 68% of height
         
         // Create main quiz container
         this.quizContainer = this.add.container(centerX, centerY);
         
         // Calculate responsive dimensions
-        let maxWidth = isMobile ? (isSmallMobile ? scaleInfo.width * 0.95 : scaleInfo.width * 0.9) : Math.min(this.scale.width * 0.9, 1000);
-        let maxHeight = isMobile ? (isSmallMobile ? scaleInfo.height * 0.85 : scaleInfo.height * 0.8) : Math.min(this.scale.height * 0.8, 700);
+        let maxWidth = isMobile ? (isSmallMobile ? scaleInfo.width * (DD_MOBILE_MAX_WIDTH_RATIO - 0.02) : scaleInfo.width * DD_MOBILE_MAX_WIDTH_RATIO) : Math.min(this.scale.width * 0.9, 1000);
+        let maxHeight = isMobile ? (isSmallMobile ? scaleInfo.height * 0.78 : scaleInfo.height * 0.75) : Math.min(this.scale.height * 0.8, 700);
         if (isTallMobile) {
-            maxWidth = scaleInfo.width * 0.82;
-            maxHeight = scaleInfo.height * 0.75;
+            maxWidth = scaleInfo.width * 0.78;
+            maxHeight = scaleInfo.height * 0.68; // tighter cap for tall
         }
         
         // Responsive font sizes
@@ -931,15 +947,25 @@ export default class QuizScene extends BaseScene {
         this.createSubmitButton();
         
         // Add entrance animation
-    this.quizContainer.setScale(isTallMobile ? 0.65 : 0.8);
+        // Determine scale relative to viewport height limit
+        let ddTargetScale = 1;
+        if (isMobile) {
+            const ddMaxHeight = this.scale.height * DD_MOBILE_MAX_HEIGHT_RATIO;
+            if (contentHeight > ddMaxHeight) {
+                ddTargetScale = Math.min(ddTargetScale, ddMaxHeight / contentHeight);
+            }
+        }
+        if (isTallMobile) {
+            ddTargetScale *= 0.9; // extra shrink
+        }
+        this.quizContainer.setScale(ddTargetScale * 0.85);
         this.quizContainer.setAlpha(0);
-        
         this.tweens.add({
             targets: this.quizContainer,
-            scaleX: isTallMobile ? TALL_MOBILE_SCALE : 1,
-            scaleY: isTallMobile ? TALL_MOBILE_SCALE : 1,
+            scaleX: ddTargetScale,
+            scaleY: ddTargetScale,
             alpha: 1,
-            duration: 500,
+            duration: 450,
             ease: 'Back.easeOut'
         });
     }
