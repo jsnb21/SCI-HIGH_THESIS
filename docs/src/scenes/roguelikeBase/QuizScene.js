@@ -654,10 +654,10 @@ export default class QuizScene extends BaseScene {
         // More aggressive mobile sizing - force smaller content
     // Responsive sizing constants (tuned bigger after feedback)
     // Slight enlargement pass for mobile
-    const MOBILE_MAX_WIDTH_RATIO = 0.85; // allow a bit wider (prev 0.82)
-    const MOBILE_MAX_WIDTH_PX = 340;     // allow a bit more max width (prev 320)
-    const MOBILE_FONT_REDUCE = 0.965;    // closer to original (prev 0.94)
-    const MOBILE_MAX_HEIGHT_RATIO = 0.6; // allow a bit taller (prev 0.56)
+    const MOBILE_MAX_WIDTH_RATIO = 0.95;   // widen further (enlarged)
+    const MOBILE_MAX_WIDTH_PX = 420;       // larger hard cap (enlarged)
+    const MOBILE_FONT_REDUCE = 0.985;      // keep font nearly original
+    const MOBILE_MAX_HEIGHT_RATIO = 0.74;  // allow taller popup
 
         let titleFontPx = isMobile ? Math.round(18 * MOBILE_FONT_REDUCE) : 28;
         let questionFontPx = isMobile ? Math.round(14 * MOBILE_FONT_REDUCE) : 22;
@@ -735,11 +735,11 @@ export default class QuizScene extends BaseScene {
                 targetScale = Math.min(targetScale, allowed / contentWidth);
             }
             // Do not let scale fall below readability baseline
-            const MIN_MOBILE_SCALE = 0.66; // raise floor to appear slightly larger
+            const MIN_MOBILE_SCALE = 0.74; // larger baseline (enlarged)
             targetScale = Math.max(targetScale, MIN_MOBILE_SCALE);
         }
         if (isTallMobile) {
-            targetScale *= 0.9; // additional shrink for tall devices
+            targetScale *= 0.97; // even gentler shrink (less reduction)
         }
         
         // Create modern quiz box with dynamic size
@@ -827,20 +827,20 @@ export default class QuizScene extends BaseScene {
     const isSmallMobile = scaleInfo.width < 500;
         const aspect = this.scale.height / (this.scale.width || 1);
     const isTallMobile = (isMobile || scaleInfo.isPortrait) && aspect > 1.85;
-    const TALL_MOBILE_SCALE = 0.64; // enlarge tall-device base scale a touch
+    const TALL_MOBILE_SCALE = 0.7; // bigger entrance scale
         const TALL_MOBILE_FONT_REDUCE = 0.9;
-    const DD_MOBILE_MAX_WIDTH_RATIO = 0.9;  // allow wider drag/drop
-    const DD_MOBILE_MAX_HEIGHT_RATIO = 0.66; // allow slightly taller drag/drop
+    const DD_MOBILE_MAX_WIDTH_RATIO = 0.95;  // even wider (enlarged)
+    const DD_MOBILE_MAX_HEIGHT_RATIO = 0.75;  // taller (enlarged)
         
         // Create main quiz container
         this.quizContainer = this.add.container(centerX, centerY);
         
         // Calculate responsive dimensions
-        let maxWidth = isMobile ? (isSmallMobile ? scaleInfo.width * (DD_MOBILE_MAX_WIDTH_RATIO - 0.06) : scaleInfo.width * DD_MOBILE_MAX_WIDTH_RATIO) : Math.min(this.scale.width * 0.88, 1000);
-        let maxHeight = isMobile ? (isSmallMobile ? scaleInfo.height * 0.74 : scaleInfo.height * 0.72) : Math.min(this.scale.height * 0.78, 700);
+        let maxWidth = isMobile ? (isSmallMobile ? scaleInfo.width * (DD_MOBILE_MAX_WIDTH_RATIO - 0.07) : scaleInfo.width * DD_MOBILE_MAX_WIDTH_RATIO) : Math.min(this.scale.width * 0.9, 1000);
+        let maxHeight = isMobile ? (isSmallMobile ? scaleInfo.height * 0.76 : scaleInfo.height * 0.74) : Math.min(this.scale.height * 0.8, 700);
         if (isTallMobile) {
-            maxWidth = scaleInfo.width * 0.78;
-            maxHeight = scaleInfo.height * 0.66; // enlarge tall-device cap
+            maxWidth = scaleInfo.width * 0.86; // allow a bit wider on tall devices
+            maxHeight = scaleInfo.height * 0.73; // slightly taller for tall devices
         }
         
         // Responsive font sizes
@@ -972,11 +972,11 @@ export default class QuizScene extends BaseScene {
                 ddTargetScale = Math.min(ddTargetScale, allowedWidth / contentWidth);
             }
             // Minimum safe scale for drag/drop readability
-            const MIN_DD_SCALE = 0.62; // raise readability floor
+            const MIN_DD_SCALE = 0.72; // larger baseline for drag/drop (enlarged)
             ddTargetScale = Math.max(ddTargetScale, MIN_DD_SCALE);
         }
         if (isTallMobile) {
-            ddTargetScale *= 0.9; // extra shrink
+            ddTargetScale *= 0.97; // gentler shrink (less reduction)
         }
         this.quizContainer.setScale(ddTargetScale * 0.85);
         this.quizContainer.setAlpha(0);
