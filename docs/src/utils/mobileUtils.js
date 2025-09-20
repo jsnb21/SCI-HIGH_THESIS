@@ -28,7 +28,21 @@ export function getScaleInfo(scene) {
         };
     }
     
-    const { width, height } = scene.scale;
+    // Phaser scale object sizes:
+    // - scene.scale.width/height: base game size (logical), may stay at 1920x1080 when using ENVELOP/FIT
+    // - scene.scale.displaySize: actual displayed (CSS) size after scaling
+    // - window.innerWidth/innerHeight: browser viewport
+    // We prefer real display size to decide mobile layout.
+    const logicalWidth = scene.scale.width;
+    const logicalHeight = scene.scale.height;
+    const displayWidth = scene.scale.displaySize ? scene.scale.displaySize.width : logicalWidth;
+    const displayHeight = scene.scale.displaySize ? scene.scale.displaySize.height : logicalHeight;
+    const viewportWidth = (typeof window !== 'undefined') ? window.innerWidth : displayWidth;
+    const viewportHeight = (typeof window !== 'undefined') ? window.innerHeight : displayHeight;
+
+    // Use the smallest among display & viewport (more conservative for mobile classification)
+    const width = Math.min(displayWidth, viewportWidth);
+    const height = Math.min(displayHeight, viewportHeight);
     
     // Calculate scale factors
     const scaleX = width / BASE_WIDTH;
@@ -38,7 +52,11 @@ export function getScaleInfo(scene) {
     const uniformScale = Math.min(scaleX, scaleY);
     
     // For mobile devices, ensure minimum readable sizes
-    const isMobile = width < 768 || height < 600;
+    // Mobile heuristic: real CSS width or height thresholds, plus pixel density consideration
+    const devicePixelRatio = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+    const cssWidth = width / devicePixelRatio; // approximate logical CSS width
+    const cssHeight = height / devicePixelRatio;
+    const isMobile = cssWidth < 820 || cssHeight < 700 || (devicePixelRatio > 1.5 && cssWidth < 900);
     const mobileScaleMultiplier = isMobile ? 1.2 : 1.0;
     
     const finalScale = uniformScale * mobileScaleMultiplier;
