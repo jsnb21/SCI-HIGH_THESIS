@@ -59,6 +59,10 @@ export default class QuizScene extends BaseScene {
         
         // Listen for timer events from main gameplay scene
         const mainScene = this.scene.get('MainGameplay');
+        // Ensure any DOM HUD from gameplay is hidden so it doesn't overlay quiz selection/results on some devices
+        if (mainScene && typeof mainScene.removeDomHud === 'function') {
+            mainScene.removeDomHud();
+        }
         if (mainScene) {
             mainScene.events.on('timer-expired', this.handleTimerExpired, this);
         }

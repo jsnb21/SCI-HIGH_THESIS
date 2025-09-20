@@ -28,8 +28,10 @@ export default class ResultScreen extends BaseScene {
         super.create();
         
         // Get scale information for mobile responsiveness
-        const scaleInfo = getScaleInfo(this);
-        const isMobile = scaleInfo.width < 768;
+    const scaleInfo = getScaleInfo(this);
+    const isMobile = scaleInfo.width < 768;
+    const aspect = scaleInfo.height / (scaleInfo.width || 1);
+    const isTallMobile = isMobile && aspect > 1.95; // very tall devices (e.g., S Ultra)
         
         // Calculate ranking based on correct/wrong ratio
         const totalQuestions = this.correctAnswers + this.wrongAnswers;
@@ -73,9 +75,12 @@ export default class ResultScreen extends BaseScene {
     // Create main result panel with responsive dimensions for mobile
     // Wider on desktop, almost full width on tiny phones, but keep readable margins
     const tinyPhone = scaleInfo.width < 400;
-    const panelWidth = isMobile ? Math.min(scaleInfo.width * 0.94, tinyPhone ? 360 : 400) : scaleDimension(540, scaleInfo);
-    // Height expands more on very small devices; we add an internal scroll container if needed
-    const basePanelHeight = isMobile ? Math.min(scaleInfo.height * 0.9, 540) : scaleDimension(470, scaleInfo);
+    const panelWidth = isMobile ? (
+        isTallMobile ? Math.min(scaleInfo.width * 0.96, 420) : Math.min(scaleInfo.width * 0.94, tinyPhone ? 360 : 405)
+    ) : scaleDimension(560, scaleInfo);
+    const basePanelHeight = isMobile ? (
+        isTallMobile ? Math.min(scaleInfo.height * 0.92, 560) : Math.min(scaleInfo.height * 0.9, 540)
+    ) : scaleDimension(480, scaleInfo);
     const panelHeight = basePanelHeight;
         const panelX = this.scale.width / 2;
         const panelY = this.scale.height / 2;
@@ -96,7 +101,7 @@ export default class ResultScreen extends BaseScene {
             `COURSE COMPLETED!` : 
             'SESSION ENDED';
         
-        let titleY = isMobile ? panelY - panelHeight * 0.4 : panelY - panelHeight * 0.35;
+    let titleY = isMobile ? panelY - panelHeight * (isTallMobile ? 0.43 : 0.4) : panelY - panelHeight * 0.35;
         const title = this.add.text(panelX, titleY, titleText, {
             fontFamily: 'Arial',
             fontSize: isMobile ? 
@@ -130,8 +135,8 @@ export default class ResultScreen extends BaseScene {
         }
         
     // Enhanced rank display with special effects and responsive positioning
-    let rankY = isMobile ? panelY - panelHeight * 0.26 : panelY - panelHeight * 0.22; // Slight tweak for new sizes
-    let rankSize = isMobile ? (tinyPhone ? 32 : 38) : 52;
+    let rankY = isMobile ? panelY - panelHeight * (isTallMobile ? 0.29 : 0.26) : panelY - panelHeight * 0.22; // adjust for tall
+    let rankSize = isMobile ? (tinyPhone ? 32 : (isTallMobile ? 40 : 38)) : 54;
         
         // Multi-layer rank background for depth
         const rankOuterGlow = this.add.circle(panelX, rankY, rankSize + 8, rankColor, 0.2);
@@ -142,7 +147,7 @@ export default class ResultScreen extends BaseScene {
         
         const rankText = this.add.text(panelX, rankY, rank, {
             fontFamily: 'Arial',
-            fontSize: isMobile ? scaleFontSize(44, scaleInfo) : '56px',
+            fontSize: isMobile ? scaleFontSize(isTallMobile ? 50 : 44, scaleInfo) : '58px',
             fontWeight: 'bold',
             color: rankColor,
             stroke: '#000000',
@@ -158,10 +163,10 @@ export default class ResultScreen extends BaseScene {
         
         // --- DYNAMIC LAYOUT (prevents overlap of stats & button) ---
         // Pre-compute button placement first so we know how much vertical space is left for stats
-    let buttonY = panelY + panelHeight * 0.44; // keep visual design
-    const buttonHeight = isMobile ? scaleDimension(54, scaleInfo) : 60;
-    const buttonWidth = isMobile ? scaleDimension(tinyPhone ? 280 : 320, scaleInfo) : 340;
-    const buttonFontSize = isMobile ? scaleFontSize(tinyPhone ? 18 : 20, scaleInfo) : 24;
+    let buttonY = panelY + panelHeight * (isTallMobile ? 0.46 : 0.44); // adjusted for tall screens
+    const buttonHeight = isMobile ? scaleDimension(isTallMobile ? 58 : 54, scaleInfo) : 62;
+    const buttonWidth = isMobile ? scaleDimension(tinyPhone ? 280 : (isTallMobile ? 340 : 330), scaleInfo) : 360;
+    const buttonFontSize = isMobile ? scaleFontSize(tinyPhone ? 18 : (isTallMobile ? 21 : 20), scaleInfo) : 24;
 
         // Stats data
         const statsData = [
@@ -192,7 +197,7 @@ export default class ResultScreen extends BaseScene {
         }
 
         // Compute line height ensuring it fits without overlap, with a max to keep design roomy
-        const maxDesiredLineHeight = isMobile ? scaleDimension(58, scaleInfo) : 60;
+    const maxDesiredLineHeight = isMobile ? scaleDimension(isTallMobile ? 62 : 58, scaleInfo) : 60;
         let lineHeight = Math.min(maxDesiredLineHeight, statsAreaHeight / statsData.length);
         // Guarantee minimum readability
         const minLineHeight = isMobile ? scaleDimension(34, scaleInfo) : 36;

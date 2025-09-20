@@ -596,6 +596,18 @@ export default class MainGameplay extends BaseScene {
         if (this.domCourseEl) this.domCourseEl.textContent = this.getFormattedCourseName(this.courseTopic);
     }
 
+    // NEW: Explicitly remove / clean up DOM HUD elements (prevents lingering in other scenes on some mobile browsers)
+    removeDomHud() {
+        if (typeof document === 'undefined') return;
+        const hud = document.getElementById('desktop-game-hud');
+        if (hud) hud.remove();
+        this.domHudActive = false;
+        this.domScoreEl = null;
+        this.domStreakEl = null;
+        this.domTimerEl = null;
+        this.domCourseEl = null;
+    }
+
     getCurrentTimeString() {
         // Always compute from numeric state so DOM HUD stays accurate even if Phaser text hidden
         const minutes = Math.floor(this.gameTimer / 60);
@@ -3786,8 +3798,9 @@ export default class MainGameplay extends BaseScene {
         resultData.strandYear = finalStudentData.strandYear;
         
         
-        // Go to ResultScreen
-        this.scene.start('ResultScreen', resultData);
+    // Go to ResultScreen (ensure HUD removed first)
+    this.removeDomHud();
+    this.scene.start('ResultScreen', resultData);
         
         // Also upload the data to Firebase in the background
         this.uploadGameplayDataInBackground(resultData);
