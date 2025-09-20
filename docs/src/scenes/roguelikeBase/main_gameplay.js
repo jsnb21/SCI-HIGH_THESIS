@@ -539,36 +539,67 @@ export default class MainGameplay extends BaseScene {
             background: 'linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.15))'
         });
 
+        // Basic text row builder (no icon) for score, streak, timer
+        const buildTextRow = (labelText, id, fontSizePx, color) => {
+            const el = document.createElement('div');
+            el.id = id;
+            el.style.fontWeight = 'bold';
+            el.style.fontSize = fontSizePx + 'px';
+            el.style.color = color;
+            el.style.textShadow = '2px 2px 3px #000';
+            el.textContent = labelText;
+            return el;
+        };
+
+        // Icon path mapping by course topic
+        const courseIconMap = {
+            python: 'python_logo.png',
+            java: 'java_logo.png',
+            c: 'c_logo.png',
+            'c++': 'cplus_logo.png',
+            cpp: 'cplus_logo.png',
+            csharp: 'csharp_logo.png',
+            'c#': 'csharp_logo.png',
+            webdesign: 'web-design_logo.png',
+            custom: 'CustomQuiz.png'
+        };
+        const iconBase = 'assets/img/comlab/icons/';
+        const courseKey = (this.courseTopic || '').toLowerCase();
+        const courseIconFile = courseIconMap[courseKey] || 'python_logo.png';
+
         // Left stack (score + streak)
         const left = document.createElement('div');
         left.style.display = 'flex';
         left.style.flexDirection = 'column';
         left.style.gap = '4px';
 
-        this.domScoreEl = document.createElement('div');
-        this.domScoreEl.style.cssText = 'font-weight:bold;font-size:22px;color:#fff;text-shadow:2px 2px 3px #000';
-        this.domScoreEl.textContent = `Score: ${this.score || 0}`;
-
-        this.domStreakEl = document.createElement('div');
-        this.domStreakEl.style.cssText = 'font-weight:bold;font-size:18px;color:#ff0;text-shadow:2px 2px 3px #000';
-        this.domStreakEl.textContent = `Streak: ${this.streak || 0}`;
-
-        left.appendChild(this.domScoreEl);
-        left.appendChild(this.domStreakEl);
+    this.domScoreEl = buildTextRow(`Score: ${this.score || 0}`, 'hud-score', 22, '#ffffff');
+    this.domStreakEl = buildTextRow(`Streak: ${this.streak || 0}`, 'hud-streak', 18, '#ffff00');
+    left.appendChild(this.domScoreEl);
+    left.appendChild(this.domStreakEl);
 
         // Center (timer)
-        const center = document.createElement('div');
-        center.style.cssText = 'position:absolute;left:50%;top:6px;transform:translateX(-50%);font-weight:bold;font-size:30px;color:#fff;text-shadow:2px 2px 4px #000';
-        this.domTimerEl = document.createElement('div');
-        this.domTimerEl.textContent = this.timerText ? this.timerText.text : '1:00';
-        center.appendChild(this.domTimerEl);
+    const center = document.createElement('div');
+    center.style.cssText = 'position:absolute;left:50%;top:6px;transform:translateX(-50%);font-weight:bold;font-size:30px;color:#fff;text-shadow:2px 2px 4px #000';
+    this.domTimerEl = document.createElement('div');
+    this.domTimerEl.textContent = this.timerText ? this.timerText.text : '1:00';
+    center.appendChild(this.domTimerEl);
 
         // Right (course)
-        const right = document.createElement('div');
-        right.style.cssText = 'font-weight:bold;font-size:20px;color:#0ff;text-shadow:2px 2px 3px #000;';
-        this.domCourseEl = document.createElement('div');
-        this.domCourseEl.textContent = this.getFormattedCourseName(this.courseTopic);
-        right.appendChild(this.domCourseEl);
+    const right = document.createElement('div');
+    right.style.cssText = 'display:flex;align-items:center;gap:6px;font-weight:bold;font-size:20px;color:#0ff;text-shadow:2px 2px 3px #000;';
+    const courseIcon = document.createElement('img');
+    courseIcon.src = iconBase + courseIconFile;
+    courseIcon.alt = 'Course';
+    courseIcon.style.width = '28px';
+    courseIcon.style.height = '28px';
+    courseIcon.style.objectFit = 'contain';
+    courseIcon.style.filter = 'drop-shadow(0 0 3px rgba(0,0,0,0.6))';
+    this.domCourseEl = document.createElement('div');
+    // Use a simplified course name without emoji since we now show an icon
+    this.domCourseEl.textContent = this.getFormattedCourseName(this.courseTopic).replace(/^[^A-Z0-9]*\s*/, '');
+    right.appendChild(courseIcon);
+    right.appendChild(this.domCourseEl);
 
         wrapper.appendChild(left);
         wrapper.appendChild(center);
@@ -972,18 +1003,18 @@ export default class MainGameplay extends BaseScene {
     }
 
     getFormattedCourseName(topic) {
-        // Convert topic to stylized display name
+        // Return plain (emoji-free) stylized course names; visual icon now provided by comlab/icons assets
         const topicMap = {
-            'python': '🐍 PYTHON',
-            'java': '☕ JAVA',
-            'c': '⚡ C LANG',
-            'cpp': '⚙️ C++',
-            'csharp': '💎 C#',
-            'webdesign': '🌐 WEB DESIGN',
-            'javascript': '🟨 JAVASCRIPT'
+            'python': 'PYTHON',
+            'java': 'JAVA',
+            'c': 'C LANG',
+            'cpp': 'C++',
+            'csharp': 'C#',
+            'webdesign': 'WEB DESIGN',
+            'javascript': 'JAVASCRIPT'
         };
-        
-        return topicMap[topic?.toLowerCase()] || `📚 ${(topic || 'PROGRAMMING').toUpperCase()}`;
+        const key = topic?.toLowerCase();
+        return topicMap[key] || (topic ? topic.toUpperCase() : 'PROGRAMMING');
     }
 
     getCourseColors(topic) {

@@ -42,11 +42,22 @@ export default class StartupScene extends Phaser.Scene {
         this.clearUI();
         
         const scaleInfo = getScaleInfo(this);
-        const { width, height } = scaleInfo;
-        const safeArea = getSafeArea(scaleInfo);
+        // Prefer displayed size (CSS pixels) to match what user actually sees; fallback to logical size
+        const displayW = this.scale.displaySize ? this.scale.displaySize.width : this.scale.width;
+        const displayH = this.scale.displaySize ? this.scale.displaySize.height : this.scale.height;
+        const logicalWidth = this.scale.width;
+        const logicalHeight = this.scale.height;
+        // We'll base layout on display size for visual centering; Phaser will scale logical -> display.
+        const layoutWidth = displayW;
+        const layoutHeight = displayH;
+        const safeArea = { width: layoutWidth * 0.92, height: layoutHeight * 0.92 };
+
+        // iOS Safari fullscreen limitations detection
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const fullscreenSupported = !isIOS; // Simplified heuristic; iOS often blocks programmatic fullscreen
 
         // Create animated background with gradient effect
-        const background = this.add.rectangle(width / 2, height / 2, width, height, 0x0f0f0f)
+        const background = this.add.rectangle(logicalWidth / 2, logicalHeight / 2, logicalWidth, logicalHeight, 0x0f0f0f)
             .setOrigin(0.5)
             .setAlpha(0);
             
@@ -56,14 +67,14 @@ export default class StartupScene extends Phaser.Scene {
         const dialogWidth = Math.min(baseDialogWidth, safeArea.width * 0.85);
         const dialogHeight = baseDialogHeight;
         
-        const dialog = this.add.rectangle(width / 2, height / 2, dialogWidth, dialogHeight, 0x1a1a1a, 1)
+        const dialog = this.add.rectangle(logicalWidth / 2, logicalHeight / 2, dialogWidth, dialogHeight, 0x1a1a1a, 1)
             .setOrigin(0.5)
             .setStrokeStyle(scaleInfo.isMobile ? 1 : 2, 0x4a4a4a, 0.8)
             .setAlpha(0);
 
         // Add glow effect to dialog
         const glowOffset = scaleInfo.isMobile ? 4 : 8;
-        const dialogGlow = this.add.rectangle(width / 2, height / 2, dialogWidth + glowOffset, dialogHeight + glowOffset, 0x2a2a2a, 0.3)
+        const dialogGlow = this.add.rectangle(logicalWidth / 2, logicalHeight / 2, dialogWidth + glowOffset, dialogHeight + glowOffset, 0x2a2a2a, 0.3)
             .setOrigin(0.5)
             .setAlpha(0);
 
@@ -78,7 +89,7 @@ export default class StartupScene extends Phaser.Scene {
             strokeThickness: 0
         };
         const titleOffset = scaleInfo.isMobile ? 30 : 50;
-        const titleText = this.add.text(width / 2, height / 2 - titleOffset, 'Go Fullscreen?', titleStyle).setOrigin(0.5).setAlpha(0);
+    const titleText = this.add.text(logicalWidth / 2, logicalHeight / 2 - titleOffset, fullscreenSupported ? 'Go Fullscreen?' : 'Optimize Display?', titleStyle).setOrigin(0.5).setAlpha(0);
         
         // Subtitle with helpful note
         const subtitleStyle = {
@@ -90,7 +101,7 @@ export default class StartupScene extends Phaser.Scene {
             strokeThickness: 0
         };
         const subtitleOffset = scaleInfo.isMobile ? 5 : 10;
-        const subtitleText = this.add.text(width / 2, height / 2 - subtitleOffset, 'This can be toggled in the options later.', subtitleStyle).setOrigin(0.5).setAlpha(0);
+    const subtitleText = this.add.text(logicalWidth / 2, logicalHeight / 2 - subtitleOffset, fullscreenSupported ? 'This can be toggled in the options later.' : 'Fullscreen limited on iOS; we will scale to fit.', subtitleStyle).setOrigin(0.5).setAlpha(0);
 
         // Remove benefits text - no longer needed
         const benefitsText = null;        // Enhanced button styles
@@ -142,10 +153,10 @@ export default class StartupScene extends Phaser.Scene {
         };
 
         // Create buttons with mobile-responsive spacing
-        const buttonSpacing = scaleInfo.isMobile ? 100 : 140;
-        const buttonY = height / 2 + scaleDimension(scaleInfo.isMobile ? 40 : 60, scaleInfo);
-        const yesButton = createStyledButton(width / 2 - buttonSpacing / 2, buttonY, 'YES', true);
-        const noButton = createStyledButton(width / 2 + buttonSpacing / 2, buttonY, 'SKIP', false);
+        const buttonSpacing = scaleInfo.isMobile ? 160 : 200; // widen spacing for balance on mobile
+    const buttonY = logicalHeight / 2 + scaleDimension(scaleInfo.isMobile ? 55 : 70, scaleInfo);
+    const yesButton = createStyledButton(logicalWidth / 2 - buttonSpacing / 2, buttonY, fullscreenSupported ? 'YES' : 'OK', true);
+    const noButton = fullscreenSupported ? createStyledButton(logicalWidth / 2 + buttonSpacing / 2, buttonY, 'SKIP', false) : null;
 
         // Add click animations and functionality
         const addButtonClick = (button, callback) => {
@@ -163,18 +174,29 @@ export default class StartupScene extends Phaser.Scene {
         };
 
         addButtonClick(yesButton, () => {
-            this.fullscreenManager.enterFullscreen(() => {
-                this.time.delayedCall(200, () => this.playLogoSequence());
-            });
+            if (fullscreenSupported) {
+                this.fullscreenManager.enterFullscreen(() => {
+                    this.time.delayedCall(200, () => this.playLogoSequence());
+                });
+            } else {
+                // On iOS just proceed
+                this.time.delayedCall(150, () => this.playLogoSequence());
+            }
         });
 
-        addButtonClick(noButton, () => {
-            this.playLogoSequence();
-        });        // Store all elements for cleanup
+        if (noButton) {
+            addButtonClick(noButton, () => {
+                this.playLogoSequence();
+            });
+        }
+        // Store all elements for cleanup
         this.uiElements = [
             background, dialogGlow, dialog, titleText, subtitleText,
-            yesButton.bg, yesButton.text, noButton.bg, noButton.text
+            yesButton.bg, yesButton.text
         ];
+        if (noButton) {
+            this.uiElements.push(noButton.bg, noButton.text);
+        }
 
         // Add keyboard controls
         this.setupKeyboardControls(yesButton, noButton);
@@ -188,7 +210,8 @@ export default class StartupScene extends Phaser.Scene {
         // Add keyboard hint text with mobile-responsive positioning and sizing
         const { width, height } = this.scale;
         const scaleInfo = getScaleInfo(this);
-        const keyboardHint = this.add.text(width / 2, height / 2 + scaleDimension(scaleInfo.isMobile ? 90 : 120, scaleInfo), 'Press ENTER for fullscreen, ESC to skip', {
+        const hintText = noButton ? 'Press ENTER for fullscreen, ESC to skip' : 'Press ENTER / TAP to continue';
+        const keyboardHint = this.add.text(width / 2, height / 2 + scaleDimension(scaleInfo.isMobile ? 110 : 140, scaleInfo), hintText, {
             fontFamily: 'Arial',
             fontSize: scaleInfo.isMobile ? '10px' : '12px',
             color: '#666666',
@@ -213,7 +236,7 @@ export default class StartupScene extends Phaser.Scene {
         });
 
         this.escapeKey.on('down', () => {
-            noButton.bg.emit('pointerdown');
+            if (noButton) noButton.bg.emit('pointerdown');
         });
     }
 

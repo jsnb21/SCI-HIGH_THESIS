@@ -96,12 +96,13 @@ export default class ResultScreen extends BaseScene {
         // Panel glow effect
         const panelGlow = this.add.rectangle(panelX, panelY, panelWidth + 10, panelHeight + 10, 0x0f4c75, 0.3);
         
-        // Title text with better styling and responsive positioning
+    // Title text with better styling and responsive positioning
         const titleText = this.courseCompleted ? 
             `COURSE COMPLETED!` : 
             'SESSION ENDED';
         
-    let titleY = isMobile ? panelY - panelHeight * (isTallMobile ? 0.43 : 0.4) : panelY - panelHeight * 0.35;
+    // Title Y: desktop a bit higher now to allow distinct rank gap
+    let titleY = isMobile ? panelY - panelHeight * (isTallMobile ? 0.43 : 0.4) : panelY - panelHeight * 0.38;
         const title = this.add.text(panelX, titleY, titleText, {
             fontFamily: 'Arial',
             fontSize: isMobile ? 
@@ -135,8 +136,16 @@ export default class ResultScreen extends BaseScene {
         }
         
     // Enhanced rank display with special effects and responsive positioning
-    let rankY = isMobile ? panelY - panelHeight * (isTallMobile ? 0.29 : 0.26) : panelY - panelHeight * 0.22; // adjust for tall
-    let rankSize = isMobile ? (tinyPhone ? 32 : (isTallMobile ? 40 : 38)) : 54;
+        // Rank positioned dynamically BELOW title so they never overlap on desktop
+    let rankSize = isMobile ? (tinyPhone ? 32 : (isTallMobile ? 40 : 38)) : 56;
+    // Larger explicit gaps so rank never touches title: desktop > mobile
+    const desktopTitleRankGap = isMobile ? 0 : 40; // increased from 12 -> 40
+    const mobileTitleRankGap = isMobile ? (isTallMobile ? 14 : 10) : 0; // slight increase mobile
+    const computedTitleBottom = title.y + title.height / 2;
+    // Center of rank circle: titleBottom + gap + radius
+    let rankY = isMobile
+        ? (computedTitleBottom + mobileTitleRankGap + rankSize * 0.5)
+        : (computedTitleBottom + desktopTitleRankGap + rankSize * 0.5);
         
         // Multi-layer rank background for depth
         const rankOuterGlow = this.add.circle(panelX, rankY, rankSize + 8, rankColor, 0.2);
@@ -163,7 +172,7 @@ export default class ResultScreen extends BaseScene {
         
         // --- DYNAMIC LAYOUT (prevents overlap of stats & button) ---
         // Pre-compute button placement first so we know how much vertical space is left for stats
-    let buttonY = panelY + panelHeight * (isTallMobile ? 0.46 : 0.44); // adjusted for tall screens
+    let buttonY = panelY + panelHeight * (isMobile ? (isTallMobile ? 0.47 : 0.455) : 0.50); // desktop moved further down
     const buttonHeight = isMobile ? scaleDimension(isTallMobile ? 58 : 54, scaleInfo) : 62;
     const buttonWidth = isMobile ? scaleDimension(tinyPhone ? 280 : (isTallMobile ? 340 : 330), scaleInfo) : 360;
     const buttonFontSize = isMobile ? scaleFontSize(tinyPhone ? 18 : (isTallMobile ? 21 : 20), scaleInfo) : 24;
@@ -182,7 +191,8 @@ export default class ResultScreen extends BaseScene {
         const panelBottom = panelY + panelHeight / 2;
         const rankBottomBuffer = isMobile ? scaleDimension(30, scaleInfo) : 40; // gap below rank
         const buttonTopBuffer = isMobile ? scaleDimension(35, scaleInfo) : 45;  // gap above button
-        const statsAreaTop = rankY + rankSize + rankBottomBuffer;
+    // statsAreaTop now uses dynamically computed rankY (based on title measured height) ensuring no overlap
+    const statsAreaTop = rankY + rankSize + rankBottomBuffer;
     const statsAreaBottom = buttonY - buttonHeight / 2 - buttonTopBuffer;
         let statsAreaHeight = statsAreaBottom - statsAreaTop;
 
@@ -197,19 +207,31 @@ export default class ResultScreen extends BaseScene {
         }
 
         // Compute line height ensuring it fits without overlap, with a max to keep design roomy
-    const maxDesiredLineHeight = isMobile ? scaleDimension(isTallMobile ? 62 : 58, scaleInfo) : 60;
+        const maxDesiredLineHeight = isMobile ? scaleDimension(isTallMobile ? 62 : 58, scaleInfo) : 64;
         let lineHeight = Math.min(maxDesiredLineHeight, statsAreaHeight / statsData.length);
-        // Guarantee minimum readability
-        const minLineHeight = isMobile ? scaleDimension(34, scaleInfo) : 36;
+        const minLineHeight = isMobile ? scaleDimension(34, scaleInfo) : 38;
         lineHeight = Math.max(lineHeight, minLineHeight);
 
-        // Recalculate stats area height based on chosen lineHeight so we can vertically center stats block
-        const totalStatsBlockHeight = lineHeight * statsData.length;
-        let statsStartY = statsAreaTop + (statsAreaHeight - totalStatsBlockHeight) / 2 + lineHeight / 2; // center within area
+        // Initial total block height without extra spacing
+        let totalStatsBlockHeight = lineHeight * statsData.length;
+        // Compute vertical slack; if significant, convert part of it to inter-row spacing for a more open layout
+        let extraSpacingPerGap = 0;
+        const gaps = statsData.length - 1;
+        const verticalSlack = statsAreaHeight - totalStatsBlockHeight;
+        if (verticalSlack > (isMobile ? 40 : 60) && gaps > 0) {
+            // Use up to 70% of slack for spacing distribution
+            const usableSlack = verticalSlack * 0.7;
+            extraSpacingPerGap = usableSlack / gaps;
+            // Cap per-gap expansion to avoid huge voids
+            const perGapCap = isMobile ? scaleDimension(14, scaleInfo) : 18;
+            extraSpacingPerGap = Math.min(extraSpacingPerGap, perGapCap);
+            totalStatsBlockHeight += extraSpacingPerGap * gaps;
+        }
 
-        // If centering would push past boundaries (due to min height), clamp
+        // Center stats block within area after spacing adjustment
+        let statsStartY = statsAreaTop + (statsAreaHeight - totalStatsBlockHeight) / 2 + lineHeight / 2;
         if (statsStartY + totalStatsBlockHeight / 2 > statsAreaBottom) {
-            statsStartY = statsAreaTop + lineHeight / 2; // top align
+            statsStartY = statsAreaTop + lineHeight / 2; // fallback top align
         }
 
         // Create a container to allow vertical scrolling on very small screens
@@ -219,7 +241,7 @@ export default class ResultScreen extends BaseScene {
         const statLabelFont = isMobile ? scaleFontSize(tinyPhone ? 15 : 17, scaleInfo) : '22px';
         const statValueFont = statLabelFont;
         statsData.forEach((stat, index) => {
-            const yPos = statsStartY + index * lineHeight;
+            const yPos = statsStartY + index * (lineHeight + extraSpacingPerGap);
             const rectHeight = Math.min(lineHeight - 8, (isMobile ? 34 : 36));
 
             const statBg = this.add.rectangle(panelX, yPos, effectiveWidth, rectHeight, 0x0a1628, 0.7);
