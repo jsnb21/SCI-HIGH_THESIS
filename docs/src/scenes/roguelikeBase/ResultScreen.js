@@ -80,7 +80,7 @@ export default class ResultScreen extends BaseScene {
     ) : scaleDimension(560, scaleInfo);
     const basePanelHeight = isMobile ? (
         isTallMobile ? Math.min(scaleInfo.height * 0.92, 560) : Math.min(scaleInfo.height * 0.9, 540)
-    ) : scaleDimension(480, scaleInfo);
+    ) : Math.min(scaleDimension(600, scaleInfo), scaleInfo.height * 0.9); // taller by default on desktop, still capped to viewport
     const panelHeight = basePanelHeight;
         const panelX = this.scale.width / 2;
         const panelY = this.scale.height / 2;
@@ -170,11 +170,9 @@ export default class ResultScreen extends BaseScene {
             }
         }).setOrigin(0.5);
         
-        // --- RESPONSIVE LAYOUT REFACTOR ---
-        // We now split logic: desktop keeps spacious fixed layout; mobile gets a dedicated scroll container
-
-        let buttonBg, buttonGlow, buttonInner, buttonText, statsContainer; // unify naming for later animations
-
+        // --- UNIFIED LAYOUT (stats + button; scroll if overflow) ---
+        let buttonBg, buttonGlow, buttonInner, buttonText;
+        const statRowElements = [];
         const statsData = [
             { label: '✓ Correct Answers', value: this.correctAnswers, color: '#00ff88' },
             { label: '✗ Wrong Answers', value: this.wrongAnswers, color: '#ff4444' },
@@ -183,237 +181,130 @@ export default class ResultScreen extends BaseScene {
             { label: '📊 Accuracy', value: `${accuracy.toFixed(1)}%`, color: accuracy >= 80 ? '#00ff88' : accuracy >= 60 ? '#ffaa00' : '#ff4444' }
         ];
 
-        if (isMobile) {
-            // -------- MOBILE LAYOUT --------
-            // Goal: Button always AFTER stats; entire stats+button column scrolls if overflow.
-            const verticalPaddingTop = scaleDimension(18, scaleInfo); // padding inside panel before first stat
-            const areaTop = rankY + rankSize + scaleDimension(20, scaleInfo); // start below rank
-            const areaBottom = panelY + panelHeight / 2 - scaleDimension(14, scaleInfo); // leave small bottom padding
-            const scrollAreaHeight = areaBottom - areaTop;
-            const contentMaxWidth = panelWidth - scaleDimension(36, scaleInfo);
+        const areaTop = rankY + rankSize + (isMobile ? scaleDimension(20, scaleInfo) : 50);
+        const areaBottom = panelY + panelHeight/2 - (isMobile ? scaleDimension(14, scaleInfo) : 30);
+        const availableHeight = areaBottom - areaTop;
+        const horizontalPadding = isMobile ? scaleDimension(18, scaleInfo) : 20;
+        const contentWidth = panelWidth - horizontalPadding * 2;
+        const rowHeight = isMobile ? scaleDimension(isTallMobile ? 40 : 38, scaleInfo) : 38;
+        const rowGap = isMobile ? scaleDimension(8, scaleInfo) : 10;
+        const statFontSize = isMobile ? scaleFontSize(tinyPhone ? 15 : 17, scaleInfo) : '20px';
 
-            statsContainer = this.add.container(0, 0);
+        const viewport = this.add.container(0,0);
+        const statsContainer = this.add.container(0,0);
+        viewport.add(statsContainer);
 
-            // Build stat rows stacked vertically (simpler for narrow screens)
-            const rowGap = scaleDimension(isTallMobile ? 10 : 8, scaleInfo);
-            let cursorY = areaTop + verticalPaddingTop;
-            const statLabelFont = scaleFontSize(tinyPhone ? 15 : 16 + (isTallMobile ? 1 : 0), scaleInfo);
+        let cursorY = 0;
+        statsData.forEach(stat => {
+            const centerY = cursorY + rowHeight/2;
+            const bg = this.add.rectangle(panelX, centerY, contentWidth, rowHeight, 0x0a1628, 0.75).setStrokeStyle(1, 0x2c3e50, 0.35);
+            const glow = this.add.rectangle(panelX, centerY, contentWidth - 4, rowHeight - 4, stat.color, 0.07);
+            const leftX = panelX - contentWidth * 0.46;
+            const rightX = panelX + contentWidth * 0.46;
+            const label = this.add.text(leftX, centerY, stat.label, { fontFamily:'Arial', fontSize: statFontSize, color:'#ffffff', fontWeight:'bold'}).setOrigin(0,0.5);
+            const value = this.add.text(rightX, centerY, stat.value.toString(), { fontFamily:'Arial', fontSize: statFontSize, color: stat.color, fontWeight:'bold'}).setOrigin(1,0.5);
+            statsContainer.add([bg, glow, label, value]);
+            statRowElements.push([bg, glow, label, value]);
+            cursorY += rowHeight + rowGap;
+        });
 
-            statsData.forEach(stat => {
-                const rowHeight = scaleDimension(40, scaleInfo);
-                const rect = this.add.rectangle(panelX, cursorY + rowHeight / 2, contentMaxWidth, rowHeight, 0x0a1628, 0.75)
-                    .setStrokeStyle(1, 0x2c3e50, 0.4);
-                const glow = this.add.rectangle(panelX, cursorY + rowHeight / 2, contentMaxWidth - 4, rowHeight - 4, stat.color, 0.08);
-                const label = this.add.text(panelX - contentMaxWidth / 2 + scaleDimension(10, scaleInfo), cursorY + rowHeight / 2, stat.label, {
-                    fontFamily: 'Arial',
-                    fontSize: statLabelFont,
-                    color: '#ffffff',
-                    fontWeight: 'bold'
-                }).setOrigin(0, 0.5);
-                const value = this.add.text(panelX + contentMaxWidth / 2 - scaleDimension(10, scaleInfo), cursorY + rowHeight / 2, stat.value.toString(), {
-                    fontFamily: 'Arial',
-                    fontSize: statLabelFont,
-                    color: stat.color,
-                    fontWeight: 'bold'
-                }).setOrigin(1, 0.5);
-                statsContainer.add([rect, glow, label, value]);
-                cursorY += rowHeight + rowGap;
-            });
+        const buttonHeight = isMobile ? scaleDimension(48, scaleInfo) : 60;
+        const buttonWidth = isMobile ? Math.min(contentWidth, scaleDimension(tinyPhone ? 240 : 300, scaleInfo)) : 340;
+        const buttonGapTop = isMobile ? scaleDimension(10, scaleInfo) : 20;
+        const buttonCenterY = cursorY + buttonGapTop + buttonHeight/2;
+        buttonBg = this.add.rectangle(panelX, buttonCenterY, buttonWidth, buttonHeight, 0x2c3e50).setStrokeStyle(isMobile?scaleDimension(2, scaleInfo):3, 0x4a90e2);
+        buttonGlow = this.add.rectangle(panelX, buttonCenterY, buttonWidth+6, buttonHeight+6, 0x4a90e2, isMobile?0.35:0.4);
+        buttonInner = this.add.rectangle(panelX, buttonCenterY, buttonWidth-(isMobile?10:12), buttonHeight-(isMobile?10:12), 0x34495e, 0.85);
+        buttonText = this.add.text(panelX, buttonCenterY, 'Back to Computer Lab', { fontFamily:'Arial', fontSize: isMobile? `${scaleFontSize(tinyPhone?16:18, scaleInfo)}px` : '22px', fontWeight:'bold', color:'#ffffff', shadow: !isMobile? {offsetX:2, offsetY:2, color:'#000', blur:4, fill:true}: undefined }).setOrigin(0.5);
+        statsContainer.add([buttonGlow, buttonBg, buttonInner, buttonText]);
+        statRowElements.push([buttonGlow, buttonBg, buttonInner, buttonText]);
 
-            // Button (smaller, proportionate) inserted AFTER stats
-            const buttonWidth = Math.min(contentMaxWidth, scaleDimension(tinyPhone ? 240 : 300, scaleInfo));
-            const buttonHeight = scaleDimension(48, scaleInfo);
-            const buttonY = cursorY + scaleDimension(6, scaleInfo) + buttonHeight / 2;
-            buttonBg = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x2c3e50);
-            buttonBg.setStrokeStyle(scaleDimension(2, scaleInfo), 0x4a90e2);
-            buttonGlow = this.add.rectangle(panelX, buttonY, buttonWidth + 6, buttonHeight + 6, 0x4a90e2, 0.35);
-            buttonInner = this.add.rectangle(panelX, buttonY, buttonWidth - 10, buttonHeight - 10, 0x34495e, 0.85);
-            buttonText = this.add.text(panelX, buttonY, 'Back to Computer Lab', {
-                fontFamily: 'Arial',
-                fontSize: `${scaleFontSize(tinyPhone ? 16 : 18, scaleInfo)}px`,
-                fontWeight: 'bold',
-                color: '#ffffff'
-            }).setOrigin(0.5);
-            statsContainer.add([buttonGlow, buttonBg, buttonInner, buttonText]);
+        const contentHeight = buttonCenterY + buttonHeight/2;
+            let showScrollHint = false;
+            let hintArrow; let scrollTrack; let scrollThumb;
+            if (contentHeight <= availableHeight) {
+                statsContainer.y = areaTop;
+            } else {
+                statsContainer.y = areaTop;
+                const maskRect = this.add.rectangle(panelX, areaTop + availableHeight/2, panelWidth - 20, availableHeight, 0xffffff, 0.01);
+                const geoMask = maskRect.createGeometryMask();
+                viewport.setMask(geoMask);
 
-            // Apply mask for scrolling if content exceeds area
-            const totalContentHeight = buttonY + buttonHeight / 2 - areaTop + verticalPaddingTop;
-            const needsScroll = totalContentHeight > scrollAreaHeight;
-            const maskRect = this.add.rectangle(panelX, areaTop + scrollAreaHeight / 2, panelWidth - 20, scrollAreaHeight, 0xffffff, 0.01);
-            const geoMask = maskRect.createGeometryMask();
-            statsContainer.setMask(geoMask);
+                // Scrollbar track & thumb
+                const trackX = panelX + contentWidth/2 + horizontalPadding/2 + 6;
+                scrollTrack = this.add.rectangle(trackX, areaTop + availableHeight/2, 4, availableHeight, 0xffffff, 0.15).setDepth(6);
+                const thumbHeight = Phaser.Math.Clamp((availableHeight / contentHeight) * availableHeight, 24, availableHeight * 0.8);
+                scrollThumb = this.add.rectangle(trackX, areaTop + thumbHeight/2, 6, thumbHeight, 0x4a90e2, 0.9).setDepth(7);
 
-            if (needsScroll) {
-                let scrollOffset = 0;
-                const maxScroll = totalContentHeight - scrollAreaHeight;
-                const applyScroll = () => { statsContainer.y = -scrollOffset; };
-                // wheel
-                this.input.on('wheel', (_, __, dx, dy) => {
-                    if (Math.abs(dy) >= Math.abs(dx)) {
-                        scrollOffset = Phaser.Math.Clamp(scrollOffset + dy * 0.4, 0, maxScroll);
-                        applyScroll();
-                    }
-                });
-                // drag
-                let dragging = false; let lastY = 0; let velocity = 0; let lastTime = 0;
-                this.input.on('pointerdown', (p) => { dragging = true; lastY = p.y; velocity = 0; lastTime = p.time; });
-                this.input.on('pointerup', () => { dragging = false; });
-                this.input.on('pointermove', (p) => {
-                    if (!dragging) return;
-                    const dy = p.y - lastY; const dt = (p.time - lastTime) || 16;
-                    lastY = p.y; lastTime = p.time; velocity = -dy / dt * 16; // approximate px/frame
-                    scrollOffset = Phaser.Math.Clamp(scrollOffset - dy, 0, maxScroll);
-                    applyScroll();
-                });
-                // Simple inertial easing
-                this.time.addEvent({
-                    delay: 16,
-                    loop: true,
-                    callback: () => {
-                        if (dragging) return;
-                        if (Math.abs(velocity) < 0.1) return;
-                        scrollOffset = Phaser.Math.Clamp(scrollOffset + velocity, 0, maxScroll);
-                        velocity *= 0.92; // friction
-                        applyScroll();
-                    }
-                });
+                // Scroll hint arrow (pulsing) near bottom
+                showScrollHint = true;
+                hintArrow = this.add.text(panelX, areaTop + availableHeight - 10, '▼', { fontFamily:'Arial', fontSize: isMobile? '20px':'18px', color:'#4a90e2' }).setOrigin(0.5,1).setDepth(8);
+                this.tweens.add({ targets: hintArrow, y: '+=10', alpha:{from:0.4,to:1}, duration:800, yoyo:true, repeat:-1, ease:'Sine.inOut' });
+
+                let scrollOffset = 0; const maxScroll = contentHeight - availableHeight; 
+                const applyScroll = () => {
+                    statsContainer.y = areaTop - scrollOffset;
+                    // Thumb position
+                    const scrollRatio = scrollOffset / maxScroll;
+                    const thumbRange = availableHeight - scrollThumb.height;
+                    scrollThumb.y = areaTop + scrollThumb.height/2 + thumbRange * scrollRatio;
+                };
+                const hideHint = () => { if (showScrollHint) { showScrollHint = false; if (hintArrow) { this.tweens.add({ targets: hintArrow, alpha:0, duration:300, onComplete: ()=> hintArrow.destroy() }); } } };
+
+                this.input.on('wheel', (_, __, dx, dy) => { if (Math.abs(dy) >= Math.abs(dx)) { hideHint(); scrollOffset = Phaser.Math.Clamp(scrollOffset + dy * 0.4, 0, maxScroll); applyScroll(); }});
+                let dragging=false,lastY=0,velocity=0,lastTime=0; this.input.on('pointerdown', p=>{ if(p.y>=areaTop && p.y<=areaBottom){ dragging=true; lastY=p.y; lastTime=p.time; velocity=0; hideHint(); }});
+                this.input.on('pointerup', ()=> dragging=false);
+                this.input.on('pointermove', p=>{ if(!dragging) return; const dy=p.y-lastY; const dt=(p.time-lastTime)||16; lastY=p.y; lastTime=p.time; velocity=-dy/dt*16; scrollOffset = Phaser.Math.Clamp(scrollOffset - dy, 0, maxScroll); applyScroll(); });
+                this.time.addEvent({ delay:16, loop:true, callback:()=>{ if(dragging) return; if(Math.abs(velocity)<0.1) return; hideHint(); scrollOffset = Phaser.Math.Clamp(scrollOffset + velocity, 0, maxScroll); velocity *= 0.92; applyScroll(); }});
+                applyScroll();
             }
+        // (keep create() open for interactions/animations below)
+        // Removed premature closing brace so following interaction code stays inside create()
 
-            // Button interactions (mobile friendly)
-            buttonBg.setInteractive({ useHandCursor: true })
-                .on('pointerover', () => { buttonBg.setFillStyle(0x4a90e2); buttonInner.setFillStyle(0x5dade2); buttonGlow.setAlpha(0.55); })
-                .on('pointerout', () => { buttonBg.setFillStyle(0x2c3e50); buttonInner.setFillStyle(0x34495e); buttonGlow.setAlpha(0.35); })
-                .on('pointerdown', () => {
-                    buttonBg.setScale(0.95); buttonInner.setScale(0.95); buttonText.setScale(0.95);
-                    this.time.delayedCall(140, () => { this.scene.start('ComputerLab'); });
-                });
+        // Interactions for button
+        buttonBg.setInteractive({ useHandCursor:true })
+            .on('pointerover', () => { buttonBg.setFillStyle(0x4a90e2); buttonInner.setFillStyle(0x5dade2); buttonGlow.setAlpha(isMobile?0.55:0.7); if(!isMobile){ buttonText.setScale(1.05); this.tweens.add({ targets: buttonGlow, scaleX:1.05, scaleY:1.05, duration:300, yoyo:true, repeat:-1 }); } })
+            .on('pointerout', () => { buttonBg.setFillStyle(0x2c3e50); buttonInner.setFillStyle(0x34495e); buttonGlow.setAlpha(isMobile?0.35:0.4); if(!isMobile){ buttonText.setScale(1); this.tweens.killTweensOf(buttonGlow); buttonGlow.setScale(1);} })
+            .on('pointerdown', () => { buttonBg.setScale(0.95); buttonInner.setScale(0.95); buttonText.setScale(0.95); this.time.delayedCall(140, ()=> this.scene.start('ComputerLab')); });
 
-        } else {
-            // -------- DESKTOP LAYOUT (retain previous visual style) --------
-            const buttonHeight = 62;
-            const buttonWidth = 360;
-            const buttonFontSize = 24;
-            const bottomMargin = 28;
-            const buttonY = panelY + panelHeight / 2 - bottomMargin - buttonHeight / 2;
-            const rankBottomBuffer = 40;
-            const buttonTopBuffer = 45;
-            let statsAreaTop = rankY + rankSize + rankBottomBuffer;
-            let statsAreaBottom = buttonY - buttonHeight / 2 - buttonTopBuffer;
-            const statsAreaHeight = statsAreaBottom - statsAreaTop;
-            const lineHeight = 48; // fixed for desktop
-            statsContainer = this.add.container(0,0);
-            const effectiveWidth = panelWidth - 40;
-            const statLabelFont = '22px';
-            statsData.forEach((stat, index) => {
-                const yPos = statsAreaTop + lineHeight/2 + index * (lineHeight + 6);
-                const statBg = this.add.rectangle(panelX, yPos, effectiveWidth, 36, 0x0a1628, 0.7).setStrokeStyle(1, 0x2c3e50, 0.3);
-                const statGlow = this.add.rectangle(panelX, yPos, effectiveWidth - 2, 34, stat.color, 0.08);
-                const leftX = panelX - effectiveWidth * 0.46;
-                const rightX = panelX + effectiveWidth * 0.46;
-                const labelText = this.add.text(leftX, yPos, stat.label, { fontFamily: 'Arial', fontSize: statLabelFont, color: '#ffffff', fontWeight: 'bold'}).setOrigin(0,0.5);
-                const valueText = this.add.text(rightX, yPos, stat.value.toString(), { fontFamily: 'Arial', fontSize: statLabelFont, color: stat.color, fontWeight: 'bold'}).setOrigin(1,0.5);
-                statsContainer.add([statBg, statGlow, labelText, valueText]);
-            });
-
-            buttonBg = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x2c3e50).setStrokeStyle(3, 0x4a90e2);
-            buttonGlow = this.add.rectangle(panelX, buttonY, buttonWidth + 4, buttonHeight + 4, 0x4a90e2, 0.4);
-            buttonInner = this.add.rectangle(panelX, buttonY, buttonWidth - 8, buttonHeight - 8, 0x34495e, 0.8);
-            buttonText = this.add.text(panelX, buttonY, 'Back to Computer Lab', {
-                fontFamily: 'Arial', fontSize: `${buttonFontSize}px`, fontWeight: 'bold', color: '#ffffff', shadow: { offsetX:2, offsetY:2, color:'#000', blur:4, fill:true }
-            }).setOrigin(0.5);
-
-            buttonBg.setInteractive({ useHandCursor: true })
-                .on('pointerover', () => {
-                    buttonBg.setFillStyle(0x4a90e2); buttonInner.setFillStyle(0x5dade2); buttonGlow.setAlpha(0.7); buttonText.setScale(1.05);
-                    this.tweens.add({ targets: buttonGlow, scaleX:1.05, scaleY:1.05, duration:300, yoyo:true, repeat:-1 });
-                })
-                .on('pointerout', () => {
-                    buttonBg.setFillStyle(0x2c3e50); buttonInner.setFillStyle(0x34495e); buttonGlow.setAlpha(0.4); buttonText.setScale(1); this.tweens.killTweensOf(buttonGlow); buttonGlow.setScale(1);
-                })
-                .on('pointerdown', () => { buttonBg.setScale(0.95); buttonInner.setScale(0.95); buttonText.setScale(0.95); this.time.delayedCall(150, () => { this.scene.start('ComputerLab'); }); });
-        }
-        // --- END RESPONSIVE LAYOUT REFACTOR ---
-        
-        // Entrance animations with all elements (stats + button handled regardless of platform)
-        const animatedElements = [
-            panelGlow, panel, title,
-            rankOuterGlow, rankBg, rankBorder, rankInnerGlow, rankText,
-            statsContainer, buttonGlow, buttonBg, buttonInner, buttonText
-        ].filter(Boolean); // filter in case of undefined
-        
+        // Entrance animations (panel + rank)
+        const animatedElements = [panelGlow, panel, title, rankOuterGlow, rankBg, rankBorder, rankInnerGlow, rankText];
         animatedElements.forEach((element, index) => {
-            element.setAlpha(0);
-            element.setScale(0.8);
-            
-            this.tweens.add({
-                targets: element,
-                alpha: 1,
-                scaleX: 1,
-                scaleY: 1,
-                duration: 600,
-                delay: index * 100,
-                ease: 'Back.out'
+            element.setAlpha(0); element.setScale(0.8);
+            this.tweens.add({ targets: element, alpha:1, scaleX:1, scaleY:1, duration:600, delay:index*100, ease:'Back.out' });
+        });
+
+        // Stagger stats + button
+        statRowElements.forEach(row => row.forEach(el => el.setAlpha(0)));
+        this.time.delayedCall(600, () => {
+            statRowElements.forEach((row, idx) => {
+                this.tweens.add({ targets: row, alpha:{from:0,to:1}, x:{from:'+=35', to:'-=35'}, duration:400, delay:idx*90, ease:'Power2.out' });
             });
         });
-        
-        // Animate stats with stagger (using stored row elements)
-        this.time.delayedCall(800, () => {
-            statRowElements.forEach((row, index) => {
-                this.tweens.add({
-                    targets: row,
-                    alpha: { from: 0, to: 1 },
-                    x: { from: '+=50', to: '-=50' },
-                    duration: 400,
-                    delay: index * 100,
-                    ease: 'Power2.out'
-                });
+
+        // Rank pulse & optional particles
+        this.time.delayedCall(1000, () => { this.tweens.add({ targets:[rankOuterGlow, rankInnerGlow], alpha:{from:0.2,to:0.5}, scaleX:{from:1,to:1.1}, scaleY:{from:1,to:1.1}, duration:1500, yoyo:true, repeat:-1, ease:'Sine.easeInOut'}); });
+        if (rank === 'S' || rank === 'A') this.createParticleEffects(panelX, panelY - 80, rankColor);
+
+        // Responsive rebuild on resize (keep data, re-layout with new dimensions)
+        this.scale.on('resize', () => {
+            this.scene.restart({
+                correctAnswers: this.correctAnswers,
+                wrongAnswers: this.wrongAnswers,
+                highestStreak: this.highestStreak,
+                totalScore: this.totalScore,
+                courseTopic: this.courseTopic,
+                courseCompleted: this.courseCompleted
             });
         });
-        
-        // Animate button last
-        [buttonGlow, buttonBg, buttonText].forEach((element, index) => {
-            element.setAlpha(0);
-            this.tweens.add({
-                targets: element,
-                alpha: 1,
-                duration: 400,
-                delay: 1400 + (index * 50),
-                ease: 'Power2.out'
-            });
-        });
-        
-        // Add subtle pulsing animation to rank
-        this.time.delayedCall(1000, () => {
-            this.tweens.add({
-                targets: [rankOuterGlow, rankInnerGlow],
-                alpha: { from: 0.2, to: 0.5 },
-                scaleX: { from: 1, to: 1.1 },
-                scaleY: { from: 1, to: 1.1 },
-                duration: 1500,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut'
-            });
-        });
-        
-        // Add particle effects for high ranks
-        if (rank === 'S' || rank === 'A') {
-            this.createParticleEffects(panelX, panelY - 80, rankColor);
-        }
-        
     }
 
-    // TODO (future): extract layout builders (mobile/desktop) into helper methods for clarity & testability.
-    
     createParticleEffects(x, y, color) {
-        // Create simple particle effect for high ranks
         for (let i = 0; i < 20; i++) {
             const particle = this.add.circle(x, y, 2, parseInt(color.replace('#', '0x')));
             particle.setAlpha(0.8);
-            
             const angle = (Math.PI * 2 * i) / 20;
             const distance = 60 + Math.random() * 40;
-            
             this.tweens.add({
                 targets: particle,
                 x: x + Math.cos(angle) * distance,
