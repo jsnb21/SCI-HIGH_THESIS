@@ -60,6 +60,19 @@ class GameManager {
         return this.totalPoints;
     }
 
+    // Explicitly set total points (e.g., after loading from leaderboard/save)
+    setTotalPoints(points) {
+        const newVal = typeof points === 'number' && !isNaN(points) ? Math.max(0, Math.round(points)) : 0;
+        this.totalPoints = newVal;
+        // Attempt to persist
+        try {
+            saveGame();
+        } catch (err) {
+            console.warn('gameManager.setTotalPoints: failed to save game after setting points', err);
+        }
+        return this.totalPoints;
+    }
+
     // Get points for a specific topic
     getTopicPoints(topic) {
         return this.topicPoints[topic] || 0;

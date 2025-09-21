@@ -264,6 +264,9 @@ export default class MainHub extends Phaser.Scene {
         this.pointsDisplay = pointsDisplay;
         this.uiElements.push(pointsDisplay.container);
 
+    // Fetch and apply current logged-in player's best score from leaderboard
+    this.fetchAndApplyPlayerBestScore();
+
         this.se_hoverSound = addSE(this, 'se_select');
         this.se_confirmSound = addSE(this, 'se_confirm');
 
@@ -353,6 +356,53 @@ export default class MainHub extends Phaser.Scene {
                 onceOnlyFlags.flags['mainhub_tutorial'] = false;
             }
         });
+    }
+
+    /**
+     * Fetch the logged-in player's total points from Career Stats (student_career_stats)
+     * and sync it with gameManager & the on-screen points display. This replaces the
+     * previous leaderboard-based lookup to avoid permission errors on /leaderboards/*.
+     *
+     * Identifier priority:
+     *  1. studentId (for student accounts)
+     *  2. uid (fallback for other account types)
+     */
+    async fetchAndApplyPlayerBestScore() { // keep old name to avoid changing call sites
+        try {
+            await new Promise(r => setTimeout(r, 120)); // slight defer for script loads
+
+            const raw = localStorage.getItem('sci_high_user');
+            if (!raw) return;
+            let studentId = null;
+            try {
+                const user = JSON.parse(raw);
+                if (user && user.studentId) {
+                    studentId = user.studentId; // canonical for career stats
+                } else if (user && user.uid) {
+                    // Career stats are keyed by studentId; if we only have uid we can't query.
+                    // In that case abort silently.
+                    return;
+                }
+            } catch (_) { return; }
+            if (!studentId) return;
+
+            // Dynamically import career stats service
+            const { default: careerStatsService } = await import('../services/careerStatsService.js');
+
+            // Grab stats (service handles its own Firebase init)
+            const stats = await careerStatsService.getCareerStats(studentId);
+            if (!stats || !stats.careerStats) return;
+            const totalPoints = parseInt(stats.careerStats.totalPoints) || 0;
+
+            if (totalPoints > gameManager.getTotalPoints()) {
+                gameManager.setTotalPoints(totalPoints);
+                if (this.pointsDisplay && this.pointsDisplay.update) {
+                    this.pointsDisplay.update();
+                }
+            }
+        } catch (err) {
+            console.warn('MainHub: failed to fetch/apply career stats points', err);
+        }
     }
 
     startHubTutorial() {
