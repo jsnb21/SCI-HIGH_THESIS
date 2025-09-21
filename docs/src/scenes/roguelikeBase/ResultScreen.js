@@ -77,8 +77,10 @@ export default class ResultScreen extends BaseScene {
     const tinyPhone = scaleInfo.width < 400;
     // Mobile: widen further (up to 98%) and allow a little more max width for larger phones
     // Widen mobile panel further; allow almost full width while keeping a tiny margin
-    // For mobile, directly use current canvas width minus a minimal margin (handles orientation/resize better)
-    const panelWidth = isMobile ? (this.scale.width - 4) : scaleDimension(560, scaleInfo);
+    const panelWidth = isMobile ? (
+        // Use almost entire width; leave only 2px margin each side
+        Math.min(scaleInfo.width * 0.998, scaleInfo.width - 4)
+    ) : scaleDimension(560, scaleInfo);
     const basePanelHeight = isMobile ? (
         // Give a little more height on standard mobile to show more stats immediately
         isTallMobile ? Math.min(scaleInfo.height * 0.92, 560) : Math.min(scaleInfo.height * 0.92, 560)
@@ -187,24 +189,27 @@ export default class ResultScreen extends BaseScene {
         title.y = panelTop + paddingTop + title.height/2;
         // Auto-fit title on mobile if it exceeds available inner width
         if (isMobile) {
-            const innerWidthAvail = panelWidth - paddingSides * 2;
-            let fontSize = parseInt(title.style.fontSize, 10) || 32;
-            // Decrease until fits or min size
-            while (title.width > innerWidthAvail && fontSize > 14) {
-                fontSize -= 1;
-                title.setFontSize(fontSize + 'px');
+            const innerWidth = panelWidth - paddingSides * 2;
+            let currentSize = parseInt(title.style.fontSize, 10) || 32;
+            // Gradually step down 1px for finer control
+            while (title.width > innerWidth && currentSize > 14) {
+                currentSize -= 1;
+                title.setFontSize(currentSize + 'px');
             }
-            // If still overflowing (very narrow), split into two roughly equal halves
-            if (title.width > innerWidthAvail) {
-                const words = title.text.split(' ');
-                if (words.length > 1) {
-                    const mid = Math.ceil(words.length/2);
-                    title.setText(words.slice(0, mid).join(' ') + '\n' + words.slice(mid).join(' '));
-                    // Re-fit again if needed
-                    fontSize = parseInt(title.style.fontSize, 10) || fontSize;
-                    while (title.width > innerWidthAvail && fontSize > 12) {
-                        fontSize -= 1;
-                        title.setFontSize(fontSize + 'px');
+            if (title.width > innerWidth) {
+                // As fallback, force a line break at space nearest middle
+                const text = title.text;
+                const parts = text.split(' ');
+                if (parts.length > 1) {
+                    // Insert newline roughly in middle
+                    const mid = Math.floor(parts.length/2);
+                    const rebuilt = parts.slice(0, mid).join(' ') + '\n' + parts.slice(mid).join(' ');
+                    title.setText(rebuilt);
+                    // After wrapping, if too wide still, shrink once more loop
+                    currentSize = parseInt(title.style.fontSize, 10) || currentSize;
+                    while (title.width > innerWidth && currentSize > 14) {
+                        currentSize -= 1;
+                        title.setFontSize(currentSize + 'px');
                     }
                 }
             }
@@ -261,7 +266,7 @@ export default class ResultScreen extends BaseScene {
         if (contentHeight > viewportHeight) {
             showScrollHint = true;
             // Mask for panel interior
-            const maskRect = this.add.rectangle(panelX, panelY, panelWidth - (isMobile?1:10), panelHeight - 6, 0xffffff, 0.01);
+            const maskRect = this.add.rectangle(panelX, panelY, panelWidth - (isMobile?2:10), panelHeight - 10, 0xffffff, 0.01);
             const geoMask = maskRect.createGeometryMask();
             scrollContainer.setMask(geoMask);
 
