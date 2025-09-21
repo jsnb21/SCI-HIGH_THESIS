@@ -76,8 +76,9 @@ export default class ResultScreen extends BaseScene {
     // Wider on desktop, almost full width on tiny phones, but keep readable margins
     const tinyPhone = scaleInfo.width < 400;
     // Mobile: widen further (up to 98%) and allow a little more max width for larger phones
+    // Widen mobile panel further; allow almost full width while keeping a tiny margin
     const panelWidth = isMobile ? (
-        isTallMobile ? Math.min(scaleInfo.width * 0.98, 440) : Math.min(scaleInfo.width * 0.975, tinyPhone ? 370 : 430)
+        isTallMobile ? Math.min(scaleInfo.width * 0.995, 470) : Math.min(scaleInfo.width * 0.99, tinyPhone ? 380 : 450)
     ) : scaleDimension(560, scaleInfo);
     const basePanelHeight = isMobile ? (
         // Give a little more height on standard mobile to show more stats immediately
@@ -178,7 +179,8 @@ export default class ResultScreen extends BaseScene {
         // --- FULL SCROLLABLE CONTENT (title, rank, stats, button) ---
     const panelTop = panelY - panelHeight/2;
     const paddingTop = isMobile ? scaleDimension(20, scaleInfo) : 34;
-        const paddingSides = isMobile ? scaleDimension(18, scaleInfo) : 26;
+    // Reduce side padding on mobile to gain more horizontal space for stats rows
+    const paddingSides = isMobile ? scaleDimension(12, scaleInfo) : 26;
         const paddingBottom = isMobile ? scaleDimension(24, scaleInfo) : 30;
         const innerWidth = panelWidth - paddingSides * 2;
 
