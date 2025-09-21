@@ -25,7 +25,7 @@ export default class ComputerLab extends Phaser.Scene {
         this.load.image('C++', 'assets/img/comlab/icons/cplus_logo.png');
     this.load.image('C#', 'assets/img/comlab/icons/csharp_logo.png');
     // Placeholder icon for custom quizzes (reuse an existing or add a new asset path if available)
-    this.load.image('CustomQuiz', 'assets/img/comlab/icons/web-design_logo.png');
+    this.load.image('CustomQuiz', 'assets/img/comlab/icons/CustomQuiz.png');
 
         // Load sound effects
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
