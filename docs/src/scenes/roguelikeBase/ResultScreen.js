@@ -172,10 +172,13 @@ export default class ResultScreen extends BaseScene {
         
         // --- DYNAMIC LAYOUT (prevents overlap of stats & button) ---
         // Pre-compute button placement first so we know how much vertical space is left for stats
-    let buttonY = panelY + panelHeight * (isMobile ? (isTallMobile ? 0.47 : 0.455) : 0.50); // desktop moved further down
+    // Button dimensions first (used for layout math)
     const buttonHeight = isMobile ? scaleDimension(isTallMobile ? 58 : 54, scaleInfo) : 62;
     const buttonWidth = isMobile ? scaleDimension(tinyPhone ? 280 : (isTallMobile ? 340 : 330), scaleInfo) : 360;
     const buttonFontSize = isMobile ? scaleFontSize(tinyPhone ? 18 : (isTallMobile ? 21 : 20), scaleInfo) : 24;
+    // Compute button Y so it ALWAYS remains fully inside the panel (previous formula let it hang a few px outside)
+    const bottomMargin = isMobile ? scaleDimension(isTallMobile ? 18 : 20, scaleInfo) : 28; // space between button and panel edge
+    let buttonY = panelY + panelHeight / 2 - bottomMargin - buttonHeight / 2;
 
         // Stats data
         const statsData = [
@@ -192,17 +195,25 @@ export default class ResultScreen extends BaseScene {
         const rankBottomBuffer = isMobile ? scaleDimension(30, scaleInfo) : 40; // gap below rank
         const buttonTopBuffer = isMobile ? scaleDimension(35, scaleInfo) : 45;  // gap above button
     // statsAreaTop now uses dynamically computed rankY (based on title measured height) ensuring no overlap
-    const statsAreaTop = rankY + rankSize + rankBottomBuffer;
-    const statsAreaBottom = buttonY - buttonHeight / 2 - buttonTopBuffer;
+        let statsAreaTop = rankY + rankSize + rankBottomBuffer;
+        let statsAreaBottom = buttonY - buttonHeight / 2 - buttonTopBuffer;
         let statsAreaHeight = statsAreaBottom - statsAreaTop;
 
-        // If area is too small (e.g. very small screen), reduce buttonY slightly within panel bounds
-        if (statsAreaHeight < 120) {
-            const adjust = 120 - statsAreaHeight;
-            // move button down if there's space otherwise shrink spacing
-            if (buttonY + buttonHeight / 2 + adjust <= panelBottom - 10) {
-                // we can push button further down
-                // NOTE: visual elements (button) created later will read updated buttonY via closure variables? we need new const -> use let for buttonY? Simpler: we cannot reassign const; create new variable
+        // Minimum desired per-row height (used for dynamic adjustment)
+        const minRowHeight = isMobile ? scaleDimension(34, scaleInfo) : 38;
+        const minStatsAreaNeeded = minRowHeight * statsData.length;
+
+        // If we don't have enough space for the stats, lift the button upward until we do (but keep margin to title & rank)
+        if (statsAreaHeight < minStatsAreaNeeded) {
+            const deficit = (minStatsAreaNeeded - statsAreaHeight);
+            // Move button up by deficit (plus a little buffer) but never above panel center + some ratio
+            const maxLift = buttonY - (panelY - panelHeight / 2) - 120; // avoid colliding with rank area
+            const actualLift = Math.min(deficit + scaleDimension(12, scaleInfo), maxLift);
+            if (actualLift > 0) {
+                buttonY -= actualLift;
+                // Recompute bottom stats boundary after lifting button
+                statsAreaBottom = buttonY - buttonHeight / 2 - buttonTopBuffer;
+                statsAreaHeight = statsAreaBottom - statsAreaTop;
             }
         }
 
