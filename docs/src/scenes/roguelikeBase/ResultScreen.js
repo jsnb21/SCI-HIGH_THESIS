@@ -78,8 +78,7 @@ export default class ResultScreen extends BaseScene {
     // Mobile: widen further (up to 98%) and allow a little more max width for larger phones
     // Widen mobile panel further; allow almost full width while keeping a tiny margin
     const panelWidth = isMobile ? (
-        // Push nearly edge-to-edge while leaving 4px margin per side
-        Math.min(scaleInfo.width * 0.995, scaleInfo.width - 8)
+        isTallMobile ? Math.min(scaleInfo.width * 0.995, 470) : Math.min(scaleInfo.width * 0.99, tinyPhone ? 380 : 450)
     ) : scaleDimension(560, scaleInfo);
     const basePanelHeight = isMobile ? (
         // Give a little more height on standard mobile to show more stats immediately
@@ -180,25 +179,13 @@ export default class ResultScreen extends BaseScene {
         // --- FULL SCROLLABLE CONTENT (title, rank, stats, button) ---
     const panelTop = panelY - panelHeight/2;
     const paddingTop = isMobile ? scaleDimension(20, scaleInfo) : 34;
-    // Further reduce side padding on mobile for maximum content width
-    const paddingSides = isMobile ? scaleDimension(8, scaleInfo) : 26;
+    // Reduce side padding on mobile to gain more horizontal space for stats rows
+    const paddingSides = isMobile ? scaleDimension(12, scaleInfo) : 26;
         const paddingBottom = isMobile ? scaleDimension(24, scaleInfo) : 30;
         const innerWidth = panelWidth - paddingSides * 2;
 
         // Build stats + button after adjusting title/rank to top anchored positions
-        title.y = panelTop + paddingTop + title.height/2;
-        // Auto-fit title on mobile if it exceeds available inner width
-        if (isMobile) {
-            const innerWidth = panelWidth - paddingSides * 2;
-            // crude measurement loop: shrink until width fits or min size reached
-            let currentSize = parseInt(title.style.fontSize, 10) || 32;
-            while (title.width > innerWidth && currentSize > 14) {
-                currentSize -= 2;
-                title.setFontSize(currentSize + 'px');
-            }
-            // Re-center after potential size change
-            title.setX(panelX);
-        }
+    title.y = panelTop + paddingTop + title.height/2;
     // Larger gap between title and rank
     const titleRankGap = isMobile ? scaleDimension(20, scaleInfo) : 34;
     rankY = title.y + title.height/2 + titleRankGap + rankSize/2;
