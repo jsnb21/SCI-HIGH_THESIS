@@ -7,6 +7,7 @@ export default class NotificationScene extends Phaser.Scene {
     this.queue = [];
     this.activeItem = null;
     this.achievementToasts = [];
+    this.responsive = { }; // will be filled each frame / on resize
   }
   create(){
     this.layer = this.add.layer();
@@ -35,6 +36,43 @@ export default class NotificationScene extends Phaser.Scene {
       });
     });
 
+    // Initial responsive calculation
+    this.computeResponsiveMetrics();
+    // Listen to scale resize from Phaser
+    this.scale.on('resize', () => this.handleResize());
+    // Fallback listener (some environments dispatch window resize only)
+    if(window){ window.addEventListener('resize', () => this.handleResize()); }
+
+  }
+  computeResponsiveMetrics(){
+    const w = this.scale.gameSize.width;
+    const isSmall = w < 540;
+    const isTiny = w < 380;
+    this.responsive = {
+      isSmall,
+      isTiny,
+      queueMaxWidth: isTiny ? 260 : isSmall ? 380 : 560,
+      queueTitleSize: isTiny ? 22 : isSmall ? 28 : 34,
+      queueMsgSize: isTiny ? 16 : isSmall ? 20 : 26,
+      queuePadding: isTiny ? 12 : isSmall ? 16 : 20,
+      queueYOffset: isTiny ? 70 : isSmall ? 110 : 140,
+      toastMaxWidth: isTiny ? 200 : isSmall ? 300 : 420,
+      toastHeaderSize: isTiny ? 16 : isSmall ? 20 : 24,
+      toastNameSize: isTiny ? 14 : isSmall ? 18 : 22,
+      toastMargin: isTiny ? 12 : isSmall ? 20 : 30,
+      toastPadding: isTiny ? 8 : isSmall ? 10 : 14,
+      toastVerticalGap: isTiny ? 6 : isSmall ? 10 : 12,
+      toastLifetime: 3600 // could shorten on tiny if desired
+    };
+  }
+  handleResize(){
+    this.computeResponsiveMetrics();
+    // Reflow active center popup (if any)
+    if(this.activeContainer && this.activeContainer.list){
+      this.relayoutActiveCenter();
+    }
+    // Reflow achievement toasts
+    this.reflowAchievementToasts(true);
   }
   enqueue(item){ this.queue.push(item); if(!this.activeItem) this.showNext(); }
   rarityColor(r){ return ({Epic:0x9b59b6,Rare:0x2980b9,Uncommon:0x27ae60,Common:0x95a5a6})[r]||0x2c3e50; }
@@ -42,15 +80,16 @@ export default class NotificationScene extends Phaser.Scene {
     if(this.activeItem || !this.queue.length) return;
     const data = this.queue.shift();
     this.activeItem = data;
-    const padding=20, maxWidth=560;
+    const { queuePadding:padding, queueMaxWidth:maxWidth, queueTitleSize, queueMsgSize, queueYOffset } = this.responsive;
     const cam=this.cameras.main;
-    const x=cam.midPoint.x; const y=cam.worldView.y+140;
-    const title = this.add.text(0,0,data.title,{fontFamily:'Caprasimo-Regular',fontSize:'34px',color:'#fff',stroke:'#000',strokeThickness:6}).setOrigin(0.5,0);
-    const msg = this.add.text(0,0,data.message,{fontFamily:'Caprasimo-Regular',fontSize:'26px',color:'#fff',wordWrap:{width:maxWidth-padding*2}}).setOrigin(0.5,0);
+    const x=cam.midPoint.x; const y=cam.worldView.y+queueYOffset;
+    const title = this.add.text(0,0,data.title,{fontFamily:'Caprasimo-Regular',fontSize:`${queueTitleSize}px`,color:'#fff',stroke:'#000',strokeThickness:Math.round(queueTitleSize*0.18)}).setOrigin(0.5,0);
+    const msg = this.add.text(0,0,data.message,{fontFamily:'Caprasimo-Regular',fontSize:`${queueMsgSize}px`,color:'#fff',wordWrap:{width:maxWidth-padding*2}}).setOrigin(0.5,0);
     msg.y = title.height + 6;
     const contentH = title.height + 6 + msg.height;
     const contentW = Math.min(maxWidth, Math.max(title.width,msg.width)+padding*2);
     const container = this.add.container(x,-400).setDepth(100000);
+    this.activeContainer = container; // store for possible relayout
     const bg = this.add.graphics();
     bg.fillStyle(data.type==='achievement'? this.rarityColor(data.rarity):0x2c3e50,0.92);
     bg.fillRoundedRect(-contentW/2,-padding,contentW,contentH+padding*2,22);
@@ -75,18 +114,16 @@ export default class NotificationScene extends Phaser.Scene {
   // ================= Top-Right Achievement Toasts =================
   showAchievementToast({ title, rarity }){
     const cam = this.cameras.main;
-    const margin = 30;
-    const padding = 14;
-    const maxWidth = 420;
+    const { toastMargin:margin, toastPadding:padding, toastMaxWidth:maxWidth, toastHeaderSize, toastNameSize, toastVerticalGap, toastLifetime } = this.responsive;
     const baseX = cam.worldView.x + cam.worldView.width - margin; // right edge reference
     const baseY = cam.worldView.y + margin; // top edge reference
 
     // Create title + (rarity label)
     const header = this.add.text(0,0,'Achievement Unlocked!',{
-      fontFamily:'Caprasimo-Regular',fontSize:'24px',color:'#fff',stroke:'#000',strokeThickness:4
+      fontFamily:'Caprasimo-Regular',fontSize:`${toastHeaderSize}px`,color:'#fff',stroke:'#000',strokeThickness:Math.round(toastHeaderSize*0.18)
     }).setOrigin(0,0);
     const name = this.add.text(0,0,title,{
-      fontFamily:'Caprasimo-Regular',fontSize:'22px',color:'#fff',stroke:'#000',strokeThickness:3,wordWrap:{width:maxWidth-padding*2}
+      fontFamily:'Caprasimo-Regular',fontSize:`${toastNameSize}px`,color:'#fff',stroke:'#000',strokeThickness:Math.round(toastNameSize*0.17),wordWrap:{width:maxWidth-padding*2}
     }).setOrigin(0,0);
     name.y = header.height + 4;
     const totalH = header.height + 4 + name.height;
@@ -113,7 +150,7 @@ export default class NotificationScene extends Phaser.Scene {
     this.layer.add(container);
 
     // Determine vertical stacking (shift existing down)
-    const verticalGap = 12;
+  const verticalGap = toastVerticalGap;
     let yOffset = 0;
     this.achievementToasts.forEach(t => {
       yOffset += t.height + verticalGap;
@@ -132,7 +169,7 @@ export default class NotificationScene extends Phaser.Scene {
     });
 
     // Auto dismiss after delay
-    this.time.delayedCall(3600, () => this.dismissAchievementToast(container));
+  this.time.delayedCall(toastLifetime, () => this.dismissAchievementToast(container));
 
     this.achievementToasts.push(container);
   }
@@ -155,15 +192,36 @@ export default class NotificationScene extends Phaser.Scene {
     });
   }
 
-  reflowAchievementToasts(){
+  reflowAchievementToasts(resizing=false){
     const cam = this.cameras.main;
-    const margin = 30; const verticalGap = 12;
+    const { toastMargin:margin, toastVerticalGap:verticalGap } = this.responsive;
     const baseY = cam.worldView.y + margin;
     const baseX = cam.worldView.x + cam.worldView.width - margin;
     let yCursor = baseY;
     this.achievementToasts.forEach(t => {
-      this.tweens.add({ targets:t, x: baseX - t.widthVal, y: yCursor, duration: 250, ease:'Cubic.easeOut'});
+      const targetX = baseX - t.widthVal;
+      if(resizing){
+        // Jump faster during resize to avoid laggy feel
+        this.tweens.add({ targets:t, x: targetX, y: yCursor, duration: 160, ease:'Cubic.easeOut'});
+      } else {
+        this.tweens.add({ targets:t, x: targetX, y: yCursor, duration: 250, ease:'Cubic.easeOut'});
+      }
       yCursor += t.height + verticalGap;
     });
+  }
+  relayoutActiveCenter(){
+    if(!this.activeContainer) return;
+    // Destroy & rebuild? Simpler: we can't easily reflow text widths without recreating; so dismiss fast & requeue original data.
+    // For smoothness: skip if currently animating in/out.
+    if(this.activeItem){
+      const current = this.activeItem;
+      // Put it back at front of queue to rebuild with new metrics
+      this.queue.unshift(current);
+      // Force immediate dismiss of current visual container
+      this.activeItem = null;
+      try { this.activeContainer.destroy(true); } catch(_) {}
+      this.activeContainer = null;
+      this.showNext();
+    }
   }
 }
