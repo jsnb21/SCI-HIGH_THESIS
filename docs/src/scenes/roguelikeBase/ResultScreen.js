@@ -75,11 +75,13 @@ export default class ResultScreen extends BaseScene {
     // Create main result panel with responsive dimensions for mobile
     // Wider on desktop, almost full width on tiny phones, but keep readable margins
     const tinyPhone = scaleInfo.width < 400;
+    // Mobile: widen further (up to 98%) and allow a little more max width for larger phones
     const panelWidth = isMobile ? (
-        isTallMobile ? Math.min(scaleInfo.width * 0.96, 420) : Math.min(scaleInfo.width * 0.94, tinyPhone ? 360 : 405)
+        isTallMobile ? Math.min(scaleInfo.width * 0.98, 440) : Math.min(scaleInfo.width * 0.975, tinyPhone ? 370 : 430)
     ) : scaleDimension(560, scaleInfo);
     const basePanelHeight = isMobile ? (
-        isTallMobile ? Math.min(scaleInfo.height * 0.92, 560) : Math.min(scaleInfo.height * 0.9, 540)
+        // Give a little more height on standard mobile to show more stats immediately
+        isTallMobile ? Math.min(scaleInfo.height * 0.92, 560) : Math.min(scaleInfo.height * 0.92, 560)
     ) : Math.min(scaleDimension(600, scaleInfo), scaleInfo.height * 0.9); // taller by default on desktop, still capped to viewport
     const panelHeight = basePanelHeight;
         const panelX = this.scale.width / 2;
@@ -102,7 +104,8 @@ export default class ResultScreen extends BaseScene {
             'SESSION ENDED';
         
     // Title Y: desktop a bit higher now to allow distinct rank gap
-    let titleY = isMobile ? panelY - panelHeight * (isTallMobile ? 0.43 : 0.4) : panelY - panelHeight * 0.38;
+    // Shift title higher on mobile to free vertical space for stats
+    let titleY = isMobile ? panelY - panelHeight * (isTallMobile ? 0.45 : 0.435) : panelY - panelHeight * 0.38;
         const title = this.add.text(panelX, titleY, titleText, {
             fontFamily: 'Arial',
             fontSize: isMobile ? 
@@ -137,10 +140,11 @@ export default class ResultScreen extends BaseScene {
         
     // Enhanced rank display with special effects and responsive positioning
         // Rank positioned dynamically BELOW title so they never overlap on desktop
-    let rankSize = isMobile ? (tinyPhone ? 32 : (isTallMobile ? 40 : 38)) : 56;
-    // Larger explicit gaps so rank never touches title: desktop > mobile
-    const desktopTitleRankGap = isMobile ? 0 : 40; // increased from 12 -> 40
-    const mobileTitleRankGap = isMobile ? (isTallMobile ? 14 : 10) : 0; // slight increase mobile
+    // Reduce rank size slightly on mobile so more stats visible
+    let rankSize = isMobile ? (tinyPhone ? 30 : (isTallMobile ? 38 : 34)) : 56;
+    // Reduce gap under title for mobile to reclaim space
+    const desktopTitleRankGap = isMobile ? 0 : 40;
+    const mobileTitleRankGap = isMobile ? (isTallMobile ? 10 : 8) : 0;
     const computedTitleBottom = title.y + title.height / 2;
     // Center of rank circle: titleBottom + gap + radius
     let rankY = isMobile
@@ -181,13 +185,15 @@ export default class ResultScreen extends BaseScene {
             { label: '📊 Accuracy', value: `${accuracy.toFixed(1)}%`, color: accuracy >= 80 ? '#00ff88' : accuracy >= 60 ? '#ffaa00' : '#ff4444' }
         ];
 
-        const areaTop = rankY + rankSize + (isMobile ? scaleDimension(20, scaleInfo) : 50);
-        const areaBottom = panelY + panelHeight/2 - (isMobile ? scaleDimension(14, scaleInfo) : 30);
+    // Tighten spacing around stats area for mobile (smaller top and bottom padding)
+    const areaTop = rankY + rankSize + (isMobile ? scaleDimension(10, scaleInfo) : 50);
+    const areaBottom = panelY + panelHeight/2 - (isMobile ? scaleDimension(8, scaleInfo) : 30);
         const availableHeight = areaBottom - areaTop;
         const horizontalPadding = isMobile ? scaleDimension(18, scaleInfo) : 20;
         const contentWidth = panelWidth - horizontalPadding * 2;
-        const rowHeight = isMobile ? scaleDimension(isTallMobile ? 40 : 38, scaleInfo) : 38;
-        const rowGap = isMobile ? scaleDimension(8, scaleInfo) : 10;
+    // Slightly more compact rows & gaps on mobile
+    const rowHeight = isMobile ? scaleDimension(isTallMobile ? 38 : 36, scaleInfo) : 38;
+    const rowGap = isMobile ? scaleDimension(6, scaleInfo) : 10;
         const statFontSize = isMobile ? scaleFontSize(tinyPhone ? 15 : 17, scaleInfo) : '20px';
 
         const viewport = this.add.container(0,0);
