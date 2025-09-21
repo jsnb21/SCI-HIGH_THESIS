@@ -203,14 +203,6 @@ export default class MainHub extends Phaser.Scene {
             sceneManager.stop('DungeonScene');
         }
         
-        // Stop any quiz scenes that might still be running
-        const quizScenes = ['PythonQuizScene', 'JavaQuizScene', 'CQuizScene', 'CSharpQuizScene', 'CplusplusQuizScene', 'WebDesignQuizScene'];
-        quizScenes.forEach(sceneName => {
-            if (sceneManager.isActive(sceneName) || sceneManager.isPaused(sceneName)) {
-                sceneManager.stop(sceneName);
-            }
-        });
-        
         // Set up cameras first
         this.cameras.main.setBackgroundColor('#87ceeb');
         

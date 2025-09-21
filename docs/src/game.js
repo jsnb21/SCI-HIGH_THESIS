@@ -28,17 +28,8 @@ import DamianChapterSelect from './scenes/storyScenes/damian/DamianChapterSelect
 import DamianStoryQuiz from './scenes/storyScenes/damian/DamianStoryQuiz.js';
 import DamianProgressTracker from './scenes/storyScenes/damian/DamianProgressTracker.js';
 
-// Office 
-import Office from './scenes/office.js';
-
 // Computer Lab
 import ComputerLab from './scenes/computerlab.js';
-import WebDesignScene from '/src/scenes/comlabscenes/webDesign.js';
-import PythonScene from '/src/scenes/comlabscenes/python.js';
-import JavaScene from '/src/scenes/comlabscenes/java.js';
-import CSProgrammingScene from '/src/scenes/comlabscenes/CProg.js';
-import CPlusplusScene from '/src/scenes/comlabscenes/Cplusplus.js';
-import CSharpScene from '/src/scenes/comlabscenes/CSharp.js';
 
 // Roguelike Scenes
 import MainGameplay from '/src/scenes/roguelikeBase/main_gameplay.js';
@@ -46,14 +37,6 @@ import QuizScene from '/src/scenes/roguelikeBase/QuizScene.js';
 import PowerUpScene from '/src/scenes/roguelikeBase/PowerUpScene.js';
 import ResultScreen from './scenes/roguelikeBase/ResultScreen.js';
 
-// Quiz Scenes
-import BaseQuizScene from '/src/scenes/quizscenes/BaseQuizScene.js';
-import WebDesignQuizScene from '/src/scenes/quizscenes/WebDesignQuizScene.js';
-import JavaQuizScene from '/src/scenes/quizscenes/JavaQuizScene.js';
-import PythonQuizScene from './scenes/quizscenes/PythonQuizScene.js';
-import CQuizScene from './scenes/quizscenes/CQuizScene.js';
-import CSharpQuizScene from './scenes/quizscenes/CSharpQuizScene.js';
-import CplusplusQuizScene from './scenes/quizscenes/CplusplusQuizScene.js';
 // Add Custom Quiz Scene import
 import CustomQuizScene from './scenes/quizscenes/CustomQuizScene.js';
 // Custom Quiz Selection Scene
@@ -61,10 +44,6 @@ import CustomQuizSelectScene from './scenes/quizscenes/CustomQuizSelectScene.js'
 
 //Library Scenes
 import BaseLibraryScene from './scenes/libraryScenes/baseLibraryScene.js';
-
-// Dungeon Scene
-import DungeonScene from './scenes/comlabscenes/dungeon.js';
-import DungeonCleared from './scenes/dungeonCleared.js';
 
 // UI Scenes
 import CardRewardScene from './scenes/ui/CardRewardScene.js';
@@ -102,8 +81,6 @@ const config = {
     StartUp, // Added StartUp as the first scene
     MainMenu,
     /* Main Scenes */
-    DungeonScene,
-    DungeonCleared,
     /* UI Scenes */
     CardRewardScene,
   NotificationScene,
@@ -127,32 +104,16 @@ const config = {
     DamianChapterSelect,
     DamianStoryQuiz,
     DamianProgressTracker,
-    /* Office */
-    Office,
     /* Computer Lab Scenes */
     ComputerLab,
-    WebDesignScene,
-    PythonScene,
-    JavaScene,
-    CSProgrammingScene,
-    CPlusplusScene,
-    CSharpScene,
     /* Roguelike Scenes */
     MainGameplay,
     QuizScene,
     PowerUpScene,
     ResultScreen,
-    /* Quiz Scenes */
-    BaseQuizScene,
-    WebDesignQuizScene,
-    JavaQuizScene,
-    PythonQuizScene,
-    CplusplusQuizScene,
-    CQuizScene,
-    CSharpQuizScene,
     // Register custom quiz scene
     CustomQuizScene,
-  CustomQuizSelectScene,
+    CustomQuizSelectScene,
     /* Library Scenes */
     BaseLibraryScene
   ],
