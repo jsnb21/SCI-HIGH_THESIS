@@ -220,6 +220,8 @@ export default class MainHub extends Phaser.Scene {
         // Clean up any existing resize listener before adding a new one
         this.scale.off('resize', this.onResize, this);
         this.scale.on('resize', this.onResize, this);
+
+        // (Notification debug code removed after verification)
     }
 
     async createUI() {

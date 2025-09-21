@@ -23,7 +23,7 @@
           if (firebase && firebase.auth && !firebase.auth().currentUser) {
             try { await firebase.auth().signInAnonymously(); } catch(_) {}
           }
-          console.log('[Game] Firebase initialized for DB URL:', firebase.app().options.databaseURL);
+        
         } catch (e) {
           console.error('Firebase init sequence failed', e);
         }
@@ -300,6 +300,7 @@
     </div>
     
     <div id="game"></div>
+    <!-- Debug notify button removed -->
     
     <script>
       // Function to check if device is mobile
@@ -336,5 +337,6 @@
     </script>
     
     <script type="module" src="./src/game.js"></script>
+    <!-- Notification debug scripts removed after verification -->
   </body>
 </html>

@@ -266,27 +266,24 @@ export default class MainMenu extends Phaser.Scene {
         // Create scrolling clouds behind everything
         this.createScrollingClouds();
 
-        // Add the logo image - responsive positioning with better desktop scaling
-        let logoPos;
-        try {
-            logoPos = getResponsivePosition(scaleInfo, 'center', { 
-                x: 0, 
-                y: scaleInfo.isMobile ? -280 * scaleInfo.finalScale : -310 * scaleInfo.finalScale 
-            });
-        } catch (error) {
-            logoPos = { 
-                x: width / 2, 
-                y: scaleInfo.isMobile ? height / 2 - 280 * scaleInfo.finalScale : height / 2 - 310 * scaleInfo.finalScale 
-            };
-        }
-        
-        const logo = this.add.image(logoPos.x, logoPos.y, 'game_logo');
-        
-        // Scale the logo appropriately - reduced desktop scale to prevent overlap
-        const logoScale = scaleInfo.isMobile ? 
-            (scaleInfo.isPortrait ? 1.0 * scaleInfo.finalScale : 0.9 * scaleInfo.finalScale) : 
-            0.8 * scaleInfo.finalScale; // Reduced from 1.3 to 0.8 for desktop
+        // Centering strategy: anchor layout to true screen center without giant negative offset
+        // Compute dynamic vertical distribution: logo above, buttons centered collectively.
+        const logo = this.add.image(width/2, 0, 'game_logo');
+        const logoScale = scaleInfo.isMobile ?
+            (scaleInfo.isPortrait ? 1.0 * scaleInfo.finalScale : 0.9 * scaleInfo.finalScale) :
+            0.85 * scaleInfo.finalScale; // Slightly larger but still safe
         logo.setScale(logoScale);
+        // After scaling, position logo so that space below it + buttons sits roughly centered
+        const projectedLogoHeight = logo.displayHeight;
+        // Reserve total stack height: logo + gap + buttons block
+        const desktopButtonCount = 4;
+        const desktopButtonSpacing = 110 * scaleInfo.finalScale;
+        const singleButtonHeightEstimate = 70 * scaleInfo.finalScale; // approximate visual height
+        const buttonsBlockHeight = (desktopButtonCount * singleButtonHeightEstimate) + ((desktopButtonCount-1) * desktopButtonSpacing);
+        const gapBetweenLogoAndFirstButton = 40 * scaleInfo.finalScale;
+        const totalStack = projectedLogoHeight + gapBetweenLogoAndFirstButton + buttonsBlockHeight;
+        const topY = (height - totalStack)/2; // top of logo
+        logo.y = topY + projectedLogoHeight/2; // center of logo
         
         // Add fade-in animation for the logo
         logo.setAlpha(0);
@@ -310,7 +307,7 @@ export default class MainMenu extends Phaser.Scene {
         });
 
         // Menu button spacing and positioning - different for mobile and desktop
-        if (scaleInfo.isMobile) {
+    if (scaleInfo.isMobile) {
             // Mobile: 2x2 grid layout with bigger buttons (moved lower)
             const horizontalSpacing = 400 * scaleInfo.finalScale; // Increased horizontal gap between buttons in same row
             const verticalSpacing = 30 * scaleInfo.finalScale;    // Increased vertical gap between rows
@@ -353,34 +350,45 @@ export default class MainMenu extends Phaser.Scene {
                 createMenuButton(this, btn.x, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo, menuButtons);
             });
         } else {
-            // Desktop: vertical layout with better spacing to prevent overlap
-            const buttonSpacing = 110 * scaleInfo.finalScale; // Increased from 85 to 110 for much better spacing
-            const startY = height / 2 + 40 * scaleInfo.finalScale; // Moved up from +120 to +40
-
-            // Menu button data with responsive positioning
+            // Desktop: create buttons first, then precisely center whole stack (logo + buttons)
+            const buttonSpacing = desktopButtonSpacing;
+            const startYApprox = topY + projectedLogoHeight + gapBetweenLogoAndFirstButton + (singleButtonHeightEstimate/2);
             const menuButtons = [
-                { label: 'Start Adventure', y: startY, onClick: async () => {
-                    se_confirmSound.play();
-                    await this.handleAdventureStart();
-                }},
-                { label: 'View Progress', y: startY + buttonSpacing, onClick: () => {
-                    se_confirmSound.play();
-                    this.showProgressSummary();
-                }},
-                { label: 'Options', y: startY + (buttonSpacing * 2), onClick: () => {
-                    se_confirmSound.play();
-                    LoadingScreen.transitionToScene(this, 'OptionsScene', 'Loading...', 800);
-                }},
-                { label: 'Quit', y: startY + (buttonSpacing * 3), onClick: () => {
-                    se_confirmSound.play();
-                    this.showQuitConfirmation(se_hoverSound, se_confirmSound);
-                }},
+                { label: 'Start Adventure', offsetIndex:0, onClick: async () => { se_confirmSound.play(); await this.handleAdventureStart(); }},
+                { label: 'View Progress', offsetIndex:1, onClick: () => { se_confirmSound.play(); this.showProgressSummary(); }},
+                { label: 'Options', offsetIndex:2, onClick: () => { se_confirmSound.play(); LoadingScreen.transitionToScene(this, 'OptionsScene', 'Loading...', 800); }},
+                { label: 'Quit', offsetIndex:3, onClick: () => { se_confirmSound.play(); this.showQuitConfirmation(se_hoverSound, se_confirmSound); }},
             ];
-
-            // Create menu buttons with consistent sizes and backgrounds and effects
-            menuButtons.forEach((btn, i) => {
-                createMenuButton(this, width / 2, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo, menuButtons);
+            const created = menuButtons.map((btn,i)=>{
+                const y = startYApprox + (btn.offsetIndex * buttonSpacing);
+                return createMenuButton(this, width/2, y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo, menuButtons);
             });
+            // Measure actual stack bounds
+            const buttonTop = Math.min(...created.map(c=> c.text.y - c.btnHeight/2));
+            const buttonBottom = Math.max(...created.map(c=> c.text.y + c.btnHeight/2));
+            const actualButtonsHeight = buttonBottom - buttonTop;
+            const gap = 40 * scaleInfo.finalScale;
+            const actualTotal = logo.displayHeight + gap + actualButtonsHeight;
+            const desiredTop = (height - actualTotal)/2;
+            const currentLogoTop = logo.y - logo.displayHeight/2;
+            const delta = desiredTop - currentLogoTop;
+            if (Math.abs(delta) > 0.5){
+                // Shift logo & buttons by delta for perfect centering
+                logo.y += delta;
+                created.forEach(c=>{ c.bg.y += delta; c.text.y += delta; });
+            }
+
+            // Horizontal centering: compute bounding box of logo + widest button backgrounds
+            const allLefts = [ logo.x - logo.displayWidth/2, ...created.map(c=> c.text.x - c.btnWidth/2) ];
+            const allRights = [ logo.x + logo.displayWidth/2, ...created.map(c=> c.text.x + c.btnWidth/2) ];
+            const minX = Math.max(0, Math.min(...allLefts));
+            const maxX = Math.min(width, Math.max(...allRights));
+            const currentCenterX = (minX + maxX) / 2;
+            const deltaX = (width/2) - currentCenterX;
+            if (Math.abs(deltaX) > 0.5) {
+                logo.x += deltaX;
+                created.forEach(c=>{ c.bg.x += deltaX; c.text.x += deltaX; });
+            }
         }
         
         // Auto-load student progress after creating UI
@@ -1144,6 +1152,7 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
             text.setScale(1);
         });
     });
+    return { bg, text, btnHeight, btnWidth };
 }
 
 function showNoSaveFilesModal(scene) {

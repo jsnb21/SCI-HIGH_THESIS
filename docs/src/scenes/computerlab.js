@@ -97,6 +97,8 @@ export default class ComputerLab extends Phaser.Scene {
                 onceOnlyFlags.flags['computerlab_tutorial'] = false;
             }
         });
+
+        // (Notification debug code removed after verification)
     }
 
     createCarousel(iconKeys, iconInfo) {

@@ -68,6 +68,7 @@ import DungeonCleared from './scenes/dungeonCleared.js';
 
 // UI Scenes
 import CardRewardScene from './scenes/ui/CardRewardScene.js';
+import NotificationScene from './scenes/ui/NotificationScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -105,6 +106,7 @@ const config = {
     DungeonCleared,
     /* UI Scenes */
     CardRewardScene,
+  NotificationScene,
     Intro,
     OptionsScene,
     MainHub,
@@ -192,6 +194,37 @@ if (typeof window.SES !== 'undefined') {
     console.warn('SES detected - this may cause conflicts');
 }
 
+// ------------------------------------------------------------------
+// Global notification helper (defined early, before scenes run)
+// ------------------------------------------------------------------
+if(!window.__pendingGameNotifications){
+  window.__pendingGameNotifications = [];
+}
+window.pushGameMessage = function(title, message, opts = {}) {
+  const payload = { title, message, ...(opts||{}) };
+  // If NotificationScene already ready & game exists -> emit immediately
+  if(window.__phaserNotificationsReady && window.game?.events){
+    window.game.events.emit('notify', payload);
+  } else {
+    window.__pendingGameNotifications.push(payload);
+  }
+};
+
+// ---------------------------------------------------------------
+// Test helper to trigger the new top-right achievement toast
+// Usage (in browser dev console): testAchievementToast('My Test', 'Legendary')
+// Rarity options expected: Common, Uncommon, Rare, Epic, Legendary
+// ---------------------------------------------------------------
+window.testAchievementToast = function(title = 'Test Achievement', rarity = 'Rare') {
+  if(window.game?.events){
+    window.game.events.emit('achievement-unlocked', { title, rarity });
+  } else {
+    console.warn('Game not ready yet; achievement test buffered');
+    if(!window.__pendingAchievementTests) window.__pendingAchievementTests = [];
+    window.__pendingAchievementTests.push({ title, rarity });
+  }
+};
+
 window.addEventListener('resize', () => {
     if (window.game && window.game.scale) {
         window.game.scale.refresh();
@@ -214,6 +247,21 @@ try {
     
     // Make game globally accessible for debugging
     window.game = game;
+
+    // Immediately flush any buffered notifications once NotificationScene signals readiness
+    // (NotificationScene itself will also flush, this is a secondary safeguard via interval.)
+    if(!window.__notifFlushInterval){
+      window.__notifFlushInterval = setInterval(()=>{
+        if(window.__phaserNotificationsReady && window.game?.events && window.__pendingGameNotifications?.length){
+          const q = window.__pendingGameNotifications.splice(0);
+          q.forEach(p=>window.game.events.emit('notify', p));
+        }
+        if(window.__phaserNotificationsReady){
+          clearInterval(window.__notifFlushInterval);
+          window.__notifFlushInterval = null;
+        }
+      }, 300);
+    }
 } catch (error) {
     console.error('Failed to create Phaser Game:', error);
     console.error('Error stack:', error.stack);
