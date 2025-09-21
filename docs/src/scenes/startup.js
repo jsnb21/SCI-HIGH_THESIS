@@ -23,7 +23,7 @@ export default class StartupScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('logo', 'assets/img/buko_productions-logo.png');
+        this.load.image('logo', 'public/assets/img/Website/buko_productions-logo.png');
     }    create() {
         // Set up event listeners using fullscreen utility
         this.fullscreenManager = FullscreenUtils.setupScene(this);
