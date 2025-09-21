@@ -170,17 +170,11 @@ export default class ResultScreen extends BaseScene {
             }
         }).setOrigin(0.5);
         
-        // --- DYNAMIC LAYOUT (prevents overlap of stats & button) ---
-        // Pre-compute button placement first so we know how much vertical space is left for stats
-    // Button dimensions first (used for layout math)
-    const buttonHeight = isMobile ? scaleDimension(isTallMobile ? 58 : 54, scaleInfo) : 62;
-    const buttonWidth = isMobile ? scaleDimension(tinyPhone ? 280 : (isTallMobile ? 340 : 330), scaleInfo) : 360;
-    const buttonFontSize = isMobile ? scaleFontSize(tinyPhone ? 18 : (isTallMobile ? 21 : 20), scaleInfo) : 24;
-    // Compute button Y so it ALWAYS remains fully inside the panel (previous formula let it hang a few px outside)
-    const bottomMargin = isMobile ? scaleDimension(isTallMobile ? 18 : 20, scaleInfo) : 28; // space between button and panel edge
-    let buttonY = panelY + panelHeight / 2 - bottomMargin - buttonHeight / 2;
+        // --- RESPONSIVE LAYOUT REFACTOR ---
+        // We now split logic: desktop keeps spacious fixed layout; mobile gets a dedicated scroll container
 
-        // Stats data
+        let buttonBg, buttonGlow, buttonInner, buttonText, statsContainer; // unify naming for later animations
+
         const statsData = [
             { label: '✓ Correct Answers', value: this.correctAnswers, color: '#00ff88' },
             { label: '✗ Wrong Answers', value: this.wrongAnswers, color: '#ff4444' },
@@ -189,212 +183,163 @@ export default class ResultScreen extends BaseScene {
             { label: '📊 Accuracy', value: `${accuracy.toFixed(1)}%`, color: accuracy >= 80 ? '#00ff88' : accuracy >= 60 ? '#ffaa00' : '#ff4444' }
         ];
 
-        // Define vertical region for stats between rank area and button
-        const panelTop = panelY - panelHeight / 2;
-        const panelBottom = panelY + panelHeight / 2;
-        const rankBottomBuffer = isMobile ? scaleDimension(30, scaleInfo) : 40; // gap below rank
-        const buttonTopBuffer = isMobile ? scaleDimension(35, scaleInfo) : 45;  // gap above button
-    // statsAreaTop now uses dynamically computed rankY (based on title measured height) ensuring no overlap
-        let statsAreaTop = rankY + rankSize + rankBottomBuffer;
-        let statsAreaBottom = buttonY - buttonHeight / 2 - buttonTopBuffer;
-        let statsAreaHeight = statsAreaBottom - statsAreaTop;
+        if (isMobile) {
+            // -------- MOBILE LAYOUT --------
+            // Goal: Button always AFTER stats; entire stats+button column scrolls if overflow.
+            const verticalPaddingTop = scaleDimension(18, scaleInfo); // padding inside panel before first stat
+            const areaTop = rankY + rankSize + scaleDimension(20, scaleInfo); // start below rank
+            const areaBottom = panelY + panelHeight / 2 - scaleDimension(14, scaleInfo); // leave small bottom padding
+            const scrollAreaHeight = areaBottom - areaTop;
+            const contentMaxWidth = panelWidth - scaleDimension(36, scaleInfo);
 
-        // Minimum desired per-row height (used for dynamic adjustment)
-        const minRowHeight = isMobile ? scaleDimension(34, scaleInfo) : 38;
-        const minStatsAreaNeeded = minRowHeight * statsData.length;
+            statsContainer = this.add.container(0, 0);
 
-        // If we don't have enough space for the stats, lift the button upward until we do (but keep margin to title & rank)
-        if (statsAreaHeight < minStatsAreaNeeded) {
-            const deficit = (minStatsAreaNeeded - statsAreaHeight);
-            // Move button up by deficit (plus a little buffer) but never above panel center + some ratio
-            const maxLift = buttonY - (panelY - panelHeight / 2) - 120; // avoid colliding with rank area
-            const actualLift = Math.min(deficit + scaleDimension(12, scaleInfo), maxLift);
-            if (actualLift > 0) {
-                buttonY -= actualLift;
-                // Recompute bottom stats boundary after lifting button
-                statsAreaBottom = buttonY - buttonHeight / 2 - buttonTopBuffer;
-                statsAreaHeight = statsAreaBottom - statsAreaTop;
-            }
-        }
+            // Build stat rows stacked vertically (simpler for narrow screens)
+            const rowGap = scaleDimension(isTallMobile ? 10 : 8, scaleInfo);
+            let cursorY = areaTop + verticalPaddingTop;
+            const statLabelFont = scaleFontSize(tinyPhone ? 15 : 16 + (isTallMobile ? 1 : 0), scaleInfo);
 
-        // Compute line height ensuring it fits without overlap, with a max to keep design roomy
-        const maxDesiredLineHeight = isMobile ? scaleDimension(isTallMobile ? 62 : 58, scaleInfo) : 64;
-        let lineHeight = Math.min(maxDesiredLineHeight, statsAreaHeight / statsData.length);
-        const minLineHeight = isMobile ? scaleDimension(34, scaleInfo) : 38;
-        lineHeight = Math.max(lineHeight, minLineHeight);
-
-        // Initial total block height without extra spacing
-        let totalStatsBlockHeight = lineHeight * statsData.length;
-        // Compute vertical slack; if significant, convert part of it to inter-row spacing for a more open layout
-        let extraSpacingPerGap = 0;
-        const gaps = statsData.length - 1;
-        const verticalSlack = statsAreaHeight - totalStatsBlockHeight;
-        if (verticalSlack > (isMobile ? 40 : 60) && gaps > 0) {
-            // Use up to 70% of slack for spacing distribution
-            const usableSlack = verticalSlack * 0.7;
-            extraSpacingPerGap = usableSlack / gaps;
-            // Cap per-gap expansion to avoid huge voids
-            const perGapCap = isMobile ? scaleDimension(14, scaleInfo) : 18;
-            extraSpacingPerGap = Math.min(extraSpacingPerGap, perGapCap);
-            totalStatsBlockHeight += extraSpacingPerGap * gaps;
-        }
-
-        // Center stats block within area after spacing adjustment
-        let statsStartY = statsAreaTop + (statsAreaHeight - totalStatsBlockHeight) / 2 + lineHeight / 2;
-        if (statsStartY + totalStatsBlockHeight / 2 > statsAreaBottom) {
-            statsStartY = statsAreaTop + lineHeight / 2; // fallback top align
-        }
-
-        // Create a container to allow vertical scrolling on very small screens
-        const statsContainer = this.add.container(0,0);
-        const statRowElements = [];
-        const effectiveWidth = panelWidth - 40;
-        const statLabelFont = isMobile ? scaleFontSize(tinyPhone ? 15 : 17, scaleInfo) : '22px';
-        const statValueFont = statLabelFont;
-        statsData.forEach((stat, index) => {
-            const yPos = statsStartY + index * (lineHeight + extraSpacingPerGap);
-            const rectHeight = Math.min(lineHeight - 8, (isMobile ? 34 : 36));
-
-            const statBg = this.add.rectangle(panelX, yPos, effectiveWidth, rectHeight, 0x0a1628, 0.7);
-            statBg.setStrokeStyle(1, 0x2c3e50, 0.3);
-            const statGlow = this.add.rectangle(panelX, yPos, effectiveWidth - 2, rectHeight - 2, stat.color, 0.08);
-
-            // If width is small, stack label over value; else keep two-column layout
-            const useStack = tinyPhone && effectiveWidth < 320;
-            let labelText, valueText;
-            if (useStack) {
-                labelText = this.add.text(panelX, yPos - rectHeight * 0.25, stat.label, {
-                    fontFamily: 'Arial',
-                    fontSize: statLabelFont,
-                    color: '#ffffff',
-                    fontWeight: 'bold',
-                    align: 'center'
-                }).setOrigin(0.5, 0.5);
-                valueText = this.add.text(panelX, yPos + rectHeight * 0.25, stat.value.toString(), {
-                    fontFamily: 'Arial',
-                    fontSize: statValueFont,
-                    color: stat.color,
-                    fontWeight: 'bold'
-                }).setOrigin(0.5, 0.5);
-            } else {
-                const leftX = panelX - effectiveWidth * 0.46;
-                const rightX = panelX + effectiveWidth * 0.46;
-                labelText = this.add.text(leftX, yPos, stat.label, {
+            statsData.forEach(stat => {
+                const rowHeight = scaleDimension(40, scaleInfo);
+                const rect = this.add.rectangle(panelX, cursorY + rowHeight / 2, contentMaxWidth, rowHeight, 0x0a1628, 0.75)
+                    .setStrokeStyle(1, 0x2c3e50, 0.4);
+                const glow = this.add.rectangle(panelX, cursorY + rowHeight / 2, contentMaxWidth - 4, rowHeight - 4, stat.color, 0.08);
+                const label = this.add.text(panelX - contentMaxWidth / 2 + scaleDimension(10, scaleInfo), cursorY + rowHeight / 2, stat.label, {
                     fontFamily: 'Arial',
                     fontSize: statLabelFont,
                     color: '#ffffff',
                     fontWeight: 'bold'
                 }).setOrigin(0, 0.5);
-                valueText = this.add.text(rightX, yPos, stat.value.toString(), {
+                const value = this.add.text(panelX + contentMaxWidth / 2 - scaleDimension(10, scaleInfo), cursorY + rowHeight / 2, stat.value.toString(), {
                     fontFamily: 'Arial',
-                    fontSize: statValueFont,
+                    fontSize: statLabelFont,
                     color: stat.color,
                     fontWeight: 'bold'
                 }).setOrigin(1, 0.5);
-            }
-            statsContainer.add([statBg, statGlow, labelText, valueText]);
-            statRowElements.push([statBg, statGlow, labelText, valueText]);
-        });
+                statsContainer.add([rect, glow, label, value]);
+                cursorY += rowHeight + rowGap;
+            });
 
-        // If stats extend beyond usable area, apply a crop mask and enable wheel scroll
-        const needsScroll = (statsStartY + lineHeight * statsData.length / 2) > statsAreaBottom;
-        if (needsScroll) {
-            const maskHeight = statsAreaBottom - statsAreaTop;
-            const maskShape = this.add.rectangle(panelX, statsAreaTop + maskHeight / 2, panelWidth - 20, maskHeight, 0xffffff, 0.01);
-            const geoMask = maskShape.createGeometryMask();
+            // Button (smaller, proportionate) inserted AFTER stats
+            const buttonWidth = Math.min(contentMaxWidth, scaleDimension(tinyPhone ? 240 : 300, scaleInfo));
+            const buttonHeight = scaleDimension(48, scaleInfo);
+            const buttonY = cursorY + scaleDimension(6, scaleInfo) + buttonHeight / 2;
+            buttonBg = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x2c3e50);
+            buttonBg.setStrokeStyle(scaleDimension(2, scaleInfo), 0x4a90e2);
+            buttonGlow = this.add.rectangle(panelX, buttonY, buttonWidth + 6, buttonHeight + 6, 0x4a90e2, 0.35);
+            buttonInner = this.add.rectangle(panelX, buttonY, buttonWidth - 10, buttonHeight - 10, 0x34495e, 0.85);
+            buttonText = this.add.text(panelX, buttonY, 'Back to Computer Lab', {
+                fontFamily: 'Arial',
+                fontSize: `${scaleFontSize(tinyPhone ? 16 : 18, scaleInfo)}px`,
+                fontWeight: 'bold',
+                color: '#ffffff'
+            }).setOrigin(0.5);
+            statsContainer.add([buttonGlow, buttonBg, buttonInner, buttonText]);
+
+            // Apply mask for scrolling if content exceeds area
+            const totalContentHeight = buttonY + buttonHeight / 2 - areaTop + verticalPaddingTop;
+            const needsScroll = totalContentHeight > scrollAreaHeight;
+            const maskRect = this.add.rectangle(panelX, areaTop + scrollAreaHeight / 2, panelWidth - 20, scrollAreaHeight, 0xffffff, 0.01);
+            const geoMask = maskRect.createGeometryMask();
             statsContainer.setMask(geoMask);
-            // Track scroll offset
-            let scrollOffset = 0;
-            const maxScroll = Math.max(0, (lineHeight * statsData.length) - maskHeight + 20);
-            const updateScroll = () => {
-                statsContainer.y = -scrollOffset;
-            };
-            this.input.on('wheel', (p, over, dx, dy) => {
-                if (Math.abs(dy) > Math.abs(dx)) {
-                    scrollOffset = Phaser.Math.Clamp(scrollOffset + dy * 0.5, 0, maxScroll);
-                    updateScroll();
-                }
-            });
-            // Touch drag for mobile
-            let dragging = false; let lastY = 0;
-            this.input.on('pointerdown', (pointer) => { dragging = true; lastY = pointer.y; });
-            this.input.on('pointerup', () => { dragging = false; });
-            this.input.on('pointermove', (pointer) => {
-                if (dragging) {
-                    const delta = pointer.y - lastY;
-                    lastY = pointer.y;
-                    scrollOffset = Phaser.Math.Clamp(scrollOffset - delta, 0, maxScroll);
-                    updateScroll();
-                }
-            });
-        }
-        // --- END DYNAMIC LAYOUT ---
 
-        // Enhanced button design positioned after stats (now guaranteed not to overlap)
-        
-        // Enhanced button design with better mobile styling
-        const buttonBg = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x2c3e50);
-        buttonBg.setStrokeStyle(scaleDimension(3, scaleInfo), 0x4a90e2);
-        
-        // Multi-layer button effect
-        const buttonGlow = this.add.rectangle(panelX, buttonY, buttonWidth + 4, buttonHeight + 4, 0x4a90e2, 0.4);
-        const buttonInner = this.add.rectangle(panelX, buttonY, buttonWidth - 8, buttonHeight - 8, 0x34495e, 0.8);
-        
-        const buttonText = this.add.text(panelX, buttonY, 'Back to Computer Lab', {
-            fontFamily: 'Arial',
-            fontSize: `${buttonFontSize}px`,
-            fontWeight: 'bold',
-            color: '#ffffff',
-            shadow: {
-                offsetX: scaleDimension(2, scaleInfo),
-                offsetY: scaleDimension(2, scaleInfo),
-                color: '#000000',
-                blur: scaleDimension(4, scaleInfo),
-                fill: true
+            if (needsScroll) {
+                let scrollOffset = 0;
+                const maxScroll = totalContentHeight - scrollAreaHeight;
+                const applyScroll = () => { statsContainer.y = -scrollOffset; };
+                // wheel
+                this.input.on('wheel', (_, __, dx, dy) => {
+                    if (Math.abs(dy) >= Math.abs(dx)) {
+                        scrollOffset = Phaser.Math.Clamp(scrollOffset + dy * 0.4, 0, maxScroll);
+                        applyScroll();
+                    }
+                });
+                // drag
+                let dragging = false; let lastY = 0; let velocity = 0; let lastTime = 0;
+                this.input.on('pointerdown', (p) => { dragging = true; lastY = p.y; velocity = 0; lastTime = p.time; });
+                this.input.on('pointerup', () => { dragging = false; });
+                this.input.on('pointermove', (p) => {
+                    if (!dragging) return;
+                    const dy = p.y - lastY; const dt = (p.time - lastTime) || 16;
+                    lastY = p.y; lastTime = p.time; velocity = -dy / dt * 16; // approximate px/frame
+                    scrollOffset = Phaser.Math.Clamp(scrollOffset - dy, 0, maxScroll);
+                    applyScroll();
+                });
+                // Simple inertial easing
+                this.time.addEvent({
+                    delay: 16,
+                    loop: true,
+                    callback: () => {
+                        if (dragging) return;
+                        if (Math.abs(velocity) < 0.1) return;
+                        scrollOffset = Phaser.Math.Clamp(scrollOffset + velocity, 0, maxScroll);
+                        velocity *= 0.92; // friction
+                        applyScroll();
+                    }
+                });
             }
-        }).setOrigin(0.5);
-        
-        // Enhanced button interactions with better visual feedback
-        buttonBg.setInteractive({ useHandCursor: true })
-            .on('pointerover', () => {
-                buttonBg.setFillStyle(0x4a90e2);
-                buttonInner.setFillStyle(0x5dade2);
-                buttonGlow.setAlpha(0.7);
-                buttonText.setScale(1.05);
-                this.tweens.add({
-                    targets: buttonGlow,
-                    scaleX: 1.05,
-                    scaleY: 1.05,
-                    duration: 300,
-                    yoyo: true,
-                    repeat: -1
+
+            // Button interactions (mobile friendly)
+            buttonBg.setInteractive({ useHandCursor: true })
+                .on('pointerover', () => { buttonBg.setFillStyle(0x4a90e2); buttonInner.setFillStyle(0x5dade2); buttonGlow.setAlpha(0.55); })
+                .on('pointerout', () => { buttonBg.setFillStyle(0x2c3e50); buttonInner.setFillStyle(0x34495e); buttonGlow.setAlpha(0.35); })
+                .on('pointerdown', () => {
+                    buttonBg.setScale(0.95); buttonInner.setScale(0.95); buttonText.setScale(0.95);
+                    this.time.delayedCall(140, () => { this.scene.start('ComputerLab'); });
                 });
-            })
-            .on('pointerout', () => {
-                buttonBg.setFillStyle(0x2c3e50);
-                buttonInner.setFillStyle(0x34495e);
-                buttonGlow.setAlpha(0.4);
-                buttonText.setScale(1);
-                this.tweens.killTweensOf(buttonGlow);
-                buttonGlow.setScale(1);
-            })
-            .on('pointerdown', () => {
-                // Enhanced button press effect
-                buttonBg.setScale(0.95);
-                buttonInner.setScale(0.95);
-                buttonText.setScale(0.95);
-                this.time.delayedCall(150, () => {
-                    this.scene.start('ComputerLab');
-                });
+
+        } else {
+            // -------- DESKTOP LAYOUT (retain previous visual style) --------
+            const buttonHeight = 62;
+            const buttonWidth = 360;
+            const buttonFontSize = 24;
+            const bottomMargin = 28;
+            const buttonY = panelY + panelHeight / 2 - bottomMargin - buttonHeight / 2;
+            const rankBottomBuffer = 40;
+            const buttonTopBuffer = 45;
+            let statsAreaTop = rankY + rankSize + rankBottomBuffer;
+            let statsAreaBottom = buttonY - buttonHeight / 2 - buttonTopBuffer;
+            const statsAreaHeight = statsAreaBottom - statsAreaTop;
+            const lineHeight = 48; // fixed for desktop
+            statsContainer = this.add.container(0,0);
+            const effectiveWidth = panelWidth - 40;
+            const statLabelFont = '22px';
+            statsData.forEach((stat, index) => {
+                const yPos = statsAreaTop + lineHeight/2 + index * (lineHeight + 6);
+                const statBg = this.add.rectangle(panelX, yPos, effectiveWidth, 36, 0x0a1628, 0.7).setStrokeStyle(1, 0x2c3e50, 0.3);
+                const statGlow = this.add.rectangle(panelX, yPos, effectiveWidth - 2, 34, stat.color, 0.08);
+                const leftX = panelX - effectiveWidth * 0.46;
+                const rightX = panelX + effectiveWidth * 0.46;
+                const labelText = this.add.text(leftX, yPos, stat.label, { fontFamily: 'Arial', fontSize: statLabelFont, color: '#ffffff', fontWeight: 'bold'}).setOrigin(0,0.5);
+                const valueText = this.add.text(rightX, yPos, stat.value.toString(), { fontFamily: 'Arial', fontSize: statLabelFont, color: stat.color, fontWeight: 'bold'}).setOrigin(1,0.5);
+                statsContainer.add([statBg, statGlow, labelText, valueText]);
             });
+
+            buttonBg = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x2c3e50).setStrokeStyle(3, 0x4a90e2);
+            buttonGlow = this.add.rectangle(panelX, buttonY, buttonWidth + 4, buttonHeight + 4, 0x4a90e2, 0.4);
+            buttonInner = this.add.rectangle(panelX, buttonY, buttonWidth - 8, buttonHeight - 8, 0x34495e, 0.8);
+            buttonText = this.add.text(panelX, buttonY, 'Back to Computer Lab', {
+                fontFamily: 'Arial', fontSize: `${buttonFontSize}px`, fontWeight: 'bold', color: '#ffffff', shadow: { offsetX:2, offsetY:2, color:'#000', blur:4, fill:true }
+            }).setOrigin(0.5);
+
+            buttonBg.setInteractive({ useHandCursor: true })
+                .on('pointerover', () => {
+                    buttonBg.setFillStyle(0x4a90e2); buttonInner.setFillStyle(0x5dade2); buttonGlow.setAlpha(0.7); buttonText.setScale(1.05);
+                    this.tweens.add({ targets: buttonGlow, scaleX:1.05, scaleY:1.05, duration:300, yoyo:true, repeat:-1 });
+                })
+                .on('pointerout', () => {
+                    buttonBg.setFillStyle(0x2c3e50); buttonInner.setFillStyle(0x34495e); buttonGlow.setAlpha(0.4); buttonText.setScale(1); this.tweens.killTweensOf(buttonGlow); buttonGlow.setScale(1);
+                })
+                .on('pointerdown', () => { buttonBg.setScale(0.95); buttonInner.setScale(0.95); buttonText.setScale(0.95); this.time.delayedCall(150, () => { this.scene.start('ComputerLab'); }); });
+        }
+        // --- END RESPONSIVE LAYOUT REFACTOR ---
         
-        // Entrance animations with all new elements
+        // Entrance animations with all elements (stats + button handled regardless of platform)
         const animatedElements = [
-            panelGlow, panel, title, 
+            panelGlow, panel, title,
             rankOuterGlow, rankBg, rankBorder, rankInnerGlow, rankText,
-            buttonBg, buttonGlow, buttonInner, buttonText,
-            statsContainer
-        ];
+            statsContainer, buttonGlow, buttonBg, buttonInner, buttonText
+        ].filter(Boolean); // filter in case of undefined
         
         animatedElements.forEach((element, index) => {
             element.setAlpha(0);
@@ -457,6 +402,8 @@ export default class ResultScreen extends BaseScene {
         }
         
     }
+
+    // TODO (future): extract layout builders (mobile/desktop) into helper methods for clarity & testability.
     
     createParticleEffects(x, y, color) {
         // Create simple particle effect for high ranks
