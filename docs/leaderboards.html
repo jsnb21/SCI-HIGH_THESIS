@@ -1042,11 +1042,20 @@
           loading.style.display = 'none';
         }
         
-        // Take only top 3 players for featured cards
-        const topPlayers = data.slice(0, 3);
+        // Take only top 3 players for featured cards and reorder to show 2nd, 1st, 3rd (with 1st in the center)
+        const rawTop = data.slice(0, 3);
+        let ordered;
+        if (rawTop.length === 3) {
+          // rawTop[0]=1st, rawTop[1]=2nd, rawTop[2]=3rd
+          ordered = [rawTop[1], rawTop[0], rawTop[2]]; // 2nd, 1st, 3rd
+        } else {
+          ordered = rawTop; // fallback for <3 players
+        }
         
         let cardsHtml = '';
-        topPlayers.forEach((player, index) => {
+        ordered.forEach((player, visualIndex) => {
+          // Compute original rank index for styling (1-based rank derived from score order)
+          const originalRank = data.indexOf(player) + 1;
           // Safe name handling
           let playerName = player.name || 'Unknown Student';
           
@@ -1067,11 +1076,11 @@
           
           // Special styling for each position
           let cardStyle, rankIcon, rankColor;
-          if (index === 0) {
+          if (originalRank === 1) {
             cardStyle = 'from-yellow-400/20 to-yellow-600/20';
             rankIcon = '👑';
             rankColor = 'from-yellow-400 to-yellow-600';
-          } else if (index === 1) {
+          } else if (originalRank === 2) {
             cardStyle = 'from-gray-300/20 to-gray-500/20';
             rankIcon = '🥈';
             rankColor = 'from-gray-300 to-gray-500';
@@ -1081,8 +1090,10 @@
             rankColor = 'from-orange-400 to-orange-600';
           }
           
+          // Emphasize middle (original rank 1) by scaling and raising slightly
+          const emphasizeClass = originalRank === 1 ? 'md:scale-110 md:-mt-2 z-10' : 'md:scale-100';
           cardsHtml += `
-            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105" onclick="showPlayerProfile('${player.studentId}')">
+            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105 ${emphasizeClass}" onclick="showPlayerProfile('${player.studentId}')">
               <div class="neon-border bg-gradient-to-br ${cardStyle} rounded-lg p-6 backdrop-blur-sm relative overflow-hidden">
                 <!-- Rank Badge -->
                 <div class="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br ${rankColor} rounded-full flex items-center justify-center text-lg font-bold text-white border-3 border-white shadow-xl z-10">
@@ -1108,7 +1119,7 @@
                   </div>
                   <div class="flex justify-between items-center">
                     <span class="text-gray-300 text-sm font-gaming">Global Rank</span>
-                    <span class="text-accent font-gaming font-bold text-lg">#${index + 1}</span>
+                    <span class="text-accent font-gaming font-bold text-lg">#${originalRank}</span>
                   </div>
                   <div class="flex justify-between items-center">
                     <span class="text-gray-300 text-sm font-gaming">Sessions</span>
@@ -1395,12 +1406,51 @@
         document.getElementById('max-combo').textContent = career.highestStreak || 0;
         document.getElementById('total-playtime').textContent = formatPlayTime(career.totalPlayTime || 0);
         
-        // Generate level badges based on career achievements
-        generateLevelBadges(career.totalSessions || 0);
+  // Derive achievements using shared utility (dynamic import for code splitting)
+  let derivedAchievements;
+  try {
+    const { evaluateAchievements } = await import('./src/services/achievementsUtil.js');
+    const career = careerStatsData.careerStats || {};
+    const recentSessions = careerStatsData.recentSessions || {};
+    const existingAchv = (careerStatsData.careerStats && careerStatsData.careerStats.achievements) || {};
+    derivedAchievements = evaluateAchievements(career, recentSessions, existingAchv);
+  } catch (e) {
+    console.warn('Failed to load shared achievementsUtil, falling back to legacy deriveAchievements:', e);
+    derivedAchievements = deriveAchievements(careerStatsData, studentId);
+  }
+  // Store globally for filter use
+  window.__currentProfileAchievements = derivedAchievements;
+  // Persist newly unlocked achievements (fire and forget)
+  persistUnlockedAchievements(studentId, derivedAchievements.unlocked);
+  // Generate level badges based on unlocked achievements count
+  generateLevelBadges(derivedAchievements.unlocked.length);
         
         // Create enhanced profile content with career stats
         const content = document.getElementById('profile-content');
         content.innerHTML = `
+          <!-- Achievements & Badges -->
+          <div class="bg-cardBg p-6 rounded-lg neon-border mb-6">
+            <h3 class="text-xl font-bold text-primary mb-2 flex items-center gap-2 font-gaming">
+              <span>🏅</span>
+              <span>Achievements & Badges</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-primary/20 border border-primary/30 text-primary tracking-wide">${derivedAchievements.unlocked.length}/${derivedAchievements.all.length} UNLOCKED</span>
+            </h3>
+            <div class="flex gap-2 mb-4 text-[11px] font-gaming">
+              <button data-achv-filter="unlocked" class="achv-filter-btn px-3 py-1 rounded border border-primary/40 bg-primary/20 text-primary font-semibold shadow-inner shadow-primary/30">Unlocked</button>
+              <button data-achv-filter="locked" class="achv-filter-btn px-3 py-1 rounded border border-light/30 hover:bg-light/10 text-gray-300">Locked</button>
+              <button data-achv-filter="all" class="achv-filter-btn px-3 py-1 rounded border border-light/30 hover:bg-light/10 text-gray-300">All</button>
+            </div>
+            <div class="flex items-center flex-wrap gap-3 mb-4 text-[10px] font-mono">
+              <span class="px-2 py-0.5 rounded bg-gray-700/40 border border-gray-600 text-gray-300">Legend:</span>
+              <span class="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400 text-amber-300">Epic</span>
+              <span class="px-2 py-0.5 rounded bg-purple-500/20 border border-purple-400 text-purple-300">Rare</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400 text-emerald-300">Common</span>
+              <span class="px-2 py-0.5 rounded bg-blue-500/20 border border-blue-400 text-blue-300">Uncommon</span>
+            </div>
+            <div class="flex flex-wrap gap-4" id="achievement-badges">${generateAchievementBadges(derivedAchievements,'unlocked')}</div>
+            ${derivedAchievements.unlocked.length === 0 ? '<p class="text-gray-400 text-sm mt-2">No achievements yet. Complete quizzes and improve stats to earn your first badge!</p>' : ''}
+          </div>
+
           <!-- Course Completion Progress -->
           <div class="bg-cardBg p-6 rounded-lg neon-border">
             <h3 class="text-xl font-bold text-primary mb-4 flex items-center gap-2 font-gaming">
@@ -1993,60 +2043,102 @@
       }
 
       function generateAchievementBadges(achievementCount) {
-        if (achievementCount === 0) {
-          return `
-            <div class="col-span-full flex items-center justify-center py-8 text-gray-400">
-              <div class="text-center">
-                <div class="text-4xl mb-2">🏆</div>
-                <div>No badges yet</div>
-                <div class="text-sm">Complete challenges to earn badges!</div>
-              </div>
-            </div>
-          `;
-        }
-
-        const badges = [
-          { name: 'First Steps', icon: '👶', description: 'Completed first quiz', color: 'bg-blue-500' },
-          { name: 'Dedicated', icon: '⏰', description: 'Played for 1 hour', color: 'bg-green-500' },
-          { name: 'Scholar', icon: '📚', description: 'Earned 1000 points', color: 'bg-purple-500' },
-          { name: 'Combo Master', icon: '🔥', description: 'Achieved 50+ combo', color: 'bg-red-500' },
-          { name: 'Multi-talented', icon: '🌟', description: 'Mastered 3+ topics', color: 'bg-yellow-500' },
-          { name: 'Perfectionist', icon: '💯', description: 'Perfect quiz score', color: 'bg-pink-500' },
-          { name: 'Speed Demon', icon: '⚡', description: 'Lightning fast answers', color: 'bg-indigo-500' },
-          { name: 'Persistent', icon: '💪', description: 'Completed 10+ quizzes', color: 'bg-teal-500' },
-          { name: 'Top Scorer', icon: '🏆', description: 'Reached leaderboard top 10', color: 'bg-orange-500' },
-          { name: 'Legend', icon: '👑', description: 'Ultimate achievement', color: 'bg-gradient-to-r from-yellow-400 to-orange-500' }
-        ];
-
-        let badgeHTML = '';
-        const earnedBadges = badges.slice(0, Math.min(achievementCount, badges.length));
-        
-        earnedBadges.forEach(badge => {
-          badgeHTML += `
-            <div class="group relative">
-              <div class="w-16 h-16 ${badge.color} rounded-lg flex items-center justify-center text-white text-2xl shadow-lg transform transition-transform group-hover:scale-110 cursor-pointer">
-                ${badge.icon}
-              </div>
-              <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                <div class="font-bold">${badge.name}</div>
-                <div>${badge.description}</div>
-              </div>
-            </div>
-          `;
-        });
-
-        // Add placeholder badges for future achievements
-        const remainingSlots = Math.max(0, 6 - earnedBadges.length);
-        for (let i = 0; i < remainingSlots; i++) {
-          badgeHTML += `
-            <div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xl border-2 border-dashed border-gray-300">
-              🔒
-            </div>
-          `;
-        }
-
-        return badgeHTML;
+        // Old function replaced by new achievements system; kept for backward compatibility
+        return '';
       }
+
+      // Legacy deriveAchievements removed; shared utility used instead (fallback defined above if dynamic import fails).
+
+      async function persistUnlockedAchievements(studentId, achievementsState) {
+        if (!studentId || !achievementsState || achievementsState.length === 0) return;
+        try {
+          const database = await ensureFirebaseReady();
+          const ref = database.ref(`student_career_stats/${studentId}/achievements`);
+          const snapshot = await ref.once('value');
+          const existing = snapshot.val() || {};
+          const updates = {};
+          let changed = false;
+          achievementsState.forEach(a => {
+            if (!existing[a.id]) {
+              updates[a.id] = {
+                name: a.name,
+                tier: a.tier,
+                unlockedAt: Date.now()
+              };
+              changed = true;
+            }
+          });
+          if (changed) {
+            await ref.update(updates);
+          }
+        } catch (e) {
+          console.warn('Could not persist achievements:', e.message);
+        }
+      }
+
+      function generateAchievementBadges(achievementsState, filter = 'unlocked') {
+        if (!achievementsState) return '';
+        const { unlocked = [], locked = [] } = achievementsState.unlocked ? achievementsState : { unlocked: [], locked: [], ...achievementsState };
+        const rarityStyles = {
+          'Common': 'border-emerald-400 text-emerald-300 bg-emerald-500/10',
+          'Uncommon': 'border-blue-400 text-blue-300 bg-blue-500/10',
+          'Rare': 'border-purple-400 text-purple-300 bg-purple-500/10',
+          'Epic': 'border-amber-400 text-amber-300 bg-amber-500/10'
+        };
+        const order = ['Epic','Rare','Common','Uncommon'];
+
+        function card(a, isLocked) {
+          const style = rarityStyles[a.tier] || 'border-primary/30 text-primary bg-primary/10';
+          return `
+            <div class="group relative">
+              <div class="w-24 h-24 rounded-xl flex flex-col items-center justify-center text-center p-2 shadow-md transition cursor-pointer border ${style} ${isLocked ? 'opacity-40 grayscale hover:opacity-60' : 'hover:shadow-primary/40'} bg-gradient-to-br from-dark/60 to-light/20">
+                <span class="text-2xl mb-1">${a.icon}</span>
+                <span class="text-[10px] font-semibold leading-tight line-clamp-2">${a.name}</span>
+                <span class="absolute top-1 right-1 text-[9px] px-1 rounded bg-black/60 border border-white/10">${a.tier}</span>
+                ${isLocked ? `<div class='absolute inset-0 flex items-center justify-center'><span class='text-lg'>🔒</span></div>` : ''}
+                ${isLocked ? `<div class='absolute bottom-0 left-0 right-0 h-2 bg-black/40 rounded-b overflow-hidden'><div class='h-full bg-primary' style='width:${a.percent}%'></div></div>` : ''}
+              </div>
+              <div class="absolute hidden group-hover:block z-50 left-1/2 -translate-x-1/2 mt-2 w-52 p-2 text-xs bg-dark/95 border border-primary/30 rounded shadow-lg">
+                <p class="font-bold text-primary mb-1 flex items-center gap-1">${a.icon} ${a.name}</p>
+                <p class="text-gray-300 leading-snug mb-1">${a.description}</p>
+                <p class="text-[10px] text-gray-400">${isLocked ? `Progress: ${Math.min(a.progress, a.goal)}/${a.goal} (${a.percent}%)` : 'Unlocked'}</p>
+                ${isLocked ? `<div class='w-full h-1.5 bg-gray-700 rounded mt-1'><div class='h-full bg-primary rounded' style='width:${a.percent}%'></div></div>` : ''}
+              </div>
+            </div>`;
+        }
+
+        let ordered = [];
+        order.forEach(r => {
+          const unlockedGroup = unlocked.filter(a=>a.tier===r);
+          const lockedGroup = locked.filter(a=>a.tier===r);
+          if (filter === 'unlocked') {
+            unlockedGroup.forEach(a=>ordered.push(card(a,false)));
+          } else if (filter === 'locked') {
+            lockedGroup.forEach(a=>ordered.push(card(a,true)));
+          } else { // all
+            unlockedGroup.forEach(a=>ordered.push(card(a,false)));
+            lockedGroup.forEach(a=>ordered.push(card(a,true)));
+          }
+        });
+        return ordered.join('');
+      }
+
+      // Event delegation for achievement filter buttons
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.achv-filter-btn');
+        if (!btn) return;
+        const mode = btn.getAttribute('data-achv-filter');
+        const container = document.getElementById('achievement-badges');
+        if (!container || !window.__currentProfileAchievements) return;
+        // Update active button styles
+        document.querySelectorAll('.achv-filter-btn').forEach(b => {
+          b.classList.remove('bg-primary/20','text-primary','border-primary/40','font-semibold','shadow-inner','shadow-primary/30');
+          b.classList.add('text-gray-300');
+        });
+        btn.classList.add('bg-primary/20','text-primary','border-primary/40','font-semibold','shadow-inner','shadow-primary/30');
+        btn.classList.remove('text-gray-300');
+        container.innerHTML = generateAchievementBadges(window.__currentProfileAchievements, mode);
+      });
 
       function getBestTopic(topicPoints) {
         if (Object.keys(topicPoints).length === 0) return 'None';
