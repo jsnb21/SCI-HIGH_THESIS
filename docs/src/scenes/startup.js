@@ -20,6 +20,7 @@ export default class StartupScene extends Phaser.Scene {
         super({ key: 'StartupScene' });
         this.uiElements = [];
         this.logoElements = [];
+        this.isTransitioning = false; // prevent redraw/races during FS transition
     }
 
     preload() {
@@ -188,6 +189,8 @@ export default class StartupScene extends Phaser.Scene {
         };
 
         addButtonClick(yesButton, () => {
+            if (this.isTransitioning) return; // debounce taps
+            this.isTransitioning = true;
             if (fullscreenSupported) {
                 this.fullscreenManager.enterFullscreen(() => {
                     this.time.delayedCall(200, () => this.playLogoSequence());
@@ -200,6 +203,8 @@ export default class StartupScene extends Phaser.Scene {
 
         if (noButton) {
             addButtonClick(noButton, () => {
+                if (this.isTransitioning) return;
+                this.isTransitioning = true;
                 this.playLogoSequence();
             });
         }
@@ -453,8 +458,8 @@ export default class StartupScene extends Phaser.Scene {
 
     createUI() {
         // Custom UI redraw method for fullscreen utility
-        // Only redraw if we're showing the fullscreen prompt
-        if (this.uiElements.length > 0) {
+        // Only redraw if we're showing the fullscreen prompt and not transitioning
+        if (!this.isTransitioning && this.uiElements.length > 0) {
             this.showFullscreenPrompt();
         }
         // Don't redraw during logo sequence to avoid interrupting animations
@@ -462,8 +467,8 @@ export default class StartupScene extends Phaser.Scene {
 
     shouldRedrawUIOnFullscreenChange() {
         // Only redraw UI if we're showing the fullscreen prompt
-        // Don't redraw during logo animations to avoid interrupting them
-        return this.uiElements.length > 0;
+        // Don't redraw during logo animations or transition to avoid interrupting them
+        return !this.isTransitioning && this.uiElements.length > 0;
     }    shutdown() {
         // Clean up keyboard listeners
         if (this.enterKey) {
