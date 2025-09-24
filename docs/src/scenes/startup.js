@@ -21,6 +21,7 @@ export default class StartupScene extends Phaser.Scene {
         this.uiElements = [];
         this.logoElements = [];
         this.isTransitioning = false; // prevent redraw/races during FS transition
+        this._logoStarted = false; // guard to avoid double-start
     }
 
     preload() {
@@ -38,6 +39,15 @@ export default class StartupScene extends Phaser.Scene {
         this.onEnterFs = () => {
             if (!this.isTransitioning && this.uiElements.length > 0) {
                 this.isTransitioning = true;
+                // Hide global overlay if present
+                try {
+                    if (window.__cleanupFullscreenPrompt) {
+                        window.__cleanupFullscreenPrompt();
+                    } else {
+                        const el = document.getElementById('fullscreen-prompt-overlay');
+                        if (el) el.style.display = 'none';
+                    }
+                } catch {}
                 this.time.delayedCall(150, () => this.playLogoSequence());
             }
         };
@@ -205,9 +215,24 @@ export default class StartupScene extends Phaser.Scene {
         addButtonClick(yesButton, () => {
             if (this.isTransitioning) return; // debounce taps
             this.isTransitioning = true;
+            // Hide global overlay if present
+            try {
+                if (window.__cleanupFullscreenPrompt) {
+                    window.__cleanupFullscreenPrompt();
+                } else {
+                    const el = document.getElementById('fullscreen-prompt-overlay');
+                    if (el) el.style.display = 'none';
+                }
+            } catch {}
             if (fullscreenSupported) {
                 this.fullscreenManager.enterFullscreen(() => {
                     this.time.delayedCall(200, () => this.playLogoSequence());
+                });
+                // Fallback: if for any reason we didn't start, proceed anyway
+                this.time.delayedCall(900, () => {
+                    if (!this._logoStarted) {
+                        this.playLogoSequence();
+                    }
                 });
             } else {
                 // On iOS just proceed
@@ -219,6 +244,14 @@ export default class StartupScene extends Phaser.Scene {
             addButtonClick(noButton, () => {
                 if (this.isTransitioning) return;
                 this.isTransitioning = true;
+                try {
+                    if (window.__cleanupFullscreenPrompt) {
+                        window.__cleanupFullscreenPrompt();
+                    } else {
+                        const el = document.getElementById('fullscreen-prompt-overlay');
+                        if (el) el.style.display = 'none';
+                    }
+                } catch {}
                 this.playLogoSequence();
             });
         }
@@ -368,6 +401,8 @@ export default class StartupScene extends Phaser.Scene {
     }
 
     playLogoSequence() {
+        if (this._logoStarted) return;
+        this._logoStarted = true;
         // Clear existing UI
         this.clearUI();
         
