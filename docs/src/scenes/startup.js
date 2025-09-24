@@ -33,6 +33,20 @@ export default class StartupScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
         this.escapeKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+
+        // Proceed automatically when fullscreen is entered (e.g., via global DOM overlay button)
+        this.onEnterFs = () => {
+            if (!this.isTransitioning && this.uiElements.length > 0) {
+                this.isTransitioning = true;
+                this.time.delayedCall(150, () => this.playLogoSequence());
+            }
+        };
+        if (this.scale && this.scale.events) {
+            // Phaser 3.60+: scale.events; older versions use ScaleManager directly
+            this.scale.on('enterfullscreen', this.onEnterFs, this);
+        } else if (this.scale) {
+            this.scale.on('enterfullscreen', this.onEnterFs, this);
+        }
         
         // Start with fullscreen prompt
         this.showFullscreenPrompt();
@@ -229,6 +243,8 @@ export default class StartupScene extends Phaser.Scene {
         // Add keyboard hint text with mobile-responsive positioning and sizing
         const { width, height } = this.scale;
         const scaleInfo = getScaleInfo(this);
+        const isMobile = !!scaleInfo.isMobile;
+        const isLandscape = !!scaleInfo.isLandscape;
         const hintText = noButton ? 'Press ENTER for fullscreen, ESC to skip' : 'Press ENTER / TAP to continue';
         const keyboardHint = this.add.text(width / 2, height / 2 + scaleDimension(scaleInfo.isMobile ? 110 : 140, scaleInfo), hintText, {
             fontFamily: 'Arial',
@@ -476,6 +492,10 @@ export default class StartupScene extends Phaser.Scene {
         }
         if (this.escapeKey) {
             this.escapeKey.removeAllListeners();
+        }
+        // Remove fullscreen listener
+        if (this.scale) {
+            this.scale.off && this.scale.off('enterfullscreen', this.onEnterFs, this);
         }
         
         // Cleanup using fullscreen utility
