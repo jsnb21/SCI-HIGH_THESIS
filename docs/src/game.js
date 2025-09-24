@@ -223,6 +223,129 @@ try {
         }
       }, 300);
     }
+
+    // ---------------------------------------------------------------
+    // Global Fullscreen Prompt (mobile + not fullscreen)
+    // ---------------------------------------------------------------
+    (function setupGlobalFullscreenPrompt(){
+      // Heuristic mobile detection (mirrors mobileUtils.js logic without scene)
+      const isMobileViewport = () => {
+        const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+        const vw = (typeof window !== 'undefined') ? window.innerWidth : 1920;
+        const vh = (typeof window !== 'undefined') ? window.innerHeight : 1080;
+        const cssW = vw / dpr;
+        const cssH = vh / dpr;
+        return cssW < 820 || cssH < 700 || (dpr > 1.5 && cssW < 900);
+      };
+
+      const isFullscreenActive = () => {
+        try {
+          return !!(game?.scale?.isFullscreen || document.fullscreenElement);
+        } catch { return false; }
+      };
+
+      // Create overlay once
+      let overlay = document.getElementById('fullscreen-prompt-overlay');
+      if(!overlay){
+        overlay = document.createElement('div');
+        overlay.id = 'fullscreen-prompt-overlay';
+        overlay.style.cssText = [
+          'position:fixed',
+          'inset:0',
+          'display:none',
+          'align-items:center',
+          'justify-content:center',
+          'background:rgba(0,0,0,0.6)',
+          'z-index:10000',
+          'backdrop-filter:saturate(120%) blur(2px)',
+          'font-family: Arial, sans-serif'
+        ].join(';');
+
+        const panel = document.createElement('div');
+        panel.style.cssText = [
+          'max-width:90%',
+          'width:420px',
+          'box-sizing:border-box',
+          'background:#111',
+          'color:#fff',
+          'border:2px solid #4CAF50',
+          'border-radius:12px',
+          'padding:18px',
+          'text-align:center',
+          'box-shadow:0 8px 24px rgba(0,0,0,0.35)'
+        ].join(';');
+
+        const title = document.createElement('div');
+        title.textContent = 'Fullscreen Recommended';
+        title.style.cssText = 'font-weight:700;font-size:20px;margin-bottom:8px;letter-spacing:0.3px';
+
+        const msg = document.createElement('div');
+        msg.innerHTML = 'For the best mobile experience, enable fullscreen.';
+        msg.style.cssText = 'font-size:14px;opacity:0.95;margin-bottom:14px;line-height:1.4';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = 'Go Fullscreen';
+        btn.style.cssText = [
+          'cursor:pointer',
+          'background:#4CAF50',
+          'color:#fff',
+          'border:none',
+          'border-radius:8px',
+          'padding:12px 16px',
+          'font-size:16px',
+          'font-weight:600',
+          'box-shadow:0 4px 10px rgba(0,0,0,0.25)'
+        ].join(';');
+
+        btn.addEventListener('click', () => {
+          // User gesture: attempt to enter fullscreen via Phaser Scale
+          try {
+            if(game?.scale && !game.scale.isFullscreen){
+              game.scale.startFullscreen();
+            }
+          } catch (e) {
+            console.warn('Fullscreen request failed:', e);
+          }
+
+          // Re-check after a brief delay
+          setTimeout(() => {
+            if (isFullscreenActive()) {
+              overlay.style.display = 'none';
+            }
+          }, 200);
+        });
+
+        panel.appendChild(title);
+        panel.appendChild(msg);
+        panel.appendChild(btn);
+        overlay.appendChild(panel);
+        document.body.appendChild(overlay);
+      }
+
+      const updateVisibility = () => {
+        const show = isMobileViewport() && !isFullscreenActive();
+        overlay.style.display = show ? 'flex' : 'none';
+      };
+
+      // Initial state
+      updateVisibility();
+
+      // Respond to changes
+      const onFsChange = () => updateVisibility();
+      const onResize = () => updateVisibility();
+      document.addEventListener('fullscreenchange', onFsChange);
+      window.addEventListener('resize', onResize);
+      window.addEventListener('orientationchange', () => setTimeout(updateVisibility, 120));
+
+      // Store cleanup if ever needed
+      window.__cleanupFullscreenPrompt = () => {
+        document.removeEventListener('fullscreenchange', onFsChange);
+        window.removeEventListener('resize', onResize);
+        const el = document.getElementById('fullscreen-prompt-overlay');
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+      };
+    })();
 } catch (error) {
     console.error('Failed to create Phaser Game:', error);
     console.error('Error stack:', error.stack);

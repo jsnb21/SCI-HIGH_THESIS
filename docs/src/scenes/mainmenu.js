@@ -342,7 +342,7 @@ export default class MainMenu extends Phaser.Scene {
                 }},
                 { label: 'View Progress', x: rightX, y: topY, onClick: () => {
                     se_confirmSound.play();
-                    this.showProgressSummary();
+                    window.location.href = 'leaderboards.html';
                 }},
                 // Bottom row
                 { label: 'Options', x: leftX, y: bottomY, onClick: () => {
@@ -365,7 +365,7 @@ export default class MainMenu extends Phaser.Scene {
             const startYApprox = topY + projectedLogoHeight + gapBetweenLogoAndFirstButton + (singleButtonHeightEstimate/2);
             const menuButtons = [
                 { label: 'Start Adventure', offsetIndex:0, onClick: async () => { se_confirmSound.play(); await this.handleAdventureStart(); }},
-                { label: 'View Progress', offsetIndex:1, onClick: () => { se_confirmSound.play(); this.showProgressSummary(); }},
+                { label: 'View Progress', offsetIndex:1, onClick: () => { se_confirmSound.play(); window.location.href = 'leaderboards.html'; }},
                 { label: 'Options', offsetIndex:2, onClick: () => { se_confirmSound.play(); LoadingScreen.transitionToScene(this, 'OptionsScene', 'Loading...', 800); }},
                 { label: 'Quit', offsetIndex:3, onClick: () => { se_confirmSound.play(); this.showQuitConfirmation(se_hoverSound, se_confirmSound); }},
             ];

@@ -270,6 +270,11 @@ export default class MainHub extends Phaser.Scene {
         this.backButton = backButtonComponents.backButton;
         this.uiElements.push(backButtonComponents.buttonBg, backButtonComponents.backButton);
 
+        // Align points display Y with back button Y (keep X positions intact)
+        if (this.pointsDisplay && this.pointsDisplay.container && this.backButtonBg) {
+            this.pointsDisplay.container.y = this.backButtonBg.y;
+        }
+
         const iconKeys = ['icon1', 'icon2', 'icon3'];
         const iconInfo = [
             { heading: "Classroom", desc: "Meet your classmates!" },
