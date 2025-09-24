@@ -7,12 +7,27 @@ class NotificationSystem {
     this.isShowing = false;
     this.notificationId = 0;
     this.isInitialized = false;
+    this.eventsBound = false;
     this.init();
   }
 
   init() {
     this.createModalStructure();
     this.bindEvents();
+    if (document.getElementById('universal-notification-modal')) {
+      this.isInitialized = true;
+    }
+  }
+
+  ensureDOM() {
+    // Ensure modal elements exist and events are bound before showing
+    const modal = document.getElementById('universal-notification-modal');
+    if (!modal) {
+      this.createModalStructure();
+    }
+    if (!this.eventsBound) {
+      this.bindEvents();
+    }
     if (document.getElementById('universal-notification-modal')) {
       this.isInitialized = true;
     }
@@ -94,6 +109,8 @@ class NotificationSystem {
       return;
     }
 
+    if (this.eventsBound) return;
+
     // Close modal on backdrop click
     modal.addEventListener('click', (e) => {
       if (e.target.id === 'universal-notification-modal') {
@@ -112,6 +129,8 @@ class NotificationSystem {
         this.closeModal();
       }
     });
+
+    this.eventsBound = true;
   }
 
   // Modern alert replacement
@@ -209,6 +228,8 @@ class NotificationSystem {
   }
 
   showModal(message, config) {
+    // Make sure DOM exists even if init ran early
+    this.ensureDOM();
     if (this.isShowing) {
       this.queue.push({ message, config });
       return;
@@ -396,6 +417,7 @@ let notifications;
 let notificationManager;
 
 function initializeNotifications() {
+  if (window.__notificationsInitDone) return;
   notifications = new NotificationSystem();
   notificationManager = notifications;
 
@@ -412,17 +434,21 @@ function initializeNotifications() {
   window.notify = notifications;
   window.notificationSystem = notifications;
 
+  window.__notificationsInitDone = true;
 }
 
-// Initialize immediately or when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeNotifications);
-} else {
-  initializeNotifications();
+// Initialize once (immediately or when DOM is ready)
+if (!window.__notificationsInitDone) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!window.__notificationsInitDone) {
+        initializeNotifications();
+      }
+    });
+  } else {
+    initializeNotifications();
+  }
 }
-
-// Also initialize immediately to ensure functions are available
-initializeNotifications();
 
 // For backwards compatibility, override native functions (optional)
 // Uncomment the lines below if you want to completely replace alert/confirm
