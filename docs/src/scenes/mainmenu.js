@@ -283,7 +283,15 @@ export default class MainMenu extends Phaser.Scene {
         const gapBetweenLogoAndFirstButton = 40 * scaleInfo.finalScale;
         const totalStack = projectedLogoHeight + gapBetweenLogoAndFirstButton + buttonsBlockHeight;
         const topY = (height - totalStack)/2; // top of logo
-        logo.y = topY + projectedLogoHeight/2; // center of logo
+        // Default (desktop-oriented) centered stack position
+        let baseLogoY = topY + projectedLogoHeight/2; // center of logo
+
+        // Mobile override: set a safer, slightly lower baseline so it doesn't sit too high
+        if (scaleInfo.isMobile) {
+            const mobileRatio = scaleInfo.isPortrait ? 0.28 : 0.26; // ~28% portrait, ~26% landscape
+            baseLogoY = height * mobileRatio;
+        }
+        logo.y = baseLogoY;
         
         // Add fade-in animation for the logo
         logo.setAlpha(0);
@@ -296,10 +304,12 @@ export default class MainMenu extends Phaser.Scene {
         });
         
         // Optional: Add a subtle floating animation to the logo
+        // Subtle, downward-first floating so it never goes higher than its baseline
+        const floatAmp = (scaleInfo.isMobile ? 6 : 8) * (scaleInfo.finalScale || 1);
         this.tweens.add({
             targets: logo,
-            y: logo.y - 10 * scaleInfo.finalScale,
-            duration: 2000,
+            y: baseLogoY + floatAmp,
+            duration: 2400,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut',

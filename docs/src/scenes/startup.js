@@ -314,9 +314,13 @@ export default class StartupScene extends Phaser.Scene {
                     });
 
                     this.time.delayedCall(200, () => {
-                        // Buttons appear with bounce
+                        // Buttons appear with bounce (handle optional noButton safely)
+                        const btnTargets = [yesButton.bg, yesButton.text];
+                        if (noButton) {
+                            btnTargets.push(noButton.bg, noButton.text);
+                        }
                         this.tweens.add({
-                            targets: [yesButton.bg, yesButton.text, noButton.bg, noButton.text],
+                            targets: btnTargets,
                             alpha: 1,
                             y: `-=20`,
                             duration: 500,
