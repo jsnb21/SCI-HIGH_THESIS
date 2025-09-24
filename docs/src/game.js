@@ -235,7 +235,8 @@ try {
         const vh = (typeof window !== 'undefined') ? window.innerHeight : 1080;
         const cssW = vw / dpr;
         const cssH = vh / dpr;
-        return cssW < 820 || cssH < 700 || (dpr > 1.5 && cssW < 900);
+        const uaMobile = (typeof navigator !== 'undefined') && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent);
+        return uaMobile || cssW < 820 || cssH < 700 || (dpr > 1.5 && cssW < 900);
       };
 
       const isFullscreenActive = () => {
@@ -337,6 +338,9 @@ try {
       document.addEventListener('fullscreenchange', onFsChange);
       window.addEventListener('resize', onResize);
       window.addEventListener('orientationchange', () => setTimeout(updateVisibility, 120));
+
+  // Expose for manual triggers from scenes/utilities
+  window.__updateFullscreenPromptVisibility = updateVisibility;
 
       // Store cleanup if ever needed
       window.__cleanupFullscreenPrompt = () => {
