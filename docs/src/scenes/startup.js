@@ -39,10 +39,14 @@ export default class StartupScene extends Phaser.Scene {
         this.onEnterFs = () => {
             if (!this.isTransitioning && this.uiElements.length > 0) {
                 this.isTransitioning = true;
-                // Hide global overlay if present (don't destroy so it can show again later)
+                // Hide global overlay if present
                 try {
-                    const el = document.getElementById('fullscreen-prompt-overlay');
-                    if (el) el.style.display = 'none';
+                    if (window.__cleanupFullscreenPrompt) {
+                        window.__cleanupFullscreenPrompt();
+                    } else {
+                        const el = document.getElementById('fullscreen-prompt-overlay');
+                        if (el) el.style.display = 'none';
+                    }
                 } catch {}
                 this.time.delayedCall(150, () => this.playLogoSequence());
             }
@@ -211,10 +215,14 @@ export default class StartupScene extends Phaser.Scene {
         addButtonClick(yesButton, () => {
             if (this.isTransitioning) return; // debounce taps
             this.isTransitioning = true;
-            // Hide global overlay if present (don't destroy so it can reappear after exit FS)
+            // Hide global overlay if present
             try {
-                const el = document.getElementById('fullscreen-prompt-overlay');
-                if (el) el.style.display = 'none';
+                if (window.__cleanupFullscreenPrompt) {
+                    window.__cleanupFullscreenPrompt();
+                } else {
+                    const el = document.getElementById('fullscreen-prompt-overlay');
+                    if (el) el.style.display = 'none';
+                }
             } catch {}
             if (fullscreenSupported) {
                 this.fullscreenManager.enterFullscreen(() => {
@@ -237,8 +245,12 @@ export default class StartupScene extends Phaser.Scene {
                 if (this.isTransitioning) return;
                 this.isTransitioning = true;
                 try {
-                    const el = document.getElementById('fullscreen-prompt-overlay');
-                    if (el) el.style.display = 'none';
+                    if (window.__cleanupFullscreenPrompt) {
+                        window.__cleanupFullscreenPrompt();
+                    } else {
+                        const el = document.getElementById('fullscreen-prompt-overlay');
+                        if (el) el.style.display = 'none';
+                    }
                 } catch {}
                 this.playLogoSequence();
             });
