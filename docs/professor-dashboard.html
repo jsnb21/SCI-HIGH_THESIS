@@ -10,8 +10,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- Modern Notification System -->
-    <script src="js/notifications.js"></script>
+  <!-- Modern Notification System -->
+  <script defer src="js/notifications.js"></script>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -19,15 +19,20 @@
     <script>
       // Provide fallback notification helpers if notifications.js hasn't initialized yet
       (function ensureNotifications(){
-        if (typeof window.modernConfirm !== 'function') {
-          console.warn('[dashboard] Notification system not ready yet – installing simple fallbacks');
-          window.modernConfirm = (message)=>Promise.resolve(confirm(message));
-          window.modernAlert = (message)=>{ alert(message); return Promise.resolve(true); };
-          window.showSuccess = (m)=>{ alert('✅ '+m); return Promise.resolve(true); };
-          window.showError = (m)=>{ alert('❌ '+m); return Promise.resolve(true); };
-          window.showWarning = (m)=>{ alert('⚠️ '+m); return Promise.resolve(true); };
-          window.showInfo = (m)=>{ alert('ℹ️ '+m); return Promise.resolve(true); };
-        }
+        const init = () => {
+          if (typeof window.modernConfirm !== 'function') {
+            // Silent fallbacks; notifications.js will override post-init
+            window.modernConfirm = (message)=>Promise.resolve(confirm(message));
+            window.modernAlert = (message)=>{ alert(message); return Promise.resolve(true); };
+            window.showSuccess = (m)=>{ alert('✅ '+m); return Promise.resolve(true); };
+            window.showError = (m)=>{ alert('❌ '+m); return Promise.resolve(true); };
+            window.showWarning = (m)=>{ alert('⚠️ '+m); return Promise.resolve(true); };
+            window.showInfo = (m)=>{ alert('ℹ️ '+m); return Promise.resolve(true); };
+          }
+        };
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init, { once: true });
+        } else { init(); }
       })();
 
       // Tailwind (CDN) configuration

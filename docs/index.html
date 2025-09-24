@@ -9,8 +9,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts for Gaming Feel -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- Modern Notification System -->
-    <script src="js/notifications.js"></script>
+  <!-- Modern Notification System -->
+  <script defer src="js/notifications.js"></script>
     <script>
       // Fallback functions in case notifications.js hasn't loaded yet
       window.ensureNotifications = function() {
@@ -42,8 +42,10 @@
         }
       };
       
-      // Ensure notifications are available immediately
-      window.ensureNotifications();
+      // Ensure notifications are available after DOM is ready (deferred script will have run by then)
+      window.addEventListener('DOMContentLoaded', () => {
+        window.ensureNotifications();
+      });
     </script>
     <script>
       tailwind.config = {
@@ -1184,11 +1186,54 @@
             this.updateProfessorTabVisibility();
             // Update user interface
             this.updateUserInterface();
+            // Show a subtle welcome-back notification for returning users
+            this.maybeShowWelcomeBack();
             
             this.firebaseInitialized = true;
           } catch (error) {
             console.error('❌ AuthManager initialization failed:', error);
             this.firebaseInitialized = false;
+          }
+        }
+
+        // Show a friendly toast if a user session exists on page load
+        maybeShowWelcomeBack() {
+          try {
+            // Only once per tab/session
+            if (sessionStorage.getItem('wb_shown') === '1') return;
+            if (!this.currentUser || this.userType === 'guest') return;
+
+            // Derive a display name based on user type
+            let name = 'Player';
+            if (this.userType === 'student') {
+              name = this.currentUser?.profile?.fullName || this.currentUser?.name || this.currentUser?.studentId || 'Student';
+            } else if (this.userType === 'professor') {
+              const base = this.currentUser?.profile?.fullName || this.currentUser?.name || 'Professor';
+              name = `Prof. ${base}`;
+            } else if (this.userType === 'admin') {
+              const base = this.currentUser?.profile?.fullName || this.currentUser?.name || 'Admin';
+              name = `Admin ${base}`;
+            } else if (this.userType === 'general') {
+              name = this.currentUser?.profile?.fullName || this.currentUser?.email || 'Player';
+            }
+
+            const message = `Welcome back, ${name}!`;
+
+            if (typeof window.showToast === 'function') {
+              // Prefer non-blocking toast
+              window.showToast(message, { type: 'success', duration: 3500 });
+            } else if (typeof window.showSuccess === 'function') {
+              // Fallback to modal success
+              window.showSuccess(message, { title: '👋 Welcome Back' });
+            } else if (typeof window.alert === 'function') {
+              // Last resort
+              alert(message);
+            }
+
+            sessionStorage.setItem('wb_shown', '1');
+          } catch (e) {
+            // Do not block UI if notifications fail
+            console.debug('[welcome-back] toast skipped:', e?.message);
           }
         }
 

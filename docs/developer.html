@@ -7,17 +7,24 @@
   <title>SCI-HIGH: Developer Console</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- Modern Notification System -->
+  <script defer src="js/notifications.js"></script>
   <script>
     // Simple notification fallbacks (mirrors index.html pattern)
     (function ensureNotifications(){
-      if(typeof window.showSuccess === 'undefined'){
-        window.modernConfirm = (m)=>Promise.resolve(confirm(m));
-        window.modernAlert = (m)=>{ alert(m); return Promise.resolve(true);} ;
-        window.showSuccess = (m)=>{ alert('✅ '+m); return Promise.resolve(true);} ;
-        window.showError = (m)=>{ alert('❌ '+m); return Promise.resolve(true);} ;
-        window.showWarning = (m)=>{ alert('⚠️ '+m); return Promise.resolve(true);} ;
-        window.showInfo = (m)=>{ alert('ℹ️ '+m); return Promise.resolve(true);} ;
-      }
+      const init = () => {
+        if(typeof window.showSuccess === 'undefined'){
+          window.modernConfirm = (m)=>Promise.resolve(confirm(m));
+          window.modernAlert = (m)=>{ alert(m); return Promise.resolve(true);} ;
+          window.showSuccess = (m)=>{ alert('✅ '+m); return Promise.resolve(true);} ;
+          window.showError = (m)=>{ alert('❌ '+m); return Promise.resolve(true);} ;
+          window.showWarning = (m)=>{ alert('⚠️ '+m); return Promise.resolve(true);} ;
+          window.showInfo = (m)=>{ alert('ℹ️ '+m); return Promise.resolve(true);} ;
+        }
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init, { once: true });
+      } else { init(); }
     })();
   </script>
   <script>
