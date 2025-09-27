@@ -161,126 +161,123 @@
     "codeArrangement": [
       {
         "title": "Arrange the Java code blocks in correct order:",
-        "description": "Create a complete Java class with constructor and methods",
+        "description": "Create a simple Java class with constructor",
         "blocks": [
           "public class Student {",
           "    private String name;",
-          "    private int age;",
-          "    public Student(String name, int age) {",
+          "    public Student(String name) {",
           "        this.name = name;",
-          "        this.age = age;",
-          "    }",
-          "    public String getName() {",
-          "        return name;",
-          "    }",
-          "    public void setAge(int age) {",
-          "        this.age = age;",
-          "    }",
-          "}"
+          "    }"
         ],
-        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
-        "description": "Implement inheritance with method overriding",
+        "description": "Implement simple inheritance",
         "blocks": [
           "class Animal {",
-          "    public void speak() {",
-          "        System.out.println(\"Animal makes a sound\");",
-          "    }",
+          "    public void speak() { }",
           "}",
           "class Dog extends Animal {",
-          "    @Override",
-          "    public void speak() {",
-          "        System.out.println(\"Dog barks\");",
-          "    }",
-          "}"
+          "    public void bark() { }"
         ],
-        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
-        "description": "Create and use a recursive factorial method",
+        "description": "Create a simple recursive method",
         "blocks": [
-          "public class MathUtils {",
-          "    public static int factorial(int n) {",
-          "        if (n <= 1) {",
-          "            return 1;",
-          "        } else {",
-          "            return n * factorial(n - 1);",
-          "        }",
+          "public static int factorial(int n) {",
+          "    if (n <= 1) {",
+          "        return 1;",
           "    }",
-          "    public static void main(String[] args) {",
-          "        int result = factorial(5);",
-          "        System.out.println(\"5! = \" + result);",
-          "    }",
-          "}"
+          "    return n * factorial(n - 1);"
         ],
-        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
-        "description": "Work with 2D arrays and nested loops",
+        "description": "Work with simple 2D array",
         "blocks": [
-          "public class Matrix {",
-          "    public static void printMatrix(int[][] matrix) {",
-          "        for (int i = 0; i < matrix.length; i++) {",
-          "            for (int j = 0; j < matrix[i].length; j++) {",
-          "                System.out.print(matrix[i][j] + \" \");",
-          "            }",
-          "            System.out.println();",
-          "        }",
-          "    }",
-          "    public static void main(String[] args) {",
-          "        int[][] grid = {{1, 2, 3}, {4, 5, 6}};",
-          "        printMatrix(grid);",
-          "    }",
-          "}"
+          "int[][] matrix = new int[2][2];",
+          "for (int i = 0; i < matrix.length; i++) {",
+          "    for (int j = 0; j < matrix[i].length; j++) {",
+          "        matrix[i][j] = i + j;",
+          "    }"
         ],
-        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
-        "description": "Use ArrayList with error handling",
+        "description": "Use ArrayList for basic operations",
         "blocks": [
           "import java.util.ArrayList;",
-          "public class ListManager {",
-          "    private ArrayList<String> items;",
-          "    public ListManager() {",
-          "        items = new ArrayList<>();",
-          "    }",
-          "    public void addItem(String item) {",
-          "        try {",
-          "            items.add(item);",
-          "            System.out.println(\"Added: \" + item);",
-          "        } catch (Exception e) {",
-          "            System.out.println(\"Error adding item\");",
-          "        }",
-          "    }",
-          "}"
+          "ArrayList<String> list = new ArrayList<>();",
+          "list.add(\"Hello\");",
+          "list.add(\"World\");",
+          "System.out.println(list.size());"
         ],
-        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
-        "description": "Complex method with multiple control structures",
+        "description": "Simple method with loop and calculation",
         "blocks": [
-          "public static void analyzeNumbers(int[] numbers) {",
-          "    int sum = 0;",
-          "    int evenCount = 0;",
-          "    for (int num : numbers) {",
-          "        sum += num;",
-          "        if (num % 2 == 0) {",
-          "            evenCount++;",
-          "        }",
-          "    }",
-          "    double average = (double) sum / numbers.length;",
-          "    System.out.println(\"Sum: \" + sum);",
-          "    System.out.println(\"Average: \" + average);",
-          "    System.out.println(\"Even numbers: \" + evenCount);",
+          "int sum = 0;",
+          "for (int num : numbers) {",
+          "    sum += num;",
+          "}",
+          "System.out.println(\"Sum: \" + sum);"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
+      },
+      {
+        "title": "Arrange the Java code blocks in correct order:",
+        "description": "Exception handling with try-catch",
+        "blocks": [
+          "try {",
+          "    int result = Integer.parseInt(input);",
+          "    System.out.println(\"Number: \" + result);",
+          "} catch (NumberFormatException e) {",
+          "    System.out.println(\"Invalid number format\");"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
+      },
+      {
+        "title": "Arrange the Java code blocks in correct order:",
+        "description": "Interface implementation with method override",
+        "blocks": [
+          "interface Drawable {",
+          "    void draw();",
+          "}",
+          "class Circle implements Drawable {",
+          "    public void draw() { System.out.println(\"Drawing circle\"); }"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
+      },
+      {
+        "title": "Arrange the Java code blocks in correct order:",
+        "description": "Generic method with type parameter",
+        "blocks": [
+          "public static <T> void swap(T[] array, int i, int j) {",
+          "    T temp = array[i];",
+          "    array[i] = array[j];",
+          "    array[j] = temp;",
           "}"
         ],
-        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        "correctOrder": [0, 1, 2, 3, 4]
+      },
+      {
+        "title": "Arrange the Java code blocks in correct order:",
+        "description": "Lambda expression with functional interface",
+        "blocks": [
+          "List<String> names = Arrays.asList(\"Alice\", \"Bob\", \"Charlie\");",
+          "names.stream()",
+          "    .filter(name -> name.length() > 3)",
+          "    .map(String::toUpperCase)",
+          "    .forEach(System.out::println);"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
       }
     ]
   }

@@ -222,75 +222,63 @@
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
-        "description": "Create a function to calculate rectangle area",
+        "description": "Create a simple function to calculate area",
         "blocks": [
           "def calculate_area(length, width):",
           "    area = length * width",
           "    return area",
-          "length = float(input(\"Enter length: \"))",
-          "width = float(input(\"Enter width: \"))",
-          "result = calculate_area(length, width)",
+          "result = calculate_area(5, 3)",
           "print(f\"Area: {result}\")"
         ],
-        "correctOrder": [0, 1, 2, 3, 4, 5, 6]
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
-        "description": "Loop through a list and check even/odd numbers",
+        "description": "Loop through numbers and check if even",
         "blocks": [
           "numbers = [1, 2, 3, 4, 5]",
           "for num in numbers:",
           "    if num % 2 == 0:",
           "        print(f\"{num} is even\")",
-          "    else:",
-          "        print(f\"{num} is odd\")"
+          "    print(f\"Checked {num}\")"
         ],
-        "correctOrder": [0, 1, 2, 3, 4, 5]
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
-        "description": "Handle file operations with error handling",
+        "description": "Basic file reading with error handling",
         "blocks": [
           "try:",
           "    file = open(\"data.txt\", \"r\")",
           "    content = file.read()",
           "    print(content)",
-          "    file.close()",
-          "except FileNotFoundError:",
-          "    print(\"File not found!\")"
+          "except FileNotFoundError:"
         ],
-        "correctOrder": [0, 1, 2, 3, 4, 5, 6]
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
-        "description": "Create a class with methods and use it",
+        "description": "Create and use a simple class",
         "blocks": [
           "class Calculator:",
-          "    def __init__(self):",
-          "        self.result = 0",
           "    def add(self, x, y):",
           "        return x + y",
           "calc = Calculator()",
-          "answer = calc.add(5, 3)",
-          "print(f\"Result: {answer}\")"
+          "result = calc.add(5, 3)"
         ],
-        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7]
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
-        "description": "Working with dictionaries and loops",
+        "description": "Working with dictionaries and simple loop",
         "blocks": [
-          "students = {\"Alice\": 85, \"Bob\": 92, \"Charlie\": 78}",
-          "total_score = 0",
-          "count = 0",
+          "students = {\"Alice\": 85, \"Bob\": 92}",
           "for name, score in students.items():",
           "    print(f\"{name}: {score}\")",
-          "    total_score += score",
-          "    count += 1",
-          "average = total_score / count",
-          "print(f\"Average score: {average}\")"
+          "    if score > 90:",
+          "        print(\"Excellent!\")"
         ],
-        "correctOrder": [0, 1, 2, 3, 4, 5, 6, 7, 8]
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -306,17 +294,63 @@
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
-        "description": "Import modules and use functions",
+        "description": "Import modules and use basic functions",
         "blocks": [
           "import math",
-          "from datetime import datetime",
-          "radius = float(input(\"Enter radius: \"))",
+          "radius = 5",
           "area = math.pi * radius ** 2",
-          "current_time = datetime.now()",
           "print(f\"Circle area: {area:.2f}\")",
-          "print(f\"Calculated at: {current_time}\")"
+          "print(f\"Pi value: {math.pi}\")"
         ],
-        "correctOrder": [0, 1, 2, 3, 4, 5, 6]
+        "correctOrder": [0, 1, 2, 3, 4]
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Exception handling with multiple except blocks",
+        "blocks": [
+          "try:",
+          "    value = int(input(\"Enter a number: \"))",
+          "    result = 10 / value",
+          "except ValueError:",
+          "    print(\"Invalid input!\")"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Working with sets and set operations",
+        "blocks": [
+          "set1 = {1, 2, 3, 4}",
+          "set2 = {3, 4, 5, 6}",
+          "intersection = set1 & set2",
+          "union = set1 | set2",
+          "print(f\"Common: {intersection}\")"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Generator function with yield",
+        "blocks": [
+          "def fibonacci(n):",
+          "    a, b = 0, 1",
+          "    for _ in range(n):",
+          "        yield a",
+          "        a, b = b, a + b"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Decorator function pattern",
+        "blocks": [
+          "def timer_decorator(func):",
+          "    def wrapper(*args, **kwargs):",
+          "        import time",
+          "        start = time.time()",
+          "        return func(*args, **kwargs)"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
       }
     ]
   }

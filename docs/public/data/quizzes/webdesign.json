@@ -308,7 +308,7 @@
     ]
   },
   "intensity3": {
-    "codeArrangement": [
+    "multipleChoice": [
       {
         "question": "Where is the best place to put a JavaScript <script> tag for faster loading?",
         "options": ["In the <head>", "At the end of <body>", "In the <title>", "Before <!DOCTYPE html>"],
@@ -358,106 +358,105 @@
         "question": "What does the else block do?",
         "options": ["Runs when condition is true", "Runs when condition is false", "Repeats code", "Stops the program"],
         "correctIndex": 1
+      }
+    ],
+    "codeArrangement": [
+      {
+        "title": "Arrange the HTML code blocks in correct order:",
+        "description": "Create a basic HTML page structure",
+        "blocks": [
+          "<!DOCTYPE html>",
+          "<html>",
+          "<head><title>My Page</title></head>",
+          "<body><h1>Welcome</h1></body>",
+          "</html>"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
-        "question": "Which loop runs at least once even if the condition is false?",
-        "options": ["for", "while", "do…while", "foreach"],
-        "correctIndex": 2
+        "title": "Arrange the CSS code blocks in correct order:",
+        "description": "Style a button with hover effects",
+        "blocks": [
+          ".button {",
+          "    background-color: blue;",
+          "    color: white;",
+          "    padding: 10px 20px;",
+          "}"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
-        "question": "Which statement is used for many choices?",
-        "options": ["if", "else", "switch", "case"],
-        "correctIndex": 2
+        "title": "Arrange the JavaScript code blocks in correct order:",
+        "description": "Add event listener to a button",
+        "blocks": [
+          "const button = document.getElementById('myButton');",
+          "button.addEventListener('click', function() {",
+          "    console.log('Button clicked!');",
+          "    alert('Hello World!');",
+          "});"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
-        "question": "Which keyword makes a function send back a value?",
-        "options": ["output", "return", "yield", "end"],
-        "correctIndex": 1
+        "title": "Arrange the HTML/CSS code blocks in correct order:",
+        "description": "Create a responsive navigation bar",
+        "blocks": [
+          "<nav class=\"navbar\">",
+          "<ul>",
+          "    <li><a href=\"#home\">Home</a></li>",
+          "    <li><a href=\"#about\">About</a></li>",
+          "</ul>"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
-        "question": "What is the correct arrow function syntax?",
-        "options": ["function => { }", "() => { }", "=> function { }", "function() -> { }"],
-        "correctIndex": 1
+        "title": "Arrange the CSS code blocks in correct order:",
+        "description": "Create a flexbox layout",
+        "blocks": [
+          ".container {",
+          "    display: flex;",
+          "    justify-content: center;",
+          "    align-items: center;",
+          "}"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
-        "question": "What will add(2,3) return if: function add(a,b){ return a+b; }?",
-        "options": ["23", "5", "NaN", "undefined"],
-        "correctIndex": 1
+        "title": "Arrange the JavaScript code blocks in correct order:",
+        "description": "Form validation with error handling",
+        "blocks": [
+          "const form = document.getElementById('myForm');",
+          "form.addEventListener('submit', function(e) {",
+          "    if (!form.checkValidity()) {",
+          "        e.preventDefault();",
+          "        alert('Please fill all fields');",
+          "    }"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
-        "question": "How do you access name in person.name?",
-        "options": ["person[\"name\"]", "person->name", "person(name)", "person::name"],
-        "correctIndex": 0
+        "title": "Arrange the CSS code blocks in correct order:",
+        "description": "Media query for responsive design",
+        "blocks": [
+          "@media screen and (max-width: 768px) {",
+          "    .container {",
+          "        width: 100%;",
+          "        padding: 10px;",
+          "    }"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
       },
       {
-        "question": "Which method adds an item to the end of an array?",
-        "options": ["shift()", "pop()", "push()", "unshift()"],
-        "correctIndex": 2
-      },
-      {
-        "question": "What does arr.length give?",
-        "options": ["The size of the array", "The last element", "The first element", "Nothing"],
-        "correctIndex": 0
-      },
-      {
-        "question": "Which method finds an element by ID?",
-        "options": ["document.getElementById()", "document.querySelectorAll()", "document.getElementsByClassName()", "document.getElementByName()"],
-        "correctIndex": 0
-      },
-      {
-        "question": "Which event happens when you click something?",
-        "options": ["onhover", "onclick", "onmouseover", "onchange"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Which property changes the text inside an element?",
-        "options": ["innerHTML", "textChange", "textContent()", "value()"],
-        "correctIndex": 0
-      },
-      {
-        "question": "A function inside another function is called a?",
-        "options": ["Callback", "Closure", "Promise", "Method"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Which word is used with async functions?",
-        "options": ["defer", "await", "sync", "yield"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Which object represents something that finishes in the future?",
-        "options": ["Closure", "Promise", "Array", "Function"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Which block catches errors?",
-        "options": ["error{}", "catch{}", "throw{}", "debug{}"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Which keyword creates an error?",
-        "options": ["error", "throw", "catch", "break"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Which method shows errors in the console?",
-        "options": ["console.write()", "console.error()", "console.log()", "console.warn()"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Which method runs code after a delay?",
-        "options": ["setInterval()", "setTimeout()", "sleep()", "delay()"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Which storage clears after closing the browser?",
-        "options": ["localStorage", "sessionStorage", "cache", "cookies"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Which object represents the browser window?",
-        "options": ["document", "screen", "window", "console"],
-        "correctIndex": 2
+        "title": "Arrange the JavaScript code blocks in correct order:",
+        "description": "Fetch data from API with error handling",
+        "blocks": [
+          "fetch('https://api.example.com/data')",
+          "    .then(response => response.json())",
+          "    .then(data => console.log(data))",
+          "    .catch(error => console.error('Error:', error));",
+          "// End of fetch"
+        ],
+        "correctOrder": [0, 1, 2, 3, 4]
       }
     ]
   }
