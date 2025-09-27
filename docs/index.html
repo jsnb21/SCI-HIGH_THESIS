@@ -135,6 +135,39 @@
         background: rgba(22, 33, 62, 0.8);
         box-shadow: 0 0 10px rgba(244, 206, 20, 0.3);
       }
+
+      /* User greeting styles for navbar */
+      #user-greeting {
+        min-width: 0; /* Allow shrinking */
+        overflow: hidden;
+      }
+      
+      #greeting-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 12rem; /* 192px max width */
+      }
+      
+      /* Mobile user greeting */
+      #mobile-greeting-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      /* Responsive navbar improvements */
+      @media (max-width: 1024px) {
+        #greeting-text {
+          max-width: 8rem; /* Smaller on medium screens */
+        }
+      }
+      
+      @media (max-width: 768px) {
+        #greeting-text {
+          max-width: 6rem; /* Even smaller on tablets */
+        }
+      }
       
       /* Custom scrollbar for chat */
       .scrollbar-thin {
@@ -330,7 +363,7 @@
           </div>
           
           <!-- Desktop navigation -->
-          <div class="hidden md:flex space-x-8">
+          <div class="hidden md:flex space-x-4 lg:space-x-8 items-center flex-wrap">
             <a href="#home" class="gaming-nav-link text-textColor hover:text-primary transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
               <span class="relative z-10">Home</span>
               <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
@@ -339,11 +372,11 @@
               <span class="relative z-10">About</span>
               <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
             </a>
-            <a href="leaderboards.html" class="gaming-nav-link text-textColor hover:text-accent transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
+            <a href="./leaderboards.html" class="gaming-nav-link text-textColor hover:text-accent transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
               <span class="relative z-10">Leaderboards</span>
               <div class="absolute inset-0 bg-accent/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
             </a>
-            <a href="news.html" class="gaming-nav-link text-textColor hover:text-cyan transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
+            <a href="./news.html" class="gaming-nav-link text-textColor hover:text-cyan transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
               <span class="relative z-10">News</span>
               <div class="absolute inset-0 bg-cyan/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
             </a>
@@ -362,8 +395,8 @@
               <div class="absolute inset-0 bg-accent/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
             </a>
             <!-- User Greeting - Hidden by default, shown for logged-in users -->
-            <span id="user-greeting" class="text-textColor font-gaming text-sm uppercase tracking-wider hidden">
-              <span id="greeting-text">Hello, User!</span>
+            <span id="user-greeting" class="text-textColor font-gaming text-sm uppercase tracking-wider hidden max-w-48 truncate">
+              <span id="greeting-text" class="truncate" title="">Hello, User!</span>
             </span>
             <!-- Logout Button - Hidden by default, shown for logged-in users (except guests) -->
             <button id="logout-btn" class="gaming-nav-link text-textColor hover:text-red-400 transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative hidden" onclick="logoutUser()">
@@ -386,12 +419,12 @@
                 <span class="mr-2">ℹ️</span> About
               </span>
             </a>
-            <a href="leaderboards.html" class="block px-4 py-3 text-textColor hover:text-accent hover:bg-accent/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-accent/30">
+            <a href="./leaderboards.html" class="block px-4 py-3 text-textColor hover:text-accent hover:bg-accent/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-accent/30">
               <span class="flex items-center">
                 <span class="mr-2">🏆</span> Leaderboards
               </span>
             </a>
-            <a href="news.html" class="block px-4 py-3 text-textColor hover:text-cyan hover:bg-cyan/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-cyan/30">
+            <a href="./news.html" class="block px-4 py-3 text-textColor hover:text-cyan hover:bg-cyan/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-cyan/30">
               <span class="flex items-center">
                 <span class="mr-2">📰</span> News
               </span>
@@ -412,7 +445,7 @@
               </span>
             </a>
             <div id="mobile-user-greeting" class="block px-4 py-3 text-primary font-gaming text-sm uppercase tracking-wider bg-primary/10 rounded-lg border border-primary/30 hidden">
-              <span id="mobile-greeting-text">Hello, User!</span>
+              <span id="mobile-greeting-text" class="truncate block" title="">Hello, User!</span>
             </div>
             <button id="mobile-logout-btn" class="block w-full text-left px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-red-500/30 hidden" onclick="logoutUser()">
               <span class="flex items-center">
@@ -2005,16 +2038,32 @@
 
             // Set personalized greeting based on user type
             let greetingMessage = '';
-            if (this.userType === 'student') {
-              greetingMessage = `Hello, ${this.currentUser.profile?.fullName || this.currentUser.name || 'Student'}!`;
-            } else if (this.userType === 'professor') {
-              greetingMessage = `Hello, Prof. ${this.currentUser.profile?.fullName || this.currentUser.name || 'Professor'}!`;
-            } else if (this.userType === 'admin') {
-              greetingMessage = `Hello, Admin ${this.currentUser.profile?.fullName || this.currentUser.name || 'Admin'}!`;
-            } else {
-              greetingMessage = `Hello, ${this.currentUser.profile?.fullName || this.currentUser.name || 'User'}!`;
+            let fullName = this.currentUser.profile?.fullName || this.currentUser.name || '';
+            
+            // Create shortened name for long names (keep first name and last initial)
+            let displayName = fullName;
+            if (fullName && fullName.split(' ').length > 2) {
+              const nameParts = fullName.split(' ');
+              displayName = `${nameParts[0]} ${nameParts[nameParts.length - 1].charAt(0)}.`;
             }
+            
+            if (this.userType === 'student') {
+              greetingMessage = `Hello, ${displayName || 'Student'}!`;
+            } else if (this.userType === 'professor') {
+              greetingMessage = `Hello, Prof. ${displayName || 'Professor'}!`;
+            } else if (this.userType === 'admin') {
+              greetingMessage = `Hello, Admin ${displayName || 'Admin'}!`;
+            } else {
+              greetingMessage = `Hello, ${displayName || 'User'}!`;
+            }
+            
+            const fullGreetingMessage = this.userType === 'student' ? `Hello, ${fullName || 'Student'}!` :
+                                     this.userType === 'professor' ? `Hello, Prof. ${fullName || 'Professor'}!` :
+                                     this.userType === 'admin' ? `Hello, Admin ${fullName || 'Admin'}!` :
+                                     `Hello, ${fullName || 'User'}!`;
+            
             greetingText.textContent = greetingMessage;
+            greetingText.setAttribute('title', fullGreetingMessage); // Set tooltip for full name
           } else {
             // Hide user greeting and logout button for guests or non-logged-in users
             userGreeting.classList.add('hidden');
@@ -4688,7 +4737,10 @@ Please provide a helpful, engaging response about SCI-HIGH or the thesis researc
             const greetingText = document.getElementById('greeting-text');
             const mobileGreetingText = document.getElementById('mobile-greeting-text');
             if (greetingText && mobileGreetingText) {
-              mobileGreetingText.textContent = greetingText.textContent;
+              const shortText = greetingText.textContent;
+              const fullText = greetingText.getAttribute('title') || shortText;
+              mobileGreetingText.textContent = shortText; // Use the same shortened text for consistency
+              mobileGreetingText.setAttribute('title', fullText); // Set tooltip for full name
             }
           }
           if (logoutBtn && mobileLogoutBtn) {
