@@ -12,6 +12,7 @@ export default defineConfig({
         main: './index.html',
         game: './game.html',
         leaderboards: './leaderboards.html',
+          news: './news.html',
         'professor-dashboard': './professor-dashboard.html',
         developer: './developer.html'
       },
