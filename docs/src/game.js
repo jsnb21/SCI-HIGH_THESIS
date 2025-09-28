@@ -225,9 +225,14 @@ try {
     }
 
     // ---------------------------------------------------------------
-    // Global Fullscreen Prompt (mobile + not fullscreen)
+    // Global Fullscreen Prompt (DISABLED to avoid duplicate prompts)
+    // We now rely on: 
+    //  - The orientation overlay in game.html (asks users to rotate to landscape first)
+    //  - The in-game StartupScene fullscreen prompt as needed
     // ---------------------------------------------------------------
+    const ENABLE_GLOBAL_FULLSCREEN_PROMPT = false;
     (function setupGlobalFullscreenPrompt(){
+      if (!ENABLE_GLOBAL_FULLSCREEN_PROMPT) return;
       // Heuristic mobile detection (mirrors mobileUtils.js logic without scene)
       const isMobileViewport = () => {
         const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
@@ -328,15 +333,15 @@ try {
         overlay.style.display = show ? 'flex' : 'none';
       };
 
-      // Initial state
-      updateVisibility();
+  // Initial state
+  updateVisibility();
 
       // Respond to changes
       const onFsChange = () => updateVisibility();
       const onResize = () => updateVisibility();
-      document.addEventListener('fullscreenchange', onFsChange);
-      window.addEventListener('resize', onResize);
-      window.addEventListener('orientationchange', () => setTimeout(updateVisibility, 120));
+  document.addEventListener('fullscreenchange', onFsChange);
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', () => setTimeout(updateVisibility, 120));
 
       // Store cleanup if ever needed
       window.__cleanupFullscreenPrompt = () => {
