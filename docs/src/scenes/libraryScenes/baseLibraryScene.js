@@ -343,9 +343,15 @@ class BaseLibraryScene extends Phaser.Scene {
         }
     }
 
-    openEbook(book) {
-        
+    async openEbook(book) {
         if (book.link) {
+            // Confirm with the player before opening a new tab
+            const proceed = await this.confirmOpenBook(book);
+            if (!proceed) {
+                // Optional: subtle canceled feedback
+                this.showTransientTip('Opening canceled');
+                return;
+            }
             
             // Play confirmation sound
             if (this.se_confirmSound) {
@@ -379,6 +385,128 @@ class BaseLibraryScene extends Phaser.Scene {
             console.warn(`No link available for book: ${book.title}`);
             this.showNoLinkMessage(book);
         }
+    }
+
+    async confirmOpenBook(book) {
+        const message = `Open "${book.title}" in a new tab?`;
+        // Prefer site-wide modernConfirm if available
+        try {
+            if (typeof window !== 'undefined' && typeof window.modernConfirm === 'function') {
+                const ok = await window.modernConfirm(message, {
+                    confirmText: 'Open',
+                    cancelText: 'Cancel',
+                    theme: 'warning'
+                });
+                return !!ok;
+            }
+        } catch (_) { /* fall through to Phaser UI */ }
+
+        // Fallback: Phaser in-scene confirmation UI
+        return this.showConfirmOverlay(message, { confirmText: 'Open', cancelText: 'Cancel' });
+    }
+
+    showConfirmOverlay(message, { confirmText = 'OK', cancelText = 'Cancel' } = {}) {
+        if (this._confirmOverlayActive) return Promise.resolve(false);
+        this._confirmOverlayActive = true;
+
+        const depth = 10_000;
+        const w = this.scale.width;
+        const h = this.scale.height;
+        const panelW = Math.min(520, Math.max(360, w * 0.7));
+        const panelH = Math.min(260, Math.max(200, h * 0.28));
+
+        const bg = this.add.rectangle(w / 2, h / 2, w, h, 0x000000, 0.75)
+            .setOrigin(0.5)
+            .setDepth(depth)
+            .setInteractive();
+
+        const panel = this.add.rectangle(w / 2, h / 2, panelW, panelH, 0x111318, 1)
+            .setOrigin(0.5)
+            .setStrokeStyle(2, 0xF4CE14, 0.6)
+            .setDepth(depth + 1);
+
+        const title = this.add.text(w / 2, h / 2 - panelH / 2 + 36, 'Leave Game Tab?', {
+            fontFamily: 'Arial Black, Arial',
+            fontSize: '20px',
+            color: '#ffffff'
+        }).setOrigin(0.5).setDepth(depth + 2);
+
+        const body = this.add.text(w / 2, title.y + 34, message, {
+            fontFamily: 'Arial',
+            fontSize: '16px',
+            color: '#d1d5db',
+            wordWrap: { width: panelW - 40, useAdvancedWrap: true },
+            align: 'center'
+        }).setOrigin(0.5).setDepth(depth + 2);
+
+        const btnY = h / 2 + panelH / 2 - 44;
+
+        const makeButton = (x, label, primary) => {
+            const btnW = 128, btnH = 40;
+            const bgRect = this.add.rectangle(x, btnY, btnW, btnH, primary ? 0xF4CE14 : 0x1F2937, 1)
+                .setOrigin(0.5)
+                .setStrokeStyle(1, primary ? 0xFDE68A : 0x374151, 0.9)
+                .setDepth(depth + 2)
+                .setInteractive({ useHandCursor: true });
+            const txt = this.add.text(x, btnY, label, {
+                fontFamily: 'Arial',
+                fontSize: '16px',
+                color: primary ? '#111827' : '#e5e7eb',
+                fontStyle: 'bold'
+            }).setOrigin(0.5).setDepth(depth + 3);
+
+            bgRect.on('pointerover', () => {
+                this.tweens.add({ targets: [bgRect, txt], scaleX: 1.04, scaleY: 1.04, duration: 120, ease: 'Power2' });
+                if (!primary) bgRect.setFillStyle(0x374151, 1);
+            });
+            bgRect.on('pointerout', () => {
+                this.tweens.add({ targets: [bgRect, txt], scaleX: 1, scaleY: 1, duration: 120, ease: 'Power2' });
+                if (!primary) bgRect.setFillStyle(0x1F2937, 1);
+            });
+
+            return { bgRect, txt };
+        };
+
+        const spacing = 160;
+        const okBtn = makeButton(w / 2 - spacing / 2, confirmText, true);
+        const cancelBtn = makeButton(w / 2 + spacing / 2, cancelText, false);
+
+        return new Promise(resolve => {
+            const cleanup = () => {
+                [bg, panel, title, body, okBtn.bgRect, okBtn.txt, cancelBtn.bgRect, cancelBtn.txt].forEach(el => el && el.destroy());
+                this._confirmOverlayActive = false;
+            };
+
+            okBtn.bgRect.on('pointerdown', () => {
+                if (this.se_confirmSound) this.se_confirmSound.play();
+                cleanup();
+                resolve(true);
+            });
+            cancelBtn.bgRect.on('pointerdown', () => {
+                cleanup();
+                resolve(false);
+            });
+
+            // Keyboard shortcuts
+            const esc = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+            const enter = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+            const onEsc = () => { cleanup(); resolve(false); };
+            const onEnter = () => { cleanup(); resolve(true); };
+            esc?.once('down', onEsc);
+            enter?.once('down', onEnter);
+
+            // Close by clicking the dark background (acts like cancel)
+            bg.once('pointerdown', onEsc);
+        });
+    }
+
+    showTransientTip(text) {
+        try {
+            const tip = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY + 80, text, {
+                fontFamily: 'Arial', fontSize: '14px', color: '#cccccc', backgroundColor: 'rgba(0,0,0,0.6)', padding: { x: 12, y: 6 }
+            }).setOrigin(0.5).setDepth(10_001);
+            this.tweens.add({ targets: tip, alpha: 0, y: tip.y + 20, duration: 900, ease: 'Power2', onComplete: () => tip.destroy() });
+        } catch { /* no-op */ }
     }
 
     showOpeningFeedback(book) {
