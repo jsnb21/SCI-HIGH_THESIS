@@ -249,39 +249,8 @@
       }
       
       /* Responsive tweaks */
-      @media (max-width: 768px) {
-        body {
-          overflow: hidden;
-        }
-        
-        #game {
-          width: 100vw;
-          height: 100vh;
-          position: fixed;
-          top: 0;
-          left: 0;
-        }
-        
-        canvas {
-          width: 100vw !important;
-          height: 100vh !important;
-          max-width: none !important;
-          max-height: none !important;
-        }
-      }
-
-      
-      @media (max-width: 500px) {
-        #game {
-          width: 100vw;
-          height: 100vh;
-        }
-        
-        canvas {
-          width: 100% !important;
-          height: 100% !important;
-        }
-      }
+      /* Removed canvas width/height overrides to prevent stretching on mobile. 
+         Let Phaser Scale FIT manage aspect ratio and letterboxing. */
     </style>
   </head>
   <body>
