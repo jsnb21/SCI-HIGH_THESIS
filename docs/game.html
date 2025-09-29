@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
   <title>SCI-HIGH: Playing!</title>
   <link rel="icon" type="image/png" href="assets/img/logo/SCI-HIGH_LOGO.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     
     <!-- Firebase Config Manager FIRST -->
     <script src="config/firebase-config.js"></script>
@@ -174,7 +174,10 @@
       #game {
         position: relative;
         width: 100vw;
-        height: 100vh;
+        /* Use dynamic viewport units to avoid mobile address bar jump and stretching */
+        height: 100vh;   /* fallback */
+        height: 100svh;  /* small viewport height */
+        height: 100dvh;  /* dynamic viewport height */
         overflow: hidden;
         display: flex;
         justify-content: center;
@@ -278,12 +281,24 @@
         setTimeout(handleOrientation, 100); // Small delay for orientation change
       });
 
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+          handleOrientation();
+        });
+      }
+
       // Button: Enable Landscape
       document.addEventListener('click', (e) => {
         if (e.target && e.target.id === 'enable-landscape-btn') {
           tryEnableLandscape();
         }
       });
+
+      // Refresh Phaser scale on fullscreen changes to prevent stretching when entering/exiting
+      const refreshScale = () => { try { if (window.game?.scale) window.game.scale.refresh(); } catch {} };
+      document.addEventListener('fullscreenchange', () => { setTimeout(refreshScale, 50); });
+      document.addEventListener('webkitfullscreenchange', () => { setTimeout(refreshScale, 50); });
+      document.addEventListener('msfullscreenchange', () => { setTimeout(refreshScale, 50); });
 
       // Initial state
       handleOrientation();
