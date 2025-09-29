@@ -31,6 +31,9 @@ export default class MainGameplay extends BaseScene {
         // Movement state
         this.isMoving = false;
         this.lastDirection = { x: 0, y: 1 }; // facing down by default
+    // Freeze/timeout state
+    this.freezeGameplay = false; // when true, block input and game loops
+    this._timeUpHandled = false; // guard to handle timer expiry once
         
         // Course data
         this.courseTopic = null;
@@ -1133,16 +1136,31 @@ export default class MainGameplay extends BaseScene {
     }
 
     onTimerExpired() {
+        // Prevent duplicate handling
+        if (this._timeUpHandled) return;
+        this._timeUpHandled = true;
+
         // Emit timer expired event for any listening scenes (like QuizScene)
         this.events.emit('timer-expired');
-        
-        // Stop the timer
+
+        // Stop the ticking timer event
         if (this.timerEvent) {
             this.timerEvent.remove();
+            this.timerEvent = null;
         }
-        
-        // Show result screen when timer expires
-        this.showResultScreen(false); // Timer expired, not course completed
+
+        // Freeze core gameplay systems (inputs/movement/spawns)
+        this.freezeGameplay = true;
+        this.enemiesMoving = false;
+
+        // Stop any timer shake tween
+        if (typeof this.stopTimerShake === 'function') this.stopTimerShake();
+
+        // Show a centered "TIME'S UP!" overlay, then transition to results
+        this.showTimesUpOverlay();
+        this.time.delayedCall(1800, () => {
+            this.showResultScreen(false); // Timer expired, not course completed
+        });
     }
 
     startCountdown() {
@@ -2313,6 +2331,53 @@ export default class MainGameplay extends BaseScene {
         });
     }
 
+    // Display a dramatic camera-fixed TIME'S UP overlay
+    showTimesUpOverlay() {
+        // Dim the screen slightly
+        const dim = this.add.rectangle(
+            this.scale.width / 2,
+            this.scale.height / 2,
+            this.scale.width * 2,
+            this.scale.height * 2,
+            0x000000,
+            0.55
+        ).setOrigin(0.5).setScrollFactor(0).setDepth(3000).setInteractive();
+
+        // Big headline
+        const title = this.add.text(this.scale.width / 2, this.scale.height / 2, "TIME'S UP!", {
+            fontFamily: 'Arial',
+            fontSize: this.scale.width < 768 ? '72px' : '96px',
+            fontWeight: 'bold',
+            color: '#ff5555',
+            stroke: '#000000',
+            strokeThickness: 8,
+            shadow: { offsetX: 4, offsetY: 4, color: '#000000', blur: 6, fill: true },
+            align: 'center'
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(3001);
+
+        // Subtext
+        const subtitle = this.add.text(this.scale.width / 2, this.scale.height / 2 + 80, 'Calculating your results…', {
+            fontFamily: 'Arial',
+            fontSize: this.scale.width < 768 ? '22px' : '26px',
+            fontWeight: 'bold',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 3,
+            align: 'center'
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(3001);
+
+        // Animate pop-in
+        title.setScale(0.6);
+        this.tweens.add({ targets: title, scale: 1.1, duration: 320, ease: 'Back.Out' });
+        // Gentle pulse
+        this.tweens.add({ targets: title, scale: 1.15, yoyo: true, duration: 500, repeat: -1, ease: 'Sine.inOut', delay: 340 });
+
+        // Store refs in case we ever need cleanup (auto-destroyed on scene switch)
+        this._timesUpDim = dim;
+        this._timesUpTitle = title;
+        this._timesUpSubtitle = subtitle;
+    }
+
     updateHighestStreakDisplay() {
         if (this.highestStreakText) {
             this.highestStreakText.setText(`Best: ${this.highestStreak}`);
@@ -3391,13 +3456,13 @@ export default class MainGameplay extends BaseScene {
     }
 
     handlePointerInput(pointer) {
-        // Add click feedback for both mobile and PC
-        this.createClickFeedback(pointer.worldX, pointer.worldY);
-        
-        // Skip if quiz is active or game hasn't started
-        if (this.quizActive || !this.gameStarted) {
+        // Skip if quiz is active, game hasn't started, or gameplay is frozen
+        if (this.quizActive || !this.gameStarted || this.freezeGameplay) {
             return;
         }
+        
+        // Add click feedback for both mobile and PC
+        this.createClickFeedback(pointer.worldX, pointer.worldY);
         
         // Get world position of pointer (accounting for camera zoom)
         const worldX = pointer.worldX;
@@ -3579,8 +3644,8 @@ export default class MainGameplay extends BaseScene {
             this.playerGlow.setPosition(this.playerSprite.x, this.playerSprite.y);
         }
         
-        // Only run game systems if the game has started and no quiz is active
-        if (!this.gameStarted || this.quizActive) {
+        // Only run game systems if the game has started and no quiz is active and not frozen
+        if (!this.gameStarted || this.quizActive || this.freezeGameplay) {
             return;
         }
         
@@ -3616,6 +3681,7 @@ export default class MainGameplay extends BaseScene {
 
     handleKeyboardInput() {
         if (this.isMoving) return; // Prevent movement spam
+        if (!this.gameStarted || this.quizActive || this.freezeGameplay) return; // Block when not in active play
         
         let moveX = 0;
         let moveY = 0;
@@ -3648,7 +3714,7 @@ export default class MainGameplay extends BaseScene {
         if (this.isMoving) return;
         
         // Don't allow movement during countdown or quiz
-        if (!this.gameStarted || this.quizActive) return;
+        if (!this.gameStarted || this.quizActive || this.freezeGameplay) return;
         
         // Calculate target position
         const targetX = this.player.x + (directionX * this.TILE_SIZE);
