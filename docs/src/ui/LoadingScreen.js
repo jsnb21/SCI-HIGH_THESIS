@@ -23,8 +23,9 @@ export default class LoadingScreen {
         const overlay = this.scene.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.9);
         this.loadingGroup.add(overlay);
         
-        // Loading text
-        this.loadingText = this.scene.add.text(width / 2, height / 2 - 30, targetScene, {
+        // Loading text (guard against non-string values)
+        const displayText = (typeof targetScene === 'string') ? targetScene : 'Loading...';
+        this.loadingText = this.scene.add.text(width / 2, height / 2 - 30, displayText, {
             fontFamily: 'Caprasimo-Regular, Arial',
             fontSize: '32px',
             color: '#ffffff',
@@ -141,17 +142,7 @@ export default class LoadingScreen {
         this.isShowing = false;
     }
 
-    // Static method for easy scene transitions with loading
-    static transitionToScene(currentScene, targetSceneName, delay = 1000) {
-        const loading = new LoadingScreen(currentScene);
-        loading.show(targetSceneName);
-
-        currentScene.time.delayedCall(delay, () => {
-            loading.hide(() => {
-                currentScene.scene.start(targetSceneName);
-            });
-        });
-    }
+    // Note: transitionToScene method consolidated below with (message, duration)
 
     // Static method for scene transitions with progress simulation
     static transitionToSceneWithProgress(currentScene, targetSceneName, message = 'Loading...', totalTime = 2000) {

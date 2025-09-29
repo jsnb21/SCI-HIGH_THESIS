@@ -311,7 +311,7 @@ export default class MainMenu extends Phaser.Scene {
             const menuButtons = [
                 { label: 'Start Adventure', x: leftX, y: topRowY, onClick: async () => { se_confirmSound.play(); await this.handleAdventureStart(); } },
                 { label: 'View Progress', x: rightX, y: topRowY, onClick: () => { se_confirmSound.play(); window.location.href = 'leaderboards.html'; } },
-                { label: 'Options', x: leftX, y: bottomRowY, onClick: () => { se_confirmSound.play(); LoadingScreen.transitionToScene(this, 'OptionsScene', 800); } },
+                { label: 'Options', x: leftX, y: bottomRowY, onClick: () => { se_confirmSound.play(); LoadingScreen.transitionToScene(this, 'OptionsScene', 'Loading...', 800); } },
                 { label: 'Quit', x: rightX, y: bottomRowY, onClick: () => { se_confirmSound.play(); this.showQuitConfirmation(se_hoverSound, se_confirmSound); } },
             ];
 
