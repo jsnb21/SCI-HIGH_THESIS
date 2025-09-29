@@ -224,7 +224,7 @@ export default class MainGameplay extends BaseScene {
             baseTileSize = 60; // Increased from 52 for better visibility
         } else {
             // Desktop / large screens: expand board to use height and a target width percentage
-            const hudHeight = 50; // unified HUD height
+            const hudHeight = 60; // unified HUD height (+10px)
             const availableHeight = screenHeight - hudHeight - 20; // small bottom margin
             const tileSizeByHeight = availableHeight / this.MAP_HEIGHT;
             const targetWidthPortion = 0.9; // occupy 90% of screen width if possible
@@ -389,6 +389,7 @@ export default class MainGameplay extends BaseScene {
         if (this.courseDisplay) this.courseDisplay.setVisible(false);
         this.ensureDomHud();
         this.syncDomHud();
+        this.updateDomHudBounds();
         // Update HUD positions for responsive design (mobile or after recreation)
         this.updateHudPositions();
     }
@@ -512,15 +513,15 @@ export default class MainGameplay extends BaseScene {
 
         const vw = (typeof window !== 'undefined') ? window.innerWidth : this.scale.width;
         const isMobileLike = vw < 768;
-        const baseHeight = isMobileLike ? 66 : 54;
+    const baseHeight = isMobileLike ? 76 : 64;
 
         const wrapper = document.createElement('div');
         wrapper.id = 'desktop-game-hud';
         Object.assign(wrapper.style, {
             position: 'absolute',
-            top: '0',
+            top: '0', // precise left/width set by updateDomHudBounds()
             left: '0',
-            width: '100%',
+            width: '0px',
             height: baseHeight + 'px',
             display: 'flex',
             alignItems: 'flex-start',
@@ -530,7 +531,8 @@ export default class MainGameplay extends BaseScene {
             fontFamily: 'Arial, sans-serif',
             zIndex: '9999',
             pointerEvents: 'none',
-            background: 'linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.25))'
+            background: 'linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.25))',
+            overflow: 'hidden'
         });
 
         // Basic text row builder (no icon) for score, streak, timer
@@ -606,18 +608,43 @@ export default class MainGameplay extends BaseScene {
         wrapper.appendChild(center);
         wrapper.appendChild(right);
 
-        const parent = this.game.canvas.parentNode || document.body;
-        parent.style.position = parent.style.position || 'relative';
-        parent.appendChild(wrapper);
-        this.domHudActive = true;
+    const parent = this.game.canvas.parentNode || document.body;
+    parent.style.position = parent.style.position || 'relative';
+    parent.appendChild(wrapper);
+    this.domHudWrapper = wrapper;
+    this.domHudActive = true;
 
         // Hide Phaser HUD (texts already hidden) and mark active
         if (this.desktopHudContainer) this.desktopHudContainer.setVisible(false);
         this.domHudActive = true;
-        // Immediate syncs to guarantee visibility
+        // Immediate syncs to guarantee visibility and correct bounds
+        this.updateDomHudBounds();
         this.syncDomHud();
-        setTimeout(() => this.syncDomHud(), 0);
-        requestAnimationFrame(() => this.syncDomHud());
+        setTimeout(() => { this.updateDomHudBounds(); this.syncDomHud(); }, 0);
+        requestAnimationFrame(() => { this.updateDomHudBounds(); this.syncDomHud(); });
+
+        // Keep HUD aligned with canvas on window and Phaser resizes
+        this._hudBoundsHandler = () => this.updateDomHudBounds();
+        window.addEventListener('resize', this._hudBoundsHandler);
+        this._scaleHudBoundsHandler = () => this.updateDomHudBounds();
+        if (this.scale) this.scale.on('resize', this._scaleHudBoundsHandler, this);
+    }
+
+    updateDomHudBounds() {
+        if (!this.domHudActive) return;
+        const canvas = this.game && this.game.canvas;
+        const wrapper = this.domHudWrapper || document.getElementById('desktop-game-hud');
+        if (!canvas || !wrapper) return;
+        const parent = canvas.parentNode || document.body;
+        const canvasRect = canvas.getBoundingClientRect();
+        const parentRect = parent.getBoundingClientRect();
+        const left = Math.max(0, Math.round(canvasRect.left - parentRect.left));
+        const top = Math.max(0, Math.round(canvasRect.top - parentRect.top));
+        const width = Math.round(canvas.clientWidth || canvasRect.width);
+        wrapper.style.left = left + 'px';
+        wrapper.style.top = top + 'px';
+        wrapper.style.width = width + 'px';
+        wrapper.style.overflow = 'hidden';
     }
 
     syncDomHud() {
@@ -633,6 +660,15 @@ export default class MainGameplay extends BaseScene {
         if (typeof document === 'undefined') return;
         const hud = document.getElementById('desktop-game-hud');
         if (hud) hud.remove();
+        // Remove listeners added for bounds syncing
+        if (this._hudBoundsHandler) {
+            window.removeEventListener('resize', this._hudBoundsHandler);
+            this._hudBoundsHandler = null;
+        }
+        if (this._scaleHudBoundsHandler && this.scale) {
+            this.scale.off('resize', this._scaleHudBoundsHandler, this);
+            this._scaleHudBoundsHandler = null;
+        }
         this.domHudActive = false;
         this.domScoreEl = null;
         this.domStreakEl = null;
@@ -662,7 +698,7 @@ export default class MainGameplay extends BaseScene {
         const isSmallMobile = screenWidth < 480;
         
         // Unified mobile-style HUD height
-        const hudHeight = 50;
+    const hudHeight = 60; // +10px to match taller HUD bar
         
         const availableHeight = screenHeight - hudHeight;
         
@@ -3170,7 +3206,7 @@ export default class MainGameplay extends BaseScene {
         const isSmallMobile = screenWidth < 480; // Very small screens
         
         // Unified HUD height across all devices (mobile style)
-        const hudHeight = 50;
+    const hudHeight = 60; // +10px to match taller HUD bar
         const availableHeight = screenHeight - hudHeight;
         
         // Aggressive unified zoom strategy (Option A)
