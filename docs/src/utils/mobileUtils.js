@@ -4,6 +4,10 @@
 export const BASE_WIDTH = 1920;
 export const BASE_HEIGHT = 1080;
 
+// Global UI scale boost applied uniformly across devices (fonts, paddings, widths)
+// Adjust to taste; 1.0 = no boost. Keep within [1.0, 1.5] to avoid overflow.
+export const UI_SCALE_BOOST = 1.2;
+
 // Minimum dimensions for mobile devices
 export const MIN_WIDTH = 320;
 export const MIN_HEIGHT = 240;
@@ -89,7 +93,8 @@ export function getScaleInfo(scene) {
  * @returns {number} - Scaled font size
  */
 export function scaleFontSize(baseSize, scaleInfo) {
-    let scaledSize = baseSize * scaleInfo.finalScale;
+    // Apply finalScale then global UI boost
+    let scaledSize = baseSize * scaleInfo.finalScale * UI_SCALE_BOOST;
     
     // Ensure minimum readable font sizes on mobile
     if (scaleInfo.isMobile) {
@@ -107,7 +112,7 @@ export function scaleFontSize(baseSize, scaleInfo) {
  * @returns {number} - Scaled dimension
  */
 export function scaleDimension(baseDimension, scaleInfo) {
-    return baseDimension * scaleInfo.finalScale;
+    return baseDimension * scaleInfo.finalScale * UI_SCALE_BOOST;
 }
 
 /**

@@ -29,9 +29,9 @@ export default class ResultScreen extends BaseScene {
         
         // Get scale information for mobile responsiveness
     const scaleInfo = getScaleInfo(this);
-    const isMobile = scaleInfo.width < 768;
+    const isMobile = scaleInfo.width < 900 || scaleInfo.isMobile;
     const aspect = scaleInfo.height / (scaleInfo.width || 1);
-    const isTallMobile = isMobile && aspect > 1.95; // very tall devices (e.g., S Ultra)
+    const isTallMobile = (isMobile || scaleInfo.isPortrait) && aspect > 1.95; // very tall devices (e.g., S Ultra)
         
         // Calculate ranking based on correct/wrong ratio
         const totalQuestions = this.correctAnswers + this.wrongAnswers;
@@ -75,15 +75,14 @@ export default class ResultScreen extends BaseScene {
     // Create main result panel with responsive dimensions for mobile
     // Wider on desktop, almost full width on tiny phones, but keep readable margins
     const tinyPhone = scaleInfo.width < 400;
-    // Mobile: widen further (up to 98%) and allow a little more max width for larger phones
-    // Widen mobile panel further; allow almost full width while keeping a tiny margin
+    // Mobile: widen further and increase cap; desktop gets a bit wider as well
     const panelWidth = isMobile ? (
-        isTallMobile ? Math.min(scaleInfo.width * 0.995, 470) : Math.min(scaleInfo.width * 0.99, tinyPhone ? 380 : 450)
-    ) : scaleDimension(560, scaleInfo);
+        isTallMobile ? Math.min(scaleInfo.width * 0.995, 520) : Math.min(scaleInfo.width * 0.99, tinyPhone ? 400 : 500)
+    ) : Math.min(scaleDimension(640, scaleInfo), scaleInfo.width * 0.9);
     const basePanelHeight = isMobile ? (
-        // Give a little more height on standard mobile to show more stats immediately
-        isTallMobile ? Math.min(scaleInfo.height * 0.92, 560) : Math.min(scaleInfo.height * 0.92, 560)
-    ) : Math.min(scaleDimension(600, scaleInfo), scaleInfo.height * 0.9); // taller by default on desktop, still capped to viewport
+        // More height on mobile to fit larger fonts comfortably
+        isTallMobile ? Math.min(scaleInfo.height * 0.92, 620) : Math.min(scaleInfo.height * 0.92, 620)
+    ) : Math.min(scaleDimension(680, scaleInfo), scaleInfo.height * 0.9);
     const panelHeight = basePanelHeight;
         const panelX = this.scale.width / 2;
         const panelY = this.scale.height / 2;
@@ -106,12 +105,12 @@ export default class ResultScreen extends BaseScene {
         
     // Title Y: desktop a bit higher now to allow distinct rank gap
     // Shift title higher on mobile to free vertical space for stats
-    let titleY = isMobile ? panelY - panelHeight * (isTallMobile ? 0.45 : 0.435) : panelY - panelHeight * 0.38;
+    let titleY = isMobile ? panelY - panelHeight * (isTallMobile ? 0.45 : 0.44) : panelY - panelHeight * 0.38;
         const title = this.add.text(panelX, titleY, titleText, {
             fontFamily: 'Arial',
             fontSize: isMobile ? 
-                (this.courseCompleted ? scaleFontSize(28, scaleInfo) : scaleFontSize(32, scaleInfo)) :
-                (this.courseCompleted ? '32px' : '36px'),
+                (this.courseCompleted ? scaleFontSize(34, scaleInfo) : scaleFontSize(38, scaleInfo)) :
+                (this.courseCompleted ? '36px' : '42px'),
             fontWeight: 'bold',
             color: this.courseCompleted ? '#00ff88' : '#ff6600',
             stroke: '#000000',
@@ -131,7 +130,7 @@ export default class ResultScreen extends BaseScene {
             let courseNameY = isMobile ? panelY - panelHeight * 0.3 : panelY - panelHeight * 0.25;
             const courseName = this.add.text(panelX, courseNameY, this.courseTopic.toUpperCase(), {
                 fontFamily: 'Arial',
-                fontSize: isMobile ? scaleFontSize(22, scaleInfo) : '26px',
+                fontSize: isMobile ? scaleFontSize(26, scaleInfo) : '28px',
                 fontWeight: 'bold',
                 color: '#ffffff',
                 stroke: '#000000',
@@ -143,7 +142,7 @@ export default class ResultScreen extends BaseScene {
         // Rank positioned dynamically BELOW title so they never overlap on desktop
     // Reduce rank size slightly on mobile so more stats visible
     // Increase rank size (both platforms) for stronger emphasis
-    let rankSize = isMobile ? (tinyPhone ? 36 : (isTallMobile ? 46 : 42)) : 68;
+    let rankSize = isMobile ? (tinyPhone ? 46 : (isTallMobile ? 56 : 54)) : 76;
     // Reduce gap under title for mobile to reclaim space
     const desktopTitleRankGap = isMobile ? 0 : 40;
     const mobileTitleRankGap = isMobile ? (isTallMobile ? 10 : 8) : 0;
@@ -162,7 +161,7 @@ export default class ResultScreen extends BaseScene {
         
         const rankText = this.add.text(panelX, rankY, rank, {
             fontFamily: 'Arial',
-            fontSize: isMobile ? scaleFontSize(isTallMobile ? 50 : 44, scaleInfo) : '58px',
+            fontSize: isMobile ? scaleFontSize(isTallMobile ? 58 : 54, scaleInfo) : '64px',
             fontWeight: 'bold',
             color: rankColor,
             stroke: '#000000',
@@ -178,21 +177,21 @@ export default class ResultScreen extends BaseScene {
         
         // --- FULL SCROLLABLE CONTENT (title, rank, stats, button) ---
     const panelTop = panelY - panelHeight/2;
-    const paddingTop = isMobile ? scaleDimension(20, scaleInfo) : 34;
+    const paddingTop = isMobile ? scaleDimension(24, scaleInfo) : 36;
     // Reduce side padding on mobile to gain more horizontal space for stats rows
-    const paddingSides = isMobile ? scaleDimension(12, scaleInfo) : 26;
-        const paddingBottom = isMobile ? scaleDimension(24, scaleInfo) : 30;
+    const paddingSides = isMobile ? scaleDimension(14, scaleInfo) : 28;
+        const paddingBottom = isMobile ? scaleDimension(28, scaleInfo) : 34;
         const innerWidth = panelWidth - paddingSides * 2;
 
         // Build stats + button after adjusting title/rank to top anchored positions
     title.y = panelTop + paddingTop + title.height/2;
     // Larger gap between title and rank
-    const titleRankGap = isMobile ? scaleDimension(20, scaleInfo) : 34;
+    const titleRankGap = isMobile ? scaleDimension(24, scaleInfo) : 36;
     rankY = title.y + title.height/2 + titleRankGap + rankSize/2;
         rankOuterGlow.y = rankBg.y = rankBorder.y = rankInnerGlow.y = rankText.y = rankY;
 
     // Larger gap between rank and stats
-    const rankStatsGap = isMobile ? scaleDimension(28, scaleInfo) : 40;
+    const rankStatsGap = isMobile ? scaleDimension(32, scaleInfo) : 42;
     const statsStartY = rankY + rankSize/2 + rankStatsGap;
         const statsData = [
             { label: '✓ Correct Answers', value: this.correctAnswers, color: '#00ff88' },
@@ -201,9 +200,9 @@ export default class ResultScreen extends BaseScene {
             { label: '⭐ Total Score', value: this.totalScore, color: '#00ddff' },
             { label: '📊 Accuracy', value: `${accuracy.toFixed(1)}%`, color: accuracy >= 80 ? '#00ff88' : accuracy >= 60 ? '#ffaa00' : '#ff4444' }
         ];
-        const rowHeight = isMobile ? scaleDimension(isTallMobile ? 40 : 38, scaleInfo) : 40;
-        const rowGap = isMobile ? scaleDimension(10, scaleInfo) : 12;
-        const statFontSize = isMobile ? scaleFontSize(tinyPhone ? 15 : 17, scaleInfo) : '20px';
+    const rowHeight = isMobile ? scaleDimension(isTallMobile ? 48 : 46, scaleInfo) : 44;
+    const rowGap = isMobile ? scaleDimension(12, scaleInfo) : 14;
+    const statFontSize = isMobile ? scaleFontSize(tinyPhone ? 18 : 20, scaleInfo) : '22px';
         const statRowElements = [];
         let statCursorY = statsStartY;
         const leftColX = panelX - innerWidth/2 + innerWidth * 0.04;
@@ -218,13 +217,13 @@ export default class ResultScreen extends BaseScene {
             statCursorY += rowHeight + rowGap;
         });
 
-        const buttonHeight = isMobile ? scaleDimension(50, scaleInfo) : 62;
-        const buttonWidth = isMobile ? Math.min(innerWidth, scaleDimension(tinyPhone ? 250 : 320, scaleInfo)) : 360;
-        const buttonCenterY = statCursorY + (isMobile ? scaleDimension(16, scaleInfo) : 26) + buttonHeight/2;
+    const buttonHeight = isMobile ? scaleDimension(58, scaleInfo) : 68;
+    const buttonWidth = isMobile ? Math.min(innerWidth, scaleDimension(tinyPhone ? 300 : 380, scaleInfo)) : 400;
+    const buttonCenterY = statCursorY + (isMobile ? scaleDimension(18, scaleInfo) : 28) + buttonHeight/2;
         const buttonBg = this.add.rectangle(panelX, buttonCenterY, buttonWidth, buttonHeight, 0x2c3e50).setStrokeStyle(isMobile?scaleDimension(2, scaleInfo):3, 0x4a90e2);
         const buttonGlow = this.add.rectangle(panelX, buttonCenterY, buttonWidth+6, buttonHeight+6, 0x4a90e2, isMobile?0.35:0.4);
-        const buttonInner = this.add.rectangle(panelX, buttonCenterY, buttonWidth-(isMobile?10:12), buttonHeight-(isMobile?10:12), 0x34495e, 0.85);
-        const buttonText = this.add.text(panelX, buttonCenterY, 'Back to Computer Lab', { fontFamily:'Arial', fontSize: isMobile? `${scaleFontSize(tinyPhone?16:18, scaleInfo)}px` : '22px', fontWeight:'bold', color:'#ffffff', shadow: !isMobile? {offsetX:2, offsetY:2, color:'#000', blur:4, fill:true}: undefined }).setOrigin(0.5);
+    const buttonInner = this.add.rectangle(panelX, buttonCenterY, buttonWidth-(isMobile?12:14), buttonHeight-(isMobile?12:14), 0x34495e, 0.85);
+    const buttonText = this.add.text(panelX, buttonCenterY, 'Back to Computer Lab', { fontFamily:'Arial', fontSize: isMobile? `${scaleFontSize(tinyPhone?18:20, scaleInfo)}px` : '24px', fontWeight:'bold', color:'#ffffff', shadow: !isMobile? {offsetX:2, offsetY:2, color:'#000', blur:4, fill:true}: undefined }).setOrigin(0.5);
         const buttonElements = [buttonGlow, buttonBg, buttonInner, buttonText];
 
         // Content container that will scroll (includes title, rank, stats, button)
