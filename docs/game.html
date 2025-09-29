@@ -117,11 +117,10 @@
       /* Orientation overlay */
       #orientation-overlay {
         position: fixed;
-        inset: 0;
-        width: 100vw;
-        height: 100vh;   /* fallback */
-        height: 100svh;  /* small viewport height */
-        height: 100dvh;  /* dynamic viewport height */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         background: rgba(0, 0, 0, 0.9);
         display: none;
         flex-direction: column;
@@ -131,8 +130,28 @@
         color: white;
         font-family: Arial, sans-serif;
         text-align: center;
-        padding: 24px;
-        gap: 12px;
+        padding: 20px;
+      }
+
+      #orientation-overlay .rotate-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+        animation: rotate 2s linear infinite;
+      }
+
+      @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      #orientation-overlay h2 {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+
+      #orientation-overlay p {
+        font-size: 16px;
+        opacity: 0.8;
       }
 
       /* Base page and game container sizing */
@@ -155,10 +174,7 @@
       #game {
         position: relative;
         width: 100vw;
-        /* Use dynamic viewport units to avoid mobile address bar jump and stretching */
-        height: 100vh;   /* fallback */
-        height: 100svh;  /* small viewport height */
-        height: 100dvh;  /* dynamic viewport height */
+        height: 100vh;
         overflow: hidden;
         display: flex;
         justify-content: center;
@@ -203,13 +219,76 @@
     <div id="orientation-overlay">
       <div class="rotate-icon">📱</div>
   <h2>Rotate to Landscape</h2>
-  <p id="orientation-instructions">For the best experience, rotate your device to landscape. Then tap Continue.</p>
-  <button id="enable-landscape-btn" style="margin-top:16px;padding:14px 20px;border-radius:12px;border:none;background:#F4CE14;color:#222;font-weight:800;font-size:16px;cursor:pointer;min-width:220px">Continue</button>
+  <p>For the best experience, rotate your device to landscape first.</p>
+  <button id="enable-landscape-btn" style="margin-top:16px;padding:10px 14px;border-radius:8px;border:none;background:#F4CE14;color:#222;font-weight:700;cursor:pointer">Enable Landscape</button>
     </div>
     
     <div id="game"></div>
     <!-- Debug notify button removed -->
-    <script type="module" src="./src/utils/orientationManager.js"></script>
+
+    <script>
+      // Function to check if device is mobile
+      function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               (window.innerWidth <= 768 && window.innerHeight <= 1024);
+      }
+
+      // Function to handle orientation
+      async function requestFullscreen(el) {
+        if (!el) return false;
+        try {
+          if (el.requestFullscreen) { await el.requestFullscreen(); return true; }
+          if (el.webkitRequestFullscreen) { await el.webkitRequestFullscreen(); return true; }
+          if (el.msRequestFullscreen) { await el.msRequestFullscreen(); return true; }
+        } catch {}
+        return false;
+      }
+
+      async function tryEnableLandscape() {
+        const container = document.getElementById('game');
+        // Fullscreen first (often required for orientation lock permissions)
+        await requestFullscreen(container);
+        // Try lock
+        try {
+          if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock('landscape');
+          }
+        } catch {}
+        // Re-evaluate state
+        handleOrientation();
+      }
+
+      function handleOrientation() {
+        const overlay = document.getElementById('orientation-overlay');
+        const isMobile = isMobileDevice();
+        const isPortrait = window.innerHeight > window.innerWidth;
+
+        if (isMobile && isPortrait) {
+          overlay.style.display = 'flex';
+        } else {
+          overlay.style.display = 'none';
+        }
+        setTimeout(() => { if (window.game?.scale) window.game.scale.refresh(); }, 50);
+      }
+
+      // Check orientation on load and resize
+      window.addEventListener('load', handleOrientation);
+      window.addEventListener('resize', handleOrientation);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(handleOrientation, 100); // Small delay for orientation change
+      });
+
+      // Button: Enable Landscape
+      document.addEventListener('click', (e) => {
+        if (e.target && e.target.id === 'enable-landscape-btn') {
+          tryEnableLandscape();
+        }
+      });
+
+      // Initial state
+      handleOrientation();
+    </script>
+
     <script type="module" src="./src/game.js"></script>
     <!-- Notification debug scripts removed after verification -->
   </body>
