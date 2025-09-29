@@ -40,6 +40,13 @@ export default class PowerUpScene extends BaseScene {
                 description: 'Higher streak = faster movement (max 2x speed)',
                 icon: '💨',
                 color: 0xFF9800
+            },
+            {
+                id: 'freezeEnemy',
+                name: 'Frost Hex',
+                description: 'Next correct answer freezes a random enemy',
+                icon: '❄️',
+                color: 0x80DEEA
             }
         ];
     }
@@ -340,6 +347,9 @@ export default class PowerUpScene extends BaseScene {
                 break;
             case 'speedBoost':
                 mainScene.activatePowerUp('speedBoost');
+                break;
+            case 'freezeEnemy':
+                mainScene.activatePowerUp('freezeEnemy');
                 break;
         }
     }

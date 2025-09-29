@@ -124,9 +124,12 @@ export default class MainGameplay extends BaseScene {
             streakProtection: false,
             goblinImmunityReady: false,  // Power-up selected, waiting for correct answer
             goblinImmunityActive: false, // Currently immune to one goblin thug
-            speedBoost: false
+            speedBoost: false,
+            freezeOnCorrectReady: false // Next correct answer freezes a random enemy
         };
         this.originalPlayerSpeed = 200; // Store original speed for speed boost
+        // Power-up cadence (popup every N correct answers)
+        this.correctAnswersSincePowerUp = 0;
     }
 
     init(data) {
@@ -190,9 +193,12 @@ export default class MainGameplay extends BaseScene {
                 streakProtection: false,
                 goblinImmunityReady: false,
                 goblinImmunityActive: false,
-                speedBoost: false
+                speedBoost: false,
+                freezeOnCorrectReady: false
             };
             this.player.speed = this.originalPlayerSpeed;
+            // Reset power-up cadence counter
+            this.correctAnswersSincePowerUp = 0;
             
         } else {
             // Resuming from quiz - load saved state
@@ -887,76 +893,18 @@ export default class MainGameplay extends BaseScene {
     }
 
     createPowerUps() {
-        // Clear existing power-ups
+        // Disabled: board-spawned power-ups are no longer used. Use popup cadence instead.
+        // Clear any existing sprites leftover from older sessions
         this.powerUps = [];
         if (this.powerUpSprites) {
             this.powerUpSprites.forEach(sprite => sprite.destroy());
         }
         this.powerUpSprites = [];
-        
-        // Generate random power-up positions (avoiding player starting position and enemies)
-        const playerTileX = Math.floor(this.MAP_WIDTH / 2);
-        const playerTileY = Math.floor(this.MAP_HEIGHT / 2);
-        
-        for (let i = 0; i < this.maxPowerUps; i++) {
-            let powerUpTileX, powerUpTileY;
-            let attempts = 0;
-            
-            // Try to find a valid position (not on player, not on enemies, not on other power-ups)
-            do {
-                powerUpTileX = Phaser.Math.Between(0, this.MAP_WIDTH - 1);
-                powerUpTileY = Phaser.Math.Between(0, this.MAP_HEIGHT - 1);
-                attempts++;
-            } while (
-                attempts < 50 && (
-                    (powerUpTileX === playerTileX && powerUpTileY === playerTileY) ||
-                    this.enemies.some(enemy => enemy.tileX === powerUpTileX && enemy.tileY === powerUpTileY) ||
-                    this.powerUps.some(powerUp => powerUp.tileX === powerUpTileX && powerUp.tileY === powerUpTileY)
-                )
-            );
-            
-            // If we found a valid position, create the power-up
-            if (attempts < 50) {
-                const powerUp = this.createPowerUp(powerUpTileX, powerUpTileY);
-                this.powerUps.push(powerUp);
-            }
-        }
-        
     }
 
     spawnSinglePowerUp() {
-        // Don't spawn if we already have maximum power-ups
-        if (this.powerUps.length >= this.maxPowerUps) {
-            return;
-        }
-        
-        // Generate random power-up position (avoiding player, enemies, and existing power-ups)
-        const playerTileX = Math.floor((this.player.x - this.boardOffsetX) / this.TILE_SIZE);
-        const playerTileY = Math.floor((this.player.y - this.boardOffsetY) / this.TILE_SIZE);
-        
-        let powerUpTileX, powerUpTileY;
-        let attempts = 0;
-        
-        // Try to find a valid position
-        do {
-            powerUpTileX = Phaser.Math.Between(0, this.MAP_WIDTH - 1);
-            powerUpTileY = Phaser.Math.Between(0, this.MAP_HEIGHT - 1);
-            attempts++;
-        } while (
-            attempts < 50 && (
-                (powerUpTileX === playerTileX && powerUpTileY === playerTileY) ||
-                this.enemies.some(enemy => enemy.tileX === powerUpTileX && enemy.tileY === powerUpTileY) ||
-                this.powerUps.some(powerUp => powerUp.tileX === powerUpTileX && powerUp.tileY === powerUpTileY) ||
-                this.goblinThugs.some(thug => thug.tileX === powerUpTileX && thug.tileY === powerUpTileY)
-            )
-        );
-        
-        // If we found a valid position, create the power-up
-        if (attempts < 50) {
-            const powerUp = this.createPowerUp(powerUpTileX, powerUpTileY);
-            this.powerUps.push(powerUp);
-        } else {
-        }
+        // Disabled: power-ups are no longer placed on the board
+        return;
     }
 
     createTimer() {
@@ -1769,7 +1717,10 @@ export default class MainGameplay extends BaseScene {
             sprite: enemySprite,
             glow: null, // No glow effect
             type: spriteKey,
-            hp: 100
+            hp: 100,
+            // Freeze power-up support
+            frozenUntil: 0,
+            freezeMarker: null
         };
     }
 
@@ -1836,6 +1787,8 @@ export default class MainGameplay extends BaseScene {
     }
 
     checkPowerUpCollision(worldX, worldY) {
+        // Disabled: power-ups are no longer on the board
+        return false;
         // Convert world coordinates to tile coordinates
         const playerTileX = Math.floor((worldX - this.boardOffsetX) / this.TILE_SIZE);
         const playerTileY = Math.floor((worldY - this.boardOffsetY) / this.TILE_SIZE);
@@ -1882,6 +1835,8 @@ export default class MainGameplay extends BaseScene {
     }
 
     handlePowerUpCollision(powerUp) {
+        // Disabled: board collisions are not used anymore
+        return;
         // Don't handle collision if power-up scene is already active or game hasn't started
         if (this.powerUpActive || !this.gameStarted) {
             return;
@@ -1896,14 +1851,14 @@ export default class MainGameplay extends BaseScene {
 
     startPowerUpScene(powerUp) {
         this.powerUpActive = true;
-        this.currentPowerUp = powerUp;
+        this.currentPowerUp = powerUp || null;
         
         // Pause the main scene to stop timer, enemy movement, and player movement
         this.scene.pause();
         
-        // Launch power-up scene
+        // Launch power-up scene; no board item is required for popup-triggered selection
         this.scene.launch('PowerUpScene', {
-            powerUpToCollect: powerUp
+            powerUpToCollect: this.currentPowerUp
         });
     }
 
@@ -2010,22 +1965,25 @@ export default class MainGameplay extends BaseScene {
             
             // Increment correct answers for intensity progression
             this.correctAnswers++;
+            // Increment cadence for power-up selection popup
+            this.correctAnswersSincePowerUp++;
             
             // Track intensity 3 progress for course completion
             if (this.intensity === 3) {
                 this.intensity3CorrectAnswers++;
-                this.intensity3PowerUpCounter++;
-                
-                // Spawn power-up every 5 correct answers in intensity 3
-                if (this.intensity3PowerUpCounter >= 5) {
-                    this.spawnSinglePowerUp();
-                    this.intensity3PowerUpCounter = 0; // Reset counter
-                }
                 
                 // Check if course is completed (10 correct answers in intensity 3)
                 if (this.intensity3CorrectAnswers >= 10) {
                     this.showResultScreen(true); // Course completed
                     return;
+                }
+            }
+
+            // Trigger power-up selection popup every 5 correct answers (global cadence)
+            if (this.correctAnswersSincePowerUp >= 5) {
+                this.correctAnswersSincePowerUp = 0; // reset cadence
+                if (!this.powerUpActive && this.gameStarted && !this.freezeGameplay) {
+                    this.startPowerUpScene(null);
                 }
             }
             
@@ -2065,6 +2023,12 @@ export default class MainGameplay extends BaseScene {
                     icon: '✨',
                     name: 'Goblin Ward Active!'
                 });
+            }
+
+            // Freeze a random enemy if freeze power-up is primed
+            if (this.activePowerUps.freezeOnCorrectReady) {
+                this.activePowerUps.freezeOnCorrectReady = false; // consume
+                this.freezeRandomEnemy(5000); // freeze for 5 seconds
             }
             
             // Check for intensity increase after correct answer
@@ -2182,7 +2146,7 @@ export default class MainGameplay extends BaseScene {
             
         }
         
-        // Remove the collected power-up from the board
+        // If a board power-up was involved, remove it; popup-triggered selection passes null
         if (powerUpData) {
             this.destroyPowerUp(powerUpData);
         }
@@ -2261,9 +2225,6 @@ export default class MainGameplay extends BaseScene {
             // Show INTENSITY 3 increase notification
             this.showIntensityNotification();
             
-            // Spawn power-up on intensity increase
-            this.spawnSinglePowerUp();
-            
         } else if (this.correctAnswers >= this.intensityThreshold && this.intensity === 1) {
             this.intensity = 2;
             
@@ -2272,9 +2233,6 @@ export default class MainGameplay extends BaseScene {
             
             // Show INTENSITY increase notification
             this.showIntensityNotification();
-            
-            // Spawn power-up on intensity increase
-            this.spawnSinglePowerUp();
             
         }
     }
@@ -2892,6 +2850,11 @@ export default class MainGameplay extends BaseScene {
 
     destroyEnemy(enemy) {
         if (!enemy) return;
+        // If enemy was frozen, clean any visuals
+        if (enemy.freezeMarker && enemy.freezeMarker.destroy) {
+            enemy.freezeMarker.destroy();
+            enemy.freezeMarker = null;
+        }
         
         // Play explosion sound effect
         this.sound.play('se_explosion', { volume: 0.4 });
@@ -3045,6 +3008,10 @@ export default class MainGameplay extends BaseScene {
                 this.activePowerUps.speedBoost = true;
                 this.updatePlayerSpeed();
                 break;
+            case 'freezeEnemy':
+                // Arm the freeze to trigger on the next correct answer
+                this.activePowerUps.freezeOnCorrectReady = true;
+                break;
         }
     }
 
@@ -3128,6 +3095,23 @@ export default class MainGameplay extends BaseScene {
         const totalEnemies = this.enemies.length;
         
         this.enemies.forEach(enemy => {
+            // Handle frozen enemies: skip movement while frozen; thaw when expired
+            const now = Date.now();
+            if (enemy.frozenUntil && now < enemy.frozenUntil) {
+                // Maintain freeze marker position
+                if (enemy.freezeMarker && enemy.sprite) {
+                    enemy.freezeMarker.x = enemy.sprite.x;
+                    enemy.freezeMarker.y = enemy.sprite.y - (this.TILE_SIZE * 0.45);
+                }
+                movedEnemies++;
+                if (movedEnemies >= totalEnemies) {
+                    this.enemiesMoving = false;
+                }
+                return; // skip movement for this enemy
+            } else if (enemy.frozenUntil && now >= enemy.frozenUntil) {
+                // Thaw enemy
+                this.thawEnemy(enemy);
+            }
             const bestMove = this.findBestEnemyMove(enemy, playerTileX, playerTileY);
             
             if (bestMove) {
@@ -3161,6 +3145,45 @@ export default class MainGameplay extends BaseScene {
                 }
             }
         });
+    }
+
+    // Power-up: Freeze a random enemy for durationMs
+    freezeRandomEnemy(durationMs = 5000) {
+        if (!this.enemies || this.enemies.length === 0) {
+            return;
+        }
+        const enemy = Phaser.Utils.Array.GetRandom(this.enemies);
+        if (!enemy || !enemy.sprite) return;
+        const now = Date.now();
+        enemy.frozenUntil = now + Math.max(1000, durationMs);
+        // Visual cue: cyan tint + snowflake marker
+        try {
+            enemy.sprite.setTint(0x80deea);
+        } catch {}
+        // Create or update freeze marker
+        if (!enemy.freezeMarker || enemy.freezeMarker.destroyed) {
+            const fxSize = Math.floor(this.TILE_SIZE * 0.55);
+            enemy.freezeMarker = this.add.text(enemy.sprite.x, enemy.sprite.y - (this.TILE_SIZE * 0.45), '❄️', {
+                fontFamily: 'Arial',
+                fontSize: `${fxSize}px`
+            }).setOrigin(0.5).setDepth(25);
+            // Gentle bobbing
+            this.tweens.add({ targets: enemy.freezeMarker, y: `-=${Math.max(4, this.TILE_SIZE*0.06)}`, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        }
+        // Small notification
+        this.showPowerUpNotification({ icon: '❄️', name: 'Enemy Frozen!' });
+    }
+
+    // Clear freeze visuals and state on an enemy
+    thawEnemy(enemy) {
+        enemy.frozenUntil = 0;
+        if (enemy.sprite) {
+            try { enemy.sprite.setTint(0xff8888); } catch {}
+        }
+        if (enemy.freezeMarker && enemy.freezeMarker.destroy) {
+            enemy.freezeMarker.destroy();
+            enemy.freezeMarker = null;
+        }
     }
 
     findBestEnemyMove(enemy, playerTileX, playerTileY) {
@@ -3742,8 +3765,7 @@ export default class MainGameplay extends BaseScene {
         // Play successful movement sound
         this.playClickSound();
         
-        // Check for power-up collision at target position
-        this.checkPowerUpCollision(targetX, targetY);
+    // Power-up tiles are no longer used; selection happens via popup cadence
         
         // Check for timer icon collision at target position
         this.checkTimerIconCollision(targetX, targetY);
