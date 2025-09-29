@@ -3743,6 +3743,22 @@ export default class MainGameplay extends BaseScene {
         }
     }
 
+    // Resolve canonical identifier for current user for Firebase keys
+    resolveUserIdentifier(user) {
+        const sanitizeKey = (s) => typeof s === 'string' ? s.replace(/[.#$\/\[\]]/g, '_') : s;
+        if (!user) return 'unknown';
+        const type = user.type || user.userType;
+        if (type === 'general') {
+            const email = user.email || (user.profile && user.profile.email);
+            if (email) return sanitizeKey(String(email).toLowerCase());
+            return sanitizeKey(user.uid || 'unknown');
+        }
+        if (type === 'student') {
+            return user.studentId || sanitizeKey(user.uid || 'unknown');
+        }
+        return user.studentId || sanitizeKey(user.uid || 'unknown');
+    }
+
     showResultScreen(courseCompleted = false) {
         // Prepare data for ResultScreen
         const resultData = {
@@ -3854,6 +3870,32 @@ export default class MainGameplay extends BaseScene {
 
     async uploadGameplayDataInBackground(resultData) {
         try {
+            // Skip server uploads for guest users
+            try {
+                const userType = localStorage.getItem('sci_high_user_type');
+                if (userType && userType.toLowerCase() === 'guest') {
+                    // Store locally and return
+                    const tempData = {
+                        studentId: 'guest',
+                        studentName: resultData.studentName || 'Guest Player',
+                        courseTopic: resultData.courseTopic,
+                        sessionData: {
+                            correctAnswers: resultData.correctAnswers,
+                            wrongAnswers: resultData.wrongAnswers,
+                            highestStreak: resultData.highestStreak,
+                            totalScore: resultData.totalScore,
+                            intensity3CorrectAnswers: resultData.intensity3CorrectAnswers || 0,
+                            courseCompleted: resultData.courseCompleted,
+                            sessionDuration: Date.now() - (resultData.startTime || Date.now()),
+                            timestamp: new Date().toISOString(),
+                            accuracyPercentage: resultData.correctAnswers + resultData.wrongAnswers > 0 ? 
+                                ((resultData.correctAnswers / (resultData.correctAnswers + resultData.wrongAnswers)) * 100).toFixed(1) : 0
+                        }
+                    };
+                    this.storeScoreLocally(tempData);
+                    return;
+                }
+            } catch {}
             
             // Get student data from localStorage (prioritize current user data)
             let studentId = 'unknown';
@@ -3863,7 +3905,7 @@ export default class MainGameplay extends BaseScene {
                 const userDataStr = localStorage.getItem('sci_high_user');
                 if (userDataStr) {
                     currentUser = JSON.parse(userDataStr);
-                    studentId = currentUser.studentId || currentUser.uid || 'unknown';
+                    studentId = this.resolveUserIdentifier(currentUser);
                     
                     // If we have current user data and it differs from result data, update result data
                     if (currentUser.profile && currentUser.profile.fullName && 

@@ -785,9 +785,31 @@
                   <label class="block text-gray-300 text-sm mb-2">Email</label>
                   <input type="email" name="email" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan focus:outline-none">
                 </div>
-                <div>
-                  <label class="block text-gray-300 text-sm mb-2">Display Name</label>
-                  <input type="text" name="displayName" required placeholder="For leaderboards" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan focus:outline-none">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Department</label>
+                    <select name="department" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-cyan focus:outline-none">
+                      <option value="General" selected>General</option>
+                      <option value="Senior High - ICT">Senior High - ICT</option>
+                      <option value="Senior High - STEM">Senior High - STEM</option>
+                      <option value="College - BSCS">College - BSCS</option>
+                      <option value="College - BSIT">College - BSIT</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Year</label>
+                    <select name="year" required class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white focus:border-cyan focus:outline-none">
+                      <option value="None" selected>None</option>
+                      <option value="Grade 11">Grade 11</option>
+                      <option value="Grade 12">Grade 12</option>
+                      <option value="1st Year">1st Year</option>
+                      <option value="2nd Year">2nd Year</option>
+                      <option value="3rd Year">3rd Year</option>
+                      <option value="4th Year">4th Year</option>
+                    </select>
+                  </div>
                 </div>
                 <div>
                   <label class="block text-gray-300 text-sm mb-2">Password</label>
@@ -1995,7 +2017,8 @@
             await firebase.database().ref('general_users').child(user.uid).set({
               fullName: formData.fullName,
               email: formData.email,
-              displayName: formData.displayName,
+              department: formData.department || 'General',
+              strandYear: formData.year || 'None',
               createdAt: new Date().toISOString(),
               gameData: {
                 totalPoints: 0,
@@ -2004,7 +2027,24 @@
               }
             });
 
-            return { success: true, message: 'Account created successfully!' };
+            // Set session immediately so redirect has profile info
+            this.currentUser = {
+              uid: user.uid,
+              email: user.email,
+              type: 'general',
+              profile: {
+                fullName: formData.fullName,
+                email: formData.email,
+                department: formData.department || 'General',
+                strandYear: formData.year || 'None'
+              }
+            };
+            localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+            this.userType = 'general';
+            this.updateProfessorTabVisibility();
+            this.updateUserInterface();
+
+            return { success: true, message: 'Account created successfully!', user: this.currentUser };
           } catch (error) {
             return { success: false, error: error.message };
           }
@@ -2902,7 +2942,8 @@
         const result = await authManager.registerGeneral({
           fullName: formData.get('fullName'),
           email: formData.get('email'),
-          displayName: formData.get('displayName'),
+          department: formData.get('department') || 'General',
+          year: formData.get('year') || 'None',
           password: formData.get('password')
         });
         

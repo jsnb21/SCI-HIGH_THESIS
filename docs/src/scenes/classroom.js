@@ -129,7 +129,17 @@ export default class Classroom extends Phaser.Scene {
             }
             
             const currentUser = JSON.parse(userDataStr);
-            const studentId = currentUser.studentId || currentUser.uid;
+            // Resolve identifier consistent with uploads (email for general users)
+            const sanitizeKey = (s) => typeof s === 'string' ? s.replace(/[.#$\/\[\]]/g, '_') : s;
+            let studentId;
+            if (currentUser && (currentUser.type === 'general' || currentUser.userType === 'general')) {
+                const email = currentUser.email || (currentUser.profile && currentUser.profile.email);
+                studentId = email ? sanitizeKey(String(email).toLowerCase()) : sanitizeKey(currentUser.uid);
+            } else if (currentUser && (currentUser.type === 'student' || currentUser.userType === 'student')) {
+                studentId = currentUser.studentId || sanitizeKey(currentUser.uid);
+            } else {
+                studentId = currentUser.studentId || sanitizeKey(currentUser.uid);
+            }
             
             if (!studentId) {
                 return false;

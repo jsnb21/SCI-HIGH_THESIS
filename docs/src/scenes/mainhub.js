@@ -151,7 +151,17 @@ export default class MainHub extends Phaser.Scene {
             }
             
             const currentUser = JSON.parse(userDataStr);
-            const studentId = currentUser.studentId || currentUser.uid;
+            // Resolve identifier: studentId for students, sanitized email for general users, else uid
+            const sanitizeKey = (s) => typeof s === 'string' ? s.replace(/[.#$\/\[\]]/g, '_') : s;
+            let studentId;
+            if (currentUser && (currentUser.type === 'general' || currentUser.userType === 'general')) {
+                const email = currentUser.email || (currentUser.profile && currentUser.profile.email);
+                studentId = email ? sanitizeKey(String(email).toLowerCase()) : sanitizeKey(currentUser.uid);
+            } else if (currentUser && (currentUser.type === 'student' || currentUser.userType === 'student')) {
+                studentId = currentUser.studentId || sanitizeKey(currentUser.uid);
+            } else {
+                studentId = currentUser.studentId || sanitizeKey(currentUser.uid);
+            }
             
             if (!studentId) {
                 return false;
@@ -378,12 +388,19 @@ export default class MainHub extends Phaser.Scene {
             let studentId = null;
             try {
                 const user = JSON.parse(raw);
-                if (user && user.studentId) {
-                    studentId = user.studentId; // canonical for career stats
+                const sanitizeKey = (s) => typeof s === 'string' ? s.replace(/[.#$\/\[\]]/g, '_') : s;
+                if (user && (user.type === 'general' || user.userType === 'general')) {
+                    const email = user.email || (user.profile && user.profile.email);
+                    if (email) {
+                        studentId = sanitizeKey(String(email).toLowerCase());
+                    } else if (user.uid) {
+                        studentId = sanitizeKey(user.uid);
+                    }
+                } else if (user && user.studentId) {
+                    studentId = user.studentId; // canonical for student accounts
                 } else if (user && user.uid) {
-                    // Career stats are keyed by studentId; if we only have uid we can't query.
-                    // In that case abort silently.
-                    return;
+                    // Fallback: use uid sanitized if no studentId
+                    studentId = sanitizeKey(user.uid);
                 }
             } catch (_) { return; }
             if (!studentId) return;
