@@ -48,18 +48,25 @@ export function getScaleInfo(scene) {
     const scaleX = width / BASE_WIDTH;
     const scaleY = height / BASE_HEIGHT;
     
-    // Use the smaller scale factor to maintain aspect ratio
+    // Use the smaller scale factor to maintain aspect ratio (canvas fit)
     const uniformScale = Math.min(scaleX, scaleY);
-    
-    // For mobile devices, ensure minimum readable sizes
-    // Mobile heuristic: real CSS width or height thresholds, plus pixel density consideration
+
+    // For mobile detection we consider CSS size and pixel density
     const devicePixelRatio = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
-    const cssWidth = width / devicePixelRatio; // approximate logical CSS width
+    const cssWidth = width / devicePixelRatio; // approximate CSS px width
     const cssHeight = height / devicePixelRatio;
     const isMobile = cssWidth < 820 || cssHeight < 700 || (devicePixelRatio > 1.5 && cssWidth < 900);
-    const mobileScaleMultiplier = isMobile ? 1.2 : 1.0;
-    
-    const finalScale = uniformScale * mobileScaleMultiplier;
+
+    // NEW: Bucketed UI scale for mobile to keep sizes consistent across devices.
+    // We clamp and snap the scale to 0.05 steps within a safe range.
+    let finalScale = uniformScale;
+    if (isMobile) {
+        const minMobileScale = 0.55; // ensures UI isn't too tiny on small phones
+        const maxMobileScale = 0.80; // prevents oversized UI on large phones/tablets
+        const clamped = Math.max(minMobileScale, Math.min(uniformScale, maxMobileScale));
+        const step = 0.05;
+        finalScale = Math.round(clamped / step) * step; // snap to nearest 0.05
+    }
     
     return {
         width,

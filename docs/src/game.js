@@ -63,16 +63,14 @@ const config = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     // Mobile-optimized scaling
+    // Logical base resolution (consistent across devices)
     width: 1920,
     height: 1080,
     min: {
       width: 320,
       height: 240
     },
-    max: {
-      width: 1920,
-      height: 1080
-    },
+    // Remove max so FIT can scale freely to the display while we clamp UI via mobileUtils
     // Mobile-specific scaling options
     zoom: 1,
     expandParent: false,
