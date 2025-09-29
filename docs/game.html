@@ -177,7 +177,10 @@
       #game {
         position: relative;
         width: 100vw;
-        height: 100vh;
+        /* Use dynamic viewport units to avoid mobile address bar jump and stretching */
+        height: 100vh;   /* fallback */
+        height: 100svh;  /* small viewport height */
+        height: 100dvh;  /* dynamic viewport height */
         overflow: hidden;
         display: flex;
         justify-content: center;
@@ -248,9 +251,8 @@
         100% { left: 130vw; }
       }
       
-      /* Responsive tweaks */
-      /* Removed canvas width/height overrides to prevent stretching on mobile. 
-         Let Phaser Scale FIT manage aspect ratio and letterboxing. */
+  /* Responsive tweaks */
+  /* Let Phaser Scale FIT manage aspect ratio and letterboxing. */
     </style>
   </head>
   <body>
@@ -292,10 +294,8 @@
       }
 
       async function tryEnableLandscape() {
-        const container = document.getElementById('game');
-        // Fullscreen first (often required for orientation lock permissions)
-        await requestFullscreen(container);
-        // Try lock
+        // Do NOT automatically request fullscreen on mobile when enabling landscape.
+        // Attempt an orientation lock (may be ignored by some browsers when not fullscreen).
         try {
           if (screen.orientation && screen.orientation.lock) {
             await screen.orientation.lock('landscape');
@@ -324,6 +324,12 @@
       window.addEventListener('orientationchange', () => {
         setTimeout(handleOrientation, 100); // Small delay for orientation change
       });
+
+      // Refresh Phaser scale on fullscreen changes to prevent stretching when exiting
+      const refreshScale = () => { try { if (window.game?.scale) window.game.scale.refresh(); } catch {} };
+      document.addEventListener('fullscreenchange', () => { setTimeout(refreshScale, 50); });
+      document.addEventListener('webkitfullscreenchange', () => { setTimeout(refreshScale, 50); });
+      document.addEventListener('msfullscreenchange', () => { setTimeout(refreshScale, 50); });
 
       // Button: Enable Landscape
       document.addEventListener('click', (e) => {
