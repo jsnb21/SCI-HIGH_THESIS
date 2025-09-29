@@ -180,18 +180,21 @@ export default class ResultScreen extends BaseScene {
     const paddingTop = isMobile ? scaleDimension(24, scaleInfo) : 36;
     // Reduce side padding on mobile to gain more horizontal space for stats rows
     const paddingSides = isMobile ? scaleDimension(14, scaleInfo) : 28;
-        const paddingBottom = isMobile ? scaleDimension(28, scaleInfo) : 34;
+        // Reduce bottom padding so the button can sit closer to the panel bottom
+        const paddingBottom = isMobile ? scaleDimension(16, scaleInfo) : 20;
         const innerWidth = panelWidth - paddingSides * 2;
 
         // Build stats + button after adjusting title/rank to top anchored positions
     title.y = panelTop + paddingTop + title.height/2;
     // Larger gap between title and rank
-    const titleRankGap = isMobile ? scaleDimension(24, scaleInfo) : 36;
+    // Further increase space above the rank letter by ~10%
+    const titleRankGap = isMobile ? scaleDimension(44, scaleInfo) : 62;
     rankY = title.y + title.height/2 + titleRankGap + rankSize/2;
         rankOuterGlow.y = rankBg.y = rankBorder.y = rankInnerGlow.y = rankText.y = rankY;
 
     // Larger gap between rank and stats
-    const rankStatsGap = isMobile ? scaleDimension(32, scaleInfo) : 42;
+    // Further increase space below the rank letter by ~10%
+    const rankStatsGap = isMobile ? scaleDimension(53, scaleInfo) : 70;
     const statsStartY = rankY + rankSize/2 + rankStatsGap;
         const statsData = [
             { label: '✓ Correct Answers', value: this.correctAnswers, color: '#00ff88' },
@@ -200,9 +203,10 @@ export default class ResultScreen extends BaseScene {
             { label: '⭐ Total Score', value: this.totalScore, color: '#00ddff' },
             { label: '📊 Accuracy', value: `${accuracy.toFixed(1)}%`, color: accuracy >= 80 ? '#00ff88' : accuracy >= 60 ? '#ffaa00' : '#ff4444' }
         ];
-    const rowHeight = isMobile ? scaleDimension(isTallMobile ? 48 : 46, scaleInfo) : 44;
+    // Larger rows and fonts for better readability
+    const rowHeight = isMobile ? scaleDimension(isTallMobile ? 54 : 52, scaleInfo) : 48;
     const rowGap = isMobile ? scaleDimension(12, scaleInfo) : 14;
-    const statFontSize = isMobile ? scaleFontSize(tinyPhone ? 18 : 20, scaleInfo) : '22px';
+    const statFontSize = isMobile ? scaleFontSize(tinyPhone ? 22 : 24, scaleInfo) : '24px';
         const statRowElements = [];
         let statCursorY = statsStartY;
         const leftColX = panelX - innerWidth/2 + innerWidth * 0.04;
@@ -219,17 +223,40 @@ export default class ResultScreen extends BaseScene {
 
     const buttonHeight = isMobile ? scaleDimension(58, scaleInfo) : 68;
     const buttonWidth = isMobile ? Math.min(innerWidth, scaleDimension(tinyPhone ? 300 : 380, scaleInfo)) : 400;
-    const buttonCenterY = statCursorY + (isMobile ? scaleDimension(18, scaleInfo) : 28) + buttonHeight/2;
+    // Even gap above/below the button: center within the remaining space
+    const buttonTopGap = isMobile ? scaleDimension(10, scaleInfo) : 16; // used only if space is tight
+    const bottomEdge = panelTop + panelHeight - paddingBottom;
+    const freeSpace = bottomEdge - statCursorY - buttonHeight;
+    let buttonCenterY;
+        if (freeSpace >= 0) {
+            // Place the button so top and bottom gaps are equal
+            buttonCenterY = statCursorY + (buttonHeight/2) + freeSpace/2;
+        } else {
+            // Not enough space: keep button just below stats with a small gap
+            buttonCenterY = statCursorY + buttonTopGap + buttonHeight/2;
+        }
         const buttonBg = this.add.rectangle(panelX, buttonCenterY, buttonWidth, buttonHeight, 0x2c3e50).setStrokeStyle(isMobile?scaleDimension(2, scaleInfo):3, 0x4a90e2);
         const buttonGlow = this.add.rectangle(panelX, buttonCenterY, buttonWidth+6, buttonHeight+6, 0x4a90e2, isMobile?0.35:0.4);
     const buttonInner = this.add.rectangle(panelX, buttonCenterY, buttonWidth-(isMobile?12:14), buttonHeight-(isMobile?12:14), 0x34495e, 0.85);
-    const buttonText = this.add.text(panelX, buttonCenterY, 'Back to Computer Lab', { fontFamily:'Arial', fontSize: isMobile? `${scaleFontSize(tinyPhone?18:20, scaleInfo)}px` : '24px', fontWeight:'bold', color:'#ffffff', shadow: !isMobile? {offsetX:2, offsetY:2, color:'#000', blur:4, fill:true}: undefined }).setOrigin(0.5);
+    const buttonText = this.add.text(
+            panelX,
+            buttonCenterY,
+            'Back to Computer Lab',
+            {
+                fontFamily: 'Arial',
+                // Increased font size for better readability
+                fontSize: isMobile ? `${scaleFontSize(tinyPhone ? 22 : 24, scaleInfo)}px` : '28px',
+                fontWeight: 'bold',
+                color: '#ffffff',
+                shadow: !isMobile ? { offsetX: 2, offsetY: 2, color: '#000', blur: 4, fill: true } : undefined
+            }
+        ).setOrigin(0.5);
         const buttonElements = [buttonGlow, buttonBg, buttonInner, buttonText];
 
         // Content container that will scroll (includes title, rank, stats, button)
         const scrollContainer = this.add.container(0,0, [title, rankOuterGlow, rankBg, rankBorder, rankInnerGlow, rankText, ...statRowElements.flat(), ...buttonElements]);
 
-        const contentBottom = buttonCenterY + buttonHeight/2 + paddingBottom;
+    const contentBottom = buttonCenterY + buttonHeight/2 + paddingBottom;
         const contentHeight = contentBottom - panelTop;
         const viewportHeight = panelHeight;
         let showScrollHint = false; let hintArrow; let scrollTrack; let scrollThumb;
