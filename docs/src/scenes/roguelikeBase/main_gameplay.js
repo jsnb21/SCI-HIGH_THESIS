@@ -1488,8 +1488,14 @@ export default class MainGameplay extends BaseScene {
         this.clearSpawnIndicators();
 
         // Use pre-calculated spawn positions
+        const playerTileX = Math.floor((this.player.x - this.boardOffsetX) / this.TILE_SIZE);
+        const playerTileY = Math.floor((this.player.y - this.boardOffsetY) / this.TILE_SIZE);
         this.nextSpawnPositions.forEach(position => {
-            this.createGoblinThug(position.x, position.y);
+            const thug = this.createGoblinThug(position.x, position.y);
+            // If a thug spawns on the player's current tile, trigger immediate collision/damage
+            if (thug && thug.tileX === playerTileX && thug.tileY === playerTileY) {
+                this.handleGoblinThugCollision(thug);
+            }
         });
 
         
@@ -1533,6 +1539,7 @@ export default class MainGameplay extends BaseScene {
         
         this.goblinThugs.push(goblinThug);
         this.goblinThugSprites.push(thugSprite);
+        return goblinThug;
     }
 
     clearGoblinThugs() {
