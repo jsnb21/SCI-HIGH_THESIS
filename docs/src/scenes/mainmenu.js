@@ -270,10 +270,10 @@ export default class MainMenu extends Phaser.Scene {
         logo.setScale(logoScale);
 
         // Compute approximate vertical stack
-        const desktopButtonCount = 4;
-        const buttonSpacingEstimate = 90 * uiScale;
-        const singleButtonHeightEstimate = 74 * uiScale;
-        const gapBetweenLogoAndFirstButton = 64 * uiScale;
+    const desktopButtonCount = 4;
+    const buttonSpacingEstimate = 110 * uiScale; // increased spacing for larger buttons
+    const singleButtonHeightEstimate = 92 * uiScale; // larger estimated height
+    const gapBetweenLogoAndFirstButton = 72 * uiScale; // slightly larger gap
 
         const projectedLogoHeight = logo.displayHeight;
         const buttonsBlockHeight = (desktopButtonCount - 1) * buttonSpacingEstimate + singleButtonHeightEstimate;
@@ -297,8 +297,8 @@ export default class MainMenu extends Phaser.Scene {
 
         if (useMobileLayout) {
             // 2x2 grid on mobile, made larger with uiScale
-            const horizontalSpacing = 460 * uiScale;
-            const verticalSpacing = 40 * uiScale;
+            const horizontalSpacing = 520 * uiScale; // widen to fit larger buttons
+            const verticalSpacing = 50 * uiScale;
 
             const startY = scaleInfo.isPortrait ? worldH / 2 + 200 * uiScale : worldH / 2 + 160 * uiScale;
 
@@ -306,7 +306,7 @@ export default class MainMenu extends Phaser.Scene {
             const leftX = Math.round(centerX - horizontalSpacing);
             const rightX = Math.round(centerX + horizontalSpacing);
             const topRowY = Math.round(startY);
-            const bottomRowY = Math.round(startY + 120 * uiScale + verticalSpacing);
+            const bottomRowY = Math.round(startY + 150 * uiScale + verticalSpacing);
 
             const menuButtons = [
                 { label: 'Start Adventure', x: leftX, y: topRowY, onClick: async () => { se_confirmSound.play(); await this.handleAdventureStart(); } },
@@ -320,8 +320,8 @@ export default class MainMenu extends Phaser.Scene {
             });
         } else {
             // Centered vertical stack on desktop
-            const buttonSpacing = 90 * uiScale;
-            const gap = 70 * uiScale;
+            const buttonSpacing = 110 * uiScale; // increased spacing for larger buttons
+            const gap = 80 * uiScale; // slightly larger gap from logo
 
             const menuButtons = [
                 { label: 'Start Adventure', onClick: async () => { se_confirmSound.play(); await this.handleAdventureStart(); } },
@@ -330,7 +330,7 @@ export default class MainMenu extends Phaser.Scene {
                 { label: 'Quit', onClick: () => { se_confirmSound.play(); this.showQuitConfirmation(se_hoverSound, se_confirmSound); } },
             ];
 
-            const totalButtonsHeight = (menuButtons.length - 1) * buttonSpacing + (70 * uiScale);
+            const totalButtonsHeight = (menuButtons.length - 1) * buttonSpacing + (90 * uiScale);
             const totalStackHeight = logo.displayHeight + gap + totalButtonsHeight;
             const stackTop = (worldH - totalStackHeight) / 2;
 
@@ -987,8 +987,8 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     const s = (scaleInfo && (scaleInfo.uiScale || scaleInfo.finalScale)) ? (scaleInfo.uiScale || scaleInfo.finalScale) : 1;
 
     // Get responsive scaling - calculate consistent button size based on longest text
-    const baseFontSize = 34;           // base logical font size before scaling
-    const padding = 64;                // base padding before scaling
+    const baseFontSize = 40;           // increased base font size
+    const padding = 80;                // increased base padding
     
     let maxWidth = 0;
     let maxHeight = 0;
@@ -1011,8 +1011,8 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     
     // Calculate consistent button size based on longest text with padding
     const btnWidth = maxWidth + padding * s;
-    const btnHeight = Math.max(maxHeight + (padding * 0.6) * s, scaleInfo.isMobile ? 80 * s : 64 * s);
-    const corner = 25 * s;
+    const btnHeight = Math.max(maxHeight + (padding * 0.6) * s, scaleInfo.isMobile ? 100 * s : 84 * s);
+    const corner = 28 * s;
 
     // Button background
     const bg = scene.add.graphics();
@@ -1028,8 +1028,8 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
         fontSize: `${Math.round(baseFontSize * s)}px`,
         color: '#ffff00',
         stroke: '#000',
-        strokeThickness: Math.max(3, Math.round(5 * s)),
-        shadow: { offsetX: Math.round(3 * s), offsetY: Math.round(3 * s), color: '#000', blur: Math.round(5 * s), fill: true }
+    strokeThickness: Math.max(4, Math.round(6 * s)),
+    shadow: { offsetX: Math.round(4 * s), offsetY: Math.round(4 * s), color: '#000', blur: Math.round(6 * s), fill: true }
     };
     
     const text = scene.add.text(x, y, label, textStyle)
@@ -1041,7 +1041,7 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     scene.tweens.add({ targets: [bg, text], alpha: 1, duration: 400, delay: tweenDelay, ease: 'Quad.easeOut' });
 
     // Hover/press effects - use scaled stroke width
-    const strokeWidth = Math.max(2, 3 * s);
+    const strokeWidth = Math.max(2, 3.5 * s);
     
     // Only add hover effects for non-mobile devices
     if (!scaleInfo.isMobile) {

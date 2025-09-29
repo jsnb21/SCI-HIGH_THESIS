@@ -117,10 +117,11 @@
       /* Orientation overlay */
       #orientation-overlay {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;   /* fallback */
+        height: 100svh;  /* small viewport height */
+        height: 100dvh;  /* dynamic viewport height */
         background: rgba(0, 0, 0, 0.9);
         display: none;
         flex-direction: column;
@@ -130,7 +131,8 @@
         color: white;
         font-family: Arial, sans-serif;
         text-align: center;
-        padding: 20px;
+        padding: 24px;
+        gap: 12px;
       }
       
       #orientation-overlay .rotate-icon {
@@ -146,12 +148,13 @@
       
       #orientation-overlay h2 {
         font-size: 24px;
-        margin-bottom: 10px;
+        margin-bottom: 6px;
       }
       
       #orientation-overlay p {
         font-size: 16px;
-        opacity: 0.8;
+        opacity: 0.85;
+        max-width: 640px;
       }
       
       html, body {
@@ -268,18 +271,35 @@
     <div id="orientation-overlay">
       <div class="rotate-icon">📱</div>
   <h2>Rotate to Landscape</h2>
-  <p>For the best experience, rotate your device to landscape first.</p>
-  <button id="enable-landscape-btn" style="margin-top:16px;padding:10px 14px;border-radius:8px;border:none;background:#F4CE14;color:#222;font-weight:700;cursor:pointer">Enable Landscape</button>
+  <p id="orientation-instructions">For the best experience, rotate your device to landscape. Then tap Continue.</p>
+  <button id="enable-landscape-btn" style="margin-top:16px;padding:14px 20px;border-radius:12px;border:none;background:#F4CE14;color:#222;font-weight:800;font-size:16px;cursor:pointer;min-width:220px">Continue</button>
     </div>
     
     <div id="game"></div>
     <!-- Debug notify button removed -->
     
     <script>
+      // Basic platform checks
+      const UA = navigator.userAgent || navigator.vendor || '';
+      const isIOS = /iPad|iPhone|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isAndroid = /Android/.test(UA);
+      
       // Function to check if device is mobile
       function isMobileDevice() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-               (window.innerWidth <= 768 && window.innerHeight <= 1024);
+        const isPhoneLike = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(UA);
+        // Tablet heuristics and small screens
+        const smallScreen = Math.min(window.innerWidth, window.innerHeight) <= 820;
+        return isPhoneLike || smallScreen;
+      }
+
+      // Robust orientation detection
+      function isPortrait() {
+        if (window.matchMedia) {
+          const mq = window.matchMedia('(orientation: portrait)');
+          if (typeof mq.matches === 'boolean') return mq.matches;
+        }
+        // Fallback: ratio with slight hysteresis to ignore UI chrome
+        return (window.innerHeight / Math.max(1, window.innerWidth)) > 1.05;
       }
       
       // Function to handle orientation
@@ -295,52 +315,73 @@
 
       async function tryEnableLandscape() {
         // Do NOT automatically request fullscreen on any platform.
-        // Attempt orientation lock (may be ignored without fullscreen, which is acceptable).
+        // Attempt orientation lock (may be ignored without fullscreen – acceptable).
+        let locked = false;
         try {
           if (screen.orientation && screen.orientation.lock) {
             await screen.orientation.lock('landscape');
+            locked = true;
           }
-        } catch {}
-        // Re-evaluate state
-        handleOrientation();
-        // If still in portrait shortly after, show a small hint under the button
-        setTimeout(() => {
-          const isPortrait = window.innerHeight > window.innerWidth;
-          if (isPortrait) {
-            const overlay = document.getElementById('orientation-overlay');
-            if (overlay) {
-              let hint = document.getElementById('orientation-hint');
-              if (!hint) {
-                hint = document.createElement('div');
-                hint.id = 'orientation-hint';
-                hint.style.cssText = 'margin-top:12px;font-size:14px;opacity:0.8;color:#cccccc;';
-                hint.textContent = 'Please rotate your device to landscape to continue.';
-                overlay.appendChild(hint);
-              }
-            }
+        } catch (e) {
+          // Ignore; many browsers require fullscreen for lock
+        }
+
+        // Update instructions for iOS or when lock unsupported
+        const instructions = document.getElementById('orientation-instructions');
+        if (instructions) {
+          if (isIOS) {
+            instructions.textContent = 'Rotate your device to landscape and ensure Portrait Orientation Lock is OFF.';
+          } else if (!locked) {
+            instructions.textContent = 'Rotate your device to landscape. If it does not change, rotate physically and try again.';
           }
-        }, 250);
+        }
+
+        // Re-evaluate with a short poll to accommodate browser UI animations
+        const overlay = document.getElementById('orientation-overlay');
+        let attempts = 0;
+        const poll = setInterval(() => {
+          handleOrientation();
+          if (!isPortrait() || attempts++ > 20) {
+            clearInterval(poll);
+          }
+        }, 100);
+      }
+
+      let refreshTimer = null;
+      function scheduleRefresh() {
+        if (refreshTimer) clearTimeout(refreshTimer);
+        refreshTimer = setTimeout(() => {
+          try { if (window.game?.scale) window.game.scale.refresh(); } catch {}
+        }, 60);
       }
 
       function handleOrientation() {
         const overlay = document.getElementById('orientation-overlay');
-        const isMobile = isMobileDevice();
-        const isPortrait = window.innerHeight > window.innerWidth;
+        const mobile = isMobileDevice();
+        const portrait = isPortrait();
 
-        if (isMobile && isPortrait) {
+        if (mobile && portrait) {
           overlay.style.display = 'flex';
         } else {
           overlay.style.display = 'none';
         }
-        setTimeout(() => { if (window.game?.scale) window.game.scale.refresh(); }, 50);
+        scheduleRefresh();
       }
       
       // Check orientation on load and resize
       window.addEventListener('load', handleOrientation);
       window.addEventListener('resize', handleOrientation);
+      // Some mobile browsers (iOS Safari) benefit from polling shortly after orientation change
       window.addEventListener('orientationchange', () => {
-        setTimeout(handleOrientation, 100); // Small delay for orientation change
+        let tries = 0;
+        const id = setInterval(() => {
+          handleOrientation();
+          if (!isPortrait() || tries++ > 15) clearInterval(id);
+        }, 120);
       });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', handleOrientation);
+      }
 
       // Refresh Phaser scale on fullscreen changes to prevent stretching when exiting
       const refreshScale = () => { try { if (window.game?.scale) window.game.scale.refresh(); } catch {} };
