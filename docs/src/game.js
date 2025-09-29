@@ -59,7 +59,8 @@ const config = {
     forceSetTimeOut: true
   },
   scale: {
-    mode: Phaser.Scale.ENVELOP,
+    // Use FIT so the game content scales within the rotated container (portrait-rotate fallback)
+    mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     // Mobile-optimized scaling
     width: 1920,

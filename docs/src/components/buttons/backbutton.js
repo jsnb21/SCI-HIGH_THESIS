@@ -1,5 +1,5 @@
 import gameManager from '../../gameManager.js'; // Add this import
-import { createDebouncedClickHandler, getScaleInfo, scaleFontSize, scaleDimension, getResponsivePosition } from '../../utils/mobileUtils.js'; // Add mobile utils import
+import { createDebouncedClickHandler, getScaleInfo, scaleFontSize, scaleDimension, getSafeArea } from '../../utils/mobileUtils.js'; // Add mobile utils import
 
 // This file is for the back button component in the game, separated to reduce lines of code in the main file
 
@@ -7,20 +7,27 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
     // Get mobile scaling information
     const scaleInfo = getScaleInfo(scene);
     
-    // Responsive button parameters
-    const baseButtonWidth = 120;
-    const baseButtonHeight = 40;
-    const baseFontSize = 24;
+    // Responsive button parameters (larger across all devices)
+    const baseButtonWidth = 160;
+    const baseButtonHeight = 56;
+    const baseFontSize = 28;
+
+    // Clamp to maintain a minimum tap target in CSS pixels
+    const rawW = scaleDimension(baseButtonWidth, scaleInfo);
+    const rawH = scaleDimension(baseButtonHeight, scaleInfo);
+    const minW = scaleInfo.isMobile ? 140 : 120;
+    const minH = scaleInfo.isMobile ? 48 : 44;
+    const buttonWidth = Math.max(rawW, minW);
+    const buttonHeight = Math.max(rawH, minH);
+    const fontSize = Math.max(scaleFontSize(baseFontSize, scaleInfo), scaleInfo.isMobile ? 18 : 16);
     
-    const buttonWidth = scaleDimension(baseButtonWidth, scaleInfo);
-    const buttonHeight = scaleDimension(baseButtonHeight, scaleInfo);
-    const fontSize = scaleFontSize(baseFontSize, scaleInfo);
-    
-    // Position button in top-left with appropriate offset
-    const buttonPosition = getResponsivePosition(scaleInfo, 'top-left', { 
-        x: buttonWidth/2 + 20, 
-        y: buttonHeight/2 + 20 
-    });
+    // Position button in top-left using safe area (avoids double-scaling issues)
+    const safeArea = getSafeArea(scaleInfo);
+    const extraTop = scaleInfo.isMobile ? scaleDimension(12, scaleInfo) : scaleDimension(8, scaleInfo);
+    const buttonPosition = {
+        x: safeArea.left + buttonWidth / 2,
+        y: safeArea.top + buttonHeight / 2 + extraTop
+    };
     
     // Create button background (rectangle with stroke)
     const buttonBg = scene.add.rectangle(
@@ -30,7 +37,7 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
         buttonHeight,
         0x000000,
         0.7 // alpha for semi-transparency
-    ).setStrokeStyle(2, 0xffffff)
+    ).setStrokeStyle(3, 0xffffff)
      .setDepth(9999) // Ensure it's on top
      .setInteractive({ useHandCursor: true }); // Make it interactive
 
@@ -65,13 +72,13 @@ export function createBackButton(scene, targetScene = 'ComputerLab') {
     // Add hover effects to background
     buttonBg.on('pointerover', () => {
         buttonBg.setFillStyle(0x333333, 0.8); // Lighter on hover
-        buttonBg.setStrokeStyle(2, 0xffff00); // Yellow border on hover
+    buttonBg.setStrokeStyle(3, 0xffff00); // Yellow border on hover
         backButton.setStyle({ fill: '#ffff00' }); // Yellow text on hover
     });
 
     buttonBg.on('pointerout', () => {
         buttonBg.setFillStyle(0x000000, 0.7); // Back to original
-        buttonBg.setStrokeStyle(2, 0xffffff); // White border
+    buttonBg.setStrokeStyle(3, 0xffffff); // White border
         backButton.setStyle({ fill: '#ffffff' }); // White text
     });
 

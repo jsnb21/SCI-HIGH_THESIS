@@ -44,14 +44,24 @@ export default class ComputerLab extends Phaser.Scene {
         // Set up background
         this.cameras.main.setBackgroundColor('#D6C8F2');
 
-        // Use the shared back button (top-left, consistent style)
-        createBackButton(this, 'MainHub');
+    // Create a back button to return to the MainHub
+    const backBtn = createBackButton(this, 'MainHub');
 
         // Add points display in top-right corner
         const { width } = this.scale;
         const scaleFactor = Math.min(width / 816, this.scale.height / 624); // Using BASE_WIDTH and BASE_HEIGHT
         const pointsDisplay = gameManager.createPointsDisplay(this, width - 100 * scaleFactor, 40 * scaleFactor, scaleFactor);
         this.pointsDisplay = pointsDisplay;
+        // Align points display vertically with the back button if possible
+        if (backBtn && backBtn.buttonBg && this.pointsDisplay && this.pointsDisplay.container) {
+            this.pointsDisplay.container.y = backBtn.buttonBg.y;
+        }
+        // Adjust points display X using logical width so it's further to the right but still inside
+        if (this.pointsDisplay && this.pointsDisplay.container) {
+            const pillHalfWidth = 50 * scaleFactor; // matches createPointsDisplay width (100 * scaleFactor) / 2
+            const rightMargin = 20 * scaleFactor;   // small inset from the right edge
+            this.pointsDisplay.container.x = this.scale.width - (pillHalfWidth + rightMargin);
+        }
 
         // Add sound effects
         this.se_hoverSound = this.sound.add('se_select');
@@ -107,7 +117,7 @@ export default class ComputerLab extends Phaser.Scene {
             centerY: 400,
             spacing: 400,
             largeScale: 0.25,  // 70% smaller than 0.2
-            smallScale: 0.1,  // Also specify smallScale to be proportionally smaller
+            smallScale: 0.1,   // Also specify smallScale to be proportionally smaller
             sounds: {
                 hover: 'se_hoverSound',
                 confirm: 'se_confirmSound'

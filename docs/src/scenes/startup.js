@@ -35,6 +35,21 @@ export default class StartupScene extends Phaser.Scene {
         this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
         this.escapeKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
+        // On iOS, skip the fullscreen prompt entirely and proceed
+        const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOSDevice) {
+            try {
+                if (window.__cleanupFullscreenPrompt) {
+                    window.__cleanupFullscreenPrompt();
+                } else {
+                    const el = document.getElementById('fullscreen-prompt-overlay');
+                    if (el) el.style.display = 'none';
+                }
+            } catch {}
+            this.time.delayedCall(100, () => this.playLogoSequence());
+            return;
+        }
+
         // Proceed automatically when fullscreen is entered (e.g., via global DOM overlay button)
         this.onEnterFs = () => {
             if (!this.isTransitioning && this.uiElements.length > 0) {
@@ -105,40 +120,48 @@ export default class StartupScene extends Phaser.Scene {
             dialogHeight = Math.max(280, logicalHeight * 0.30);
         }
         
+        // Dialog with rounded corners and light shadow
         const dialog = this.add.rectangle(logicalWidth / 2, logicalHeight / 2, dialogWidth, dialogHeight, 0x1a1a1a, 1)
             .setOrigin(0.5)
             .setStrokeStyle(isMobile ? 2 : 2, 0x4a4a4a, 0.9)
             .setAlpha(0);
+        // Draw rounded border and shadow via a graphics overlay for nicer look
+        const dialogBorder = this.add.graphics();
+        dialogBorder.lineStyle(2, 0x4a4a4a, 0.9);
+        dialogBorder.fillStyle(0x1a1a1a, 1);
+        dialogBorder.fillRoundedRect((logicalWidth - dialogWidth)/2, (logicalHeight - dialogHeight)/2, dialogWidth, dialogHeight, 12);
+        dialogBorder.strokeRoundedRect((logicalWidth - dialogWidth)/2, (logicalHeight - dialogHeight)/2, dialogWidth, dialogHeight, 12);
+        dialogBorder.setAlpha(0);
 
         // Add glow effect to dialog
-        const glowOffset = isMobile ? 8 : 10;
-        const dialogGlow = this.add.rectangle(logicalWidth / 2, logicalHeight / 2, dialogWidth + glowOffset, dialogHeight + glowOffset, 0x2a2a2a, 0.3)
+        const glowOffset = isMobile ? 14 : 16;
+        const dialogGlow = this.add.rectangle(logicalWidth / 2, logicalHeight / 2, dialogWidth + glowOffset, dialogHeight + glowOffset, 0x000000, 0.25)
             .setOrigin(0.5)
             .setAlpha(0);
 
         // Main title with responsive text
         const titleStyle = {
             fontFamily: 'Arial Black, Arial',
-            fontSize: isMobile ? (isLandscape ? '24px' : '22px') : '32px',
+            fontSize: isMobile ? (isLandscape ? '28px' : '26px') : '34px',
             color: '#ffffff',
             fontStyle: 'bold',
             align: 'center',
             stroke: 'transparent',
             strokeThickness: 0
         };
-        const titleOffset = isMobile ? (isLandscape ? 44 : 36) : 50;
+        const titleOffset = isMobile ? (isLandscape ? 48 : 42) : 52;
     const titleText = this.add.text(logicalWidth / 2, logicalHeight / 2 - titleOffset, fullscreenSupported ? 'Go Fullscreen?' : 'Optimize Display?', titleStyle).setOrigin(0.5).setAlpha(0);
         
         // Subtitle with helpful note
         const subtitleStyle = {
             fontFamily: 'Arial',
-            fontSize: isMobile ? (isLandscape ? '13px' : '12px') : '16px',
+            fontSize: isMobile ? (isLandscape ? '15px' : '14px') : '16px',
             color: '#cccccc',
             align: 'center',
             stroke: 'transparent',
             strokeThickness: 0
         };
-        const subtitleOffset = isMobile ? 8 : 10;
+        const subtitleOffset = isMobile ? 12 : 10;
     const subtitleText = this.add.text(logicalWidth / 2, logicalHeight / 2 - subtitleOffset, fullscreenSupported ? 'This can be toggled in the options later.' : 'Fullscreen limited on iOS; we will scale to fit.', subtitleStyle).setOrigin(0.5).setAlpha(0);
 
         // Remove benefits text - no longer needed
@@ -147,8 +170,8 @@ export default class StartupScene extends Phaser.Scene {
         const createStyledButton = (x, y, text, isPrimary = false) => {
             const buttonColor = isPrimary ? 0x3B82F6 : 0x374151;
             const textColor = isPrimary ? '#ffffff' : '#e5e7eb';
-            const buttonWidth = isMobile ? (isLandscape ? 140 : 120) : 140;
-            const buttonHeight = isMobile ? (isLandscape ? 52 : 46) : 54;
+            const buttonWidth = isMobile ? (isLandscape ? 188 : 176) : 152;
+            const buttonHeight = isMobile ? (isLandscape ? 64 : 60) : 58;
             
             // Button background
             const buttonBg = this.add.rectangle(x, y, buttonWidth, buttonHeight, buttonColor, 1)
@@ -160,7 +183,7 @@ export default class StartupScene extends Phaser.Scene {
             // Button text
             const buttonText = this.add.text(x, y, text, {
                 fontFamily: 'Arial',
-                fontSize: isMobile ? (isLandscape ? '18px' : '16px') : '18px',
+                fontSize: isMobile ? (isLandscape ? '22px' : '21px') : '18px',
                 color: textColor,
                 fontStyle: 'bold'
             }).setOrigin(0.5).setAlpha(0);
@@ -192,8 +215,8 @@ export default class StartupScene extends Phaser.Scene {
         };
 
     // Create buttons with mobile-responsive spacing
-    const buttonSpacing = isMobile ? (isLandscape ? 220 : 180) : 220; // wider spacing on mobile landscape
-    const buttonY = logicalHeight / 2 + (isMobile ? (isLandscape ? 64 : 58) : 72);
+    const buttonSpacing = isMobile ? (isLandscape ? 280 : 230) : 224; // widen spacing for larger buttons
+    const buttonY = logicalHeight / 2 + (isMobile ? (isLandscape ? 78 : 72) : 72);
     const yesButton = createStyledButton(logicalWidth / 2 - buttonSpacing / 2, buttonY, fullscreenSupported ? 'YES' : 'OK', true);
     const noButton = fullscreenSupported ? createStyledButton(logicalWidth / 2 + buttonSpacing / 2, buttonY, 'SKIP', false) : null;
 
@@ -257,7 +280,7 @@ export default class StartupScene extends Phaser.Scene {
         }
         // Store all elements for cleanup
         this.uiElements = [
-            background, dialogGlow, dialog, titleText, subtitleText,
+            background, dialogGlow, dialogBorder, dialog, titleText, subtitleText,
             yesButton.bg, yesButton.text
         ];
         if (noButton) {
@@ -273,32 +296,7 @@ export default class StartupScene extends Phaser.Scene {
     }
 
     setupKeyboardControls(yesButton, noButton) {
-        // Add keyboard hint text with mobile-responsive positioning and sizing
-        const { width, height } = this.scale;
-        const scaleInfo = getScaleInfo(this);
-        const isMobile = !!scaleInfo.isMobile;
-        const isLandscape = !!scaleInfo.isLandscape;
-        const hintText = noButton ? 'Press ENTER for fullscreen, ESC to skip' : 'Press ENTER / TAP to continue';
-        const keyboardHint = this.add.text(width / 2, height / 2 + scaleDimension(scaleInfo.isMobile ? 110 : 140, scaleInfo), hintText, {
-            fontFamily: 'Arial',
-            fontSize: isMobile ? (isLandscape ? '13px' : '12px') : '12px',
-            color: '#666666',
-            align: 'center'
-        }).setOrigin(0.5).setAlpha(0);
-
-        this.uiElements.push(keyboardHint);
-
-        // Show hint after other animations
-        this.time.delayedCall(1500, () => {
-            this.tweens.add({
-                targets: keyboardHint,
-                alpha: 0.8,
-                duration: 400,
-                ease: 'Power2'
-            });
-        });
-
-        // Keyboard event listeners
+        // Keyboard event listeners (hint text removed)
         this.enterKey.on('down', () => {
             yesButton.bg.emit('pointerdown');
         });

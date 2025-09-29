@@ -215,7 +215,8 @@ export default class MainMenu extends Phaser.Scene {
         } catch (error) {
             console.warn('MainMenu: Failed to sync save data:', error);
         }
-        
+
+        // Scale info with safe fallback
         let scaleInfo;
         try {
             scaleInfo = getScaleInfo(this);
@@ -230,28 +231,24 @@ export default class MainMenu extends Phaser.Scene {
                 isPortrait: height > width
             };
         }
-        
-    const { width, height } = scaleInfo;
-    // Logical game size from Phaser Scale (constant 1920x1080 by config)
-    const worldW = this.scale.width;
-    const worldH = this.scale.height;
+
+        const { width, height } = scaleInfo;
+        const worldW = this.scale.width;
+        const worldH = this.scale.height;
+
+        // Clamp UI scale on compact devices so the menu isn’t tiny
+        const uiScale = scaleInfo.isMobile ? Math.max(scaleInfo.finalScale, 0.7) : scaleInfo.finalScale;
+        scaleInfo.uiScale = uiScale;
+
+        // Safe area (not heavily used here, but keep for consistency)
         let safeArea;
         try {
             safeArea = getSafeArea(scaleInfo);
         } catch (error) {
-            console.warn('SafeArea fallback');
-            const margin = scaleInfo.isMobile ? 20 * scaleInfo.finalScale : 10 * scaleInfo.finalScale;
-            safeArea = {
-                left: margin,
-                right: width - margin,
-                top: margin,
-                bottom: height - margin,
-                width: width - (margin * 2),
-                height: height - (margin * 2)
-            };
+            const margin = scaleInfo.isMobile ? 20 * uiScale : 10 * uiScale;
+            safeArea = { left: margin, right: worldW - margin, top: margin, bottom: worldH - margin, width: worldW - margin * 2, height: worldH - margin * 2 };
         }
-        
-        
+
         const se_hoverSound = this.sound.add('se_select');
         const se_confirmSound = this.sound.add('se_confirm');
 
@@ -263,107 +260,83 @@ export default class MainMenu extends Phaser.Scene {
             se_hoverSound.stop();
         });
 
-        // Set a solid color background
+        // Background
         this.cameras.main.setBackgroundColor('#87ceeb');
-
-        // Create scrolling clouds behind everything
         this.createScrollingClouds();
 
-        // Centering strategy: anchor layout to true screen center without giant negative offset
-        // Compute dynamic vertical distribution: logo above, buttons centered collectively.
-    const logo = this.add.image(worldW/2, 0, 'game_logo');
-        const logoScale = scaleInfo.isMobile ?
-            (scaleInfo.isPortrait ? 1.0 * scaleInfo.finalScale : 0.9 * scaleInfo.finalScale) :
-            0.85 * scaleInfo.finalScale; // Slightly larger but still safe
+        // Logo
+        const logo = this.add.image(worldW / 2, 0, 'game_logo');
+        const logoScale = scaleInfo.isMobile ? (scaleInfo.isPortrait ? 1.1 * uiScale : 1.0 * uiScale) : 0.9 * uiScale;
         logo.setScale(logoScale);
-        // After scaling, position logo so that space below it + buttons sits roughly centered
-        const projectedLogoHeight = logo.displayHeight;
-        // Reserve total stack height: logo + gap + buttons block
-        const desktopButtonCount = 4;
-        const desktopButtonSpacing = 110 * scaleInfo.finalScale;
-        const singleButtonHeightEstimate = 70 * scaleInfo.finalScale; // approximate visual height
-        const buttonsBlockHeight = (desktopButtonCount * singleButtonHeightEstimate) + ((desktopButtonCount-1) * desktopButtonSpacing);
-        const gapBetweenLogoAndFirstButton = 40 * scaleInfo.finalScale;
-        const totalStack = projectedLogoHeight + gapBetweenLogoAndFirstButton + buttonsBlockHeight;
-    const topY = (worldH - totalStack)/2; // top of logo
-        // Default (desktop-oriented) centered stack position
-        let baseLogoY = topY + projectedLogoHeight/2; // center of logo
 
-        // Mobile override: set a safer, slightly lower baseline so it doesn't sit too high
+        // Compute approximate vertical stack
+        const desktopButtonCount = 4;
+        const buttonSpacingEstimate = 90 * uiScale;
+        const singleButtonHeightEstimate = 74 * uiScale;
+        const gapBetweenLogoAndFirstButton = 64 * uiScale;
+
+        const projectedLogoHeight = logo.displayHeight;
+        const buttonsBlockHeight = (desktopButtonCount - 1) * buttonSpacingEstimate + singleButtonHeightEstimate;
+        const totalStack = projectedLogoHeight + gapBetweenLogoAndFirstButton + buttonsBlockHeight;
+        const topY = (worldH - totalStack) / 2;
+        let baseLogoY = topY + projectedLogoHeight / 2;
+
         if (scaleInfo.isMobile) {
-            const mobileRatio = scaleInfo.isPortrait ? 0.28 : 0.26; // ~28% portrait, ~26% landscape
+            const mobileRatio = scaleInfo.isPortrait ? 0.28 : 0.26;
             baseLogoY = worldH * mobileRatio;
         }
-        logo.y = baseLogoY;
-        
-        // Add fade-in animation for the logo
-        logo.setAlpha(0);
-        this.tweens.add({
-            targets: logo,
-            alpha: 1,
-            duration: 600,
-            delay: 200,
-            ease: 'Quad.easeOut'
-        });
-        
-        // Logo floating animation removed per user request
+        logo.y = Math.round(baseLogoY);
 
-        // Menu button spacing and positioning - different for mobile and desktop
-        // Some high-DPI desktops could be misclassified as mobile by the heuristic.
-        // If the displayed game area is reasonably large, force the desktop layout.
+        // Fade-in only (no floating animation)
+        logo.setAlpha(0);
+        this.tweens.add({ targets: logo, alpha: 1, duration: 600, delay: 200, ease: 'Quad.easeOut' });
+
+        // Layout selection
         const forceDesktopLayout = (scaleInfo.width >= 1000 && scaleInfo.height >= 700);
         const useMobileLayout = scaleInfo.isMobile && !forceDesktopLayout;
 
         if (useMobileLayout) {
-            // Mobile: 2x2 grid layout with bigger buttons (moved lower)
-            const horizontalSpacing = 400 * scaleInfo.finalScale;
-            const verticalSpacing = 30 * scaleInfo.finalScale;
+            // 2x2 grid on mobile, made larger with uiScale
+            const horizontalSpacing = 460 * uiScale;
+            const verticalSpacing = 40 * uiScale;
 
-            const startY = scaleInfo.isPortrait ?
-                worldH / 2 + 180 * scaleInfo.finalScale :
-                worldH / 2 + 140 * scaleInfo.finalScale;
+            const startY = scaleInfo.isPortrait ? worldH / 2 + 200 * uiScale : worldH / 2 + 160 * uiScale;
 
-            // Calculate button positions for 2x2 grid - buttons will auto-size to fit text
-            const centerX = worldW / 2;
-            const leftX = centerX - horizontalSpacing;
-            const rightX = centerX + horizontalSpacing;
-            const topRowY = startY;
-            const bottomRowY = startY + 120 * scaleInfo.finalScale + verticalSpacing;
+            const centerX = Math.round(worldW / 2);
+            const leftX = Math.round(centerX - horizontalSpacing);
+            const rightX = Math.round(centerX + horizontalSpacing);
+            const topRowY = Math.round(startY);
+            const bottomRowY = Math.round(startY + 120 * uiScale + verticalSpacing);
 
             const menuButtons = [
-                { label: 'Start Adventure', x: leftX, y: topRowY, onClick: async () => { se_confirmSound.play(); await this.handleAdventureStart(); }},
-                { label: 'View Progress', x: rightX, y: topRowY, onClick: () => { se_confirmSound.play(); window.location.href = 'leaderboards.html'; }},
-                { label: 'Options', x: leftX, y: bottomRowY, onClick: () => { se_confirmSound.play(); LoadingScreen.transitionToScene(this, 'OptionsScene', 800); }},
-                { label: 'Quit', x: rightX, y: bottomRowY, onClick: () => { se_confirmSound.play(); this.showQuitConfirmation(se_hoverSound, se_confirmSound); }},
+                { label: 'Start Adventure', x: leftX, y: topRowY, onClick: async () => { se_confirmSound.play(); await this.handleAdventureStart(); } },
+                { label: 'View Progress', x: rightX, y: topRowY, onClick: () => { se_confirmSound.play(); window.location.href = 'leaderboards.html'; } },
+                { label: 'Options', x: leftX, y: bottomRowY, onClick: () => { se_confirmSound.play(); LoadingScreen.transitionToScene(this, 'OptionsScene', 800); } },
+                { label: 'Quit', x: rightX, y: bottomRowY, onClick: () => { se_confirmSound.play(); this.showQuitConfirmation(se_hoverSound, se_confirmSound); } },
             ];
 
             menuButtons.forEach((btn, i) => {
-                createMenuButton(this, Math.round(btn.x), Math.round(btn.y), btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo, menuButtons);
+                createMenuButton(this, btn.x, btn.y, btn.label, btn.onClick, se_hoverSound, i * 80 + 400, scaleInfo, menuButtons);
             });
         } else {
-            // Desktop: Simple centered layout using logical game size to remain centered in windowed mode
-            const buttonSpacing = 80 * scaleInfo.finalScale;
-            const gap = 60 * scaleInfo.finalScale;
+            // Centered vertical stack on desktop
+            const buttonSpacing = 90 * uiScale;
+            const gap = 70 * uiScale;
 
             const menuButtons = [
-                { label: 'Start Adventure', onClick: async () => { se_confirmSound.play(); await this.handleAdventureStart(); }},
-                { label: 'View Progress', onClick: () => { se_confirmSound.play(); window.location.href = 'leaderboards.html'; }},
-                { label: 'Options', onClick: () => { se_confirmSound.play(); LoadingScreen.transitionToScene(this, 'OptionsScene', 'Loading...', 800); }},
-                { label: 'Quit', onClick: () => { se_confirmSound.play(); this.showQuitConfirmation(se_hoverSound, se_confirmSound); }},
+                { label: 'Start Adventure', onClick: async () => { se_confirmSound.play(); await this.handleAdventureStart(); } },
+                { label: 'View Progress', onClick: () => { se_confirmSound.play(); window.location.href = 'leaderboards.html'; } },
+                { label: 'Options', onClick: () => { se_confirmSound.play(); LoadingScreen.transitionToScene(this, 'OptionsScene', 'Loading...', 800); } },
+                { label: 'Quit', onClick: () => { se_confirmSound.play(); this.showQuitConfirmation(se_hoverSound, se_confirmSound); } },
             ];
 
-            // Calculate total height needed
-            const totalButtonsHeight = (menuButtons.length - 1) * buttonSpacing + (70 * scaleInfo.finalScale);
+            const totalButtonsHeight = (menuButtons.length - 1) * buttonSpacing + (70 * uiScale);
             const totalStackHeight = logo.displayHeight + gap + totalButtonsHeight;
-
-            // Center the entire stack vertically in logical space
             const stackTop = (worldH - totalStackHeight) / 2;
 
-            // Position logo at the top of the centered stack
             logo.y = Math.round(stackTop + logo.displayHeight / 2);
             logo.x = Math.round(worldW / 2);
 
-            // Position buttons below the logo
             const firstButtonY = stackTop + logo.displayHeight + gap;
 
             menuButtons.forEach((btn, i) => {
@@ -1010,9 +983,12 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
         }
     }
     
+    // Choose UI scale (clamped on compact devices) falling back to finalScale
+    const s = (scaleInfo && (scaleInfo.uiScale || scaleInfo.finalScale)) ? (scaleInfo.uiScale || scaleInfo.finalScale) : 1;
+
     // Get responsive scaling - calculate consistent button size based on longest text
-    const baseFontSize = scaleInfo.isMobile ? 32 : 32;  // Reduced desktop font from 42 to 32
-    const padding = scaleInfo.isMobile ? 50 : 60;       // Reduced desktop padding from 80 to 60
+    const baseFontSize = 34;           // base logical font size before scaling
+    const padding = 64;                // base padding before scaling
     
     let maxWidth = 0;
     let maxHeight = 0;
@@ -1020,30 +996,23 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     // If we have all buttons, calculate the size based on the longest text
     if (allButtons && allButtons.length > 0) {
         allButtons.forEach(buttonData => {
-            const tempText = scene.add.text(0, 0, buttonData.label, {
-                ...DEFAULT_TEXT_STYLE,
-                fontSize: `${baseFontSize * (scaleInfo.finalScale || 1)}px`
-            });
+            const tempText = scene.add.text(0, 0, buttonData.label, { ...DEFAULT_TEXT_STYLE, fontSize: `${Math.round(baseFontSize * s)}px` });
             maxWidth = Math.max(maxWidth, tempText.width);
             maxHeight = Math.max(maxHeight, tempText.height);
             tempText.destroy();
         });
     } else {
         // Fallback: measure current button text only
-        const tempText = scene.add.text(0, 0, label, {
-            ...DEFAULT_TEXT_STYLE,
-            fontSize: `${baseFontSize * (scaleInfo.finalScale || 1)}px`
-        });
+        const tempText = scene.add.text(0, 0, label, { ...DEFAULT_TEXT_STYLE, fontSize: `${Math.round(baseFontSize * s)}px` });
         maxWidth = tempText.width;
         maxHeight = tempText.height;
         tempText.destroy();
     }
     
     // Calculate consistent button size based on longest text with padding
-    const btnWidth = maxWidth + padding * (scaleInfo.finalScale || 1);
-    const btnHeight = Math.max(maxHeight + (padding * 0.6) * (scaleInfo.finalScale || 1), 
-                              scaleInfo.isMobile ? 70 * (scaleInfo.finalScale || 1) : 60 * (scaleInfo.finalScale || 1)); // Reduced desktop height from 80 to 60
-    const corner = scaleInfo.finalScale ? 25 * scaleInfo.finalScale : 25;
+    const btnWidth = maxWidth + padding * s;
+    const btnHeight = Math.max(maxHeight + (padding * 0.6) * s, scaleInfo.isMobile ? 80 * s : 64 * s);
+    const corner = 25 * s;
 
     // Button background
     const bg = scene.add.graphics();
@@ -1054,35 +1023,14 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     bg.setAlpha(0);
 
     // Button text with responsive styling - consistent with button sizing
-    let textStyle;
-    try {
-        const fontSize = scaleInfo.isMobile ? 32 : 32;  // Consistent font size for both mobile and desktop
-        textStyle = createResponsiveTextStyle(fontSize, scaleInfo, {
-            color: '#ffff00',
-            stroke: '#000',
-            strokeThickness: scaleInfo.finalScale ? 5 * scaleInfo.finalScale : 5,
-            shadow: { 
-                offsetX: scaleInfo.finalScale ? 3 * scaleInfo.finalScale : 3, 
-                offsetY: scaleInfo.finalScale ? 3 * scaleInfo.finalScale : 3, 
-                color: '#000', 
-                blur: scaleInfo.finalScale ? 5 * scaleInfo.finalScale : 5, 
-                fill: true 
-            }
-        });
-    } catch (error) {
-        console.warn('Using fallback text style');
-        const fontSize = scaleInfo.finalScale ? 
-            Math.max(20, (scaleInfo.isMobile ? 32 : 32) * scaleInfo.finalScale) : 
-            (scaleInfo.isMobile ? 32 : 32);
-        textStyle = {
-            ...DEFAULT_TEXT_STYLE,
-            fontSize: `${fontSize}px`,
-            color: '#ffff00',
-            stroke: '#000',
-            strokeThickness: 5,
-            shadow: { offsetX: 3, offsetY: 3, color: '#000', blur: 5, fill: true }
-        };
-    }
+    const textStyle = {
+        ...DEFAULT_TEXT_STYLE,
+        fontSize: `${Math.round(baseFontSize * s)}px`,
+        color: '#ffff00',
+        stroke: '#000',
+        strokeThickness: Math.max(3, Math.round(5 * s)),
+        shadow: { offsetX: Math.round(3 * s), offsetY: Math.round(3 * s), color: '#000', blur: Math.round(5 * s), fill: true }
+    };
     
     const text = scene.add.text(x, y, label, textStyle)
         .setOrigin(0.5)
@@ -1093,7 +1041,7 @@ function createMenuButton(scene, x, y, label, onClick, hoverSound, tweenDelay = 
     scene.tweens.add({ targets: [bg, text], alpha: 1, duration: 400, delay: tweenDelay, ease: 'Quad.easeOut' });
 
     // Hover/press effects - use scaled stroke width
-    const strokeWidth = scaleInfo.finalScale ? 3 * scaleInfo.finalScale : 3;
+    const strokeWidth = Math.max(2, 3 * s);
     
     // Only add hover effects for non-mobile devices
     if (!scaleInfo.isMobile) {

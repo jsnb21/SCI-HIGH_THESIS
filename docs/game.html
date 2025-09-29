@@ -269,6 +269,7 @@
           max-height: none !important;
         }
       }
+
       
       @media (max-width: 500px) {
         #game {
@@ -297,6 +298,7 @@
       <div class="rotate-icon">📱</div>
   <h2>Rotate to Landscape</h2>
   <p>For the best experience, rotate your device to landscape first.</p>
+  <button id="enable-landscape-btn" style="margin-top:16px;padding:10px 14px;border-radius:8px;border:none;background:#F4CE14;color:#222;font-weight:700;cursor:pointer">Enable Landscape</button>
     </div>
     
     <div id="game"></div>
@@ -310,16 +312,41 @@
       }
       
       // Function to handle orientation
+      async function requestFullscreen(el) {
+        if (!el) return false;
+        try {
+          if (el.requestFullscreen) { await el.requestFullscreen(); return true; }
+          if (el.webkitRequestFullscreen) { await el.webkitRequestFullscreen(); return true; }
+          if (el.msRequestFullscreen) { await el.msRequestFullscreen(); return true; }
+        } catch {}
+        return false;
+      }
+
+      async function tryEnableLandscape() {
+        const container = document.getElementById('game');
+        // Fullscreen first (often required for orientation lock permissions)
+        await requestFullscreen(container);
+        // Try lock
+        try {
+          if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock('landscape');
+          }
+        } catch {}
+        // Re-evaluate state
+        handleOrientation();
+      }
+
       function handleOrientation() {
         const overlay = document.getElementById('orientation-overlay');
         const isMobile = isMobileDevice();
         const isPortrait = window.innerHeight > window.innerWidth;
-        
+
         if (isMobile && isPortrait) {
           overlay.style.display = 'flex';
         } else {
           overlay.style.display = 'none';
         }
+        setTimeout(() => { if (window.game?.scale) window.game.scale.refresh(); }, 50);
       }
       
       // Check orientation on load and resize
@@ -328,12 +355,16 @@
       window.addEventListener('orientationchange', () => {
         setTimeout(handleOrientation, 100); // Small delay for orientation change
       });
+
+      // Button: Enable Landscape
+      document.addEventListener('click', (e) => {
+        if (e.target && e.target.id === 'enable-landscape-btn') {
+          tryEnableLandscape();
+        }
+      });
       
-      // Try to lock to landscape on mobile if Screen Orientation API is available
-      if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(err => {
-        });
-      }
+      // Initial state
+      handleOrientation();
     </script>
     
     <script type="module" src="./src/game.js"></script>

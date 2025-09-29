@@ -270,9 +270,12 @@ export default class MainHub extends Phaser.Scene {
         this.backButton = backButtonComponents.backButton;
         this.uiElements.push(backButtonComponents.buttonBg, backButtonComponents.backButton);
 
-        // Align points display Y with back button Y (keep X positions intact)
+        // Align points display with back button and push further to the right (logical width)
         if (this.pointsDisplay && this.pointsDisplay.container && this.backButtonBg) {
             this.pointsDisplay.container.y = this.backButtonBg.y;
+            const pillHalfWidth = 50 * this.scaleFactor; // matches createPointsDisplay width / 2
+            const rightMargin = 20 * this.scaleFactor;   // small inset from the right edge
+            this.pointsDisplay.container.x = this.scale.width - (pillHalfWidth + rightMargin);
         }
 
         const iconKeys = ['icon1', 'icon2', 'icon3'];
