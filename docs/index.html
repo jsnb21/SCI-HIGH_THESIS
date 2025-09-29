@@ -2608,10 +2608,39 @@
       document.getElementById('student-option').addEventListener('click', () => showForm('student'));
       document.getElementById('general-option').addEventListener('click', () => showForm('general'));
       
-      document.getElementById('guest-option').addEventListener('click', () => {
+      document.getElementById('guest-option').addEventListener('click', async () => {
+        // Ensure notification system is available
+        if (typeof window.ensureNotifications === 'function') {
+          window.ensureNotifications();
+        }
+
+        const message = "You're about to play as Guest. Your progress won't be saved online and may be lost if you clear your browser or switch devices. Continue?";
+        let proceed = true;
+        try {
+          if (typeof window.modernConfirm === 'function') {
+            proceed = await window.modernConfirm(message, {
+              title: 'Guest Mode Warning',
+              confirmText: 'Continue as Guest',
+              cancelText: 'Go Back',
+              type: 'warning'
+            });
+          } else {
+            proceed = confirm(message);
+          }
+        } catch (e) {
+          proceed = confirm(message);
+        }
+
+        if (!proceed) return;
+
         authManager.createGuestSession();
         loginModal.classList.add('hidden');
         authManager.redirectToGame();
+
+        // Optional info toast
+        if (typeof window.showInfo === 'function') {
+          window.showInfo('Guest mode enabled. Progress will only be saved locally.');
+        }
       });
 
       // Back to selection

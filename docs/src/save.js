@@ -109,6 +109,7 @@ function getCurrentUserSaveKey() {
 async function saveGame() {
     const saveKey = getCurrentUserSaveKey();
     const userData = getCurrentUserData();
+    const userType = localStorage.getItem('sci_high_user_type');
     
     const saveData = {
         playerHP: gameManager.getPlayerHP(),
@@ -133,8 +134,8 @@ async function saveGame() {
         console.error('SaveService: Failed to save to localStorage:', error);
     }
 
-    // Save to Firebase if available and user is authenticated
-    if (userData && await saveService.ensureFirebaseReady()) {
+    // Save to Firebase if available, user is authenticated, and not a guest
+    if (userData && userType !== 'guest' && await saveService.ensureFirebaseReady()) {
         try {
             const docRef = saveService.firestore
                 .collection('users')
@@ -153,9 +154,10 @@ async function saveGame() {
 // Check if current user has existing save data (checks both Firebase and localStorage)
 async function hasExistingSave() {
     const userData = getCurrentUserData();
+    const userType = localStorage.getItem('sci_high_user_type');
     
     // Check Firebase first if available
-    if (userData && await saveService.ensureFirebaseReady()) {
+    if (userData && userType !== 'guest' && await saveService.ensureFirebaseReady()) {
         try {
             const docRef = saveService.firestore
                 .collection('users')
@@ -183,10 +185,11 @@ async function hasExistingSave() {
 // Load function - loads from Firebase first, falls back to localStorage
 async function loadGame() {
     const userData = getCurrentUserData();
+    const userType = localStorage.getItem('sci_high_user_type');
     let saveData = null;
     
     // Try to load from Firebase first if available
-    if (userData && await saveService.ensureFirebaseReady()) {
+    if (userData && userType !== 'guest' && await saveService.ensureFirebaseReady()) {
         try {
             const docRef = saveService.firestore
                 .collection('users')
@@ -228,12 +231,13 @@ async function loadGame() {
 async function clearCurrentUserSave() {
     const saveKey = getCurrentUserSaveKey();
     const userData = getCurrentUserData();
+    const userType = localStorage.getItem('sci_high_user_type');
     
     // Remove from localStorage
     localStorage.removeItem(saveKey);
     
     // Remove from Firebase if available
-    if (userData && await saveService.ensureFirebaseReady()) {
+    if (userData && userType !== 'guest' && await saveService.ensureFirebaseReady()) {
         try {
             const docRef = saveService.firestore
                 .collection('users')
@@ -251,8 +255,9 @@ async function clearCurrentUserSave() {
 // Sync save data on login - pull latest from Firebase when user logs in
 async function syncSaveDataOnLogin() {
     const userData = getCurrentUserData();
+    const userType = localStorage.getItem('sci_high_user_type');
     
-    if (!userData || !await saveService.ensureFirebaseReady()) {
+    if (!userData || userType === 'guest' || !await saveService.ensureFirebaseReady()) {
         return false;
     }
     

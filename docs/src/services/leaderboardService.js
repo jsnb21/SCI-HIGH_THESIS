@@ -18,6 +18,22 @@ class LeaderboardService {
         this.initializationPromise = null;
     }
 
+    // Determine if current session is a guest user (no server writes)
+    isGuestUser() {
+        try {
+            const userType = localStorage.getItem('sci_high_user_type');
+            if (userType && userType.toLowerCase() === 'guest') return true;
+            const userStr = localStorage.getItem('sci_high_user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                if ((user?.userType || '').toLowerCase() === 'guest') return true;
+                if ((user?.role || '').toLowerCase() === 'guest') return true;
+                if ((user?.displayName || '').toLowerCase() === 'guest') return true;
+            }
+        } catch {}
+        return false;
+    }
+
     async ensureFirebaseInitialized() {
         if (this.isFirebaseInitialized) {
             return true;
@@ -187,8 +203,13 @@ class LeaderboardService {
 
     // Submit score to leaderboard
     async submitScore(playerData) {
+        // Guests should not write to Firebase; use local storage fallback
+        if (this.isGuestUser()) {
+            console.info('LeaderboardService: Guest user, saving to local storage only');
+            return this.saveToLocalStorage(playerData);
+        }
+
         const isInitialized = await this.ensureFirebaseInitialized();
-        
         if (!isInitialized) {
             throw new Error('Firebase initialization failed - leaderboard service unavailable');
         }
@@ -233,8 +254,12 @@ class LeaderboardService {
 
     // Update score only if it's better than current best
     async updateBestScore(playerData) {
+        // Guests should not write to Firebase
+        if (this.isGuestUser()) {
+            return this.saveToLocalStorage(playerData);
+        }
+
         const isInitialized = await this.ensureFirebaseInitialized();
-        
         if (!isInitialized) {
             console.warn('Firebase not available, using local storage fallback');
             return this.saveToLocalStorage(playerData);

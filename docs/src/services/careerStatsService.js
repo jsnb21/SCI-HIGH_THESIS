@@ -18,6 +18,24 @@ class CareerStatsService {
         this.initializationPromise = null;
     }
 
+    // Determine if current session is a guest user (no server writes)
+    isGuestUser() {
+        try {
+            const userType = localStorage.getItem('sci_high_user_type');
+            if (userType && userType.toLowerCase() === 'guest') return true;
+            // Fallback: inspect stored user object
+            const userStr = localStorage.getItem('sci_high_user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                // Some flows may tag name/uid
+                if ((user?.userType || '').toLowerCase() === 'guest') return true;
+                if ((user?.role || '').toLowerCase() === 'guest') return true;
+                if ((user?.displayName || '').toLowerCase() === 'guest') return true;
+            }
+        } catch {}
+        return false;
+    }
+
     async ensureFirebaseInitialized() {
         if (this.isFirebaseInitialized) {
             return true;
@@ -111,6 +129,11 @@ class CareerStatsService {
     // Update student career stats with new session data
     async updateCareerStats(studentId, studentName, sessionData, additionalData = {}) {
         try {
+            // Skip any Firebase writes for guest users
+            if (this.isGuestUser()) {
+                console.info('CareerStatsService: Skipping Firebase write for guest user');
+                return { success: true, skipped: true, reason: 'guest-user' };
+            }
             
             // Validate and sanitize sessionData to prevent NaN values
             if (!sessionData) {
