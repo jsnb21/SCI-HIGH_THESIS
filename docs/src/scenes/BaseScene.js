@@ -28,6 +28,14 @@ export default class BaseScene extends Phaser.Scene {
         
         // Listen for resize events
         this.scale.on('resize', this.onResize, this);
+
+        // If a global overlay is visible from a transition, hide it once the scene is ready
+        try {
+            if (window.__loadingOverlay && window.__loadingOverlay.isVisible()) {
+                // small delay to allow first render
+                this.time?.delayedCall?.(100, () => window.__loadingOverlay.hide(150));
+            }
+        } catch {}
         
         // Call the child scene's createMobile method if it exists
         if (this.createMobile) {

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { setupGlobalLoadingOverlay } from './ui/globalLoadingOverlay.js';
 import Intro from '/src/scenes/intro.js';
 import MainMenu from './scenes/mainmenu';
 import OptionsScene from './scenes/options.js';
@@ -207,6 +208,9 @@ try {
     
     // Make game globally accessible for debugging
     window.game = game;
+
+  // Initialize global loading overlay and patch scene transitions
+  try { setupGlobalLoadingOverlay(Phaser, game); } catch (e) { console.warn('Loading overlay patch failed:', e); }
 
     // Immediately flush any buffered notifications once NotificationScene signals readiness
     // (NotificationScene itself will also flush, this is a secondary safeguard via interval.)
