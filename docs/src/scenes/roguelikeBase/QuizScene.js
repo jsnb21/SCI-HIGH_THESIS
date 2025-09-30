@@ -831,9 +831,8 @@ export default class QuizScene extends BaseScene {
         const aspect = this.scale.height / (this.scale.width || 1);
         const isTallMobile = (isMobile || scaleInfo.isPortrait) && aspect > 1.85;
         const TALL_MOBILE_FONT_REDUCE = 0.94;
-    // Allow the arrangement to take more of the screen on mobile
-    const DD_MOBILE_MAX_WIDTH_RATIO = 0.96;
-    const DD_MOBILE_MAX_HEIGHT_RATIO = 0.9;
+        const DD_MOBILE_MAX_WIDTH_RATIO = 0.92;  // a bit narrower to fit controls comfortably
+        const DD_MOBILE_MAX_HEIGHT_RATIO = 0.86;  // allow more height for blocks
         
         // Create main quiz container
         this.quizContainer = this.add.container(centerX, centerY);
@@ -864,11 +863,11 @@ export default class QuizScene extends BaseScene {
         
         // Calculate content areas based on number of blocks
         const numberOfBlocks = this.currentQuestion.blocks.length;
-    let blockSpacing = isMobile ? (isSmallMobile ? 70 : 76) : 64;
+        let blockSpacing = isMobile ? (isSmallMobile ? 62 : 68) : 64;
         let titleHeight = isMobile ? (isSmallMobile ? 56 : 62) : 56;
         const questionNumberHeight = 0;
         let questionHeight = isMobile ? (isSmallMobile ? 120 : 132) : 112;
-    let instructionHeight = isMobile ? (isSmallMobile ? 120 : 138) : 130;
+        let instructionHeight = isMobile ? (isSmallMobile ? 120 : 132) : 130;
         const draggableAreaHeight = numberOfBlocks * blockSpacing + (isMobile ? 30 : 40);
         let submitAreaHeight = isMobile ? (isSmallMobile ? 100 : 112) : 108;
         if (isTallMobile) {
@@ -975,14 +974,14 @@ export default class QuizScene extends BaseScene {
                 ddTargetScale = Math.min(ddTargetScale, allowedWidth / contentWidth);
             }
             // Minimum safe scale for drag/drop readability
-            const MIN_DD_SCALE = 0.9; // larger baseline for drag/drop on mobile
+            const MIN_DD_SCALE = 0.78; // larger baseline for drag/drop
             ddTargetScale = Math.max(ddTargetScale, MIN_DD_SCALE);
         }
         if (isTallMobile) {
             ddTargetScale *= 0.97; // gentler shrink
         }
         // Global boost: enlarge drag/drop UI by ~20% with clamps
-    const DD_BOOST = 1.28;
+        const DD_BOOST = 1.2;
         ddTargetScale *= DD_BOOST;
         if (isMobile) {
             // Re-apply width/height constraints after boost
@@ -1060,10 +1059,9 @@ export default class QuizScene extends BaseScene {
         this.currentOrder = new Array(blocks.length).fill(null);
         
         // Calculate responsive dimensions
-    const isMobileBlocks = (getScaleInfo(this).width < 900);
-    const blockWidth = Math.min(isMobileBlocks ? 420 : 350, (this.contentWidth - 100) / 2);
-    const blockHeight = isMobileBlocks ? 60 : 50;
-    const blockSpacing = isMobileBlocks ? 70 : 60;
+        const blockWidth = Math.min(350, (this.contentWidth - 100) / 2);
+        const blockHeight = 50;
+        const blockSpacing = 60;
         
         // Calculate positions for left side (draggable blocks) and right side (drop zones)
         const leftX = -this.contentWidth/4;
@@ -1079,7 +1077,7 @@ export default class QuizScene extends BaseScene {
             
             const blockText = this.add.text(leftX, blockY, block, {
                 fontFamily: 'monospace',
-                fontSize: isMobileBlocks ? '16px' : '14px',
+                fontSize: '14px',
                 color: '#ffffff',
                 align: 'center',
                 wordWrap: { width: blockWidth - 20 }
@@ -1111,7 +1109,7 @@ export default class QuizScene extends BaseScene {
             
             const label = this.add.text(rightX, dropY, `${i + 1}. Drop here`, {
                 fontFamily: 'Arial',
-                fontSize: isMobileBlocks ? '16px' : '14px',
+                fontSize: '14px',
                 color: '#2c3e50',
                 align: 'center',
                 fontWeight: 'bold'
