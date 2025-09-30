@@ -117,7 +117,8 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
         this.label = this.add.text(w/2, h/2 - 24, 'Loading...', { fontFamily: 'Arial, sans-serif', fontSize: '26px', color: '#ffffff' }).setOrigin(0.5).setScrollFactor(0);
         this.bg.setDepth(100000);
         this.label.setDepth(100001);
-        this.events.on('resize', (sz) => {
+        // Respond to Scale Manager resize to keep overlay centered and full-screen
+        this.scale.on('resize', () => {
           const W = this.scale.width, H = this.scale.height;
           this.bg.setSize(W, H).setPosition(W/2, H/2);
           this.label.setPosition(W/2, H/2 - 24);

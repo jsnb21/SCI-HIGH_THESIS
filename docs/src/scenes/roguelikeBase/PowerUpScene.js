@@ -153,16 +153,23 @@ export default class PowerUpScene extends BaseScene {
 
         // Apply a 20% size boost on mobile to the whole UI, with basic clamping
         if (isMobile) {
+            // Center the container first so bounds are symmetric around screen center
+            this.powerUpContainer.setPosition(centerX, centerY);
             let targetScale = 1.2;
-            // Clamp so it doesn't exceed viewport width excessively
-            const bounds = this.powerUpContainer.getBounds();
-            if (bounds.width * targetScale > this.scale.width * 0.94) {
-                targetScale = Math.min(targetScale, (this.scale.width * 0.94) / Math.max(1, bounds.width));
+            // Measure bounds without scale to determine clamped scale
+            const preScaleBounds = this.powerUpContainer.getBounds();
+            if (preScaleBounds.width * targetScale > this.scale.width * 0.94) {
+                targetScale = Math.min(targetScale, (this.scale.width * 0.94) / Math.max(1, preScaleBounds.width));
             }
-            if (bounds.height * targetScale > this.scale.height * 0.9) {
-                targetScale = Math.min(targetScale, (this.scale.height * 0.9) / Math.max(1, bounds.height));
+            if (preScaleBounds.height * targetScale > this.scale.height * 0.9) {
+                targetScale = Math.min(targetScale, (this.scale.height * 0.9) / Math.max(1, preScaleBounds.height));
             }
             this.powerUpContainer.setScale(targetScale);
+            // Ensure centered after scaling
+            this.powerUpContainer.setPosition(centerX, centerY);
+        } else {
+            // On desktop, also center
+            this.powerUpContainer.setPosition(centerX, centerY);
         }
     }
 
