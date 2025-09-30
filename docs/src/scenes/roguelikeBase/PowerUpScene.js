@@ -150,6 +150,20 @@ export default class PowerUpScene extends BaseScene {
         
         // Add timer warning if needed
         this.addTimerWarning(centerX);
+
+        // Apply a 20% size boost on mobile to the whole UI, with basic clamping
+        if (isMobile) {
+            let targetScale = 1.2;
+            // Clamp so it doesn't exceed viewport width excessively
+            const bounds = this.powerUpContainer.getBounds();
+            if (bounds.width * targetScale > this.scale.width * 0.94) {
+                targetScale = Math.min(targetScale, (this.scale.width * 0.94) / Math.max(1, bounds.width));
+            }
+            if (bounds.height * targetScale > this.scale.height * 0.9) {
+                targetScale = Math.min(targetScale, (this.scale.height * 0.9) / Math.max(1, bounds.height));
+            }
+            this.powerUpContainer.setScale(targetScale);
+        }
     }
 
     createPowerUpButtons(centerX, centerY) {

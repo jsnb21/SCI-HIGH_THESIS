@@ -1000,7 +1000,7 @@ export default class QuizScene extends BaseScene {
         if (isMobile) {
             const topic = (this.courseTopic || '').toLowerCase();
             if (topic.includes('python')) {
-                ddTargetScale *= 1.06; // small extra bump for python code arrangement
+                ddTargetScale *= 1.12; // bigger extra bump for python code arrangement
                 // Re-apply constraints to keep within viewport after bump
                 const allowedWidth2 = scaleInfo.width * DD_MOBILE_MAX_WIDTH_RATIO;
                 if (contentWidth * ddTargetScale > allowedWidth2) {

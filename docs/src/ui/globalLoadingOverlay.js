@@ -132,6 +132,18 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
     try { return !!(game?.scale?.isFullscreen || document.fullscreenElement); } catch { return false; }
   }
 
+  // Heuristic mobile detection based on viewport CSS pixels and DPR
+  function isMobileViewport() {
+    try {
+      const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+      const vw = (typeof window !== 'undefined') ? window.innerWidth : 1920;
+      const vh = (typeof window !== 'undefined') ? window.innerHeight : 1080;
+      const cssW = vw / dpr;
+      const cssH = vh / dpr;
+      return cssW < 820 || cssH < 700 || (dpr > 1.5 && cssW < 900);
+    } catch { return false; }
+  }
+
   function showPhaserOverlay(text) {
     ensurePhaserOverlayScene();
     const mgr = game.scene;
@@ -174,7 +186,8 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
 
   function showOverlayFor(targetKey) {
     const label = `Loading ${prettyName(targetKey)}...`;
-    if (isFullscreenActive()) {
+    // Prefer Phaser overlay on mobile and in fullscreen to avoid DOM overlay quirks
+    if (isFullscreenActive() || isMobileViewport()) {
       showPhaserOverlay(label);
     } else {
       window.__loadingOverlay.show(label);
@@ -183,7 +196,8 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
 
   function scheduleAutoHide() {
     // Safety auto-hide in case scene is lightweight; keeps the overlay brief
-    if (isFullscreenActive()) hidePhaserOverlay(1200); else window.__loadingOverlay.hide(1200);
+    const delay = isMobileViewport() ? 1400 : 1200;
+    if (isFullscreenActive() || isMobileViewport()) hidePhaserOverlay(delay); else window.__loadingOverlay.hide(delay);
   }
 
   // Defer to next frames so overlay can render before heavy scene work (mobile-safe)
@@ -244,7 +258,7 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
   const tryHideOnFirstStep = () => {
     if (!firstPostStart) return;
     firstPostStart = false;
-    if (isFullscreenActive()) hidePhaserOverlay(250); else window.__loadingOverlay.hide(250);
+    if (isFullscreenActive() || isMobileViewport()) hidePhaserOverlay(250); else window.__loadingOverlay.hide(250);
   };
   game.events.on('resume', () => { if (isFullscreenActive()) hidePhaserOverlay(250); else window.__loadingOverlay.hide(250); });
   game.events.on('step', tryHideOnFirstStep);
