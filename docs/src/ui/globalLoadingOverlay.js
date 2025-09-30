@@ -110,12 +110,16 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
     try { return String(key).replace(/([A-Z])/g, ' $1').replace(/\s+/g, ' ').trim(); } catch { return 'Loading...'; }
   };
 
-  // Patch ScenePlugin.start and switch
+  // Patch ScenePlugin.start/switch/launch
   const pluginProto = Phaser.Scenes.ScenePlugin?.prototype;
   if (!pluginProto) return;
 
   const originalStart = pluginProto.start;
   const originalSwitch = pluginProto.switch;
+  const originalLaunch = pluginProto.launch;
+
+  // Track first engine step after transition begins
+  let firstPostStart = false;
 
   function showOverlayFor(targetKey) {
     const label = `Loading ${prettyName(targetKey)}...`;
@@ -127,35 +131,61 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
     window.__loadingOverlay.hide(1200);
   }
 
+  // Defer to next frames so overlay can render before heavy scene work (mobile-safe)
+  function deferSceneCall(fn) {
+    try {
+      const raf = typeof window !== 'undefined' && window.requestAnimationFrame;
+      if (raf) {
+        raf(() => raf(() => fn())); // two rAFs ensure a paint on mobile browsers
+      } else {
+        setTimeout(fn, 0);
+      }
+    } catch {
+      setTimeout(fn, 0);
+    }
+  }
+
   pluginProto.start = function patchedStart(key, data) {
     try { showOverlayFor(key); } catch {}
     // Yield to allow the overlay to paint before heavy work
-    setTimeout(() => {
+    deferSceneCall(() => {
       try {
         // mark to hide on the first engine step after the new scene begins ticking
         firstPostStart = true;
         originalStart.call(this, key, data);
       } finally { scheduleAutoHide(); }
-    }, 0);
+    });
     return this;
   };
 
   if (typeof originalSwitch === 'function') {
     pluginProto.switch = function patchedSwitch(key, data) {
       try { showOverlayFor(key); } catch {}
-      setTimeout(() => {
+      deferSceneCall(() => {
         try {
           firstPostStart = true;
           originalSwitch.call(this, key, data);
         } finally { scheduleAutoHide(); }
-      }, 0);
+      });
+      return this;
+    };
+  }
+
+  if (typeof originalLaunch === 'function') {
+    pluginProto.launch = function patchedLaunch(key, data) {
+      try { showOverlayFor(key); } catch {}
+      deferSceneCall(() => {
+        try {
+          firstPostStart = true;
+          originalLaunch.call(this, key, data);
+        } finally { scheduleAutoHide(); }
+      });
       return this;
     };
   }
 
   // Optional: hide overlay when the game resumes focus or on first render after start
   // to avoid it sticking around in unexpected cases.
-  let firstPostStart = false;
   const tryHideOnFirstStep = () => {
     if (!firstPostStart) return;
     firstPostStart = false;
