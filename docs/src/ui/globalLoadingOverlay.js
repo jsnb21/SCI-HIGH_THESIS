@@ -74,7 +74,7 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
     return el;
   };
 
-  // Public API on window
+  // Public API on window (DOM overlay)
   if (!window.__loadingOverlay) {
     let hideTimer = null;
     const el = ensureOverlay();
@@ -104,6 +104,57 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
     };
   }
 
+  // Phaser overlay fallback (works in fullscreen)
+  let phaserOverlaySceneKey = '__GlobalOverlayScene__';
+  function ensurePhaserOverlayScene() {
+    if (game.scene.keys[phaserOverlaySceneKey]) return;
+    const OverlayScene = new Phaser.Class({
+      Extends: Phaser.Scene,
+      initialize: function OverlayScene() { Phaser.Scene.call(this, { key: phaserOverlaySceneKey, active: false }); },
+      create: function() {
+        const w = this.scale.width, h = this.scale.height;
+        this.bg = this.add.rectangle(w/2, h/2, w, h, 0x000000, 0.9).setScrollFactor(0);
+        this.label = this.add.text(w/2, h/2 - 24, 'Loading...', { fontFamily: 'Arial, sans-serif', fontSize: '26px', color: '#ffffff' }).setOrigin(0.5).setScrollFactor(0);
+        this.bg.setDepth(100000);
+        this.label.setDepth(100001);
+        this.events.on('resize', (sz) => {
+          const W = this.scale.width, H = this.scale.height;
+          this.bg.setSize(W, H).setPosition(W/2, H/2);
+          this.label.setPosition(W/2, H/2 - 24);
+        });
+      },
+      setText: function(t) { if (this.label) this.label.setText(t || 'Loading...'); }
+    });
+    game.scene.add(phaserOverlaySceneKey, OverlayScene, false);
+  }
+
+  function isFullscreenActive() {
+    try { return !!(game?.scale?.isFullscreen || document.fullscreenElement); } catch { return false; }
+  }
+
+  function showPhaserOverlay(text) {
+    ensurePhaserOverlayScene();
+    const mgr = game.scene;
+    if (!mgr.isActive(phaserOverlaySceneKey)) mgr.launch(phaserOverlaySceneKey);
+    mgr.bringToTop(phaserOverlaySceneKey);
+    const scn = mgr.getScene(phaserOverlaySceneKey);
+    scn.scene.setVisible(true);
+    if (scn.setText) scn.setText(text);
+  }
+
+  function hidePhaserOverlay(delayMs = 0) {
+    const mgr = game.scene;
+    if (!mgr) return;
+    const doHide = () => {
+      if (mgr.keys[phaserOverlaySceneKey] && mgr.isActive(phaserOverlaySceneKey)) {
+        const scn = mgr.getScene(phaserOverlaySceneKey);
+        scn.scene.setVisible(false);
+        mgr.stop(phaserOverlaySceneKey);
+      }
+    };
+    if (delayMs > 0) setTimeout(doHide, delayMs); else doHide();
+  }
+
   // Helper: derive a friendly name
   const prettyName = (key) => {
     if (!key) return 'Loading...';
@@ -123,12 +174,16 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
 
   function showOverlayFor(targetKey) {
     const label = `Loading ${prettyName(targetKey)}...`;
-    window.__loadingOverlay.show(label);
+    if (isFullscreenActive()) {
+      showPhaserOverlay(label);
+    } else {
+      window.__loadingOverlay.show(label);
+    }
   }
 
   function scheduleAutoHide() {
     // Safety auto-hide in case scene is lightweight; keeps the overlay brief
-    window.__loadingOverlay.hide(1200);
+    if (isFullscreenActive()) hidePhaserOverlay(1200); else window.__loadingOverlay.hide(1200);
   }
 
   // Defer to next frames so overlay can render before heavy scene work (mobile-safe)
@@ -189,8 +244,8 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
   const tryHideOnFirstStep = () => {
     if (!firstPostStart) return;
     firstPostStart = false;
-    window.__loadingOverlay.hide(250);
+    if (isFullscreenActive()) hidePhaserOverlay(250); else window.__loadingOverlay.hide(250);
   };
-  game.events.on('resume', () => window.__loadingOverlay.hide(250));
+  game.events.on('resume', () => { if (isFullscreenActive()) hidePhaserOverlay(250); else window.__loadingOverlay.hide(250); });
   game.events.on('step', tryHideOnFirstStep);
 }

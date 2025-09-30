@@ -651,13 +651,13 @@ export default class QuizScene extends BaseScene {
         const TALL_MOBILE_FONT_REDUCE = 0.94; // gentler reduction on very tall devices
         
         // Mobile sizing in GAME UNITS (avoid CSS pixel mixing)
-        const MOBILE_MAX_WIDTH_RATIO = 0.9;   // up to 90% of game width
-        const MOBILE_MAX_HEIGHT_RATIO = 0.82; // up to 82% of game height
+    const MOBILE_MAX_WIDTH_RATIO = 0.98;   // up to 98% of game width
+    const MOBILE_MAX_HEIGHT_RATIO = 0.9; // up to 90% of game height
 
         // Larger, more readable mobile fonts
-        let titleFontPx = isMobile ? 42 : 32;
-        let questionFontPx = isMobile ? 30 : 24;
-        let contentWidth = isMobile ? Math.min(this.scale.width * MOBILE_MAX_WIDTH_RATIO, 1400) : 900;
+    let titleFontPx = isMobile ? 52 : 36;
+    let questionFontPx = isMobile ? 38 : 28;
+    let contentWidth = isMobile ? Math.min(this.scale.width * MOBILE_MAX_WIDTH_RATIO, 1700) : 980;
         if (isTallMobile) {
             titleFontPx = Math.round(titleFontPx * TALL_MOBILE_FONT_REDUCE);
             questionFontPx = Math.round(questionFontPx * TALL_MOBILE_FONT_REDUCE);
@@ -684,10 +684,10 @@ export default class QuizScene extends BaseScene {
         // Calculate content dimensions based on actual content - mobile responsive
         const answers = this.currentQuestion.options;
         const numAnswers = answers.length;
-    let buttonHeight = isMobile ? 66 : 60;
-    let buttonSpacing = isMobile ? 72 : 78;
-    let titleHeight = isMobile ? 58 : 66;
-    let questionNumberHeight = isMobile ? 28 : 30;
+    let buttonHeight = isMobile ? 84 : 64;
+    let buttonSpacing = isMobile ? 92 : 84;
+    let titleHeight = isMobile ? 74 : 70;
+    let questionNumberHeight = isMobile ? 36 : 30;
     // Extra space between question text and the first option (A)
     // Increased to create more breathing room above the first answer
     let questionPadding = isMobile ? 44 : 84;
@@ -733,7 +733,7 @@ export default class QuizScene extends BaseScene {
                 targetScale = Math.min(targetScale, allowed / contentWidth);
             }
             // Maintain a strong readability baseline on phones
-            const MIN_MOBILE_SCALE = 1.0;
+            const MIN_MOBILE_SCALE = 1.3; // ~+30% bigger baseline
             targetScale = Math.max(targetScale, MIN_MOBILE_SCALE);
         }
         if (isTallMobile) {
@@ -1533,16 +1533,16 @@ export default class QuizScene extends BaseScene {
     createTwoChoiceButtons(startY, isMobile = false, isSmallMobile = false) {
         const answers = this.currentQuestion.options;
         // Mobile uses vertical layout, desktop uses side-by-side
-        const buttonWidth = isMobile ? (isSmallMobile ? 320 : 360) : 300;
-        const buttonHeight = isMobile ? (isSmallMobile ? 50 : 56) : 70;
-        const spacing = isMobile ? (isSmallMobile ? 62 : 70) : 54; // Vertical spacing for mobile, horizontal for desktop
-        const fontSize = isMobile ? (isSmallMobile ? '16px' : '18px') : '20px';
+    const buttonWidth = isMobile ? (isSmallMobile ? 360 : 420) : 300;
+    const buttonHeight = isMobile ? (isSmallMobile ? 60 : 68) : 70;
+    const spacing = isMobile ? (isSmallMobile ? 84 : 96) : 54; // Larger vertical spacing on mobile
+    const fontSize = isMobile ? (isSmallMobile ? '18px' : '20px') : '20px';
         
         for (let i = 0; i < 2; i++) {
             let buttonX, buttonY;
             
             if (isMobile) {
-                // Vertical layout for mobile
+                // Vertical layout for mobile: keep below the question
                 buttonX = 0;
                 buttonY = startY + (i * spacing);
             } else {
