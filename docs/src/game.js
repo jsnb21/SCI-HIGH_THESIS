@@ -210,22 +210,7 @@ try {
     window.game = game;
 
   // Initialize global loading overlay and patch scene transitions
-    try {
-      setupGlobalLoadingOverlay(Phaser, game);
-      // Optional: briefly show the overlay on mobile to ensure visibility on first transition
-      const isProbablyMobile = () => {
-        try {
-          const dpr = window.devicePixelRatio || 1;
-          const w = window.innerWidth / dpr;
-          const h = window.innerHeight / dpr;
-          return w < 900 || h < 700 || dpr > 1.5;
-        } catch { return false; }
-      };
-      if (isProbablyMobile() && window.__loadingOverlay && !window.__loadingOverlay.isVisible()) {
-        window.__loadingOverlay.show('Loading...');
-        window.__loadingOverlay.hide(900);
-      }
-    } catch (e) { console.warn('Loading overlay patch failed:', e); }
+  try { setupGlobalLoadingOverlay(Phaser, game); } catch (e) { console.warn('Loading overlay patch failed:', e); }
 
     // Immediately flush any buffered notifications once NotificationScene signals readiness
     // (NotificationScene itself will also flush, this is a secondary safeguard via interval.)

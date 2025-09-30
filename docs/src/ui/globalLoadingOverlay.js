@@ -116,7 +116,6 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
 
   const originalStart = pluginProto.start;
   const originalSwitch = pluginProto.switch;
-  const originalLaunch = pluginProto.launch;
 
   function showOverlayFor(targetKey) {
     const label = `Loading ${prettyName(targetKey)}...`;
@@ -148,19 +147,6 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
         try {
           firstPostStart = true;
           originalSwitch.call(this, key, data);
-        } finally { scheduleAutoHide(); }
-      }, 0);
-      return this;
-    };
-  }
-
-  if (typeof originalLaunch === 'function') {
-    pluginProto.launch = function patchedLaunch(key, data) {
-      try { showOverlayFor(key); } catch {}
-      setTimeout(() => {
-        try {
-          firstPostStart = true;
-          originalLaunch.call(this, key, data);
         } finally { scheduleAutoHide(); }
       }, 0);
       return this;
