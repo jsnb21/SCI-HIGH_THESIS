@@ -27,54 +27,26 @@ export default class StartupScene extends Phaser.Scene {
     preload() {
         this.load.image('logo', 'assets/img/Website/buko_productions-logo.png');
     }    create() {
-        // Set up event listeners using fullscreen utility
+        // Set up event listeners using fullscreen utility (kept for resize/orientation behaviors)
         this.fullscreenManager = FullscreenUtils.setupScene(this);
-        
+
         // Set up keyboard controls
         this.cursors = this.input.keyboard.createCursorKeys();
         this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
         this.escapeKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
-        // On iOS, skip the fullscreen prompt entirely and proceed
-        const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        if (isIOSDevice) {
-            try {
-                if (window.__cleanupFullscreenPrompt) {
-                    window.__cleanupFullscreenPrompt();
-                } else {
-                    const el = document.getElementById('fullscreen-prompt-overlay');
-                    if (el) el.style.display = 'none';
-                }
-            } catch {}
-            this.time.delayedCall(100, () => this.playLogoSequence());
-            return;
-        }
-
-        // Proceed automatically when fullscreen is entered (e.g., via global DOM overlay button)
-        this.onEnterFs = () => {
-            if (!this.isTransitioning && this.uiElements.length > 0) {
-                this.isTransitioning = true;
-                // Hide global overlay if present
-                try {
-                    if (window.__cleanupFullscreenPrompt) {
-                        window.__cleanupFullscreenPrompt();
-                    } else {
-                        const el = document.getElementById('fullscreen-prompt-overlay');
-                        if (el) el.style.display = 'none';
-                    }
-                } catch {}
-                this.time.delayedCall(150, () => this.playLogoSequence());
+        // Remove any residual DOM fullscreen prompt overlay if present
+        try {
+            if (window.__cleanupFullscreenPrompt) {
+                window.__cleanupFullscreenPrompt();
+            } else {
+                const el = document.getElementById('fullscreen-prompt-overlay');
+                if (el) el.style.display = 'none';
             }
-        };
-        if (this.scale && this.scale.events) {
-            // Phaser 3.60+: scale.events; older versions use ScaleManager directly
-            this.scale.on('enterfullscreen', this.onEnterFs, this);
-        } else if (this.scale) {
-            this.scale.on('enterfullscreen', this.onEnterFs, this);
-        }
-        
-        // Start with fullscreen prompt
-        this.showFullscreenPrompt();
+        } catch {}
+
+        // Skip the fullscreen prompt entirely on all platforms and go straight to the logo sequence
+        this.time.delayedCall(100, () => this.playLogoSequence());
     }
 
     showFullscreenPrompt() {

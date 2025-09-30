@@ -116,12 +116,12 @@ export default class PowerUpScene extends BaseScene {
         this.powerUpContainer.setDepth(10);
         
         // Responsive font sizes
-        const titleFontSize = isMobile ? (isSmallMobile ? '20px' : '24px') : '32px';
-        const descFontSize = isMobile ? (isSmallMobile ? '14px' : '16px') : '18px';
+    const titleFontSize = isMobile ? (isSmallMobile ? '26px' : '30px') : '34px';
+    const descFontSize = isMobile ? (isSmallMobile ? '16px' : '18px') : '20px';
         
         // Responsive positioning
-        const titleOffsetY = isMobile ? (isSmallMobile ? -120 : -140) : -180;
-        const descOffsetY = isMobile ? (isSmallMobile ? -80 : -100) : -130;
+    const titleOffsetY = isMobile ? (isSmallMobile ? -140 : -160) : -190;
+    const descOffsetY = isMobile ? (isSmallMobile ? -95 : -115) : -140;
         
         // Title
         this.titleText = this.add.text(centerX, centerY + titleOffsetY, '🌟 Power-Up Station! 🌟', {
@@ -161,20 +161,20 @@ export default class PowerUpScene extends BaseScene {
         const isSmallMobile = scaleInfo.width < 480;
         
         // Responsive button dimensions
-        const buttonWidth = isMobile ? (isSmallMobile ? Math.min(scaleInfo.width * 0.85, 260) : Math.min(scaleInfo.width * 0.8, 280)) : 280;
-        const buttonHeight = isMobile ? (isSmallMobile ? 60 : 70) : 80;
-        const buttonSpacing = isMobile ? (isSmallMobile ? 70 : 80) : 100;
-        const startY = centerY + (isMobile ? (isSmallMobile ? -30 : -40) : -50);
+    const buttonWidth = isMobile ? (isSmallMobile ? Math.min(scaleInfo.width * 0.9, 320) : Math.min(scaleInfo.width * 0.88, 360)) : 300;
+    const buttonHeight = isMobile ? (isSmallMobile ? 76 : 88) : 90;
+    const buttonSpacing = isMobile ? (isSmallMobile ? 84 : 98) : 110;
+    const startY = centerY + (isMobile ? (isSmallMobile ? -10 : -20) : -40);
         
         // Responsive font sizes
-        const iconFontSize = isMobile ? (isSmallMobile ? '18px' : '20px') : '24px';
-        const titleFontSize = isMobile ? (isSmallMobile ? '14px' : '16px') : '18px';
-        const descFontSize = isMobile ? (isSmallMobile ? '10px' : '11px') : '12px';
+    const iconFontSize = isMobile ? (isSmallMobile ? '22px' : '24px') : '26px';
+    const titleFontSize = isMobile ? (isSmallMobile ? '18px' : '20px') : '20px';
+    const descFontSize = isMobile ? (isSmallMobile ? '12px' : '14px') : '14px';
         
         // Responsive text positioning
-        const iconOffsetX = isMobile ? (isSmallMobile ? -80 : -90) : -100;
-        const textOffsetX = isMobile ? (isSmallMobile ? -40 : -45) : -50;
-        const textWrapWidth = isMobile ? (isSmallMobile ? 140 : 160) : 200;
+    const iconOffsetX = isMobile ? (isSmallMobile ? -92 : -104) : -110;
+    const textOffsetX = isMobile ? (isSmallMobile ? -36 : -40) : -46;
+    const textWrapWidth = isMobile ? (isSmallMobile ? 170 : 200) : 220;
         
         this.powerUps.forEach((powerUp, index) => {
             const buttonY = startY + (index * buttonSpacing);
@@ -246,8 +246,8 @@ export default class PowerUpScene extends BaseScene {
         const isSmallMobile = scaleInfo.width < 480;
         
         // Responsive font size and positioning
-        const warningFontSize = isMobile ? (isSmallMobile ? '12px' : '13px') : '14px';
-        const warningY = isMobile ? (isSmallMobile ? this.scale.height - 30 : this.scale.height - 40) : this.scale.height - 50;
+    const warningFontSize = isMobile ? (isSmallMobile ? '14px' : '16px') : '16px';
+    const warningY = isMobile ? (isSmallMobile ? this.scale.height - 36 : this.scale.height - 44) : this.scale.height - 50;
         
         const warningText = this.add.text(centerX, warningY, 'Game paused - Take your time choosing!', {
             fontSize: warningFontSize,
@@ -307,7 +307,7 @@ export default class PowerUpScene extends BaseScene {
         });
         
         // Responsive feedback text
-        const feedbackFontSize = isMobile ? (isSmallMobile ? '20px' : '24px') : '28px';
+    const feedbackFontSize = isMobile ? (isSmallMobile ? '26px' : '30px') : '30px';
         
         // Show selection feedback
         const feedbackText = this.add.text(centerX, centerY, `${powerUp.icon} ${powerUp.name} Activated! ${powerUp.icon}`, {

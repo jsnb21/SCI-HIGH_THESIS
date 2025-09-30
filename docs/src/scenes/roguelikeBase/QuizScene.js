@@ -960,7 +960,7 @@ export default class QuizScene extends BaseScene {
         // Submit button
         this.createSubmitButton();
         
-        // Add entrance animation
+    // Add entrance animation
         // Determine scale relative to viewport height limit
         let ddTargetScale = 1;
         if (isMobile) {
@@ -995,6 +995,24 @@ export default class QuizScene extends BaseScene {
             }
             const MIN_DD_SCALE = 0.78;
             ddTargetScale = Math.max(ddTargetScale, MIN_DD_SCALE);
+        }
+        // If Python topic, boost slightly more on mobile for readability
+        if (isMobile) {
+            const topic = (this.courseTopic || '').toLowerCase();
+            if (topic.includes('python')) {
+                ddTargetScale *= 1.06; // small extra bump for python code arrangement
+                // Re-apply constraints to keep within viewport after bump
+                const allowedWidth2 = scaleInfo.width * DD_MOBILE_MAX_WIDTH_RATIO;
+                if (contentWidth * ddTargetScale > allowedWidth2) {
+                    ddTargetScale = Math.min(ddTargetScale, allowedWidth2 / contentWidth);
+                }
+                const ddMaxHeight2 = this.scale.height * DD_MOBILE_MAX_HEIGHT_RATIO;
+                if (contentHeight * ddTargetScale > ddMaxHeight2) {
+                    ddTargetScale = Math.min(ddTargetScale, ddMaxHeight2 / contentHeight);
+                }
+                const MIN_DD_SCALE2 = 0.78;
+                ddTargetScale = Math.max(ddTargetScale, MIN_DD_SCALE2);
+            }
         }
         this.quizContainer.setScale(ddTargetScale * 0.85);
         this.quizContainer.setAlpha(0);
