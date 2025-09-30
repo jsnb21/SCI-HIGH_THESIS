@@ -625,10 +625,10 @@ export default class QuizScene extends BaseScene {
         const centerY = this.scale.height / 2;
         
         // Get mobile information for responsive design
-    const scaleInfo = getScaleInfo(this);
-    // Use improved mobile detection; treat narrow CSS width as mobile even if original logical size is large
-    const isMobile = scaleInfo.isMobile || scaleInfo.width < 900;
-    const isSmallMobile = scaleInfo.width < 500;
+        const scaleInfo = getScaleInfo(this);
+        // Use improved mobile detection (CSS-based for detection only)
+        const isMobile = scaleInfo.isMobile || scaleInfo.width < 900;
+        const isSmallMobile = scaleInfo.width < 500;
         
         // Check if this is a drag-and-drop question (code arrangement - intensity 3)
         if (this.currentQuestion.isDragDrop) {
@@ -646,24 +646,22 @@ export default class QuizScene extends BaseScene {
         this.quizContainer = this.add.container(centerX, centerY);
         
         // Tall mobile detection (e.g., Poco X6 Pro 1220x2712 ~ aspect 2.22)
-    const aspect = this.scale.height / (this.scale.width || 1);
-    const isTallMobile = (isMobile || scaleInfo.isPortrait) && aspect > 1.85;
+        const aspect = this.scale.height / (this.scale.width || 1);
+        const isTallMobile = (isMobile || scaleInfo.isPortrait) && aspect > 1.85;
         const TALL_MOBILE_FONT_REDUCE = 0.94; // gentler reduction on very tall devices
-        const TALL_MOBILE_EXTRA_SCALE = 0.75; // final container scale multiplier
         
-        // Responsive sizing constants (enlarged but clamped)
-    const MOBILE_MAX_WIDTH_RATIO = 0.95;   // allow almost full width
-    const MOBILE_MAX_WIDTH_PX = 480;       // higher cap for modern phones
-    const MOBILE_FONT_REDUCE = 1.08;       // enlarge fonts on mobile
-    const MOBILE_MAX_HEIGHT_RATIO = 0.8;   // allow taller popup on mobile
+        // Mobile sizing in GAME UNITS (avoid CSS pixel mixing)
+        const MOBILE_MAX_WIDTH_RATIO = 0.9;   // up to 90% of game width
+        const MOBILE_MAX_HEIGHT_RATIO = 0.82; // up to 82% of game height
 
-        let titleFontPx = isMobile ? Math.round(24 * MOBILE_FONT_REDUCE) : 32;
-        let questionFontPx = isMobile ? Math.round(20 * MOBILE_FONT_REDUCE) : 24;
-        let contentWidth = isMobile ? Math.min(scaleInfo.width * MOBILE_MAX_WIDTH_RATIO, MOBILE_MAX_WIDTH_PX) : 700;
+        // Larger, more readable mobile fonts
+        let titleFontPx = isMobile ? 42 : 32;
+        let questionFontPx = isMobile ? 30 : 24;
+        let contentWidth = isMobile ? Math.min(this.scale.width * MOBILE_MAX_WIDTH_RATIO, 1400) : 900;
         if (isTallMobile) {
             titleFontPx = Math.round(titleFontPx * TALL_MOBILE_FONT_REDUCE);
             questionFontPx = Math.round(questionFontPx * TALL_MOBILE_FONT_REDUCE);
-            contentWidth = Math.min(contentWidth, scaleInfo.width * 0.75);
+            contentWidth = Math.min(contentWidth, this.scale.width * 0.85);
         }
         const titleFontSize = `${titleFontPx}px`;
         const questionFontSize = `${questionFontPx}px`;
@@ -686,21 +684,21 @@ export default class QuizScene extends BaseScene {
         // Calculate content dimensions based on actual content - mobile responsive
         const answers = this.currentQuestion.options;
         const numAnswers = answers.length;
-        let buttonHeight = isMobile ? 54 : 60;
-        let buttonSpacing = isMobile ? 62 : 78;
-        let titleHeight = isMobile ? 46 : 66;
-        let questionNumberHeight = isMobile ? 22 : 30;
+    let buttonHeight = isMobile ? 66 : 60;
+    let buttonSpacing = isMobile ? 72 : 78;
+    let titleHeight = isMobile ? 58 : 66;
+    let questionNumberHeight = isMobile ? 28 : 30;
     // Extra space between question text and the first option (A)
     // Increased to create more breathing room above the first answer
     let questionPadding = isMobile ? 44 : 84;
         let bottomPadding = isMobile ? 18 : 30;
         if (isTallMobile) {
-            buttonHeight = 50;
-            buttonSpacing = 56;
-            titleHeight = 42;
-            questionNumberHeight = 20;
-            questionPadding = 38;
-            bottomPadding = 14;
+            buttonHeight = 60;
+            buttonSpacing = 68;
+            titleHeight = 52;
+            questionNumberHeight = 24;
+            questionPadding = 40;
+            bottomPadding = 16;
         }
         
         // Calculate required height based on layout type
@@ -715,51 +713,32 @@ export default class QuizScene extends BaseScene {
         
         const contentHeight = titleHeight + questionNumberHeight + questionHeight + questionPadding + buttonsAreaHeight + bottomPadding;
 
-    // Determine scaling based on viewport bounds (height & width constraints)
-    let targetScale = 1;
+        // Determine scaling based on game viewport bounds (height & width constraints)
+        let targetScale = 1;
         if (isMobile) {
-            const maxHeight = scaleInfo.height * MOBILE_MAX_HEIGHT_RATIO;
+            const maxHeight = this.scale.height * MOBILE_MAX_HEIGHT_RATIO;
             if (contentHeight > maxHeight) {
                 targetScale = Math.min(targetScale, maxHeight / contentHeight);
             }
-            // Extra safety: never exceed 90% width visually
-            const visualWidth = contentWidth; // unscaled width
-            const maxVisualWidth = scaleInfo.width * 0.9;
+            // Extra safety: never exceed 90% of game width visually
+            const visualWidth = contentWidth; // unscaled width in game units
+            const maxVisualWidth = this.scale.width * 0.9;
             if (visualWidth > maxVisualWidth) {
                 targetScale = Math.min(targetScale, maxVisualWidth / visualWidth);
             }
-            // Ensure overall width feels compact: if width ratio still > MOBILE_MAX_WIDTH_RATIO after scale, apply extra scale
+            // Ensure overall width respects MOBILE_MAX_WIDTH_RATIO
             const postWidth = contentWidth * targetScale;
-            const allowed = scaleInfo.width * MOBILE_MAX_WIDTH_RATIO;
+            const allowed = this.scale.width * MOBILE_MAX_WIDTH_RATIO;
             if (postWidth > allowed) {
                 targetScale = Math.min(targetScale, allowed / contentWidth);
             }
-            // Do not let scale fall below readability baseline
-            const MIN_MOBILE_SCALE = 0.78; // slightly larger baseline
+            // Maintain a strong readability baseline on phones
+            const MIN_MOBILE_SCALE = 1.0;
             targetScale = Math.max(targetScale, MIN_MOBILE_SCALE);
         }
         if (isTallMobile) {
-            targetScale *= 0.97; // even gentler shrink (less reduction)
-        }
-
-        // Global boost: enlarge quiz UI by ~20% while respecting clamps
-        const BOOST = 1.2;
-        targetScale *= BOOST;
-        if (isMobile) {
-            // Re-apply width constraint after boost
-            const postWidth = contentWidth * targetScale;
-            const allowed = scaleInfo.width * MOBILE_MAX_WIDTH_RATIO;
-            if (postWidth > allowed) {
-                targetScale = Math.min(targetScale, allowed / contentWidth);
-            }
-            // Re-apply height constraint after boost
-            const maxHeight = scaleInfo.height * MOBILE_MAX_HEIGHT_RATIO;
-            if (contentHeight * targetScale > maxHeight) {
-                targetScale = Math.min(targetScale, maxHeight / contentHeight);
-            }
-            // Keep baseline readability
-            const MIN_MOBILE_SCALE = 0.78;
-            targetScale = Math.max(targetScale, MIN_MOBILE_SCALE);
+            // Slight reduction on extremely tall devices to avoid clipping
+            targetScale *= 0.98;
         }
         
         // Create modern quiz box with dynamic size
@@ -831,7 +810,7 @@ export default class QuizScene extends BaseScene {
         this.quizContainer.add(instructionText);
         
         // Add entrance animation with refined scaling
-    const INITIAL_SCALE_MULTIPLIER = 0.85; // slight pop-in grow effect
+        const INITIAL_SCALE_MULTIPLIER = 0.9; // slight pop-in grow effect
         this.quizContainer.setScale(targetScale * INITIAL_SCALE_MULTIPLIER);
         this.quizContainer.setAlpha(0);
         this.tweens.add({
@@ -847,31 +826,30 @@ export default class QuizScene extends BaseScene {
     createDragDropInterface(centerX, centerY) {
         // Get mobile information for responsive design
         const scaleInfo = getScaleInfo(this);
-    const isMobile = scaleInfo.isMobile || scaleInfo.width < 900;
-    const isSmallMobile = scaleInfo.width < 500;
+        const isMobile = scaleInfo.isMobile || scaleInfo.width < 900;
+        const isSmallMobile = scaleInfo.width < 500;
         const aspect = this.scale.height / (this.scale.width || 1);
-    const isTallMobile = (isMobile || scaleInfo.isPortrait) && aspect > 1.85;
-    const TALL_MOBILE_SCALE = 0.75; // slightly larger entrance scale
+        const isTallMobile = (isMobile || scaleInfo.isPortrait) && aspect > 1.85;
         const TALL_MOBILE_FONT_REDUCE = 0.94;
-    const DD_MOBILE_MAX_WIDTH_RATIO = 0.96;  // wider
-    const DD_MOBILE_MAX_HEIGHT_RATIO = 0.82;  // taller
+        const DD_MOBILE_MAX_WIDTH_RATIO = 0.92;  // a bit narrower to fit controls comfortably
+        const DD_MOBILE_MAX_HEIGHT_RATIO = 0.86;  // allow more height for blocks
         
         // Create main quiz container
         this.quizContainer = this.add.container(centerX, centerY);
         
         // Calculate responsive dimensions
-        let maxWidth = isMobile ? (isSmallMobile ? scaleInfo.width * (DD_MOBILE_MAX_WIDTH_RATIO - 0.04) : scaleInfo.width * DD_MOBILE_MAX_WIDTH_RATIO) : Math.min(this.scale.width * 0.9, 1100);
-        let maxHeight = isMobile ? (isSmallMobile ? scaleInfo.height * 0.8 : scaleInfo.height * 0.78) : Math.min(this.scale.height * 0.82, 760);
+        let maxWidth = isMobile ? (isSmallMobile ? this.scale.width * (DD_MOBILE_MAX_WIDTH_RATIO - 0.02) : this.scale.width * DD_MOBILE_MAX_WIDTH_RATIO) : Math.min(this.scale.width * 0.92, 1200);
+        let maxHeight = isMobile ? (isSmallMobile ? this.scale.height * 0.84 : this.scale.height * 0.82) : Math.min(this.scale.height * 0.86, 820);
         if (isTallMobile) {
-            maxWidth = scaleInfo.width * 0.9; // allow a bit wider on tall devices
-            maxHeight = scaleInfo.height * 0.8; // slightly taller for tall devices
+            maxWidth = this.scale.width * 0.9; // allow a bit wider on tall devices
+            maxHeight = this.scale.height * 0.86; // slightly taller for tall devices
         }
         
         // Responsive font sizes
-        let titleFontPx = isMobile ? (isSmallMobile ? 24 : 28) : 30;
-        let questionFontPx = isMobile ? (isSmallMobile ? 18 : 20) : 24;
-        let descriptionFontPx = isMobile ? (isSmallMobile ? 14 : 16) : 18;
-        let instructionFontPx = isMobile ? (isSmallMobile ? 14 : 16) : 18;
+        let titleFontPx = isMobile ? (isSmallMobile ? 32 : 36) : 30;
+        let questionFontPx = isMobile ? (isSmallMobile ? 22 : 26) : 24;
+        let descriptionFontPx = isMobile ? (isSmallMobile ? 16 : 18) : 18;
+        let instructionFontPx = isMobile ? (isSmallMobile ? 16 : 18) : 18;
         if (isTallMobile) {
             titleFontPx = Math.round(titleFontPx * TALL_MOBILE_FONT_REDUCE);
             questionFontPx = Math.round(questionFontPx * TALL_MOBILE_FONT_REDUCE);
@@ -885,19 +863,19 @@ export default class QuizScene extends BaseScene {
         
         // Calculate content areas based on number of blocks
         const numberOfBlocks = this.currentQuestion.blocks.length;
-        let blockSpacing = isMobile ? (isSmallMobile ? 52 : 58) : 64;
-        let titleHeight = isMobile ? (isSmallMobile ? 46 : 50) : 56;
+        let blockSpacing = isMobile ? (isSmallMobile ? 62 : 68) : 64;
+        let titleHeight = isMobile ? (isSmallMobile ? 56 : 62) : 56;
         const questionNumberHeight = 0;
-        let questionHeight = isMobile ? (isSmallMobile ? 94 : 104) : 112;
-        let instructionHeight = isMobile ? (isSmallMobile ? 110 : 120) : 130;
+        let questionHeight = isMobile ? (isSmallMobile ? 120 : 132) : 112;
+        let instructionHeight = isMobile ? (isSmallMobile ? 120 : 132) : 130;
         const draggableAreaHeight = numberOfBlocks * blockSpacing + (isMobile ? 30 : 40);
-        let submitAreaHeight = isMobile ? (isSmallMobile ? 86 : 98) : 108;
+        let submitAreaHeight = isMobile ? (isSmallMobile ? 100 : 112) : 108;
         if (isTallMobile) {
-            blockSpacing = Math.max(46, blockSpacing - 8);
-            questionHeight = Math.max(84, questionHeight - 12);
-            instructionHeight = Math.max(98, instructionHeight - 20);
-            submitAreaHeight = Math.max(80, submitAreaHeight - 15);
-            titleHeight = Math.max(40, titleHeight - 8);
+            blockSpacing = Math.max(54, blockSpacing - 6);
+            questionHeight = Math.max(110, questionHeight - 10);
+            instructionHeight = Math.max(108, instructionHeight - 12);
+            submitAreaHeight = Math.max(96, submitAreaHeight - 10);
+            titleHeight = Math.max(48, titleHeight - 6);
         }
         
         const contentHeight = titleHeight + questionNumberHeight + questionHeight + instructionHeight + draggableAreaHeight + submitAreaHeight;
@@ -905,7 +883,7 @@ export default class QuizScene extends BaseScene {
         
         // Create main background with same style as multiple choice
         const quizBox = this.add.graphics();
-        quizBox.fillStyle(0x1a2332, 0.95);
+    quizBox.fillStyle(0x1a2332, 0.98);
         quizBox.fillRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 20);
         quizBox.lineStyle(3, 0x34495e, 1);
         quizBox.strokeRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 20);
