@@ -922,6 +922,14 @@ export default class QuizScene extends BaseScene {
         // Setup auto-checking (no submit button needed)
         this.setupAutoChecking();
         
+        // Add background click handler to clear selection
+        this.input.on('pointerdown', (pointer, currentlyOver) => {
+            // If user clicks on empty space (not on blocks or drop zones), clear selection
+            if (currentlyOver.length === 0) {
+                this.clearSelection();
+            }
+        });
+        
         // Determine scaling based on game viewport bounds (height & width constraints) - SAME AS MULTIPLE CHOICE
         let targetScale = 1;
         if (isMobile) {
@@ -994,6 +1002,7 @@ export default class QuizScene extends BaseScene {
         this.dragBlocks = [];
         this.dropZones = [];
         this.currentOrder = new Array(blocks.length).fill(null);
+        this.selectedBlock = null; // Track currently selected block
         
         // Calculate responsive dimensions (matching multiple choice button scale)
         const blockWidth = Math.min(480, (this.contentWidth - 120) / 2);
@@ -1022,9 +1031,9 @@ export default class QuizScene extends BaseScene {
                 wordWrap: { width: blockWidth - 30 }
             }).setOrigin(0.5);
             
-            // Make interactive
-            blockObj.setInteractive({ draggable: true });
-            blockText.setInteractive({ draggable: true });
+            // Make interactive for tap selection
+            blockObj.setInteractive();
+            blockText.setInteractive();
             
             // Store data
             blockObj.originalText = block;
@@ -1032,7 +1041,7 @@ export default class QuizScene extends BaseScene {
             blockText.blockObj = blockObj;
             blockText.originalText = block;
             
-            this.setupDragEvents(blockObj, blockText);
+            this.setupTapEvents(blockObj, blockText);
             
             this.quizContainer.add([blockObj, blockText]);
             this.dragBlocks.push({ block: blockObj, text: blockText, originalText: block });
@@ -1047,8 +1056,13 @@ export default class QuizScene extends BaseScene {
             dropZone.setStrokeStyle(2, 0x718096, 0.8);
             dropZone.setAlpha(0.9);
             
-            dropZone.setInteractive({ dropZone: true });
+            dropZone.setInteractive();
             dropZone.index = i;
+            
+            // Set up tap event for drop zone
+            dropZone.on('pointerdown', () => {
+                this.handleDropZoneTap(dropZone);
+            });
             
             this.quizContainer.add(dropZone);
             this.dropZones.push(dropZone);
@@ -1071,55 +1085,177 @@ export default class QuizScene extends BaseScene {
         }
     }
 
-    setupDragEvents(blockObj, blockText) {
-        // Store initial offsets between block and text
-        const textOffsetX = blockText.x - blockObj.x;
-        const textOffsetY = blockText.y - blockObj.y;
+    setupTapEvents(blockObj, blockText) {
+        // Set up tap/click events for block selection
+        const handleBlockTap = () => {
+            this.selectBlock(blockObj, blockText);
+        };
         
-        // Set up drag events for the block
-        blockObj.on('dragstart', (pointer, dragX, dragY) => {
-            blockObj.setFillStyle(0xFFE58A); // Lighter yellow for drag highlight
-            blockText.setColor('#000000'); // Dark text for visibility
-            
-            // Store the offset from mouse to block center when drag starts
-            blockObj.dragOffsetX = pointer.worldX - (blockObj.x + this.quizContainer.x);
-            blockObj.dragOffsetY = pointer.worldY - (blockObj.y + this.quizContainer.y);
-        });
+        blockObj.on('pointerdown', handleBlockTap);
+        blockText.on('pointerdown', handleBlockTap);
+    }
+    
+    selectBlock(blockObj, blockText) {
+        // Clear previous selection
+        this.clearSelection();
         
-        blockObj.on('drag', (pointer, dragX, dragY) => {
-            // Calculate new position relative to container, accounting for initial offset
-            const newX = pointer.worldX - this.quizContainer.x - blockObj.dragOffsetX;
-            const newY = pointer.worldY - this.quizContainer.y - blockObj.dragOffsetY;
-            
-            // Update block position
-            blockObj.x = newX;
-            blockObj.y = newY;
-            
-            // Update text position to stay with the block
-            blockText.x = newX + textOffsetX;
-            blockText.y = newY + textOffsetY;
-        });
+        // Set new selection
+        this.selectedBlock = { block: blockObj, text: blockText };
         
-        blockObj.on('dragend', () => {
-            // Check if block is in a drop zone to determine styling
-            let isInDropZone = false;
+        // Highlight selected block
+        blockObj.setFillStyle(0xFFE58A); // Lighter yellow for selection
+        blockObj.setStrokeStyle(4, 0xFFD700); // Gold border for selection
+        blockText.setColor('#000000');
+        
+        // Show white outlines on drop zones
+        this.showDropZoneOutlines();
+    }
+    
+    clearSelection() {
+        if (this.selectedBlock) {
+            const { block, text } = this.selectedBlock;
+            
+            // Check if block is currently placed in a drop zone
+            let isPlaced = false;
             for (let i = 0; i < this.currentOrder.length; i++) {
-                if (this.currentOrder[i] === blockObj) {
-                    isInDropZone = true;
+                if (this.currentOrder[i] === block) {
+                    isPlaced = true;
                     break;
                 }
             }
             
-            if (isInDropZone) {
-                // Keep drop zone styling - green for placed blocks
-                blockObj.setFillStyle(0x2ecc71);
-                blockText.setColor('#ffffff');
+            if (isPlaced) {
+                // Keep placed block styling - green
+                block.setFillStyle(0x2ecc71);
+                block.setStrokeStyle(3, 0x27ae60);
+                text.setColor('#ffffff');
             } else {
-                // Back to original left side styling - yellow/gold
-                blockObj.setFillStyle(0xF9DD72);
-                blockText.setColor('#000000');
+                // Return to original styling - yellow/gold
+                block.setFillStyle(0xF9DD72);
+                block.setStrokeStyle(3, 0xB8860B);
+                text.setColor('#000000');
+            }
+        }
+        
+        this.selectedBlock = null;
+        this.hideDropZoneOutlines();
+    }
+    
+    showDropZoneOutlines() {
+        this.dropZones.forEach(dropZone => {
+            // Add white outline to available drop zones
+            if (!this.currentOrder[dropZone.index]) {
+                dropZone.setStrokeStyle(4, 0xFFFFFF); // White outline
             }
         });
+    }
+    
+    hideDropZoneOutlines() {
+        this.dropZones.forEach(dropZone => {
+            // Return to original drop zone styling
+            dropZone.setStrokeStyle(2, 0x718096, 0.8);
+        });
+    }
+    
+    handleDropZoneTap(dropZone) {
+        if (!this.selectedBlock) {
+            return; // No block selected
+        }
+        
+        const { block: selectedBlock, text: selectedText } = this.selectedBlock;
+        
+        // Check if drop zone is already occupied
+        if (this.currentOrder[dropZone.index]) {
+            // Handle swapping logic here if needed
+            this.handleBlockSwap(dropZone, selectedBlock, selectedText);
+        } else {
+            // Place block in empty drop zone
+            this.placeBlockInDropZone(dropZone, selectedBlock, selectedText);
+        }
+        
+        // Clear selection after placement
+        this.clearSelection();
+    }
+    
+    placeBlockInDropZone(dropZone, blockObj, blockText) {
+        // Remove block from current position if it was placed elsewhere
+        const currentIndex = this.currentOrder.indexOf(blockObj);
+        if (currentIndex !== -1) {
+            this.currentOrder[currentIndex] = null;
+            // Reset the previous drop zone opacity
+            this.dropZones[currentIndex].setAlpha(0.9);
+        }
+        
+        // Calculate drop zone position
+        const dropZoneX = dropZone.x;
+        const dropZoneY = dropZone.y;
+        
+        // Move block to drop zone
+        blockObj.x = dropZoneX;
+        blockObj.y = dropZoneY;
+        blockText.x = dropZoneX;
+        blockText.y = dropZoneY;
+        
+        // Update current order
+        this.currentOrder[dropZone.index] = blockObj;
+        
+        // Style the block for being placed
+        blockObj.setFillStyle(0x2ecc71); // Green for placed blocks
+        blockObj.setStrokeStyle(3, 0x27ae60);
+        blockText.setStyle({
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontSize: '18px'
+        });
+        
+        // Update drop zone appearance
+        dropZone.setAlpha(0.3); // Lower opacity for occupied drop zones
+        
+        // Check if all blocks are placed for auto-submission
+        this.checkIfAllBlocksPlaced();
+    }
+    
+    handleBlockSwap(dropZone, newBlock, newText) {
+        const existingBlock = this.currentOrder[dropZone.index];
+        
+        if (!existingBlock) return;
+        
+        // Find where the new block currently is
+        const newBlockIndex = this.currentOrder.indexOf(newBlock);
+        
+        if (newBlockIndex !== -1) {
+            // Swap the blocks
+            this.currentOrder[newBlockIndex] = existingBlock;
+            this.currentOrder[dropZone.index] = newBlock;
+            
+            // Move existing block to new block's position
+            const swapDropZone = this.dropZones[newBlockIndex];
+            existingBlock.x = swapDropZone.x;
+            existingBlock.y = swapDropZone.y;
+            existingBlock.textObj.x = swapDropZone.x;
+            existingBlock.textObj.y = swapDropZone.y;
+        } else {
+            // New block is from left side, send existing block back to left
+            const dragBlockIndex = this.dragBlocks.findIndex(db => db.block === newBlock);
+            const originalX = this.dragBlocks[dragBlockIndex].block.x; // Use original position
+            const originalY = this.dragBlocks[dragBlockIndex].block.y;
+            
+            existingBlock.x = originalX;
+            existingBlock.y = originalY;
+            existingBlock.textObj.x = originalX;
+            existingBlock.textObj.y = originalY;
+            
+            // Reset existing block styling
+            existingBlock.setFillStyle(0xF9DD72);
+            existingBlock.setStrokeStyle(3, 0xB8860B);
+            existingBlock.textObj.setColor('#000000');
+            
+            // Clear the position from current order
+            this.currentOrder[dropZone.index] = null;
+        }
+        
+        // Place new block
+        this.placeBlockInDropZone(dropZone, newBlock, newText);
         
         // Set up drag events for the text (should move the block too)
         blockText.on('dragstart', (pointer, dragX, dragY) => {
@@ -1163,115 +1299,6 @@ export default class QuizScene extends BaseScene {
                 // Back to original left side styling - yellow/gold
                 blockObj.setFillStyle(0xF9DD72);
                 blockText.setColor('#000000');
-            }
-        });
-        
-        // Drop zone events
-        this.input.on('drop', (pointer, gameObject, dropZone) => {
-            if (this.dropZones.includes(dropZone)) {
-                // Calculate positions for repositioning
-                const leftX = -this.contentWidth/4;
-                const rightX = this.contentWidth/4;
-                
-                // Get the dragged object (could be block or text)
-                let draggedBlock, draggedText;
-                if (gameObject.textObj) {
-                    // It's a block object
-                    draggedBlock = gameObject;
-                    draggedText = gameObject.textObj;
-                } else if (gameObject.blockObj) {
-                    // It's a text object
-                    draggedText = gameObject;
-                    draggedBlock = gameObject.blockObj;
-                }
-                
-                // Check if there's already something in this drop zone
-                const existingBlock = this.currentOrder[dropZone.index];
-                
-                if (existingBlock) {
-                    // SWAP: Find where the dragged item came from
-                    let draggedFromIndex = -1;
-                    
-                    // Check if dragged item was in a drop zone
-                    for (let i = 0; i < this.currentOrder.length; i++) {
-                        if (this.currentOrder[i] === draggedBlock) {
-                            draggedFromIndex = i;
-                            break;
-                        }
-                    }
-                    
-                    if (draggedFromIndex !== -1) {
-                        // Swap positions: move existing block to where dragged item came from
-                        const swapDropZone = this.dropZones[draggedFromIndex];
-                        existingBlock.x = swapDropZone.x;
-                        existingBlock.y = swapDropZone.y;
-                        existingBlock.textObj.x = swapDropZone.x;
-                        existingBlock.textObj.y = swapDropZone.y;
-                        this.currentOrder[draggedFromIndex] = existingBlock;
-                        
-                        // Keep existing block styled for drop zone
-                        existingBlock.setFillStyle(0x2ecc71);
-                        existingBlock.setStrokeStyle(3, 0x27ae60);
-                        existingBlock.textObj.setStyle({
-                            color: '#ffffff',
-                            fontWeight: 'bold',
-                            fontSize: '15px'
-                        });
-                        
-                        // Update the original drop zone appearance
-                        swapDropZone.setAlpha(0.3); // Lower opacity for occupied zones
-                    } else {
-                        // Dragged item came from the left side, send existing block back to left
-                        const dragBlockIndex = this.dragBlocks.findIndex(db => db.block === draggedBlock);
-                        const originalY = this.draggableAreaY + (dragBlockIndex * 60);
-                        existingBlock.x = leftX;
-                        existingBlock.y = originalY;
-                        existingBlock.textObj.x = leftX;
-                        existingBlock.textObj.y = originalY;
-                        
-                        // Reset block styling when returning to left side
-                        existingBlock.setFillStyle(0xF9DD72);
-                        existingBlock.setStrokeStyle(3, 0xB8860B);
-                        existingBlock.textObj.setStyle({
-                            color: '#000000',
-                            fontWeight: 'bold',
-                            fontSize: '14px'
-                        });
-                    }
-                } else {
-                    // No existing block, check if dragged item was in another drop zone
-                    for (let i = 0; i < this.currentOrder.length; i++) {
-                        if (this.currentOrder[i] === draggedBlock) {
-                            // Clear the previous position
-                            this.currentOrder[i] = null;
-                            this.dropZones[i].setAlpha(0.9);
-                            this.dropZones[i].label.setText(`${i + 1}. Drop here`);
-                            break;
-                        }
-                    }
-                }
-                
-                // Place the dragged item in the new position
-                draggedBlock.x = dropZone.x;
-                draggedBlock.y = dropZone.y;
-                draggedText.x = dropZone.x;
-                draggedText.y = dropZone.y;
-                this.currentOrder[dropZone.index] = draggedBlock;
-                
-                // Make the block more visible when dropped in zone
-                draggedBlock.setFillStyle(0x2ecc71); // Bright green for dropped blocks
-                draggedBlock.setStrokeStyle(3, 0x27ae60); // Thicker green border
-                draggedText.setStyle({
-                    color: '#ffffff',
-                    fontWeight: 'bold',
-                    fontSize: '15px' // Slightly larger text
-                });
-                
-                // Update drop zone appearance
-                dropZone.setAlpha(0.3); // Lower opacity for occupied drop zones
-                
-                // Check if all blocks are now placed for auto-submission
-                this.checkIfAllBlocksPlaced();
             }
         });
     }
