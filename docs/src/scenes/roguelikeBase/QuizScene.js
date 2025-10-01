@@ -2,6 +2,25 @@ import Phaser from 'phaser';
 import BaseScene from '../BaseScene.js';
 import { getScaleInfo } from '../../utils/mobileUtils.js';
 
+// Quiz UI color palette (centralized for easy tweaking)
+// Panel: semi-transparent dark background (80% opacity)
+// Buttons default: soft yellow with golden border
+// Correct: bright green with darker green border
+// Wrong: vivid magenta/pink with darker border
+const QUIZ_UI_COLORS = {
+    panelFill: 0x222222,
+    panelOpacity: 0.8,
+    panelBorder: 0x111111,
+    buttonDefaultFill: 0xF9DD72,
+    buttonDefaultHover: 0xFFE58A,
+    buttonDefaultBorder: 0xB8860B,
+    buttonDefaultHoverBorder: 0xDAA520,
+    correctFill: 0x00FF4E,
+    correctBorder: 0x008F2A,
+    wrongFill: 0xFF0066,
+    wrongBorder: 0x8B002F
+};
+
 export default class QuizScene extends BaseScene {
     constructor() {
         super('QuizScene');
@@ -700,6 +719,14 @@ export default class QuizScene extends BaseScene {
             questionPadding = 40;
             bottomPadding = 16;
         }
+
+    // Title & question number removed; we now repurpose titleHeight as top padding
+    titleHeight = isMobile ? 40 : 56; // acts as top spacing above question
+    questionNumberHeight = 0;
+    // Increase gap below question before answers per new request
+    questionPadding = isMobile ? 56 : 72;
+    // Add a bit more bottom padding for balance
+    bottomPadding = isMobile ? 26 : 40;
         
         // Calculate required height based on layout type
         let buttonsAreaHeight;
@@ -741,43 +768,25 @@ export default class QuizScene extends BaseScene {
             targetScale *= 0.98;
         }
         
-        // Create modern quiz box with dynamic size
-        const quizBox = this.add.graphics();
-        quizBox.fillStyle(0x2a2a3a, 1);
-        quizBox.fillRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 20);
-        quizBox.lineStyle(4, 0x64ffda);
-        quizBox.strokeRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 20);
-        
-        // Add glow effect
-        const glowBox = this.add.graphics();
-        glowBox.lineStyle(8, 0x64ffda, 0.3);
-        glowBox.strokeRoundedRect(-contentWidth/2 - 4, -contentHeight/2 - 4, contentWidth + 8, contentHeight + 8, 20);
-        
-        this.quizContainer.add([glowBox, quizBox]);
+    // Create quiz background to match new design (80% opaque dark rectangle, no neon glow)
+    const quizBox = this.add.graphics();
+    // Dark near-black with 80% opacity from reference screenshot
+    quizBox.fillStyle(0x222222, 0.8); // rgba(34,34,34,0.8)
+    quizBox.fillRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 8);
+    // Subtle border (darker) for separation
+    quizBox.lineStyle(2, 0x111111, 0.9);
+    quizBox.strokeRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 8);
+    this.quizContainer.add(quizBox);
         
         // Title with programming language - responsive font size
         const courseTopic = this.courseTopic || 'Programming';
-        this.titleText = this.add.text(0, -contentHeight/2 + (titleHeight/2) + 5, `${courseTopic.toUpperCase()} QUIZ CHALLENGE`, {
-            fontFamily: 'Arial',
-            fontSize: titleFontSize,
-            fontWeight: 'bold',
-            color: '#64ffda',
-            align: 'center'
-        }).setOrigin(0.5);
-        this.quizContainer.add(this.titleText);
+        // Title removed per request (previously showed course quiz challenge)
+        this.titleText = null;
         
-        // Question number indicator - responsive
-        const questionNumberFontSize = isMobile ? '12px' : '18px';
-        const questionNumber = this.add.text(0, -contentHeight/2 + titleHeight + (questionNumberHeight/2), 'Question 1 of 1', {
-            fontFamily: 'Arial',
-            fontSize: questionNumberFontSize,
-            color: '#a0a0a0',
-            align: 'center'
-        }).setOrigin(0.5);
-        this.quizContainer.add(questionNumber);
+        // Removed question number per request
         
         // Question text with better formatting - responsive
-        this.questionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + (questionHeight/2) + 10, this.currentQuestion.question, {
+    this.questionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + (questionHeight/2) + 2, this.currentQuestion.question, {
             fontFamily: 'Arial',
             fontSize: questionFontSize,
             fontWeight: 'bold',
@@ -794,17 +803,26 @@ export default class QuizScene extends BaseScene {
         // Create answer options with modern design - pass mobile info
         this.createAnswerButtons(buttonStartY, isMobile, isSmallMobile);
         
-        // Add instruction text - responsive size and consistent bottom margin inside the box
+        // Add instruction text - dynamically centered between last answer button and panel bottom
         const instructionFontPx = isMobile
             ? Math.max(14, Math.round(questionFontPx * 0.75))
             : Math.max(16, Math.round(24 * 0.65));
         const instructionFontSize = `${instructionFontPx}px`;
-        const instructionMarginBottom = isMobile ? 18 : 22; // keep it safely inside the rounded border
-    const instructionY = (contentHeight / 2) - instructionMarginBottom - 3; // raised by 3px
+        // Determine bottom of last answer button within container coordinates
+        let lastAnswerBottom = 0;
+        if (this.answerButtons.length > 0) {
+            const lastBtn = this.answerButtons[this.answerButtons.length - 1];
+            // container y (0) + button container y + half height
+            lastAnswerBottom = lastBtn.container.y + (lastBtn.buttonHeight / 2);
+        }
+        const panelBottom = contentHeight / 2; // since origin is centered
+        const availableSpace = panelBottom - lastAnswerBottom; // space from last answer bottom to panel bottom
+        // Apply symmetric margins: place instruction halfway in that space
+        const instructionY = lastAnswerBottom + (availableSpace / 2);
         const instructionText = this.add.text(0, instructionY, 'Tap your answer choice', {
             fontFamily: 'Arial',
             fontSize: instructionFontSize,
-            color: '#a0a0a0',
+            color: '#ffffff',
             align: 'center'
         }).setOrigin(0.5);
         this.quizContainer.add(instructionText);
@@ -1486,16 +1504,17 @@ export default class QuizScene extends BaseScene {
             
             // Create button background with responsive size
             const buttonBg = this.add.graphics();
-            buttonBg.fillStyle(0x4a5568, 1);
-            buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
-            buttonBg.lineStyle(2, 0x64ffda, 0.5);
-            buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
+            // Default: soft yellow fill with brown/gold border (matches reference)
+            buttonBg.fillStyle(0xF9DD72, 1); // base yellow
+            buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 14);
+            buttonBg.lineStyle(4, 0xB8860B, 1); // dark goldenrod border
+            buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 14);
             
             // Create answer text with responsive sizing
             const answerText = this.add.text(0, 0, `${String.fromCharCode(65 + i)}. ${answers[i]}`, {
                 fontFamily: 'Arial',
                 fontSize: fontSize,
-                color: '#ffffff',
+                color: '#000000',
                 align: 'center',
                 wordWrap: { width: textWrapWidth }
             }).setOrigin(0.5);
@@ -1524,20 +1543,20 @@ export default class QuizScene extends BaseScene {
             hitArea.on('pointerover', () => {
                 if (!this.answerButtons[i].isSelected) {
                     buttonBg.clear();
-                    buttonBg.fillStyle(0x64ffda, 0.3);
-                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
-                    buttonBg.lineStyle(2, 0x64ffda);
-                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
+                    buttonBg.fillStyle(0xFFE58A, 1); // lighter hover
+                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 14);
+                    buttonBg.lineStyle(4, 0xDAA520, 1); // golden border
+                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 14);
                 }
             });
 
             hitArea.on('pointerout', () => {
                 if (!this.answerButtons[i].isSelected) {
                     buttonBg.clear();
-                    buttonBg.fillStyle(0x4a5568, 1);
-                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
-                    buttonBg.lineStyle(2, 0x64ffda, 0.5);
-                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 10);
+                    buttonBg.fillStyle(0xF9DD72, 1);
+                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 14);
+                    buttonBg.lineStyle(4, 0xB8860B, 1);
+                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 14);
                 }
             });
 
@@ -1574,10 +1593,10 @@ export default class QuizScene extends BaseScene {
             
             // Create button background with responsive size
             const buttonBg = this.add.graphics();
-            buttonBg.fillStyle(0x4a5568, 1);
-            buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
-            buttonBg.lineStyle(3, 0x64ffda, 0.5);
-            buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
+            buttonBg.fillStyle(0xF9DD72, 1);
+            buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 18);
+            buttonBg.lineStyle(4, 0xB8860B, 1);
+            buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 18);
             
             // Create answer text with responsive sizing
             const textWrapWidth = buttonWidth - (isMobile ? 20 : 20);
@@ -1585,7 +1604,7 @@ export default class QuizScene extends BaseScene {
                 fontFamily: 'Arial',
                 fontSize: fontSize,
                 fontWeight: 'bold',
-                color: '#ffffff',
+                color: '#000000',
                 align: 'center',
                 wordWrap: { width: textWrapWidth }
             }).setOrigin(0.5);
@@ -1614,20 +1633,20 @@ export default class QuizScene extends BaseScene {
             hitArea.on('pointerover', () => {
                 if (!this.answerButtons[i].isSelected) {
                     buttonBg.clear();
-                    buttonBg.fillStyle(0x64ffda, 0.4);
-                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
-                    buttonBg.lineStyle(3, 0x64ffda);
-                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
+                    buttonBg.fillStyle(0xFFE58A, 1);
+                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 18);
+                    buttonBg.lineStyle(4, 0xDAA520, 1);
+                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 18);
                 }
             });
 
             hitArea.on('pointerout', () => {
                 if (!this.answerButtons[i].isSelected) {
                     buttonBg.clear();
-                    buttonBg.fillStyle(0x4a5568, 1);
-                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
-                    buttonBg.lineStyle(3, 0x64ffda, 0.5);
-                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 15);
+                    buttonBg.fillStyle(0xF9DD72, 1);
+                    buttonBg.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 18);
+                    buttonBg.lineStyle(4, 0xB8860B, 1);
+                    buttonBg.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, 18);
                 }
             });
 
@@ -1656,23 +1675,28 @@ export default class QuizScene extends BaseScene {
             const cornerRadius = buttonWidth < 320 ? 10 : (buttonWidth === 280 ? 15 : 10);
             
             if (index === selectedIndex) {
-                // Selected answer
+                // Selected answer styling
                 button.background.clear();
                 if (isCorrect) {
-                    button.background.fillStyle(0x38a169, 1);
+                    // Bright correct green similar to reference (#00FF4E approx)
+                    button.background.fillStyle(0x00FF4E, 1);
+                    button.background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius + 4);
+                    button.background.lineStyle(4, 0x008F2A, 1);
+                    button.background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius + 4);
                 } else {
-                    button.background.fillStyle(0xe53e3e, 1);
+                    // Wrong magenta/pink (#FF0066-ish) with darker border
+                    button.background.fillStyle(0xFF0066, 1);
+                    button.background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius + 4);
+                    button.background.lineStyle(4, 0x8B002F, 1);
+                    button.background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius + 4);
                 }
-                button.background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius);
-                button.background.lineStyle(3, 0xffffff);
-                button.background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius);
             } else if (index === correctIndex && !isCorrect) {
-                // Show correct answer if user was wrong
+                // Reveal correct answer when user selected wrong
                 button.background.clear();
-                button.background.fillStyle(0x38a169, 1);
-                button.background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius);
-                button.background.lineStyle(2, 0xffffff, 0.7);
-                button.background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius);
+                button.background.fillStyle(0x00FF4E, 1);
+                button.background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius + 4);
+                button.background.lineStyle(3, 0x008F2A, 1);
+                button.background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, cornerRadius + 4);
             }
             
             // Disable interaction
@@ -1695,13 +1719,13 @@ export default class QuizScene extends BaseScene {
         this.resultContainer = this.add.container(this.scale.width / 2, this.scale.height / 2 + 300);
         
         const resultBg = this.add.graphics();
-        resultBg.fillStyle(isCorrect ? 0x38a169 : 0xe53e3e, 0.9);
+    resultBg.fillStyle(isCorrect ? 0x00FF4E : 0xFF0066, 0.85);
         resultBg.fillRoundedRect(-200, -50, 400, 100, 15);
         resultBg.lineStyle(3, 0xffffff);
         resultBg.strokeRoundedRect(-200, -50, 400, 100, 15);
         
         const resultText = this.add.text(0, -10, 
-            isCorrect ? 'CORRECT!' : 'INCORRECT!', {
+            isCorrect ? 'Correct!' : 'Wrong!', {
             fontFamily: 'Arial',
             fontSize: '24px',
             fontWeight: 'bold',
@@ -1710,9 +1734,9 @@ export default class QuizScene extends BaseScene {
         }).setOrigin(0.5);
         
         const rewardText = this.add.text(0, 15, 
-            isCorrect ? '+100 Score, +10 Seconds' : 'Better luck next time!', {
+            isCorrect ? '+100pts\n+10s' : '', {
             fontFamily: 'Arial',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#ffffff',
             align: 'center'
         }).setOrigin(0.5);
