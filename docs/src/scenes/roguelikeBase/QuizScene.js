@@ -749,14 +749,14 @@ export default class QuizScene extends BaseScene {
             targetScale *= 0.98;
         }
         
-    // Create quiz background to match new design (80% opaque dark rectangle, no neon glow)
+    // Create quiz background - dark rectangle with 80% opacity
     const quizBox = this.add.graphics();
-    // Dark near-black with 80% opacity from reference screenshot
-    quizBox.fillStyle(0x222222, 0.8); // rgba(34,34,34,0.8)
+    // Black background with 80% opacity as per reference
+    quizBox.fillStyle(0x000000, 0.8);
     quizBox.fillRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 8);
-    // Subtle border (darker) for separation
-    quizBox.lineStyle(2, 0x111111, 0.9);
-    quizBox.strokeRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 8);
+    // Remove border for cleaner look
+    // quizBox.lineStyle(2, 0x111111, 0.9);
+    // quizBox.strokeRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 8);
     this.quizContainer.add(quizBox);
         
         // Title with programming language - responsive font size
@@ -830,25 +830,25 @@ export default class QuizScene extends BaseScene {
         const aspect = this.scale.height / (this.scale.width || 1);
         const isTallMobile = (isMobile || scaleInfo.isPortrait) && aspect > 1.85;
         const TALL_MOBILE_FONT_REDUCE = 0.94;
-        const DD_MOBILE_MAX_WIDTH_RATIO = 0.92;  // a bit narrower to fit controls comfortably
-        const DD_MOBILE_MAX_HEIGHT_RATIO = 0.86;  // allow more height for blocks
+
         
         // Create main quiz container
         this.quizContainer = this.add.container(centerX, centerY);
         
-        // Calculate responsive dimensions
-        let maxWidth = isMobile ? (isSmallMobile ? this.scale.width * (DD_MOBILE_MAX_WIDTH_RATIO - 0.02) : this.scale.width * DD_MOBILE_MAX_WIDTH_RATIO) : Math.min(this.scale.width * 0.92, 1200);
-        let maxHeight = isMobile ? (isSmallMobile ? this.scale.height * 0.84 : this.scale.height * 0.82) : Math.min(this.scale.height * 0.86, 820);
+        // Mobile sizing in GAME UNITS (avoid CSS pixel mixing) - SAME AS MULTIPLE CHOICE
+        const MOBILE_MAX_WIDTH_RATIO = 0.98;   // up to 98% of game width
+        const MOBILE_MAX_HEIGHT_RATIO = 0.9; // up to 90% of game height
+        
+        let contentWidth = isMobile ? Math.min(this.scale.width * MOBILE_MAX_WIDTH_RATIO, 1700) : 980;
         if (isTallMobile) {
-            maxWidth = this.scale.width * 0.9; // allow a bit wider on tall devices
-            maxHeight = this.scale.height * 0.86; // slightly taller for tall devices
+            contentWidth = Math.min(contentWidth, this.scale.width * 0.85);
         }
         
-        // Responsive font sizes
-        let titleFontPx = isMobile ? (isSmallMobile ? 32 : 36) : 30;
-        let questionFontPx = isMobile ? (isSmallMobile ? 22 : 26) : 24;
-        let descriptionFontPx = isMobile ? (isSmallMobile ? 16 : 18) : 18;
-        let instructionFontPx = isMobile ? (isSmallMobile ? 16 : 18) : 18;
+        // Responsive font sizes (matching multiple choice UI)
+        let titleFontPx = isMobile ? 52 : 36;
+        let questionFontPx = isMobile ? 38 : 28;
+        let descriptionFontPx = isMobile ? (isSmallMobile ? 20 : 22) : 20;
+        let instructionFontPx = isMobile ? (isSmallMobile ? 18 : 20) : 18;
         if (isTallMobile) {
             titleFontPx = Math.round(titleFontPx * TALL_MOBILE_FONT_REDUCE);
             questionFontPx = Math.round(questionFontPx * TALL_MOBILE_FONT_REDUCE);
@@ -860,15 +860,15 @@ export default class QuizScene extends BaseScene {
         const descriptionFontSize = `${descriptionFontPx}px`;
         const instructionFontSize = `${instructionFontPx}px`;
         
-        // Calculate content areas based on number of blocks
+        // Calculate content areas based on number of blocks (matching multiple choice scale)
         const numberOfBlocks = this.currentQuestion.blocks.length;
-        let blockSpacing = isMobile ? (isSmallMobile ? 62 : 68) : 64;
-        let titleHeight = isMobile ? (isSmallMobile ? 56 : 62) : 56;
+        let blockSpacing = isMobile ? (isSmallMobile ? 80 : 90) : 85;
+        let titleHeight = isMobile ? (isSmallMobile ? 70 : 80) : 70;
         const questionNumberHeight = 0;
-        let questionHeight = isMobile ? (isSmallMobile ? 120 : 132) : 112;
-        let instructionHeight = isMobile ? (isSmallMobile ? 120 : 132) : 130;
-        const draggableAreaHeight = numberOfBlocks * blockSpacing + (isMobile ? 30 : 40);
-        let submitAreaHeight = isMobile ? (isSmallMobile ? 100 : 112) : 108;
+        let questionHeight = 0; // No question text in new design
+        let instructionHeight = isMobile ? (isSmallMobile ? 80 : 90) : 100; // Increased for better visibility
+        const draggableAreaHeight = numberOfBlocks * blockSpacing + (isMobile ? 100 : 120);
+        let submitAreaHeight = 0; // No submit button in new design
         if (isTallMobile) {
             blockSpacing = Math.max(54, blockSpacing - 6);
             questionHeight = Math.max(110, questionHeight - 10);
@@ -878,75 +878,38 @@ export default class QuizScene extends BaseScene {
         }
         
         const contentHeight = titleHeight + questionNumberHeight + questionHeight + instructionHeight + draggableAreaHeight + submitAreaHeight;
-        const contentWidth = maxWidth;
+        // contentWidth already calculated above using multiple choice logic
         
-        // Create main background with same style as multiple choice
+        // Create simple black background with 80% opacity as per reference
         const quizBox = this.add.graphics();
-    quizBox.fillStyle(0x1a2332, 0.98);
-        quizBox.fillRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 20);
-        quizBox.lineStyle(3, 0x34495e, 1);
-        quizBox.strokeRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 20);
+        quizBox.fillStyle(0x000000, 0.8);
+        quizBox.fillRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 8);
         
-        // Add glow effect
-        const glowBox = this.add.graphics();
-        glowBox.lineStyle(8, 0x64ffda, 0.3);
-        glowBox.strokeRoundedRect(-contentWidth/2 - 4, -contentHeight/2 - 4, contentWidth + 8, contentHeight + 8, 20);
+        this.quizContainer.add(quizBox);
         
-        this.quizContainer.add([glowBox, quizBox]);
-        
-        // Title with programming language - responsive font size
-        const courseTopic = this.courseTopic || 'Programming';
-        this.titleText = this.add.text(0, -contentHeight/2 + (titleHeight/2) + 5, `${courseTopic.toUpperCase()} CODE ARRANGEMENT`, {
+        // Simple white title as shown in reference
+        this.titleText = this.add.text(0, -contentHeight/2 + (titleHeight/2) + 5, 'Code Arrangement', {
             fontFamily: 'Arial',
             fontSize: titleFontSize,
             fontWeight: 'bold',
-            color: '#64ffda',
+            color: '#ffffff',
             align: 'center'
         }).setOrigin(0.5);
         this.quizContainer.add(this.titleText);
         
-        // Question text with better formatting - responsive
-        this.questionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + (questionHeight/2) + 10, this.currentQuestion.title, {
-            fontFamily: 'Arial',
-            fontSize: questionFontSize,
-            fontWeight: 'bold',
-            color: '#ffffff',
-            align: 'center',
-            wordWrap: { width: contentWidth - (isMobile ? 60 : 80) },
-            lineSpacing: isMobile ? 6 : 8
-        }).setOrigin(0.5);
-        this.quizContainer.add(this.questionText);
+        // Remove question text and description as they're not in the reference image
         
-        // Description text - responsive
-        const descText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + (isMobile ? 15 : 20), this.currentQuestion.description, {
-            fontFamily: 'Arial',
-            fontSize: descriptionFontSize,
-            color: '#bdc3c7',
-            align: 'center',
-            wordWrap: { width: contentWidth - (isMobile ? 80 : 100) }
-        }).setOrigin(0.5);
-        this.quizContainer.add(descText);
-        
-        // Instruction text - responsive
-        this.tooltipText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + (isMobile ? 45 : 60), 'Drag code blocks to arrange them in correct order', {
+        // Bottom tooltip as shown in reference image
+        this.tooltipText = this.add.text(0, contentHeight/2 - 50, 'Arrange the Code Blocks in the Correct Order', {
             fontFamily: 'Arial',
             fontSize: instructionFontSize,
-            color: '#64ffda',
+            color: '#ffffff',
             align: 'center',
-            fontStyle: 'italic'
+            fontWeight: 'normal'
         }).setOrigin(0.5);
         this.quizContainer.add(this.tooltipText);
         
-        // Add swap behavior note with responsive sizing
-        const swapNoteFontSize = isMobile ? '10px' : '12px';
-        const swapNote = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + (isMobile ? 75 : 90), 'Note: Unplaced blocks can swap with placed blocks, but placed blocks cannot be removed', {
-            fontFamily: 'Arial',
-            fontSize: swapNoteFontSize,
-            color: '#a0a0a0',
-            align: 'center',
-            fontStyle: 'italic'
-        }).setOrigin(0.5);
-        this.quizContainer.add(swapNote);
+        // Remove swap note as it's not in the reference image
         
         // Store dimensions for responsive block creation
         this.contentWidth = contentWidth;
@@ -956,69 +919,44 @@ export default class QuizScene extends BaseScene {
         // Create shuffled blocks and drop zones
         this.createDragDropBlocks();
         
-        // Submit button
-        this.createSubmitButton();
+        // Setup auto-checking (no submit button needed)
+        this.setupAutoChecking();
         
-    // Add entrance animation
-        // Determine scale relative to viewport height limit
-        let ddTargetScale = 1;
+        // Determine scaling based on game viewport bounds (height & width constraints) - SAME AS MULTIPLE CHOICE
+        let targetScale = 1;
         if (isMobile) {
-            const ddMaxHeight = this.scale.height * DD_MOBILE_MAX_HEIGHT_RATIO;
-            if (contentHeight > ddMaxHeight) {
-                ddTargetScale = Math.min(ddTargetScale, ddMaxHeight / contentHeight);
+            const maxHeight = this.scale.height * MOBILE_MAX_HEIGHT_RATIO;
+            if (contentHeight > maxHeight) {
+                targetScale = Math.min(targetScale, maxHeight / contentHeight);
             }
-            // Width constraint pass
-            const allowedWidth = scaleInfo.width * DD_MOBILE_MAX_WIDTH_RATIO;
-            if (contentWidth * ddTargetScale > allowedWidth) {
-                ddTargetScale = Math.min(ddTargetScale, allowedWidth / contentWidth);
+            // Extra safety: never exceed 90% of game width visually
+            const visualWidth = contentWidth; // unscaled width in game units
+            const maxVisualWidth = this.scale.width * 0.9;
+            if (visualWidth > maxVisualWidth) {
+                targetScale = Math.min(targetScale, maxVisualWidth / visualWidth);
             }
-            // Minimum safe scale for drag/drop readability
-            const MIN_DD_SCALE = 0.78; // larger baseline for drag/drop
-            ddTargetScale = Math.max(ddTargetScale, MIN_DD_SCALE);
+            // Ensure overall width respects MOBILE_MAX_WIDTH_RATIO
+            const postWidth = contentWidth * targetScale;
+            const allowed = this.scale.width * MOBILE_MAX_WIDTH_RATIO;
+            if (postWidth > allowed) {
+                targetScale = Math.min(targetScale, allowed / contentWidth);
+            }
+            // Maintain a strong readability baseline on phones
+            const MIN_MOBILE_SCALE = 1.3; // ~+30% bigger baseline
+            targetScale = Math.max(targetScale, MIN_MOBILE_SCALE);
         }
         if (isTallMobile) {
-            ddTargetScale *= 0.97; // gentler shrink
+            // Slight reduction on extremely tall devices to avoid clipping
+            targetScale *= 0.98;
         }
-        // Global boost: enlarge drag/drop UI by ~20% with clamps
-        const DD_BOOST = 1.2;
-        ddTargetScale *= DD_BOOST;
-        if (isMobile) {
-            // Re-apply width/height constraints after boost
-            const allowedWidth = scaleInfo.width * DD_MOBILE_MAX_WIDTH_RATIO;
-            if (contentWidth * ddTargetScale > allowedWidth) {
-                ddTargetScale = Math.min(ddTargetScale, allowedWidth / contentWidth);
-            }
-            const ddMaxHeight = this.scale.height * DD_MOBILE_MAX_HEIGHT_RATIO;
-            if (contentHeight * ddTargetScale > ddMaxHeight) {
-                ddTargetScale = Math.min(ddTargetScale, ddMaxHeight / contentHeight);
-            }
-            const MIN_DD_SCALE = 0.78;
-            ddTargetScale = Math.max(ddTargetScale, MIN_DD_SCALE);
-        }
-        // If Python topic, boost slightly more on mobile for readability
-        if (isMobile) {
-            const topic = (this.courseTopic || '').toLowerCase();
-            if (topic.includes('python')) {
-                ddTargetScale *= 1.12; // bigger extra bump for python code arrangement
-                // Re-apply constraints to keep within viewport after bump
-                const allowedWidth2 = scaleInfo.width * DD_MOBILE_MAX_WIDTH_RATIO;
-                if (contentWidth * ddTargetScale > allowedWidth2) {
-                    ddTargetScale = Math.min(ddTargetScale, allowedWidth2 / contentWidth);
-                }
-                const ddMaxHeight2 = this.scale.height * DD_MOBILE_MAX_HEIGHT_RATIO;
-                if (contentHeight * ddTargetScale > ddMaxHeight2) {
-                    ddTargetScale = Math.min(ddTargetScale, ddMaxHeight2 / contentHeight);
-                }
-                const MIN_DD_SCALE2 = 0.78;
-                ddTargetScale = Math.max(ddTargetScale, MIN_DD_SCALE2);
-            }
-        }
-        this.quizContainer.setScale(ddTargetScale * 0.85);
+        
+        // Add entrance animation (using same scaling as multiple choice)
+        this.quizContainer.setScale(targetScale * 0.85);
         this.quizContainer.setAlpha(0);
         this.tweens.add({
             targets: this.quizContainer,
-            scaleX: ddTargetScale,
-            scaleY: ddTargetScale,
+            scaleX: targetScale,
+            scaleY: targetScale,
             alpha: 1,
             duration: 450,
             ease: 'Back.easeOut'
@@ -1057,10 +995,10 @@ export default class QuizScene extends BaseScene {
         this.dropZones = [];
         this.currentOrder = new Array(blocks.length).fill(null);
         
-        // Calculate responsive dimensions
-        const blockWidth = Math.min(350, (this.contentWidth - 100) / 2);
-        const blockHeight = 50;
-        const blockSpacing = 60;
+        // Calculate responsive dimensions (matching multiple choice button scale)
+        const blockWidth = Math.min(480, (this.contentWidth - 120) / 2);
+        const blockHeight = 70;
+        const blockSpacing = 85;
         
         // Calculate positions for left side (draggable blocks) and right side (drop zones)
         const leftX = -this.contentWidth/4;
@@ -1077,11 +1015,11 @@ export default class QuizScene extends BaseScene {
             
             const blockText = this.add.text(leftX, blockY, block, {
                 fontFamily: 'Arial',
-                fontSize: '14px',
+                fontSize: '18px',
                 color: '#000000',
                 fontWeight: 'bold',
                 align: 'center',
-                wordWrap: { width: blockWidth - 20 }
+                wordWrap: { width: blockWidth - 30 }
             }).setOrigin(0.5);
             
             // Make interactive
@@ -1111,7 +1049,7 @@ export default class QuizScene extends BaseScene {
             
             const label = this.add.text(rightX, dropY, `${i + 1}. Drop here`, {
                 fontFamily: 'Arial',
-                fontSize: '14px',
+                fontSize: '18px',
                 color: '#ffffff',
                 align: 'center',
                 fontWeight: 'bold'
@@ -1326,57 +1264,29 @@ export default class QuizScene extends BaseScene {
                 // Update drop zone appearance
                 dropZone.setAlpha(0.3); // Lower opacity for occupied drop zones
                 dropZone.label.setText(`${dropZone.index + 1}.`);
+                
+                // Check if all blocks are now placed for auto-submission
+                this.checkIfAllBlocksPlaced();
             }
         });
     }
 
-    createSubmitButton() {
-        // Calculate submit button position based on the number of blocks
-        const blockSpacing = 60;
-        const numberOfBlocks = this.currentQuestion.blocks.length;
-        const lastBlockY = this.draggableAreaY + ((numberOfBlocks - 1) * blockSpacing);
-        const submitY = lastBlockY + 80; // 80px below the last block
-        
-        // Create submit button with same style as multiple choice
-        const submitBtn = this.add.graphics();
-        submitBtn.fillStyle(0x27ae60, 1);
-        submitBtn.fillRoundedRect(-100, -25, 200, 50, 10);
-        submitBtn.lineStyle(2, 0x229954, 1);
-        submitBtn.strokeRoundedRect(-100, -25, 200, 50, 10);
-        submitBtn.x = 0;
-        submitBtn.y = submitY;
-        
-        const submitText = this.add.text(0, submitY, 'Submit Order', {
-            fontFamily: 'Arial',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: '#ffffff'
-        }).setOrigin(0.5);
-        
-        // Create invisible hit area for better interaction
-        const hitArea = this.add.rectangle(0, submitY, 200, 50, 0x000000, 0);
-        hitArea.setInteractive();
-        
-        // Add hover effects
-        hitArea.on('pointerover', () => {
-            submitBtn.clear();
-            submitBtn.fillStyle(0x229954, 1);
-            submitBtn.fillRoundedRect(-100, -25, 200, 50, 10);
-            submitBtn.lineStyle(3, 0x1e8449, 1);
-            submitBtn.strokeRoundedRect(-100, -25, 200, 50, 10);
-        });
-        
-        hitArea.on('pointerout', () => {
-            submitBtn.clear();
-            submitBtn.fillStyle(0x27ae60, 1);
-            submitBtn.fillRoundedRect(-100, -25, 200, 50, 10);
-            submitBtn.lineStyle(2, 0x229954, 1);
-            submitBtn.strokeRoundedRect(-100, -25, 200, 50, 10);
-        });
-        
-        hitArea.on('pointerdown', () => this.checkDragDropAnswer());
-        
-        this.quizContainer.add([submitBtn, submitText, hitArea]);
+
+
+    setupAutoChecking() {
+        // Auto-checking will be triggered in drag events when all blocks are placed
+        this.autoCheckEnabled = true;
+    }
+
+    checkIfAllBlocksPlaced() {
+        // Check if all drop zones are filled
+        const allFilled = this.currentOrder.every(slot => slot !== null);
+        if (allFilled && this.autoCheckEnabled) {
+            // Small delay for better UX
+            this.time.delayedCall(300, () => {
+                this.checkDragDropAnswer();
+            });
+        }
     }
 
     checkDragDropAnswer() {
