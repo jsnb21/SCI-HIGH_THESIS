@@ -186,37 +186,18 @@ export function setupGlobalLoadingOverlay(Phaser, game) {
 
   function showOverlayFor(targetKey) {
     const label = `Loading ${prettyName(targetKey)}...`;
-    // Revised strategy: always attempt to show the DOM overlay first (more reliable on some mobile browsers)
-    // Use Phaser overlay ONLY when fullscreen is active (WebKit iOS sometimes hides fixed DOM in fullscreen)
-    try {
-      if (isFullscreenActive()) {
-        showPhaserOverlay(label);
-      } else {
-        window.__loadingOverlay.show(label);
-        // On mobile ensure style is forced in case previous inline styles / transforms interfered
-        if (isMobileViewport()) {
-          const dom = document.getElementById('global-loading-overlay');
-            if (dom) {
-              dom.style.display = 'flex';
-              dom.style.opacity = '1';
-              dom.style.transition = 'opacity 0.25s ease';
-            }
-        }
-      }
-    } catch (e) {
-      // Fallback to Phaser overlay if DOM path throws
-      try { showPhaserOverlay(label); } catch { /* swallow */ }
+    // Prefer Phaser overlay on mobile and in fullscreen to avoid DOM overlay quirks
+    if (isFullscreenActive() || isMobileViewport()) {
+      showPhaserOverlay(label);
+    } else {
+      window.__loadingOverlay.show(label);
     }
   }
 
   function scheduleAutoHide() {
     // Safety auto-hide in case scene is lightweight; keeps the overlay brief
-    const delay = isMobileViewport() ? 1800 : 1300; // slightly longer on mobile for perceived feedback
-    if (isFullscreenActive()) {
-      hidePhaserOverlay(delay);
-    } else {
-      window.__loadingOverlay.hide(delay);
-    }
+    const delay = isMobileViewport() ? 1400 : 1200;
+    if (isFullscreenActive() || isMobileViewport()) hidePhaserOverlay(delay); else window.__loadingOverlay.hide(delay);
   }
 
   // Defer to next frames so overlay can render before heavy scene work (mobile-safe)

@@ -103,10 +103,8 @@ export default class PowerUpScene extends BaseScene {
     }
 
     createPowerUpInterface() {
-    // Use camera center instead of raw scale for more robust centering (accounts for zoom/pan)
-    const cam = this.cameras.main;
-    const centerX = cam.midPoint.x;
-    const centerY = cam.midPoint.y;
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
         
         // Get mobile information for responsive design
         const scaleInfo = getScaleInfo(this);
@@ -121,10 +119,9 @@ export default class PowerUpScene extends BaseScene {
     const titleFontSize = isMobile ? (isSmallMobile ? '26px' : '30px') : '34px';
     const descFontSize = isMobile ? (isSmallMobile ? '16px' : '18px') : '20px';
         
-        // Responsive positioning (reduced negative offsets so overall block is closer to true vertical center)
-        // We'll calculate dynamic offsets later if total container height would overflow.
-    const titleOffsetY = isMobile ? (isSmallMobile ? -120 : -135) : -160;
-    const descOffsetY = isMobile ? (isSmallMobile ? -78 : -96) : -120;
+        // Responsive positioning
+    const titleOffsetY = isMobile ? (isSmallMobile ? -140 : -160) : -190;
+    const descOffsetY = isMobile ? (isSmallMobile ? -95 : -115) : -140;
         
         // Title
         this.titleText = this.add.text(centerX, centerY + titleOffsetY, '🌟 Power-Up Station! 🌟', {
@@ -150,26 +147,14 @@ export default class PowerUpScene extends BaseScene {
         
         // Create power-up buttons
         this.createPowerUpButtons(centerX, centerY);
-
-        // After building, recenter container vertically if space permits
-        this.time.delayedCall(0, () => {
-            try {
-                const bounds = this.powerUpContainer.getBounds();
-                // Target is camera vertical center
-                const desiredY = cam.midPoint.y;
-                const currentMidY = bounds.y + bounds.height / 2;
-                const delta = desiredY - currentMidY;
-                // Shift container
-                this.powerUpContainer.y += delta;
-            } catch { /* noop */ }
-        });
         
         // Add timer warning if needed
         this.addTimerWarning(centerX);
 
-        // Apply a 20% size boost on mobile to the whole UI, with basic clamping and re-centering
+        // Apply a 20% size boost on mobile to the whole UI, with basic clamping
         if (isMobile) {
             let targetScale = 1.2;
+            // Clamp so it doesn't exceed viewport width excessively
             const bounds = this.powerUpContainer.getBounds();
             if (bounds.width * targetScale > this.scale.width * 0.94) {
                 targetScale = Math.min(targetScale, (this.scale.width * 0.94) / Math.max(1, bounds.width));
@@ -178,11 +163,6 @@ export default class PowerUpScene extends BaseScene {
                 targetScale = Math.min(targetScale, (this.scale.height * 0.9) / Math.max(1, bounds.height));
             }
             this.powerUpContainer.setScale(targetScale);
-            // Recenter after scale
-            const post = this.powerUpContainer.getBounds();
-            const targetMidY = cam.midPoint.y;
-            const adjust = targetMidY - (post.y + post.height / 2);
-            this.powerUpContainer.y += adjust;
         }
     }
 

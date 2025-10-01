@@ -1058,21 +1058,10 @@ export default class QuizScene extends BaseScene {
         this.dropZones = [];
         this.currentOrder = new Array(blocks.length).fill(null);
         
-        // Calculate responsive dimensions (larger tap targets on mobile / Python for readability)
-        const isPython = (this.courseTopic || '').toLowerCase().includes('python');
-        const isMobileViewport = this.scale.width < 900; // heuristic to match other code paths
-        let blockWidth = Math.min(360, (this.contentWidth - 90) / 2);
-        let blockHeight = 50;
-        let blockSpacing = 60;
-        if (isMobileViewport) {
-            blockWidth = Math.min(380, (this.contentWidth - 70) / 2);
-            blockHeight = 56;
-            blockSpacing = 66;
-        }
-        if (isPython) { // additional cushion for Python indentation clarity
-            blockHeight += 4;
-            blockSpacing += 6;
-        }
+        // Calculate responsive dimensions
+        const blockWidth = Math.min(350, (this.contentWidth - 100) / 2);
+        const blockHeight = 50;
+        const blockSpacing = 60;
         
         // Calculate positions for left side (draggable blocks) and right side (drop zones)
         const leftX = -this.contentWidth/4;
@@ -1086,13 +1075,12 @@ export default class QuizScene extends BaseScene {
             const blockObj = this.add.rectangle(leftX, blockY, blockWidth, blockHeight, 0x3498db);
             blockObj.setStrokeStyle(2, 0x2980b9);
             
-            const fontSizePx = isMobileViewport ? (isPython ? 16 : 15) : 14;
             const blockText = this.add.text(leftX, blockY, block, {
                 fontFamily: 'monospace',
-                fontSize: fontSizePx + 'px',
+                fontSize: '14px',
                 color: '#ffffff',
                 align: 'center',
-                wordWrap: { width: blockWidth - 24 }
+                wordWrap: { width: blockWidth - 20 }
             }).setOrigin(0.5);
             
             // Make interactive
@@ -1119,10 +1107,9 @@ export default class QuizScene extends BaseScene {
             dropZone.setStrokeStyle(2, 0x7f8c8d);
             dropZone.setAlpha(0.3);
             
-            const dzFontSize = isMobileViewport ? (isPython ? '16px' : '15px') : '14px';
             const label = this.add.text(rightX, dropY, `${i + 1}. Drop here`, {
                 fontFamily: 'Arial',
-                fontSize: dzFontSize,
+                fontSize: '14px',
                 color: '#2c3e50',
                 align: 'center',
                 fontWeight: 'bold'
@@ -1154,11 +1141,8 @@ export default class QuizScene extends BaseScene {
         
         blockObj.on('drag', (pointer, dragX, dragY) => {
             // Calculate new position relative to container, accounting for initial offset
-            // Apply slight smoothing on mobile for less jittery touch drags
-            const rawX = pointer.worldX - this.quizContainer.x - blockObj.dragOffsetX;
-            const rawY = pointer.worldY - this.quizContainer.y - blockObj.dragOffsetY;
-            const newX = isMobileViewport ? Phaser.Math.Linear(blockObj.x, rawX, 0.35) : rawX;
-            const newY = isMobileViewport ? Phaser.Math.Linear(blockObj.y, rawY, 0.35) : rawY;
+            const newX = pointer.worldX - this.quizContainer.x - blockObj.dragOffsetX;
+            const newY = pointer.worldY - this.quizContainer.y - blockObj.dragOffsetY;
             
             // Update block position
             blockObj.x = newX;
@@ -1202,10 +1186,8 @@ export default class QuizScene extends BaseScene {
         
         blockText.on('drag', (pointer, dragX, dragY) => {
             // Calculate new text position relative to container, accounting for initial offset
-            const rawTextX = pointer.worldX - this.quizContainer.x - blockText.dragOffsetX;
-            const rawTextY = pointer.worldY - this.quizContainer.y - blockText.dragOffsetY;
-            const newTextX = isMobileViewport ? Phaser.Math.Linear(blockText.x, rawTextX, 0.35) : rawTextX;
-            const newTextY = isMobileViewport ? Phaser.Math.Linear(blockText.y, rawTextY, 0.35) : rawTextY;
+            const newTextX = pointer.worldX - this.quizContainer.x - blockText.dragOffsetX;
+            const newTextY = pointer.worldY - this.quizContainer.y - blockText.dragOffsetY;
             
             // Update text position
             blockText.x = newTextX;
@@ -1333,12 +1315,10 @@ export default class QuizScene extends BaseScene {
                 // Make the block more visible when dropped in zone
                 draggedBlock.setFillStyle(0x2ecc71); // Bright green for dropped blocks
                 draggedBlock.setStrokeStyle(3, 0x27ae60); // Thicker green border
-                const __mobileDrag = this.scale.width < 900;
-                const __isPython = (this.courseTopic || '').toLowerCase().includes('python');
                 draggedText.setStyle({
                     color: '#ffffff',
                     fontWeight: 'bold',
-                    fontSize: (__mobileDrag ? (__isPython ? '18px' : '16px') : '15px')
+                    fontSize: '15px' // Slightly larger text
                 });
                 
                 // Update drop zone appearance
