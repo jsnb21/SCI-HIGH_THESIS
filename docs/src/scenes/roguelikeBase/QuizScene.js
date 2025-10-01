@@ -1038,7 +1038,7 @@ export default class QuizScene extends BaseScene {
             this.dragBlocks.push({ block: blockObj, text: blockText, originalText: block });
         });
         
-        // Create drop zones (right side) - styled like multiple choice options
+        // Create drop zones (right side) - empty zones without text
         for (let i = 0; i < blocks.length; i++) {
             const dropY = startY + (i * blockSpacing);
             
@@ -1047,20 +1047,27 @@ export default class QuizScene extends BaseScene {
             dropZone.setStrokeStyle(2, 0x718096, 0.8);
             dropZone.setAlpha(0.9);
             
-            const label = this.add.text(rightX, dropY, `${i + 1}. Drop here`, {
+            dropZone.setInteractive({ dropZone: true });
+            dropZone.index = i;
+            
+            this.quizContainer.add(dropZone);
+            this.dropZones.push(dropZone);
+        }
+        
+        // Create centered numbers between blocks and drop zones (like in reference image)
+        const centerX = (leftX + rightX) / 2;
+        for (let i = 0; i < blocks.length; i++) {
+            const numberY = startY + (i * blockSpacing);
+            
+            const numberText = this.add.text(centerX, numberY, `${i + 1}`, {
                 fontFamily: 'Arial',
-                fontSize: '18px',
+                fontSize: '36px',
                 color: '#ffffff',
                 align: 'center',
                 fontWeight: 'bold'
             }).setOrigin(0.5);
             
-            dropZone.setInteractive({ dropZone: true });
-            dropZone.index = i;
-            dropZone.label = label;
-            
-            this.quizContainer.add([dropZone, label]);
-            this.dropZones.push(dropZone);
+            this.quizContainer.add(numberText);
         }
     }
 
@@ -1213,7 +1220,6 @@ export default class QuizScene extends BaseScene {
                         
                         // Update the original drop zone appearance
                         swapDropZone.setAlpha(0.3); // Lower opacity for occupied zones
-                        swapDropZone.label.setText(`${draggedFromIndex + 1}.`);
                     } else {
                         // Dragged item came from the left side, send existing block back to left
                         const dragBlockIndex = this.dragBlocks.findIndex(db => db.block === draggedBlock);
@@ -1263,7 +1269,6 @@ export default class QuizScene extends BaseScene {
                 
                 // Update drop zone appearance
                 dropZone.setAlpha(0.3); // Lower opacity for occupied drop zones
-                dropZone.label.setText(`${dropZone.index + 1}.`);
                 
                 // Check if all blocks are now placed for auto-submission
                 this.checkIfAllBlocksPlaced();
