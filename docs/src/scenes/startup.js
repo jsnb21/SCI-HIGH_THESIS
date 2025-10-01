@@ -45,8 +45,283 @@ export default class StartupScene extends Phaser.Scene {
             }
         } catch {}
 
-        // Skip the fullscreen prompt entirely on all platforms and go straight to the logo sequence
-        this.time.delayedCall(100, () => this.playLogoSequence());
+        // If user previously acknowledged privacy (and disclaimer), skip directly to logo sequence
+        const acknowledged = this.getPrivacyAcknowledged();
+        if (acknowledged) {
+            this.time.delayedCall(60, () => this.playLogoSequence());
+        } else {
+            // New order: privacy first -> AI disclaimer -> logo
+            this.time.delayedCall(80, () => this.showDataPrivacyNotice());
+        }
+    }
+
+    // localStorage helpers
+    getPrivacyAcknowledged() {
+        try {
+            return window.localStorage.getItem('scigame_privacy_ack') === '1';
+        } catch { return false; }
+    }
+    setPrivacyAcknowledged() {
+        try { window.localStorage.setItem('scigame_privacy_ack','1'); } catch {}
+    }
+
+    // Display a brief AI assets disclaimer due to time/resource constraints, then proceed
+    showAIDisclaimerThenLogo() {
+        const { width, height } = this.scale;
+        const isSmall = width < 480;
+        const isMobile = width < 768;
+
+        // Full black background (match screenshot)
+        const bg = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 1)
+            .setOrigin(0.5)
+            .setAlpha(0);
+
+        // Header style (big red, centered)
+        const headerFontSize = isSmall ? 48 : (isMobile ? 56 : 72);
+        const header = this.add.text(width / 2, height * 0.23, 'DISCLAIMER', {
+            fontFamily: 'Arial Black, Arial',
+            fontSize: headerFontSize + 'px',
+            fontStyle: 'bold',
+            color: '#ff0000',
+            align: 'center',
+            stroke: '#000000',
+            strokeThickness: 6,
+            shadow: {
+                offsetX: 2,
+                offsetY: 2,
+                color: '#000000',
+                blur: 4,
+                fill: true
+            }
+        }).setOrigin(0.5).setAlpha(0);
+
+        // Body paragraph (exact wording from screenshot)
+    const bodyMaxWidth = Math.min(width * 0.82, 1100);
+    // Increase previous base sizes (~14 / 16 / 20) by 30%
+    const baseBodyFontSize = isSmall ? 14 : (isMobile ? 16 : 20);
+    const bodyFontSize = Math.round(baseBodyFontSize * 1.3);
+        const bodyText = this.add.text(width / 2, height * 0.52,
+            "This game contains assets generated with the assistance of artificial intelligence (AI). Due to limited time and resources, AI tools were used to create certain visual and audio elements that support the overall development process. This allowed the team to focus more on gameplay, design, and delivering the best experience possible within our constraints.",
+            {
+                fontFamily: 'Arial',
+                fontSize: bodyFontSize + 'px',
+                color: '#ffffff',
+                align: 'center',
+                wordWrap: { width: bodyMaxWidth },
+                lineSpacing: 6,
+                stroke: '#000000',
+                strokeThickness: 3,
+                shadow: {
+                    offsetX: 2,
+                    offsetY: 2,
+                    color: '#000000',
+                    blur: 3,
+                    fill: true
+                }
+            }
+        ).setOrigin(0.5).setAlpha(0);
+
+        // Animate fade in similar to screenshot pacing
+        this.tweens.add({ targets: bg, alpha: 1, duration: 350, ease: 'Power2' });
+        this.tweens.add({ targets: header, alpha: 1, duration: 550, ease: 'Power2', delay: 120 });
+        this.tweens.add({ targets: bodyText, alpha: 1, duration: 600, ease: 'Power2', delay: 300 });
+
+        this._disclaimerElems = [bg, header, bodyText];
+
+        const proceed = () => {
+            if (this._disclaimerDone) return;
+            this._disclaimerDone = true;
+            this.tweens.add({
+                targets: [bodyText, header, bg],
+                alpha: 0,
+                duration: 500,
+                ease: 'Power2',
+                onComplete: () => {
+                    this._disclaimerElems?.forEach(el => el.destroy());
+                    this._disclaimerElems = null;
+                    // After AI disclaimer now go directly to logo sequence
+                    this.playLogoSequence();
+                }
+            });
+            this.input.off('pointerdown', proceed, this);
+            if (this.enterKey) this.enterKey.off('down', proceed, this);
+        };
+
+        // Allow skip or auto-continue (slightly longer to read)
+        this.time.delayedCall(4000, proceed);
+        this.input.once('pointerdown', proceed, this);
+        if (this.enterKey) this.enterKey.once('down', proceed, this);
+    }
+
+    // Data Privacy Notice (must acknowledge to proceed)
+    showDataPrivacyNotice() {
+        const { width, height } = this.scale;
+        const isMobile = width < 768;
+        const isSmall = width < 480;
+
+        // Dim background overlay
+        const overlay = this.add.rectangle(width/2, height/2, width, height, 0x000000, 0.55)
+            .setOrigin(0.5).setAlpha(0);
+
+        // Modal dimensions
+    // Slightly larger for small screens to maximize readable area
+    const panelWidth = Math.min(width * 0.92, 800);
+    const panelHeight = Math.min(height * 0.82, 560);
+        const panelX = width / 2;
+        const panelY = height / 2;
+
+        // Panel base (dark navy gradient simulated with two rects)
+        const panel = this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x0f1524, 0.95)
+            .setStrokeStyle(3, 0xffdd33, 1)
+            .setOrigin(0.5)
+            .setAlpha(0);
+
+        // Header bar
+        const headerHeight = 68;
+        const headerBar = this.add.rectangle(panelX, panelY - panelHeight/2 + headerHeight/2, panelWidth, headerHeight, 0x121d31, 1)
+            .setOrigin(0.5)
+            .setAlpha(0);
+
+        // Warning icon circle
+        const iconRadius = 22;
+        const iconX = panelX - panelWidth/2 + 28 + iconRadius;
+        const iconY = headerBar.y;
+        const iconCircle = this.add.circle(iconX, iconY, iconRadius, 0xffcc18, 1).setAlpha(0);
+        const iconText = this.add.text(iconX, iconY, '⚠', { fontFamily:'Arial', fontSize: (isMobile? 28:30) + 'px', color:'#222222'}).setOrigin(0.5).setAlpha(0);
+
+        // Title text
+        const titleFontSize = isMobile ? 26 : 28;
+        const titleText = this.add.text(iconX + iconRadius + 18, iconY, 'Data Privacy Notice', {
+            fontFamily: 'Arial Black, Arial',
+            fontSize: titleFontSize + 'px',
+            color: '#ffffff'
+        }).setOrigin(0,0.5).setAlpha(0);
+
+        // (Removed close X button per request)
+
+        // Body content
+        const bodyPaddingX = 40;
+        const bodyPaddingTop = 24;
+        const bodyAreaWidth = panelWidth - bodyPaddingX*2;
+        const baseBodyFont = isSmall?14:(isMobile?15:16);
+        const bodyFontSize = baseBodyFont + 2; // Slightly larger
+        const bodyStartY = headerBar.y + headerHeight/2 + bodyPaddingTop;
+        const bodyText = this.add.text(panelX, bodyStartY, 
+            'In compliance with the Data Privacy Act of 2012, this game collects only the information you provide during login or signup, along with essential gameplay data such as scores, number of sessions, and course progression.\n\nWe value your privacy and are committed to protecting your personal information. All collected data is securely stored and used solely for research, academic development, and improving the gameplay and learning experience. Your data will never be shared with third parties without your consent and will always be treated with the highest level of confidentiality.',
+            {
+                fontFamily: 'Arial',
+                fontSize: bodyFontSize + 'px',
+                color: '#dbe3f2',
+                align: 'left',
+                wordWrap: { width: bodyAreaWidth },
+                lineSpacing: 8
+            }
+        ).setOrigin(0.5,0).setAlpha(0);
+
+        // Scroll mask (if content taller than available area)
+        const availableBodyHeight = panelHeight - headerHeight - 140; // reserve space for button + checkbox
+        const needsScroll = bodyText.height > availableBodyHeight;
+        let bodyMaskShape = null;
+        if (needsScroll) {
+            bodyMaskShape = this.add.rectangle(panelX, bodyStartY + availableBodyHeight/2, bodyAreaWidth, availableBodyHeight, 0xffffff, 0)
+                .setOrigin(0.5);
+            bodyText.setY(bodyStartY); // ensure starting position
+            bodyText.setMask(bodyMaskShape.createBitmapMask());
+            // Enable wheel scroll
+            this.input.on('wheel', (pointer, over, dx, dy) => {
+                if (this._privacyDone) return;
+                const delta = dy * 0.5; // slower scroll
+                bodyText.y = Phaser.Math.Clamp(bodyText.y - delta, bodyStartY - (bodyText.height - availableBodyHeight), bodyStartY);
+            });
+            // Drag scroll (touch / pointer)
+            let dragStartY = 0;
+            let contentStartY = 0;
+            bodyText.setInteractive();
+            bodyText.on('pointerdown', (p) => { dragStartY = p.position.y; contentStartY = bodyText.y; });
+            bodyText.on('pointermove', (p) => {
+                if (!p.isDown) return;
+                const diff = p.position.y - dragStartY;
+                bodyText.y = Phaser.Math.Clamp(contentStartY + diff, bodyStartY - (bodyText.height - availableBodyHeight), bodyStartY);
+            });
+        }
+
+        // Buttons row
+    const buttonsY = panelY + panelHeight/2 - (isMobile? 88:78);
+    const primaryColor = 0xffdd33;
+    const btnW = 260;
+    const btnH = isMobile? 60:56;
+    const yesX = panelX; // Centered single button
+
+        const makeButton = (x,y,w,h,color,label,isPrimary=false) => {
+            const rect = this.add.rectangle(x,y,w,h,color,1).setOrigin(0.5).setAlpha(0).setInteractive({useHandCursor:true});
+            rect.setStrokeStyle(2, isPrimary? 0xffe572 : 0x596276, 1);
+            const txt = this.add.text(x,y,label,{
+                fontFamily:'Arial',
+                fontSize:(isMobile?22:20)+'px',
+                fontStyle:'bold',
+                color: isPrimary? '#1a1f29':'#ffffff'
+            }).setOrigin(0.5).setAlpha(0);
+            rect.on('pointerover',()=> rect.setFillStyle(isPrimary?0xffe04a:0x4a566b));
+            rect.on('pointerout',()=> rect.setFillStyle(color));
+            return {rect, txt};
+        };
+
+        const yesBtn = makeButton(yesX, buttonsY, btnW, btnH, primaryColor, 'Yes, I Understand', true);
+
+        // Checkbox: Don't show again
+        const checkboxY = buttonsY - (isMobile ? 70 : 64);
+        const boxSize = 28;
+        const cbX = panelX - btnW/2 + 4; // align left under text start
+        const cbRect = this.add.rectangle(cbX, checkboxY, boxSize, boxSize, 0x1d2a3b, 1).setStrokeStyle(2, 0xffdd33, 1).setOrigin(0.5).setAlpha(0).setInteractive({useHandCursor:true});
+        const cbMark = this.add.text(cbX, checkboxY, '', {fontFamily:'Arial Black', fontSize: (boxSize-6)+'px', color:'#ffdd33'}).setOrigin(0.5).setAlpha(0);
+        const cbLabel = this.add.text(cbX + boxSize/2 + 12, checkboxY, "Don't show again", {fontFamily:'Arial', fontSize:(isMobile?18:17)+'px', color:'#dbe3f2'}).setOrigin(0,0.5).setAlpha(0).setInteractive();
+        let cbChecked = false;
+        const toggleCb = () => {
+            cbChecked = !cbChecked;
+            cbMark.setText(cbChecked ? '✓' : '');
+            // sound feedback
+            try { this.sound.play('se_select',{volume:0.6}); } catch {}
+        };
+        cbRect.on('pointerdown', toggleCb);
+        cbLabel.on('pointerdown', toggleCb);
+
+    const elements = [overlay, panel, headerBar, iconCircle, iconText, titleText, bodyText, yesBtn.rect, yesBtn.txt, cbRect, cbMark, cbLabel];
+    if (bodyMaskShape) elements.push(bodyMaskShape);
+        this._privacyElems = elements;
+
+        const proceed = () => {
+            if (this._privacyDone) return;
+            this._privacyDone = true;
+            this.tweens.add({
+                targets: elements,
+                alpha: 0,
+                duration: 400,
+                ease: 'Power2',
+                onComplete: () => {
+                    // Persist acknowledgment if checked
+                    if (cbChecked) this.setPrivacyAcknowledged();
+                    elements.forEach(e=>{ if (e && e.destroy) e.destroy(); });
+                    // After privacy, now show AI disclaimer (reordered)
+                    this.showAIDisclaimerThenLogo();
+                }
+            });
+            if (this.enterKey) this.enterKey.off('down', onEnter, this);
+        };
+
+        const onEnter = () => proceed();
+        if (this.enterKey) this.enterKey.once('down', onEnter, this);
+        yesBtn.rect.on('pointerdown', () => {
+            try { this.sound.play('se_select',{volume:0.7}); } catch {}
+            this.tweens.add({ targets:[yesBtn.rect, yesBtn.txt], scaleX:0.94, scaleY:0.94, duration:110, yoyo:true, ease:'Power2', onComplete:proceed });
+        });
+
+        // Intro animation
+        this.tweens.add({ targets: overlay, alpha:0.6, duration:260, ease:'Power2' });
+        this.tweens.add({ targets: panel, alpha:1, duration:320, ease:'Back.Out' });
+        this.tweens.add({ targets: [headerBar, iconCircle, iconText, titleText], alpha:1, duration:380, ease:'Power2', delay:140 });
+        this.tweens.add({ targets: bodyText, alpha:1, duration:420, ease:'Power2', delay:260 });
+        this.tweens.add({ targets: [cbRect, cbMark, cbLabel], alpha:1, duration:420, ease:'Power2', delay:360 });
+        this.tweens.add({ targets: [yesBtn.rect, yesBtn.txt], alpha:1, duration:420, ease:'Power2', delay:460 });
     }
 
     showFullscreenPrompt() {
@@ -110,6 +385,7 @@ export default class StartupScene extends Phaser.Scene {
         const dialogGlow = this.add.rectangle(logicalWidth / 2, logicalHeight / 2, dialogWidth + glowOffset, dialogHeight + glowOffset, 0x000000, 0.25)
             .setOrigin(0.5)
             .setAlpha(0);
+
 
         // Main title with responsive text
         const titleStyle = {
@@ -375,6 +651,11 @@ export default class StartupScene extends Phaser.Scene {
         this._logoStarted = true;
         // Clear existing UI
         this.clearUI();
+        // If disclaimer elements linger for any reason, clean them
+        if (this._disclaimerElems) {
+            this._disclaimerElems.forEach(el => el?.destroy());
+            this._disclaimerElems = null;
+        }
         
         const { width, height } = this.scale;
         
