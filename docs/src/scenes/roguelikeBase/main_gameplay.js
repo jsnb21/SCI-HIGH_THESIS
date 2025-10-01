@@ -27,13 +27,12 @@ export default class MainGameplay extends BaseScene {
         this.TILE_SIZE = 58; // Base size, will be adjusted for mobile
         this.MAP_WIDTH = 19;  // Increased from 16 (16 * 1.2 = 19.2, rounded to 19)
         this.MAP_HEIGHT = 14; // Increased from 12 (12 * 1.2 = 14.4, rounded to 14)
-        
         // Movement state
         this.isMoving = false;
         this.lastDirection = { x: 0, y: 1 }; // facing down by default
-    // Freeze/timeout state
-    this.freezeGameplay = false; // when true, block input and game loops
-    this._timeUpHandled = false; // guard to handle timer expiry once
+        // Freeze/timeout state
+        this.freezeGameplay = false; // when true, block input and game loops
+        this._timeUpHandled = false; // guard to handle timer expiry once
         
         // Course data
         this.courseTopic = null;
@@ -73,6 +72,7 @@ export default class MainGameplay extends BaseScene {
         this.spawnIndicators = [];
         this.spawnIndicatorDelay = 1000; // Show indicator 1 second before spawn
         this.nextSpawnPositions = []; // Pre-calculated spawn positions
+        this.spawnIndicatorsShown = false; // Prevent repeated showSpawnIndicators calls
         
         // Timer system
         this.gameTimer = 60; // 1 minute in seconds
@@ -130,6 +130,8 @@ export default class MainGameplay extends BaseScene {
         this.originalPlayerSpeed = 200; // Store original speed for speed boost
         // Power-up cadence (popup every N correct answers)
         this.correctAnswersSincePowerUp = 0;
+
+    this._resultShown = false; // guard to prevent duplicate result screens
     }
 
     init(data) {
@@ -145,8 +147,15 @@ export default class MainGameplay extends BaseScene {
             this.gameStarted = false; // Reset game started flag
             this.score = 0; // Reset score
             this.quizActive = false; // Reset quiz state
+            this.powerUpActive = false; // Reset power-up state
             this.currentQuiz = null;
             this.isMoving = false; // Reset movement state
+            
+            // Reset all freezing flags for clean scene reentry
+            this.freezeGameplay = false;
+            this.enemiesMoving = false;
+            this._timeUpHandled = false;
+            this._resultShown = false;
             // Reset custom quiz answered tracking if custom quiz session
             if (this.customQuiz) {
                 this.customQuizAnswered = new Set();
@@ -276,13 +285,6 @@ export default class MainGameplay extends BaseScene {
         this.load.json('csharpQuiz', 'data/quizzes/csharp.json');
         this.load.json('webdesignQuiz', 'data/quizzes/webdesign.json');
         
-        // Load background tile; if it fails we'll fallback to generated default in createBackground
-        try {
-            this.load.image('grassTile', 'assets/img/bg/grass.png');
-        } catch (e) {
-            console.warn('Could not queue grassTile image, will use procedural rectangles.', e);
-        }
-        
         // Load audio effects
         this.load.audio('se_hurt', 'assets/audio/se/se_hurt.wav');
         this.load.audio('se_combo', 'assets/audio/se/se_combo.wav');
@@ -293,12 +295,18 @@ export default class MainGameplay extends BaseScene {
         this.load.audio('se_wrong', 'assets/audio/se/se_wrong.wav');
         this.load.audio('bgm_game1', 'assets/audio/bgm/bgm_game1.mp3');
         
-        // Create a simple colored rectangle if grass tile doesn't exist
+        // Create a simple default tile for background texture
         this.load.image('defaultTile', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
     }
 
     create() {
         super.create(); // Call BaseScene create method
+        
+        // Reset all freezing/blocking flags to ensure fresh gameplay state
+        this.freezeGameplay = false;
+        this.enemiesMoving = false;
+        this._timeUpHandled = false;
+        this._resultShown = false;
         
         // Clear any old/conflicting student data to ensure fresh names
         this.clearOldStudentData();
@@ -1224,8 +1232,10 @@ export default class MainGameplay extends BaseScene {
             loop: true
         });
         
-        // Mark game as started
+        // Mark game as started and ensure it's not frozen
         this.gameStarted = true;
+        this.freezeGameplay = false;
+        this.enemiesMoving = false; // Reset to allow enemy movement to start fresh
         this.syncDomHud();
         
     }
@@ -1392,11 +1402,16 @@ export default class MainGameplay extends BaseScene {
 
         // Generate spawn positions and create indicators
         this.nextSpawnPositions = [];
-        for (let i = 0; i < thugCount; i++) {
+        let failedAttempts = 0;
+        for (let i = 0; i < thugCount && failedAttempts < 10; i++) {
             const position = this.generateSpawnPosition();
             if (position) {
                 this.nextSpawnPositions.push(position);
                 this.createSpawnIndicator(position.x, position.y);
+                failedAttempts = 0; // Reset failed attempts on success
+            } else {
+                failedAttempts++;
+                i--; // Retry this iteration
             }
         }
 
@@ -1416,10 +1431,10 @@ export default class MainGameplay extends BaseScene {
         } while (
             attempts < 50 && (
                 (spawnTileX === playerTileX && spawnTileY === playerTileY) ||
-                this.enemies.some(enemy => enemy.tileX === spawnTileX && enemy.tileY === spawnTileY) ||
-                this.timerIcons.some(icon => icon.tileX === spawnTileX && icon.tileY === spawnTileY) ||
-                this.goblinThugs.some(thug => thug.tileX === spawnTileX && thug.tileY === spawnTileY) ||
-                this.nextSpawnPositions.some(pos => pos.x === spawnTileX && pos.y === spawnTileY)
+                (this.enemies && this.enemies.some(enemy => enemy.tileX === spawnTileX && enemy.tileY === spawnTileY)) ||
+                (this.timerIcons && this.timerIcons.some(icon => icon.tileX === spawnTileX && icon.tileY === spawnTileY)) ||
+                (this.goblinThugs && this.goblinThugs.some(thug => thug.tileX === spawnTileX && thug.tileY === spawnTileY)) ||
+                (this.nextSpawnPositions && this.nextSpawnPositions.some(pos => pos.x === spawnTileX && pos.y === spawnTileY))
             )
         );
         
@@ -3253,7 +3268,6 @@ export default class MainGameplay extends BaseScene {
         if (tileX === playerTileX && tileY === playerTileY) {
             return false;
         }
-        
         // Check if position is occupied by another enemy
         return !this.enemies.some(enemy => 
             enemy !== movingEnemy && enemy.tileX === tileX && enemy.tileY === tileY
@@ -3691,14 +3705,16 @@ export default class MainGameplay extends BaseScene {
         
         // Show spawn indicators 1 second before spawning
         if (this.goblinThugSpawnTimer >= this.goblinThugSpawnInterval - this.spawnIndicatorDelay && 
-            this.spawnIndicators.length === 0) {
+            this.spawnIndicators.length === 0 && !this.spawnIndicatorsShown) {
             this.showSpawnIndicators();
+            this.spawnIndicatorsShown = true;
         }
         
         // Spawn thugs at full interval
         if (this.goblinThugSpawnTimer >= this.goblinThugSpawnInterval) {
             this.spawnGoblinThugs();
             this.goblinThugSpawnTimer = 0;
+            this.spawnIndicatorsShown = false; // Reset for next cycle
         }
     }
 
@@ -3891,6 +3907,8 @@ export default class MainGameplay extends BaseScene {
     }
 
     showResultScreen(courseCompleted = false) {
+        if (this._resultShown) return; // prevent duplicate calls
+        this._resultShown = true;
         // Prepare data for ResultScreen
         const resultData = {
             correctAnswers: this.correctAnswers,
