@@ -40,6 +40,7 @@ export default class QuizScene extends BaseScene {
         this.backgroundOverlay = null;
         this.quizContainer = null;
         this.resultContainer = null;
+        this.tooltipText = null;
     }
 
     init(data) {
@@ -819,13 +820,13 @@ export default class QuizScene extends BaseScene {
         const availableSpace = panelBottom - lastAnswerBottom; // space from last answer bottom to panel bottom
         // Apply symmetric margins: place instruction halfway in that space
         const instructionY = lastAnswerBottom + (availableSpace / 2);
-        const instructionText = this.add.text(0, instructionY, 'Tap your answer choice', {
+        this.tooltipText = this.add.text(0, instructionY, 'Tap your answer choice', {
             fontFamily: 'Arial',
             fontSize: instructionFontSize,
             color: '#ffffff',
             align: 'center'
         }).setOrigin(0.5);
-        this.quizContainer.add(instructionText);
+        this.quizContainer.add(this.tooltipText);
         
         // Add entrance animation with refined scaling
         const INITIAL_SCALE_MULTIPLIER = 0.9; // slight pop-in grow effect
@@ -947,14 +948,14 @@ export default class QuizScene extends BaseScene {
         this.quizContainer.add(descText);
         
         // Instruction text - responsive
-        const instructionText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + (isMobile ? 45 : 60), 'Drag code blocks to arrange them in correct order', {
+        this.tooltipText = this.add.text(0, -contentHeight/2 + titleHeight + questionNumberHeight + questionHeight + (isMobile ? 45 : 60), 'Drag code blocks to arrange them in correct order', {
             fontFamily: 'Arial',
             fontSize: instructionFontSize,
             color: '#64ffda',
             align: 'center',
             fontStyle: 'italic'
         }).setOrigin(0.5);
-        this.quizContainer.add(instructionText);
+        this.quizContainer.add(this.tooltipText);
         
         // Add swap behavior note with responsive sizing
         const swapNoteFontSize = isMobile ? '10px' : '12px';
@@ -1467,10 +1468,15 @@ export default class QuizScene extends BaseScene {
             });
         }
         
-        // Show result after a brief delay (only if timer hasn't expired)
-        this.time.delayedCall(400, () => {
+        // Update tooltip immediately (only if timer hasn't expired)
+        if (!this.timerExpired) {
+            this.updateTooltip(isCorrect);
+        }
+        
+        // Return to gameplay after delay (only if timer hasn't expired)
+        this.time.delayedCall(1200, () => {
             if (!this.timerExpired) {
-                this.showResult(isCorrect);
+                this.returnToGameplay(isCorrect);
             }
         });
     }
@@ -1703,64 +1709,47 @@ export default class QuizScene extends BaseScene {
             button.hitArea.removeInteractive();
         });
         
-        // Show result after a brief delay (only if timer hasn't expired)
-        this.time.delayedCall(400, () => {
-            if (!this.timerExpired) {
-                this.showResult(isCorrect);
-            }
-        });
-    }
-
-    showResult(isCorrect) {
-        // Don't show result if timer has expired
-        if (this.timerExpired) return;
-        
-        // Create result overlay
-        this.resultContainer = this.add.container(this.scale.width / 2, this.scale.height / 2 + 300);
-        
-        const resultBg = this.add.graphics();
-    resultBg.fillStyle(isCorrect ? 0x00FF4E : 0xFF0066, 0.85);
-        resultBg.fillRoundedRect(-200, -50, 400, 100, 15);
-        resultBg.lineStyle(3, 0xffffff);
-        resultBg.strokeRoundedRect(-200, -50, 400, 100, 15);
-        
-        const resultText = this.add.text(0, -10, 
-            isCorrect ? 'Correct!' : 'Wrong!', {
-            fontFamily: 'Arial',
-            fontSize: '24px',
-            fontWeight: 'bold',
-            color: '#ffffff',
-            align: 'center'
-        }).setOrigin(0.5);
-        
-        const rewardText = this.add.text(0, 15, 
-            isCorrect ? '+100pts\n+10s' : '', {
-            fontFamily: 'Arial',
-            fontSize: '18px',
-            color: '#ffffff',
-            align: 'center'
-        }).setOrigin(0.5);
-        
-        this.resultContainer.add([resultBg, resultText, rewardText]);
-        
-        // Animate result appearance
-        this.resultContainer.setScale(0.5);
-        this.resultContainer.setAlpha(0);
-        
-        this.tweens.add({
-            targets: this.resultContainer,
-            scaleX: 1,
-            scaleY: 1,
-            alpha: 1,
-            duration: 300,
-            ease: 'Back.easeOut'
-        });
+        // Update tooltip immediately (only if timer hasn't expired)
+        if (!this.timerExpired) {
+            this.updateTooltip(isCorrect);
+        }
         
         // Return to gameplay after delay (only if timer hasn't expired)
         this.time.delayedCall(1200, () => {
             if (!this.timerExpired) {
                 this.returnToGameplay(isCorrect);
             }
+        });
+    }
+
+    updateTooltip(isCorrect) {
+        // Don't update tooltip if timer has expired or tooltip doesn't exist
+        if (this.timerExpired || !this.tooltipText) return;
+        
+        // Update tooltip text and color based on result
+        if (isCorrect) {
+            this.tooltipText.setText('Correct! +100pts +10s');
+            this.tooltipText.setStyle({ 
+                color: '#00FF4E',
+                fontWeight: 'bold'
+            });
+        } else {
+            this.tooltipText.setText('Wrong! Try again next time');
+            this.tooltipText.setStyle({ 
+                color: '#FF0066',
+                fontWeight: 'bold'
+            });
+        }
+        
+        // Add a subtle pulse animation to draw attention
+        this.tweens.add({
+            targets: this.tooltipText,
+            scaleX: 1.1,
+            scaleY: 1.1,
+            duration: 200,
+            ease: 'Power2.easeOut',
+            yoyo: true,
+            repeat: 1
         });
     }
 
@@ -1778,7 +1767,7 @@ export default class QuizScene extends BaseScene {
         
         // Animate exit
         this.tweens.add({
-            targets: [this.quizContainer, this.resultContainer],
+            targets: this.quizContainer,
             scaleX: 0.8,
             scaleY: 0.8,
             alpha: 0,
