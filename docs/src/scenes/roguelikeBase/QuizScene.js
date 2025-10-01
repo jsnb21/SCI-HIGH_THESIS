@@ -37,7 +37,6 @@ export default class QuizScene extends BaseScene {
         this.questionText = null;
         this.answerButtons = [];
         this.titleText = null;
-        this.backgroundOverlay = null;
         this.quizContainer = null;
         this.resultContainer = null;
         this.tooltipText = null;
@@ -83,32 +82,13 @@ export default class QuizScene extends BaseScene {
             mainScene.events.on('timer-expired', this.handleTimerExpired, this);
         }
         
-        // Get mobile information for responsive overlay positioning
+        // Get mobile information for responsive design
         const scaleInfo = getScaleInfo(this);
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
         const isMobile = screenWidth < 768;
         
-        // Calculate UI element positions using the same logic as main gameplay scene
-        const scoreY = isMobile ? Math.min(30, screenHeight * 0.05) : 30;
-        const streakY = isMobile ? Math.min(65, screenHeight * 0.11) : 65;
-        const scoreFontSize = isMobile ? Math.max(18, screenWidth * 0.03) : 24;
-        const streakFontSize = isMobile ? Math.max(14, screenWidth * 0.025) : 18;
-        
-        // Calculate overlay start position based on actual UI element heights
-        // Add some padding after the streak text (use font size as height approximation)
-        const overlayStartY = Math.max(100, streakY + streakFontSize + 20);
-        const overlayHeight = this.scale.height - overlayStartY;
-        const overlayY = overlayStartY + (overlayHeight / 2);
-        
-        this.backgroundOverlay = this.add.rectangle(
-            this.scale.width / 2, 
-            overlayY, 
-            this.scale.width, 
-            overlayHeight, 
-            0x000000, 
-            0.85
-        );
+
         
         // Load appropriate quiz data based on course topic
         if (this.courseTopic === 'custom' && this.customQuiz) {
@@ -1765,14 +1745,12 @@ export default class QuizScene extends BaseScene {
             questionType: this.getQuestionType()
         };
         
-        // Animate exit
+        // Animate exit - simple fade out
         this.tweens.add({
             targets: this.quizContainer,
-            scaleX: 0.8,
-            scaleY: 0.8,
             alpha: 0,
             duration: 300,
-            ease: 'Power2.easeIn',
+            ease: 'Power2.easeOut',
             onComplete: () => {
                 // Send completion event to main gameplay scene and stop quiz scene
                 this.scene.get('MainGameplay').events.emit('quiz-completed', resultData);
