@@ -2,7 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="assets/img/logo/SCI-HIGH_LOGO.png" />
+  <!-- Primary favicon & PWA meta -->
+  <link rel="preload" as="image" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="apple-touch-icon" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="manifest" href="site.webmanifest" />
+  <meta name="theme-color" content="#0f1524" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
     <title>SCI-HIGH: A Byte-Size Learning Adventure!</title>
     <!-- Tailwind CSS -->
@@ -348,7 +355,7 @@
       <div class="max-w-6xl mx-auto px-3 sm:px-6">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-2 sm:space-x-4">
-            <img src="public/assets/img/Website/buko_productions-logo.png" alt="Buko Productions Logo" class="w-10 h-10 sm:w-16 sm:h-16 animate-bounce-in" />
+            <!-- Removed buko_productions branding logo -->
             <span class="font-gaming text-base sm:text-xl font-bold text-primary">SCI-HIGH</span>
           </div>
           
@@ -459,16 +466,12 @@
         <!-- Main Hero Content -->
         <div class="mb-6 sm:mb-12 animate-slide-in">
           <div class="mb-4 sm:mb-8 relative">
-            <img src="public/assets/img/Website/buko_productions-logo.png" alt="Buko Productions - SCI-HIGH" class="mx-auto w-24 h-24 sm:w-32 sm:h-32 md:w-48 md:h-48 animate-float drop-shadow-2xl relative z-10" />
             <div class="absolute inset-0 bg-primary/20 blur-2xl sm:blur-3xl rounded-full animate-pulse-glow"></div>
           </div>
           
-          <h1 class="font-gaming text-3xl xs:text-4xl sm:text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-cyan mb-3 sm:mb-6 animate-bounce-in px-2">
-            SCI-HIGH
-          </h1>
-          
-          <div class="font-gaming text-sm xs:text-base sm:text-xl md:text-2xl text-primary mb-3 sm:mb-4 tracking-wide sm:tracking-widest animate-bounce-in px-2" style="animation-delay: 0.2s;">
-            A BYTE-SIZE LEARNING ADVENTURE!
+          <!-- Replaced tagline text with SCI-HIGH logo image -->
+          <div class="flex justify-center mb-3 sm:mb-4 animate-bounce-in px-2" style="animation-delay: 0.2s;">
+            <img src="public/assets/img/logo/SCI-HIGH_LOGO.png" alt="SCI-HIGH Logo" class="h-[5.625rem] xs:h-[6.75rem] sm:h-[11.25rem] md:h-[15.75rem] object-contain drop-shadow-lg" />
           </div>
           
           <p class="text-sm xs:text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-6 sm:mb-12 px-4 sm:px-6 animate-bounce-in leading-relaxed" style="animation-delay: 0.4s;">
