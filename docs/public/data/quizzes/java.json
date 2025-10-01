@@ -165,11 +165,9 @@
         "blocks": [
           "public class Student {",
           "    private String name;",
-          "    public Student(String name) {",
-          "        this.name = name;",
-          "    }"
+          "    public Student(String name) {"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
@@ -177,11 +175,9 @@
         "blocks": [
           "class Animal {",
           "    public void speak() { }",
-          "}",
-          "class Dog extends Animal {",
-          "    public void bark() { }"
+          "}"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
@@ -189,11 +185,9 @@
         "blocks": [
           "public static int factorial(int n) {",
           "    if (n <= 1) {",
-          "        return 1;",
-          "    }",
-          "    return n * factorial(n - 1);"
+          "        return 1;"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
@@ -201,11 +195,9 @@
         "blocks": [
           "int[][] matrix = new int[2][2];",
           "for (int i = 0; i < matrix.length; i++) {",
-          "    for (int j = 0; j < matrix[i].length; j++) {",
-          "        matrix[i][j] = i + j;",
-          "    }"
+          "    for (int j = 0; j < matrix[i].length; j++) {"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
@@ -213,11 +205,9 @@
         "blocks": [
           "import java.util.ArrayList;",
           "ArrayList<String> list = new ArrayList<>();",
-          "list.add(\"Hello\");",
-          "list.add(\"World\");",
-          "System.out.println(list.size());"
+          "list.add(\"Hello\");"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
@@ -225,11 +215,9 @@
         "blocks": [
           "int sum = 0;",
           "for (int num : numbers) {",
-          "    sum += num;",
-          "}",
-          "System.out.println(\"Sum: \" + sum);"
+          "    sum += num;"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
@@ -237,11 +225,9 @@
         "blocks": [
           "try {",
           "    int result = Integer.parseInt(input);",
-          "    System.out.println(\"Number: \" + result);",
-          "} catch (NumberFormatException e) {",
-          "    System.out.println(\"Invalid number format\");"
+          "    System.out.println(\"Number: \" + result);"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
@@ -249,11 +235,9 @@
         "blocks": [
           "interface Drawable {",
           "    void draw();",
-          "}",
-          "class Circle implements Drawable {",
-          "    public void draw() { System.out.println(\"Drawing circle\"); }"
+          "}"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
@@ -261,11 +245,9 @@
         "blocks": [
           "public static <T> void swap(T[] array, int i, int j) {",
           "    T temp = array[i];",
-          "    array[i] = array[j];",
-          "    array[j] = temp;",
-          "}"
+          "    array[i] = array[j];"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Java code blocks in correct order:",
@@ -273,11 +255,9 @@
         "blocks": [
           "List<String> names = Arrays.asList(\"Alice\", \"Bob\", \"Charlie\");",
           "names.stream()",
-          "    .filter(name -> name.length() > 3)",
-          "    .map(String::toUpperCase)",
-          "    .forEach(System.out::println);"
+          "    .filter(name -> name.length() > 3)"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       }
     ]
   }

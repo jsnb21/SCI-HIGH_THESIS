@@ -367,11 +367,9 @@
         "blocks": [
           "<!DOCTYPE html>",
           "<html>",
-          "<head><title>My Page</title></head>",
-          "<body><h1>Welcome</h1></body>",
-          "</html>"
+          "<head><title>My Page</title></head>"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the CSS code blocks in correct order:",
@@ -379,11 +377,9 @@
         "blocks": [
           ".button {",
           "    background-color: blue;",
-          "    color: white;",
-          "    padding: 10px 20px;",
-          "}"
+          "    color: white;"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the JavaScript code blocks in correct order:",
@@ -391,11 +387,9 @@
         "blocks": [
           "const button = document.getElementById('myButton');",
           "button.addEventListener('click', function() {",
-          "    console.log('Button clicked!');",
-          "    alert('Hello World!');",
-          "});"
+          "    console.log('Button clicked!');"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the HTML/CSS code blocks in correct order:",
@@ -403,11 +397,9 @@
         "blocks": [
           "<nav class=\"navbar\">",
           "<ul>",
-          "    <li><a href=\"#home\">Home</a></li>",
-          "    <li><a href=\"#about\">About</a></li>",
-          "</ul>"
+          "    <li><a href=\"#home\">Home</a></li>"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the CSS code blocks in correct order:",
@@ -415,11 +407,9 @@
         "blocks": [
           ".container {",
           "    display: flex;",
-          "    justify-content: center;",
-          "    align-items: center;",
-          "}"
+          "    justify-content: center;"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the JavaScript code blocks in correct order:",
@@ -427,12 +417,9 @@
         "blocks": [
           "const form = document.getElementById('myForm');",
           "form.addEventListener('submit', function(e) {",
-          "    if (!form.checkValidity()) {",
-          "        e.preventDefault();",
-          "        alert('Please fill all fields');",
-          "    }"
+          "    if (!form.checkValidity()) {"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the CSS code blocks in correct order:",
@@ -440,11 +427,9 @@
         "blocks": [
           "@media screen and (max-width: 768px) {",
           "    .container {",
-          "        width: 100%;",
-          "        padding: 10px;",
-          "    }"
+          "        width: 100%;"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the JavaScript code blocks in correct order:",
@@ -452,11 +437,9 @@
         "blocks": [
           "fetch('https://api.example.com/data')",
           "    .then(response => response.json())",
-          "    .then(data => console.log(data))",
-          "    .catch(error => console.error('Error:', error));",
-          "// End of fetch"
+          "    .then(data => console.log(data))"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       }
     ]
   }

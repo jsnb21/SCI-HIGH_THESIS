@@ -1067,17 +1067,19 @@ export default class QuizScene extends BaseScene {
         const rightX = this.contentWidth/4;
         const startY = this.draggableAreaY;
         
-        // Create drag blocks (left side)
+        // Create drag blocks (left side) - styled like multiple choice buttons
         blocks.forEach((block, index) => {
             const blockY = startY + (index * blockSpacing);
             
-            const blockObj = this.add.rectangle(leftX, blockY, blockWidth, blockHeight, 0x3498db);
-            blockObj.setStrokeStyle(2, 0x2980b9);
+            // Use yellow/gold styling to match multiple choice buttons
+            const blockObj = this.add.rectangle(leftX, blockY, blockWidth, blockHeight, 0xF9DD72);
+            blockObj.setStrokeStyle(3, 0xB8860B);
             
             const blockText = this.add.text(leftX, blockY, block, {
-                fontFamily: 'monospace',
+                fontFamily: 'Arial',
                 fontSize: '14px',
-                color: '#ffffff',
+                color: '#000000',
+                fontWeight: 'bold',
                 align: 'center',
                 wordWrap: { width: blockWidth - 20 }
             }).setOrigin(0.5);
@@ -1098,18 +1100,19 @@ export default class QuizScene extends BaseScene {
             this.dragBlocks.push({ block: blockObj, text: blockText, originalText: block });
         });
         
-        // Create drop zones (right side) with better styling
+        // Create drop zones (right side) - styled like multiple choice options
         for (let i = 0; i < blocks.length; i++) {
             const dropY = startY + (i * blockSpacing);
             
-            const dropZone = this.add.rectangle(rightX, dropY, blockWidth, blockHeight, 0x95a5a6);
-            dropZone.setStrokeStyle(2, 0x7f8c8d);
-            dropZone.setAlpha(0.3);
+            // Use darker styling to match multiple choice options background
+            const dropZone = this.add.rectangle(rightX, dropY, blockWidth, blockHeight, 0x4a5568);
+            dropZone.setStrokeStyle(2, 0x718096, 0.8);
+            dropZone.setAlpha(0.9);
             
             const label = this.add.text(rightX, dropY, `${i + 1}. Drop here`, {
                 fontFamily: 'Arial',
                 fontSize: '14px',
-                color: '#2c3e50',
+                color: '#ffffff',
                 align: 'center',
                 fontWeight: 'bold'
             }).setOrigin(0.5);
@@ -1130,7 +1133,7 @@ export default class QuizScene extends BaseScene {
         
         // Set up drag events for the block
         blockObj.on('dragstart', (pointer, dragX, dragY) => {
-            blockObj.setFillStyle(0xffff00); // Yellow highlight
+            blockObj.setFillStyle(0xFFE58A); // Lighter yellow for drag highlight
             blockText.setColor('#000000'); // Dark text for visibility
             
             // Store the offset from mouse to block center when drag starts
@@ -1163,19 +1166,19 @@ export default class QuizScene extends BaseScene {
             }
             
             if (isInDropZone) {
-                // Keep drop zone styling
+                // Keep drop zone styling - green for placed blocks
                 blockObj.setFillStyle(0x2ecc71);
                 blockText.setColor('#ffffff');
             } else {
-                // Back to original left side styling
-                blockObj.setFillStyle(0x3498db);
-                blockText.setColor('#ffffff');
+                // Back to original left side styling - yellow/gold
+                blockObj.setFillStyle(0xF9DD72);
+                blockText.setColor('#000000');
             }
         });
         
         // Set up drag events for the text (should move the block too)
         blockText.on('dragstart', (pointer, dragX, dragY) => {
-            blockObj.setFillStyle(0xffff00); // Yellow highlight
+            blockObj.setFillStyle(0xFFE58A); // Lighter yellow for drag highlight
             blockText.setColor('#000000'); // Dark text for visibility
             
             // Store the offset from mouse to text position when drag starts
@@ -1208,13 +1211,13 @@ export default class QuizScene extends BaseScene {
             }
             
             if (isInDropZone) {
-                // Keep drop zone styling
+                // Keep drop zone styling - green for placed blocks
                 blockObj.setFillStyle(0x2ecc71);
                 blockText.setColor('#ffffff');
             } else {
-                // Back to original left side styling
-                blockObj.setFillStyle(0x3498db);
-                blockText.setColor('#ffffff');
+                // Back to original left side styling - yellow/gold
+                blockObj.setFillStyle(0xF9DD72);
+                blockText.setColor('#000000');
             }
         });
         
@@ -1271,7 +1274,7 @@ export default class QuizScene extends BaseScene {
                         });
                         
                         // Update the original drop zone appearance
-                        swapDropZone.setAlpha(0.1); // 10% opacity for occupied zones
+                        swapDropZone.setAlpha(0.3); // Lower opacity for occupied zones
                         swapDropZone.label.setText(`${draggedFromIndex + 1}.`);
                     } else {
                         // Dragged item came from the left side, send existing block back to left
@@ -1283,11 +1286,11 @@ export default class QuizScene extends BaseScene {
                         existingBlock.textObj.y = originalY;
                         
                         // Reset block styling when returning to left side
-                        existingBlock.setFillStyle(0x3498db);
-                        existingBlock.setStrokeStyle(2, 0x2980b9);
+                        existingBlock.setFillStyle(0xF9DD72);
+                        existingBlock.setStrokeStyle(3, 0xB8860B);
                         existingBlock.textObj.setStyle({
-                            color: '#ffffff',
-                            fontWeight: 'normal',
+                            color: '#000000',
+                            fontWeight: 'bold',
                             fontSize: '14px'
                         });
                     }
@@ -1297,7 +1300,7 @@ export default class QuizScene extends BaseScene {
                         if (this.currentOrder[i] === draggedBlock) {
                             // Clear the previous position
                             this.currentOrder[i] = null;
-                            this.dropZones[i].setAlpha(0.3);
+                            this.dropZones[i].setAlpha(0.9);
                             this.dropZones[i].label.setText(`${i + 1}. Drop here`);
                             break;
                         }
@@ -1321,7 +1324,7 @@ export default class QuizScene extends BaseScene {
                 });
                 
                 // Update drop zone appearance
-                dropZone.setAlpha(0.1); // 10% opacity for occupied drop zones
+                dropZone.setAlpha(0.3); // Lower opacity for occupied drop zones
                 dropZone.label.setText(`${dropZone.index + 1}.`);
             }
         });

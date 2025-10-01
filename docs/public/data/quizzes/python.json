@@ -215,10 +215,9 @@
         "blocks": [
           "name = input(\"Enter your name: \")",
           "greeting = \"Hello, \" + name",
-          "print(greeting)",
-          "print(\"Welcome to Python!\")"
+          "print(greeting)"
         ],
-        "correctOrder": [0, 1, 2, 3]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -226,11 +225,9 @@
         "blocks": [
           "def calculate_area(length, width):",
           "    area = length * width",
-          "    return area",
-          "result = calculate_area(5, 3)",
-          "print(f\"Area: {result}\")"
+          "    return area"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -238,23 +235,19 @@
         "blocks": [
           "numbers = [1, 2, 3, 4, 5]",
           "for num in numbers:",
-          "    if num % 2 == 0:",
-          "        print(f\"{num} is even\")",
           "    print(f\"Checked {num}\")"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
         "description": "Basic file reading with error handling",
         "blocks": [
-          "try:",
-          "    file = open(\"data.txt\", \"r\")",
-          "    content = file.read()",
-          "    print(content)",
-          "except FileNotFoundError:"
+          "file = open(\"data.txt\", \"r\")",
+          "content = file.read()",
+          "print(content)"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -262,11 +255,9 @@
         "blocks": [
           "class Calculator:",
           "    def add(self, x, y):",
-          "        return x + y",
-          "calc = Calculator()",
-          "result = calc.add(5, 3)"
+          "        return x + y"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -274,11 +265,9 @@
         "blocks": [
           "students = {\"Alice\": 85, \"Bob\": 92}",
           "for name, score in students.items():",
-          "    print(f\"{name}: {score}\")",
-          "    if score > 90:",
-          "        print(\"Excellent!\")"
+          "    print(f\"{name}: {score}\")"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -286,11 +275,9 @@
         "blocks": [
           "numbers = range(1, 11)",
           "even_numbers = [num for num in numbers if num % 2 == 0]",
-          "squared_evens = [num ** 2 for num in even_numbers]",
-          "print(\"Even numbers:\", even_numbers)",
-          "print(\"Squared evens:\", squared_evens)"
+          "squared_evens = [num ** 2 for num in even_numbers]"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -298,23 +285,19 @@
         "blocks": [
           "import math",
           "radius = 5",
-          "area = math.pi * radius ** 2",
-          "print(f\"Circle area: {area:.2f}\")",
-          "print(f\"Pi value: {math.pi}\")"
+          "area = math.pi * radius ** 2"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
         "description": "Exception handling with multiple except blocks",
         "blocks": [
-          "try:",
-          "    value = int(input(\"Enter a number: \"))",
-          "    result = 10 / value",
-          "except ValueError:",
-          "    print(\"Invalid input!\")"
+          "value = int(input(\"Enter a number: \"))",
+          "result = 10 / value",
+          "print(result)"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -322,11 +305,9 @@
         "blocks": [
           "set1 = {1, 2, 3, 4}",
           "set2 = {3, 4, 5, 6}",
-          "intersection = set1 & set2",
-          "union = set1 | set2",
-          "print(f\"Common: {intersection}\")"
+          "intersection = set1 & set2"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -334,11 +315,9 @@
         "blocks": [
           "def fibonacci(n):",
           "    a, b = 0, 1",
-          "    for _ in range(n):",
-          "        yield a",
-          "        a, b = b, a + b"
+          "    for _ in range(n):"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -346,11 +325,9 @@
         "blocks": [
           "def timer_decorator(func):",
           "    def wrapper(*args, **kwargs):",
-          "        import time",
-          "        start = time.time()",
-          "        return func(*args, **kwargs)"
+          "        import time"
         ],
-        "correctOrder": [0, 1, 2, 3, 4]
+        "correctOrder": [0, 1, 2]
       }
     ]
   }
