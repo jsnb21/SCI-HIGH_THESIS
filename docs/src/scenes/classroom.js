@@ -167,8 +167,8 @@ export default class Classroom extends Phaser.Scene {
     }
 
     preload() {
-        // Load classroom background
-        this.load.image('classroomBG', 'assets/img/bg/classroom_day.png');
+        // Load scrolling binary background (same as MainHub)
+        this.load.image('BinaryBG', 'assets/img/bg/BinaryBG.png');
         
         // Load Principal Richard image for intro dialogue
         this.load.image('Secretary', 'assets/sprites/npcs/secretary.png');
@@ -193,37 +193,19 @@ export default class Classroom extends Phaser.Scene {
     }
 
     create() {
-        // Get mobile scaling info
-        const scaleInfo = getScaleInfo(this);
-        const { width, height } = scaleInfo;
-        const safeArea = getSafeArea(scaleInfo);
+        // Use direct scale access like MainHub for proper background sizing
+        const { width, height } = this.scale;
 
         // Initialize modal state
         this.characterBoxOpen = false;
 
-        // Add classroom background with comprehensive scaling
-        this.bg = this.add.image(0, 0, 'classroomBG').setOrigin(0, 0);
-        
-        // Method 1: Try standard scaling first
-        if (this.bg.width && this.bg.height && this.bg.width > 0 && this.bg.height > 0) {
-            const scaleX = width / this.bg.width;
-            const scaleY = height / this.bg.height;
-            const scale = Math.max(scaleX, scaleY);
-            this.bg.setScale(scale);
-            
-            // Center the scaled image
-            this.bg.x = (width - this.bg.displayWidth) / 2;
-            this.bg.y = (height - this.bg.displayHeight) / 2;
-        } else {
-            // Method 2: Force display size as fallback
-            console.warn('Using displaySize fallback for classroom background');
-            this.bg.setDisplaySize(width, height);
+        // Add scrolling binary background (same as MainHub)
+        this.bg = this.add.tileSprite(0, 0, width, height, 'BinaryBG').setOrigin(0, 0);
+        this.bg.setAlpha(0.5);
+        this.bg.setDepth(-10); // Ensure background renders behind all other elements
+        if (this.cameras && this.cameras.main) {
+            this.cameras.main.setBackgroundColor('#b2e2b1');
         }
-        
-        this.bg.setAlpha(0.5); // Match main hub background alpha
-        
-        // Set background color to match main hub styling
-        this.cameras.main.setBackgroundColor('#B2E2B1');
 
         // Sound effects
         this.se_hoverSound = this.sound.add('se_select');
@@ -994,5 +976,13 @@ export default class Classroom extends Phaser.Scene {
                 onceOnlyFlags.setSeen('classroom_tutorial');
             }
         });
+    }
+
+    update() {
+        if (this.bg) {
+            // Enhanced scrolling background behind carousel (same as MainHub)
+            this.bg.tilePositionY -= 0.5; // Slower vertical scroll for more subtle effect
+            this.bg.tilePositionX -= 0.2; // Add slight horizontal drift for dynamic feel
+        }
     }
 }
