@@ -14,6 +14,8 @@ export default class PowerUpScene extends BaseScene {
         // UI elements
         this.titleText = null;
         this.descriptionText = null;
+        this.tooltipText = null;
+        this.defaultTooltipText = 'Game paused - Take your time choosing!';
         this.powerUpButtons = [];
         this.backgroundOverlay = null;
         this.powerUpContainer = null;
@@ -21,30 +23,33 @@ export default class PowerUpScene extends BaseScene {
         // PowerUp definitions (removed freeze power-up)
         this.powerUps = [
             {
-                id: 'goblinImmunity',
+                id: 'goblinWard',
                 name: 'GOBLIN WARD',
                 icon: '🔆', // shield icon
-                color: 0xFF1744 // red
+                color: 0xFF1744, // red
+                description: 'Protects you from goblin attacks for a limited time'
             },
             {
-                id: 'streakProtection',
+                id: 'streakShield',
                 name: 'STREAK SHIELD',
                 icon: '🛡️', // shield icon
-                color: 0x2196F3 // blue
+                color: 0x2196F3, // blue
+                description: 'Prevents your answer streak from breaking on wrong answers'
             },
             {
-                id: 'speedBoost',
+                id: 'swiftSteps',
                 name: 'SWIFT STEPS',
                 icon: '💨', // wind icon
-                color: 0xFFD700 // yellow/gold
+                color: 0xFFD700, // yellow/gold
+                description: 'Increases your movement speed to navigate faster'
             }
         ];
         
         // Power-up level tracking
         this.powerUpLevels = {
-            goblinImmunity: 1,
-            streakProtection: 1,
-            speedBoost: 1
+            goblinWard: 1,
+            streakShield: 1,
+            swiftSteps: 1
         };
     }
 
@@ -192,8 +197,8 @@ export default class PowerUpScene extends BaseScene {
         // Create power-up cards with modern design
         this.createHorizontalPowerUpCards(buttonStartY, isMobile, isSmallMobile, contentWidth, contentHeight);
         
-        // Add instruction text (matching QuizScene)
-        this.addTimerWarning(contentHeight);
+        // Add instruction text - dynamically centered between last power-up card and panel bottom (matching QuizScene)
+        this.createTooltip(buttonStartY, contentHeight, isMobile, questionFontPx);
         
         // Add entrance animation with refined scaling (matching QuizScene)
         const INITIAL_SCALE_MULTIPLIER = 0.9;
@@ -267,17 +272,23 @@ export default class PowerUpScene extends BaseScene {
             });
             levelText.setOrigin(0.5);
             
-            // Card hover effects
+            // Card hover effects with tooltip updates
             cardBg.on('pointerover', () => {
                 cardBg.setFillStyle(powerUp.color, 1.0);
                 cardBg.setScale(1.1);
                 iconText.setScale(1.1);
+                
+                // Update tooltip with power-up description
+                this.updateTooltip(powerUp.description, '#ffffff');
             });
             
             cardBg.on('pointerout', () => {
                 cardBg.setFillStyle(powerUp.color, 0.9);
                 cardBg.setScale(1.0);
                 iconText.setScale(1.0);
+                
+                // Revert tooltip to default text
+                this.updateTooltip(this.defaultTooltipText, '#00ff00');
             });
             
             // Card click handler
@@ -299,33 +310,41 @@ export default class PowerUpScene extends BaseScene {
         });
     }
 
-    addTimerWarning(contentHeight) {
-        // Get mobile information for responsive design
-        const scaleInfo = getScaleInfo(this);
-        const isMobile = scaleInfo.width < 768;
-        const isSmallMobile = scaleInfo.width < 480;
+
+
+    createTooltip(buttonStartY, contentHeight, isMobile, questionFontPx) {
+        const instructionFontPx = isMobile
+            ? Math.max(14, Math.round(questionFontPx * 0.75))
+            : Math.max(16, Math.round(24 * 0.65));
+        const instructionFontSize = `${instructionFontPx}px`;
         
-        // Responsive font size and positioning (matching QuizScene)
-        const warningFontSize = isMobile ? (isSmallMobile ? 12 : 14) : 16;
-        const warningY = (contentHeight / 2) - 25;
+        // Calculate button height for positioning
+        let buttonHeight = isMobile ? 84 : 100;
+        if (this.scale.width < 500) { // isSmallMobile
+            buttonHeight = 70;
+        }
         
-        const warningText = this.add.text(0, warningY, 'Game paused - Take your time choosing!', {
-            fontSize: `${warningFontSize}px`,
-            fill: '#00ff00',
+        // Get the bottom of the level text (which is below the cards)
+        const lastCardBottom = buttonStartY + buttonHeight + 35; // card height + level text space
+        const panelBottom = contentHeight / 2; // since origin is centered
+        const availableSpace = panelBottom - lastCardBottom; // space from last card bottom to panel bottom
+        
+        // Apply symmetric margins: place instruction halfway in that space (matching QuizScene)
+        const instructionY = lastCardBottom + (availableSpace / 2);
+        this.tooltipText = this.add.text(0, instructionY, this.defaultTooltipText, {
             fontFamily: 'Arial',
+            fontSize: instructionFontSize,
+            color: '#00ff00',
             align: 'center'
-        });
-        warningText.setOrigin(0.5);
-        this.powerUpContainer.add(warningText);
-        
-        // Make it blink
-        this.tweens.add({
-            targets: warningText,
-            alpha: 0.3,
-            duration: 800,
-            yoyo: true,
-            repeat: -1
-        });
+        }).setOrigin(0.5);
+        this.powerUpContainer.add(this.tooltipText);
+    }
+
+    updateTooltip(text, color = '#ffffff') {
+        if (this.tooltipText && !this.powerUpSelected) {
+            this.tooltipText.setText(text);
+            this.tooltipText.setStyle({ color: color });
+        }
     }
 
     selectPowerUp(powerUp) {
@@ -350,9 +369,6 @@ export default class PowerUpScene extends BaseScene {
     }
 
     showSelectionFeedback(powerUp) {
-        const centerX = this.scale.width / 2;
-        const centerY = this.scale.height / 2;
-        
         // Get mobile information for responsive design
         const scaleInfo = getScaleInfo(this);
         const isMobile = scaleInfo.width < 768;
@@ -367,17 +383,17 @@ export default class PowerUpScene extends BaseScene {
         });
         
         // Responsive feedback text
-    const feedbackFontSize = isMobile ? (isSmallMobile ? '26px' : '30px') : '30px';
+        const feedbackFontSize = isMobile ? (isSmallMobile ? '26px' : '30px') : '30px';
         
-        // Show selection feedback
-        const feedbackText = this.add.text(centerX, centerY, `${powerUp.icon} ${powerUp.name} Activated! ${powerUp.icon}`, {
+        // Show selection feedback (positioned relative to container center)
+        const feedbackText = this.add.text(0, 0, `${powerUp.icon} ${powerUp.name} Activated! ${powerUp.icon}`, {
             fontSize: feedbackFontSize,
             fill: '#00ff00',
             fontFamily: 'Arial',
             stroke: '#000000',
             strokeThickness: 2,
             align: 'center',
-            wordWrap: { width: isMobile ? scaleInfo.width * 0.9 : undefined }
+            wordWrap: { width: isMobile ? 600 : 800 } // Use fixed width instead of screen-relative
         });
         feedbackText.setOrigin(0.5);
         this.powerUpContainer.add(feedbackText);
