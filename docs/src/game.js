@@ -12,22 +12,7 @@ import StartUp from './scenes/startup.js'
 import Classroom from './scenes/classroom.js';
 
 // Story Scenes
-import NoahStoryMode from './scenes/storyScenes/noah/NoahStoryMode.js';
-import NoahChapterSelect from './scenes/storyScenes/noah/NoahChapterSelect.js';
-import NoahStoryQuiz from './scenes/storyScenes/noah/NoahStoryQuiz.js';
-import NoahProgressTracker from './scenes/storyScenes/noah/NoahProgressTracker.js';
-
-// Lily's Python Story Scenes
-import LilyStoryMode from './scenes/storyScenes/lily/LilyStoryMode.js';
-import LilyChapterSelect from './scenes/storyScenes/lily/LilyChapterSelect.js';
-import LilyStoryQuiz from './scenes/storyScenes/lily/LilyStoryQuiz.js';
-import LilyProgressTracker from './scenes/storyScenes/lily/LilyProgressTracker.js';
-
-// Damian's Java Story Scenes
-import DamianStoryMode from './scenes/storyScenes/damian/DamianStoryMode.js';
-import DamianChapterSelect from './scenes/storyScenes/damian/DamianChapterSelect.js';
-import DamianStoryQuiz from './scenes/storyScenes/damian/DamianStoryQuiz.js';
-import DamianProgressTracker from './scenes/storyScenes/damian/DamianProgressTracker.js';
+import LilyStory from './scenes/storyScenes/lily/lilyStory.js';
 
 // Computer Lab
 import ComputerLab from './scenes/computerlab.js';
@@ -78,32 +63,19 @@ const config = {
     autoRound: true
   },
   scene: [
-    StartUp, // Added StartUp as the first scene
+    StartUp,
     MainMenu,
-    /* Main Scenes */
     /* UI Scenes */
     CardRewardScene,
-  NotificationScene,
+    NotificationScene,
+    /* Main Scenes */
     Intro,
     OptionsScene,
     MainHub,
     /* Classroom */
     Classroom,
     /* Story Scenes */
-    NoahStoryMode,
-    NoahChapterSelect,
-    NoahStoryQuiz,
-    NoahProgressTracker,
-    /* Lily's Python Story Scenes */
-    LilyStoryMode,
-    LilyChapterSelect,
-    LilyStoryQuiz,
-    LilyProgressTracker,
-    /* Damian's Java Story Scenes */
-    DamianStoryMode,
-    DamianChapterSelect,
-    DamianStoryQuiz,
-    DamianProgressTracker,
+    LilyStory,
     /* Computer Lab Scenes */
     ComputerLab,
     /* Roguelike Scenes */
@@ -111,7 +83,7 @@ const config = {
     QuizScene,
     PowerUpScene,
     ResultScreen,
-    // Register custom quiz scene
+    /* Custom Quiz Scenes */
     CustomQuizScene,
     CustomQuizSelectScene,
     /* Library Scenes */
