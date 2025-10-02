@@ -20,37 +20,51 @@ export default class PowerUpScene extends BaseScene {
         this.backgroundOverlay = null;
         this.powerUpContainer = null;
         
-        // PowerUp definitions (removed freeze power-up)
+        // PowerUp definitions with leveling system (Max Level 3)
         this.powerUps = [
             {
                 id: 'goblinWard',
                 name: 'GOBLIN WARD',
                 icon: '🔆', // shield icon
                 color: 0xFF1744, // red
-                description: 'Protects you from goblin attacks for a limited time'
+                descriptions: {
+                    1: 'Protects you from goblin attacks for a limited time',
+                    2: 'Hitting goblins creates explosions that remove nearby thugs',
+                    3: 'Hitting goblins doubles your movement speed temporarily'
+                }
             },
             {
                 id: 'streakShield',
                 name: 'STREAK SHIELD',
                 icon: '🛡️', // shield icon
                 color: 0x2196F3, // blue
-                description: 'Prevents your answer streak from breaking on wrong answers'
+                descriptions: {
+                    1: 'Prevents your answer streak from breaking on wrong answers',
+                    2: 'Wrong answers during streak still give +2 seconds bonus',
+                    3: 'Wrong answers during streak give +50 points bonus'
+                }
             },
             {
                 id: 'swiftSteps',
                 name: 'SWIFT STEPS',
                 icon: '💨', // wind icon
                 color: 0xFFD700, // yellow/gold
-                description: 'Increases your movement speed to navigate faster'
+                descriptions: {
+                    1: 'Increases base movement speed by 5%',
+                    2: 'Further increases base movement speed by 10% (15% total)',
+                    3: 'Speed scales with streak count (up to 25% bonus)'
+                }
             }
         ];
         
-        // Power-up level tracking
+        // Power-up level tracking (Max Level 3)
         this.powerUpLevels = {
             goblinWard: 1,
             streakShield: 1,
             swiftSteps: 1
         };
+        
+        this.MAX_POWER_UP_LEVEL = 3;
     }
 
     init(data) {
@@ -278,8 +292,10 @@ export default class PowerUpScene extends BaseScene {
                 cardBg.setScale(1.1);
                 iconText.setScale(1.1);
                 
-                // Update tooltip with power-up description
-                this.updateTooltip(powerUp.description, '#ffffff');
+                // Update tooltip with current level description
+                const currentLevel = this.powerUpLevels[powerUp.id];
+                const description = powerUp.descriptions[currentLevel];
+                this.updateTooltip(description, '#ffffff');
             });
             
             cardBg.on('pointerout', () => {
@@ -347,6 +363,12 @@ export default class PowerUpScene extends BaseScene {
         }
     }
 
+    incrementPowerUpLevel(powerUpId) {
+        if (this.powerUpLevels[powerUpId] < this.MAX_POWER_UP_LEVEL) {
+            this.powerUpLevels[powerUpId]++;
+        }
+    }
+
     selectPowerUp(powerUp) {
         if (this.powerUpSelected || this.timerExpired) {
             return;
@@ -355,12 +377,17 @@ export default class PowerUpScene extends BaseScene {
         this.powerUpSelected = true;
         this.selectedPowerUp = powerUp;
         
+        // Get current level before incrementing
+        const currentLevel = this.powerUpLevels[powerUp.id];
         
-        // Visual feedback
-        this.showSelectionFeedback(powerUp);
+        // Level up the selected power-up for next time (max level 3)
+        this.incrementPowerUpLevel(powerUp.id);
         
-        // Apply the power-up effect
-        this.applyPowerUpEffect(powerUp);
+        // Visual feedback with level info
+        this.showSelectionFeedback(powerUp, currentLevel);
+        
+        // Apply the power-up effect with current level
+        this.applyPowerUpEffect(powerUp, currentLevel);
         
         // Return to gameplay after a short delay
         this.time.delayedCall(1500, () => {
@@ -368,7 +395,7 @@ export default class PowerUpScene extends BaseScene {
         });
     }
 
-    showSelectionFeedback(powerUp) {
+    showSelectionFeedback(powerUp, level) {
         // Get mobile information for responsive design
         const scaleInfo = getScaleInfo(this);
         const isMobile = scaleInfo.width < 768;
@@ -385,8 +412,9 @@ export default class PowerUpScene extends BaseScene {
         // Responsive feedback text
         const feedbackFontSize = isMobile ? (isSmallMobile ? '26px' : '30px') : '30px';
         
-        // Show selection feedback (positioned relative to container center)
-        const feedbackText = this.add.text(0, 0, `${powerUp.icon} ${powerUp.name} Activated! ${powerUp.icon}`, {
+        // Show selection feedback with level info (positioned relative to container center)
+        const levelText = level < this.MAX_POWER_UP_LEVEL ? ` LVL ${level}` : ' MAX';
+        const feedbackText = this.add.text(0, 0, `${powerUp.icon} ${powerUp.name}${levelText} Activated! ${powerUp.icon}`, {
             fontSize: feedbackFontSize,
             fill: '#00ff00',
             fontFamily: 'Arial',
@@ -409,20 +437,20 @@ export default class PowerUpScene extends BaseScene {
         });
     }
 
-    applyPowerUpEffect(powerUp) {
+    applyPowerUpEffect(powerUp, level) {
         const mainScene = this.scene.get('MainGameplay');
         if (!mainScene) return;
         
-        // Apply the selected power-up effect to the main gameplay scene
+        // Apply the selected power-up effect to the main gameplay scene with level
         switch (powerUp.id) {
             case 'goblinWard':
-                mainScene.activatePowerUp('goblinWard');
+                mainScene.activatePowerUp('goblinWard', level);
                 break;
             case 'streakShield':
-                mainScene.activatePowerUp('streakShield');
+                mainScene.activatePowerUp('streakShield', level);
                 break;
             case 'swiftSteps':
-                mainScene.activatePowerUp('swiftSteps');
+                mainScene.activatePowerUp('swiftSteps', level);
                 break;
         }
     }
