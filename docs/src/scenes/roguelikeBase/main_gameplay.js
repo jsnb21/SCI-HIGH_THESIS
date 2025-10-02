@@ -1732,10 +1732,7 @@ export default class MainGameplay extends BaseScene {
             sprite: enemySprite,
             glow: null, // No glow effect
             type: spriteKey,
-            hp: 100,
-            // Freeze power-up support
-            frozenUntil: 0,
-            freezeMarker: null
+            hp: 100
         };
     }
 
@@ -2040,11 +2037,7 @@ export default class MainGameplay extends BaseScene {
                 });
             }
 
-            // Freeze a random enemy if freeze power-up is primed
-            if (this.activePowerUps.freezeOnCorrectReady) {
-                this.activePowerUps.freezeOnCorrectReady = false; // consume
-                this.freezeRandomEnemy(5000); // freeze for 5 seconds
-            }
+
             
             // Check for intensity increase after correct answer
             this.checkIntensityIncrease();
@@ -2865,11 +2858,6 @@ export default class MainGameplay extends BaseScene {
 
     destroyEnemy(enemy) {
         if (!enemy) return;
-        // If enemy was frozen, clean any visuals
-        if (enemy.freezeMarker && enemy.freezeMarker.destroy) {
-            enemy.freezeMarker.destroy();
-            enemy.freezeMarker = null;
-        }
         
         // Play explosion sound effect
         this.sound.play('se_explosion', { volume: 0.4 });
@@ -3110,23 +3098,6 @@ export default class MainGameplay extends BaseScene {
         const totalEnemies = this.enemies.length;
         
         this.enemies.forEach(enemy => {
-            // Handle frozen enemies: skip movement while frozen; thaw when expired
-            const now = Date.now();
-            if (enemy.frozenUntil && now < enemy.frozenUntil) {
-                // Maintain freeze marker position
-                if (enemy.freezeMarker && enemy.sprite) {
-                    enemy.freezeMarker.x = enemy.sprite.x;
-                    enemy.freezeMarker.y = enemy.sprite.y - (this.TILE_SIZE * 0.45);
-                }
-                movedEnemies++;
-                if (movedEnemies >= totalEnemies) {
-                    this.enemiesMoving = false;
-                }
-                return; // skip movement for this enemy
-            } else if (enemy.frozenUntil && now >= enemy.frozenUntil) {
-                // Thaw enemy
-                this.thawEnemy(enemy);
-            }
             const bestMove = this.findBestEnemyMove(enemy, playerTileX, playerTileY);
             
             if (bestMove) {
@@ -3162,44 +3133,9 @@ export default class MainGameplay extends BaseScene {
         });
     }
 
-    // Power-up: Freeze a random enemy for durationMs
-    freezeRandomEnemy(durationMs = 5000) {
-        if (!this.enemies || this.enemies.length === 0) {
-            return;
-        }
-        const enemy = Phaser.Utils.Array.GetRandom(this.enemies);
-        if (!enemy || !enemy.sprite) return;
-        const now = Date.now();
-        enemy.frozenUntil = now + Math.max(1000, durationMs);
-        // Visual cue: cyan tint + snowflake marker
-        try {
-            enemy.sprite.setTint(0x80deea);
-        } catch {}
-        // Create or update freeze marker
-        if (!enemy.freezeMarker || enemy.freezeMarker.destroyed) {
-            const fxSize = Math.floor(this.TILE_SIZE * 0.55);
-            enemy.freezeMarker = this.add.text(enemy.sprite.x, enemy.sprite.y - (this.TILE_SIZE * 0.45), '❄️', {
-                fontFamily: 'Arial',
-                fontSize: `${fxSize}px`
-            }).setOrigin(0.5).setDepth(25);
-            // Gentle bobbing
-            this.tweens.add({ targets: enemy.freezeMarker, y: `-=${Math.max(4, this.TILE_SIZE*0.06)}`, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-        }
-        // Small notification
-        this.showPowerUpNotification({ icon: '❄️', name: 'Enemy Frozen!' });
-    }
 
-    // Clear freeze visuals and state on an enemy
-    thawEnemy(enemy) {
-        enemy.frozenUntil = 0;
-        if (enemy.sprite) {
-            try { enemy.sprite.setTint(0xff8888); } catch {}
-        }
-        if (enemy.freezeMarker && enemy.freezeMarker.destroy) {
-            enemy.freezeMarker.destroy();
-            enemy.freezeMarker = null;
-        }
-    }
+
+
 
     findBestEnemyMove(enemy, playerTileX, playerTileY) {
         const deltaX = enemy.tileX - playerTileX;
