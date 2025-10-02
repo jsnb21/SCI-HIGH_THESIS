@@ -256,9 +256,30 @@
       <section class="py-8 px-4 sm:px-6">
         <div class="max-w-4xl mx-auto">
           <!-- Latest News -->
-          <div class="grid gap-6 sm:gap-8">
+          <div id="news-grid" class="grid gap-6 sm:gap-8">
             
             <!-- LATEST NEWS -->
+
+            <article class="news-card bg-cardBg/80 rounded-xl p-6 sm:p-8 animate-fade-in border-2 border-primary/50" style="animation-delay: 0.05s;">
+              <div class="flex flex-wrap items-center gap-3 mb-4">
+                <span class="badge-new text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">New</span>
+                <span class="text-gray-400 text-sm font-gaming">OCTOBER 2, 2025 - 1:15PM</span>
+              </div>
+              <h2 class="font-gaming text-xl sm:text-2xl font-bold text-primary mb-4">
+                ✨ UI Evolution & Power-Up Overhaul! ✨
+              </h2>
+              <p class="text-gray-300 leading-relaxed mb-4">
+                The Results Screen has been polished with a fresh new look—clearer, cleaner, and more satisfying than ever! 🖥️
+
+                But the real game-changer? The Power-Up System! ⚡ Each power now comes with its own leveling path, unlocking new abilities as you grow stronger. Every level brings fresh ways to play—so experiment, strategize, and have fun discovering your perfect build! 🚀
+              </p>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <span class="bg-primary/20 text-primary px-2 py-1 rounded">News</span>
+                <span class="bg-cyan/20 text-cyan px-2 py-1 rounded">Updates</span>
+                <span class="bg-purple/20 text-purple px-2 py-1 rounded">Platform</span>
+              </div>
+            </article>
+
             <article class="news-card bg-cardBg/80 rounded-xl p-6 sm:p-8 animate-fade-in border-2 border-primary/50" style="animation-delay: 0.05s;">
               <div class="flex flex-wrap items-center gap-3 mb-4">
                 <span class="badge-new text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">New</span>
@@ -392,6 +413,21 @@
 
           </div>
 
+          <!-- Load More Button Section -->
+          <div id="load-more-section" class="text-center mt-12 mb-8">
+            <button id="load-more-btn" class="gaming-btn bg-gradient-to-r from-primary to-accent text-dark font-gaming font-bold text-lg uppercase tracking-wider px-8 py-4 rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/50 focus:outline-none focus:ring-4 focus:ring-primary/50">
+              <span class="mr-3">📰</span>
+              Load More Articles
+              <span class="ml-3">↓</span>
+            </button>
+            <div id="load-status" class="mt-4 text-gray-400 font-gaming text-sm hidden">
+              Loading more articles...
+            </div>
+            <div id="no-more-articles" class="mt-4 text-gray-500 font-gaming text-sm hidden">
+              📜 All articles loaded! You're caught up with all the news.
+            </div>
+          </div>
+
           
           <!-- Coming Soon Section (commented out)
           <div class="mt-12 sm:mt-16">
@@ -514,11 +550,7 @@
         initializeMobileMenu();
         initializeSmoothScrolling();
         
-        // Add staggered animation to news cards
-        const newsCards = document.querySelectorAll('.news-card');
-        newsCards.forEach((card, index) => {
-          card.style.animationDelay = `${index * 0.1}s`;
-        });
+        // Note: Staggered animation now handled by pagination system
       });
 
       // Add gaming hover effects
@@ -532,6 +564,117 @@
             link.style.textShadow = 'none';
           });
         });
+      });
+
+      // News pagination system
+      let currentlyVisible = 5; // Show 5 articles initially
+      let isLoading = false;
+
+      function initializeNewsPagination() {
+        const newsGrid = document.getElementById('news-grid');
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        const loadStatus = document.getElementById('load-status');
+        const noMoreArticles = document.getElementById('no-more-articles');
+        
+        if (!newsGrid) return;
+        
+        // Get all news articles
+        const allArticles = Array.from(newsGrid.querySelectorAll('article.news-card'));
+        const totalArticles = allArticles.length;
+        
+        // Hide articles beyond the first 5
+        function updateVisibleArticles() {
+          allArticles.forEach((article, index) => {
+            if (index < currentlyVisible) {
+              article.style.display = 'block';
+              // Add staggered animation
+              article.style.animationDelay = `${index * 0.1}s`;
+            } else {
+              article.style.display = 'none';
+            }
+          });
+          
+          // Update button visibility
+          if (currentlyVisible >= totalArticles) {
+            loadMoreBtn.style.display = 'none';
+            noMoreArticles.classList.remove('hidden');
+          } else {
+            loadMoreBtn.style.display = 'inline-flex';
+            noMoreArticles.classList.add('hidden');
+          }
+        }
+        
+        // Load more functionality
+        function loadMoreArticles() {
+          if (isLoading || currentlyVisible >= totalArticles) return;
+          
+          isLoading = true;
+          loadMoreBtn.disabled = true;
+          loadMoreBtn.innerHTML = '<span class="mr-3">⏳</span>Loading...<span class="ml-3">⏳</span>';
+          loadStatus.classList.remove('hidden');
+          
+          // Simulate loading delay for better UX
+          setTimeout(() => {
+            const previousVisible = currentlyVisible;
+            currentlyVisible = Math.min(currentlyVisible + 5, totalArticles);
+            
+            // Show new articles with animation
+            for (let i = previousVisible; i < currentlyVisible; i++) {
+              if (allArticles[i]) {
+                allArticles[i].style.display = 'block';
+                allArticles[i].style.animationDelay = `${(i - previousVisible) * 0.1}s`;
+                
+                // Add a smooth reveal animation
+                allArticles[i].style.opacity = '0';
+                allArticles[i].style.transform = 'translateY(30px)';
+                
+                setTimeout(() => {
+                  allArticles[i].style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+                  allArticles[i].style.opacity = '1';
+                  allArticles[i].style.transform = 'translateY(0)';
+                }, (i - previousVisible) * 100);
+              }
+            }
+            
+            // Update UI
+            updateVisibleArticles();
+            loadStatus.classList.add('hidden');
+            loadMoreBtn.disabled = false;
+            
+            if (currentlyVisible >= totalArticles) {
+              loadMoreBtn.style.display = 'none';
+              noMoreArticles.classList.remove('hidden');
+            } else {
+              loadMoreBtn.innerHTML = '<span class="mr-3">📰</span>Load More Articles<span class="ml-3">↓</span>';
+            }
+            
+            isLoading = false;
+            
+            // Scroll to the first newly loaded article
+            if (allArticles[previousVisible]) {
+              setTimeout(() => {
+                allArticles[previousVisible].scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'center'
+                });
+              }, 300);
+            }
+          }, 800); // Loading delay
+        }
+        
+        // Initialize
+        updateVisibleArticles();
+        
+        // Add event listener
+        if (loadMoreBtn) {
+          loadMoreBtn.addEventListener('click', loadMoreArticles);
+        }
+      }
+      
+      // Initialize pagination when DOM is ready
+      document.addEventListener('DOMContentLoaded', () => {
+        // Small delay to ensure all other initialization is complete
+        setTimeout(initializeNewsPagination, 100);
       });
     </script>
   </body>

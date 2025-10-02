@@ -871,6 +871,36 @@
       </div>
     </div>
 
+    <!-- Latest News Section -->
+    <section id="latest-news" class="relative z-10 py-20 px-6">
+      <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-16">
+          <h2 class="font-gaming text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-cyan mb-4">
+            📰 Latest News
+          </h2>
+          <p class="text-gray-300 text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed">
+            Stay up-to-date with the latest features, improvements, and announcements from SCI-HIGH!
+          </p>
+        </div>
+
+        <div id="latest-news-container" class="grid md:grid-cols-2 gap-8 mb-12">
+          <!-- Loading placeholder -->
+          <div class="col-span-2 text-center py-8">
+            <div class="text-primary font-gaming">Loading latest news...</div>
+          </div>
+        </div>
+
+        <!-- View All News Button -->
+        <div class="text-center">
+          <a href="./news.html" class="gaming-btn inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-primary to-accent text-dark font-gaming font-bold text-lg uppercase tracking-wider rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/50 focus:outline-none focus:ring-4 focus:ring-primary/50">
+            <span class="mr-3">📰</span>
+            View All News & Updates
+            <span class="ml-3">→</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
     <!-- About Section -->
     <section id="about" class="relative z-10 py-20 px-6">
       <div class="max-w-6xl mx-auto">
@@ -4894,6 +4924,97 @@ Please provide a helpful, engaging response about SCI-HIGH or the thesis researc
         setInterval(syncMobileMenu, 1000);
         syncMobileMenu(); // Initial sync
       });
+
+      // Auto-update latest news section
+      async function loadLatestNews() {
+        try {
+          const response = await fetch('./news.html');
+          const html = await response.text();
+          
+          // Create a temporary DOM parser to extract news articles
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          
+          // Find all news articles (look for articles with news-card class)
+          const articles = doc.querySelectorAll('article.news-card');
+          
+          // Get the first 2 articles (most recent)
+          const latestArticles = Array.from(articles).slice(0, 2);
+          
+          if (latestArticles.length === 0) {
+            document.getElementById('latest-news-container').innerHTML = `
+              <div class="col-span-2 text-center py-8">
+                <div class="text-gray-400 font-gaming">No news articles found.</div>
+              </div>
+            `;
+            return;
+          }
+          
+          // Generate HTML for latest news
+          const newsHTML = latestArticles.map(article => {
+            // Extract article data
+            const dateElement = article.querySelector('.text-gray-400');
+            const titleElement = article.querySelector('h2');
+            const contentElement = article.querySelector('p');
+            const tagsElements = article.querySelectorAll('.bg-primary\\/20, .bg-cyan\\/20, .bg-purple\\/20, .bg-accent\\/20');
+            const newBadge = article.querySelector('.badge-new, [class*="badge-new"]');
+            
+            const date = dateElement ? dateElement.textContent.trim() : 'Recent';
+            const title = titleElement ? titleElement.textContent.trim() : 'News Update';
+            let content = contentElement ? contentElement.textContent.trim() : 'Click to read more...';
+            
+            // Truncate content to about 150 characters for preview
+            if (content.length > 150) {
+              content = content.substring(0, 150) + '...';
+            }
+            
+            // Extract tags
+            const tags = Array.from(tagsElements).map(tag => {
+              const text = tag.textContent.trim();
+              const classes = tag.className;
+              return { text, classes };
+            });
+            
+            // Check if article has "NEW" badge
+            const isNew = newBadge !== null;
+            
+            return `
+              <article class="neon-border bg-cardBg rounded-xl p-6 sm:p-8 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                <div class="flex flex-wrap items-center gap-3 mb-4">
+                  ${isNew ? '<span class="badge-new bg-primary text-dark text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">New</span>' : ''}
+                  <span class="text-gray-400 text-sm font-gaming">${date}</span>
+                </div>
+                <h3 class="font-gaming text-xl sm:text-2xl font-bold text-primary mb-4 leading-tight">
+                  ${title}
+                </h3>
+                <p class="text-gray-300 leading-relaxed mb-6">
+                  ${content}
+                </p>
+                <div class="flex flex-wrap gap-2 mb-4">
+                  ${tags.map(tag => `<span class="${tag.classes} px-2 py-1 rounded text-sm">${tag.text}</span>`).join('')}
+                </div>
+                <a href="./news.html" class="inline-flex items-center text-primary hover:text-accent transition-colors duration-300 font-gaming text-sm uppercase tracking-wider">
+                  Read More <span class="ml-2">→</span>
+                </a>
+              </article>
+            `;
+          }).join('');
+          
+          // Update the news container
+          document.getElementById('latest-news-container').innerHTML = newsHTML;
+          
+        } catch (error) {
+          console.error('Error loading latest news:', error);
+          document.getElementById('latest-news-container').innerHTML = `
+            <div class="col-span-2 text-center py-8">
+              <div class="text-red-400 font-gaming">Error loading news. Please try again later.</div>
+            </div>
+          `;
+        }
+      }
+
+      // Load news when page loads
+      document.addEventListener('DOMContentLoaded', loadLatestNews);
     </script>
   </body>
 </html>
