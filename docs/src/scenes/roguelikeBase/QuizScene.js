@@ -413,27 +413,35 @@ export default class QuizScene extends BaseScene {
         
         // Try to load from intensity3 structure first
         if (quizData && quizData.intensity3 && quizData.intensity3.codeArrangement && quizData.intensity3.codeArrangement.length > 0) {
-            // Filter out already answered questions
             const availableQuestions = this.filterAnsweredQuestions(
-                quizData.intensity3.codeArrangement, 
-                3, 
+                quizData.intensity3.codeArrangement,
+                3,
                 'codeArrangement'
             );
-            
             if (availableQuestions.length > 0) {
-                // Select a random code arrangement question from the available questions
-                this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+                const picked = Phaser.Utils.Array.GetRandom(availableQuestions);
+                // Normalize shape so routing & getQuestionType detect properly
+                this.currentQuestion = {
+                    ...picked,
+                    type: 'codeArrangement',
+                    sourceType: 'codeArrangement',
+                    isDragDrop: true
+                };
             }
         } else if (quizData && quizData.codeArrangement && quizData.codeArrangement.length > 0) {
-            // Fallback to old structure for compatibility
             const availableQuestions = this.filterAnsweredQuestions(
-                quizData.codeArrangement, 
-                3, 
+                quizData.codeArrangement,
+                3,
                 'codeArrangement'
             );
-            
             if (availableQuestions.length > 0) {
-                this.currentQuestion = Phaser.Utils.Array.GetRandom(availableQuestions);
+                const picked = Phaser.Utils.Array.GetRandom(availableQuestions);
+                this.currentQuestion = {
+                    ...picked,
+                    type: 'codeArrangement',
+                    sourceType: 'codeArrangement',
+                    isDragDrop: true
+                };
             }
         }
     }
@@ -722,14 +730,17 @@ export default class QuizScene extends BaseScene {
         const isMobile = scaleInfo.isMobile || scaleInfo.width < 900;
         const isSmallMobile = scaleInfo.width < 500;
         
-        // New: syntax block selection question type
-        if (this.currentQuestion.type === 'syntaxBlock') {
+        // Unified detection for syntax block (includes combined max intensity via sourceType)
+        const detectedType = this.getQuestionType();
+        if (detectedType === 'syntaxBlock') {
             this.createSyntaxBlockInterface(centerX, centerY);
             return;
         }
 
-        // Check if this is a drag-and-drop question (code arrangement - intensity 3)
-        if (this.currentQuestion.isDragDrop) {
+        // Check if this is a code arrangement style question
+        if (detectedType === 'codeArrangement' || this.currentQuestion.isDragDrop) {
+            // Normalize flag for downstream logic
+            this.currentQuestion.isDragDrop = true;
             this.createDragDropInterface(centerX, centerY);
             return;
         }
@@ -781,6 +792,26 @@ export default class QuizScene extends BaseScene {
         
         // Calculate content dimensions based on actual content - mobile responsive
         const answers = this.currentQuestion.options;
+        // Defensive: if options missing, determine correct UI instead of defaulting to syntaxBlock
+        if (!Array.isArray(answers)) {
+            console.warn('[QuizScene] Expected options array for multiple choice, got:', answers, 'Question:', this.currentQuestion);
+            // If it has correctOrder & blocks (array of strings) it's a code arrangement question
+            if (this.currentQuestion && this.currentQuestion.blocks && this.currentQuestion.correctOrder) {
+                this.currentQuestion.isDragDrop = true;
+                this.createDragDropInterface(centerX, centerY);
+                return;
+            }
+            // If it has blocks of objects with a 'code' property → syntaxBlock
+            if (this.currentQuestion && Array.isArray(this.currentQuestion.blocks) && this.currentQuestion.blocks.length > 0) {
+                const first = this.currentQuestion.blocks[0];
+                if (first && typeof first === 'object' && ('code' in first)) {
+                    this.createSyntaxBlockInterface(centerX, centerY);
+                    return;
+                }
+            }
+            // Abort to avoid rendering empty UI
+            return;
+        }
         const numAnswers = answers.length;
     let buttonHeight = isMobile ? 84 : 64;
     let buttonSpacing = isMobile ? 92 : 84;
