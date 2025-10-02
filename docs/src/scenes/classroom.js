@@ -342,11 +342,12 @@ export default class Classroom extends Phaser.Scene {
             smallScale: 0.15,
             iconToTitleGap: 140, // Same as MainHub
             iconToDescGap: 80,   // Same as MainHub
+            // Fixed sizes to mirror ComputerLab appearance (56 / 36) without double scaling
             headingStyle: {
-                fontSize: Math.max(32, 56 * scale) // Same responsive system as MainHub
+                fontSize: 56
             },
             descStyle: {
-                fontSize: Math.max(24, 36 * scale) // Same responsive system as MainHub
+                fontSize: 36
             },
             sounds: {
                 hover: 'se_select',

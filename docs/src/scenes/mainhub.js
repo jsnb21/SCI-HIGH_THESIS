@@ -493,11 +493,13 @@ export default class MainHub extends Phaser.Scene {
             smallScale: 0.15,
             iconToTitleGap: 140, // Increased gap between icon and title
             iconToDescGap: 80,   // Increased gap between title and description
+            // Use base (unscaled) font sizes so the internal carousel scaling applies exactly once,
+            // matching ComputerLab appearance (56 / 36 baselines).
             headingStyle: {
-                fontSize: Math.max(32, 56 * scale) // Responsive font size with minimum
+                fontSize: 56
             },
             descStyle: {
-                fontSize: Math.max(24, 36 * scale) // Responsive font size with minimum
+                fontSize: 36
             },
             sounds: {
                 hover: 'se_hoverSound',
