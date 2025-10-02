@@ -363,12 +363,19 @@ export default class Classroom extends Phaser.Scene {
         });
 
         this.carousel.create(charKeys, charInfo, (selectedItem, index) => {
-            // Navigate to character story scenes
-            if (index === 0) { // Lily
-                this.scene.start('LilyStory');
-            } else {
-                // Show coming soon message for other characters
-                this.showComingSoonMessage(charInfo[index].heading);
+            // Navigate to character story scenes based on index mapping
+            switch(index){
+                case 0: // Lily
+                    this.scene.start('LilyStory');
+                    break;
+                case 1: // Damian
+                    this.scene.start('DamianStory');
+                    break;
+                case 2: // Finley
+                    this.scene.start('FinleyStory');
+                    break;
+                default:
+                    this.showComingSoonMessage(charInfo[index].heading);
             }
         });
     }

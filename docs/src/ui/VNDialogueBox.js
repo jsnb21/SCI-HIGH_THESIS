@@ -54,8 +54,9 @@ export default class VNDialogueBox {
     });
     this.textObject.setDepth(11); // Text should be above the dialogue box
 
-    // Sound
-    this.selectSound = scene.sound.get('se_select') || scene.sound.add('se_select');
+  // Sounds (guard if missing)
+  this.hoverSound = scene.sound.get('se_select') || (scene.sound.add ? scene.sound.add('se_select') : null);
+  this.confirmSound = scene.sound.get('se_confirm') || (scene.sound.add ? scene.sound.add('se_confirm') : null);
 
     // Create continue indicator (initially hidden)
     this.createContinueIndicator(boxX, boxY, boxWidth, boxHeight, scale);
@@ -176,7 +177,7 @@ export default class VNDialogueBox {
     this.dialogueIndex++;
     if (this.dialogueIndex < this.dialogueLines.length) {
       this.text = this.dialogueLines[this.dialogueIndex];
-      if (this.selectSound) this.selectSound.play();
+  if (this.hoverSound) this.hoverSound.play();
       this.typeText(this.text);
     } else {
       // Safety: if out of range, just complete
@@ -259,18 +260,24 @@ export default class VNDialogueBox {
       choiceTextObj.setOrigin(0.5);
       choiceTextObj.setDepth(11);
       
-      // Hover effects
+      // Hover effects with sound (debounced to not spam)
+      let hoverArmed = true;
       choiceButton.on('pointerover', () => {
         choiceButton.setFillStyle(0x5566aa, 0.9);
+        if (hoverArmed && this.hoverSound) {
+          this.hoverSound.play();
+          hoverArmed = false;
+          // Re-arm after short delay to avoid rapid fire
+          this.scene.time.delayedCall(120, () => { hoverArmed = true; });
+        }
       });
-      
       choiceButton.on('pointerout', () => {
         choiceButton.setFillStyle(0x444466, 0.9);
       });
       
-      // Click handler
+      // Click handler with confirm sound
       choiceButton.on('pointerdown', () => {
-        if (this.selectSound) this.selectSound.play();
+        if (this.confirmSound) this.confirmSound.play();
         this.destroyChoices();
         if (this.onChoiceSelected) {
           this.onChoiceSelected(index, choiceText);

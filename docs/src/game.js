@@ -13,6 +13,8 @@ import Classroom from './scenes/classroom.js';
 
 // Story Scenes
 import LilyStory from './scenes/storyScenes/lily/lilyStory.js';
+import DamianStory from './scenes/storyScenes/damian/damianStory.js';
+import FinleyStory from './scenes/storyScenes/finley/finleyStory.js';
 
 // Computer Lab
 import ComputerLab from './scenes/computerlab.js';
@@ -76,6 +78,8 @@ const config = {
     Classroom,
     /* Story Scenes */
     LilyStory,
+  DamianStory,
+  FinleyStory,
     /* Computer Lab Scenes */
     ComputerLab,
     /* Roguelike Scenes */
