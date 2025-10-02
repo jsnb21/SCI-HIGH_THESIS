@@ -1588,20 +1588,30 @@ export default class MainGameplay extends BaseScene {
     }
 
     handleGoblinThugCollision(thug) {
-        // Check for goblin immunity power-up
-        if (this.activePowerUps.goblinImmunityActive) {
-            // Player is immune - destroy thug without penalty
+        // Check for goblin ward power-up
+        if (this.activePowerUps.goblinWard && this.activePowerUps.goblinWard.active) {
+            const level = this.activePowerUps.goblinWard.level;
             
-            // Deactivate immunity after blocking one thug
-            this.activePowerUps.goblinImmunityActive = false;
-            
-            // Show immunity notification
+            // Show ward notification
             this.showPowerUpNotification({
-                icon: '✨',
-                name: 'Goblin Blocked!'
+                icon: '🔆',
+                name: `Goblin Ward LVL ${level}!`
             });
             
-            // Create golden shield effect instead of damage
+            // Level 2: Create explosion that removes nearby goblins
+            if (level >= 2) {
+                this.createGoblinExplosion(thug.x, thug.y);
+            }
+            
+                // Level 3: Double player speed temporarily
+                if (level >= 3) {
+                    const originalSpeed = this.player.speed;
+                    this.player.speed *= 2;
+                    this.time.delayedCall(3000, () => {
+                        this.player.speed = originalSpeed;
+                    });
+                    this.showSpeedBoostPopup('SPEED BOOST!');
+                }            // Create golden shield effect
             const shieldEffect = this.add.circle(this.player.x, this.player.y, this.TILE_SIZE * 0.6, 0xFFD700, 0.5);
             shieldEffect.setDepth(15);
             
@@ -1617,6 +1627,9 @@ export default class MainGameplay extends BaseScene {
             
             // Remove the thug
             this.removeGoblinThug(thug);
+            
+            // Deactivate ward after blocking one thug
+            this.activePowerUps.goblinWard.active = false;
             return;
         }
         
@@ -1732,10 +1745,7 @@ export default class MainGameplay extends BaseScene {
             sprite: enemySprite,
             glow: null, // No glow effect
             type: spriteKey,
-            hp: 100,
-            // Freeze power-up support
-            frozenUntil: 0,
-            freezeMarker: null
+            hp: 100
         };
     }
 
@@ -2040,11 +2050,7 @@ export default class MainGameplay extends BaseScene {
                 });
             }
 
-            // Freeze a random enemy if freeze power-up is primed
-            if (this.activePowerUps.freezeOnCorrectReady) {
-                this.activePowerUps.freezeOnCorrectReady = false; // consume
-                this.freezeRandomEnemy(5000); // freeze for 5 seconds
-            }
+
             
             // Check for intensity increase after correct answer
             this.checkIntensityIncrease();
@@ -2055,22 +2061,35 @@ export default class MainGameplay extends BaseScene {
             // Increment wrong answers counter
             this.wrongAnswers++;
             
-            // Check for streak protection power-up
-            if (this.activePowerUps.streakProtection) {
-                // Use streak protection to save the streak
-                this.activePowerUps.streakProtection = false; // One-time use
+            // Check for streak shield power-up
+            if (this.activePowerUps.streakShield && this.activePowerUps.streakShield.active && this.streak > 0) {
+                const level = this.activePowerUps.streakShield.level;
+                
+                // Level 1: Prevent streak from breaking
                 this.showPowerUpNotification({
                     icon: '🛡️',
                     name: 'Streak Protected!'
                 });
+                
+                // Level 2: Give +2 seconds bonus on wrong answer during streak
+                if (level >= 2) {
+                    this.addTime(2);
+                }
+                
+                // Level 3: Give +50 points bonus on wrong answer during streak
+                if (level >= 3) {
+                    this.updateScore(50);
+                }
+                
+                // Use streak shield (one-time use per activation)
+                this.activePowerUps.streakShield.active = false;
             } else {
                 // Reset streak on wrong answer
                 this.streak = 0;
                 
-                // Reset goblin immunity on wrong answer
-                if (this.activePowerUps.goblinImmunityReady || this.activePowerUps.goblinImmunityActive) {
-                    this.activePowerUps.goblinImmunityReady = false;
-                    this.activePowerUps.goblinImmunityActive = false;
+                // Reset goblin ward on wrong answer
+                if (this.activePowerUps.goblinWard && this.activePowerUps.goblinWard.active) {
+                    this.activePowerUps.goblinWard.active = false;
                 }
             }
             
@@ -2865,11 +2884,6 @@ export default class MainGameplay extends BaseScene {
 
     destroyEnemy(enemy) {
         if (!enemy) return;
-        // If enemy was frozen, clean any visuals
-        if (enemy.freezeMarker && enemy.freezeMarker.destroy) {
-            enemy.freezeMarker.destroy();
-            enemy.freezeMarker = null;
-        }
         
         // Play explosion sound effect
         this.sound.play('se_explosion', { volume: 0.4 });
@@ -3010,22 +3024,18 @@ export default class MainGameplay extends BaseScene {
         });
     }
 
-    activatePowerUp(powerUpId) {
+    activatePowerUp(powerUpId, level = 1) {
         
         switch (powerUpId) {
-            case 'streakProtection':
-                this.activePowerUps.streakProtection = true;
+            case 'streakShield':
+                this.activePowerUps.streakShield = { active: true, level: level };
                 break;
-            case 'goblinImmunity':
-                this.activePowerUps.goblinImmunityReady = true;
+            case 'goblinWard':
+                this.activePowerUps.goblinWard = { active: true, level: level };
                 break;
-            case 'speedBoost':
-                this.activePowerUps.speedBoost = true;
+            case 'swiftSteps':
+                this.activePowerUps.swiftSteps = { active: true, level: level };
                 this.updatePlayerSpeed();
-                break;
-            case 'freezeEnemy':
-                // Arm the freeze to trigger on the next correct answer
-                this.activePowerUps.freezeOnCorrectReady = true;
                 break;
         }
     }
@@ -3035,13 +3045,142 @@ export default class MainGameplay extends BaseScene {
     }
 
     updatePlayerSpeed() {
-        if (this.activePowerUps.speedBoost) {
-            // Calculate speed based on current streak (max 2x speed)
-            const speedMultiplier = Math.min(1 + (this.streak * 0.2), 2.0);
-            this.player.speed = this.originalPlayerSpeed * speedMultiplier;
-        } else {
-            this.player.speed = this.originalPlayerSpeed;
+        let speedMultiplier = 1.0;
+        
+        if (this.activePowerUps.swiftSteps && this.activePowerUps.swiftSteps.active) {
+            const level = this.activePowerUps.swiftSteps.level;
+            
+            switch (level) {
+                case 1:
+                    // Level 1: +5% base speed
+                    speedMultiplier = 1.05;
+                    break;
+                case 2:
+                    // Level 2: +15% total base speed (10% additional)
+                    speedMultiplier = 1.15;
+                    break;
+                case 3:
+                    // Level 3: Speed scales with streak (up to 25% bonus)
+                    const streakBonus = Math.min(this.streak * 0.05, 0.25); // 5% per streak, max 25%
+                    speedMultiplier = 1.0 + streakBonus;
+                    break;
+            }
         }
+        
+        this.player.speed = this.originalPlayerSpeed * speedMultiplier;
+    }
+
+    createGoblinExplosion(x, y) {
+        // Create explosion effect
+        const explosion = this.add.circle(x, y, this.TILE_SIZE * 0.3, 0xFF4444, 0.8);
+        explosion.setDepth(20);
+        
+        // Animate explosion
+        this.tweens.add({
+            targets: explosion,
+            scaleX: 3,
+            scaleY: 3,
+            alpha: 0,
+            duration: 600,
+            ease: 'Power2',
+            onComplete: () => explosion.destroy()
+        });
+        
+        // Find and remove nearby goblins within explosion radius
+        const explosionRadius = this.TILE_SIZE * 2.5;
+        const nearbyGoblins = this.goblinThugs.filter(goblin => {
+            const distance = Phaser.Math.Distance.Between(x, y, goblin.x, goblin.y);
+            return distance <= explosionRadius;
+        });
+        
+        // Remove nearby goblins
+        nearbyGoblins.forEach(goblin => {
+            this.removeGoblinThug(goblin);
+        });
+        
+        // Show explosion notification if goblins were destroyed
+        if (nearbyGoblins.length > 0) {
+            this.showExplosionPopup(`EXPLOSION! ${nearbyGoblins.length} Goblins Destroyed!`);
+        }
+    }
+
+    showScorePopup(text, x, y, color = '#ffffff') {
+        const popup = this.add.text(x, y, text, {
+            fontSize: '16px',
+            fill: color,
+            fontFamily: 'Arial',
+            stroke: '#000000',
+            strokeThickness: 2,
+            align: 'center'
+        });
+        popup.setOrigin(0.5);
+        popup.setDepth(25);
+        
+        // Animate popup
+        this.tweens.add({
+            targets: popup,
+            y: y - 50,
+            alpha: 0,
+            duration: 1500,
+            ease: 'Power2',
+            onComplete: () => popup.destroy()
+        });
+    }
+
+
+
+    showSpeedBoostPopup(text) {
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2 - 50;
+        
+        const popup = this.add.text(centerX, centerY, text, {
+            fontSize: '26px',
+            fill: '#ffff00',
+            fontFamily: 'Arial',
+            stroke: '#000000',
+            strokeThickness: 3,
+            align: 'center'
+        });
+        popup.setOrigin(0.5);
+        popup.setDepth(30);
+        
+        // Animate popup with bounce effect
+        this.tweens.add({
+            targets: popup,
+            y: centerY - 80,
+            scale: 1.5,
+            alpha: 0,
+            duration: 2500,
+            ease: 'Bounce.easeOut',
+            onComplete: () => popup.destroy()
+        });
+    }
+
+    showExplosionPopup(text) {
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
+        
+        const popup = this.add.text(centerX, centerY, text, {
+            fontSize: '22px',
+            fill: '#ff4444',
+            fontFamily: 'Arial',
+            stroke: '#000000',
+            strokeThickness: 3,
+            align: 'center'
+        });
+        popup.setOrigin(0.5);
+        popup.setDepth(30);
+        
+        // Animate popup with explosive effect
+        this.tweens.add({
+            targets: popup,
+            y: centerY - 100,
+            scale: 1.4,
+            alpha: 0,
+            duration: 2200,
+            ease: 'Power3.easeOut',
+            onComplete: () => popup.destroy()
+        });
     }
 
     showPowerUpNotification(powerUp) {
@@ -3110,23 +3249,6 @@ export default class MainGameplay extends BaseScene {
         const totalEnemies = this.enemies.length;
         
         this.enemies.forEach(enemy => {
-            // Handle frozen enemies: skip movement while frozen; thaw when expired
-            const now = Date.now();
-            if (enemy.frozenUntil && now < enemy.frozenUntil) {
-                // Maintain freeze marker position
-                if (enemy.freezeMarker && enemy.sprite) {
-                    enemy.freezeMarker.x = enemy.sprite.x;
-                    enemy.freezeMarker.y = enemy.sprite.y - (this.TILE_SIZE * 0.45);
-                }
-                movedEnemies++;
-                if (movedEnemies >= totalEnemies) {
-                    this.enemiesMoving = false;
-                }
-                return; // skip movement for this enemy
-            } else if (enemy.frozenUntil && now >= enemy.frozenUntil) {
-                // Thaw enemy
-                this.thawEnemy(enemy);
-            }
             const bestMove = this.findBestEnemyMove(enemy, playerTileX, playerTileY);
             
             if (bestMove) {
@@ -3162,44 +3284,9 @@ export default class MainGameplay extends BaseScene {
         });
     }
 
-    // Power-up: Freeze a random enemy for durationMs
-    freezeRandomEnemy(durationMs = 5000) {
-        if (!this.enemies || this.enemies.length === 0) {
-            return;
-        }
-        const enemy = Phaser.Utils.Array.GetRandom(this.enemies);
-        if (!enemy || !enemy.sprite) return;
-        const now = Date.now();
-        enemy.frozenUntil = now + Math.max(1000, durationMs);
-        // Visual cue: cyan tint + snowflake marker
-        try {
-            enemy.sprite.setTint(0x80deea);
-        } catch {}
-        // Create or update freeze marker
-        if (!enemy.freezeMarker || enemy.freezeMarker.destroyed) {
-            const fxSize = Math.floor(this.TILE_SIZE * 0.55);
-            enemy.freezeMarker = this.add.text(enemy.sprite.x, enemy.sprite.y - (this.TILE_SIZE * 0.45), '❄️', {
-                fontFamily: 'Arial',
-                fontSize: `${fxSize}px`
-            }).setOrigin(0.5).setDepth(25);
-            // Gentle bobbing
-            this.tweens.add({ targets: enemy.freezeMarker, y: `-=${Math.max(4, this.TILE_SIZE*0.06)}`, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-        }
-        // Small notification
-        this.showPowerUpNotification({ icon: '❄️', name: 'Enemy Frozen!' });
-    }
 
-    // Clear freeze visuals and state on an enemy
-    thawEnemy(enemy) {
-        enemy.frozenUntil = 0;
-        if (enemy.sprite) {
-            try { enemy.sprite.setTint(0xff8888); } catch {}
-        }
-        if (enemy.freezeMarker && enemy.freezeMarker.destroy) {
-            enemy.freezeMarker.destroy();
-            enemy.freezeMarker = null;
-        }
-    }
+
+
 
     findBestEnemyMove(enemy, playerTileX, playerTileY) {
         const deltaX = enemy.tileX - playerTileX;

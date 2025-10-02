@@ -27,12 +27,6 @@ export default class ResultScreen extends BaseScene {
     create() {
         super.create();
         
-        // Get scale information for mobile responsiveness
-    const scaleInfo = getScaleInfo(this);
-    const isMobile = scaleInfo.width < 900 || scaleInfo.isMobile;
-    const aspect = scaleInfo.height / (scaleInfo.width || 1);
-    const isTallMobile = (isMobile || scaleInfo.isPortrait) && aspect > 1.95; // very tall devices (e.g., S Ultra)
-        
         // Calculate ranking based on correct/wrong ratio
         const totalQuestions = this.correctAnswers + this.wrongAnswers;
         const accuracy = totalQuestions > 0 ? (this.correctAnswers / totalQuestions) * 100 : 0;
@@ -66,287 +60,500 @@ export default class ResultScreen extends BaseScene {
             rankColor = '#ff4000';
             rankGlow = '#ff6600';
         }
+
+        // Use QuizScene scaling system
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
         
-        // Create gradient background
-        const gradient = this.add.graphics();
-        gradient.fillGradientStyle(0x000000, 0x000000, 0x1a1a2e, 0x1a1a2e, 1);
-        gradient.fillRect(0, 0, this.scale.width, this.scale.height);
-        
-    // Create main result panel with responsive dimensions for mobile
-    // Wider on desktop, almost full width on tiny phones, but keep readable margins
-    const tinyPhone = scaleInfo.width < 400;
-    // Mobile: widen further and increase cap; desktop gets a bit wider as well
-    const panelWidth = isMobile ? (
-        isTallMobile ? Math.min(scaleInfo.width * 0.995, 520) : Math.min(scaleInfo.width * 0.99, tinyPhone ? 400 : 500)
-    ) : Math.min(scaleDimension(640, scaleInfo), scaleInfo.width * 0.9);
-    const basePanelHeight = isMobile ? (
-        // More height on mobile to fit larger fonts comfortably
-        isTallMobile ? Math.min(scaleInfo.height * 0.92, 620) : Math.min(scaleInfo.height * 0.92, 620)
-    ) : Math.min(scaleDimension(680, scaleInfo), scaleInfo.height * 0.9);
-    const panelHeight = basePanelHeight;
-        const panelX = this.scale.width / 2;
-        const panelY = this.scale.height / 2;
-        
-        // Panel shadow
-        const shadow = this.add.rectangle(panelX + 5, panelY + 5, panelWidth, panelHeight, 0x000000, 0.5);
-        shadow.setStrokeStyle(2, 0x333333);
-        
-        // Main panel - consistent design for both mobile and PC
-        const panel = this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x1a2332);
-        panel.setStrokeStyle(3, 0x4a90e2); // Blue border for both platforms
-        
-        // Panel glow effect
-        const panelGlow = this.add.rectangle(panelX, panelY, panelWidth + 10, panelHeight + 10, 0x0f4c75, 0.3);
-        
-    // Title text with better styling and responsive positioning
-        const titleText = this.courseCompleted ? 
-            `COURSE COMPLETED!` : 
-            'SESSION ENDED';
-        
-    // Title Y: desktop a bit higher now to allow distinct rank gap
-    // Shift title higher on mobile to free vertical space for stats
-    let titleY = isMobile ? panelY - panelHeight * (isTallMobile ? 0.45 : 0.44) : panelY - panelHeight * 0.38;
-        const title = this.add.text(panelX, titleY, titleText, {
-            fontFamily: 'Arial',
-            fontSize: isMobile ? 
-                (this.courseCompleted ? scaleFontSize(34, scaleInfo) : scaleFontSize(38, scaleInfo)) :
-                (this.courseCompleted ? '36px' : '42px'),
-            fontWeight: 'bold',
-            color: this.courseCompleted ? '#00ff88' : '#ff6600',
-            stroke: '#000000',
-            strokeThickness: 2,
-            align: 'center',
-            shadow: {
-                offsetX: 2,
-                offsetY: 2,
-                color: '#000000',
-                blur: 5,
-                fill: true
-            }
-        }).setOrigin(0.5);
-        
-        // Course name if completed
-        if (this.courseCompleted) {
-            let courseNameY = isMobile ? panelY - panelHeight * 0.3 : panelY - panelHeight * 0.25;
-            const courseName = this.add.text(panelX, courseNameY, this.courseTopic.toUpperCase(), {
-                fontFamily: 'Arial',
-                fontSize: isMobile ? scaleFontSize(26, scaleInfo) : '28px',
-                fontWeight: 'bold',
-                color: '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 1
-            }).setOrigin(0.5);
+        // Mobile detection matching QuizScene
+        const scaleInfo = getScaleInfo(this);
+        const isMobile = scaleInfo.width < 900 || scaleInfo.isMobile;
+        const isSmallMobile = scaleInfo.width < 500;
+        const aspect = this.scale.height / (this.scale.width || 1);
+        const isTallMobile = (isMobile || scaleInfo.isPortrait) && aspect > 1.85;
+        const TALL_MOBILE_FONT_REDUCE = 0.94;
+
+        // Mobile sizing in GAME UNITS matching QuizScene
+        const MOBILE_MAX_WIDTH_RATIO = 0.98;
+        const MOBILE_MAX_HEIGHT_RATIO = 0.9;
+
+        // Content width spanning full screen like QuizScene questions
+        let contentWidth = isMobile ? this.scale.width * 0.98 : this.scale.width * 0.95;
+        if (isTallMobile) {
+            contentWidth = this.scale.width * 0.95;
         }
+
+        // Calculate content dimensions
+        let titleFontPx = isMobile ? 52 : 42;
+        let statFontPx = isMobile ? 32 : 28;
+        let rankFontPx = isMobile ? 120 : 150;
         
-    // Enhanced rank display with special effects and responsive positioning
-        // Rank positioned dynamically BELOW title so they never overlap on desktop
-    // Reduce rank size slightly on mobile so more stats visible
-    // Increase rank size (both platforms) for stronger emphasis
-    let rankSize = isMobile ? (tinyPhone ? 46 : (isTallMobile ? 56 : 54)) : 76;
-    // Reduce gap under title for mobile to reclaim space
-    const desktopTitleRankGap = isMobile ? 0 : 40;
-    const mobileTitleRankGap = isMobile ? (isTallMobile ? 10 : 8) : 0;
-    const computedTitleBottom = title.y + title.height / 2;
-    // Center of rank circle: titleBottom + gap + radius
-    let rankY = isMobile
-        ? (computedTitleBottom + mobileTitleRankGap + rankSize * 0.5)
-        : (computedTitleBottom + desktopTitleRankGap + rankSize * 0.5);
+        if (isTallMobile) {
+            titleFontPx = Math.round(titleFontPx * TALL_MOBILE_FONT_REDUCE);
+            statFontPx = Math.round(statFontPx * TALL_MOBILE_FONT_REDUCE);
+            rankFontPx = Math.round(rankFontPx * TALL_MOBILE_FONT_REDUCE);
+        }
+
+        // Layout dimensions - fix broken layout
+        const titleHeight = isMobile ? 80 : 100;
+        const statRowHeight = isMobile ? 45 : 50;
+        const statGap = isMobile ? 25 : 30;
+        const rankSize = isMobile ? 100 : 140;
         
-        // Multi-layer rank background for depth
-        const rankOuterGlow = this.add.circle(panelX, rankY, rankSize + 8, rankColor, 0.2);
-        const rankBg = this.add.circle(panelX, rankY, rankSize, 0x2c3e50, 0.9);
-        const rankBorder = this.add.circle(panelX, rankY, rankSize);
-        rankBorder.setStrokeStyle(4, rankColor);
-        const rankInnerGlow = this.add.circle(panelX, rankY, rankSize - 8, rankColor, 0.3);
+        const contentHeight = titleHeight + (5 * statRowHeight) + (4 * statGap) + 200; // Extra padding for button
+
+        // Create main container matching QuizScene
+        this.resultContainer = this.add.container(centerX, centerY);
         
-        const rankText = this.add.text(panelX, rankY, rank, {
+        // Determine scaling like QuizScene for full-width layout
+        let targetScale = 1;
+        if (isMobile) {
+            const maxHeight = this.scale.height * MOBILE_MAX_HEIGHT_RATIO;
+            if (contentHeight > maxHeight) {
+                targetScale = Math.min(targetScale, maxHeight / contentHeight);
+            }
+            // No width constraint since we want full width
+            const MIN_MOBILE_SCALE = 0.7; // Allow smaller scale for full-width
+            targetScale = Math.max(targetScale, MIN_MOBILE_SCALE);
+        }
+        if (isTallMobile) {
+            targetScale *= 0.9;
+        }
+
+        // Create background like QuizScene - navy blue rectangle with 80% opacity
+        const resultBox = this.add.graphics();
+        resultBox.fillStyle(0x1a237e, 0.8); // Navy blue color
+        resultBox.fillRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 8);
+        this.resultContainer.add(resultBox);
+
+        // Apply scaling to container
+        this.resultContainer.setScale(targetScale);
+        
+        // Create stats data for left side
+        const statsData = [
+            { label: 'Correct Answers', value: this.correctAnswers, color: '#00ff88', icon: '✓' },
+            { label: 'Wrong Answers', value: this.wrongAnswers, color: '#ff4444', icon: '✗' },
+            { label: 'Highest Streak', value: `x${this.highestStreak}`, color: '#ffaa00', icon: '🔥' },
+            { label: 'Accuracy', value: `${accuracy.toFixed(0)}%`, color: accuracy >= 80 ? '#00ff88' : accuracy >= 60 ? '#ffaa00' : '#ff4444', icon: '🎯' },
+            { label: 'TOTAL SCORE', value: this.totalScore, color: '#ffd700', icon: '' }
+        ];
+
+        // Layout positions - adjusted for full-width container
+        const leftSideX = -contentWidth * 0.3; // Stats positioned on left side
+        const rightSideX = contentWidth * 0.3; // Rank positioned on right side  
+        const statsStartY = -contentHeight/2 + titleHeight + 40; // Proper spacing after title
+
+        // Create title with flashy styling
+        const titleText = 'RESULTS'; // Simplified title
+        const title = this.add.text(0, -contentHeight/2 + titleHeight/2, titleText, {
             fontFamily: 'Arial',
-            fontSize: isMobile ? scaleFontSize(isTallMobile ? 58 : 54, scaleInfo) : '64px',
-            fontWeight: 'bold',
-            color: rankColor,
+            fontSize: `${titleFontPx}px`,
+            fontWeight: '900',
+            color: '#ffffff',
             stroke: '#000000',
-            strokeThickness: 3,
+            strokeThickness: 4,
+            align: 'center',
             shadow: {
                 offsetX: 0,
                 offsetY: 0,
-                color: rankGlow,
+                color: '#00ffff',
                 blur: 15,
                 fill: true
             }
         }).setOrigin(0.5);
         
-        // --- FULL SCROLLABLE CONTENT (title, rank, stats, button) ---
-    const panelTop = panelY - panelHeight/2;
-    const paddingTop = isMobile ? scaleDimension(24, scaleInfo) : 36;
-    // Reduce side padding on mobile to gain more horizontal space for stats rows
-    const paddingSides = isMobile ? scaleDimension(14, scaleInfo) : 28;
-        // Reduce bottom padding so the button can sit closer to the panel bottom
-        const paddingBottom = isMobile ? scaleDimension(16, scaleInfo) : 20;
-        const innerWidth = panelWidth - paddingSides * 2;
+        // Add title glow effect
+        const titleGlow = this.add.text(0, -contentHeight/2 + titleHeight/2, titleText, {
+            fontFamily: 'Arial',
+            fontSize: `${titleFontPx}px`,
+            fontWeight: '900',
+            color: '#00ffff',
+            alpha: 0.3
+        }).setOrigin(0.5);
+        this.resultContainer.add([titleGlow, title]);
 
-        // Build stats + button after adjusting title/rank to top anchored positions
-    title.y = panelTop + paddingTop + title.height/2;
-    // Larger gap between title and rank
-    // Further increase space above the rank letter by ~10%
-    const titleRankGap = isMobile ? scaleDimension(44, scaleInfo) : 62;
-    rankY = title.y + title.height/2 + titleRankGap + rankSize/2;
-        rankOuterGlow.y = rankBg.y = rankBorder.y = rankInnerGlow.y = rankText.y = rankY;
+        // Store elements for animation
+        this.statElements = [];
+        this.rankElements = [];
 
-    // Larger gap between rank and stats
-    // Further increase space below the rank letter by ~10%
-    const rankStatsGap = isMobile ? scaleDimension(53, scaleInfo) : 70;
-    const statsStartY = rankY + rankSize/2 + rankStatsGap;
-        const statsData = [
-            { label: '✓ Correct Answers', value: this.correctAnswers, color: '#00ff88' },
-            { label: '✗ Wrong Answers', value: this.wrongAnswers, color: '#ff4444' },
-            { label: '🔥 Highest Streak', value: `${this.highestStreak}x`, color: '#ffaa00' },
-            { label: '⭐ Total Score', value: this.totalScore, color: '#00ddff' },
-            { label: '📊 Accuracy', value: `${accuracy.toFixed(1)}%`, color: accuracy >= 80 ? '#00ff88' : accuracy >= 60 ? '#ffaa00' : '#ff4444' }
-        ];
-    // Larger rows and fonts for better readability
-    const rowHeight = isMobile ? scaleDimension(isTallMobile ? 54 : 52, scaleInfo) : 48;
-    const rowGap = isMobile ? scaleDimension(12, scaleInfo) : 14;
-    const statFontSize = isMobile ? scaleFontSize(tinyPhone ? 22 : 24, scaleInfo) : '24px';
-        const statRowElements = [];
-        let statCursorY = statsStartY;
-        const leftColX = panelX - innerWidth/2 + innerWidth * 0.04;
-        const rightColX = panelX + innerWidth * 0.46;
-        statsData.forEach(stat => {
-            const centerY = statCursorY + rowHeight/2;
-            const bg = this.add.rectangle(panelX, centerY, innerWidth, rowHeight, 0x0a1628, 0.75).setStrokeStyle(1, 0x2c3e50, 0.35);
-            const glow = this.add.rectangle(panelX, centerY, innerWidth - 4, rowHeight - 4, stat.color, 0.07);
-            const label = this.add.text(leftColX, centerY, stat.label, { fontFamily:'Arial', fontSize: statFontSize, color:'#ffffff', fontWeight:'bold'}).setOrigin(0,0.5);
-            const value = this.add.text(rightColX, centerY, stat.value.toString(), { fontFamily:'Arial', fontSize: statFontSize, color: stat.color, fontWeight:'bold'}).setOrigin(1,0.5);
-            statRowElements.push([bg, glow, label, value]);
-            statCursorY += rowHeight + rowGap;
-        });
-
-    const buttonHeight = isMobile ? scaleDimension(58, scaleInfo) : 68;
-    const buttonWidth = isMobile ? Math.min(innerWidth, scaleDimension(tinyPhone ? 300 : 380, scaleInfo)) : 400;
-    // Even gap above/below the button: center within the remaining space
-    const buttonTopGap = isMobile ? scaleDimension(10, scaleInfo) : 16; // used only if space is tight
-    const bottomEdge = panelTop + panelHeight - paddingBottom;
-    const freeSpace = bottomEdge - statCursorY - buttonHeight;
-    let buttonCenterY;
-        if (freeSpace >= 0) {
-            // Place the button so top and bottom gaps are equal
-            buttonCenterY = statCursorY + (buttonHeight/2) + freeSpace/2;
-        } else {
-            // Not enough space: keep button just below stats with a small gap
-            buttonCenterY = statCursorY + buttonTopGap + buttonHeight/2;
-        }
-        const buttonBg = this.add.rectangle(panelX, buttonCenterY, buttonWidth, buttonHeight, 0x2c3e50).setStrokeStyle(isMobile?scaleDimension(2, scaleInfo):3, 0x4a90e2);
-        const buttonGlow = this.add.rectangle(panelX, buttonCenterY, buttonWidth+6, buttonHeight+6, 0x4a90e2, isMobile?0.35:0.4);
-    const buttonInner = this.add.rectangle(panelX, buttonCenterY, buttonWidth-(isMobile?12:14), buttonHeight-(isMobile?12:14), 0x34495e, 0.85);
-    const buttonText = this.add.text(
-            panelX,
-            buttonCenterY,
-            'Back to Computer Lab',
-            {
+        // Create stats on left side with fixed positioning
+        statsData.forEach((stat, index) => {
+            const yPos = statsStartY + (index * (statRowHeight + statGap));
+            
+            // Icon positioned like in reference image with glow
+            const iconText = this.add.text(leftSideX - 50, yPos, stat.icon, {
                 fontFamily: 'Arial',
-                // Increased font size for better readability
-                fontSize: isMobile ? `${scaleFontSize(tinyPhone ? 22 : 24, scaleInfo)}px` : '28px',
+                fontSize: `${statFontPx}px`,
                 fontWeight: 'bold',
+                color: stat.color,
+                shadow: {
+                    offsetX: 0,
+                    offsetY: 0,
+                    color: stat.color,
+                    blur: 8,
+                    fill: true
+                }
+            }).setOrigin(0, 0.5);
+
+            // Label text positioned next to icon with enhanced styling
+            const labelText = this.add.text(leftSideX - 10, yPos, stat.label, {
+                fontFamily: 'Arial',
+                fontSize: `${statFontPx}px`,
+                fontWeight: '800',
                 color: '#ffffff',
-                shadow: !isMobile ? { offsetX: 2, offsetY: 2, color: '#000', blur: 4, fill: true } : undefined
+                stroke: '#000000',
+                strokeThickness: 2,
+                shadow: {
+                    offsetX: 2,
+                    offsetY: 2,
+                    color: '#000000',
+                    blur: 4,
+                    fill: true
+                }
+            }).setOrigin(0, 0.5);
+
+            // Value positioned far right with enhanced glow
+            const valueText = this.add.text(leftSideX + 420, yPos, stat.value.toString(), {
+                fontFamily: 'Arial',
+                fontSize: `${statFontPx}px`,
+                fontWeight: '900',
+                color: stat.color,
+                stroke: '#000000',
+                strokeThickness: 2,
+                shadow: {
+                    offsetX: 0,
+                    offsetY: 0,
+                    color: stat.color,
+                    blur: 10,
+                    fill: true
+                }
+            }).setOrigin(1, 0.5);
+
+            // Special styling for TOTAL SCORE with dramatic effects
+            if (stat.label === 'TOTAL SCORE') {
+                labelText.x = leftSideX - 10; // Keep same alignment as other labels
+                valueText.x = leftSideX + 420; // Keep same alignment as other values
+                labelText.setFontSize(`${Math.floor(statFontPx * 1.2)}px`);
+                labelText.setStyle({ 
+                    fontWeight: '900',
+                    color: '#ffd700',
+                    stroke: '#ff8800',
+                    strokeThickness: 3,
+                    shadow: {
+                        offsetX: 0,
+                        offsetY: 0,
+                        color: '#ffff00',
+                        blur: 15,
+                        fill: true
+                    }
+                });
+                valueText.setFontSize(`${Math.floor(statFontPx * 1.4)}px`);
+                valueText.setStyle({
+                    fontWeight: '900',
+                    color: '#ffd700',
+                    stroke: '#ff8800',
+                    strokeThickness: 3,
+                    shadow: {
+                        offsetX: 0,
+                        offsetY: 0,
+                        color: '#ffff00',
+                        blur: 15,
+                        fill: true
+                    }
+                });
             }
-        ).setOrigin(0.5);
-        const buttonElements = [buttonGlow, buttonBg, buttonInner, buttonText];
 
-        // Content container that will scroll (includes title, rank, stats, button)
-        const scrollContainer = this.add.container(0,0, [title, rankOuterGlow, rankBg, rankBorder, rankInnerGlow, rankText, ...statRowElements.flat(), ...buttonElements]);
-
-    const contentBottom = buttonCenterY + buttonHeight/2 + paddingBottom;
-        const contentHeight = contentBottom - panelTop;
-        const viewportHeight = panelHeight;
-        let showScrollHint = false; let hintArrow; let scrollTrack; let scrollThumb;
-        if (contentHeight > viewportHeight) {
-            showScrollHint = true;
-            // Mask for panel interior
-            const maskRect = this.add.rectangle(panelX, panelY, panelWidth - 10, panelHeight - 10, 0xffffff, 0.01);
-            const geoMask = maskRect.createGeometryMask();
-            scrollContainer.setMask(geoMask);
-
-            // Scrollbar
-            const trackX = panelX + innerWidth/2 + paddingSides/2 + 4;
-            const effectiveHeight = panelHeight - 20;
-            scrollTrack = this.add.rectangle(trackX, panelY, 4, effectiveHeight, 0xffffff, 0.15).setDepth(6);
-            const thumbHeight = Phaser.Math.Clamp((viewportHeight / contentHeight) * effectiveHeight, 28, effectiveHeight * 0.85);
-            scrollThumb = this.add.rectangle(trackX, panelY - effectiveHeight/2 + thumbHeight/2, 6, thumbHeight, 0x4a90e2, 0.9).setDepth(7);
-
-            // Hint arrow
-            hintArrow = this.add.text(panelX, panelY + panelHeight/2 - 6, '▼', { fontFamily:'Arial', fontSize: isMobile? '20px':'18px', color:'#4a90e2' }).setOrigin(0.5,1).setDepth(8);
-            this.tweens.add({ targets: hintArrow, y: '+=10', alpha:{from:0.4,to:1}, duration:800, yoyo:true, repeat:-1, ease:'Sine.inOut' });
-
-            let scrollOffset = 0; const maxScroll = contentHeight - viewportHeight;
-            const applyScroll = () => {
-                scrollContainer.y = -scrollOffset;
-                const ratio = scrollOffset / maxScroll;
-                const thumbRange = effectiveHeight - scrollThumb.height;
-                scrollThumb.y = panelY - effectiveHeight/2 + scrollThumb.height/2 + thumbRange * ratio;
-            };
-            const hideHint = () => { if (showScrollHint) { showScrollHint = false; if (hintArrow) { this.tweens.add({ targets: hintArrow, alpha:0, duration:300, onComplete: ()=> hintArrow.destroy() }); } } };
-
-            // Wheel
-            this.input.on('wheel', (_, __, dx, dy) => { if (Math.abs(dy) >= Math.abs(dx)) { hideHint(); scrollOffset = Phaser.Math.Clamp(scrollOffset + dy * 0.45, 0, maxScroll); applyScroll(); }});
-            // Drag
-            let dragging=false,lastY=0,velocity=0,lastTime=0;
-            this.input.on('pointerdown', p=>{ if(p.x>=panelX-panelWidth/2 && p.x<=panelX+panelWidth/2 && p.y>=panelY-panelHeight/2 && p.y<=panelY+panelHeight/2){ dragging=true; lastY=p.y; lastTime=p.time; velocity=0; hideHint(); }});
-            this.input.on('pointerup', ()=> dragging=false);
-            this.input.on('pointermove', p=>{ if(!dragging) return; const dy=p.y-lastY; const dt=(p.time-lastTime)||16; lastY=p.y; lastTime=p.time; velocity=-dy/dt*16; scrollOffset = Phaser.Math.Clamp(scrollOffset - dy, 0, maxScroll); applyScroll(); });
-            // Inertia
-            this.time.addEvent({ delay:16, loop:true, callback:()=>{ if(dragging) return; if(Math.abs(velocity)<0.15) return; hideHint(); scrollOffset = Phaser.Math.Clamp(scrollOffset + velocity, 0, maxScroll); velocity *= 0.9; applyScroll(); }});
-            applyScroll();
-        }
-
-        // Button interactions
-        buttonBg.setInteractive({ useHandCursor:true })
-            .on('pointerover', () => { buttonBg.setFillStyle(0x4a90e2); buttonInner.setFillStyle(0x5dade2); buttonGlow.setAlpha(isMobile?0.55:0.7); if(!isMobile){ buttonText.setScale(1.05); this.tweens.add({ targets: buttonGlow, scaleX:1.05, scaleY:1.05, duration:300, yoyo:true, repeat:-1 }); } })
-            .on('pointerout', () => { buttonBg.setFillStyle(0x2c3e50); buttonInner.setFillStyle(0x34495e); buttonGlow.setAlpha(isMobile?0.35:0.4); if(!isMobile){ buttonText.setScale(1); this.tweens.killTweensOf(buttonGlow); buttonGlow.setScale(1);} })
-            .on('pointerdown', () => { buttonBg.setScale(0.95); buttonInner.setScale(0.95); buttonText.setScale(0.95); this.time.delayedCall(140, ()=> this.scene.start('ComputerLab')); });
-
-        // Entrance animations
-        const animatedElements = [panelGlow, panel, title, rankOuterGlow, rankBg, rankBorder, rankInnerGlow, rankText];
-        animatedElements.forEach((element, index) => {
-            element.setAlpha(0); element.setScale(0.8);
-            this.tweens.add({ targets: element, alpha:1, scaleX:1, scaleY:1, duration:600, delay:index*100, ease:'Back.out' });
-        });
-        statRowElements.forEach(row => row.forEach(el => el.setAlpha(0)));
-        buttonElements.forEach(el => el.setAlpha(0));
-        this.time.delayedCall(600, () => {
-            statRowElements.forEach((row, idx) => { this.tweens.add({ targets: row, alpha:{from:0,to:1}, x:{from:'+=35', to:'-=35'}, duration:400, delay:idx*90, ease:'Power2.out' }); });
-            this.tweens.add({ targets: buttonElements, alpha:{from:0,to:1}, duration:500, delay: statRowElements.length*90 + 200, ease:'Power2.out' });
+            this.resultContainer.add([iconText, labelText, valueText]);
+            this.statElements.push({ icon: iconText, label: labelText, value: valueText });
         });
 
-        // Rank pulse & particles
-        this.time.delayedCall(1000, () => { this.tweens.add({ targets:[rankOuterGlow, rankInnerGlow], alpha:{from:0.2,to:0.5}, scaleX:{from:1,to:1.1}, scaleY:{from:1,to:1.1}, duration:1500, yoyo:true, repeat:-1, ease:'Sine.easeInOut'}); });
-        if (rank === 'S' || rank === 'A') this.createParticleEffects(panelX, panelY - 80, rankColor);
+        // Create rank on right side with redesigned multi-layer glow effect
+        const rankCenterY = statsStartY + (2 * (statRowHeight + statGap)); // Center with middle stat (Highest Streak)
 
-        // Resize rebuild
-        this.scale.on('resize', () => {
-            this.scene.restart({
-                correctAnswers: this.correctAnswers,
-                wrongAnswers: this.wrongAnswers,
-                highestStreak: this.highestStreak,
-                totalScore: this.totalScore,
-                courseTopic: this.courseTopic,
-                courseCompleted: this.courseCompleted
+        // Create multiple background layers for depth
+        const rankBgOuter = this.add.circle(rightSideX, rankCenterY, rankSize/2 + 15, 0x000000, 0.6);
+        const rankBg = this.add.circle(rightSideX, rankCenterY, rankSize/2, 0x1a1a2e, 0.95);
+        
+        // Enhanced multi-layer glow system
+        const rankGlow5 = this.add.circle(rightSideX, rankCenterY, rankSize/2 + 50, parseInt(rankColor.replace('#', '0x')), 0.05);
+        const rankGlow4 = this.add.circle(rightSideX, rankCenterY, rankSize/2 + 40, parseInt(rankColor.replace('#', '0x')), 0.1);
+        const rankGlow3 = this.add.circle(rightSideX, rankCenterY, rankSize/2 + 30, parseInt(rankColor.replace('#', '0x')), 0.15);
+        const rankGlow2 = this.add.circle(rightSideX, rankCenterY, rankSize/2 + 20, parseInt(rankColor.replace('#', '0x')), 0.25);
+        const rankGlow1 = this.add.circle(rightSideX, rankCenterY, rankSize/2 + 10, parseInt(rankColor.replace('#', '0x')), 0.4);
+        
+        // Main border with enhanced styling
+        const rankBorder = this.add.circle(rightSideX, rankCenterY, rankSize/2);
+        rankBorder.setStrokeStyle(8, parseInt(rankColor.replace('#', '0x')));
+        
+        // Inner border for extra detail
+        const rankInnerBorder = this.add.circle(rightSideX, rankCenterY, rankSize/2 - 8);
+        rankInnerBorder.setStrokeStyle(3, parseInt(rankColor.replace('#', '0x')), 0.7);
+
+        // Enhanced rank text with multiple shadow layers
+        const rankText = this.add.text(rightSideX, rankCenterY, rank, {
+            fontFamily: 'Arial',
+            fontSize: `${rankFontPx}px`,
+            fontWeight: '900',
+            color: rankColor,
+            stroke: '#000000',
+            strokeThickness: 6,
+            shadow: {
+                offsetX: 0,
+                offsetY: 0,
+                color: rankGlow,
+                blur: 25,
+                fill: true
+            }
+        }).setOrigin(0.5);
+
+        // Enhanced "RANK" label with glow
+        const rankLabel = this.add.text(rightSideX, rankCenterY - rankSize/2 - 40, 'RANK', {
+            fontFamily: 'Arial',
+            fontSize: `${Math.floor(statFontPx * 1.2)}px`,
+            fontWeight: '800',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 2,
+            shadow: {
+                offsetX: 0,
+                offsetY: 0,
+                color: rankColor,
+                blur: 10,
+                fill: true
+            }
+        }).setOrigin(0.5);
+
+        this.resultContainer.add([rankGlow5, rankGlow4, rankGlow3, rankGlow2, rankGlow1, rankBgOuter, rankBg, rankBorder, rankInnerBorder, rankText, rankLabel]);
+        this.rankElements = [rankGlow5, rankGlow4, rankGlow3, rankGlow2, rankGlow1, rankBgOuter, rankBg, rankBorder, rankInnerBorder, rankText, rankLabel];
+
+        // Create back button - position it at the bottom with proper spacing
+        const buttonY = contentHeight/2 - 60; // Proper bottom positioning
+        const buttonWidth = isMobile ? 280 : 360;
+        const buttonHeight = isMobile ? 50 : 60;
+        
+        const buttonBg = this.add.rectangle(0, buttonY, buttonWidth, buttonHeight, 0x2c3e50);
+        buttonBg.setStrokeStyle(3, 0x4a90e2);
+        const buttonText = this.add.text(0, buttonY, 'Back to Computer Lab', {
+            fontFamily: 'Arial',
+            fontSize: isMobile ? '24px' : '28px',
+            fontWeight: 'bold',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+
+        this.resultContainer.add([buttonBg, buttonText]);
+
+        // Make button interactive
+        buttonBg.setInteractive({ useHandCursor: true })
+            .on('pointerover', () => {
+                buttonBg.setFillStyle(0x4a90e2);
+                buttonText.setScale(1.05);
+            })
+            .on('pointerout', () => {
+                buttonBg.setFillStyle(0x2c3e50);
+                buttonText.setScale(1);
+            })
+            .on('pointerdown', () => {
+                buttonBg.setScale(0.95);
+                buttonText.setScale(0.95);
+                this.time.delayedCall(140, () => this.scene.start('ComputerLab'));
+            });
+
+        // Initialize all elements as invisible for animation
+        this.statElements.forEach(stat => {
+            stat.icon.setAlpha(0).setScale(0.8);
+            stat.label.setAlpha(0).setScale(0.8);
+            stat.value.setAlpha(0).setScale(0.8);
+        });
+
+        this.rankElements.forEach(element => {
+            element.setAlpha(0).setScale(0.8);
+        });
+
+        title.setAlpha(0).setScale(0.8);
+        titleGlow.setAlpha(0).setScale(0.8);
+        buttonBg.setAlpha(0).setScale(0.8);
+        buttonText.setAlpha(0).setScale(0.8);
+
+        // Start sequential animations
+        this.createSequentialAnimations();
+    }
+
+    createSequentialAnimations() {
+        const animationDelay = 300; // Delay between each stat animation
+
+        // 1. Title appears first with glow
+        this.tweens.add({
+            targets: [this.resultContainer.list[1], this.resultContainer.list[2]], // titleGlow and title
+            alpha: 1,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 500,
+            ease: 'Back.out'
+        });
+        
+        // Add pulsing effect to title glow
+        this.time.delayedCall(500, () => {
+            this.tweens.add({
+                targets: this.resultContainer.list[1], // titleGlow
+                alpha: 0.5,
+                scaleX: 1.1,
+                scaleY: 1.1,
+                duration: 2000,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
             });
         });
-        return; // end create
+
+        // 2. Stats appear sequentially (Correct -> Wrong -> Streak -> Accuracy -> Score)
+        this.statElements.forEach((stat, index) => {
+            const delay = 500 + (index * animationDelay);
+            
+            // Pop-up animation for each stat
+            this.tweens.add({
+                targets: [stat.icon, stat.label, stat.value],
+                alpha: 1,
+                scaleX: 1,
+                scaleY: 1,
+                duration: 400,
+                delay: delay,
+                ease: 'Back.out',
+                onComplete: () => {
+                    // Add a little bounce effect
+                    this.tweens.add({
+                        targets: [stat.icon, stat.label, stat.value],
+                        scaleX: 1.1,
+                        scaleY: 1.1,
+                        duration: 200,
+                        yoyo: true,
+                        ease: 'Power2.out'
+                    });
+                }
+            });
+        });
+
+        // 3. Rank appears last with special effects
+        const rankDelay = 500 + (this.statElements.length * animationDelay) + 200;
+        
+        this.tweens.add({
+            targets: this.rankElements,
+            alpha: 1,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 600,
+            delay: rankDelay,
+            ease: 'Back.out',
+            onComplete: () => {
+                // Start continuous glow animation for rank
+                this.createRankGlowAnimation();
+                
+                // Create particle effect for high ranks
+                const rankText = this.rankElements[5]; // rankText is at index 5
+                const rank = rankText.text;
+                if (rank === 'S' || rank === 'A') {
+                    this.createParticleEffects(rankText.x, rankText.y, rankText.style.color);
+                }
+            }
+        });
+
+        // 4. Button appears at the end
+        this.time.delayedCall(rankDelay + 800, () => {
+            const buttonElements = this.resultContainer.list.slice(-2); // Last 2 elements are button
+            this.tweens.add({
+                targets: buttonElements,
+                alpha: 1,
+                scaleX: 1,
+                scaleY: 1,
+                duration: 400,
+                ease: 'Back.out'
+            });
+        });
+    }
+
+    createRankGlowAnimation() {
+        // Enhanced multi-layer glow animation with different speeds
+        const outerGlowElements = this.rankElements.slice(0, 3); // Outer glow layers
+        const innerGlowElements = this.rankElements.slice(3, 5); // Inner glow layers
+        
+        // Outer glow - slower, more dramatic
+        this.tweens.add({
+            targets: outerGlowElements,
+            alpha: 0.8,
+            scaleX: 1.3,
+            scaleY: 1.3,
+            duration: 2500,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+        
+        // Inner glow - faster pulse
+        this.tweens.add({
+            targets: innerGlowElements,
+            alpha: 0.9,
+            scaleX: 1.15,
+            scaleY: 1.15,
+            duration: 1200,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Power2.easeInOut'
+        });
+
+        // Rank text with enhanced sparkle effect
+        const rankText = this.rankElements[9]; // rankText is now at index 9
+        this.tweens.add({
+            targets: rankText,
+            scaleX: 1.08,
+            scaleY: 1.08,
+            duration: 1800,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+        
+        // Border pulsing effect
+        const rankBorder = this.rankElements[7]; // rankBorder at index 7
+        this.tweens.add({
+            targets: rankBorder,
+            alpha: 0.8,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Power2.easeInOut'
+        });
+        
+        // Rank label subtle glow
+        const rankLabel = this.rankElements[10]; // rankLabel at index 10
+        this.tweens.add({
+            targets: rankLabel,
+            alpha: 0.9,
+            scaleX: 1.02,
+            scaleY: 1.02,
+            duration: 3000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
     }
 
     createParticleEffects(x, y, color) {
+        // Convert world coordinates to screen coordinates since particles are added to scene, not container
+        const worldX = this.resultContainer.x + x;
+        const worldY = this.resultContainer.y + y;
+        
         for (let i = 0; i < 20; i++) {
-            const particle = this.add.circle(x, y, 2, parseInt(color.replace('#', '0x')));
-            particle.setAlpha(0.8);
+            const particle = this.add.circle(worldX, worldY, 3, parseInt(color.replace('#', '0x')));
+            particle.setAlpha(0.9);
             const angle = (Math.PI * 2 * i) / 20;
-            const distance = 60 + Math.random() * 40;
+            const distance = 80 + Math.random() * 60;
+            
             this.tweens.add({
                 targets: particle,
-                x: x + Math.cos(angle) * distance,
-                y: y + Math.sin(angle) * distance,
+                x: worldX + Math.cos(angle) * distance,
+                y: worldY + Math.sin(angle) * distance,
                 alpha: 0,
+                scaleX: 0.3,
+                scaleY: 0.3,
                 duration: 1500 + Math.random() * 1000,
                 ease: 'Power2.out',
                 onComplete: () => particle.destroy()
