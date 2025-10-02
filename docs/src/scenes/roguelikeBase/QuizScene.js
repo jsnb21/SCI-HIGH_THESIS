@@ -47,10 +47,16 @@ export default class QuizScene extends BaseScene {
         this.courseTopic = data.courseTopic;
         this.enemyData = data.enemyToDestroy;
         this.intensity = data.intensity || 1;
+        // Reworked intensity mapping:
+        // 1: multipleChoice only
+        // 2: syntaxBlock only
+        // 3: codeArrangement only
+        // 4+: mixed (all types)
         this.answeredQuestions = data.answeredQuestions || {
             intensity1: { multipleChoice: new Set() },
-            intensity2: { multipleChoice: new Set(), dragDrop: new Set() },
-            intensity3: { codeArrangement: new Set() }
+            intensity2: { syntaxBlock: new Set() },
+            intensity3: { codeArrangement: new Set() },
+            intensity4: { multipleChoice: new Set(), syntaxBlock: new Set(), codeArrangement: new Set(), dragDrop: new Set(), combined: new Set() }
         };
         this.selectedAnswer = null;
         this.currentQuestion = null;
@@ -125,50 +131,44 @@ export default class QuizScene extends BaseScene {
     }
 
     loadQuizData() {
-        // Load questions based on intensity level
-        if (this.intensity >= 3) {
-            // Intensity 3: Try code arrangement first, then expand to all question types
-            this.loadCodeArrangementQuestion();
-            if (this.currentQuestion) {
-                // Check if it's actually a drag-drop question or just multiple choice
-                if (this.currentQuestion.prompt || this.currentQuestion.description || 
-                    (this.currentQuestion.type && this.currentQuestion.type.includes('drag'))) {
-                    this.currentQuestion.isDragDrop = true;
-                } else {
-                    // It's actually a multiple choice question in the code arrangement section
-                }
-                return;
-            } else {
-                // No code arrangement questions available, try loading from combined pool
-                this.loadCombinedIntensity3Question();
-                if (this.currentQuestion) {
-                    return;
-                }
+        // New mapping:
+        // 1 -> multiple choice only
+        // 2 -> syntaxBlock only
+        // 3 -> codeArrangement only
+        // 4+ -> combined pool of all available types
+        if (this.intensity >= 4) {
+            this.loadCombinedMaxIntensityQuestion();
+            if (!this.currentQuestion) {
+                // fallback degrade path
+                this.loadCodeArrangementQuestion();
+                if (!this.currentQuestion) this.loadSyntaxBlockQuestion();
+                if (!this.currentQuestion) this.loadMultipleChoiceQuestion(1);
             }
-        } else if (this.intensity === 2) {
-            // Intensity 2: Mix of multiple choice and drag-drop (precedence order)
-            const questionType = Math.random() < 0.5 ? 'multipleChoice' : 'dragDrop';
-            if (questionType === 'dragDrop') {
-                this.loadDragDropQuestion();
-                if (this.currentQuestion) {
-                    return;
-                }
-            } else {
-                this.loadMultipleChoiceQuestion(2);
-                if (this.currentQuestion) {
-                    return;
-                }
-            }
-        } else {
-            // Intensity 1: Multiple choice only
-            this.loadMultipleChoiceQuestion(1);
-            if (this.currentQuestion) {
-                return;
-            }
+            return;
         }
-        
-        // Final fallback to intensity 1 multiple choice if nothing else works
+        if (this.intensity === 3) {
+            this.loadCodeArrangementQuestion();
+            if (!this.currentQuestion) {
+                // minimal fallback to keep quiz flowing
+                this.loadMultipleChoiceQuestion(1);
+            }
+            return;
+        }
+        if (this.intensity === 2) {
+            this.loadSyntaxBlockQuestion();
+            if (!this.currentQuestion) {
+                // fallback to multiple choice if no syntaxBlock present
+                this.loadMultipleChoiceQuestion(1);
+            }
+            return;
+        }
+        // intensity 1
         this.loadMultipleChoiceQuestion(1);
+        if (!this.currentQuestion) {
+            // fallback search higher pools
+            this.loadMultipleChoiceQuestion(2);
+            if (!this.currentQuestion) this.loadMultipleChoiceQuestion(3);
+        }
     }
 
     loadCustomQuizQuestion() {
@@ -344,6 +344,43 @@ export default class QuizScene extends BaseScene {
         }
     }
 
+    loadSyntaxBlockQuestion() {
+        // Syntax block selection questions (intensity 2)
+        const topic = this.courseTopic || 'python';
+        let quizData = null;
+        switch (topic.toLowerCase()) {
+            case 'python': quizData = this.cache.json.get('pythonQuiz'); break;
+            case 'java': quizData = this.cache.json.get('javaQuiz'); break;
+            case 'c': quizData = this.cache.json.get('cQuiz'); break;
+            case 'c++': quizData = this.cache.json.get('cppQuiz'); break;
+            case 'c#':
+            case 'csharp': quizData = this.cache.json.get('csharpQuiz'); break;
+            case 'webdesign': quizData = this.cache.json.get('webdesignQuiz'); break;
+            default: quizData = this.cache.json.get('pythonQuiz'); break;
+        }
+        if (!quizData) return;
+        let pool = [];
+        if (quizData.intensity2 && Array.isArray(quizData.intensity2.syntaxBlock)) {
+            pool = pool.concat(quizData.intensity2.syntaxBlock.map(q => ({...q, type: 'syntaxBlock'})));
+        }
+        // Backward compatibility: syntaxBlock stored under multipleChoice
+        if (quizData.intensity2 && Array.isArray(quizData.intensity2.multipleChoice)) {
+            pool = pool.concat(quizData.intensity2.multipleChoice.filter(q => q.type === 'syntaxBlock'));
+        }
+        ['intensity1','intensity3'].forEach(key => {
+            if (quizData[key] && quizData[key].multipleChoice) {
+                pool = pool.concat(quizData[key].multipleChoice.filter(q => q.type === 'syntaxBlock'));
+            }
+        });
+        if (quizData.questions) {
+            pool = pool.concat(quizData.questions.filter(q => q.type === 'syntaxBlock'));
+        }
+        if (pool.length === 0) return;
+        const available = this.filterAnsweredQuestions(pool, 2, 'syntaxBlock');
+        const pick = available.length > 0 ? available : pool;
+        this.currentQuestion = Phaser.Utils.Array.GetRandom(pick);
+    }
+
     loadCodeArrangementQuestion() {
         // Get quiz data based on course topic for intensity 3 code arrangement
         const topic = this.courseTopic || 'python';
@@ -490,6 +527,42 @@ export default class QuizScene extends BaseScene {
         }
     }
 
+    loadCombinedMaxIntensityQuestion() {
+        // Intensity 4+: combine every question type
+        const topic = this.courseTopic || 'python';
+        let quizData = null;
+        switch (topic.toLowerCase()) {
+            case 'python': quizData = this.cache.json.get('pythonQuiz'); break;
+            case 'java': quizData = this.cache.json.get('javaQuiz'); break;
+            case 'c': quizData = this.cache.json.get('cQuiz'); break;
+            case 'c++': quizData = this.cache.json.get('cppQuiz'); break;
+            case 'c#':
+            case 'csharp': quizData = this.cache.json.get('csharpQuiz'); break;
+            case 'webdesign': quizData = this.cache.json.get('webdesignQuiz'); break;
+            default: quizData = this.cache.json.get('pythonQuiz'); break;
+        }
+        if (!quizData) return;
+        let all = [];
+        const add = (arr, type) => { if (Array.isArray(arr)) all = all.concat(arr.map(q => ({...q, sourceType: type}))); };
+        ['intensity3','intensity2','intensity1'].forEach(level => {
+            const bucket = quizData[level];
+            if (!bucket) return;
+            add(bucket.multipleChoice, 'multipleChoice');
+            add(bucket.syntaxBlock, 'syntaxBlock');
+            add(bucket.dragDrop, 'dragDrop');
+            add(bucket.codeArrangement, 'codeArrangement');
+        });
+        if (quizData.questions) add(quizData.questions.filter(q => q.options), 'multipleChoice');
+        if (all.length === 0) return;
+        const available = this.filterCombinedQuestionsMax(all);
+        if (available.length === 0) return; // filter handles reset
+        this.currentQuestion = Phaser.Utils.Array.GetRandom(available);
+        if (this.currentQuestion.sourceType === 'codeArrangement' || this.currentQuestion.sourceType === 'dragDrop') {
+            this.currentQuestion.isDragDrop = true;
+        }
+        if (this.currentQuestion.options && this.currentQuestion.options.length > 2) this.randomizeAnswerChoices();
+    }
+
     randomizeAnswerChoices() {
         if (!this.currentQuestion || !this.currentQuestion.options || this.currentQuestion.options.length <= 2) {
             return; // Don't randomize if there are 2 or fewer options
@@ -558,6 +631,22 @@ export default class QuizScene extends BaseScene {
         return availableQuestions;
     }
 
+    filterCombinedQuestionsMax(questions) {
+        // Combined tracking for MAX intensity (4+)
+        if (!this.answeredQuestions) return questions;
+        const intensityKey = 'intensity4';
+        if (!this.answeredQuestions[intensityKey]) {
+            this.answeredQuestions[intensityKey] = { multipleChoice: new Set(), syntaxBlock: new Set(), codeArrangement: new Set(), dragDrop: new Set(), combined: new Set() };
+        }
+        const combinedSet = this.answeredQuestions[intensityKey].combined;
+        const available = questions.filter(q => !combinedSet.has(this.createQuestionId(q)));
+        if (available.length === 0 && questions.length > 0) {
+            combinedSet.clear();
+            return questions;
+        }
+        return available;
+    }
+
     filterAnsweredQuestions(questions, intensity, questionType) {
         if (!this.answeredQuestions) {
             return questions; // Return all questions if no tracking system
@@ -613,6 +702,9 @@ export default class QuizScene extends BaseScene {
         }
         
         // Legacy detection for questions without sourceType
+        if (this.currentQuestion.type === 'syntaxBlock') {
+            return 'syntaxBlock';
+        }
         if (this.currentQuestion.isDragDrop || this.currentQuestion.type === 'drag-and-drop') {
             return this.intensity === 3 ? 'codeArrangement' : 'dragDrop';
         } else {
@@ -630,6 +722,12 @@ export default class QuizScene extends BaseScene {
         const isMobile = scaleInfo.isMobile || scaleInfo.width < 900;
         const isSmallMobile = scaleInfo.width < 500;
         
+        // New: syntax block selection question type
+        if (this.currentQuestion.type === 'syntaxBlock') {
+            this.createSyntaxBlockInterface(centerX, centerY);
+            return;
+        }
+
         // Check if this is a drag-and-drop question (code arrangement - intensity 3)
         if (this.currentQuestion.isDragDrop) {
             this.createDragDropInterface(centerX, centerY);
@@ -819,6 +917,174 @@ export default class QuizScene extends BaseScene {
             alpha: 1,
             duration: 450,
             ease: 'Back.easeOut'
+        });
+    }
+
+    /**
+     * syntaxBlock question structure example:
+     * {
+     *   type: 'syntaxBlock',
+     *   question: 'Select the Correct Syntax',
+     *   instruction: 'Tap the Block with the Correct Syntax', // optional
+     *   blocks: [ { code: 'if 5 > 3 {\n    print("Hello World");\n}', correct: false }, ... ]
+     * }
+     */
+    createSyntaxBlockInterface(centerX, centerY){
+        const scaleInfo = getScaleInfo(this);
+        const isMobile = scaleInfo.isMobile || scaleInfo.width < 900;
+        const isSmallMobile = scaleInfo.width < 520;
+
+        this.quizContainer = this.add.container(centerX, centerY);
+
+        const contentWidth = isMobile ? Math.min(this.scale.width * 0.95, 1900) : 1420;
+    // Increase header height to create more breathing room between title and blocks
+    const headerHeight = isMobile ? 140 : 130;
+    const blockAreaHeight = isMobile ? 380 : 320; // area for blocks (3 side-by-side)
+        const footerHeight = isMobile ? 90 : 80;
+        const contentHeight = headerHeight + blockAreaHeight + footerHeight;
+
+        // Background panel (match reference: dark #222 with near 0.8 opacity)
+        const panel = this.add.graphics();
+        panel.fillStyle(0x222222, 0.95);
+        panel.fillRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 0);
+        this.quizContainer.add(panel);
+
+        // Title
+        const titleFontSize = isMobile ? (isSmallMobile ? '40px' : '52px') : '48px';
+        const title = this.add.text(0, -contentHeight/2 + (headerHeight/2), this.currentQuestion.question || 'Select the Correct Syntax', {
+            fontFamily: 'Arial',
+            fontSize: titleFontSize,
+            fontWeight: 'bold',
+            color: '#ffffff',
+            align: 'center'
+        }).setOrigin(0.5);
+        this.quizContainer.add(title);
+
+        // Clone & shuffle blocks so display order is randomized each time (does not mutate source data)
+        const blocks = [...(this.currentQuestion.blocks || [])];
+        if (blocks.length > 1) {
+            Phaser.Utils.Array.Shuffle(blocks);
+        }
+    const blockCount = blocks.length;
+    const gap = isMobile ? 40 : 60;
+    // Use target width then compute total width and center group
+    const baseBlockWidth = Math.min(420, (contentWidth - gap * (blockCount + 1)) / Math.max(blockCount,1));
+    const blockHeight = isMobile ? 220 : 200;
+    const totalWidth = blockCount * baseBlockWidth + (blockCount - 1) * gap;
+    const leftEdge = -totalWidth/2; // center relative to container origin
+    // Increased verticalOffset to enlarge the visual gap between title and blocks.
+    // Chosen so that top and bottom whitespace are closer to symmetrical once tooltip is lifted.
+    const verticalOffset = isMobile ? 70 : 60; // previously 20/18
+    const blockY = -contentHeight/2 + headerHeight + blockHeight/2 + verticalOffset;
+
+        this.answerButtons = [];
+        blocks.forEach((blk, i) => {
+            const x = leftEdge + (baseBlockWidth/2) + i * (baseBlockWidth + gap);
+            const rect = this.add.rectangle(x, blockY, baseBlockWidth, blockHeight, 0xF9DD72, 1)
+                .setStrokeStyle(4, 0xB8860B)
+                .setOrigin(0.5)
+                .setInteractive({ useHandCursor: true });
+            rect.buttonIndex = i;
+            this.quizContainer.add(rect);
+
+            // Number label above block (1,2,3)
+            const numberLabel = this.add.text(x, blockY - blockHeight/2 - 28, (i+1).toString(), {
+                fontFamily: 'Arial',
+                fontSize: isMobile ? '46px' : '40px',
+                fontWeight: 'bold',
+                color: '#ffffff'
+            }).setOrigin(0.5);
+            this.quizContainer.add(numberLabel);
+
+            // Code text inside (monospace style look via bold + spacing)
+            const codeStyle = {
+                fontFamily: 'Courier New',
+                fontSize: isMobile ? '22px' : '20px',
+                color: '#000000',
+                align: 'left',
+                wordWrap: { width: baseBlockWidth - 40 }
+            };
+            const codeText = this.add.text(x - baseBlockWidth/2 + 20, blockY - blockHeight/2 + 20, blk.code || '', codeStyle).setOrigin(0,0);
+            this.quizContainer.add(codeText);
+
+            // Hover / pointer styling
+            rect.on('pointerover', () => {
+                if (!rect.selected && !this.answerSubmitted) rect.setFillStyle(0xFFE58A);
+            });
+            rect.on('pointerout', () => {
+                if (!rect.selected && !this.answerSubmitted) rect.setFillStyle(0xF9DD72);
+            });
+            rect.on('pointerdown', () => {
+                if (this.answerSubmitted) return;
+                this.handleSyntaxBlockSelection(i, rect);
+            });
+
+            this.answerButtons.push({ container: rect, isSyntaxBlock: true, codeText, data: blk });
+        });
+
+        const instruction = this.currentQuestion.instruction || 'Tap the Block with the Correct Syntax';
+        // Bottom tooltip (reuse tooltipText reference for unified updateTooltip handling)
+        // Lift tooltip upward for symmetry with the enlarged top gap
+        const tooltipLift = isMobile ? 60 : 55; // amount to move tooltip up from previous position
+        this.tooltipText = this.add.text(0, contentHeight/2 - footerHeight/2 - tooltipLift, instruction, {
+            fontFamily: 'Arial',
+            fontSize: isMobile ? '30px' : '26px',
+            fontWeight: 'bold',
+            color: '#ffffff',
+            align: 'center'
+        }).setOrigin(0.5);
+        this.quizContainer.add(this.tooltipText);
+
+
+        // Entrance animation
+        const targetScale = isMobile ? 1.3 : 1;
+        this.quizContainer.setScale(targetScale * 0.9);
+        this.quizContainer.setAlpha(0);
+        this.tweens.add({
+            targets: this.quizContainer,
+            scaleX: targetScale,
+            scaleY: targetScale,
+            alpha: 1,
+            duration: 450,
+            ease: 'Back.easeOut'
+        });
+    }
+
+    handleSyntaxBlockSelection(index, rect){
+        if (this.answerSubmitted) return;
+        this.answerSubmitted = true;
+        const selected = this.answerButtons[index];
+        const isCorrect = !!selected.data.correct;
+        // Mark visual state
+        this.answerButtons.forEach(btn => btn.container.disableInteractive());
+        if (isCorrect){
+            rect.setFillStyle(QUIZ_UI_COLORS.correctFill).setStrokeStyle(4, QUIZ_UI_COLORS.correctBorder);
+            this.handleAnswerResult(true, 'syntaxBlock');
+        } else {
+            rect.setFillStyle(QUIZ_UI_COLORS.wrongFill).setStrokeStyle(4, QUIZ_UI_COLORS.wrongBorder);
+            // Highlight correct one
+            const correctBtn = this.answerButtons.find(b => b.data.correct);
+            if (correctBtn){
+                correctBtn.container.setFillStyle(QUIZ_UI_COLORS.correctFill).setStrokeStyle(4, QUIZ_UI_COLORS.correctBorder);
+            }
+            this.handleAnswerResult(false, 'syntaxBlock');
+        }
+    }
+
+    // Unified answer result handler (added to support syntaxBlock integration)
+    handleAnswerResult(isCorrect, forcedType){
+        // Fallback if this function already existed elsewhere
+        if (typeof this.returnToGameplay !== 'function') return;
+        // Update tooltip/feedback if available
+        if (this.updateTooltip) {
+            try { this.updateTooltip(isCorrect); } catch(e) {}
+        }
+        const qType = forcedType || this.getQuestionType();
+        // Delay consistent with multiple choice transitions
+        this.time.delayedCall(900, () => {
+            // Some legacy flows may use emit path; mimic expected structure
+            this.events.emit('answer-submitted', { correct: isCorrect, questionType: qType });
+            this.returnToGameplay(isCorrect);
         });
     }
 
@@ -1650,20 +1916,16 @@ export default class QuizScene extends BaseScene {
     updateTooltip(isCorrect) {
         // Don't update tooltip if timer has expired or tooltip doesn't exist
         if (this.timerExpired || !this.tooltipText) return;
-        
-        // Update tooltip text and color based on result
+        // If it's a syntaxBlock question show feedback both in top result text (if present) and tooltip
+        // syntaxResultText removed (redundant); rely solely on tooltipText
+
         if (isCorrect) {
+            // Preserve reward text style matching multiple choice
             this.tooltipText.setText('Correct! +100pts +10s');
-            this.tooltipText.setStyle({ 
-                color: '#00FF4E',
-                fontWeight: 'bold'
-            });
+            this.tooltipText.setStyle({ color: '#00FF4E', fontWeight: 'bold' });
         } else {
-            this.tooltipText.setText('Wrong! Try again next time');
-            this.tooltipText.setStyle({ 
-                color: '#FF0066',
-                fontWeight: 'bold'
-            });
+            this.tooltipText.setText('Wrong! Tap the correct syntax next time');
+            this.tooltipText.setStyle({ color: '#FF0066', fontWeight: 'bold' });
         }
         
         // Add a subtle pulse animation to draw attention

@@ -2120,34 +2120,25 @@ export default class MainGameplay extends BaseScene {
         const intensityKey = `intensity${intensity}`;
         
         if (intensity === 1) {
-            // Intensity 1: Only multiple choice
-            this.answeredQuestions[intensityKey].multipleChoice.add(questionId);
+            this.answeredQuestions[intensityKey]?.multipleChoice?.add(questionId);
         } else if (intensity === 2) {
-            // Intensity 2: Multiple choice or drag-drop
-            if (questionType === 'dragDrop' || questionData.type === 'drag-and-drop') {
-                this.answeredQuestions[intensityKey].dragDrop.add(questionId);
-            } else {
-                this.answeredQuestions[intensityKey].multipleChoice.add(questionId);
+            // Syntax block only
+            if (questionType === 'syntaxBlock' || questionData.type === 'syntaxBlock') {
+                this.answeredQuestions[intensityKey]?.syntaxBlock?.add(questionId);
             }
         } else if (intensity === 3) {
-            // Intensity 3: Enhanced tracking for combined question system
-            
-            // Track in appropriate individual category
-            if (questionType === 'codeArrangement' || questionData.type === 'drag-and-drop' || questionData.isDragDrop) {
-                this.answeredQuestions[intensityKey].codeArrangement.add(questionId);
-            } else {
-                // Multiple choice questions in intensity 3
-                if (!this.answeredQuestions[intensityKey].multipleChoice) {
-                    this.answeredQuestions[intensityKey].multipleChoice = new Set();
-                }
-                this.answeredQuestions[intensityKey].multipleChoice.add(questionId);
+            // Code arrangement only
+            if (questionType === 'codeArrangement' || questionData.isDragDrop || questionData.type === 'drag-and-drop') {
+                this.answeredQuestions[intensityKey]?.codeArrangement?.add(questionId);
             }
-            
-            // Also track in combined pool for cycling system
-            if (!this.answeredQuestions[intensityKey].combined) {
-                this.answeredQuestions[intensityKey].combined = new Set();
-            }
-            this.answeredQuestions[intensityKey].combined.add(questionId);
+        } else if (intensity >= 4) {
+            // MAX intensity: track all in combined pool plus specific type
+            const bucket = this.answeredQuestions.intensity4 || (this.answeredQuestions.intensity4 = { multipleChoice:new Set(), syntaxBlock:new Set(), codeArrangement:new Set(), dragDrop:new Set(), combined:new Set() });
+            if (questionType === 'syntaxBlock') bucket.syntaxBlock.add(questionId);
+            else if (questionType === 'codeArrangement') bucket.codeArrangement.add(questionId);
+            else if (questionType === 'dragDrop') bucket.dragDrop.add(questionId);
+            else bucket.multipleChoice.add(questionId);
+            bucket.combined.add(questionId);
         }
     }
 
@@ -2250,24 +2241,22 @@ export default class MainGameplay extends BaseScene {
     }
 
     checkIntensityIncrease() {
-        if (this.correctAnswers >= this.intensityThreshold2 && this.intensity === 2) {
-            this.intensity = 3;
-            
-            // Play intensity increase sound
-            this.sound.play('se_combo', { volume: 0.8 });
-            
-            // Show INTENSITY 3 increase notification
-            this.showIntensityNotification();
-            
-        } else if (this.correctAnswers >= this.intensityThreshold && this.intensity === 1) {
+        // Threshold logic reused; assume thresholds remain meaning of steps between intensities.
+        if (this.correctAnswers >= this.intensityThreshold && this.intensity === 1) {
+            // Move to intensity 2 (syntax block)
             this.intensity = 2;
-            
-            // Play intensity increase sound
             this.sound.play('se_combo', { volume: 0.7 });
-            
-            // Show INTENSITY increase notification
             this.showIntensityNotification();
-            
+        } else if (this.correctAnswers >= this.intensityThreshold2 && this.intensity === 2) {
+            // Move to intensity 3 (code arrangement)
+            this.intensity = 3;
+            this.sound.play('se_combo', { volume: 0.8 });
+            this.showIntensityNotification();
+        } else if (this.correctAnswers >= this.intensityThreshold2 + 5 && this.intensity === 3) {
+            // Simple additional rule: after some extra correct answers escalate to MAX (4)
+            this.intensity = 4;
+            this.sound.play('se_combo', { volume: 0.9 });
+            this.showIntensityNotification();
         }
     }
 
@@ -2278,9 +2267,11 @@ export default class MainGameplay extends BaseScene {
         
         let notificationText = '';
         if (this.intensity === 2) {
-            notificationText = 'INTENSITY LEVEL 2\nDRAG & DROP MODE!';
+            notificationText = 'INTENSITY LEVEL 2\nSYNTAX CHECK MODE!';
         } else if (this.intensity === 3) {
-            notificationText = 'INTENSITY LEVEL 3\nCODE ARRANGEMENT!';
+            notificationText = 'INTENSITY LEVEL 3\nCODE ARRANGEMENT MODE!';
+        } else if (this.intensity >= 4) {
+            notificationText = 'MAX INTENSITY\nALL QUESTION TYPES!';
         }
         
         const notification = this.add.text(centerX, centerY, notificationText, {

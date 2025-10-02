@@ -154,6 +154,108 @@
     ]
   },
   "intensity2": {
+    "syntaxBlock": [
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Valid HTML image tag with alt",
+        "blocks": [
+          { "code": "<img src=\"logo.png\" alt=\"Logo\">", "correct": true },
+          { "code": "<img alt=logo.png src=Logo>", "correct": false },
+          { "code": "<image src=\"logo.png\" text=\"Logo\">", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "External CSS link tag",
+        "blocks": [
+          { "code": "<link rel=\"stylesheet\" href=\"styles.css\">", "correct": true },
+          { "code": "<link stylesheet=styles.css>", "correct": false },
+          { "code": "<style link=\"styles.css\"></style>", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS class selector styling buttons",
+        "blocks": [
+          { "code": ".btn {\n  background:#3498db;\n  color:#fff;\n}", "correct": true },
+          { "code": "btn { background:#3498db; color:#fff }", "correct": false },
+          { "code": ".btn: { background:#3498db; color:#fff; }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Flex container with centered items",
+        "blocks": [
+          { "code": ".row {\n  display:flex;\n  justify-content:center;\n}", "correct": true },
+          { "code": ".row { flex-display: center; }", "correct": false },
+          { "code": ".row { display:flex-center; }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "JavaScript function declaration",
+        "blocks": [
+          { "code": "function greet(name) {\n  console.log(name);\n}", "correct": true },
+          { "code": "greet(name) => { console.log(name) }", "correct": false },
+          { "code": "function:greet(name){ print name }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Arrow function returning sum",
+        "blocks": [
+          { "code": "const add = (a,b) => a + b;", "correct": true },
+          { "code": "const add(a,b) => { return a + b }", "correct": false },
+          { "code": "let add = a,b => a + b", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Media query for max width 600px",
+        "blocks": [
+          { "code": "@media (max-width:600px) {\n  body { font-size:14px; }\n}", "correct": true },
+          { "code": "@media max-width=600px { body { font-size:14px } }", "correct": false },
+          { "code": "@screen (600px) { body { font-size:14px } }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "HTML form input email",
+        "blocks": [
+          { "code": "<input type=\"email\" name=\"user\">", "correct": true },
+          { "code": "<input email name=\"user\">", "correct": false },
+          { "code": "<input type=email() user>", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS variable usage",
+        "blocks": [
+          { "code": ":root { --main:#222; }\n.box { color: var(--main); }", "correct": true },
+          { "code": "root { main=#222 } .box { color: main(); }", "correct": false },
+          { "code": ":root main:#222; .box { color: var(main); }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Fetch API basic pattern",
+        "blocks": [
+          { "code": "fetch('/data.json')\n  .then(r => r.json())\n  .then(d => console.log(d));", "correct": true },
+          { "code": "fetch('/data.json').json().then(d => log(d));", "correct": false },
+          { "code": "get('/data.json', data => console.log(data));", "correct": false }
+        ]
+      }
+    ],
     "multipleChoice": [
       {
         "question": "Which CSS property is used to change the text color of an element?",

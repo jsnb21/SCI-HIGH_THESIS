@@ -104,6 +104,108 @@
     ]
   },
   "intensity2": {
+    "syntaxBlock": [
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Valid main method declaration",
+        "blocks": [
+          { "code": "public static void main(String[] args) {\n    System.out.println(\"Hi\");\n}", "correct": true },
+          { "code": "public void static main(args) => { }", "correct": false },
+          { "code": "static public main(String args) { }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Create an int array of size 5",
+        "blocks": [
+          { "code": "int[] nums = new int[5];", "correct": true },
+          { "code": "int nums = int[5];", "correct": false },
+          { "code": "array<int> nums = 5;", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Class definition with constructor",
+        "blocks": [
+          { "code": "class User {\n    User(String n) { }\n}", "correct": true },
+          { "code": "class User(String n) { constructor {} }", "correct": false },
+          { "code": "class User: User(String n) {};", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Declare an interface",
+        "blocks": [
+          { "code": "interface Shape {\n    void draw();\n}", "correct": true },
+          { "code": "public interface Shape() => void draw();", "correct": false },
+            { "code": "interface Shape: draw()", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Generic method header",
+        "blocks": [
+          { "code": "public static <T> void swap(T[] a, int i, int j) { }", "correct": true },
+          { "code": "public void static <T> swap(T a[], i, j) { }", "correct": false },
+          { "code": "static <T> public swap(T[] a, i, j) void { }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Enhanced for loop over list",
+        "blocks": [
+          { "code": "for (String s : list) {\n    System.out.println(s);\n}", "correct": true },
+          { "code": "for each s in list -> print(s);", "correct": false },
+          { "code": "foreach (String s of list) { print(s); }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Try/catch NumberFormatException",
+        "blocks": [
+          { "code": "try {\n    int v = Integer.parseInt(s);\n} catch (NumberFormatException e) {\n    e.printStackTrace();\n}", "correct": true },
+          { "code": "catch(NumberFormatException) try { int v = parseInt(s); }", "correct": false },
+          { "code": "try int v = Integer.parseInt(s) catch { }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Anonymous Runnable implementation",
+        "blocks": [
+          { "code": "Runnable r = new Runnable() {\n    public void run() { }\n};", "correct": true },
+          { "code": "Runnable r = () run {};", "correct": false },
+          { "code": "Runnable r = implement Runnable { run() {} };", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Lambda filtering stream",
+        "blocks": [
+          { "code": "list.stream().filter(x -> x.length() > 2);", "correct": true },
+          { "code": "list.stream.filter(x => x.length > 2);", "correct": false },
+          { "code": "stream(list).filter(x -> length(x) > 2);", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Static import Math.sqrt",
+        "blocks": [
+          { "code": "import static java.lang.Math.sqrt;\ndouble r = sqrt(16);", "correct": true },
+          { "code": "static import Math.sqrt; r = sqrt(16);", "correct": false },
+          { "code": "import java.lang.Math.sqrt();", "correct": false }
+        ]
+      }
+    ],
     "multipleChoice": [
       {
         "question": "Which loop always runs once?",
