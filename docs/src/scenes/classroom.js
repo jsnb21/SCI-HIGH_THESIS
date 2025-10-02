@@ -173,12 +173,10 @@ export default class Classroom extends Phaser.Scene {
         // Load Principal Richard image for intro dialogue
         this.load.image('Secretary', 'assets/sprites/npcs/secretary.png');
         
-        // Load character images from public/assets/sprites/npcs with their respective names
-        this.load.image('Noah', 'assets/sprites/npcs/Noah.png');
-        this.load.image('Lily', 'assets/sprites/npcs/Lily.png');
-        this.load.image('Damian', 'assets/sprites/npcs/Damian.png');
-        this.load.image('Bella', 'assets/sprites/npcs/Bella.png');
-        this.load.image('Finley', 'assets/sprites/npcs/Finley.png');
+        // Load character images from public/assets/sprites/npcs with chibi versions
+        this.load.image('Lily', 'assets/sprites/npcs/chibiLily.png');
+        this.load.image('Damian', 'assets/sprites/npcs/chibiDamian.png');
+        this.load.image('Finley', 'assets/sprites/npcs/chibiFinley.png');
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.audio('bgm_classroom', 'assets/audio/bgm/bgm_classroom.mp3');
@@ -203,8 +201,25 @@ export default class Classroom extends Phaser.Scene {
         // Initialize modal state
         this.characterBoxOpen = false;
 
-        // Add classroom background with better styling
-        this.bg = this.add.tileSprite(0, 0, width, height, 'classroomBG').setOrigin(0, 0);
+        // Add classroom background with comprehensive scaling
+        this.bg = this.add.image(0, 0, 'classroomBG').setOrigin(0, 0);
+        
+        // Method 1: Try standard scaling first
+        if (this.bg.width && this.bg.height && this.bg.width > 0 && this.bg.height > 0) {
+            const scaleX = width / this.bg.width;
+            const scaleY = height / this.bg.height;
+            const scale = Math.max(scaleX, scaleY);
+            this.bg.setScale(scale);
+            
+            // Center the scaled image
+            this.bg.x = (width - this.bg.displayWidth) / 2;
+            this.bg.y = (height - this.bg.displayHeight) / 2;
+        } else {
+            // Method 2: Force display size as fallback
+            console.warn('Using displaySize fallback for classroom background');
+            this.bg.setDisplaySize(width, height);
+        }
+        
         this.bg.setAlpha(0.5); // Match main hub background alpha
         
         // Set background color to match main hub styling
@@ -233,21 +248,16 @@ export default class Classroom extends Phaser.Scene {
         // Get mobile scaling info
         const scaleInfo = getScaleInfo(this);
 
-        // Carousel data using images from assets/img/sprites/npcs with their respective names
-        const charKeys = ['Noah', 'Lily', 'Damian', 'Bella', 'Finley'];
+        // Carousel data using MainHub-style structure
+        const charKeys = ['Lily', 'Damian', 'Finley'];
         const charInfo = [
-            { 
-                name: "Noah", 
-                desc: "A diligent student who loves coding a bit too much.",
-                progress: char1.quest1 / 100,
-                side: char1.quest2 / 100,
-                bonus: char1.quest3 / 100,
-                questDescs: [
-                    char1.quest1Desc,
-                    char1.quest2Desc,
-                    char1.quest3Desc
-                ]
-            },
+            { heading: "Lily", desc: "She can teach you more about SCI-HIGH." },
+            { heading: "Damian", desc: "He knows a lot about the main website." },
+            { heading: "Finley", desc: "He'll guide you on how the Computer Lab works." }
+        ];
+        
+        // Store additional character data for showCharacterBox
+        this.extendedCharInfo = [
             { 
                 name: "Lily", 
                 desc: "A popular idol, she's talented at singing, dancing, and even web design.",
@@ -270,18 +280,6 @@ export default class Classroom extends Phaser.Scene {
                     char3.quest1Desc,
                     char3.quest2Desc,
                     char3.quest3Desc
-                ]
-            },
-            { 
-                name: "Bella", 
-                desc: "She's shy and timid, yet she's one of the top performers.",
-                progress: char4.quest1 / 100,
-                side: char4.quest2 / 100,
-                bonus: char4.quest3 / 100,
-                questDescs: [
-                    char4.quest1Desc,
-                    char4.quest2Desc,
-                    char4.quest3Desc
                 ]
             },
             { 
@@ -317,30 +315,7 @@ export default class Classroom extends Phaser.Scene {
             });
         }
 
-        // Create the carousel with main hub styling - centered horizontally
-        const carouselConfig = {
-            iconSpacing: scaleInfo.isMobile ? 
-                (scaleInfo.isPortrait ? scaleDimension(180, scaleInfo) : scaleDimension(240, scaleInfo)) : 
-                scaleDimension(280, scaleInfo),
-            smallScale: scaleInfo.isMobile ? 0.12 : 0.15, // Match main hub
-            largeScale: scaleInfo.isMobile ? 0.20 : 0.3,  // Match main hub
-            iconYOffset: scaleInfo.isMobile ? 
-                scaleDimension(-60, scaleInfo) : 
-                scaleDimension(-40, scaleInfo),
-            iconToTitleGap: scaleDimension(100, scaleInfo),
-            iconToDescGap: scaleDimension(50, scaleInfo),
-            headingStyle: { 
-                fontSize: scaleFontSize(56, scaleInfo),
-                fontStyle: 'bold'
-            },
-            descStyle: { 
-                fontSize: scaleFontSize(28, scaleInfo)
-            },
-            sounds: {
-                hover: 'se_select',
-                confirm: 'se_confirm'
-            }
-        };
+
 
         // Check if student has data in Firebase to decide whether to show intro
         const hasFirebaseData = await this.checkStudentDataInFirebase();
@@ -359,7 +334,7 @@ export default class Classroom extends Phaser.Scene {
                 "Welcome to the classroom! I see you followed my advice.",
                 "These are your classmates, they are all profecient in different programming languages.",
                 "Each of them can teach you the basics of their specialty before you tackle the challenges in the Computer Lab.",
-                "Noah specializes in Python, Lily knows Web Design, Damian is great with Java, Bella handles C programming, and Finley is our C++ prodigy.",
+                "Lily knows Web Design, Damian is great with Java, and Finley is our C++ prodigy.",
                 "Make sure to talk to them and learn from their experience. They'll help you prepare for the coding challenges ahead!"
             ], () => {
                 // Hide Secretary when dialogue ends
@@ -367,7 +342,7 @@ export default class Classroom extends Phaser.Scene {
                 onceOnlyFlags.setSeen('classroom_intro');
                 // Show UI elements after cutscene
                 this.showUIElementsAfterCutscene();
-                this.createClassroomCarousel(charKeys, charInfo, carouselConfig);
+                this.createCarousel(charKeys, charInfo);
                 
                 // Start tutorial after carousel is created (if first time visiting classroom)
                 if (!onceOnlyFlags.hasSeen('classroom_tutorial')) {
@@ -380,10 +355,9 @@ export default class Classroom extends Phaser.Scene {
             if (hasFirebaseData) {
                 // Auto-mark intro as seen for returning students
                 onceOnlyFlags.setSeen('classroom_intro');
-            } else {
             }
             
-            this.createClassroomCarousel(charKeys, charInfo, carouselConfig);
+            this.createCarousel(charKeys, charInfo);
             
             // Skip tutorial as well for returning students with Firebase data
             if (hasFirebaseData) {
@@ -415,40 +389,49 @@ export default class Classroom extends Phaser.Scene {
         });
     }
 
-    createClassroomCarousel(charKeys, charInfo, carouselConfig) {
-        this.characterCarousel = new Carousel(this, carouselConfig).create(
-            charKeys,
-            charInfo.map(c => ({
-                heading: c.name,
-                desc: c.desc
-            })),
-            (selected, index) => {
-                // Show character box or handle selection
-                this.showCharacterBox(charInfo[index], charKeys[index]);
-            }
-        );
+    createCarousel(charKeys, charInfo) {
+        const { width, height } = this.scale;
+        const scale = Math.min(width / 816, height / 624); // Calculate scale factor like MainHub
         
-        // Debug: Check if images are loaded
-        charKeys.forEach(key => {
-            if (!this.textures.exists(key)) {
-                console.error(`Image not loaded: ${key}`);
-            } else {
+        this.carousel = new Carousel(this, {
+            iconCenterY: 200, // Same as MainHub
+            largeScale: 0.3,  
+            smallScale: 0.15,
+            iconToTitleGap: 140, // Same as MainHub
+            iconToDescGap: 80,   // Same as MainHub
+            headingStyle: {
+                fontSize: Math.max(32, 56 * scale) // Same responsive system as MainHub
+            },
+            descStyle: {
+                fontSize: Math.max(24, 36 * scale) // Same responsive system as MainHub
+            },
+            sounds: {
+                hover: 'se_select',
+                confirm: 'se_confirm'
             }
         });
 
-        // Back button
-        // (Already created in create method)
-
-        // Add shutdown and destroy event listeners to clean up the carousel
+        // Add shutdown and destroy event listeners to clean up the carousel (MainHub style)
         this.events.on('shutdown', () => {
-            this.destroyCarousel();
+            if (this.carousel) this.carousel.destroy();
         });
         this.events.on('destroy', () => {
-            this.destroyCarousel();
+            if (this.carousel) this.carousel.destroy();
+        });
+
+        this.carousel.create(charKeys, charInfo, (selectedItem, index) => {
+            // Show character box using extended character info
+            this.showCharacterBox(this.extendedCharInfo[index], charKeys[index]);
         });
     }
 
     destroyCarousel() {
+        // Clean up carousel (MainHub style)
+        if (this.carousel) {
+            this.carousel.destroy();
+            this.carousel = null;
+        }
+        
         // Clean up tutorial manager
         if (this.tutorialManager) {
             this.tutorialManager.destroy();
@@ -611,7 +594,7 @@ export default class Classroom extends Phaser.Scene {
         }
 
         // Story Mode and Progress buttons for characters with story content
-        if (charData.name === "Noah" || charData.name === "Lily" || charData.name === "Damian") {
+        if (charData.name === "Lily" || charData.name === "Damian" || charData.name === "Finley") {
             let storyColor = 0x4caf50; // Default green for Noah
             let progressColor = 0x2196f3; // Default blue
             let chapterSelectScene = 'NoahChapterSelect';

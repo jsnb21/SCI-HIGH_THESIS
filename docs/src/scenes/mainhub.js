@@ -189,11 +189,10 @@ export default class MainHub extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('MainHubBG', 'assets/img/mainhub/MainHubBG.png');
+        this.load.image('MainHubBG', 'assets/img/bg/BinaryBG.png');
         this.load.image('icon1', 'assets/img/mainhub/CLASSROOM_ICON.png');
         this.load.image('icon2', 'assets/img/mainhub/LIBRARY_ICON.png');
         this.load.image('icon3', 'assets/img/mainhub/COMLAB_ICON.png');
-        // this.load.image('icon5', 'assets/img/mainhub/canteenIcon.png');
 
         // Load Secretary image for dialogue
         this.load.image('Secretary', 'assets/sprites/npcs/secretary.png');
@@ -258,6 +257,7 @@ export default class MainHub extends Phaser.Scene {
 
         this.bg = this.add.tileSprite(0, 0, width, height, 'MainHubBG').setOrigin(0, 0);
         this.bg.setAlpha(0.5);
+        this.bg.setDepth(-10); // Ensure background renders behind all other elements
         if (this.cameras && this.cameras.main) {
             this.cameras.main.setBackgroundColor('#87ceeb');
         }
@@ -550,7 +550,9 @@ export default class MainHub extends Phaser.Scene {
 
     update() {
         if (this.bg) {
-            this.bg.tilePositionY -= 1;
+            // Enhanced scrolling background behind carousel
+            this.bg.tilePositionY -= 0.5; // Slower vertical scroll for more subtle effect
+            this.bg.tilePositionX -= 0.2; // Add slight horizontal drift for dynamic feel
         }
         // Update points display if it exists and is still valid
         if (this.pointsDisplay && this.pointsDisplay.update) {
