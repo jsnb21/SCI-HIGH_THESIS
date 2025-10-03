@@ -13,6 +13,7 @@ import {
     scaleDimension, 
     getSafeArea
 } from '../utils/mobileUtils.js';
+// Removed showStyledConfirm import as character detail modal has been retired
 
 export default class Classroom extends Phaser.Scene {
     constructor() {
@@ -196,8 +197,7 @@ export default class Classroom extends Phaser.Scene {
         // Use direct scale access like MainHub for proper background sizing
         const { width, height } = this.scale;
 
-        // Initialize modal state
-        this.characterBoxOpen = false;
+    // Character detail modal retired; no modal state needed
 
         // Add scrolling binary background (same as MainHub)
         this.bg = this.add.tileSprite(0, 0, width, height, 'BinaryBG').setOrigin(0, 0);
@@ -238,45 +238,7 @@ export default class Classroom extends Phaser.Scene {
             { heading: "Finley", desc: "He'll guide you on how the Computer Lab works." }
         ];
         
-        // Store additional character data for showCharacterBox
-        this.extendedCharInfo = [
-            { 
-                name: "Lily", 
-                desc: "A popular idol, she's talented at singing, dancing, and even web design.",
-                progress: char2.quest1 / 100,
-                side: char2.quest2 / 100,
-                bonus: char2.quest3 / 100,
-                questDescs: [
-                    char2.quest1Desc,
-                    char2.quest2Desc,
-                    char2.quest3Desc
-                ]
-            },
-            { 
-                name: "Damian", 
-                desc: "A creative thinker and artist.",
-                progress: char3.quest1 / 100,
-                side: char3.quest2 / 100,
-                bonus: char3.quest3 / 100,
-                questDescs: [
-                    char3.quest1Desc,
-                    char3.quest2Desc,
-                    char3.quest3Desc
-                ]
-            },
-            { 
-                name: "Finley", 
-                desc: "He can appear cold, but he's a kind man.",
-                progress: char5.quest1 / 100,
-                side: char5.quest2 / 100,
-                bonus: char5.quest3 / 100,
-                questDescs: [
-                    char5.quest1Desc,
-                    char5.quest2Desc,
-                    char5.quest3Desc
-                ]
-            }
-        ];
+        // Character detail modal removed; extended progress data no longer needed here
 
         // Ensure all character images are loaded before creating carousel
         const allImagesLoaded = charKeys.every(key => this.textures.exists(key));
@@ -401,9 +363,25 @@ export default class Classroom extends Phaser.Scene {
             if (this.carousel) this.carousel.destroy();
         });
 
-        this.carousel.create(charKeys, charInfo, (selectedItem, index) => {
-            // Show character box using extended character info
-            this.showCharacterBox(this.extendedCharInfo[index], charKeys[index]);
+        this.carousel.create(charKeys, charInfo, (_selectedItem, index) => {
+            // Direct navigation: immediately enter story scene
+            const key = charKeys[index];
+            const directStoryMap = {
+                'Lily': 'LilyStory',
+                'Damian': 'DamianStory',
+                'Finley': 'FinleyStory'
+            };
+            const storySceneKey = directStoryMap[key];
+            if (storySceneKey) {
+                if (this.se_confirmSound) this.se_confirmSound.play();
+                if (!this.scene.get(storySceneKey)) {
+                    console.warn(`[Classroom] Story scene '${storySceneKey}' not registered.`);
+                } else {
+                    this.scene.start(storySceneKey);
+                }
+            } else {
+                console.warn('[Classroom] No mapped story scene for character:', key);
+            }
         });
     }
 
@@ -420,8 +398,7 @@ export default class Classroom extends Phaser.Scene {
             this.tutorialManager = null;
         }
         
-        // Clean up modal state
-        this.characterBoxOpen = false;
+    // Modal state removed (character detail modal retired)
         
         // Clean up carousel properly using the carousel's destroy method
         if (this.characterCarousel) {
@@ -450,448 +427,7 @@ export default class Classroom extends Phaser.Scene {
         }
     }
 
-    showCharacterBox(charData, charKey) {
-        // Prevent opening multiple modals
-        if (this.characterBoxOpen) {
-            return;
-        }
-        
-        const { width, height } = this.scale;
-
-        // Disable carousel controls
-        this.characterBoxOpen = true;
-
-        // --- Layout constants ---
-        const boxWidth = 600;
-        const boxHeight = 540;
-        const BOX_PADDING_TOP = 70; // Increased from 36 to 70
-        const SPACING = 32;
-        const BAR_WIDTH = 400;
-        const BAR_HEIGHT = 28;
-
-        // Group for easy cleanup
-        const boxObjects = [];
-
-        // Dim background
-        const dim = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6)
-            .setDepth(10);
-        boxObjects.push(dim);
-
-        // Main box
-        const box = this.add.rectangle(width / 2, height / 2, boxWidth, boxHeight, 0xffffff, 1)
-            .setStrokeStyle(4, 0x1e90ff)
-            .setDepth(11);
-        boxObjects.push(box);
-
-        // Start Y at top of box, add padding
-        let y = height / 2 - boxHeight / 2 + BOX_PADDING_TOP;
-
-        // Character image removed (no icon in messageBox)
-        // y += 76; // Adjusted for new scale and margin (skip this since no image)
-
-        // Name
-        boxObjects.push(
-            this.add.text(width / 2, y, charData.name, {
-                fontFamily: 'Caprasimo-Regular',
-                fontSize: '32px',
-                color: '#1e90ff',
-                stroke: '#000000',
-                strokeThickness: 4
-            }).setOrigin(0.5).setDepth(12)
-        );
-
-        y += 44;
-
-        // Description
-        boxObjects.push(
-            this.add.text(width / 2, y, charData.desc, {
-                fontFamily: 'Caprasimo-Regular',
-                fontSize: '18px',
-                color: '#444466',
-                wordWrap: { width: boxWidth - 60 },
-                align: 'center'
-            }).setOrigin(0.5).setDepth(12)
-        );
-
-        y += 54;
-
-        // "Quests" label
-        boxObjects.push(
-            this.add.text(width / 2, y, "Quests", {
-                fontFamily: 'Caprasimo-Regular',
-                fontSize: '24px',
-                color: '#1e90ff',
-                stroke: '#000000',
-                strokeThickness: 3
-            }).setOrigin(0.5).setDepth(12)
-        );
-
-        y += SPACING + 4;
-
-        // --- Progress Bars and Descriptions ---
-        const questColors = [0x1e90ff, 0x4caf50, 0xff9800];
-        const questLabels = ['Quest 1', 'Quest 2', 'Quest 3'];
-        const questPercents = [charData.progress, charData.side, charData.bonus];
-
-        for (let i = 0; i < 3; i++) {
-            // Label
-            boxObjects.push(
-                this.add.text(width / 2, y, `${questLabels[i]}: ${(questPercents[i] * 100).toFixed(0)}%`, {
-                    fontFamily: 'Caprasimo-Regular',
-                    fontSize: '16px',
-                    color: '#222244',
-                    stroke: '#ffffff',
-                    strokeThickness: 2
-                }).setOrigin(0.5).setDepth(12)
-            );
-            y += 28;
-
-            // Progress bar background
-            boxObjects.push(
-                this.add.rectangle(width / 2, y, BAR_WIDTH, BAR_HEIGHT, 0xcccccc)
-                    .setDepth(12)
-            );
-            // Progress bar fill
-            boxObjects.push(
-                this.add.rectangle(
-                    width / 2 - BAR_WIDTH / 2 + (questPercents[i] * BAR_WIDTH) / 2,
-                    y,
-                    questPercents[i] * BAR_WIDTH,
-                    BAR_HEIGHT,
-                    questColors[i]
-                ).setDepth(12)
-            );
-
-            // Description
-            y += BAR_HEIGHT;
-            boxObjects.push(
-                this.add.text(width / 2, y, charData.questDescs[i], {
-                    fontFamily: 'Caprasimo-Regular',
-                    fontSize: '14px',
-                    color: '#444466',
-                    wordWrap: { width: boxWidth - 60 }
-                }).setOrigin(0.5).setDepth(12)
-            );
-            y += SPACING;
-        }
-
-        // Story Mode and Progress buttons for characters with story content
-        if (charData.name === "Lily" || charData.name === "Damian" || charData.name === "Finley") {
-            let storyColor = 0x4caf50; // Default green for Noah
-            let progressColor = 0x2196f3; // Default blue
-            let chapterSelectScene = 'NoahChapterSelect';
-            let progressTrackerScene = 'NoahProgressTracker';
-            
-            // Set colors and scenes based on character
-            if (charData.name === "Lily") {
-                storyColor = 0xff6b9d; // Pink for Lily
-                chapterSelectScene = 'LilyChapterSelect';
-                progressTrackerScene = 'LilyProgressTracker';
-            } else if (charData.name === "Damian") {
-                storyColor = 0xf57c00; // Orange for Damian
-                chapterSelectScene = 'DamianChapterSelect';
-                progressTrackerScene = 'DamianProgressTracker';
-            }
-            
-            const storyBtn = this.add.rectangle(
-                width / 2 - 110,
-                height / 2 + boxHeight / 2 - 50,
-                180,
-                40,
-                storyColor
-            ).setDepth(12).setInteractive({ useHandCursor: true });
-            boxObjects.push(storyBtn);
-
-            const storyBtnText = this.add.text(
-                width / 2 - 110,
-                height / 2 + boxHeight / 2 - 50,
-                'Story Mode',
-                {
-                    fontFamily: 'Caprasimo-Regular',
-                    fontSize: '14px',
-                    color: '#ffffff',
-                    stroke: '#000000',
-                    strokeThickness: 2
-                }
-            ).setOrigin(0.5).setDepth(13);
-            boxObjects.push(storyBtnText);
-
-            storyBtn.on('pointerdown', () => {
-                this.se_confirmSound.play();
-                boxObjects.forEach(obj => obj.destroy());
-                this.characterBoxOpen = false;
-                // Launch character's chapter selection
-                this.scene.start(chapterSelectScene);
-            });
-
-            // Progress button
-            const progressBtn = this.add.rectangle(
-                width / 2 + 110,
-                height / 2 + boxHeight / 2 - 50,
-                180,
-                40,
-                progressColor
-            ).setDepth(12).setInteractive({ useHandCursor: true });
-            boxObjects.push(progressBtn);
-
-            const progressBtnText = this.add.text(
-                width / 2 + 110,
-                height / 2 + boxHeight / 2 - 50,
-                'Progress',
-                {
-                    fontFamily: 'Caprasimo-Regular',
-                    fontSize: '14px',
-                    color: '#ffffff',
-                    stroke: '#000000',
-                    strokeThickness: 2
-                }
-            ).setOrigin(0.5).setDepth(13);
-            boxObjects.push(progressBtnText);
-
-            progressBtn.on('pointerdown', () => {
-                this.se_confirmSound.play();
-                boxObjects.forEach(obj => obj.destroy());
-                this.characterBoxOpen = false;
-                // Launch character's progress tracker
-                this.scene.start(progressTrackerScene);
-            });
-
-            // Hover effects
-            const storyHoverColor = charData.name === "Lily" ? 0xff85b3 : (charData.name === "Damian" ? 0xff9800 : 0x66bb6a);
-            storyBtn.on('pointerover', () => {
-                storyBtn.setFillStyle(storyHoverColor);
-                this.se_hoverSound.play();
-            });
-            storyBtn.on('pointerout', () => storyBtn.setFillStyle(storyColor));
-
-            progressBtn.on('pointerover', () => {
-                progressBtn.setFillStyle(0x42a5f5);
-                this.se_hoverSound.play();
-            });
-            progressBtn.on('pointerout', () => progressBtn.setFillStyle(progressColor));
-        } else if (charData.name === "Bella" || charData.name === "Finley") {
-            // Locked story mode buttons for characters without story content yet
-            const lockedColor = 0x666666; // Gray color for locked buttons
-            const lockIconColor = 0xdddddd;
-            
-            // Locked Story Mode button
-            const lockedStoryBtn = this.add.rectangle(
-                width / 2 - 110,
-                height / 2 + boxHeight / 2 - 50,
-                180,
-                40,
-                lockedColor
-            ).setDepth(12).setInteractive({ useHandCursor: true });
-            boxObjects.push(lockedStoryBtn);
-
-            // Add lock icon
-            const lockIcon = this.add.text(
-                width / 2 - 140,
-                height / 2 + boxHeight / 2 - 50,
-                '🔒',
-                {
-                    fontSize: '16px',
-                    color: '#ffffff'
-                }
-            ).setOrigin(0.5).setDepth(13);
-            boxObjects.push(lockIcon);
-
-            const lockedStoryBtnText = this.add.text(
-                width / 2 - 95,
-                height / 2 + boxHeight / 2 - 50,
-                'Story Mode',
-                {
-                    fontFamily: 'Caprasimo-Regular',
-                    fontSize: '14px',
-                    color: lockIconColor,
-                    stroke: '#000000',
-                    strokeThickness: 1
-                }
-            ).setOrigin(0.5).setDepth(13);
-            boxObjects.push(lockedStoryBtnText);
-
-            // Locked Progress button
-            const lockedProgressBtn = this.add.rectangle(
-                width / 2 + 110,
-                height / 2 + boxHeight / 2 - 50,
-                180,
-                40,
-                lockedColor
-            ).setDepth(12).setInteractive({ useHandCursor: true });
-            boxObjects.push(lockedProgressBtn);
-
-            // Add lock icon for progress
-            const progressLockIcon = this.add.text(
-                width / 2 + 80,
-                height / 2 + boxHeight / 2 - 50,
-                '🔒',
-                {
-                    fontSize: '16px',
-                    color: '#ffffff'
-                }
-            ).setOrigin(0.5).setDepth(13);
-            boxObjects.push(progressLockIcon);
-
-            const lockedProgressBtnText = this.add.text(
-                width / 2 + 125,
-                height / 2 + boxHeight / 2 - 50,
-                'Progress',
-                {
-                    fontFamily: 'Caprasimo-Regular',
-                    fontSize: '14px',
-                    color: lockIconColor,
-                    stroke: '#000000',
-                    strokeThickness: 1
-                }
-            ).setOrigin(0.5).setDepth(13);
-            boxObjects.push(lockedProgressBtnText);
-
-            // Show "Coming Soon" message when clicked
-            const showComingSoonMessage = () => {
-                // Create temporary overlay
-                const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7).setDepth(20);
-                
-                const messageBox = this.add.rectangle(width / 2, height / 2, 400, 200, 0x2c3e50).setDepth(21);
-                messageBox.setStrokeStyle(3, 0x3498db);
-                
-                const comingSoonText = this.add.text(width / 2, height / 2 - 20, 'Coming Soon!', {
-                    fontFamily: 'Caprasimo-Regular',
-                    fontSize: '24px',
-                    color: '#ffffff',
-                    stroke: '#000000',
-                    strokeThickness: 2
-                }).setOrigin(0.5).setDepth(22);
-                
-                const subText = this.add.text(width / 2, height / 2 + 20, `${charData.name}'s story is under development`, {
-                    fontFamily: 'Caprasimo-Regular',
-                    fontSize: '16px',
-                    color: '#bdc3c7',
-                    stroke: '#000000',
-                    strokeThickness: 1
-                }).setOrigin(0.5).setDepth(22);
-                
-                const okButton = this.add.rectangle(width / 2, height / 2 + 60, 100, 35, 0x3498db).setDepth(22);
-                okButton.setInteractive({ useHandCursor: true });
-                
-                const okText = this.add.text(width / 2, height / 2 + 60, 'OK', {
-                    fontFamily: 'Caprasimo-Regular',
-                    fontSize: '16px',
-                    color: '#ffffff',
-                    stroke: '#000000',
-                    strokeThickness: 1
-                }).setOrigin(0.5).setDepth(23);
-                
-                // Animate message appearance
-                [overlay, messageBox, comingSoonText, subText, okButton, okText].forEach((element, index) => {
-                    element.setAlpha(0);
-                    this.tweens.add({
-                        targets: element,
-                        alpha: 1,
-                        duration: 300,
-                        delay: index * 50,
-                        ease: 'Power2.out'
-                    });
-                });
-                
-                messageBox.setScale(0.5);
-                this.tweens.add({
-                    targets: messageBox,
-                    scaleX: 1,
-                    scaleY: 1,
-                    duration: 400,
-                    ease: 'Back.out'
-                });
-                
-                // Close message on OK button click
-                okButton.on('pointerdown', () => {
-                    [overlay, messageBox, comingSoonText, subText, okButton, okText].forEach(element => {
-                        this.tweens.add({
-                            targets: element,
-                            alpha: 0,
-                            duration: 200,
-                            onComplete: () => element.destroy()
-                        });
-                    });
-                });
-                
-                // Button hover effect
-                okButton.on('pointerover', () => okButton.setFillStyle(0x2980b9));
-                okButton.on('pointerout', () => okButton.setFillStyle(0x3498db));
-            };
-
-            // Add click handlers for locked buttons
-            lockedStoryBtn.on('pointerdown', showComingSoonMessage);
-            lockedProgressBtn.on('pointerdown', showComingSoonMessage);
-
-            // Subtle hover effects for locked buttons
-            lockedStoryBtn.on('pointerover', () => {
-                lockedStoryBtn.setFillStyle(0x777777);
-                this.tweens.add({
-                    targets: [lockIcon, lockedStoryBtnText],
-                    scaleX: 1.05,
-                    scaleY: 1.05,
-                    duration: 200,
-                    ease: 'Power2.out'
-                });
-            });
-            
-            lockedStoryBtn.on('pointerout', () => {
-                lockedStoryBtn.setFillStyle(lockedColor);
-                this.tweens.add({
-                    targets: [lockIcon, lockedStoryBtnText],
-                    scaleX: 1,
-                    scaleY: 1,
-                    duration: 200,
-                    ease: 'Power2.out'
-                });
-            });
-
-            lockedProgressBtn.on('pointerover', () => {
-                lockedProgressBtn.setFillStyle(0x777777);
-                this.tweens.add({
-                    targets: [progressLockIcon, lockedProgressBtnText],
-                    scaleX: 1.05,
-                    scaleY: 1.05,
-                    duration: 200,
-                    ease: 'Power2.out'
-                });
-            });
-            
-            lockedProgressBtn.on('pointerout', () => {
-                lockedProgressBtn.setFillStyle(lockedColor);
-                this.tweens.add({
-                    targets: [progressLockIcon, lockedProgressBtnText],
-                    scaleX: 1,
-                    scaleY: 1,
-                    duration: 200,
-                    ease: 'Power2.out'
-                });
-            });
-        }
-
-        // Close button (top right of box)
-        const closeBtn = this.add.text(
-            width / 2 + boxWidth / 2 - 30,
-            height / 2 - boxHeight / 2 + 30,
-            '✕',
-            {
-                fontFamily: 'Caprasimo-Regular',
-                fontSize: '24px',
-                color: '#1e90ff',
-                backgroundColor: '#fff',
-                stroke: '#000000',
-                strokeThickness: 2
-            }
-        ).setOrigin(0.5).setDepth(13).setInteractive({ useHandCursor: true });
-        boxObjects.push(closeBtn);
-
-        closeBtn.on('pointerdown', () => {
-            this.se_confirmSound.play();
-            boxObjects.forEach(obj => obj.destroy());
-            // Re-enable carousel controls
-            this.characterBoxOpen = false;
-        });
-    }
+    // showCharacterBox removed (direct navigation implemented)
 
     showSecretary() {
         const scaleInfo = getScaleInfo(this);
