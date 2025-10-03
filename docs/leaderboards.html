@@ -1687,13 +1687,13 @@
             ${(gameData.achievementCount || 0) === 0 ? '<p class="text-gray-400 text-center mt-4">No badges earned yet. Keep playing to unlock achievements!</p>' : ''}
           </div>
 
-          <!-- Performance Charts Section -->
+          <!-- Performance Charts Section (wider full-width charts on large screens) -->
           <div class="grid lg:grid-cols-2 gap-6">
             <!-- Topic Performance Chart -->
-            <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
               <h3 class="text-lg font-semibold text-accent mb-4 font-gaming">Topic Performance</h3>
               ${Object.keys(topicPoints).length > 0 ? `
-                <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
+                <div class="relative h-80 mb-4 bg-white rounded-lg p-4 w-full">
                   <canvas id="topicChart"></canvas>
                 </div>
                 <div class="text-sm text-gray-300 text-center">
@@ -1710,9 +1710,9 @@
             </div>
 
             <!-- Score Analysis Chart -->
-            <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
               <h3 class="text-lg font-semibold text-cyan mb-4 font-gaming">Score Analysis</h3>
-              <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
+              <div class="relative h-80 mb-4 bg-white rounded-lg p-4 w-full">
                 <canvas id="scoreChart"></canvas>
               </div>
               <div class="text-sm text-gray-300 text-center">
@@ -1721,13 +1721,13 @@
             </div>
           </div>
 
-          <!-- Detailed Statistics -->
+          <!-- Detailed Statistics (wider charts) -->
           <div class="grid lg:grid-cols-2 gap-6">
             <!-- Performance Metrics -->
-            <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
               <h3 class="text-lg font-semibold text-purple mb-4 font-gaming">Performance Radar</h3>
-              <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
-                <canvas id="radarChart"></canvas>
+              <div class="relative h-[28rem] mb-4 bg-white rounded-lg p-2 w-full flex items-center justify-center">
+                <canvas id="radarChart" class="w-full h-full"></canvas>
               </div>
               <div class="text-sm text-gray-300 text-center">
                 Overall performance across all metrics
@@ -1736,17 +1736,17 @@
 
             <!-- Course Progress -->
             ${gameData.courseProgress ? `
-            <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
               <h3 class="text-lg font-semibold text-primary mb-4 font-gaming">Course Progress</h3>
-              <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
-                <canvas id="progressChart"></canvas>
+              <div class="relative h-80 mb-4 bg-white rounded-lg p-4 w-full">
+                <canvas id="progressChart" class="w-full h-full"></canvas>
               </div>
               <div class="text-sm text-gray-300 text-center">
                 ${formatCourseProgress(gameData.courseProgress)}
               </div>
             </div>
             ` : `
-            <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
               <h3 class="text-lg font-semibold text-accent mb-4 font-gaming">Recent Activity</h3>
               <div class="space-y-3">
                 <div class="flex items-center gap-3 p-3 bg-dark/50 rounded neon-border">
@@ -1830,9 +1830,14 @@
           </div>
         `;
 
-        // Create charts after DOM is updated
+        // Create charts after DOM is updated, ensuring Chart.js is loaded (reuse same loader as Bloom)
         setTimeout(() => {
-          createPlayerCharts(playerData, topicPoints, gameData);
+          const launchCharts = () => { try { createPlayerCharts(playerData, topicPoints, gameData); } catch(e){ console.warn('[PlayerCharts] build failed:', e); } };
+          if(window.Chart){ window.applyChartWhiteTheme && window.applyChartWhiteTheme(); launchCharts(); }
+          else {
+            window.ensureChartJs().then(()=>{ window.applyChartWhiteTheme && window.applyChartWhiteTheme(); launchCharts(); })
+              .catch(err=> console.warn('[PlayerCharts] Chart.js load failed:', err.message));
+          }
         }, 100);
       }
 
@@ -2050,6 +2055,7 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { top: 30, bottom: 30, left: 30, right: 30 } },
             plugins: {
               legend: {
                 display: false
@@ -2061,7 +2067,10 @@
                 max: 10,
                 ticks: {
                   display: false
-                }
+                },
+                pointLabels: { color: '#ffffff', font: { size: 14 } },
+                angleLines: { color: 'rgba(255,255,255,0.25)' },
+                grid: { color: 'rgba(255,255,255,0.15)' }
               }
             }
           }
@@ -2616,241 +2625,173 @@
       }
       
       function initializeCareerStatsCharts(career, completionStatus, recentSessions) {
-        
-        // Create Career Performance Line Chart
-        createCareerLineChart(career);
-        
-        // Create Performance Radar Chart
-        createPerformanceRadarChart(career, completionStatus);
-        
+        const runCharts = () => {
+          try { createCareerLineChart(career, recentSessions); } catch(e){ console.warn('[CareerChart] build failed:', e); }
+          try { createPerformanceRadarChart(career, completionStatus); } catch(e){ console.warn('[PerformanceRadar] build failed:', e); }
+        };
+        if(window.Chart){ runCharts(); }
+        else if(window.ensureChartJs){
+          window.ensureChartJs().then(()=>{ window.applyChartWhiteTheme && window.applyChartWhiteTheme(); runCharts(); })
+            .catch(err=> console.warn('[CareerCharts] Chart.js load failed:', err.message));
+        } else {
+          console.warn('[CareerCharts] ensureChartJs not available');
+        }
       }
 
-      // Lightweight Line Chart for Career Performance
-      function createCareerLineChart(career) {
+      // Revamped Career Performance (multi-metric line/area using Chart.js)
+      function createCareerLineChart(career, recentSessions = {}) {
         const canvas = document.getElementById('careerChart');
         if (!canvas) return;
-        
+        if (!window.Chart) { console.warn('[CareerChart] Chart.js not loaded'); return; }
+
+        const sessionsArray = Object.values(recentSessions)
+          .filter(s => s && s.timestamp)
+          .sort((a,b)=> a.timestamp - b.timestamp);
+
+        // If not enough real sessions, synthesize 5 buckets like before
+        let labels = [];
+        let pointsSeries = [];
+        let accuracySeries = [];
+        let cumulativePoints = 0;
+        if (sessionsArray.length >= 3) {
+          sessionsArray.forEach(s => {
+            cumulativePoints += (s.totalScore || s.sessionScore || 0);
+            labels.push(new Date(s.timestamp).toLocaleDateString(undefined,{month:'short', day:'numeric'}));
+            pointsSeries.push(cumulativePoints);
+            accuracySeries.push(s.accuracyPercentage || 0);
+          });
+        } else {
+          const totalPoints = career.totalPoints || 0;
+            pointsSeries = [0, totalPoints*0.2, totalPoints*0.5, totalPoints*0.8, totalPoints].map(v=> Math.round(v));
+            labels = ['Week 1','Week 2','Week 3','Week 4','Current'];
+            accuracySeries = [65,70,75, (career.averageAccuracy||70), (career.averageAccuracy||70)];
+        }
+
         const ctx = canvas.getContext('2d');
-        const container = canvas.parentElement;
-        
-        // Set canvas size to match container with proper centering
-        const containerRect = container.getBoundingClientRect();
-        const size = Math.min(containerRect.width, containerRect.height) * 0.9; // 90% of container
-        
-        canvas.width = size * window.devicePixelRatio;
-        canvas.height = size * window.devicePixelRatio;
-        canvas.style.width = size + 'px';
-        canvas.style.height = size + 'px';
-        
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        
-        const width = size;
-        const height = size;
-        const padding = 30;
-        
-        // Clear canvas
-        ctx.clearRect(0, 0, width, height);
-        
-        // Chart data
-        const totalPoints = career.totalPoints || 0;
-        const data = [
-          0,
-          Math.floor(totalPoints * 0.2),
-          Math.floor(totalPoints * 0.5),
-          Math.floor(totalPoints * 0.8),
-          totalPoints
-        ];
-        const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current'];
-        
-        const maxValue = Math.max(...data) || 100;
-        
-        // Draw background
-        ctx.fillStyle = 'rgba(26, 26, 46, 0.8)';
-        ctx.fillRect(0, 0, width, height);
-        
-        // Draw grid lines
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.lineWidth = 1;
-        
-        for (let i = 0; i <= 4; i++) {
-          const y = padding + (i * (height - 2 * padding)) / 4;
-          ctx.beginPath();
-          ctx.moveTo(padding, y);
-          ctx.lineTo(width - padding, y);
-          ctx.stroke();
-        }
-        
-        // Draw data line
-        ctx.strokeStyle = '#00ff88';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        
-        for (let i = 0; i < data.length; i++) {
-          const x = padding + (i * (width - 2 * padding)) / (data.length - 1);
-          const y = height - padding - (data[i] / maxValue) * (height - 2 * padding);
-          
-          if (i === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
+        // Clean up any existing chart instance stored on element
+        if (canvas._chartInstance) { canvas._chartInstance.destroy(); }
+
+        const gradient = ctx.createLinearGradient(0,0,0,canvas.height);
+        gradient.addColorStop(0,'rgba(55,151,119,0.35)');
+        gradient.addColorStop(1,'rgba(55,151,119,0)');
+
+        const chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Cumulative Points',
+                data: pointsSeries,
+                borderColor: 'rgba(55,151,119,1)',
+                backgroundColor: gradient,
+                fill: true,
+                tension: 0.25,
+                pointRadius: 3,
+                yAxisID: 'yPoints'
+              },
+              {
+                label: 'Accuracy %',
+                data: accuracySeries.map(a=> parseFloat(a.toFixed(1))),
+                borderColor: 'rgba(244,206,20,1)',
+                backgroundColor: 'rgba(244,206,20,0.15)',
+                fill: false,
+                tension: 0.25,
+                pointRadius: 3,
+                yAxisID: 'yAccuracy'
+              }
+            ]
+          },
+          options: {
+            maintainAspectRatio: false,
+            interaction: { mode:'index', intersect:false },
+            plugins: {
+              legend: { labels: { color:'#ffffff' } },
+              tooltip: {
+                callbacks: {
+                  label(ctx){
+                    if(ctx.dataset.label.includes('Points')) return `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} pts`;
+                    return `${ctx.dataset.label}: ${ctx.parsed.y}%`;
+                  }
+                }
+              }
+            },
+            scales: {
+              yPoints: {
+                position:'left',
+                ticks:{ color:'#ffffff', callback:v=> v>=1000? (v/1000)+'k': v },
+                grid:{ color:'rgba(255,255,255,0.08)' }
+              },
+              yAccuracy: {
+                position:'right',
+                min:0, max:100,
+                ticks:{ color:'#ffffff', callback:v=> v+'%' },
+                grid:{ drawOnChartArea:false }
+              },
+              x:{ ticks:{ color:'#ffffff' }, grid:{ color:'rgba(255,255,255,0.05)' } }
+            }
           }
-        }
-        ctx.stroke();
-        
-        // Draw data points
-        ctx.fillStyle = '#00ff88';
-        for (let i = 0; i < data.length; i++) {
-          const x = padding + (i * (width - 2 * padding)) / (data.length - 1);
-          const y = height - padding - (data[i] / maxValue) * (height - 2 * padding);
-          
-          ctx.beginPath();
-          ctx.arc(x, y, 4, 0, 2 * Math.PI);
-          ctx.fill();
-        }
-        
-        // Draw labels
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        
-        for (let i = 0; i < labels.length; i++) {
-          const x = padding + (i * (width - 2 * padding)) / (labels.length - 1);
-          ctx.fillText(labels[i], x, height - 10);
-        }
-        
-        // Draw values
-        ctx.textAlign = 'left';
-        for (let i = 0; i <= 4; i++) {
-          const value = Math.round((maxValue * (4 - i)) / 4);
-          const y = padding + (i * (height - 2 * padding)) / 4;
-          ctx.fillText(value.toString(), 5, y + 4);
-        }
-        
-        // Hide fallback
-        const fallback = document.getElementById('careerChartFallback');
-        if (fallback) fallback.style.display = 'none';
-        
+        });
+        canvas._chartInstance = chart;
+        const fallback = document.getElementById('careerChartFallback'); if(fallback) fallback.remove();
       }
 
-      // Lightweight Radar Chart for Performance Metrics
-      function createPerformanceRadarChart(career, completionStatus) {
+      // Revamped Performance Metrics Radar using Chart.js
+      function createPerformanceRadarChart(career, completionStatus = {}) {
         const canvas = document.getElementById('performanceRadar');
-        if (!canvas) return;
-        
-        const ctx = canvas.getContext('2d');
-        const container = canvas.parentElement;
-        
-        // Set canvas size to match container with proper centering
-        const containerRect = container.getBoundingClientRect();
-        const size = Math.min(containerRect.width, containerRect.height) * 0.9; // 90% of container
-        
-        canvas.width = size * window.devicePixelRatio;
-        canvas.height = size * window.devicePixelRatio;
-        canvas.style.width = size + 'px';
-        canvas.style.height = size + 'px';
-        
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        
-        const width = size;
-        const height = size;
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const radius = Math.min(width, height) / 2 - 30;
-        
-        // Clear canvas
-        ctx.clearRect(0, 0, width, height);
-        
-        // Chart data
+        if(!canvas) return;
+        if(!window.Chart){ console.warn('[PerformanceRadar] Chart.js not loaded'); return; }
+
         const completedCourses = Object.values(completionStatus).filter(Boolean).length;
-        const totalCourses = Object.keys(completionStatus).length;
-        const completionPercentage = totalCourses > 0 ? (completedCourses / totalCourses) * 100 : 0;
-        
-        const data = [
-          career.averageAccuracy || 0,
-          Math.min(100, (career.totalSessions || 0) * 10),
-          Math.min(100, (career.highestStreak || 0) * 5),
-          completedCourses * 16.67,
-          completionPercentage
-        ];
-        
-        const labels = ['Accuracy', 'Speed', 'Consistency', 'Difficulty', 'Completion'];
-        const angles = labels.map((_, i) => (i * 2 * Math.PI) / labels.length - Math.PI / 2);
-        
-        // Draw background
-        ctx.fillStyle = 'rgba(26, 26, 46, 0.8)';
-        ctx.fillRect(0, 0, width, height);
-        
-        // Draw grid circles
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.lineWidth = 1;
-        
-        for (let i = 1; i <= 5; i++) {
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, (radius * i) / 5, 0, 2 * Math.PI);
-          ctx.stroke();
-        }
-        
-        // Draw grid lines
-        for (let i = 0; i < angles.length; i++) {
-          ctx.beginPath();
-          ctx.moveTo(centerX, centerY);
-          ctx.lineTo(
-            centerX + Math.cos(angles[i]) * radius,
-            centerY + Math.sin(angles[i]) * radius
-          );
-          ctx.stroke();
-        }
-        
-        // Draw data area
-        ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
-        ctx.strokeStyle = '#00ff88';
-        ctx.lineWidth = 2;
-        
-        ctx.beginPath();
-        for (let i = 0; i < data.length; i++) {
-          const value = data[i] / 100; // Normalize to 0-1
-          const x = centerX + Math.cos(angles[i]) * radius * value;
-          const y = centerY + Math.sin(angles[i]) * radius * value;
-          
-          if (i === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
+        const totalCourses = Object.keys(completionStatus).length || 1;
+        const completionPct = (completedCourses/totalCourses)*100;
+
+        // Derive metrics & normalize 0-100
+        const metrics = {
+          Accuracy: Math.min(100, career.averageAccuracy || 0),
+            Engagement: Math.min(100, (career.totalSessions||0) / 50 * 100),
+            Consistency: Math.min(100, (career.highestStreak||0) / 20 * 100),
+            Progress: Math.min(100, completionPct),
+            Mastery: Math.min(100, (career.totalPoints||0) / 50000 * 100)
+        };
+        const labels = Object.keys(metrics);
+        const data = Object.values(metrics).map(v=> parseFloat(v.toFixed(1)));
+
+        if(canvas._chartInstance) canvas._chartInstance.destroy();
+        const ctx = canvas.getContext('2d');
+        const radar = new Chart(ctx, {
+          type: 'radar',
+          data: { labels, datasets:[{
+            label: 'Performance Index',
+            data,
+            backgroundColor: 'rgba(55,151,119,0.25)',
+            borderColor: 'rgba(55,151,119,1)',
+            pointBackgroundColor: 'rgba(244,206,20,1)',
+            pointBorderColor: '#ffffff',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]},
+          options:{
+            maintainAspectRatio:false,
+            plugins:{
+              legend:{ labels:{ color:'#ffffff' } },
+              tooltip:{ callbacks:{ label: ctx => `${ctx.label}: ${ctx.parsed.r}%` } }
+            },
+            scales:{
+              r:{
+                beginAtZero:true,
+                suggestedMax:100,
+                ticks:{ display:false },
+                grid:{ color:'rgba(255,255,255,0.15)' },
+                angleLines:{ color:'rgba(255,255,255,0.25)' },
+                pointLabels:{ color:'#ffffff', font:{ size:13 } }
+              }
+            }
           }
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        
-        // Draw data points
-        ctx.fillStyle = '#00ff88';
-        for (let i = 0; i < data.length; i++) {
-          const value = data[i] / 100;
-          const x = centerX + Math.cos(angles[i]) * radius * value;
-          const y = centerY + Math.sin(angles[i]) * radius * value;
-          
-          ctx.beginPath();
-          ctx.arc(x, y, 3, 0, 2 * Math.PI);
-          ctx.fill();
-        }
-        
-        // Draw labels
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        
-        for (let i = 0; i < labels.length; i++) {
-          const labelRadius = radius + 20;
-          const x = centerX + Math.cos(angles[i]) * labelRadius;
-          const y = centerY + Math.sin(angles[i]) * labelRadius;
-          
-          ctx.fillText(labels[i], x, y + 4);
-        }
-        
-        // Hide fallback
-        const fallback = document.getElementById('radarChartFallback');
-        if (fallback) fallback.style.display = 'none';
-        
+        });
+        canvas._chartInstance = radar;
+        const fallback = document.getElementById('radarChartFallback'); if(fallback) fallback.remove();
       }
 
       // Enhanced API for external access
