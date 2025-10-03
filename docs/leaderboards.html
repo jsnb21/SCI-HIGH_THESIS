@@ -314,6 +314,37 @@
       <!-- Leaderboard Section -->
       <section class="px-6 pb-16">
         <div class="max-w-6xl mx-auto">
+          <!-- MINI-CONTEST Countdown -->
+          <div id="mini-contest-countdown" class="mb-8 relative overflow-hidden rounded-xl border-2 border-primary/40 bg-gradient-to-r from-dark/80 via-light/70 to-dark/80 backdrop-blur-sm p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-yellow-400 flex items-center justify-center shadow-lg shadow-primary/30 animate-pulse-glow">
+                <span class="text-3xl" aria-hidden="true">⏳</span>
+              </div>
+              <div>
+                <h3 class="font-gaming text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">MINI-CONTEST Countdown</h3>
+                <p class="text-gray-300 text-sm font-body">Contest ends: Oct 12, 2025 00:00 (local time)</p>
+                <p id="mini-contest-status" class="text-cyan text-xs mt-1 font-gaming tracking-wider"></p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-auto text-center">
+              <div class="count-box px-4 py-3 rounded-lg bg-dark/60 border border-primary/30 shadow-inner">
+                <div id="mc-days" class="font-gaming text-3xl md:text-4xl font-black text-primary">0</div>
+                <div class="text-xs tracking-wider text-gray-300 font-gaming mt-1">DAYS</div>
+              </div>
+              <div class="count-box px-4 py-3 rounded-lg bg-dark/60 border border-primary/30 shadow-inner">
+                <div id="mc-hours" class="font-gaming text-3xl md:text-4xl font-black text-primary">00</div>
+                <div class="text-xs tracking-wider text-gray-300 font-gaming mt-1">HRS</div>
+              </div>
+              <div class="count-box px-4 py-3 rounded-lg bg-dark/60 border border-primary/30 shadow-inner">
+                <div id="mc-mins" class="font-gaming text-3xl md:text-4xl font-black text-primary">00</div>
+                <div class="text-xs tracking-wider text-gray-300 font-gaming mt-1">MINS</div>
+              </div>
+              <div class="count-box px-4 py-3 rounded-lg bg-dark/60 border border-primary/30 shadow-inner">
+                <div id="mc-secs" class="font-gaming text-3xl md:text-4xl font-black text-primary">00</div>
+                <div class="text-xs tracking-wider text-gray-300 font-gaming mt-1">SECS</div>
+              </div>
+            </div>
+          </div>
           <div class="neon-border rounded-xl backdrop-blur-sm p-8">
             <div class="flex items-center justify-between mb-8">
               <h2 class="font-gaming text-2xl font-bold text-primary flex items-center gap-3">
@@ -2812,6 +2843,195 @@
       document.addEventListener('DOMContentLoaded', () => {
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
+        // MINI-CONTEST Countdown initialization
+        try {
+          const targetDate = new Date('2025-10-12T00:00:00'); // Local time target
+          const daysEl = document.getElementById('mc-days');
+            const hoursEl = document.getElementById('mc-hours');
+            const minsEl = document.getElementById('mc-mins');
+            const secsEl = document.getElementById('mc-secs');
+            const statusEl = document.getElementById('mini-contest-status');
+            const container = document.getElementById('mini-contest-countdown');
+            let snapshotTaken = false;
+
+            // Utility: fetch current leaderboard data via existing loader if available
+            async function getFullLeaderboardData(){
+              try {
+                if(window.leaderboardAPI && window.leaderboardAPI.loadCareerStatsData){
+                  // loadCareerStatsData returns aggregated array already sorted (b.score - a.score)
+                  return await window.leaderboardAPI.loadCareerStatsData();
+                }
+              } catch(e){ console.warn('[MiniContestSnapshot] load failed', e); }
+              return [];
+            }
+
+            function partitionByDepartment(entries){
+              const buckets = {};
+              entries.forEach(e => {
+                const dept = (e.department || 'Unknown').trim() || 'Unknown';
+                if(!buckets[dept]) buckets[dept] = [];
+                buckets[dept].push(e);
+              });
+              // Sort each bucket and take top 3
+              const result = {};
+              Object.keys(buckets).forEach(dept => {
+                const sorted = buckets[dept].slice().sort((a,b)=> b.score - a.score);
+                result[dept] = sorted.slice(0,3);
+              });
+              return result;
+            }
+
+            function buildSnapshotStructure(all){
+              const overallTop3 = all.slice(0,3);
+              const byDept = partitionByDepartment(all);
+              return {
+                generatedAt: new Date().toISOString(),
+                contestEnds: targetDate.toISOString(),
+                overallTop3,
+                byDepartment: byDept
+              };
+            }
+
+            function toCSV(snapshot){
+              const rows = [];
+              rows.push(['Category','Rank','StudentId','Name','Department','Score','Sessions','Accuracy','CompletedCourses','TotalCourses'].join(','));
+              function pushEntries(category, list){
+                list.forEach((e,i)=>{
+                  rows.push([
+                    '"'+category+'"',
+                    i+1,
+                    '"'+(e.studentId||'')+'"',
+                    '"'+(e.name||'')+'"',
+                    '"'+(e.department||'')+'"',
+                    e.score||0,
+                    e.totalSessions||0,
+                    e.averageAccuracy||0,
+                    e.completedCourses||0,
+                    e.totalCourses||0
+                  ].join(','));
+                });
+              }
+              pushEntries('Overall', snapshot.overallTop3);
+              Object.keys(snapshot.byDepartment).forEach(dept => {
+                pushEntries('Dept: '+dept, snapshot.byDepartment[dept]);
+              });
+              return rows.join('\n');
+            }
+
+            function triggerDownload(content, filename, mime){
+              const blob = new Blob([content], {type: mime});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = filename;
+              document.body.appendChild(a);
+              a.click();
+              setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
+            }
+
+            function addDownloadButtons(snapshot){
+              if(!container) return;
+              let btnWrap = document.getElementById('mini-contest-downloads');
+              if(btnWrap) btnWrap.remove();
+              btnWrap = document.createElement('div');
+              btnWrap.id = 'mini-contest-downloads';
+              btnWrap.className = 'mt-4 flex flex-wrap gap-3';
+              const jsonBtn = document.createElement('button');
+              jsonBtn.className = 'px-4 py-2 font-gaming text-sm rounded-lg bg-primary text-dark font-bold hover:brightness-110 transition shadow';
+              jsonBtn.textContent = 'Download Winners (JSON)';
+              jsonBtn.addEventListener('click', ()=>{
+                triggerDownload(JSON.stringify(snapshot, null, 2), 'mini_contest_winners.json', 'application/json');
+              });
+              const csvBtn = document.createElement('button');
+              csvBtn.className = 'px-4 py-2 font-gaming text-sm rounded-lg bg-accent text-white font-bold hover:brightness-110 transition shadow';
+              csvBtn.textContent = 'Download Winners (CSV)';
+              csvBtn.addEventListener('click', ()=>{
+                triggerDownload(toCSV(snapshot), 'mini_contest_winners.csv', 'text/csv');
+              });
+              btnWrap.appendChild(jsonBtn);
+              btnWrap.appendChild(csvBtn);
+              container.appendChild(btnWrap);
+            }
+
+            async function takeSnapshot(){
+              if(snapshotTaken) return; // safety
+              snapshotTaken = true;
+              if(statusEl) statusEl.textContent = 'Contest ended. Snapshot captured.';
+              const data = await getFullLeaderboardData();
+              const snapshot = buildSnapshotStructure(data);
+              addDownloadButtons(snapshot);
+              console.info('[MiniContestSnapshot] Generated snapshot', snapshot);
+            }
+
+            // Admin/manual trigger support (?admin=1 in URL)
+            (function setupManualSnapshot(){
+              try {
+                const params = new URLSearchParams(window.location.search);
+                const isAdmin = params.get('admin') === '1';
+                if(!isAdmin || !container) return;
+                let manualBtn = document.getElementById('mini-contest-manual-btn');
+                if(manualBtn) manualBtn.remove();
+                manualBtn = document.createElement('button');
+                manualBtn.id = 'mini-contest-manual-btn';
+                manualBtn.type = 'button';
+                manualBtn.className = 'px-4 py-2 font-gaming text-xs md:text-sm rounded-lg bg-gradient-to-r from-purple to-pink-600 text-white font-semibold tracking-wide shadow hover:brightness-110 hover:shadow-lg transition focus:outline-none focus:ring-2 focus:ring-purple-300';
+                manualBtn.textContent = 'Test Export Now';
+                manualBtn.title = 'Generate a snapshot early (admin only)';
+                manualBtn.addEventListener('click', async () => {
+                  // Allow multiple manual regenerations prior to end; don't block by snapshotTaken flag
+                  if(!snapshotTaken){
+                    // First manual snapshot marks snapshotTaken so end-of-timer just regenerates when time passes
+                    snapshotTaken = true;
+                  }
+                  if(statusEl) statusEl.textContent = 'Generating manual snapshot...';
+                  const data = await getFullLeaderboardData();
+                  const snapshot = buildSnapshotStructure(data);
+                  addDownloadButtons(snapshot);
+                  if(statusEl) statusEl.textContent = 'Manual snapshot ready (will auto-regenerate at contest end).';
+                  console.info('[MiniContestSnapshot] Manual snapshot generated');
+                });
+                // Insert button at bottom of countdown container
+                container.appendChild(manualBtn);
+              } catch(err){
+                console.warn('[MiniContestSnapshot] manual button setup failed:', err);
+              }
+            })();
+
+            if (daysEl && hoursEl && minsEl && secsEl) {
+              function updateCountdown(){
+                const now = new Date();
+                const diff = targetDate.getTime() - now.getTime();
+                if (diff <= 0){
+                  daysEl.textContent = '0';
+                  hoursEl.textContent = '00';
+                  minsEl.textContent = '00';
+                  secsEl.textContent = '00';
+                  if(!snapshotTaken) {
+                    // Take snapshot first, message handled inside
+                    takeSnapshot();
+                  }
+                  if(container) container.classList.add('ring', 'ring-primary/50');
+                  return; // stop updating
+                }
+                const totalSeconds = Math.floor(diff/1000);
+                const days = Math.floor(totalSeconds / 86400);
+                const hours = Math.floor((totalSeconds % 86400) / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                daysEl.textContent = days;
+                hoursEl.textContent = hours.toString().padStart(2,'0');
+                minsEl.textContent = minutes.toString().padStart(2,'0');
+                secsEl.textContent = seconds.toString().padStart(2,'0');
+                if(statusEl){
+                  statusEl.textContent = 'Time remaining until contest ends';
+                }
+              }
+              updateCountdown();
+              setInterval(updateCountdown, 1000);
+            }
+        } catch(e){
+          console.warn('[MiniContestCountdown] initialization failed:', e.message);
+        }
         
         if (mobileMenuBtn && mobileMenu) {
           mobileMenuBtn.addEventListener('click', () => {
