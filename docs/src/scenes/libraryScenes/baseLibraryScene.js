@@ -51,6 +51,11 @@ class BaseLibraryScene extends Phaser.Scene {
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.audio('bgm_library', 'assets/audio/bgm/bgm_library.mp3');
+
+        // Font (match MainHub usage if not already loaded globally)
+        if (this.load.font) {
+            this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
+        }
     }
 
     createBookIcons() {
@@ -116,23 +121,26 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     create() {
-        // Load books data first
-        this.loadBooksData();
-        
-        // Create book icons after data is loaded
-        this.createBookIcons();
-        
-        // Setup scene
-        this.setupBackground();
-        this.createLibraryTitle();
-        this.createBooksCarousel();
-        this.createBackButton();
+        // Establish responsive scale similar to MainHub
+        this.BASE_WIDTH = 816; this.BASE_HEIGHT = 624;
+        const { width, height } = this.scale;
+        this.scaleFactor = Math.min(width / this.BASE_WIDTH, height / this.BASE_HEIGHT);
+        const scaleFont = (size) => Math.round(size * this.scaleFactor);
 
-        // Initialize sound effects and background music
+        // Background + audio
+        this.setupBackground();
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
         playExclusiveBGM(this, 'bgm_library', { loop: true });
         updateSoundVolumes(this);
+
+        // Data + icons
+        this.loadBooksData();
+        this.createBookIcons();
+
+    // Removed header & side stats per redesign; just carousel + back
+    this.createBooksCarousel();
+    this.createBackButton();
 
         // Initialize tutorial manager
         this.tutorialManager = new TutorialManager(this);
@@ -168,31 +176,18 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     setupBackground() {
-        // Add library background
         const bg = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'libraryBg');
         bg.setDisplaySize(this.cameras.main.width, this.cameras.main.height);
         bg.setDepth(-10);
+        bg.setAlpha(0.85);
+        this.bg = bg;
     }
 
-    createLibraryTitle() {
-        const title = this.add.text(this.cameras.main.centerX, 80, 'DIGITAL LIBRARY', {
-            fontSize: '48px',
-            fontFamily: 'Arial',
-            color: '#ffe066',
-            stroke: '#111122',
-            strokeThickness: 8,
-            shadow: { offsetX: 0, offsetY: 4, color: '#000', blur: 12, fill: true }
-        }).setOrigin(0.5).setDepth(100);
+    // Header removed in minimal redesign
 
-        const subtitle = this.add.text(this.cameras.main.centerX, 130, 'Click on any book to open it in a new tab', {
-            fontSize: '24px',
-            fontFamily: 'Arial',
-            color: '#e0e0ff',
-            stroke: '#111122',
-            strokeThickness: 4,
-            shadow: { offsetX: 0, offsetY: 2, color: '#000', blur: 8, fill: true }
-        }).setOrigin(0.5).setDepth(100);
-    }
+    positionBackButton() { /* no-op after header removal */ }
+
+    createSideStatsPanel() { /* removed per redesign */ }
 
     createBooksCarousel() {
         // Get books from books data
@@ -214,13 +209,15 @@ class BaseLibraryScene extends Phaser.Scene {
 
 
         // Create carousel
+        // Align vertical position with MainHub (iconCenterY ~200) and reduce size ~30%
         this.carousel = new Carousel(this, {
-            iconYOffset: 50,
-            iconSpacing: 200,
+            iconCenterY: 200, // Same as MainHub
+            iconYOffset: 0,
+            iconSpacing: 220,
             iconToTitleGap: 120,
             iconToDescGap: 60,
-            smallScale: 0.15,  // Further reduced from 0.3 to make icons much smaller
-            largeScale: 0.25   // Further reduced from 0.5 to make icons much smaller
+            smallScale: 0.1 * this.scaleFactor, // reduced from ~0.2
+            largeScale: 0.22 * this.scaleFactor // reduced from 0.35 (~37% smaller)
         });
 
         this.carousel.create(
@@ -230,115 +227,10 @@ class BaseLibraryScene extends Phaser.Scene {
             [] // No locked books
         );
 
-        // Add book names above each icon
-        this.createBookNameLabels();
-
-        // Override carousel's move method to update our book name labels
-        const originalMove = this.carousel.move.bind(this.carousel);
-        this.carousel.move = (direction) => {
-            originalMove(direction);
-            // Update book name labels after carousel moves
-            this.time.delayedCall(50, () => {
-                this.updateBookNameLabels();
-            });
-        };
+        // Removed overlay labels for cleaner look
     }
 
-    createBookNameLabels() {
-        const books = this.booksData.books || [];
-        const scale = this.carousel.getScale();
-        const iconSpacing = 200 * scale;
-        const iconYOffset = 50 * scale;
-        
-        let iconCenterX, iconCenterY;
-        if (this.cameras && this.cameras.main) {
-            iconCenterX = this.cameras.main.centerX;
-            iconCenterY = this.cameras.main.centerY + iconYOffset;
-        } else {
-            iconCenterX = this.scale.width / 2;
-            iconCenterY = this.scale.height / 2 + iconYOffset;
-        }
-
-        this.bookNameLabels = [];
-
-        books.forEach((book, index) => {
-            // Calculate position relative to carousel center
-            let relativePos = index - this.carousel.carouselIndex;
-            const iconCount = books.length;
-            if (relativePos > Math.floor(iconCount / 2)) relativePos -= iconCount;
-            else if (relativePos < -Math.floor(iconCount / 2)) relativePos += iconCount;
-            
-            const x = iconCenterX + relativePos * iconSpacing;
-            const y = iconCenterY - 80 * scale; // Position above the icon
-
-            const nameLabel = this.add.text(x, y, book.title, {
-                fontSize: `${Math.round(16 * scale)}px`,
-                fontFamily: 'Arial',
-                color: index === this.carousel.carouselIndex ? '#ffe066' : '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 2,
-                align: 'center',
-                wordWrap: { width: 120 * scale, useAdvancedWrap: true }
-            }).setOrigin(0.5).setDepth(200);
-
-            // Set initial alpha based on selection
-            nameLabel.setAlpha(index === this.carousel.carouselIndex ? 1.0 : 0.7);
-            
-            // Store reference for updates
-            nameLabel.bookIndex = index;
-            this.bookNameLabels.push(nameLabel);
-        });
-    }
-
-    updateBookNameLabels() {
-        if (!this.bookNameLabels) return;
-        
-        const books = this.booksData.books || [];
-        const scale = this.carousel.getScale();
-        const iconSpacing = 200 * scale;
-        const iconYOffset = 50 * scale;
-        
-        let iconCenterX, iconCenterY;
-        if (this.cameras && this.cameras.main) {
-            iconCenterX = this.cameras.main.centerX;
-            iconCenterY = this.cameras.main.centerY + iconYOffset;
-        } else {
-            iconCenterX = this.scale.width / 2;
-            iconCenterY = this.scale.height / 2 + iconYOffset;
-        }
-
-        this.bookNameLabels.forEach((label, arrayIndex) => {
-            const bookIndex = label.bookIndex;
-            
-            // Calculate new position
-            let relativePos = bookIndex - this.carousel.carouselIndex;
-            const iconCount = books.length;
-            if (relativePos > Math.floor(iconCount / 2)) relativePos -= iconCount;
-            else if (relativePos < -Math.floor(iconCount / 2)) relativePos += iconCount;
-            
-            const x = iconCenterX + relativePos * iconSpacing;
-            const y = iconCenterY - 80 * scale;
-
-            // Animate to new position
-            this.tweens.add({
-                targets: label,
-                x: x,
-                y: y,
-                duration: 300,
-                ease: 'Power2'
-            });
-
-            // Update styling based on selection
-            const isSelected = bookIndex === this.carousel.carouselIndex;
-            label.setColor(isSelected ? '#ffe066' : '#ffffff');
-            this.tweens.add({
-                targets: label,
-                alpha: isSelected ? 1.0 : 0.7,
-                duration: 200,
-                ease: 'Power2'
-            });
-        });
-    }
+    // Removed createBookNameLabels and updateBookNameLabels (overlay labels)
 
     onBookSelected(selectedData) {
         
