@@ -121,8 +121,10 @@ export default class ComputerLab extends Phaser.Scene {
         this.carousel = new Carousel(this, {
             centerY: 400,
             spacing: 400,
-            largeScale: 0.25,  // 70% smaller than 0.2
-            smallScale: 0.1,   // Also specify smallScale to be proportionally smaller
+            largeScale: 0.25,
+            smallScale: 0.1,
+            headingStyle: { fontSize: 48 },
+            descStyle: { fontSize: 26 },
             sounds: {
                 hover: 'se_hoverSound',
                 confirm: 'se_confirmSound'

@@ -382,12 +382,10 @@ export default class Classroom extends Phaser.Scene {
             iconToTitleGap: 120,
             iconToDescGap: 60,
             headingStyle: {
-                // Computer Lab baseline 56 with lower bound 32
-                fontSize: Math.max(32, 56 * scale)
+                fontSize: 48
             },
             descStyle: {
-                // Computer Lab baseline 36 with lower bound 24
-                fontSize: Math.max(24, 36 * scale)
+                fontSize: 26
             },
             sounds: {
                 hover: 'se_select',

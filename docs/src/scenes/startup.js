@@ -165,8 +165,9 @@ export default class StartupScene extends Phaser.Scene {
 
         // Modal dimensions
     // Slightly larger for small screens to maximize readable area
-    const panelWidth = Math.min(width * 0.92, 800);
-    const panelHeight = Math.min(height * 0.82, 560);
+    // Expanded panel to better accommodate larger 24px body font
+    const panelWidth = Math.min(width * 0.94, 960);
+    const panelHeight = Math.min(height * 0.86, 640);
         const panelX = width / 2;
         const panelY = height / 2;
 
@@ -200,11 +201,11 @@ export default class StartupScene extends Phaser.Scene {
         // (Removed close X button per request)
 
         // Body content
-        const bodyPaddingX = 40;
-        const bodyPaddingTop = 24;
-        const bodyAreaWidth = panelWidth - bodyPaddingX*2;
-        const baseBodyFont = isSmall?14:(isMobile?15:16);
-        const bodyFontSize = baseBodyFont + 2; // Slightly larger
+    const bodyPaddingX = 48; // Slightly more horizontal padding
+    const bodyPaddingTop = 28;
+    const bodyAreaWidth = panelWidth - bodyPaddingX*2;
+    // Increase body font size to fixed 24px as requested
+    const bodyFontSize = 24;
         const bodyStartY = headerBar.y + headerHeight/2 + bodyPaddingTop;
         const bodyText = this.add.text(panelX, bodyStartY, 
             'In compliance with the Data Privacy Act of 2012, this game collects only the information you provide during login or signup, along with essential gameplay data such as scores, number of sessions, and course progression.\n\nWe value your privacy and are committed to protecting your personal information. All collected data is securely stored and used solely for research, academic development, and improving the gameplay and learning experience. Your data will never be shared with third parties without your consent and will always be treated with the highest level of confidentiality.',
@@ -214,12 +215,12 @@ export default class StartupScene extends Phaser.Scene {
                 color: '#dbe3f2',
                 align: 'left',
                 wordWrap: { width: bodyAreaWidth },
-                lineSpacing: 8
+                lineSpacing: 10
             }
         ).setOrigin(0.5,0).setAlpha(0);
 
         // Scroll mask (if content taller than available area)
-        const availableBodyHeight = panelHeight - headerHeight - 140; // reserve space for button + checkbox
+    const availableBodyHeight = panelHeight - headerHeight - 160; // Adjusted for larger padding & font
         const needsScroll = bodyText.height > availableBodyHeight;
         let bodyMaskShape = null;
         if (needsScroll) {
@@ -246,7 +247,7 @@ export default class StartupScene extends Phaser.Scene {
         }
 
         // Buttons row
-    const buttonsY = panelY + panelHeight/2 - (isMobile? 88:78);
+    const buttonsY = panelY + panelHeight/2 - (isMobile? 112:104); // move button slightly up to make room for checkbox underneath
     const primaryColor = 0xffdd33;
     const btnW = 260;
     const btnH = isMobile? 60:56;
@@ -268,13 +269,14 @@ export default class StartupScene extends Phaser.Scene {
 
         const yesBtn = makeButton(yesX, buttonsY, btnW, btnH, primaryColor, 'Yes, I Understand', true);
 
-        // Checkbox: Don't show again
-        const checkboxY = buttonsY - (isMobile ? 70 : 64);
-        const boxSize = 28;
-        const cbX = panelX - btnW/2 + 4; // align left under text start
-        const cbRect = this.add.rectangle(cbX, checkboxY, boxSize, boxSize, 0x1d2a3b, 1).setStrokeStyle(2, 0xffdd33, 1).setOrigin(0.5).setAlpha(0).setInteractive({useHandCursor:true});
-        const cbMark = this.add.text(cbX, checkboxY, '', {fontFamily:'Arial Black', fontSize: (boxSize-6)+'px', color:'#ffdd33'}).setOrigin(0.5).setAlpha(0);
-        const cbLabel = this.add.text(cbX + boxSize/2 + 12, checkboxY, "Don't show again", {fontFamily:'Arial', fontSize:(isMobile?18:17)+'px', color:'#dbe3f2'}).setOrigin(0,0.5).setAlpha(0).setInteractive();
+    // Checkbox: Don't show again (now centered BELOW the button)
+    const checkboxY = buttonsY + (isMobile ? 60 : 56);
+    const boxSize = 28;
+    const totalCheckboxWidth = boxSize + 12 + 200; // approximate label width for centering
+    const cbX = panelX - totalCheckboxWidth/2 + boxSize/2 + 10; // nudged 10px to the right
+    const cbRect = this.add.rectangle(cbX, checkboxY, boxSize, boxSize, 0x1d2a3b, 1).setStrokeStyle(2, 0xffdd33, 1).setOrigin(0.5).setAlpha(0).setInteractive({useHandCursor:true});
+    const cbMark = this.add.text(cbX, checkboxY, '', {fontFamily:'Arial Black', fontSize: (boxSize-6)+'px', color:'#ffdd33'}).setOrigin(0.5).setAlpha(0);
+    const cbLabel = this.add.text(cbX + boxSize/2 + 12, checkboxY, "Don't show again", {fontFamily:'Arial', fontSize:(isMobile?18:17)+'px', color:'#dbe3f2'}).setOrigin(0,0.5).setAlpha(0).setInteractive();
         let cbChecked = false;
         const toggleCb = () => {
             cbChecked = !cbChecked;

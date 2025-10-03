@@ -216,8 +216,10 @@ class BaseLibraryScene extends Phaser.Scene {
             iconSpacing: 220,
             iconToTitleGap: 120,
             iconToDescGap: 60,
-            smallScale: 0.1 * this.scaleFactor, // reduced from ~0.2
-            largeScale: 0.22 * this.scaleFactor // reduced from 0.35 (~37% smaller)
+            smallScale: 0.1 * this.scaleFactor,
+            largeScale: 0.22 * this.scaleFactor,
+            headingStyle: { fontSize: 48 },
+            descStyle: { fontSize: 26 }
         });
 
         this.carousel.create(
