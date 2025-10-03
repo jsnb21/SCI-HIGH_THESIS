@@ -1978,6 +1978,25 @@ export default class MainGameplay extends BaseScene {
     }
 
     handleQuizCompletion(data) {
+        // Initialize per-session bloom stats holder
+        if (!this.sessionBloomStats) {
+            this.sessionBloomStats = {
+                remembering: { correct: 0, total: 0 },
+                understanding: { correct: 0, total: 0 },
+                applying: { correct: 0, total: 0 },
+                analyzing: { correct: 0, total: 0 },
+                evaluating: { correct: 0, total: 0 },
+                creating: { correct: 0, total: 0 }
+            };
+        }
+        if (data && data.bloomTarget) {
+            const bt = data.bloomTarget;
+            if (!this.sessionBloomStats[bt]) {
+                this.sessionBloomStats[bt] = { correct: 0, total: 0 };
+            }
+            this.sessionBloomStats[bt].total += 1;
+            if (data.correct) this.sessionBloomStats[bt].correct += 1;
+        }
         // Track the answered question to prevent repetition
         if (data.questionData) {
             this.trackAnsweredQuestion(data.questionData, data.questionType, this.intensity);
@@ -4175,7 +4194,8 @@ export default class MainGameplay extends BaseScene {
                     sessionDuration: Date.now() - (resultData.startTime || Date.now()),
                     timestamp: new Date().toISOString(),
                     accuracyPercentage: resultData.correctAnswers + resultData.wrongAnswers > 0 ? 
-                        ((resultData.correctAnswers / (resultData.correctAnswers + resultData.wrongAnswers)) * 100).toFixed(1) : 0
+                        ((resultData.correctAnswers / (resultData.correctAnswers + resultData.wrongAnswers)) * 100).toFixed(1) : 0,
+                    bloomStats: this.sessionBloomStats || null
                 }
             };
             

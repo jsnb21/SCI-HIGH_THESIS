@@ -95,6 +95,41 @@
         }
       }
     </script>
+    <script>
+      // Lightweight on-demand Chart.js loader (prevents ReferenceError if not bundled)
+      window.ensureChartJs = function(){
+        return new Promise((resolve,reject)=>{
+          if (window.Chart) return resolve(window.Chart);
+          const existing = document.querySelector('script[data-chartjs]');
+          if (existing){
+            existing.addEventListener('load', ()=> resolve(window.Chart));
+            existing.addEventListener('error', ()=> reject(new Error('Chart.js failed to load (existing tag).')));
+            return;
+          }
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+          s.async = true;
+          s.setAttribute('data-chartjs','true');
+          s.onload = ()=> window.Chart ? resolve(window.Chart) : reject(new Error('Chart.js loaded but Chart undefined'));
+          s.onerror = ()=> reject(new Error('Chart.js network load error'));
+          document.head.appendChild(s);
+        });
+      };
+      // Apply a global white text theme for all charts once Chart is available
+      window.applyChartWhiteTheme = function(){
+        if(!window.Chart) return;
+        const d = window.Chart.defaults;
+        d.color = '#ffffff';
+        d.font = d.font || {}; // keep existing family if Chart sets one later
+        if(d.plugins){
+          if(d.plugins.legend && d.plugins.legend.labels){
+            d.plugins.legend.labels.color = '#ffffff';
+          }
+          if(d.plugins.title){ d.plugins.title.color = '#ffffff'; }
+          if(d.plugins.tooltip){ /* tooltip text inherits defaults.color */ }
+        }
+      };
+    </script>
     <style>
       @keyframes pulse-glow {
         from { box-shadow: 0 0 20px #F4CE14; }
@@ -1546,11 +1581,47 @@
               </div>
             </div>
           </div>
+
+          <!-- Bloom Taxonomy Performance -->
+          <div class="grid lg:grid-cols-2 gap-6">
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-primary mb-4 font-gaming flex items-center gap-2">
+                <span>🧠</span> Bloom Level Distribution
+              </h3>
+              <div class="relative h-64 mb-4 bg-dark/50 rounded-lg flex items-center justify-center overflow-hidden">
+                <canvas id="bloomDistributionChart" class="max-w-full max-h-full"></canvas>
+                <div id="bloomDistributionFallback" class="text-gray-400 text-center absolute inset-0 flex flex-col items-center justify-center">
+                  <div class="text-4xl mb-2">🧠</div>
+                  <div>Loading Bloom data...</div>
+                </div>
+              </div>
+              <div class="text-sm text-gray-300 text-center" id="bloom-distribution-summary">Cognitive engagement overview</div>
+            </div>
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-accent mb-4 font-gaming flex items-center gap-2">
+                <span>🎯</span> Bloom Accuracy by Level
+              </h3>
+              <div class="relative h-64 mb-4 bg-dark/50 rounded-lg flex items-center justify-center overflow-hidden">
+                <canvas id="bloomAccuracyChart" class="max-w-full max-h-full"></canvas>
+                <div id="bloomAccuracyFallback" class="text-gray-400 text-center absolute inset-0 flex flex-col items-center justify-center">
+                  <div class="text-4xl mb-2">🎯</div>
+                  <div>Loading accuracy data...</div>
+                </div>
+              </div>
+              <div class="text-sm text-gray-300 text-center" id="bloom-accuracy-summary">Accuracy per cognitive level</div>
+            </div>
+          </div>
         `;
         
         // Initialize charts with career stats data
         setTimeout(() => {
           initializeCareerStatsCharts(career, completionStatus, recentSessions);
+          // Load Chart.js if needed, then build Bloom charts
+          window.ensureChartJs().then(()=>{
+            try { window.applyChartWhiteTheme(); buildBloomChartsFromCareer(career); } catch(e) { console.warn('Bloom charts skipped:', e); }
+          }).catch(err=>{
+            console.warn('[BloomCharts] Chart.js not available:', err.message);
+          });
         }, 100);
       }
 
@@ -1814,7 +1885,8 @@
                 position: 'bottom',
                 labels: {
                   padding: 15,
-                  usePointStyle: true
+                  usePointStyle: true,
+                  color: '#ffffff'
                 }
               },
               tooltip: {
@@ -1881,11 +1953,10 @@
             scales: {
               y: {
                 beginAtZero: true,
-                title: {
-                  display: true,
-                  text: 'Points'
-                }
-              }
+                ticks: { color: '#ffffff' },
+                title: { display: true, text: 'Points', color:'#ffffff' }
+              },
+              x: { ticks: { color:'#ffffff' } }
             }
           }
         });
@@ -1921,7 +1992,8 @@
                 position: 'bottom',
                 labels: {
                   padding: 10,
-                  usePointStyle: true
+                  usePointStyle: true,
+                  color:'#ffffff'
                 }
               },
               tooltip: {
@@ -1994,6 +2066,66 @@
             }
           }
         });
+      }
+
+      // Bloom Charts Builder (reuses Chart.js already loaded)
+      function buildBloomChartsFromCareer(career){
+        // Expect optional structure career.bloomStats = { remembering:{correct: X, total:Y}, understanding:{...}, ... }
+        const stats = career.bloomStats;
+        if(!stats || typeof stats !== 'object') {
+          console.info('[BloomCharts] No bloomStats object found on careerStats.');
+          const distFallback = document.getElementById('bloomDistributionFallback');
+          if(distFallback){ distFallback.innerHTML = '<div class="text-gray-400 text-center"><div class="text-xl mb-1">ℹ️</div><div>No Bloom data yet.<br/><span class="text-sm text-gray-500">Play at least one quiz session after update.</span></div></div>'; }
+          const accFallback = document.getElementById('bloomAccuracyFallback');
+          if(accFallback){ accFallback.innerHTML = '<div class="text-gray-400 text-center"><div class="text-xl mb-1">ℹ️</div><div>No Bloom accuracy yet.</div></div>'; }
+          return;
+        }
+        const orderedLevels = ['remembering','understanding','applying','analyzing','evaluating','creating'];
+        const presentLevels = orderedLevels.filter(l => stats[l] && stats[l].total > 0);
+        if(presentLevels.length === 0){
+          console.info('[BloomCharts] bloomStats present but all totals are 0. Raw stats:', stats);
+          const distFallback = document.getElementById('bloomDistributionFallback');
+          if(distFallback){ distFallback.innerHTML = '<div class="text-gray-400 text-center"><div class="text-xl mb-1">🕒</div><div>Bloom tracking initialized.<br/><span class="text-sm text-gray-500">Answer some questions to populate.</span></div></div>'; }
+          const accFallback = document.getElementById('bloomAccuracyFallback');
+          if(accFallback){ accFallback.innerHTML = '<div class="text-gray-400 text-center"><div class="text-xl mb-1">🕒</div><div>No accuracy data yet.</div></div>'; }
+          return;
+        }
+
+        const totals = presentLevels.map(l => stats[l].total);
+        const corrects = presentLevels.map(l => stats[l].correct || 0);
+        const accuracies = corrects.map((c,i)=> (c / Math.max(1, totals[i])) * 100);
+
+        // Distribution (doughnut) - mirror topic chart simplicity
+        const distCtx = document.getElementById('bloomDistributionChart');
+        if(distCtx){
+          const colors = generateChartColors(presentLevels.length);
+          new Chart(distCtx, {
+            type: 'doughnut',
+            data: { labels: presentLevels.map(capitalizeBloom), datasets:[{ data: totals, backgroundColor: colors.backgrounds, borderColor: colors.borders, borderWidth: 2 }]},
+            options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ usePointStyle:true, padding:12, color:'#ffffff' }}} }
+          });
+          const sumTotal = totals.reduce((a,b)=>a+b,0);
+          const high = presentLevels[accuracies.indexOf(Math.max(...accuracies))];
+          const fallback = document.getElementById('bloomDistributionFallback'); if(fallback) fallback.remove();
+          document.getElementById('bloom-distribution-summary').textContent = `${sumTotal} questions • Best accuracy: ${capitalizeBloom(high)}`;
+        }
+
+        // Accuracy (bar) - simplified (single axis) like scoreChart style
+        const accCtx = document.getElementById('bloomAccuracyChart');
+        if(accCtx){
+          new Chart(accCtx, {
+            type: 'bar',
+            data: { labels: presentLevels.map(capitalizeBloom), datasets:[{ label:'Accuracy %', data: accuracies.map(a=> parseFloat(a.toFixed(1))), backgroundColor:'rgba(55,151,119,0.8)', borderColor:'rgb(55,151,119)', borderWidth:2 }]},
+            options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false }}, scales:{ y:{ beginAtZero:true, max:100, ticks:{ color:'#ffffff' } }, x:{ ticks:{ color:'#ffffff' } }}} 
+          });
+          const avgAcc = (accuracies.reduce((a,b)=>a+b,0)/accuracies.length).toFixed(1);
+          const fallback = document.getElementById('bloomAccuracyFallback'); if(fallback) fallback.remove();
+          document.getElementById('bloom-accuracy-summary').textContent = `Average accuracy: ${avgAcc}%`;
+        }
+      }
+
+      function capitalizeBloom(str){
+        return str.charAt(0).toUpperCase() + str.slice(1);
       }
 
       // Utility Functions for Charts

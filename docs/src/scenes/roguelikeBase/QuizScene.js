@@ -720,6 +720,41 @@ export default class QuizScene extends BaseScene {
         }
     }
 
+    // Minimal Bloom taxonomy classifier (non-invasive)
+    // Priority: explicit bloomTarget on question JSON > heuristic by question features > fallback by intensity
+    getBloomLevel(question = this.currentQuestion) {
+        if (!question) return 'remembering';
+        // 1. Explicit metadata override
+        if (question.bloomTarget) return question.bloomTarget; // expected values already lowercase
+        // 2. Heuristic: detect creation/evaluating patterns with existing fields (no new schema required)
+        // Creating: code arrangement with multipleValid solutions or presence of distractors array + correctOrder
+        if ((question.type === 'codeArrangement' || question.isDragDrop) && (question.multipleValid || Array.isArray(question.distractors))) {
+            return 'creating';
+        }
+        // Evaluating: syntaxBlock or multiple choice with evaluation criteria hints (keywords) or >4 options w/ best/most wording
+        const stem = (question.question || question.prompt || '').toLowerCase();
+        if (/(best|most appropriate|optimi(s|z)e|refactor|improv(e|ing)|more (efficient|secure)|avoid)/.test(stem)) {
+            return 'evaluating';
+        }
+        // Analyzing: codeArrangement without multipleValid but with correctOrder OR syntaxBlock with more than 2 distractors
+        if ((question.type === 'codeArrangement' || question.isDragDrop) && question.correctOrder) {
+            return 'analyzing';
+        }
+        if (question.type === 'syntaxBlock' && Array.isArray(question.options) && question.options.length >= 4) {
+            return 'analyzing';
+        }
+        // Applying: any intensity >=2 non-trivial question (syntaxBlock or code arrangement) not triggered above
+        if (this.intensity >= 2 && (question.type === 'syntaxBlock' || question.type === 'codeArrangement' || question.isDragDrop)) {
+            return 'applying';
+        }
+        // Understanding: multiple choice with >2 options and verbs like 'which of the following'
+        if (Array.isArray(question.options) && question.options.length > 2) {
+            return 'understanding';
+        }
+        // Remembering fallback
+        return 'remembering';
+    }
+
     createQuizInterface() {
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2;
@@ -1111,10 +1146,11 @@ export default class QuizScene extends BaseScene {
             try { this.updateTooltip(isCorrect); } catch(e) {}
         }
         const qType = forcedType || this.getQuestionType();
+        const bloomTarget = this.getBloomLevel();
         // Delay consistent with multiple choice transitions
         this.time.delayedCall(900, () => {
             // Some legacy flows may use emit path; mimic expected structure
-            this.events.emit('answer-submitted', { correct: isCorrect, questionType: qType });
+            this.events.emit('answer-submitted', { correct: isCorrect, questionType: qType, bloomTarget });
             this.returnToGameplay(isCorrect);
         });
     }
@@ -1980,7 +2016,8 @@ export default class QuizScene extends BaseScene {
             correct: isCorrect,
             enemyToDestroy: this.enemyData,
             questionData: this.currentQuestion,
-            questionType: this.getQuestionType()
+            questionType: this.getQuestionType(),
+            bloomTarget: this.getBloomLevel()
         };
         
         // Animate exit - simple fade out
@@ -2013,7 +2050,8 @@ export default class QuizScene extends BaseScene {
                 correct: false,
                 enemyToDestroy: this.enemyData,
                 questionData: this.currentQuestion,
-                questionType: this.getQuestionType()
+                questionType: this.getQuestionType(),
+                bloomTarget: this.getBloomLevel()
             };
             
             // Send completion event and stop scene immediately
