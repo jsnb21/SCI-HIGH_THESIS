@@ -597,7 +597,7 @@
                 </div>
                 
                 <!-- Stats Bar -->
-                <div class="mt-6 grid grid-cols-2 lg:grid-cols-6 gap-4 text-center">
+                <div class="mt-6 grid grid-cols-2 lg:grid-cols-5 gap-4 text-center">
                   <div class="bg-cardBg rounded-lg p-3 neon-border">
                     <div class="text-xs opacity-75 font-gaming">Ranked Score</div>
                     <div id="ranked-score" class="text-lg font-gaming font-bold text-primary">0</div>
@@ -613,10 +613,6 @@
                   <div class="bg-cardBg rounded-lg p-3 neon-border">
                     <div class="text-xs opacity-75 font-gaming">Total Score</div>
                     <div id="total-score" class="text-lg font-gaming font-bold text-purple">0</div>
-                  </div>
-                  <div class="bg-cardBg rounded-lg p-3 neon-border">
-                    <div class="text-xs opacity-75 font-gaming">Questions</div>
-                    <div id="total-questions" class="text-lg font-gaming font-bold text-gray-300">0</div>
                   </div>
                   <div class="bg-cardBg rounded-lg p-3 neon-border">
                     <div class="text-xs opacity-75 font-gaming">Max Combo</div>
@@ -638,10 +634,7 @@
                   </div>
                 </div>
               </div>
-              <div class="text-right">
-                <div class="text-sm text-gray-400 font-gaming">Total Play Time</div>
-                <div id="total-playtime" class="font-gaming font-bold text-accent">0h 0m</div>
-              </div>
+              <!-- Removed Total Play Time (no data) -->
             </div>
           </div>
           
@@ -1434,13 +1427,21 @@
         document.getElementById('dept-rank').textContent = '#' + rankings.departmentRank;
         
         // Update stats with career data
-        document.getElementById('ranked-score').textContent = (career.totalPoints || 0).toLocaleString();
-        document.getElementById('accuracy').textContent = (career.averageAccuracy || 0).toFixed(1) + '%';
-        document.getElementById('quiz-count').textContent = career.totalSessions || 0;
-        document.getElementById('total-score').textContent = (career.totalPoints || 0).toLocaleString();
-        document.getElementById('total-questions').textContent = career.totalQuestions || 0;
-        document.getElementById('max-combo').textContent = career.highestStreak || 0;
-        document.getElementById('total-playtime').textContent = formatPlayTime(career.totalPlayTime || 0);
+        // Safe setter helper to avoid null dereference when legacy IDs are removed
+        const safeSetText = (id, value) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = value;
+        };
+
+        safeSetText('ranked-score', (career.totalPoints || 0).toLocaleString());
+        safeSetText('accuracy', (career.averageAccuracy || 0).toFixed(1) + '%');
+        safeSetText('quiz-count', career.totalSessions || 0);
+        safeSetText('total-score', (career.totalPoints || 0).toLocaleString());
+        // Removed total-questions display
+        safeSetText('max-combo', career.highestStreak || 0);
+        // total-playtime element was removed from DOM; guard its update
+        const playTimeEl = document.getElementById('total-playtime');
+        if (playTimeEl) playTimeEl.textContent = formatPlayTime(career.totalPlayTime || 0);
         
   // Derive achievements using shared utility (dynamic import for code splitting)
   let derivedAchievements;
@@ -1559,29 +1560,6 @@
             </div>
           </div>
 
-          <!-- Career Summary -->
-          <div class="bg-cardBg p-6 rounded-lg neon-border">
-            <h3 class="text-lg font-semibold text-cyan mb-4 font-gaming">Career Summary</h3>
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div class="bg-dark/50 p-4 rounded text-center neon-border">
-                <div class="text-2xl font-bold text-primary font-gaming">${(career.totalPoints || 0).toLocaleString()}</div>
-                <div class="text-sm text-gray-400">Total Points</div>
-              </div>
-              <div class="bg-dark/50 p-4 rounded text-center neon-border">
-                <div class="text-2xl font-bold text-accent font-gaming">${career.totalSessions || 0}</div>
-                <div class="text-sm text-gray-400">Total Sessions</div>
-              </div>
-              <div class="bg-dark/50 p-4 rounded text-center neon-border">
-                <div class="text-2xl font-bold text-cyan font-gaming">${(career.averageAccuracy || 0).toFixed(1)}%</div>
-                <div class="text-sm text-gray-400">Average Accuracy</div>
-              </div>
-              <div class="bg-dark/50 p-4 rounded text-center neon-border">
-                <div class="text-2xl font-bold text-purple font-gaming">${career.highestStreak || 0}</div>
-                <div class="text-sm text-gray-400">Best Streak</div>
-              </div>
-            </div>
-          </div>
-
           <!-- Bloom Taxonomy Performance -->
           <div class="grid lg:grid-cols-2 gap-6">
             <div class="bg-cardBg p-6 rounded-lg neon-border">
@@ -1609,6 +1587,29 @@
                 </div>
               </div>
               <div class="text-sm text-gray-300 text-center" id="bloom-accuracy-summary">Accuracy per cognitive level</div>
+            </div>
+          </div>
+
+          <!-- Career Summary (moved below Bloom charts) -->
+          <div class="bg-cardBg p-6 rounded-lg neon-border mt-6">
+            <h3 class="text-lg font-semibold text-cyan mb-4 font-gaming">Career Summary</h3>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-primary font-gaming">${(career.totalPoints || 0).toLocaleString()}</div>
+                <div class="text-sm text-gray-400">Total Points</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-accent font-gaming">${career.totalSessions || 0}</div>
+                <div class="text-sm text-gray-400">Total Sessions</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-cyan font-gaming">${(career.averageAccuracy || 0).toFixed(1)}%</div>
+                <div class="text-sm text-gray-400">Average Accuracy</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-purple font-gaming">${career.highestStreak || 0}</div>
+                <div class="text-sm text-gray-400">Best Streak</div>
+              </div>
             </div>
           </div>
         `;
@@ -1660,14 +1661,15 @@
         document.getElementById('global-rank').textContent = '#' + estimatedGlobalRank;
         document.getElementById('dept-rank').textContent = '#' + estimatedDeptRank;
         
-        // Update stats
-        document.getElementById('ranked-score').textContent = playerData.score.toLocaleString();
-        document.getElementById('accuracy').textContent = estimatedAccuracy.toFixed(1) + '%';
-        document.getElementById('quiz-count').textContent = estimatedQuizCount;
-        document.getElementById('total-score').textContent = (gameData.totalPoints || playerData.score).toLocaleString();
-        document.getElementById('total-questions').textContent = estimatedTotalQuestions;
-        document.getElementById('max-combo').textContent = maxCombo;
-        document.getElementById('total-playtime').textContent = playTimeFormatted;
+    // Update stats (guard missing elements)
+    const safeSetText2 = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    safeSetText2('ranked-score', playerData.score.toLocaleString());
+    safeSetText2('accuracy', estimatedAccuracy.toFixed(1) + '%');
+    safeSetText2('quiz-count', estimatedQuizCount);
+    safeSetText2('total-score', (gameData.totalPoints || playerData.score).toLocaleString());
+    // Removed total-questions estimated display
+    safeSetText2('max-combo', maxCombo);
+    // total-playtime element removed
         
         // Generate level badges
         generateLevelBadges(gameData.achievementCount || 0);
