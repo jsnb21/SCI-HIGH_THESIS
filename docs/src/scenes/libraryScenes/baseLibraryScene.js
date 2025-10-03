@@ -32,7 +32,14 @@ class BaseLibraryScene extends Phaser.Scene {
         // Load JSON data files
         this.load.json('booksData', `library/books.json`);
         
-        // Load programming language icons from comlab folder
+        // Load NEW dedicated library book cover images
+        // Files placed in public/assets/img/library : html_book.png, css_book.png, javascript_book.png, python_book.png, java_book.png
+        this.load.image('html_book', 'assets/img/library/html_book.png');
+        this.load.image('css_book', 'assets/img/library/css_book.png');
+        this.load.image('javascript_book', 'assets/img/library/javascript_book.png');
+        this.load.image('python_book', 'assets/img/library/python_book.png');
+        this.load.image('java_book', 'assets/img/library/java_book.png');
+        // Backwards compatibility: keep older icons if some books still reference legacy icon keys
         this.load.image('web-design_logo', 'assets/img/comlab/icons/web-design_logo.png');
         this.load.image('python_logo', 'assets/img/comlab/icons/python_logo.png');
         this.load.image('java_logo', 'assets/img/comlab/icons/java_logo.png');
@@ -53,18 +60,29 @@ class BaseLibraryScene extends Phaser.Scene {
             return;
         }
 
+        // Mapping from book title (normalized) or legacy icon field to new cover image keys
+        const coverMap = {
+            'html': 'html_book',
+            'css': 'css_book',
+            'javascript': 'javascript_book',
+            'python': 'python_book',
+            'java': 'java_book'
+        };
+
         this.booksData.books.forEach((book, index) => {
             const iconKey = `book_${book.id}`;
-            const sourceIconKey = book.icon; // This will be like 'python_logo', 'java_logo', etc.
+            const normalizedTitle = (book.title || '').toLowerCase();
+            // Prefer explicit new cover by title; fall back to legacy icon property
+            let sourceIconKey = coverMap[normalizedTitle] || book.icon;
             
             
             // Check if the source icon exists in the texture manager
-            if (this.textures.exists(sourceIconKey)) {
+            if (sourceIconKey && this.textures.exists(sourceIconKey)) {
                 // Create a copy of the texture with our book-specific key
                 const sourceTexture = this.textures.get(sourceIconKey);
                 this.textures.addImage(iconKey, sourceTexture.source[0].image);
             } else {
-                console.warn(`Source icon ${sourceIconKey} not found for book ${book.title}`);
+                console.warn(`Source icon ${sourceIconKey} not found for book ${book.title}. Using fallback generated texture.`);
                 // Fallback: create a simple colored rectangle as backup
                 const graphics = this.add.graphics();
                 graphics.fillStyle(0x4a90e2, 0.8);
