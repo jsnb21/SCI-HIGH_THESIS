@@ -1479,6 +1479,7 @@
             </div>
             <div class="flex items-center flex-wrap gap-3 mb-4 text-[10px] font-mono">
               <span class="px-2 py-0.5 rounded bg-gray-700/40 border border-gray-600 text-gray-300">Legend:</span>
+              <span class="px-2 py-0.5 rounded bg-fuchsia-500/20 border border-fuchsia-400 text-fuchsia-300">Mythic</span>
               <span class="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400 text-amber-300">Epic</span>
               <span class="px-2 py-0.5 rounded bg-purple-500/20 border border-purple-400 text-purple-300">Rare</span>
               <span class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400 text-emerald-300">Common</span>
@@ -2224,12 +2225,13 @@
         if (!achievementsState) return '';
         const { unlocked = [], locked = [] } = achievementsState.unlocked ? achievementsState : { unlocked: [], locked: [], ...achievementsState };
         const rarityStyles = {
-          'Common': 'border-emerald-400 text-emerald-300 bg-emerald-500/10',
-          'Uncommon': 'border-blue-400 text-blue-300 bg-blue-500/10',
+          'Mythic': 'border-fuchsia-400 text-fuchsia-300 bg-fuchsia-500/10 shadow-[0_0_6px_rgba(255,0,255,0.4)]',
+          'Epic': 'border-amber-400 text-amber-300 bg-amber-500/10',
           'Rare': 'border-purple-400 text-purple-300 bg-purple-500/10',
-          'Epic': 'border-amber-400 text-amber-300 bg-amber-500/10'
+          'Uncommon': 'border-blue-400 text-blue-300 bg-blue-500/10',
+          'Common': 'border-emerald-400 text-emerald-300 bg-emerald-500/10'
         };
-        const order = ['Epic','Rare','Common','Uncommon'];
+        const order = ['Mythic','Epic','Rare','Uncommon','Common'];
 
         function card(a, isLocked) {
           const style = rarityStyles[a.tier] || 'border-primary/30 text-primary bg-primary/10';
