@@ -62,8 +62,7 @@ export default class BaseCharacterStoryScene extends Phaser.Scene {
       this.tweens.add({ targets: this.portrait, alpha: 1, duration: 400, ease: 'Power2' });
     }
 
-    // Back button
-    this.backButton = createBackButton(this, () => this.returnToClassroom());
+  this.backButton = createBackButton(this, 'Classroom');
 
     // Start initial dialogue
     this.startOpening();
@@ -115,6 +114,7 @@ export default class BaseCharacterStoryScene extends Phaser.Scene {
       this.dialogueBox.destroy();
       this.dialogueBox = null;
     }
+    // Return to Classroom after dialogue (restored behavior)
     this.scene.start('Classroom');
   }
 }
