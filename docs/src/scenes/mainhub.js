@@ -226,6 +226,10 @@ export default class MainHub extends Phaser.Scene {
     }
 
     async createUI() {
+        // Concurrency guard: prevent overlapping async invocations (resize + intro completion)
+        this._createUiRunId = (this._createUiRunId || 0) + 1;
+        const runId = this._createUiRunId;
+
         if (this.uiElements.length) {
             this.uiElements.forEach(el => el.destroy());
             this.uiElements = [];
@@ -320,6 +324,8 @@ export default class MainHub extends Phaser.Scene {
                 this.hideSecretary();
                 onceOnlyFlags.setSeen('mainhub_intro');
                 // Show UI elements after cutscene
+                // If a newer createUI run started while cutscene was playing, abort this one
+                if (runId !== this._createUiRunId) { return; }
                 this.showUIElementsAfterCutscene();
                 this.createCarousel(iconKeys, iconInfo);
                 
@@ -338,6 +344,8 @@ export default class MainHub extends Phaser.Scene {
             } else {
             }
             
+            // Abort if superseded by a newer run (e.g., rapid resize)
+            if (runId !== this._createUiRunId) { return; }
             this.createCarousel(iconKeys, iconInfo);
             
             // Skip tutorial as well for returning students with Firebase data
@@ -346,7 +354,7 @@ export default class MainHub extends Phaser.Scene {
             } else if (!onceOnlyFlags.hasSeen('mainhub_tutorial')) {
                 // Start tutorial after carousel is created (if first time visiting hub)
                 this.time.delayedCall(300, () => {
-                    this.startHubTutorial();
+                    if (runId === this._createUiRunId) this.startHubTutorial();
                 });
             }
         }
@@ -488,18 +496,18 @@ export default class MainHub extends Phaser.Scene {
         const scale = Math.min(width / 816, height / 624); // Calculate scale factor
         
         this.carousel = new Carousel(this, {
-            iconCenterY: 200, // Moved up from 220 to 200 to give more room for text
-            largeScale: 0.3,  
+            iconCenterY: 200,
+            largeScale: 0.3,
             smallScale: 0.15,
-            iconToTitleGap: 140, // Increased gap between icon and title
-            iconToDescGap: 80,   // Increased gap between title and description
-            // Use base (unscaled) font sizes so the internal carousel scaling applies exactly once,
-            // matching ComputerLab appearance (56 / 36 baselines).
+            iconToTitleGap: 120,
+            iconToDescGap: 60,
             headingStyle: {
-                fontSize: 56
+                // Computer Lab baseline 56 with lower bound 32
+                fontSize: Math.max(32, 56 * scale)
             },
             descStyle: {
-                fontSize: 36
+                // Computer Lab baseline 36 with lower bound 24
+                fontSize: Math.max(24, 36 * scale)
             },
             sounds: {
                 hover: 'se_hoverSound',

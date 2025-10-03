@@ -258,8 +258,7 @@ class BaseLibraryScene extends Phaser.Scene {
             // Confirm with the player before opening a new tab
             const proceed = await this.confirmOpenBook(book);
             if (!proceed) {
-                // Optional: subtle canceled feedback
-                this.showTransientTip('Opening canceled');
+                // Opening canceled silently per request
                 return;
             }
             
@@ -268,18 +267,31 @@ class BaseLibraryScene extends Phaser.Scene {
                 this.se_confirmSound.play();
             }
             
-            // Show visual feedback
-            this.showOpeningFeedback(book);
+            // Removed opening feedback popup per request
             
-            // Open in a new window/tab with better security
-            const newWindow = window.open(book.link, '_blank', 'noopener,noreferrer');
-            
-            // Handle popup blocker
-            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-                console.warn('Popup blocked for:', book.link);
-                this.showPopupBlockedMessage(book);
-                return;
+            // Open in a new tab
+            // NOTE: Some browsers initially return a WindowProxy object that appears 'closed' until the event loop cycles.
+            // We do a deferred validation to reduce false positives.
+            let newWindow = null;
+            try {
+                newWindow = window.open(book.link, '_blank'); // keep minimal features to reduce blocker triggers
+            } catch (err) {
+                console.warn('window.open threw, treating as blocked', err);
             }
+
+            const validatePopup = () => {
+                // True block conditions: null OR explicitly undefined OR (no focus method AND no closed property), extremely rare.
+                const blocked = !newWindow || typeof newWindow.closed === 'undefined' && typeof newWindow.focus !== 'function';
+                if (blocked) {
+                    console.warn('Likely popup blocked for:', book.link);
+                    this.showPopupBlockedMessage(book);
+                } else {
+                    // Attempt a focus (may be ignored depending on browser policy)
+                    try { newWindow.focus(); } catch {}
+                }
+            };
+            // Defer check to allow browser to finalize tab creation
+            this.time.delayedCall(120, validatePopup);
             
             
             // Mark as reading and save progress
@@ -322,91 +334,133 @@ class BaseLibraryScene extends Phaser.Scene {
         const depth = 10_000;
         const w = this.scale.width;
         const h = this.scale.height;
-        const panelW = Math.min(520, Math.max(360, w * 0.7));
-        const panelH = Math.min(260, Math.max(200, h * 0.28));
+        const isMobile = w < 768;
+        const isSmall = w < 480;
 
-        const bg = this.add.rectangle(w / 2, h / 2, w, h, 0x000000, 0.75)
-            .setOrigin(0.5)
-            .setDepth(depth)
-            .setInteractive();
+        // Dimensions styled similar to Data Privacy panel
+        const panelW = Math.min(w * 0.9, 640);
+        const panelH = Math.min(h * 0.6, 360);
+        const panelX = w / 2;
+        const panelY = h / 2;
 
-        const panel = this.add.rectangle(w / 2, h / 2, panelW, panelH, 0x111318, 1)
+        // Dim background
+        const overlay = this.add.rectangle(panelX, panelY, w, h, 0x000000, 0.6)
+            .setOrigin(0.5).setAlpha(0).setDepth(depth).setInteractive();
+
+        // Base panel
+        const panel = this.add.rectangle(panelX, panelY, panelW, panelH, 0x0f1524, 0.95)
+            .setStrokeStyle(3, 0xffdd33, 1)
             .setOrigin(0.5)
-            .setStrokeStyle(2, 0xF4CE14, 0.6)
+            .setAlpha(0)
             .setDepth(depth + 1);
 
-        const title = this.add.text(w / 2, h / 2 - panelH / 2 + 36, 'Leave Game Tab?', {
+        // Header bar
+        const headerHeight = 60;
+        const headerBar = this.add.rectangle(panelX, panelY - panelH/2 + headerHeight/2, panelW, headerHeight, 0x121d31, 1)
+            .setOrigin(0.5)
+            .setAlpha(0)
+            .setDepth(depth + 2);
+
+        // Icon circle (info / open)
+        const iconRadius = 20;
+        const iconX = panelX - panelW/2 + 24 + iconRadius;
+        const iconY = headerBar.y;
+        const iconCircle = this.add.circle(iconX, iconY, iconRadius, 0xffcc18, 1).setAlpha(0).setDepth(depth + 3);
+        const iconText = this.add.text(iconX, iconY, '📖', { fontFamily:'Arial', fontSize: (isMobile? 26:28) + 'px', color:'#222222'}).setOrigin(0.5).setAlpha(0).setDepth(depth + 4);
+
+        // Title
+        const titleFontSize = isMobile ? 24 : 26;
+        const titleText = this.add.text(iconX + iconRadius + 16, iconY, 'Open Book?', {
             fontFamily: 'Arial Black, Arial',
-            fontSize: '20px',
+            fontSize: titleFontSize + 'px',
             color: '#ffffff'
-        }).setOrigin(0.5).setDepth(depth + 2);
+        }).setOrigin(0,0.5).setAlpha(0).setDepth(depth + 4);
 
-        const body = this.add.text(w / 2, title.y + 34, message, {
+        // Body text
+        const bodyPaddingX = 36;
+        const bodyPaddingTop = 18;
+        const bodyAreaWidth = panelW - bodyPaddingX*2;
+        // Base body font size; elevate for open-book prompt
+        let bodyFontSize = (isSmall?14:(isMobile?15:16)) + 1;
+        if (/^Open \".+\" in a new tab\?$/.test(message)) {
+            bodyFontSize = Math.max(bodyFontSize, 24); // enforce minimum 24px for this prompt
+        }
+        const bodyStartY = headerBar.y + headerHeight/2 + bodyPaddingTop;
+        const bodyText = this.add.text(panelX, bodyStartY, message, {
             fontFamily: 'Arial',
-            fontSize: '16px',
-            color: '#d1d5db',
-            wordWrap: { width: panelW - 40, useAdvancedWrap: true },
-            align: 'center'
-        }).setOrigin(0.5).setDepth(depth + 2);
+            fontSize: bodyFontSize + 'px',
+            color: '#dbe3f2',
+            align: 'center',
+            wordWrap: { width: bodyAreaWidth },
+            lineSpacing: 6
+        }).setOrigin(0.5,0).setAlpha(0).setDepth(depth + 3);
 
-        const btnY = h / 2 + panelH / 2 - 44;
+        // Buttons
+        const buttonsY = panelY + panelH/2 - (isMobile? 78:70);
+        const primaryColor = 0xffdd33;
+        const btnH = isMobile? 54:50;
+        const btnW = 180;
+        const spacing = 34;
+        const okX = panelX - (btnW/2 + spacing/2);
+        const cancelX = panelX + (btnW/2 + spacing/2);
 
-        const makeButton = (x, label, primary) => {
-            const btnW = 128, btnH = 40;
-            const bgRect = this.add.rectangle(x, btnY, btnW, btnH, primary ? 0xF4CE14 : 0x1F2937, 1)
-                .setOrigin(0.5)
-                .setStrokeStyle(1, primary ? 0xFDE68A : 0x374151, 0.9)
-                .setDepth(depth + 2)
-                .setInteractive({ useHandCursor: true });
-            const txt = this.add.text(x, btnY, label, {
-                fontFamily: 'Arial',
-                fontSize: '16px',
-                color: primary ? '#111827' : '#e5e7eb',
-                fontStyle: 'bold'
-            }).setOrigin(0.5).setDepth(depth + 3);
-
-            bgRect.on('pointerover', () => {
-                this.tweens.add({ targets: [bgRect, txt], scaleX: 1.04, scaleY: 1.04, duration: 120, ease: 'Power2' });
-                if (!primary) bgRect.setFillStyle(0x374151, 1);
-            });
-            bgRect.on('pointerout', () => {
-                this.tweens.add({ targets: [bgRect, txt], scaleX: 1, scaleY: 1, duration: 120, ease: 'Power2' });
-                if (!primary) bgRect.setFillStyle(0x1F2937, 1);
-            });
-
-            return { bgRect, txt };
+        const makeButton = (x,y,w,h,color,label,isPrimary=false) => {
+            const rect = this.add.rectangle(x,y,w,h,color,1).setOrigin(0.5).setAlpha(0).setDepth(depth + 3).setInteractive({useHandCursor:true});
+            rect.setStrokeStyle(2, isPrimary? 0xffe572 : 0x596276, 1);
+            const txt = this.add.text(x,y,label,{
+                fontFamily:'Arial',
+                fontSize:(isMobile?22:20)+'px',
+                fontStyle:'bold',
+                color: isPrimary? '#1a1f29':'#ffffff'
+            }).setOrigin(0.5).setAlpha(0).setDepth(depth + 4);
+            rect.on('pointerover',()=> rect.setFillStyle(isPrimary?0xffe04a:0x4a566b));
+            rect.on('pointerout',()=> rect.setFillStyle(color));
+            return {rect, txt};
         };
 
-        const spacing = 160;
-        const okBtn = makeButton(w / 2 - spacing / 2, confirmText, true);
-        const cancelBtn = makeButton(w / 2 + spacing / 2, cancelText, false);
+        const okBtn = makeButton(okX, buttonsY, btnW, btnH, primaryColor, confirmText, true);
+        const cancelBtn = makeButton(cancelX, buttonsY, btnW, btnH, 0x1d2a3b, cancelText, false);
+
+        // Intro animation
+        this.tweens.add({ targets: overlay, alpha:0.6, duration:240, ease:'Power2' });
+        this.tweens.add({ targets: panel, alpha:1, duration:300, ease:'Back.Out' });
+        this.tweens.add({ targets: [headerBar, iconCircle, iconText, titleText], alpha:1, duration:340, ease:'Power2', delay:110 });
+        this.tweens.add({ targets: bodyText, alpha:1, duration:380, ease:'Power2', delay:200 });
+        this.tweens.add({ targets: [okBtn.rect, okBtn.txt, cancelBtn.rect, cancelBtn.txt], alpha:1, duration:420, ease:'Power2', delay:300 });
 
         return new Promise(resolve => {
+            const elements = [overlay, panel, headerBar, iconCircle, iconText, titleText, bodyText, okBtn.rect, okBtn.txt, cancelBtn.rect, cancelBtn.txt];
+
             const cleanup = () => {
-                [bg, panel, title, body, okBtn.bgRect, okBtn.txt, cancelBtn.bgRect, cancelBtn.txt].forEach(el => el && el.destroy());
+                elements.forEach(e=>{ if (e && e.destroy) e.destroy(); });
                 this._confirmOverlayActive = false;
             };
 
-            okBtn.bgRect.on('pointerdown', () => {
+            const accept = () => {
                 if (this.se_confirmSound) this.se_confirmSound.play();
-                cleanup();
-                resolve(true);
+                this.tweens.add({ targets: elements, alpha:0, duration:320, ease:'Power2', onComplete:() => { cleanup(); resolve(true); } });
+            };
+            const decline = () => {
+                this.tweens.add({ targets: elements, alpha:0, duration:250, ease:'Power2', onComplete:() => { cleanup(); resolve(false); } });
+            };
+
+            okBtn.rect.on('pointerdown', () => {
+                this.tweens.add({ targets:[okBtn.rect, okBtn.txt], scaleX:0.94, scaleY:0.94, duration:110, yoyo:true, ease:'Power2', onComplete: accept });
             });
-            cancelBtn.bgRect.on('pointerdown', () => {
-                cleanup();
-                resolve(false);
+            cancelBtn.rect.on('pointerdown', () => {
+                this.tweens.add({ targets:[cancelBtn.rect, cancelBtn.txt], scaleX:0.94, scaleY:0.94, duration:110, yoyo:true, ease:'Power2', onComplete: decline });
             });
 
             // Keyboard shortcuts
             const esc = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
             const enter = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
-            const onEsc = () => { cleanup(); resolve(false); };
-            const onEnter = () => { cleanup(); resolve(true); };
+            const onEsc = () => decline();
+            const onEnter = () => accept();
             esc?.once('down', onEsc);
             enter?.once('down', onEnter);
 
-            // Close by clicking the dark background (acts like cancel)
-            bg.once('pointerdown', onEsc);
+            // Click outside to cancel
+            overlay.once('pointerdown', onEsc);
         });
     }
 
@@ -419,28 +473,7 @@ class BaseLibraryScene extends Phaser.Scene {
         } catch { /* no-op */ }
     }
 
-    showOpeningFeedback(book) {
-        // Create a temporary feedback message
-        const feedback = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY - 100, 
-            `Opening "${book.title}"...`, {
-            fontSize: '20px',
-            fontFamily: 'Arial',
-            color: '#00ff00',
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            padding: { x: 20, y: 10 },
-            borderRadius: 10
-        }).setOrigin(0.5).setDepth(300);
-
-        // Animate and remove feedback
-        this.tweens.add({
-            targets: feedback,
-            alpha: 0,
-            y: feedback.y - 50,
-            duration: 2000,
-            ease: 'Power2.easeOut',
-            onComplete: () => feedback.destroy()
-        });
-    }
+    // Removed showOpeningFeedback method (no longer needed)
 
     showPopupBlockedMessage(book) {
         // Show popup blocked message
