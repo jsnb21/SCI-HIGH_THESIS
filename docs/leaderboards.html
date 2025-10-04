@@ -695,68 +695,10 @@
       </div>
     </footer>
     <script>
-      // Secure Firebase initialization with fallback configuration
+      // Firebase initialization is centralized in firebaseClient.js
       async function initializeFirebase() {
-        try {
-          // Try multiple paths for GitHub Pages compatibility
-          const configPaths = [
-            './config/firebase-config.js',
-            '/SCI-HIGH_THESIS/config/firebase-config.js',
-            'config/firebase-config.js'
-          ];
-          
-          let configLoaded = false;
-          
-          for (const configPath of configPaths) {
-            try {
-              const script = document.createElement('script');
-              script.src = configPath;
-              
-              await new Promise((resolve, reject) => {
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
-              });
-              
-              if (window.firebaseConfig) {
-                await window.firebaseConfig.initializeFirebase();
-                configLoaded = true;
-                break;
-              }
-            } catch (error) {
-              console.warn(`Failed to load config from ${configPath}:`, error);
-              continue;
-            }
-          }
-          
-          if (!configLoaded) {
-            // Initialize with minimal public configuration (no sensitive data)
-            if (typeof firebase !== 'undefined' && firebase.apps.length === 0) {
-              // Use environment variables or minimal public config
-              const publicConfig = {
-                authDomain: "sci-high-website.firebaseapp.com",
-                databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-                projectId: "sci-high-website",
-                storageBucket: "sci-high-website.appspot.com"
-                // Note: API key should be loaded securely or use Firebase Anonymous Auth
-              };
-              
-              try {
-                firebase.initializeApp(publicConfig);
-                console.warn('Firebase initialized with minimal config. Some features may be limited.');
-              } catch (initError) {
-                console.error('Failed to initialize Firebase with minimal config:', initError);
-                throw new Error('Firebase initialization failed completely');
-              }
-            }
-          }
-          
-          // Initialize Firebase services after successful initialization
-          window.db = firebase.database();
-        } catch (error) {
-          console.error('Error loading Firebase configuration:', error);
-          throw error;
-        }
+        const mod = await import('./js/leaderboards/firebaseClient.js');
+        return mod.initFirebase();
       }
 
       // Initialize Firebase when page loads and wait for completion
@@ -770,15 +712,10 @@
         throw error;
       });
 
-      // Helper function to ensure Firebase is ready before using database
+      // Helper function to ensure Firebase is ready before using database (delegates to firebaseClient)
       async function ensureFirebaseReady() {
-        if (!firebaseInitialized) {
-          await firebaseInitPromise;
-        }
-        if (!db) {
-          throw new Error('Firebase database not available');
-        }
-        return db;
+        const mod = await import('./js/leaderboards/firebaseClient.js');
+        return mod.ensureFirebaseReady();
       }
 
       // Helper function to format course names properly
@@ -799,433 +736,40 @@
         return courseMap[courseTopic.toLowerCase()] || courseTopic.charAt(0).toUpperCase() + courseTopic.slice(1);
       }
 
-      // Load Career Stats Data from Firebase
+      // Load Career Stats Data via dataService with injected db provider
       async function loadCareerStatsData(filter = 'overall') {
         try {
-          
-          // Ensure Firebase is ready before using database
-          const database = await ensureFirebaseReady();
-          
-          // Get career stats data
-          const careerSnapshot = await database.ref('student_career_stats').once('value');
-          const careerData = careerSnapshot.val();
-          
-          if (!careerData) {
-            return [];
+          const [fb, dataMod, cacheMod] = await Promise.all([
+            import('./js/leaderboards/firebaseClient.js'),
+            import('./js/leaderboards/dataService.js'),
+            import('./js/leaderboards/cache.js')
+          ]);
+          const cache = cacheMod.default || (window && window.leaderboardCache);
+          const key = `career:${filter}`;
+          const ttlMs = 30000; // 30s cache to avoid double fetches on quick filter changes
+          if (cache && typeof cache.cached === 'function') {
+            return await cache.cached(key, ttlMs, () => dataMod.loadCareerStatsAggregated(() => fb.ensureFirebaseReady(), filter));
           }
-
-          // Try to get main student data for correct names (fallback if permission denied)
-          let studentNameMap = {};
-          try {
-            const studentsSnapshot = await database.ref('students').once('value');
-            const studentsData = studentsSnapshot.val();
-            
-            if (studentsData) {
-              Object.values(studentsData).forEach(student => {
-                if (student.studentId) {
-                  studentNameMap[student.studentId] = {
-                    name: student.name || student.fullName || 'Unknown Student',
-                    department: student.department || 'Unknown'
-                  };
-                }
-              });
-            }
-          } catch (error) {
-            console.warn('Could not access students database (permission denied), using career stats names:', error.message);
-            // Continue without student names map - will use career stats names
-          }
-
-          // Use Map to accumulate data for students (to handle duplicates)
-          const studentAccumulator = new Map();
-          
-          Object.entries(careerData).forEach(([studentId, statsData]) => {
-            if (!statsData.careerStats || !statsData.studentInfo) {
-              return; // Skip incomplete records
-            }
-
-            const career = statsData.careerStats;
-            const info = statsData.studentInfo;
-            
-            // Get correct student name from main database, fallback to career stats
-            const studentInfo = studentNameMap[studentId];
-            
-            // Enhanced name construction with better fallback logic
-            let studentName = 'Unknown Student';
-            
-            if (studentInfo?.name) {
-              // Use name from main students database
-              studentName = studentInfo.name;
-            } else if (info.fullName) {
-              // Use fullName from career stats studentInfo
-              studentName = info.fullName;
-            } else if (statsData.firstName || statsData.lastName) {
-              // Construct name from firstName and lastName, handling missing parts
-              const firstName = statsData.firstName || '';
-              const lastName = statsData.lastName || '';
-              const middleName = statsData.middleName || '';
-              
-              if (firstName && lastName) {
-                // If we have both first and last name
-                studentName = middleName ? `${firstName} ${middleName} ${lastName}` : `${firstName} ${lastName}`;
-              } else if (firstName) {
-                // Only first name available
-                studentName = firstName;
-              } else if (lastName) {
-                // Only last name available
-                studentName = lastName;
-              }
-            } else if (statsData.studentInfo?.studentName) {
-              // Check for alternative name field
-              studentName = statsData.studentInfo.studentName;
-            }
-            
-            // Ensure we don't have empty or just whitespace names
-            studentName = studentName.trim() || `Student ${studentId}`;
-          
-            
-            // Determine department from main database first, then fallback
-            let department = studentInfo?.department || statsData.department || 'Unknown';
-            let departmentType = 'other';
-            
-            if (department) {
-              departmentType = department.toLowerCase().includes('college') ? 'college' : 
-                              department.toLowerCase().includes('senior') ? 'seniorhigh' : 
-                              department.toLowerCase().includes('junior') ? 'juniorhigh' : 'other';
-            }
-
-            // Apply filter
-            if (filter !== 'overall') {
-              if (filter === 'college' && departmentType !== 'college') return;
-              if (filter === 'seniorhigh' && departmentType !== 'seniorhigh') return;
-              if (filter === 'juniorhigh' && departmentType !== 'juniorhigh') return;
-            }
-
-            // Use student name as key to accumulate data for same students
-            const accumulatorKey = `${studentName}_${department}`.toLowerCase();
-            
-            if (studentAccumulator.has(accumulatorKey)) {
-              // Accumulate existing student data
-              const existing = studentAccumulator.get(accumulatorKey);
-              
-              // Add up scores and sessions
-              existing.score += career.totalPoints || 0;
-              existing.totalSessions += career.totalSessions || 0;
-              
-              // Calculate weighted average for accuracy
-              const totalQuestions = existing.totalQuestions + (career.totalQuestions || 0);
-              const totalCorrectAnswers = existing.totalCorrectAnswers + (career.totalCorrectAnswers || 0);
-              existing.averageAccuracy = totalQuestions > 0 ? Math.round((totalCorrectAnswers / totalQuestions) * 100) : 0;
-              existing.totalQuestions = totalQuestions;
-              existing.totalCorrectAnswers = totalCorrectAnswers;
-              
-              // Keep highest streak
-              existing.highestStreak = Math.max(existing.highestStreak, career.highestStreak || 0);
-              
-              // Merge course completion status
-              const existingCompletion = existing.courseCompletionStatus;
-              const newCompletion = career.courseCompletionStatus || {};
-              Object.entries(newCompletion).forEach(([course, completed]) => {
-                if (completed) existingCompletion[course] = true;
-              });
-              
-              // Update completion percentage
-              const totalCourses = Object.keys(existingCompletion).length;
-              const completedCourses = Object.values(existingCompletion).filter(Boolean).length;
-              existing.completedCourses = completedCourses;
-              existing.totalCourses = totalCourses;
-              existing.completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
-              
-              // Update last updated time
-              if (info.lastUpdated && (!existing.lastUpdated || new Date(info.lastUpdated) > new Date(existing.lastUpdated))) {
-                existing.lastUpdated = info.lastUpdated;
-              }
-              
-            } else {
-              // First time seeing this student
-              const completionStatus = career.courseCompletionStatus || {};
-              const totalCourses = Object.keys(completionStatus).length;
-              const completedCourses = Object.values(completionStatus).filter(Boolean).length;
-              const completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
-
-              studentAccumulator.set(accumulatorKey, {
-                studentId: studentId,
-                userId: studentId, // For compatibility
-                name: studentName,
-                firstName: statsData.firstName || '',
-                lastName: statsData.lastName || '',
-                department: department,
-                strandYear: statsData.strandYear || '',
-                score: career.totalPoints || 0,
-                totalSessions: career.totalSessions || 0,
-                averageAccuracy: career.averageAccuracy || 0,
-                totalQuestions: career.totalQuestions || 0,
-                totalCorrectAnswers: career.totalCorrectAnswers || 0,
-                highestStreak: career.highestStreak || 0,
-                completedCourses: completedCourses,
-                totalCourses: totalCourses,
-                completionPercentage: completionPercentage,
-                courseCompletionStatus: completionStatus,
-                lastUpdated: info.lastUpdated || '',
-                recentSessions: statsData.recentSessions || {}
-              });
-            }
-          });
-
-          // Convert Map back to array
-          const leaderboardData = Array.from(studentAccumulator.values());
-
-          // Sort by total accumulated points (descending)
-          leaderboardData.sort((a, b) => b.score - a.score);
-          
-          return leaderboardData;
-
+          // Fallback: no cache available
+          return await dataMod.loadCareerStatsAggregated(() => fb.ensureFirebaseReady(), filter);
         } catch (error) {
           console.error('Error loading career stats data:', error);
           return [];
         }
       }
 
-      // Enhanced Leaderboard Rendering with Career Stats
-      function renderLeaderboard(data) {
-        const container = document.getElementById('leaderboard-list');
-        if (!data || data.length === 0) {
-          container.innerHTML = '<p class="text-gray-500 text-center font-gaming">No career stats available yet. Complete some quiz sessions!</p>';
-          return;
-        }
-
-        let html = `
-          <div class="overflow-x-auto">
-            <table class="w-full text-left bg-dark/50 rounded-lg overflow-hidden">
-              <thead class="bg-gradient-to-r from-primary to-accent">
-                <tr class="text-dark font-gaming">
-                  <th class="py-4 px-4 font-bold">Rank</th>
-                  <th class="py-4 px-4 font-bold">Student</th>
-                  <th class="py-4 px-4 font-bold">Total Points</th>
-                  <th class="py-4 px-4 font-bold">Sessions</th>
-                  <th class="py-4 px-4 font-bold">Avg Accuracy</th>
-                  <th class="py-4 px-4 font-bold">Courses</th>
-                  <th class="py-4 px-4 font-bold">Department</th>
-                </tr>
-              </thead>
-              <tbody>
-        `;
-
-        data.forEach((entry, index) => {
-          const rank = index + 1;
-          let rankBadge = '';
-          let rowClass = 'border-b border-light/30 hover:bg-light/20 transition-colors';
-          
-          if (rank === 1) {
-            rankBadge = '👑';
-            rowClass += ' bg-gradient-to-r from-yellow-400/10 to-yellow-600/10';
-          } else if (rank === 2) {
-            rankBadge = '🥈';
-            rowClass += ' bg-gradient-to-r from-gray-300/10 to-gray-500/10';
-          } else if (rank === 3) {
-            rankBadge = '🥉';
-            rowClass += ' bg-gradient-to-r from-orange-400/10 to-orange-600/10';
-          }
-
-          const playerNameHtml = `
-            <button class="player-name-link text-primary hover:text-accent underline cursor-pointer font-medium transition-colors" 
-                    onclick="showPlayerProfile('${entry.studentId}')">
-              ${entry.name}
-            </button>
-          `;
-
-          const coursesHtml = `
-            <div class="text-center">
-              <span class="text-accent font-bold">${entry.completedCourses}/${entry.totalCourses}</span>
-              <div class="text-xs text-gray-400">${entry.completionPercentage}%</div>
-            </div>
-          `;
-
-          html += `
-            <tr class="${rowClass}">
-              <td class="py-3 px-4">
-                <div class="flex items-center space-x-2">
-                  <span class="font-gaming font-bold text-primary">#${rank}</span>
-                  <span class="text-lg">${rankBadge}</span>
-                </div>
-              </td>
-              <td class="py-3 px-4">
-                <div>
-                  ${playerNameHtml}
-                  <div class="text-xs text-gray-400">
-                    ${entry.strand ? `${entry.strand}` : ''}${entry.strand && entry.year ? ' - ' : ''}${entry.year ? `${entry.year}` : ''}${!entry.strand && !entry.year && entry.strandYear ? entry.strandYear : ''}
-                  </div>
-                </div>
-              </td>
-              <td class="py-3 px-4">
-                <span class="font-gaming font-bold text-primary text-lg">${entry.score.toLocaleString()}</span>
-              </td>
-              <td class="py-3 px-4 text-center">
-                <span class="font-gaming text-accent">${entry.totalSessions}</span>
-              </td>
-              <td class="py-3 px-4 text-center">
-                <span class="font-gaming text-cyan">${entry.averageAccuracy}%</span>
-              </td>
-              <td class="py-3 px-4">
-                ${coursesHtml}
-              </td>
-              <td class="py-3 px-4">
-                <span class="text-sm text-gray-300">${entry.department}</span>
-              </td>
-            </tr>
-          `;
-        });
-
-        html += '</tbody></table></div>';
-        container.innerHTML = html;
-      }
-
-      // Enhanced Player Cards with Career Stats
-      function renderPlayerCards(data) {
-        const container = document.getElementById('player-cards-grid');
-        const loading = document.getElementById('player-cards-loading');
-        
-        if (!container) {
-          console.error('ERROR: player-cards-grid element not found!');
-          return;
-        }
-        
-        if (!data || data.length === 0) {
-          if (loading) {
-            loading.innerHTML = '<p class="text-gray-400 text-center font-gaming">No students with career stats found</p>';
-            loading.style.display = 'block';
-          }
-          return;
-        }
-        
-        // Hide loading and show cards
-        if (loading) {
-          loading.style.display = 'none';
-        }
-        
-        // Take only top 3 players for featured cards and reorder to show 2nd, 1st, 3rd (with 1st in the center)
-        const rawTop = data.slice(0, 3);
-        let ordered;
-        if (rawTop.length === 3) {
-          // rawTop[0]=1st, rawTop[1]=2nd, rawTop[2]=3rd
-          ordered = [rawTop[1], rawTop[0], rawTop[2]]; // 2nd, 1st, 3rd
-        } else {
-          ordered = rawTop; // fallback for <3 players
-        }
-        
-        let cardsHtml = '';
-        ordered.forEach((player, visualIndex) => {
-          // Compute original rank index for styling (1-based rank derived from score order)
-          const originalRank = data.indexOf(player) + 1;
-          // Safe name handling
-          let playerName = player.name || 'Unknown Student';
-          
-          // Safe initials generation
-          let initials = '??';
-          try {
-            if (playerName && typeof playerName === 'string' && playerName.trim().length > 0) {
-              const words = playerName.trim().split(' ').filter(word => word.length > 0);
-              if (words.length > 0) {
-                initials = words.map(word => word[0] ? word[0].toUpperCase() : '').join('').substring(0, 2);
-                if (!initials || initials.length === 0) initials = playerName.substring(0, 2).toUpperCase();
-              }
-            }
-          } catch (e) {
-            console.warn('Error generating initials:', e);
-            initials = '??';
-          }
-          
-          // Special styling for each position
-          let cardStyle, rankIcon, rankColor;
-          if (originalRank === 1) {
-            cardStyle = 'from-yellow-400/20 to-yellow-600/20';
-            rankIcon = '👑';
-            rankColor = 'from-yellow-400 to-yellow-600';
-          } else if (originalRank === 2) {
-            cardStyle = 'from-gray-300/20 to-gray-500/20';
-            rankIcon = '🥈';
-            rankColor = 'from-gray-300 to-gray-500';
-          } else {
-            cardStyle = 'from-orange-400/20 to-orange-600/20';
-            rankIcon = '🥉';
-            rankColor = 'from-orange-400 to-orange-600';
-          }
-          
-          // Emphasize middle (original rank 1) by scaling and raising slightly
-          const emphasizeClass = originalRank === 1 ? 'md:scale-110 md:-mt-2 z-10' : 'md:scale-100';
-          cardsHtml += `
-            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105 ${emphasizeClass}" onclick="showPlayerProfile('${player.studentId}')">
-              <div class="neon-border bg-gradient-to-br ${cardStyle} rounded-lg p-6 backdrop-blur-sm relative overflow-hidden">
-                <!-- Rank Badge -->
-                <div class="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br ${rankColor} rounded-full flex items-center justify-center text-lg font-bold text-white border-3 border-white shadow-xl z-10">
-                  ${rankIcon}
-                </div>
-                
-                <!-- Player Avatar -->
-                <div class="flex flex-col items-center mb-4">
-                  <div class="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-2xl font-bold text-dark mb-3 border-3 border-primary/50 shadow-lg">
-                    ${initials}
-                  </div>
-                  <div class="text-center">
-                    <h3 class="font-gaming text-primary text-lg font-bold">${playerName}</h3>
-                    <p class="text-gray-400 text-sm">${player.department || 'Unknown'}</p>
-                  </div>
-                </div>
-                
-                <!-- Enhanced Player Stats -->
-                <div class="space-y-3">
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-300 text-sm font-gaming">Career Points</span>
-                    <span class="text-primary font-gaming font-bold text-lg">${(player.score || 0).toLocaleString()}</span>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-300 text-sm font-gaming">Global Rank</span>
-                    <span class="text-accent font-gaming font-bold text-lg">#${originalRank}</span>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-300 text-sm font-gaming">Sessions</span>
-                    <span class="text-cyan font-gaming font-bold">${player.totalSessions || 0}</span>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-300 text-sm font-gaming">Accuracy</span>
-                    <span class="text-purple font-gaming font-bold">${player.averageAccuracy || 0}%</span>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-300 text-sm font-gaming">Courses</span>
-                    <span class="text-orange-400 font-gaming font-bold">${player.completedCourses}/${player.totalCourses}</span>
-                  </div>
-                </div>
-                
-                <!-- Course Progress Bar -->
-                <div class="mt-4">
-                  <div class="flex justify-between text-xs text-gray-400 mb-1">
-                    <span>Course Progress</span>
-                    <span>${player.completionPercentage}%</span>
-                  </div>
-                  <div class="w-full bg-gray-700 rounded-full h-2">
-                    <div class="bg-gradient-to-r from-accent to-cyan h-2 rounded-full transition-all duration-300" style="width: ${player.completionPercentage}%"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `;
-        });
-        
-        container.innerHTML = cardsHtml;
-      }
+      // Rendering moved to renderService.js (imported where used)
 
       // Enhanced Fetch Leaderboard using Career Stats
       async function fetchLeaderboard(filter) {
         try {
-          
-          // Load career stats data using the new function
+          // Load career stats data using the data service
           const careerStatsData = await loadCareerStatsData(filter);
-          
-          
+          // Dynamically import renderers
+          const renderMod = await import('./js/leaderboards/renderService.js');
           // Render results
-          renderPlayerCards(careerStatsData.slice(0, 3));
-          
-          renderLeaderboard(careerStatsData);
-          
+          renderMod.renderPlayerCards(careerStatsData.slice(0, 3));
+          renderMod.renderLeaderboard(careerStatsData);
         } catch (error) {
           console.error('Error fetching career stats leaderboard:', error);
           console.error('Error details:', error.message);
@@ -1245,22 +789,92 @@
         }
       }
 
-      // Filter button logic
-      document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('bg-primary', 'text-dark'));
-          this.classList.add('bg-primary', 'text-dark');
-          fetchLeaderboard(this.dataset.filter);
-        });
-      });
+      // State-driven filter logic with URL sync
+      (function(){
+        const VALID = new Set(['overall','college','seniorhigh','juniorhigh']);
+        const defaultFilter = 'overall';
 
-      // Initial load: overall
-      fetchLeaderboard('overall');
+        function getFilterFromURL(){
+          try {
+            const params = new URLSearchParams(window.location.search);
+            const f = (params.get('filter') || '').toLowerCase();
+            return VALID.has(f) ? f : defaultFilter;
+          } catch(_) { return defaultFilter; }
+        }
+
+        function setURLFilter(filter, replace){
+          try {
+            const url = new URL(window.location.href);
+            if (filter === defaultFilter) {
+              url.searchParams.delete('filter');
+            } else {
+              url.searchParams.set('filter', filter);
+            }
+            const newUrl = url.toString();
+            if (replace) window.history.replaceState({ filter }, '', newUrl);
+            else window.history.pushState({ filter }, '', newUrl);
+          } catch(_){}
+        }
+
+        function setActiveButton(filter){
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('bg-primary', 'text-dark'));
+          const activeBtn = document.querySelector(`.filter-btn[data-filter="${filter}"]`);
+          if (activeBtn) activeBtn.classList.add('bg-primary', 'text-dark');
+        }
+
+        function toggleSections(filter){
+          const dept = document.getElementById('department-leaderboard');
+          const glob = document.getElementById('global-leaderboard');
+          if (!dept || !glob) return;
+          if (filter === 'overall') {
+            glob.classList.remove('hidden');
+            dept.classList.add('hidden');
+          } else {
+            glob.classList.remove('hidden'); // keep global visible by default
+            dept.classList.remove('hidden');
+            const subtitle = document.getElementById('department-subtitle');
+            if (subtitle) {
+              const label = filter === 'college' ? 'College Leaders' : filter === 'seniorhigh' ? 'Senior High Leaders' : 'Junior High Leaders';
+              subtitle.textContent = `Elite warriors of the department • ${label}`;
+            }
+          }
+        }
+
+        async function applyFilter(filter, options = { fromPopState: false }){
+          const f = VALID.has(filter) ? filter : defaultFilter;
+          setActiveButton(f);
+          toggleSections(f);
+          if (!options.fromPopState) setURLFilter(f, false);
+          await fetchLeaderboard(f);
+        }
+
+        // Wire clicks
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const f = btn.dataset.filter;
+            applyFilter(f);
+          });
+        });
+
+        // Hydrate initial state from URL (no history push)
+        const initialFilter = getFilterFromURL();
+        setActiveButton(initialFilter);
+        toggleSections(initialFilter);
+        setURLFilter(initialFilter, true); // normalize URL (replace state)
+        fetchLeaderboard(initialFilter);
+
+        // Handle back/forward
+        window.addEventListener('popstate', (ev) => {
+          const f = (ev && ev.state && ev.state.filter) ? ev.state.filter : getFilterFromURL();
+          applyFilter(f, { fromPopState: true });
+        });
+      })();
 
       // Add missing functions for leaderboard API
       async function addScore(userId, playerName, score, department = 'Unknown', gameData = {}) {
         try {
           // Ensure Firebase is ready before using database
+          const { ensureFirebaseReady } = await import('./js/leaderboards/firebaseClient.js');
           const database = await ensureFirebaseReady();
           
           const scoreData = {
@@ -1283,6 +897,7 @@
       async function updateBestScore(userId, playerName, score, department = 'Unknown', gameData = {}) {
         try {
           // Ensure Firebase is ready before using database
+          const { ensureFirebaseReady } = await import('./js/leaderboards/firebaseClient.js');
           const database = await ensureFirebaseReady();
           
           const snapshot = await database.ref('leaderboards/' + userId).once('value');
@@ -1313,6 +928,7 @@
       async function getPlayerBestScore(userId) {
         try {
           // Ensure Firebase is ready before using database
+          const { ensureFirebaseReady } = await import('./js/leaderboards/firebaseClient.js');
           const database = await ensureFirebaseReady();
           
           const snapshot = await database.ref('leaderboards/' + userId).once('value');
@@ -1647,11 +1263,18 @@
         `;
         
         // Initialize charts with career stats data
-        setTimeout(() => {
-          initializeCareerStatsCharts(career, completionStatus, recentSessions);
+        setTimeout(async () => {
+          try {
+            const chartsMod = await import('./js/leaderboards/chartsService.js');
+            chartsMod.initializeCareerStatsCharts(career, completionStatus, recentSessions);
+          } catch (e) { console.warn('[Charts] init failed:', e); }
           // Load Chart.js if needed, then build Bloom charts
-          window.ensureChartJs().then(()=>{
-            try { window.applyChartWhiteTheme(); buildBloomChartsFromCareer(career); } catch(e) { console.warn('Bloom charts skipped:', e); }
+          window.ensureChartJs().then(async ()=>{
+            try {
+              window.applyChartWhiteTheme && window.applyChartWhiteTheme();
+              const chartsMod = await import('./js/leaderboards/chartsService.js');
+              chartsMod.buildBloomChartsFromCareer(career);
+            } catch(e) { console.warn('Bloom charts skipped:', e); }
           }).catch(err=>{
             console.warn('[BloomCharts] Chart.js not available:', err.message);
           });
@@ -1865,8 +1488,10 @@
         `;
 
         // Create charts after DOM is updated, ensuring Chart.js is loaded (reuse same loader as Bloom)
-        setTimeout(() => {
-          const launchCharts = () => { try { createPlayerCharts(playerData, topicPoints, gameData); } catch(e){ console.warn('[PlayerCharts] build failed:', e); } };
+        setTimeout(async () => {
+          const launchCharts = async () => {
+            try { const chartsMod = await import('./js/leaderboards/chartsService.js'); chartsMod.createPlayerCharts(playerData, topicPoints, gameData); } catch(e){ console.warn('[PlayerCharts] build failed:', e); }
+          };
           if(window.Chart){ window.applyChartWhiteTheme && window.applyChartWhiteTheme(); launchCharts(); }
           else {
             window.ensureChartJs().then(()=>{ window.applyChartWhiteTheme && window.applyChartWhiteTheme(); launchCharts(); })
@@ -2111,65 +1736,7 @@
         });
       }
 
-      // Bloom Charts Builder (reuses Chart.js already loaded)
-      function buildBloomChartsFromCareer(career){
-        // Expect optional structure career.bloomStats = { remembering:{correct: X, total:Y}, understanding:{...}, ... }
-        const stats = career.bloomStats;
-        if(!stats || typeof stats !== 'object') {
-          console.info('[BloomCharts] No bloomStats object found on careerStats.');
-          const distFallback = document.getElementById('bloomDistributionFallback');
-          if(distFallback){ distFallback.innerHTML = '<div class="text-gray-400 text-center"><div class="text-xl mb-1">ℹ️</div><div>No Bloom data yet.<br/><span class="text-sm text-gray-500">Play at least one quiz session after update.</span></div></div>'; }
-          const accFallback = document.getElementById('bloomAccuracyFallback');
-          if(accFallback){ accFallback.innerHTML = '<div class="text-gray-400 text-center"><div class="text-xl mb-1">ℹ️</div><div>No Bloom accuracy yet.</div></div>'; }
-          return;
-        }
-        const orderedLevels = ['remembering','understanding','applying','analyzing','evaluating','creating'];
-        const presentLevels = orderedLevels.filter(l => stats[l] && stats[l].total > 0);
-        if(presentLevels.length === 0){
-          console.info('[BloomCharts] bloomStats present but all totals are 0. Raw stats:', stats);
-          const distFallback = document.getElementById('bloomDistributionFallback');
-          if(distFallback){ distFallback.innerHTML = '<div class="text-gray-400 text-center"><div class="text-xl mb-1">🕒</div><div>Bloom tracking initialized.<br/><span class="text-sm text-gray-500">Answer some questions to populate.</span></div></div>'; }
-          const accFallback = document.getElementById('bloomAccuracyFallback');
-          if(accFallback){ accFallback.innerHTML = '<div class="text-gray-400 text-center"><div class="text-xl mb-1">🕒</div><div>No accuracy data yet.</div></div>'; }
-          return;
-        }
-
-        const totals = presentLevels.map(l => stats[l].total);
-        const corrects = presentLevels.map(l => stats[l].correct || 0);
-        const accuracies = corrects.map((c,i)=> (c / Math.max(1, totals[i])) * 100);
-
-        // Distribution (doughnut) - mirror topic chart simplicity
-        const distCtx = document.getElementById('bloomDistributionChart');
-        if(distCtx){
-          const colors = generateChartColors(presentLevels.length);
-          new Chart(distCtx, {
-            type: 'doughnut',
-            data: { labels: presentLevels.map(capitalizeBloom), datasets:[{ data: totals, backgroundColor: colors.backgrounds, borderColor: colors.borders, borderWidth: 2 }]},
-            options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ usePointStyle:true, padding:12, color:'#ffffff' }}} }
-          });
-          const sumTotal = totals.reduce((a,b)=>a+b,0);
-          const high = presentLevels[accuracies.indexOf(Math.max(...accuracies))];
-          const fallback = document.getElementById('bloomDistributionFallback'); if(fallback) fallback.remove();
-          document.getElementById('bloom-distribution-summary').textContent = `${sumTotal} questions • Best accuracy: ${capitalizeBloom(high)}`;
-        }
-
-        // Accuracy (bar) - simplified (single axis) like scoreChart style
-        const accCtx = document.getElementById('bloomAccuracyChart');
-        if(accCtx){
-          new Chart(accCtx, {
-            type: 'bar',
-            data: { labels: presentLevels.map(capitalizeBloom), datasets:[{ label:'Accuracy %', data: accuracies.map(a=> parseFloat(a.toFixed(1))), backgroundColor:'rgba(55,151,119,0.8)', borderColor:'rgb(55,151,119)', borderWidth:2 }]},
-            options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false }}, scales:{ y:{ beginAtZero:true, max:100, ticks:{ color:'#ffffff' } }, x:{ ticks:{ color:'#ffffff' } }}} 
-          });
-          const avgAcc = (accuracies.reduce((a,b)=>a+b,0)/accuracies.length).toFixed(1);
-          const fallback = document.getElementById('bloomAccuracyFallback'); if(fallback) fallback.remove();
-          document.getElementById('bloom-accuracy-summary').textContent = `Average accuracy: ${avgAcc}%`;
-        }
-      }
-
-      function capitalizeBloom(str){
-        return str.charAt(0).toUpperCase() + str.slice(1);
-      }
+      // Bloom chart builders moved to chartsService.js
 
       // Utility Functions for Charts
       function generateChartColors(count) {
@@ -2659,175 +2226,13 @@
         }).join('');
       }
       
-      function initializeCareerStatsCharts(career, completionStatus, recentSessions) {
-        const runCharts = () => {
-          try { createCareerLineChart(career, recentSessions); } catch(e){ console.warn('[CareerChart] build failed:', e); }
-          try { createPerformanceRadarChart(career, completionStatus); } catch(e){ console.warn('[PerformanceRadar] build failed:', e); }
-        };
-        if(window.Chart){ runCharts(); }
-        else if(window.ensureChartJs){
-          window.ensureChartJs().then(()=>{ window.applyChartWhiteTheme && window.applyChartWhiteTheme(); runCharts(); })
-            .catch(err=> console.warn('[CareerCharts] Chart.js load failed:', err.message));
-        } else {
-          console.warn('[CareerCharts] ensureChartJs not available');
-        }
-      }
+      // Chart initializers moved to chartsService.js
 
       // Revamped Career Performance (multi-metric line/area using Chart.js)
-      function createCareerLineChart(career, recentSessions = {}) {
-        const canvas = document.getElementById('careerChart');
-        if (!canvas) return;
-        if (!window.Chart) { console.warn('[CareerChart] Chart.js not loaded'); return; }
-
-        const sessionsArray = Object.values(recentSessions)
-          .filter(s => s && s.timestamp)
-          .sort((a,b)=> a.timestamp - b.timestamp);
-
-        // If not enough real sessions, synthesize 5 buckets like before
-        let labels = [];
-        let pointsSeries = [];
-        let accuracySeries = [];
-        let cumulativePoints = 0;
-        if (sessionsArray.length >= 3) {
-          sessionsArray.forEach(s => {
-            cumulativePoints += (s.totalScore || s.sessionScore || 0);
-            labels.push(new Date(s.timestamp).toLocaleDateString(undefined,{month:'short', day:'numeric'}));
-            pointsSeries.push(cumulativePoints);
-            accuracySeries.push(s.accuracyPercentage || 0);
-          });
-        } else {
-          const totalPoints = career.totalPoints || 0;
-            pointsSeries = [0, totalPoints*0.2, totalPoints*0.5, totalPoints*0.8, totalPoints].map(v=> Math.round(v));
-            labels = ['Week 1','Week 2','Week 3','Week 4','Current'];
-            accuracySeries = [65,70,75, (career.averageAccuracy||70), (career.averageAccuracy||70)];
-        }
-
-        const ctx = canvas.getContext('2d');
-        // Clean up any existing chart instance stored on element
-        if (canvas._chartInstance) { canvas._chartInstance.destroy(); }
-
-        const gradient = ctx.createLinearGradient(0,0,0,canvas.height);
-        gradient.addColorStop(0,'rgba(55,151,119,0.35)');
-        gradient.addColorStop(1,'rgba(55,151,119,0)');
-
-        const chart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [
-              {
-                label: 'Cumulative Points',
-                data: pointsSeries,
-                borderColor: 'rgba(55,151,119,1)',
-                backgroundColor: gradient,
-                fill: true,
-                tension: 0.25,
-                pointRadius: 3,
-                yAxisID: 'yPoints'
-              },
-              {
-                label: 'Accuracy %',
-                data: accuracySeries.map(a=> parseFloat(a.toFixed(1))),
-                borderColor: 'rgba(244,206,20,1)',
-                backgroundColor: 'rgba(244,206,20,0.15)',
-                fill: false,
-                tension: 0.25,
-                pointRadius: 3,
-                yAxisID: 'yAccuracy'
-              }
-            ]
-          },
-          options: {
-            maintainAspectRatio: false,
-            interaction: { mode:'index', intersect:false },
-            plugins: {
-              legend: { labels: { color:'#ffffff' } },
-              tooltip: {
-                callbacks: {
-                  label(ctx){
-                    if(ctx.dataset.label.includes('Points')) return `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} pts`;
-                    return `${ctx.dataset.label}: ${ctx.parsed.y}%`;
-                  }
-                }
-              }
-            },
-            scales: {
-              yPoints: {
-                position:'left',
-                ticks:{ color:'#ffffff', callback:v=> v>=1000? (v/1000)+'k': v },
-                grid:{ color:'rgba(255,255,255,0.08)' }
-              },
-              yAccuracy: {
-                position:'right',
-                min:0, max:100,
-                ticks:{ color:'#ffffff', callback:v=> v+'%' },
-                grid:{ drawOnChartArea:false }
-              },
-              x:{ ticks:{ color:'#ffffff' }, grid:{ color:'rgba(255,255,255,0.05)' } }
-            }
-          }
-        });
-        canvas._chartInstance = chart;
-        const fallback = document.getElementById('careerChartFallback'); if(fallback) fallback.remove();
-      }
+      // createCareerLineChart moved to chartsService.js
 
       // Revamped Performance Metrics Radar using Chart.js
-      function createPerformanceRadarChart(career, completionStatus = {}) {
-        const canvas = document.getElementById('performanceRadar');
-        if(!canvas) return;
-        if(!window.Chart){ console.warn('[PerformanceRadar] Chart.js not loaded'); return; }
-
-        const completedCourses = Object.values(completionStatus).filter(Boolean).length;
-        const totalCourses = Object.keys(completionStatus).length || 1;
-        const completionPct = (completedCourses/totalCourses)*100;
-
-        // Derive metrics & normalize 0-100
-        const metrics = {
-          Accuracy: Math.min(100, career.averageAccuracy || 0),
-            Engagement: Math.min(100, (career.totalSessions||0) / 50 * 100),
-            Consistency: Math.min(100, (career.highestStreak||0) / 20 * 100),
-            Progress: Math.min(100, completionPct),
-            Mastery: Math.min(100, (career.totalPoints||0) / 50000 * 100)
-        };
-        const labels = Object.keys(metrics);
-        const data = Object.values(metrics).map(v=> parseFloat(v.toFixed(1)));
-
-        if(canvas._chartInstance) canvas._chartInstance.destroy();
-        const ctx = canvas.getContext('2d');
-        const radar = new Chart(ctx, {
-          type: 'radar',
-          data: { labels, datasets:[{
-            label: 'Performance Index',
-            data,
-            backgroundColor: 'rgba(55,151,119,0.25)',
-            borderColor: 'rgba(55,151,119,1)',
-            pointBackgroundColor: 'rgba(244,206,20,1)',
-            pointBorderColor: '#ffffff',
-            borderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6
-          }]},
-          options:{
-            maintainAspectRatio:false,
-            plugins:{
-              legend:{ labels:{ color:'#ffffff' } },
-              tooltip:{ callbacks:{ label: ctx => `${ctx.label}: ${ctx.parsed.r}%` } }
-            },
-            scales:{
-              r:{
-                beginAtZero:true,
-                suggestedMax:100,
-                ticks:{ display:false },
-                grid:{ color:'rgba(255,255,255,0.15)' },
-                angleLines:{ color:'rgba(255,255,255,0.25)' },
-                pointLabels:{ color:'#ffffff', font:{ size:13 } }
-              }
-            }
-          }
-        });
-        canvas._chartInstance = radar;
-        const fallback = document.getElementById('radarChartFallback'); if(fallback) fallback.remove();
-      }
+      // createPerformanceRadarChart moved to chartsService.js
 
       // Enhanced API for external access
       window.leaderboardAPI = {
@@ -2843,195 +2248,28 @@
       document.addEventListener('DOMContentLoaded', () => {
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
-        // MINI-CONTEST Countdown initialization
-        try {
-          const targetDate = new Date('2025-10-12T00:00:00'); // Local time target
-          const daysEl = document.getElementById('mc-days');
-            const hoursEl = document.getElementById('mc-hours');
-            const minsEl = document.getElementById('mc-mins');
-            const secsEl = document.getElementById('mc-secs');
-            const statusEl = document.getElementById('mini-contest-status');
-            const container = document.getElementById('mini-contest-countdown');
-            let snapshotTaken = false;
-
-            // Utility: fetch current leaderboard data via existing loader if available
-            async function getFullLeaderboardData(){
-              try {
-                if(window.leaderboardAPI && window.leaderboardAPI.loadCareerStatsData){
-                  // loadCareerStatsData returns aggregated array already sorted (b.score - a.score)
-                  return await window.leaderboardAPI.loadCareerStatsData();
-                }
-              } catch(e){ console.warn('[MiniContestSnapshot] load failed', e); }
-              return [];
-            }
-
-            function partitionByDepartment(entries){
-              const buckets = {};
-              entries.forEach(e => {
-                const dept = (e.department || 'Unknown').trim() || 'Unknown';
-                if(!buckets[dept]) buckets[dept] = [];
-                buckets[dept].push(e);
-              });
-              // Sort each bucket and take top 3
-              const result = {};
-              Object.keys(buckets).forEach(dept => {
-                const sorted = buckets[dept].slice().sort((a,b)=> b.score - a.score);
-                result[dept] = sorted.slice(0,3);
-              });
-              return result;
-            }
-
-            function buildSnapshotStructure(all){
-              const overallTop3 = all.slice(0,3);
-              const byDept = partitionByDepartment(all);
-              return {
-                generatedAt: new Date().toISOString(),
-                contestEnds: targetDate.toISOString(),
-                overallTop3,
-                byDepartment: byDept
-              };
-            }
-
-            function toCSV(snapshot){
-              const rows = [];
-              rows.push(['Category','Rank','StudentId','Name','Department','Score','Sessions','Accuracy','CompletedCourses','TotalCourses'].join(','));
-              function pushEntries(category, list){
-                list.forEach((e,i)=>{
-                  rows.push([
-                    '"'+category+'"',
-                    i+1,
-                    '"'+(e.studentId||'')+'"',
-                    '"'+(e.name||'')+'"',
-                    '"'+(e.department||'')+'"',
-                    e.score||0,
-                    e.totalSessions||0,
-                    e.averageAccuracy||0,
-                    e.completedCourses||0,
-                    e.totalCourses||0
-                  ].join(','));
-                });
-              }
-              pushEntries('Overall', snapshot.overallTop3);
-              Object.keys(snapshot.byDepartment).forEach(dept => {
-                pushEntries('Dept: '+dept, snapshot.byDepartment[dept]);
-              });
-              return rows.join('\n');
-            }
-
-            function triggerDownload(content, filename, mime){
-              const blob = new Blob([content], {type: mime});
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = filename;
-              document.body.appendChild(a);
-              a.click();
-              setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
-            }
-
-            function addDownloadButtons(snapshot){
-              if(!container) return;
-              let btnWrap = document.getElementById('mini-contest-downloads');
-              if(btnWrap) btnWrap.remove();
-              btnWrap = document.createElement('div');
-              btnWrap.id = 'mini-contest-downloads';
-              btnWrap.className = 'mt-4 flex flex-wrap gap-3';
-              const jsonBtn = document.createElement('button');
-              jsonBtn.className = 'px-4 py-2 font-gaming text-sm rounded-lg bg-primary text-dark font-bold hover:brightness-110 transition shadow';
-              jsonBtn.textContent = 'Download Winners (JSON)';
-              jsonBtn.addEventListener('click', ()=>{
-                triggerDownload(JSON.stringify(snapshot, null, 2), 'mini_contest_winners.json', 'application/json');
-              });
-              const csvBtn = document.createElement('button');
-              csvBtn.className = 'px-4 py-2 font-gaming text-sm rounded-lg bg-accent text-white font-bold hover:brightness-110 transition shadow';
-              csvBtn.textContent = 'Download Winners (CSV)';
-              csvBtn.addEventListener('click', ()=>{
-                triggerDownload(toCSV(snapshot), 'mini_contest_winners.csv', 'text/csv');
-              });
-              btnWrap.appendChild(jsonBtn);
-              btnWrap.appendChild(csvBtn);
-              container.appendChild(btnWrap);
-            }
-
-            async function takeSnapshot(){
-              if(snapshotTaken) return; // safety
-              snapshotTaken = true;
-              if(statusEl) statusEl.textContent = 'Contest ended. Snapshot captured.';
-              const data = await getFullLeaderboardData();
-              const snapshot = buildSnapshotStructure(data);
-              addDownloadButtons(snapshot);
-              console.info('[MiniContestSnapshot] Generated snapshot', snapshot);
-            }
-
-            // Admin/manual trigger support (?admin=1 in URL)
-            (function setupManualSnapshot(){
-              try {
-                const params = new URLSearchParams(window.location.search);
-                const isAdmin = params.get('admin') === '1';
-                if(!isAdmin || !container) return;
-                let manualBtn = document.getElementById('mini-contest-manual-btn');
-                if(manualBtn) manualBtn.remove();
-                manualBtn = document.createElement('button');
-                manualBtn.id = 'mini-contest-manual-btn';
-                manualBtn.type = 'button';
-                manualBtn.className = 'px-4 py-2 font-gaming text-xs md:text-sm rounded-lg bg-gradient-to-r from-purple to-pink-600 text-white font-semibold tracking-wide shadow hover:brightness-110 hover:shadow-lg transition focus:outline-none focus:ring-2 focus:ring-purple-300';
-                manualBtn.textContent = 'Test Export Now';
-                manualBtn.title = 'Generate a snapshot early (admin only)';
-                manualBtn.addEventListener('click', async () => {
-                  // Allow multiple manual regenerations prior to end; don't block by snapshotTaken flag
-                  if(!snapshotTaken){
-                    // First manual snapshot marks snapshotTaken so end-of-timer just regenerates when time passes
-                    snapshotTaken = true;
-                  }
-                  if(statusEl) statusEl.textContent = 'Generating manual snapshot...';
-                  const data = await getFullLeaderboardData();
-                  const snapshot = buildSnapshotStructure(data);
-                  addDownloadButtons(snapshot);
-                  if(statusEl) statusEl.textContent = 'Manual snapshot ready (will auto-regenerate at contest end).';
-                  console.info('[MiniContestSnapshot] Manual snapshot generated');
-                });
-                // Insert button at bottom of countdown container
-                container.appendChild(manualBtn);
-              } catch(err){
-                console.warn('[MiniContestSnapshot] manual button setup failed:', err);
-              }
-            })();
-
-            if (daysEl && hoursEl && minsEl && secsEl) {
-              function updateCountdown(){
-                const now = new Date();
-                const diff = targetDate.getTime() - now.getTime();
-                if (diff <= 0){
-                  daysEl.textContent = '0';
-                  hoursEl.textContent = '00';
-                  minsEl.textContent = '00';
-                  secsEl.textContent = '00';
-                  if(!snapshotTaken) {
-                    // Take snapshot first, message handled inside
-                    takeSnapshot();
-                  }
-                  if(container) container.classList.add('ring', 'ring-primary/50');
-                  return; // stop updating
-                }
-                const totalSeconds = Math.floor(diff/1000);
-                const days = Math.floor(totalSeconds / 86400);
-                const hours = Math.floor((totalSeconds % 86400) / 3600);
-                const minutes = Math.floor((totalSeconds % 3600) / 60);
-                const seconds = totalSeconds % 60;
-                daysEl.textContent = days;
-                hoursEl.textContent = hours.toString().padStart(2,'0');
-                minsEl.textContent = minutes.toString().padStart(2,'0');
-                secsEl.textContent = seconds.toString().padStart(2,'0');
-                if(statusEl){
-                  statusEl.textContent = 'Time remaining until contest ends';
-                }
-              }
-              updateCountdown();
-              setInterval(updateCountdown, 1000);
-            }
-        } catch(e){
-          console.warn('[MiniContestCountdown] initialization failed:', e.message);
-        }
+        // MINI-CONTEST Countdown initialization (refactored into module)
+        (async () => {
+          try {
+            const [mod, cfg] = await Promise.all([
+              import('./js/leaderboards/countdownSnapshot.js'),
+              import('./js/leaderboards/config.js')
+            ]);
+            const loadData = window.leaderboardAPI && window.leaderboardAPI.loadCareerStatsData
+              ? window.leaderboardAPI.loadCareerStatsData
+              : undefined;
+            await mod.initCountdown({
+              targetISO: cfg.CONTEST_END_ISO,
+              containerId: 'mini-contest-countdown',
+              selectors: { days: '#mc-days', hours: '#mc-hours', mins: '#mc-mins', secs: '#mc-secs' },
+              statusId: 'mini-contest-status',
+              enableAdminButton: true,
+              loadData
+            });
+          } catch (e) {
+            console.warn('[MiniContestCountdown] module init failed:', e.message);
+          }
+        })();
         
         if (mobileMenuBtn && mobileMenu) {
           mobileMenuBtn.addEventListener('click', () => {
