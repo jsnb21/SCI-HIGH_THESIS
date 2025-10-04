@@ -103,19 +103,20 @@ export default class MainGameplay extends BaseScene {
         this.currentQuiz = null;
         this.quizContainer = null;
         
-        // Answered questions tracking system - prevents question repetition
+        // Answered questions tracking system - prevents question repetition (use arrays)
         this.answeredQuestions = {
             intensity1: {
-                multipleChoice: new Set()
+                multipleChoice: []
             },
             intensity2: {
-                multipleChoice: new Set(),
-                dragDrop: new Set()
+                multipleChoice: [],
+                dragDrop: [],
+                syntaxBlock: []
             },
             intensity3: {
-                multipleChoice: new Set(),
-                codeArrangement: new Set(),
-                combined: new Set() // For combined cycling system
+                multipleChoice: [],
+                codeArrangement: [],
+                combined: [] // For combined cycling system across all types at intensity 3
             }
         };
         
@@ -186,19 +187,20 @@ export default class MainGameplay extends BaseScene {
             this.intensity3PowerUpCounter = 0;
             this.intensity = 1;
             
-            // Reset answered questions tracking for new sessions
+            // Reset answered questions tracking for new sessions (use arrays)
             this.answeredQuestions = {
                 intensity1: {
-                    multipleChoice: new Set()
+                    multipleChoice: []
                 },
                 intensity2: {
-                    multipleChoice: new Set(),
-                    dragDrop: new Set()
+                    multipleChoice: [],
+                    dragDrop: [],
+                    syntaxBlock: []
                 },
                 intensity3: {
-                    multipleChoice: new Set(),
-                    codeArrangement: new Set(),
-                    combined: new Set() // For combined cycling system
+                    multipleChoice: [],
+                    codeArrangement: [],
+                    combined: [] // For combined cycling system
                 }
             };
             
@@ -1894,25 +1896,31 @@ export default class MainGameplay extends BaseScene {
         const intensityKey = `intensity${intensity}`;
         
         if (intensity === 1) {
-            this.answeredQuestions[intensityKey]?.multipleChoice?.add(questionId);
+            const arr = this.answeredQuestions[intensityKey]?.multipleChoice;
+            if (arr && !arr.includes(questionId)) arr.push(questionId);
         } else if (intensity === 2) {
             // Syntax block only
             if (questionType === 'syntaxBlock' || questionData.type === 'syntaxBlock') {
-                this.answeredQuestions[intensityKey]?.syntaxBlock?.add(questionId);
+                const arr = this.answeredQuestions[intensityKey]?.syntaxBlock;
+                if (arr && !arr.includes(questionId)) arr.push(questionId);
             }
         } else if (intensity === 3) {
             // Code arrangement only
             if (questionType === 'codeArrangement' || questionData.isDragDrop || questionData.type === 'drag-and-drop') {
-                this.answeredQuestions[intensityKey]?.codeArrangement?.add(questionId);
+                const arr = this.answeredQuestions[intensityKey]?.codeArrangement;
+                if (arr && !arr.includes(questionId)) arr.push(questionId);
+                const combined = this.answeredQuestions[intensityKey]?.combined;
+                if (combined && !combined.includes(questionId)) combined.push(questionId);
             }
         } else if (intensity >= 4) {
             // MAX intensity: track all in combined pool plus specific type
-            const bucket = this.answeredQuestions.intensity4 || (this.answeredQuestions.intensity4 = { multipleChoice:new Set(), syntaxBlock:new Set(), codeArrangement:new Set(), dragDrop:new Set(), combined:new Set() });
-            if (questionType === 'syntaxBlock') bucket.syntaxBlock.add(questionId);
-            else if (questionType === 'codeArrangement') bucket.codeArrangement.add(questionId);
-            else if (questionType === 'dragDrop') bucket.dragDrop.add(questionId);
-            else bucket.multipleChoice.add(questionId);
-            bucket.combined.add(questionId);
+            const bucket = this.answeredQuestions.intensity4 || (this.answeredQuestions.intensity4 = { multipleChoice:[], syntaxBlock:[], codeArrangement:[], dragDrop:[], combined:[] });
+            const pushUnique = (a) => { if (!a.includes(questionId)) a.push(questionId); };
+            if (questionType === 'syntaxBlock') pushUnique(bucket.syntaxBlock);
+            else if (questionType === 'codeArrangement') pushUnique(bucket.codeArrangement);
+            else if (questionType === 'dragDrop') pushUnique(bucket.dragDrop);
+            else pushUnique(bucket.multipleChoice);
+            pushUnique(bucket.combined);
         }
     }
 

@@ -53,10 +53,9 @@ export default class QuizScene extends BaseScene {
         // 3: codeArrangement only
         // 4+: mixed (all types)
         this.answeredQuestions = data.answeredQuestions || {
-            intensity1: { multipleChoice: new Set() },
-            intensity2: { syntaxBlock: new Set() },
-            intensity3: { codeArrangement: new Set() },
-            intensity4: { multipleChoice: new Set(), syntaxBlock: new Set(), codeArrangement: new Set(), dragDrop: new Set(), combined: new Set() }
+            intensity1: { multipleChoice: [] },
+            intensity2: { syntaxBlock: [] },
+            intensity3: { codeArrangement: [] }
         };
         this.selectedAnswer = null;
         this.currentQuestion = null;
@@ -608,19 +607,19 @@ export default class QuizScene extends BaseScene {
         const intensityKey = 'intensity3';
         if (!this.answeredQuestions[intensityKey]) {
             this.answeredQuestions[intensityKey] = {
-                multipleChoice: new Set(),
-                dragDrop: new Set(),
-                codeArrangement: new Set(),
-                combined: new Set() // Special tracker for combined pool
+                multipleChoice: [],
+                dragDrop: [],
+                codeArrangement: [],
+                combined: [] // Special tracker for combined pool
             };
         }
 
-        const combinedSet = this.answeredQuestions[intensityKey].combined;
+    const combinedSet = this.answeredQuestions[intensityKey].combined;
 
         // Filter out questions that have already been answered in the combined pool
         const availableQuestions = questions.filter(question => {
             const questionId = this.createQuestionId(question);
-            return !combinedSet.has(questionId);
+            return !combinedSet.includes(questionId);
         });
 
 
@@ -628,10 +627,10 @@ export default class QuizScene extends BaseScene {
         if (availableQuestions.length === 0 && questions.length > 0) {
             
             // Clear all intensity 3 question pools to start fresh cycle
-            this.answeredQuestions[intensityKey].multipleChoice.clear();
-            this.answeredQuestions[intensityKey].dragDrop.clear();
-            this.answeredQuestions[intensityKey].codeArrangement.clear();
-            this.answeredQuestions[intensityKey].combined.clear();
+            this.answeredQuestions[intensityKey].multipleChoice.length = 0;
+            this.answeredQuestions[intensityKey].dragDrop.length = 0;
+            this.answeredQuestions[intensityKey].codeArrangement.length = 0;
+            this.answeredQuestions[intensityKey].combined.length = 0;
             
             return questions; // Return all questions after reset
         }
@@ -644,12 +643,12 @@ export default class QuizScene extends BaseScene {
         if (!this.answeredQuestions) return questions;
         const intensityKey = 'intensity4';
         if (!this.answeredQuestions[intensityKey]) {
-            this.answeredQuestions[intensityKey] = { multipleChoice: new Set(), syntaxBlock: new Set(), codeArrangement: new Set(), dragDrop: new Set(), combined: new Set() };
+            this.answeredQuestions[intensityKey] = { multipleChoice: [], syntaxBlock: [], codeArrangement: [], dragDrop: [], combined: [] };
         }
         const combinedSet = this.answeredQuestions[intensityKey].combined;
-        const available = questions.filter(q => !combinedSet.has(this.createQuestionId(q)));
+    const available = questions.filter(q => !combinedSet.includes(this.createQuestionId(q)));
         if (available.length === 0 && questions.length > 0) {
-            combinedSet.clear();
+            combinedSet.length = 0;
             return questions;
         }
         return available;
@@ -661,7 +660,7 @@ export default class QuizScene extends BaseScene {
         }
         
         const intensityKey = `intensity${intensity}`;
-        const answeredSet = this.answeredQuestions[intensityKey]?.[questionType];
+    const answeredSet = this.answeredQuestions[intensityKey]?.[questionType];
         
         if (!answeredSet) {
             return questions; // Return all questions if no answered questions for this category
@@ -670,13 +669,13 @@ export default class QuizScene extends BaseScene {
         // Filter out questions that have already been answered
         const availableQuestions = questions.filter(question => {
             const questionId = this.createQuestionId(question);
-            return !answeredSet.has(questionId);
+            return !answeredSet.includes(questionId);
         });
         
         
         // If all questions have been answered, reset the answered questions for this category
         if (availableQuestions.length === 0 && questions.length > 0) {
-            answeredSet.clear();
+            answeredSet.length = 0;
             return questions; // Return all questions after reset
         }
         
