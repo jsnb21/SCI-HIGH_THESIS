@@ -4,6 +4,28 @@ import { dirname } from 'path';
 
 export default defineConfig({
   base: '/SCI-HIGH_THESIS/',
+  // Limit which hostnames can access the dev server (mitigates DNS rebinding).
+  // Configure via env: ALLOWED_HOSTS or VITE_ALLOWED_HOSTS or __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+  // Example: ALLOWED_HOSTS=localhost,127.0.0.1,.ngrok-free.app
+  server: {
+    allowedHosts: (() => {
+      const candidates = [
+        process.env.ALLOWED_HOSTS,
+        process.env.VITE_ALLOWED_HOSTS,
+        process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+      ].filter(Boolean);
+      if (candidates.length === 0) {
+        // Default allow list can include known tunnels or domains used by the project
+        return ['subradiative-aidan-unexotically.ngrok-free.dev'];
+      }
+      // Support comma or space separated values
+      return candidates
+        .join(',')
+        .split(/[\s,]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+    })()
+  },
   build: {
     outDir: './dist',
     emptyOutDir: true,

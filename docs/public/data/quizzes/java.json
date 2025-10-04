@@ -2,365 +2,1433 @@
   "intensity1": {
     "multipleChoice": [
       {
-        "question": "Which is a valid integer declaration?",
-        "options": ["int x = 10;", "int = x;", "integer x = 10;", "x int = 10;"],
-        "correctIndex": 0
+        "question": "Which keyword is used to define a class in Java?",
+        "options": ["define", "struct", "class", "object"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
       },
       {
-        "question": "Default value of a boolean in Java?",
-        "options": ["false", "true", "0", "null"],
-        "correctIndex": 0
+        "question": "Which method serves as the entry point for a Java application?",
+        "options": ["start()", "init()", "main()", "run()"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
       },
       {
-        "question": "Which operator is used for addition?",
-        "options": ["+", "+=", "++", "&"],
-        "correctIndex": 0
+        "question": "What is the correct file extension for Java source files?",
+        "options": [".class", ".java", ".jar", ".jav"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
-        "question": "Which keyword creates a new object?",
-        "options": ["new", "create", "make", "this"],
-        "correctIndex": 0
+        "question": "Which of the following is NOT a Java primitive type?",
+        "options": ["int", "String", "char", "double"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "What does \"Java\".length() return?",
-        "options": ["4", "5", "\"Java\"", "error"],
-        "correctIndex": 0
+        "question": "Which operator is used for string concatenation in Java?",
+        "options": ["+", "&", ".", ","],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
       },
       {
-        "question": "Correct way to convert \"123\" to int?",
-        "options": ["Integer.parseInt(\"123\")", "parseInt(\"123\")", "int(\"123\")", "String.parseInt(\"123\")"],
-        "correctIndex": 0
+        "question": "What will be the output of: System.out.println(10 / 3);",
+        "options": ["3", "3.0", "3.33", "3.333333"],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which finds the position of a char?",
-        "options": ["indexOf()", "charAt()", "substring()", "contains()"],
-        "correctIndex": 0
+        "question": "Which keyword is used to create an object in Java?",
+        "options": ["create", "new", "make", "construct"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
-        "question": "Logical AND operator in Java?",
-        "options": ["&&", "||", "AND", "&and;"],
-        "correctIndex": 0
+        "question": "Which of these data types can store a single character?",
+        "options": ["char", "string", "Character", "byte"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
       },
       {
-        "question": "Result of true && false?",
-        "options": ["false", "true", "0", "null"],
-        "correctIndex": 0
+        "question": "What is the default value of a boolean variable in Java?",
+        "options": ["true", "false", "0", "null"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
-        "question": "Which is a valid if statement?",
-        "options": ["if (x == 10) { }", "if x = 10 { }", "if (x 10) { }", "if (x == 10);"],
-        "correctIndex": 0
+        "question": "Which of these is a valid identifier in Java?",
+        "options": ["1name", "first-name", "firstName", "first name"],
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Method with no return uses:",
-        "options": ["void", "null", "int", "none"],
-        "correctIndex": 0
+        "question": "Which package is automatically imported in every Java program?",
+        "options": ["java.lang", "java.util", "java.io", "java.net"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
       },
       {
-        "question": "Correct method header?",
-        "options": ["public void getData()", "public void getData;", "getData public void()", "void getData public()"],
-        "correctIndex": 0
+        "question": "Which of the following is used to read input from the console?",
+        "options": ["Input.read()", "Scanner", "Console.read()", "System.input()"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Role of method parameters?",
-        "options": ["provide input values", "create objects", "store attributes", "define return types"],
-        "correctIndex": 0
+        "question": "Which loop is guaranteed to execute at least once?",
+        "options": ["for", "while", "do-while", "foreach"],
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which defines a constructor?",
-        "options": ["public MyClass()", "public void MyClass()", "constructor MyClass()", "class MyClass()"],
-        "correctIndex": 0
+        "question": "Which access modifier allows visibility only within the same package?",
+        "options": ["public", "private", "protected", "default"],
+        "correctIndex": 3,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "What does this mean?",
-        "options": ["current object", "superclass", "static variable", "null"],
-        "correctIndex": 0
+        "question": "Which statement is used to terminate a loop early?",
+        "options": ["stop", "break", "exit", "end"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
-        "question": "Which gets a private variable?",
-        "options": ["accessor", "mutator", "static", "local"],
-        "correctIndex": 0
+        "question": "Arrays in Java are:",
+        "options": ["Fixed-size", "Resizable", "Dynamic", "Mutable in length"],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Correct int array declaration?",
-        "options": ["int[] arr = new int[5];", "int arr(5);", "int arr = int[5];", "arr int[5];"],
-        "correctIndex": 0
+        "question": "Which symbol is used to start a single-line comment in Java?",
+        "options": ["//", "#", "/*", "<!--"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
       },
       {
-        "question": "What does arr.length give?",
-        "options": ["number of elements", "last index", "max value", "size in bytes"],
-        "correctIndex": 0
+        "question": "Which keyword prevents a variable’s value from being changed?",
+        "options": ["const", "static", "final", "immutable"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
       },
       {
-        "question": "Which adds an item?",
-        "options": ["add()", "put()", "insert()", "append()"],
-        "correctIndex": 0
+        "question": "Which exception is thrown when dividing by zero using integers?",
+        "options": ["IOException", "ArithmeticException", "NullPointerException", "RuntimeException"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "list.get(0) gives:",
-        "options": ["first element", "last element", "size of list", "null"],
-        "correctIndex": 0
+        "question": "Which of the following creates an array of integers with 5 elements?",
+        "options": ["int[] arr = new int[5];", "int arr = new int(5);", "arr = int[5];", "array<int> arr = new array(5);"],
+        "correctIndex": 0,
+        "bloomTarget": "applying"
+      },
+      {
+        "question": "Which statement correctly compares two strings for equality?",
+        "options": ["a == b", "a.equals(b)", "a = b", "equals(a, b)"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which keyword is used to inherit a class in Java?",
+        "options": ["implements", "extends", "inherits", "derives"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which keyword is used to define an interface?",
+        "options": ["interface", "implements", "extends", "abstract"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which of the following is NOT a valid loop structure in Java?",
+        "options": ["for", "foreach", "repeat-until", "while"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What is printed by: System.out.println(2 + 3 + \"4\");",
+        "options": ["54", "234", "9", "Error"],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "What is the size of an int in Java?",
+        "options": ["8 bits", "16 bits", "32 bits", "64 bits"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which of the following best describes polymorphism?",
+        "options": ["Ability to have multiple constructors", "Ability of a method to take many forms", "Ability to overload operators", "Ability to change variable type"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which keyword refers to the current object?",
+        "options": ["this", "self", "me", "super"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which method is called automatically when an object is created?",
+        "options": ["main()", "init()", "constructor", "start()"],
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "What is the superclass of all Java classes?",
+        "options": ["System", "Object", "BaseClass", "Root"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What is the result of 'true && false'?",
+        "options": ["true", "false", "null", "Error"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which of these is not a valid conditional operator?",
+        "options": ["&&", "||", "==", "=>"],
+        "correctIndex": 3,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which statement is used to handle exceptions?",
+        "options": ["catch", "throw", "try-catch", "error-handle"],
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which keyword is used to define a subclass constructor’s parent call?",
+        "options": ["super", "this", "base", "parent"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What does JVM stand for?",
+        "options": ["Java Variable Manager", "Java Virtual Machine", "Java Verified Module", "Joint Virtual Memory"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which operator is used to access members of an object?",
+        "options": [".", "::", "->", ":"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which exception occurs when accessing an array beyond its limit?",
+        "options": ["NullPointerException", "ArrayIndexOutOfBoundsException", "ArithmeticException", "OverflowError"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which statement is true about Java?",
+        "options": ["It supports multiple inheritance", "It uses pointers", "It’s platform-independent via JVM", "It compiles directly to machine code"],
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which keyword is used to stop further inheritance?",
+        "options": ["final", "static", "sealed", "restrict"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What does the keyword 'static' mean?",
+        "options": ["Belongs to instance", "Belongs to class", "Temporary", "Local only"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which of these is not a valid access modifier?",
+        "options": ["protected", "internal", "private", "public"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What is returned by a method that doesn’t specify a return type?",
+        "options": ["null", "void", "int", "None"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which of these keywords is used to handle errors?",
+        "options": ["throw", "catch", "try", "All of the above"],
+        "correctIndex": 3,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which Java feature ensures memory management?",
+        "options": ["Destructor", "Garbage Collection", "Pointers", "Reference Counting"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which keyword is used to import a package in Java?",
+        "options": ["package", "include", "import", "use"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which is the correct syntax for an if statement?",
+        "options": ["if x > y {}", "if (x > y) {}", "if x > y then {}", "if {x > y}"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which statement is true about constructors?",
+        "options": ["They must return a value", "They can be overloaded", "They can be abstract", "They are called manually"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which keyword is used to declare a constant value?",
+        "options": ["final", "const", "static", "constant"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What is the output of: System.out.println('A' + 1);",
+        "options": ["A1", "66", "Error", "B"],
+        "correctIndex": 1,
+        "bloomTarget": "analyzing"
+      },
+      {
+        "question": "Which keyword is used to define an abstract class?",
+        "options": ["abstract", "virtual", "interface", "template"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What is encapsulation in Java?",
+        "options": ["Wrapping data and code together", "Hiding data only", "Making all variables public", "Using multiple classes"],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which of these is true about method overloading?",
+        "options": ["Same name, different parameters", "Same name, same parameters", "Different names, same return type", "Different classes only"],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       }
     ]
   },
-  "intensity2": {
+  "intensity2":{
     "syntaxBlock": [
       {
         "type": "syntaxBlock",
         "question": "Select the Correct Syntax",
-        "instruction": "Valid main method declaration",
+        "instruction": "Choose the valid way to declare an integer variable in Java.",
         "blocks": [
-          { "code": "public static void main(String[] args) {\n    System.out.println(\"Hi\");\n}", "correct": true },
-          { "code": "public void static main(args) => { }", "correct": false },
-          { "code": "static public main(String args) { }", "correct": false }
-        ]
+          { "code": "int num = 5;", "correct": true },
+          { "code": "num int = 5;", "correct": false },
+          { "code": "integer num = 5;", "correct": false }
+        ],
+        "bloomTarget": "remembering"
       },
       {
         "type": "syntaxBlock",
         "question": "Select the Correct Syntax",
-        "instruction": "Create an int array of size 5",
+        "instruction": "Choose the correct if statement that checks if x is greater than 10.",
         "blocks": [
-          { "code": "int[] nums = new int[5];", "correct": true },
-          { "code": "int nums = int[5];", "correct": false },
-          { "code": "array<int> nums = 5;", "correct": false }
-        ]
+          { "code": "if (x > 10) { System.out.println(x); }", "correct": true },
+          { "code": "if x > 10: System.out.println(x);", "correct": false },
+          { "code": "if x > 10 { print(x); }", "correct": false }
+        ],
+        "bloomTarget": "understanding"
       },
       {
         "type": "syntaxBlock",
-        "question": "Select the Correct Syntax",
-        "instruction": "Class definition with constructor",
+        "question": "Select the Correct Loop Syntax",
+        "instruction": "Choose the correct for loop that prints numbers 1 to 5.",
         "blocks": [
-          { "code": "class User {\n    User(String n) { }\n}", "correct": true },
-          { "code": "class User(String n) { constructor {} }", "correct": false },
-          { "code": "class User: User(String n) {};", "correct": false }
-        ]
+          { "code": "for (int i = 1; i <= 5; i++) { System.out.println(i); }", "correct": true },
+          { "code": "for i = 1 to 5 { print(i); }", "correct": false },
+          { "code": "loop (i = 1; i <= 5; i++) System.out.println(i);", "correct": false }
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
-        "question": "Select the Correct Syntax",
-        "instruction": "Declare an interface",
+        "question": "Identify the Correct Method Definition",
+        "instruction": "Choose the correct method that returns an integer.",
         "blocks": [
-          { "code": "interface Shape {\n    void draw();\n}", "correct": true },
-          { "code": "public interface Shape() => void draw();", "correct": false },
-            { "code": "interface Shape: draw()", "correct": false }
-        ]
+          { "code": "int add(int a, int b) { return a + b; }", "correct": true },
+          { "code": "int add(int a, int b) -> a + b;", "correct": false },
+          { "code": "method int add(a, b) return a + b;", "correct": false }
+        ],
+        "bloomTarget": "understanding"
       },
       {
         "type": "syntaxBlock",
-        "question": "Select the Correct Syntax",
-        "instruction": "Generic method header",
+        "question": "Choose the Correct Array Declaration",
+        "instruction": "Select the valid way to declare an array of 10 integers.",
         "blocks": [
-          { "code": "public static <T> void swap(T[] a, int i, int j) { }", "correct": true },
-          { "code": "public void static <T> swap(T a[], i, j) { }", "correct": false },
-          { "code": "static <T> public swap(T[] a, i, j) void { }", "correct": false }
-        ]
+          { "code": "int[] nums = new int[10];", "correct": true },
+          { "code": "int nums = new int(10);", "correct": false },
+          { "code": "array<int> nums = 10;", "correct": false }
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
-        "question": "Select the Correct Syntax",
-        "instruction": "Enhanced for loop over list",
+        "question": "Identify the Correct Switch Statement",
+        "instruction": "Select the properly structured switch statement.",
         "blocks": [
-          { "code": "for (String s : list) {\n    System.out.println(s);\n}", "correct": true },
-          { "code": "for each s in list -> print(s);", "correct": false },
-          { "code": "foreach (String s of list) { print(s); }", "correct": false }
-        ]
+          {
+            "code": "switch (day) {\n  case 1: System.out.println(\"Monday\"); break;\n  default: System.out.println(\"Invalid\");\n}",
+            "correct": true
+          },
+          {
+            "code": "switch day {\n  case 1: print(\"Monday\"); break;\n}",
+            "correct": false
+          },
+          {
+            "code": "switch (day)\n  case 1: System.out.println(\"Monday\");",
+            "correct": false
+          }
+        ],
+        "bloomTarget": "understanding"
       },
       {
         "type": "syntaxBlock",
-        "question": "Select the Correct Syntax",
-        "instruction": "Try/catch NumberFormatException",
+        "question": "Spot the Correct Constructor",
+        "instruction": "Select the valid constructor for the class Student.",
         "blocks": [
-          { "code": "try {\n    int v = Integer.parseInt(s);\n} catch (NumberFormatException e) {\n    e.printStackTrace();\n}", "correct": true },
-          { "code": "catch(NumberFormatException) try { int v = parseInt(s); }", "correct": false },
-          { "code": "try int v = Integer.parseInt(s) catch { }", "correct": false }
-        ]
+          { "code": "public Student(String name) { this.name = name; }", "correct": true },
+          { "code": "void Student(String name) { name = this.name; }", "correct": false },
+          { "code": "constructor Student(String name) { this.name = name; }", "correct": false }
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
-        "question": "Select the Correct Syntax",
-        "instruction": "Anonymous Runnable implementation",
+        "question": "Pick the Correct While Loop",
+        "instruction": "Choose the loop that continues while x < 5.",
         "blocks": [
-          { "code": "Runnable r = new Runnable() {\n    public void run() { }\n};", "correct": true },
-          { "code": "Runnable r = () run {};", "correct": false },
-          { "code": "Runnable r = implement Runnable { run() {} };", "correct": false }
-        ]
+          { "code": "while (x < 5) { x++; }", "correct": true },
+          { "code": "while x < 5 { x++; }", "correct": false },
+          { "code": "loop(x < 5) { x++; }", "correct": false }
+        ],
+        "bloomTarget": "understanding"
       },
       {
         "type": "syntaxBlock",
-        "question": "Select the Correct Syntax",
-        "instruction": "Lambda filtering stream",
+        "question": "Identify the Correct Class Definition",
+        "instruction": "Select the valid syntax for defining a class named Animal.",
         "blocks": [
-          { "code": "list.stream().filter(x -> x.length() > 2);", "correct": true },
-          { "code": "list.stream.filter(x => x.length > 2);", "correct": false },
-          { "code": "stream(list).filter(x -> length(x) > 2);", "correct": false }
-        ]
+          { "code": "public class Animal { }", "correct": true },
+          { "code": "class: Animal { }", "correct": false },
+          { "code": "define class Animal()", "correct": false }
+        ],
+        "bloomTarget": "remembering"
       },
       {
         "type": "syntaxBlock",
-        "question": "Select the Correct Syntax",
-        "instruction": "Static import Math.sqrt",
+        "question": "Find the Correct String Concatenation",
+        "instruction": "Choose the valid code that combines two strings a and b.",
         "blocks": [
-          { "code": "import static java.lang.Math.sqrt;\ndouble r = sqrt(16);", "correct": true },
-          { "code": "static import Math.sqrt; r = sqrt(16);", "correct": false },
-          { "code": "import java.lang.Math.sqrt();", "correct": false }
-        ]
-      }
-    ],
-    "multipleChoice": [
-      {
-        "question": "Which loop always runs once?",
-        "options": ["do…while", "while", "for", "foreach"],
-        "correctIndex": 0
+          { "code": "String c = a + b;", "correct": true },
+          { "code": "String c = concat(a, b);", "correct": false },
+          { "code": "String c = a.add(b);", "correct": false }
+        ],
+        "bloomTarget": "applying"
       },
       {
-        "question": "In for (int i = 0; i < 4; i++), how many times does it run?",
-        "options": ["4", "3", "5", "0"],
-        "correctIndex": 0
+        "type": "syntaxBlock",
+        "question": "Choose the Correct Try-Catch Structure",
+        "instruction": "Select the valid syntax for handling an exception.",
+        "blocks": [
+          {
+            "code": "try {\n  int x = 10 / 0;\n} catch (ArithmeticException e) {\n  System.out.println(\"Error\");\n}",
+            "correct": true
+          },
+          {
+            "code": "try {\n  int x = 10 / 0;\n} except (Exception e) { print(\"Error\"); }",
+            "correct": false
+          },
+          {
+            "code": "catch (ArithmeticException e) { System.out.println(\"Error\"); } try { ... }",
+            "correct": false
+          }
+        ],
+        "bloomTarget": "analyzing"
       },
       {
-        "question": "Control variable in for (int i = 0; i < 5; i++)?",
-        "options": ["i", "int", "for", "5"],
-        "correctIndex": 0
+        "type": "syntaxBlock",
+        "question": "Identify the Correct Method Overloading Example",
+        "instruction": "Select the proper example of method overloading.",
+        "blocks": [
+          {
+            "code": "void display(int a) {}\nvoid display(String a) {}",
+            "correct": true
+          },
+          {
+            "code": "void display(int a) {}\nint display(int a) {}",
+            "correct": false
+          },
+          {
+            "code": "display(int a) { }\ndisplay(String a) { }",
+            "correct": false
+          }
+        ],
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Best loop when number of repetitions is known?",
-        "options": ["for", "while", "do-while", "if"],
-        "correctIndex": 0
+        "type": "syntaxBlock",
+        "question": "Select the Correct Enhanced For Loop",
+        "instruction": "Choose the valid enhanced for loop for an integer array.",
+        "blocks": [
+          { "code": "for (int n : numbers) { System.out.println(n); }", "correct": true },
+          { "code": "for n in numbers { print(n); }", "correct": false },
+          { "code": "foreach (n in numbers) System.out.println(n);", "correct": false }
+        ],
+        "bloomTarget": "applying"
       },
       {
-        "question": "First row, second column of arr?",
-        "options": ["arr[0][1]", "arr[1][0]", "arr[1][1]", "arr[0,1]"],
-        "correctIndex": 0
+        "type": "syntaxBlock",
+        "question": "Pick the Correct String Comparison",
+        "instruction": "Select the valid code to compare two strings a and b for equality.",
+        "blocks": [
+          { "code": "if (a.equals(b)) { System.out.println(\"Equal\"); }", "correct": true },
+          { "code": "if (a == b) { System.out.println(\"Equal\"); }", "correct": false },
+          { "code": "if equal(a,b) { print(\"Equal\"); }", "correct": false }
+        ],
+        "bloomTarget": "understanding"
       },
       {
-        "question": "A 2D array in Java is:",
-        "options": ["array of arrays", "matrix", "grid", "list of lists"],
-        "correctIndex": 0
+        "type": "syntaxBlock",
+        "question": "Spot the Correct Interface Implementation",
+        "instruction": "Choose the valid implementation of an interface.",
+        "blocks": [
+          {
+            "code": "class Dog implements Animal { public void sound() { System.out.println(\"Bark\"); } }",
+            "correct": true
+          },
+          {
+            "code": "class Dog extends Animal() { void sound() { Bark; } }",
+            "correct": false
+          },
+          {
+            "code": "class Dog inherit Animal { sound() => 'Bark'; }",
+            "correct": false
+          }
+        ],
+        "bloomTarget": "applying"
       },
       {
-        "question": "Keyword to create subclass?",
-        "options": ["extends", "implements", "super", "inherits"],
-        "correctIndex": 0
+        "type": "syntaxBlock",
+        "question": "Identify the Correct Overridden Method",
+        "instruction": "Select the valid override of a superclass method.",
+        "blocks": [
+          {
+            "code": "@Override\nvoid display() { System.out.println(\"Child\"); }",
+            "correct": true
+          },
+          {
+            "code": "override void display() { print(\"Child\"); }",
+            "correct": false
+          },
+          {
+            "code": "void override display() { System.out.println(\"Child\"); }",
+            "correct": false
+          }
+        ],
+        "bloomTarget": "analyzing"
       },
       {
-        "question": "Method overriding is:",
-        "options": ["redefining parent method", "renaming method", "copying method", "deleting method"],
-        "correctIndex": 0
+        "type": "syntaxBlock",
+        "question": "Spot the Correct Use of 'super'",
+        "instruction": "Choose the code that correctly calls a parent method.",
+        "blocks": [
+          { "code": "super.display();", "correct": true },
+          { "code": "parent.display();", "correct": false },
+          { "code": "base.display();", "correct": false }
+        ],
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Recursive method must have:",
-        "options": ["base case", "static keyword", "loop", "parameter"],
-        "correctIndex": 0
+        "type": "syntaxBlock",
+        "question": "Choose the Correct Do-While Loop",
+        "instruction": "Pick the valid structure that runs at least once.",
+        "blocks": [
+          { "code": "do { x++; } while (x < 5);", "correct": true },
+          { "code": "do while (x < 5) { x++; }", "correct": false },
+          { "code": "whiledo (x < 5) { x++; }", "correct": false }
+        ],
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Recursion is when:",
-        "options": ["method calls itself", "loop repeats", "no return", "subclass calls superclass"],
-        "correctIndex": 0
+        "type": "syntaxBlock",
+        "question": "Find the Correct Use of Generics",
+        "instruction": "Select the correct syntax for a generic ArrayList of Strings.",
+        "blocks": [
+          { "code": "ArrayList<String> list = new ArrayList<>();", "correct": true },
+          { "code": "ArrayList<String> list = new ArrayList<String>();", "correct": false },
+          { "code": "ArrayList<str> list = new ArrayList();", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Identify the Correct Lambda Expression",
+        "instruction": "Choose the correct lambda for adding 5 to a number.",
+        "blocks": [
+          { "code": "n -> n + 5", "correct": true },
+          { "code": "(n) => n + 5", "correct": false },
+          { "code": "lambda n: n + 5", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct File Reading Syntax",
+        "instruction": "Choose the valid try-with-resources statement for reading a file.",
+        "blocks": [
+          {
+            "code": "try (BufferedReader br = new BufferedReader(new FileReader(\"data.txt\"))) {\n  br.readLine();\n}",
+            "correct": true
+          },
+          {
+            "code": "try BufferedReader br = new FileReader(\"data.txt\");",
+            "correct": false
+          },
+          {
+            "code": "try (BufferedReader br = FileReader(\"data.txt\")) { br.read(); }",
+            "correct": false
+          }
+        ],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Pick the Correct 'final' Usage",
+        "instruction": "Select the correct code that defines a constant integer.",
+        "blocks": [
+          { "code": "final int MAX = 100;", "correct": true },
+          { "code": "int final MAX = 100;", "correct": false },
+          { "code": "const int MAX = 100;", "correct": false }
+        ],
+        "bloomTarget": "remembering"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Spot the Correct Exception Throwing",
+        "instruction": "Choose the valid code that throws a custom exception.",
+        "blocks": [
+          { "code": "throw new IOException(\"File not found\");", "correct": true },
+          { "code": "raise IOException(\"File not found\");", "correct": false },
+          { "code": "throw IOException;", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Find the Correct Static Method Call",
+        "instruction": "Select the valid call to a static method named printInfo in class Util.",
+        "blocks": [
+          { "code": "Util.printInfo();", "correct": true },
+          { "code": "new Util().printInfo();", "correct": false },
+          { "code": "Util->printInfo();", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Choose the Correct 'this' Keyword Usage",
+        "instruction": "Select the valid use of 'this' in a constructor.",
+        "blocks": [
+          { "code": "this.name = name;", "correct": true },
+          { "code": "self.name = name;", "correct": false },
+          { "code": "super.name = name;", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Identify Correct Stream API Usage",
+        "instruction": "Choose the correct syntax for printing elements of a list using streams.",
+        "blocks": [
+          { "code": "list.stream().forEach(System.out::println);", "correct": true },
+          { "code": "list.forEachStream(System.out::println);", "correct": false },
+          { "code": "stream(list).each(print);", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Spot Correct Nested Loop",
+        "instruction": "Choose the correct nested for loop that prints a 3x3 grid.",
+        "blocks": [
+          {
+            "code": "for (int i=0; i<3; i++) {\n  for (int j=0; j<3; j++) {\n    System.out.print(\"*\");\n  }\n  System.out.println();\n}",
+            "correct": true
+          },
+          {
+            "code": "for i=0..3, j=0..3: print('*');",
+            "correct": false
+          },
+          {
+            "code": "loop (i=0; i<3) loop (j=0; j<3) print('*');",
+            "correct": false
+          }
+        ],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Pick Correct Overriding Signature",
+        "instruction": "Select the correctly matching method override.",
+        "blocks": [
+          {
+            "code": "class B extends A { @Override void run() { System.out.println(\"Run\"); } }",
+            "correct": true
+          },
+          {
+            "code": "class B extends A { void run(int speed) { } }",
+            "correct": false
+          },
+          {
+            "code": "class B implements A { override run(); }",
+            "correct": false
+          }
+        ],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Identify the Correct Nested Try Block",
+        "instruction": "Choose valid nested try-catch syntax.",
+        "blocks": [
+          {
+            "code": "try {\n  try { int x = 10 / 0; }\n  catch (ArithmeticException e) { System.out.println(\"Inner\"); }\n} catch (Exception e) { System.out.println(\"Outer\"); }",
+            "correct": true
+          },
+          {
+            "code": "try { int x=0; } catch(Exception e) try { }",
+            "correct": false
+          },
+          {
+            "code": "try (int x=10/0) catch(Exception e) {}",
+            "correct": false
+          }
+        ],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Choose Correct 'implements' Usage",
+        "instruction": "Select correct syntax implementing multiple interfaces.",
+        "blocks": [
+          { "code": "class Bird implements Flyable, Singable { }", "correct": true },
+          { "code": "class Bird extends Flyable, Singable { }", "correct": false },
+          { "code": "class Bird implement Flyable and Singable { }", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Spot Correct 'instanceof' Usage",
+        "instruction": "Choose code that checks if obj is of type Student.",
+        "blocks": [
+          { "code": "if (obj instanceof Student) { }", "correct": true },
+          { "code": "if (obj is Student) { }", "correct": false },
+          { "code": "if (obj.type == Student) { }", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Identify Correct Type Casting",
+        "instruction": "Select the valid downcasting of an object.",
+        "blocks": [
+          { "code": "Dog d = (Dog) animal;", "correct": true },
+          { "code": "Dog d = Dog(animal);", "correct": false },
+          { "code": "Dog d = cast Dog animal;", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Find Correct StringBuilder Usage",
+        "instruction": "Choose the valid StringBuilder append example.",
+        "blocks": [
+          { "code": "StringBuilder sb = new StringBuilder(); sb.append(\"Hi\");", "correct": true },
+          { "code": "StringBuilder sb = StringBuilder(); sb.add(\"Hi\");", "correct": false },
+          { "code": "new StringBuilder.add(\"Hi\");", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Spot Correct Map Declaration",
+        "instruction": "Select valid declaration for a HashMap of String keys and Integer values.",
+        "blocks": [
+          { "code": "Map<String, Integer> map = new HashMap<>();", "correct": true },
+          { "code": "Map<String, int> map = new HashMap();", "correct": false },
+          { "code": "HashMap map<String, Integer> = new HashMap();", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Choose Correct Variable Scope Example",
+        "instruction": "Identify valid variable usage within block scope.",
+        "blocks": [
+          { "code": "{ int a = 10; System.out.println(a); }", "correct": true },
+          { "code": "if(true) a = 10; { print(a); }", "correct": false },
+          { "code": "var int a = 10;", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Identify Correct 'break' in Loop",
+        "instruction": "Choose valid example that exits loop on condition.",
+        "blocks": [
+          {
+            "code": "for (int i=0; i<10; i++) {\n  if (i == 5) break;\n}",
+            "correct": true
+          },
+          { "code": "break when i == 5;", "correct": false },
+          { "code": "if (i == 5): stop;", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Pick Correct Overloaded Constructor",
+        "instruction": "Select valid constructor overloading syntax.",
+        "blocks": [
+          {
+            "code": "public Box() {}\npublic Box(int size) { this.size = size; }",
+            "correct": true
+          },
+          {
+            "code": "Box() {}\nBox(size int) { }",
+            "correct": false
+          },
+          {
+            "code": "public constructor Box(int size);",
+            "correct": false
+          }
+        ],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Choose Correct 'finally' Block",
+        "instruction": "Select valid use of finally in exception handling.",
+        "blocks": [
+          {
+            "code": "try { x = 10 / y; } catch (Exception e) { } finally { System.out.println(\"Done\"); }",
+            "correct": true
+          },
+          {
+            "code": "try { x = 10 / y; } finally catch (e) { }",
+            "correct": false
+          },
+          {
+            "code": "try (Exception e) { finally { } }",
+            "correct": false
+          }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Spot Correct 'continue' Statement",
+        "instruction": "Select correct syntax that skips iteration.",
+        "blocks": [
+          {
+            "code": "for (int i=0; i<10; i++) {\n  if (i==5) continue;\n  System.out.println(i);\n}",
+            "correct": true
+          },
+          { "code": "skip i when == 5;", "correct": false },
+          { "code": "continue(i==5);", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Find Correct Wrapper Class Example",
+        "instruction": "Select code that converts int to Integer.",
+        "blocks": [
+          { "code": "Integer num = Integer.valueOf(5);", "correct": true },
+          { "code": "Integer num = new int(5);", "correct": false },
+          { "code": "num = wrap(5);", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Spot Correct Use of 'System.out.format'",
+        "instruction": "Select valid formatted output syntax.",
+        "blocks": [
+          { "code": "System.out.format(\"%d %s\", 10, \"dogs\");", "correct": true },
+          { "code": "System.format.out(10, 'dogs');", "correct": false },
+          { "code": "System.printFormat(\"%d\", 10);", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Identify Correct Use of Varargs",
+        "instruction": "Choose valid method declaration using varargs.",
+        "blocks": [
+          { "code": "void printAll(String... args) { }", "correct": true },
+          { "code": "void printAll(...String args) { }", "correct": false },
+          { "code": "printAll(String args...) { }", "correct": false }
+        ],
+        "bloomTarget": "applying"
       }
     ]
   },
-  "intensity3": {
+  "intensity3":{
     "codeArrangement": [
       {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Create a simple Java class with constructor",
+        "sourceType": "codeArrangement",
+        "title": "Arrange to print a message using a method.",
+        "description": "Order code to call a method that prints 'Hi'.",
         "blocks": [
-          "public class Student {",
-          "    private String name;",
-          "    public Student(String name) {"
+          "void greet() { System.out.println(\"Hi\"); }",
+          "Main m = new Main();",
+          "m.greet();"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
       },
       {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Implement simple inheritance",
+        "sourceType": "codeArrangement",
+        "title": "Arrange to compute a factorial recursively.",
+        "description": "Order code to return factorial of n.",
         "blocks": [
-          "class Animal {",
-          "    public void speak() { }",
-          "}"
+          "if (n <= 1) return 1;",
+          "return n * fact(n - 1);",
+          "int fact(int n) { ... }"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [2, 0, 1],
+        "bloomTarget": "creating"
       },
       {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Create a simple recursive method",
+        "sourceType": "codeArrangement",
+        "title": "Arrange to demonstrate inheritance.",
+        "description": "Order code to call a method from subclass Dog.",
         "blocks": [
-          "public static int factorial(int n) {",
-          "    if (n <= 1) {",
-          "        return 1;"
+          "class Dog extends Animal { void bark() { System.out.println(\"Woof\"); } }",
+          "Dog d = new Dog();",
+          "d.bark();"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
       },
       {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Work with simple 2D array",
+        "sourceType": "codeArrangement",
+        "title": "Arrange for try-catch handling.",
+        "description": "Order to safely divide two numbers.",
         "blocks": [
-          "int[][] matrix = new int[2][2];",
-          "for (int i = 0; i < matrix.length; i++) {",
-          "    for (int j = 0; j < matrix[i].length; j++) {"
+          "try { int x = a / b; }",
+          "catch (ArithmeticException e) { System.out.println(\"Error\"); }",
+          "System.out.println(\"Done\");"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
       },
       {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Use ArrayList for basic operations",
+        "sourceType": "codeArrangement",
+        "title": "Arrange to reverse a string.",
+        "description": "Order to reverse and print a string.",
         "blocks": [
-          "import java.util.ArrayList;",
+          "StringBuilder sb = new StringBuilder(\"Java\");",
+          "sb.reverse();",
+          "System.out.println(sb);"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange to iterate through an array.",
+        "description": "Order to print all numbers in nums.",
+        "blocks": [
+          "int[] nums = {1,2,3};",
+          "for (int n : nums)",
+          "System.out.println(n);"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange polymorphism call.",
+        "description": "Order to call overridden method speak().",
+        "blocks": [
+          "Animal a = new Dog();",
+          "a.speak();",
+          "class Dog extends Animal { void speak() { System.out.println(\"Bark\"); } }"
+        ],
+        "correctOrder": [2, 0, 1],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange static method use.",
+        "description": "Order to compute square of 4.",
+        "blocks": [
+          "class MathUtil { static int sq(int x){return x*x;} }",
+          "int r = MathUtil.sq(4);",
+          "System.out.println(r);"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange file reading.",
+        "description": "Order to read and close a file.",
+        "blocks": [
+          "BufferedReader br = new BufferedReader(new FileReader(\"a.txt\"));",
+          "System.out.println(br.readLine());",
+          "br.close();"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange ArrayList usage.",
+        "description": "Order to store and print items.",
+        "blocks": [
           "ArrayList<String> list = new ArrayList<>();",
-          "list.add(\"Hello\");"
+          "list.add(\"A\"); list.add(\"B\");",
+          "System.out.println(list);"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
       },
       {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Simple method with loop and calculation",
+        "sourceType": "codeArrangement",
+        "title": "Arrange constructor chaining.",
+        "description": "Order to call another constructor.",
         "blocks": [
-          "int sum = 0;",
-          "for (int num : numbers) {",
-          "    sum += num;"
+          "Box() { this(5); }",
+          "Box(int s) { size = s; }",
+          "int size;"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [2, 0, 1],
+        "bloomTarget": "analyzing"
       },
       {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Exception handling with try-catch",
+        "sourceType": "codeArrangement",
+        "title": "Arrange for generic method.",
+        "description": "Order to print a generic value.",
         "blocks": [
-          "try {",
-          "    int result = Integer.parseInt(input);",
-          "    System.out.println(\"Number: \" + result);"
-        ],
-        "correctOrder": [0, 1, 2]
-      },
-      {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Interface implementation with method override",
-        "blocks": [
-          "interface Drawable {",
-          "    void draw();",
+          "<T> void print(T val) {",
+          "System.out.println(val);",
           "}"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
       },
       {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Generic method with type parameter",
+        "sourceType": "codeArrangement",
+        "title": "Arrange for thread run.",
+        "description": "Order to start a thread.",
         "blocks": [
-          "public static <T> void swap(T[] array, int i, int j) {",
-          "    T temp = array[i];",
-          "    array[i] = array[j];"
+          "Thread t = new Thread(() -> System.out.println(\"Run\"));",
+          "t.start();",
+          "System.out.println(\"Done\");"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
       },
       {
-        "title": "Arrange the Java code blocks in correct order:",
-        "description": "Lambda expression with functional interface",
+        "sourceType": "codeArrangement",
+        "title": "Arrange interface example.",
+        "description": "Order to define and use interface.",
         "blocks": [
-          "List<String> names = Arrays.asList(\"Alice\", \"Bob\", \"Charlie\");",
-          "names.stream()",
-          "    .filter(name -> name.length() > 3)"
+          "interface A { void show(); }",
+          "class B implements A { public void show(){System.out.println(\"OK\");} }",
+          "new B().show();"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange Map iteration.",
+        "description": "Order to print all map entries.",
+        "blocks": [
+          "Map<String,Integer> m = new HashMap<>();",
+          "for (var e : m.entrySet())",
+          "System.out.println(e);"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange to filter with streams.",
+        "description": "Order to print even numbers from list.",
+        "blocks": [
+          "list.stream()",
+          ".filter(n -> n % 2 == 0)",
+          ".forEach(System.out::println);"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange abstract class usage.",
+        "description": "Order to implement abstract method.",
+        "blocks": [
+          "abstract class Shape { abstract void draw(); }",
+          "class Circle extends Shape { void draw(){System.out.println(\"O\");} }",
+          "new Circle().draw();"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange recursion base case.",
+        "description": "Order to stop recursion at zero.",
+        "blocks": [
+          "if (n == 0) return;",
+          "System.out.println(n);",
+          "print(n - 1);"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange array sorting.",
+        "description": "Order to sort and print an array.",
+        "blocks": [
+          "int[] a = {3,1,2};",
+          "Arrays.sort(a);",
+          "System.out.println(Arrays.toString(a));"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange switch example.",
+        "description": "Order to handle case values.",
+        "blocks": [
+          "switch (x) {",
+          "case 1 -> System.out.println(\"One\");",
+          "}"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange list sorting with lambda.",
+        "description": "Order to sort list alphabetically.",
+        "blocks": [
+          "Collections.sort(names,",
+          "(a,b)->a.compareTo(b));",
+          "System.out.println(names);"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange for enhanced for loop.",
+        "description": "Order to print values from list.",
+        "blocks": [
+          "for (String s : list)",
+          "System.out.println(s);",
+          "System.out.println(\"End\");"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange to demonstrate encapsulation.",
+        "description": "Order to set and get private data.",
+        "blocks": [
+          "private int age;",
+          "void setAge(int a){ age=a; }",
+          "int getAge(){ return age; }"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange two-dimensional array loop.",
+        "description": "Order to print all matrix elements.",
+        "blocks": [
+          "for(int[] r:mat)",
+          "for(int c:r) System.out.print(c+\" \");",
+          "System.out.println();"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange nested if-else.",
+        "description": "Order to check range of n.",
+        "blocks": [
+          "if (n>0) System.out.println(\"+ve\");",
+          "else if (n<0) System.out.println(\"-ve\");",
+          "else System.out.println(\"Zero\");"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange for file writing.",
+        "description": "Order to write text to file.",
+        "blocks": [
+          "FileWriter fw = new FileWriter(\"a.txt\");",
+          "fw.write(\"Data\");",
+          "fw.close();"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange to demonstrate overriding.",
+        "description": "Order to override base method.",
+        "blocks": [
+          "class A { void show(){System.out.println(\"A\");} }",
+          "class B extends A { void show(){System.out.println(\"B\");} }",
+          "new B().show();"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange for comparator use.",
+        "description": "Order to sort integers descending.",
+        "blocks": [
+          "Collections.sort(nums,",
+          "(a,b)->b-a);",
+          "System.out.println(nums);"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange recursion print down to 1.",
+        "description": "Order to print countdown recursively.",
+        "blocks": [
+          "if(n==0)return;",
+          "System.out.println(n);",
+          "print(n-1);"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange multi-catch exception.",
+        "description": "Order to handle multiple errors.",
+        "blocks": [
+          "catch(IOException|NullPointerException e){",
+          "System.out.println(\"Error\");",
+          "}"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange synchronized block.",
+        "description": "Order to safely increment count.",
+        "blocks": [
+          "synchronized(this){",
+          "count++;",
+          "}"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange for ternary usage.",
+        "description": "Order to print if x>y.",
+        "blocks": [
+          "String r = (x>y)?\"X\":\"Y\";",
+          "System.out.println(r);",
+          "System.out.println(\"Done\");"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange String comparison.",
+        "description": "Order to compare strings properly.",
+        "blocks": [
+          "if(a.equals(b))",
+          "System.out.println(\"Equal\");",
+          "else System.out.println(\"Not\");"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange local class use.",
+        "description": "Order to define and create an inner class.",
+        "blocks": [
+          "class Local { void f(){System.out.println(\"Hi\");} }",
+          "Local l = new Local();",
+          "l.f();"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange queue usage.",
+        "description": "Order to enqueue and print items.",
+        "blocks": [
+          "Queue<Integer> q = new LinkedList<>();",
+          "q.add(10); q.add(20);",
+          "System.out.println(q);"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange stack usage.",
+        "description": "Order to push and pop values.",
+        "blocks": [
+          "Stack<Integer> s = new Stack<>();",
+          "s.push(1); s.pop();",
+          "System.out.println(s);"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange lambda function call.",
+        "description": "Order to call a lambda expression.",
+        "blocks": [
+          "Runnable r = ()->System.out.println(\"Run\");",
+          "r.run();",
+          "System.out.println(\"Done\");"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange string formatting.",
+        "description": "Order to format and print values.",
+        "blocks": [
+          "String f = String.format(\"%d-%s\", 10, \"A\");",
+          "System.out.println(f);",
+          "System.out.println(\"End\");"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange basic enum usage.",
+        "description": "Order to print enum constant.",
+        "blocks": [
+          "enum Color { RED, BLUE }",
+          "Color c = Color.RED;",
+          "System.out.println(c);"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange to demonstrate overriding toString.",
+        "description": "Order to override toString and print object.",
+        "blocks": [
+          "public String toString(){return \"Obj\";}",
+          "System.out.println(new A());",
+          "class A { ... }"
+        ],
+        "correctOrder": [2, 0, 1],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange conditional operator chain.",
+        "description": "Order to assign based on condition.",
+        "blocks": [
+          "int r = (a>b)?a:b;",
+          "System.out.println(r);",
+          "System.out.println(\"End\");"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange to print with method reference.",
+        "description": "Order to use method reference with stream.",
+        "blocks": [
+          "list.stream()",
+          ".map(String::toUpperCase)",
+          ".forEach(System.out::println);"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange for nested loops pattern.",
+        "description": "Order to print a small triangle.",
+        "blocks": [
+          "for(int i=1;i<=3;i++){",
+          "for(int j=1;j<=i;j++)System.out.print(\"*\"); System.out.println();",
+          "}"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange to call super constructor.",
+        "description": "Order to invoke parent constructor.",
+        "blocks": [
+          "class A { A(){System.out.println(\"A\");} }",
+          "class B extends A { B(){super();} }",
+          "new B();"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "sourceType": "codeArrangement",
+        "title": "Arrange default method usage.",
+        "description": "Order to use interface default method.",
+        "blocks": [
+          "interface A{ default void show(){System.out.println(\"Hi\");} }",
+          "class B implements A {}",
+          "new B().show();"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
       }
     ]
   }
 }
+
