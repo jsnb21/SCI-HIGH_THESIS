@@ -1054,6 +1054,10 @@ export default class MainGameplay extends BaseScene {
     }
 
     updateTimer() {
+        // Do not tick the timer when gameplay isn't actively running
+        if (!this.gameStarted || this.freezeGameplay || this.quizActive || this.powerUpActive) {
+            return;
+        }
         // Prevent timer from going negative
         this.gameTimer = Math.max(0, this.gameTimer - 1);
         
@@ -1224,7 +1228,11 @@ export default class MainGameplay extends BaseScene {
             }
         });
         
-        // Start the actual game timer
+        // Start the actual game timer (ensure we don't create duplicate events)
+        if (this.timerEvent) {
+            try { this.timerEvent.remove(); } catch (_) {}
+            this.timerEvent = null;
+        }
         this.timerEvent = this.time.addEvent({
             delay: 1000, // 1 second
             callback: this.updateTimer,
@@ -2234,6 +2242,77 @@ export default class MainGameplay extends BaseScene {
                 // Reset position when no streak
                 this.streakText.setPosition(20, 65);
             }
+        }
+    }
+
+    // Reset current streak and sync both Phaser and DOM HUDs
+    resetStreak() {
+        this.streak = 0;
+        // Update Phaser HUD text via existing helper
+        try { this.updateStreakDisplay(); } catch (_) {}
+        // Update DOM HUD if active
+        if (this.domHudActive && this.domStreakEl) {
+            try { this.domStreakEl.textContent = 'Streak: 0'; } catch (_) {}
+        }
+        // Ensure unified HUD reflects latest values
+        if (typeof this.syncDomHud === 'function') {
+            try { this.syncDomHud(); } catch (_) {}
+        }
+    }
+
+    // Reset all power-up related state so nothing carries to the next scene/session
+    resetPowerUps() {
+        try {
+            // Flags and references
+            this.powerUpActive = false;
+            this.currentPowerUp = null;
+
+            // Ensure container exists, then clear flags
+            this.activePowerUps = this.activePowerUps || {};
+            this.activePowerUps.streakProtection = false;
+            this.activePowerUps.goblinImmunityReady = false;
+            this.activePowerUps.goblinImmunityActive = false;
+
+            // Structured/leveled power-ups
+            if (this.activePowerUps.streakShield) {
+                this.activePowerUps.streakShield.active = false;
+                this.activePowerUps.streakShield = null;
+            }
+            if (this.activePowerUps.goblinWard) {
+                this.activePowerUps.goblinWard.active = false;
+                this.activePowerUps.goblinWard = null;
+            }
+            if (this.activePowerUps.swiftSteps) {
+                this.activePowerUps.swiftSteps.active = false;
+                this.activePowerUps.swiftSteps = null;
+            }
+
+            // Cadence/progression tied to power-ups
+            this.correctAnswersSincePowerUp = 0;
+            this.intensity3PowerUpCounter = 0;
+
+            // Restore player speed baseline
+            if (this.player) {
+                const base = this.originalPlayerSpeed != null ? this.originalPlayerSpeed : 200;
+                this.player.speed = base;
+            }
+
+            // Destroy lingering board power-up sprites
+            if (Array.isArray(this.powerUpSprites)) {
+                try {
+                    this.powerUpSprites.forEach(s => {
+                        try { if (this.tweens && this.tweens.killTweensOf && s) this.tweens.killTweensOf(s); } catch {}
+                        if (s && s.destroy && !s.destroyed) s.destroy();
+                    });
+                } finally {
+                    this.powerUpSprites = [];
+                }
+            }
+            if (Array.isArray(this.powerUps)) {
+                this.powerUps = [];
+            }
+        } catch (e) {
+            console.warn('resetPowerUps encountered an issue:', e);
         }
     }
 
@@ -4006,6 +4085,10 @@ export default class MainGameplay extends BaseScene {
     showResultScreen(courseCompleted = false) {
         if (this._resultShown) return; // prevent duplicate calls
         this._resultShown = true;
+        // Ensure streak does not carry over after gameplay ends
+        if (typeof this.resetStreak === 'function') this.resetStreak();
+        // Ensure power-ups and related cadence are cleared on exit
+        if (typeof this.resetPowerUps === 'function') this.resetPowerUps();
         // Prepare data for ResultScreen
         const resultData = {
             correctAnswers: this.correctAnswers,
@@ -4526,6 +4609,10 @@ export default class MainGameplay extends BaseScene {
 
     // Clean up when scene is shutdown
     shutdown() {
+        // Defensive: ensure streak is reset if scene ends abruptly
+        if (typeof this.resetStreak === 'function') this.resetStreak();
+        // Defensive: also clear any active power-up states
+        if (typeof this.resetPowerUps === 'function') this.resetPowerUps();
         if (this.playerGlow) {
             this.playerGlow.destroy();
             this.playerGlow = null;
