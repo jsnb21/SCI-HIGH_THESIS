@@ -12,6 +12,9 @@ export default class DomHudManager {
     this.domCourseEl = null;
     this._hudBoundsHandler = null;
     this._scaleHudBoundsHandler = null;
+    this._lowPulseApplied = false;
+    this._flashActive = false;
+    this._flashTimeoutId = null;
   }
 
   init() {
@@ -252,20 +255,33 @@ export default class DomHudManager {
     const el = this.domTimerEl;
     const parent = el.parentElement;
     const prevColor = el.style.color;
+    const prevShadow = el.style.textShadow;
     // Apply inline color to override inherited center color
     try {
-      el.style.transition = el.style.transition || 'color 0.2s ease';
+      // Mark flash active so updateTimerVisual doesn't override during the flash window
+      this._flashActive = true;
+      if (this._flashTimeoutId) { try { clearTimeout(this._flashTimeoutId); } catch (_) {} }
+      el.style.transition = el.style.transition || 'color 0.2s ease, text-shadow 0.2s ease';
       el.style.color = color;
+      // Add a quick colored glow for stronger feedback
+      el.style.textShadow = `0 0 6px ${color}, 0 0 12px ${color}`;
       // Optionally echo on parent for stronger effect across browsers
       if (parent) {
         const prevParentColor = parent.style.color;
         parent.style.color = color;
-        setTimeout(() => {
+        this._flashTimeoutId = setTimeout(() => {
           parent.style.color = prevParentColor || '';
         }, durationMs);
       }
-      setTimeout(() => {
+      this._flashTimeoutId = setTimeout(() => {
+        // End flash: restore styles and let updateTimerVisual set threshold color
         el.style.color = prevColor || '';
+        el.style.textShadow = prevShadow || '';
+        this._flashActive = false;
+        // Re-apply threshold color in case something else changed meanwhile
+        if (typeof this.scene?.gameTimer === 'number') {
+          this.updateTimerVisual(this.scene.gameTimer);
+        }
       }, durationMs);
     } catch (_) {}
   }
@@ -280,20 +296,27 @@ export default class DomHudManager {
     if (!this.domHudActive || !this.domTimerEl) return;
     try {
       const baseColor = seconds > 30 ? '#ffffff' : (seconds > 10 ? '#ffff00' : '#ff3333');
-      this.domTimerEl.style.color = baseColor;
+      // Avoid overriding color during an active flash
+      if (!this._flashActive) {
+        this.domTimerEl.style.color = baseColor;
+      }
+      // Ensure scaling happens around the center so it doesn't shift
+      this.domTimerEl.style.transformOrigin = 'center';
       // Optional emphasis when critically low: gentle pulse via CSS animation
       if (seconds <= 10) {
-        if (!this._lowPulseApplied) {
-          this._lowPulseApplied = true;
-          this.domTimerEl.style.animation = 'dom-timer-pulse 0.8s ease-in-out infinite';
-          // Inject keyframes once
-          if (!document.getElementById('domTimerPulseKeyframes')) {
-            const style = document.createElement('style');
-            style.id = 'domTimerPulseKeyframes';
-            style.textContent = `@keyframes dom-timer-pulse { 0%{ transform:translateX(-50%) scale(1); } 50%{ transform:translateX(-50%) scale(1.06); } 100%{ transform:translateX(-50%) scale(1); } }`;
-            document.head.appendChild(style);
-          }
+        // Inject or update keyframes to use scale only (no translateX) to avoid horizontal offset
+        let styleEl = document.getElementById('domTimerPulseKeyframes');
+        const correctKeyframes = '@keyframes dom-timer-pulse { 0%{ transform: scale(1); } 50%{ transform: scale(1.06); } 100%{ transform: scale(1); } }';
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.id = 'domTimerPulseKeyframes';
+          styleEl.textContent = correctKeyframes;
+          document.head.appendChild(styleEl);
+        } else if (styleEl.textContent && styleEl.textContent.includes('translateX')) {
+          styleEl.textContent = correctKeyframes;
         }
+        this.domTimerEl.style.animation = 'dom-timer-pulse 0.8s ease-in-out infinite';
+        this._lowPulseApplied = true;
       } else {
         this._lowPulseApplied = false;
         this.domTimerEl.style.animation = '';

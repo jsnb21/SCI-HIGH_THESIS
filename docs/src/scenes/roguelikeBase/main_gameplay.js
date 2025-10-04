@@ -364,8 +364,7 @@ export default class MainGameplay extends BaseScene {
         // Setup input controls
         this.setupInput();
 
-        // Add course topic display
-        this.addCourseDisplay();
+    // Course topic is displayed in the DOM HUD; no Phaser text needed
         
         // Add mobile control hint
         this.addMobileControlHint();
@@ -416,11 +415,11 @@ export default class MainGameplay extends BaseScene {
         // Legacy desktopHudContainer no longer used; remove if exists
         if (this.desktopHudContainer) { this.desktopHudContainer.destroy(); this.desktopHudContainer = null; }
 
-        // Always use DOM HUD; keep Phaser text HUD hidden
-        if (this.scoreText) this.scoreText.setVisible(false);
-        if (this.streakText) this.streakText.setVisible(false);
-        if (this.timerText) this.timerText.setVisible(false);
-        if (this.courseDisplay) this.courseDisplay.setVisible(false);
+    // Always use DOM HUD; Phaser HUD texts are not used
+    this.scoreText = null;
+    this.streakText = null;
+    this.timerText = null;
+    this.courseDisplay = null;
     if (!this._domHud) this._domHud = new DomHudManager(this);
     this._domHud.init();
     // Ensure HUD text reflects current state after any DOM re-creation
@@ -464,105 +463,8 @@ export default class MainGameplay extends BaseScene {
             // DOM HUD supersedes this; proceed no further
             return;
         }
-        // If DOM HUD active we may still keep Phaser texts hidden; skip heavy reposition if texts missing
-        const texts = [this.scoreText, this.streakText, this.timerText, this.courseDisplay];
-        const anyDestroyed = texts.some(t => t && (t._destroyed || t.active === false));
-        if (anyDestroyed) {
-            if (!this._hudWarned) {
-                console.warn('HUD texts were destroyed before reposition. Skipping updateHudPositions this frame.');
-                this._hudWarned = true;
-            }
-            return;
-        }
-        // Desktop now uses a camera-anchored HUD (independent overlay)
-        const cam = this.cameras.main;
-        const screenWidth = this.scale.width;
-        const screenHeight = this.scale.height;
-        const isVerySmall = screenWidth < 480;
-        const isDesktop = screenWidth >= 768; // treat tablets as mobile style
-
-        // Base margins (screen-space intent)
-        const marginX = Math.min(20, screenWidth * 0.035);
-        const topMargin = 6;
-
-        // Font sizes remain responsive to raw screen width
-        const scoreFontSize = Math.max(20, screenWidth * 0.03);
-        const streakFontSize = Math.max(16, screenWidth * 0.025);
-        const timerFontSize = Math.max(26, screenWidth * 0.04);
-        const courseFontSize = Math.max(18, screenWidth * 0.028);
-
-        // For desktop we anchor using camera worldView (so zoom has no shrinking effect)
-        let originX = 0;
-        let originY = 0;
-        if (isDesktop) {
-            originX = cam.worldView.x;
-            originY = cam.worldView.y; // top edge of visible world after zoom
-        }
-        // For mobile we keep the prior absolute approach
-        const scoreX = isDesktop ? originX + marginX : marginX;
-        const scoreY = isDesktop ? originY + topMargin : topMargin;
-        const streakY = scoreY + (isVerySmall ? 25 : 30);
-        const timerY = scoreY; // top aligned
-        const courseY = scoreY;
-        const centerX = isDesktop ? originX + (cam.worldView.width / 2) : screenWidth / 2;
-        const courseX = isDesktop ? originX + cam.worldView.width - marginX : screenWidth - marginX;
-        
-        // Update score text position and font size
-        try {
-            if (this.scoreText) {
-                this.scoreText.setPosition(scoreX, scoreY);
-                this.scoreText.setFontSize(`${scoreFontSize}px`);
-                this.scoreText.setStroke('#000000', 4);
-                this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
-            }
-        } catch (e) { /* swallow to avoid crashing draw cycle */ }
-        
-        // Update streak text position and font size
-        try {
-            if (this.streakText) {
-                this.streakText.setPosition(scoreX, streakY);
-                this.streakText.setFontSize(`${streakFontSize}px`);
-                this.streakText.setStroke('#000000', 3);
-                this.streakText.setShadow(2, 2, '#000000', 2, true, false);
-            }
-        } catch (e) {}
-        
-        // Update timer position and font size - centered at top
-        try {
-            if (this.timerText) {
-                this.timerText.setPosition(centerX, timerY);
-                this.timerText.setFontSize(`${timerFontSize}px`);
-                this.timerText.setStroke('#000080', 4);
-                this.timerText.setShadow(2, 2, '#000040', 3, true, false);
-            }
-        } catch (e) {}
-        
-        // Update course display for mobile - top positioning only on mobile
-        try {
-            if (this.courseDisplay) {
-                this.courseDisplay.setPosition(courseX, courseY);
-                this.courseDisplay.setFontSize(`${courseFontSize}px`);
-                this.courseDisplay.setOrigin(1, 0);
-                this.courseDisplay.setStroke('#000080', 3);
-                this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
-            }
-        } catch (e) {}
-
-        // Safety clamp: ensure none of the texts drift outside (rare but defensive)
-        // Clamp only for mobile where absolute screen bounds apply
-        if (!isDesktop) {
-            const clampMargin = 2;
-            const maxX = screenWidth - clampMargin;
-            const maxY = screenHeight - clampMargin;
-            [this.scoreText, this.streakText, this.timerText, this.courseDisplay].forEach(txt => {
-                if (txt) {
-                    if (txt.x < clampMargin) txt.x = clampMargin;
-                    if (txt.y < clampMargin) txt.y = clampMargin;
-                    if (txt.x > maxX) txt.x = maxX;
-                    if (txt.y > maxY) txt.y = maxY;
-                }
-            });
-        }
+        // DOM-only HUD: no Phaser HUD elements to reposition
+        return;
     }
 
     createDesktopHUD() { /* deprecated: replaced by DOM HUD */ }
@@ -3411,63 +3313,7 @@ export default class MainGameplay extends BaseScene {
         
     }
 
-    addCourseDisplay() {
-        // Add stylized course topic display in the top-right corner
-        if (this.courseTopic) {
-            const courseDisplayName = this.getFormattedCourseName(this.courseTopic);
-            
-            // Enhanced mobile-responsive positioning and styling
-            const isMobile = this.scale.width < 768;
-            const isSmallMobile = this.scale.width < 480;
-            
-            let fontSize, strokeThickness, courseX, courseY;
-            if (isSmallMobile) {
-                fontSize = '16px';
-                strokeThickness = 3;
-                courseX = this.scale.width - 15;
-                courseY = 5; // Absolute top
-            } else if (isMobile) {
-                fontSize = '18px';
-                strokeThickness = 3;
-                courseX = this.scale.width - 20;
-                courseY = 5; // Absolute top
-            } else {
-                fontSize = '20px';
-                strokeThickness = 2;
-                courseX = this.scale.width - 20;
-                courseY = 30; // Original position for desktop
-            }
-            
-            this.courseDisplay = this.add.text(courseX, courseY, courseDisplayName, {
-                fontFamily: 'Arial',
-                fontSize: fontSize,
-                fontWeight: 'bold',
-                color: '#00ffff', // Cyan color
-                stroke: '#000080', // Dark blue stroke
-                strokeThickness: strokeThickness,
-                shadow: {
-                    offsetX: 2,
-                    offsetY: 2,
-                    color: '#000040',
-                    blur: 4,
-                    fill: true
-                }
-            });
-            this.courseDisplay.setOrigin(1, 0);
-            this.courseDisplay.setScrollFactor(0);
-            this.courseDisplay.setDepth(100);
-            
-            // Add subtle glow effect to course name
-            this.tweens.add({
-                targets: this.courseDisplay,
-                alpha: 0.7,
-                duration: 1500,
-                ease: 'Sine.easeInOut',
-                yoyo: true,
-                repeat: -1
-            });
-        }
-    }
+    addCourseDisplay() { /* DOM HUD shows course; Phaser text removed */ }
 
     addMobileControlHint() {
         // Only show hint on mobile devices
@@ -4043,17 +3889,10 @@ export default class MainGameplay extends BaseScene {
     }
 
     removeDesktopHud() {
-        // Remove DOM HUD if present
+        // Remove DOM HUD if present; Phaser HUD is not used
         const domHud = typeof document !== 'undefined' ? document.getElementById('desktop-game-hud') : null;
-        if (domHud) {
-            domHud.remove();
-        }
+        if (domHud) domHud.remove();
         this.domHudActive = false;
-        // Re-show Phaser HUD texts (in case we return to gameplay later without full reload)
-        if (this.scoreText) this.scoreText.setVisible(true);
-        if (this.streakText) this.streakText.setVisible(true);
-        if (this.timerText) this.timerText.setVisible(true);
-        if (this.courseDisplay) this.courseDisplay.setVisible(true);
     }
 
     async uploadGameplayDataInBackground(resultData) {
