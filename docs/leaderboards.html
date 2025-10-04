@@ -763,18 +763,15 @@
       // Enhanced Fetch Leaderboard using Career Stats
       async function fetchLeaderboard(filter) {
         try {
-          // Load career stats data using the data service
-          const careerStatsData = await loadCareerStatsData(filter);
-          // Dynamically import renderers
           const renderMod = await import('./js/leaderboards/renderService.js');
-          // Render results
-          renderMod.renderPlayerCards(careerStatsData.slice(0, 3));
-          renderMod.renderLeaderboard(careerStatsData);
+          const data = await loadCareerStatsData(filter);
+          renderMod.renderPlayerCards(data.slice(0, 3));
+          renderMod.renderLeaderboard(data);
         } catch (error) {
           console.error('Error fetching career stats leaderboard:', error);
           console.error('Error details:', error.message);
           
-          // Show error message
+          // Show error message in list container
           const leaderboardList = document.getElementById('leaderboard-list');
           if (leaderboardList) {
             leaderboardList.innerHTML = `<div class="text-center py-8 text-red-400">⚠️ Database error: ${error.message}</div>`;
@@ -846,6 +843,18 @@
           toggleSections(f);
           if (!options.fromPopState) setURLFilter(f, false);
           await fetchLeaderboard(f);
+          // If department filter, auto-jump to Top 3 section
+          if (f !== 'overall') {
+            const el = document.getElementById('featured-players');
+            if (el) {
+              // account for sticky nav ~72px; adjust if header size changes
+              const headerOffset = 80;
+              const rect = el.getBoundingClientRect();
+              const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+              const targetY = rect.top + scrollTop - headerOffset;
+              window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+            }
+          }
         }
 
         // Wire clicks
