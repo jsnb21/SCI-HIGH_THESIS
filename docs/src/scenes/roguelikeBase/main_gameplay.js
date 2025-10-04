@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import BaseScene from '../BaseScene.js';
 import { playExclusiveBGM, updateSoundVolumes } from '../../audioUtils.js';
+import DomHudManager from '../../ui/DomHudManager.js';
 
 export default class MainGameplay extends BaseScene {
     constructor() {
@@ -42,6 +43,8 @@ export default class MainGameplay extends BaseScene {
         this.streak = 0;
         this.highestStreak = 0;
         this.baseScore = 100;
+    // Phase 1: DOM HUD manager instance
+    this._domHud = null;
         
         // INTENSITY system
         this.enemiesDefeated = 0;
@@ -301,6 +304,14 @@ export default class MainGameplay extends BaseScene {
 
     create() {
         super.create(); // Call BaseScene create method
+        // Phase 0: lightweight debug hooks (no behavior change)
+        try {
+            // eslint-disable-next-line global-require, import/no-unresolved
+            const dbg = require('../../utils/debug.js');
+            this.__DEBUG__ = dbg && dbg.DEBUG;
+            this.__dlog__ = (scope, ...args) => (dbg && dbg.DEBUG && dbg.dlog ? dbg.dlog(scope, ...args) : null);
+            if (this.__dlog__) this.__dlog__('Scene', 'create()', { topic: this.courseTopic });
+        } catch (_) { /* ignore if module not present in build */ }
         
         // Reset all freezing/blocking flags to ensure fresh gameplay state
         this.freezeGameplay = false;
@@ -357,13 +368,14 @@ export default class MainGameplay extends BaseScene {
         // Add mobile control hint
         this.addMobileControlHint();
 
-        // Unified HUD (DOM for all devices)
+        // Unified HUD (DOM for all devices) via DomHudManager
         if (this.scoreText) this.scoreText.setVisible(false);
         if (this.streakText) this.streakText.setVisible(false);
         if (this.timerText) this.timerText.setVisible(false);
         if (this.courseDisplay) this.courseDisplay.setVisible(false);
         this.time.delayedCall(0, () => {
-            this.ensureDomHud();
+            if (!this._domHud) this._domHud = new DomHudManager(this);
+            this._domHud.init();
             this.syncDomHud();
             requestAnimationFrame(() => this.syncDomHud());
         });
@@ -371,6 +383,7 @@ export default class MainGameplay extends BaseScene {
         
         // Add resize listener to keep board centered
         this.scale.on('resize', this.onResize, this);
+        if (this.__dlog__) this.__dlog__('Scene', 'resize listener attached');
     }
 
     onResize() {
@@ -404,7 +417,8 @@ export default class MainGameplay extends BaseScene {
         if (this.streakText) this.streakText.setVisible(false);
         if (this.timerText) this.timerText.setVisible(false);
         if (this.courseDisplay) this.courseDisplay.setVisible(false);
-        this.ensureDomHud();
+        if (!this._domHud) this._domHud = new DomHudManager(this);
+        this._domHud.init();
         this.syncDomHud();
         this.updateDomHudBounds();
         // Update HUD positions for responsive design (mobile or after recreation)
@@ -524,174 +538,19 @@ export default class MainGameplay extends BaseScene {
 
     createDesktopHUD() { /* deprecated: replaced by DOM HUD */ }
 
-    ensureDomHud() {
-        // Unified DOM HUD overlay for all devices (desktop + mobile)
-        if (document.getElementById('desktop-game-hud')) return; // Already exists
+    ensureDomHud() { if (!this._domHud) this._domHud = new DomHudManager(this); this._domHud.init(); }
 
-        const vw = (typeof window !== 'undefined') ? window.innerWidth : this.scale.width;
-        const isMobileLike = vw < 768;
-    const baseHeight = isMobileLike ? 76 : 64;
-
-        const wrapper = document.createElement('div');
-        wrapper.id = 'desktop-game-hud';
-        Object.assign(wrapper.style, {
-            position: 'absolute',
-            top: '0', // precise left/width set by updateDomHudBounds()
-            left: '0',
-            width: '0px',
-            height: baseHeight + 'px',
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            padding: (isMobileLike ? '8px 12px 4px 12px' : '6px 20px 4px 20px'),
-            boxSizing: 'border-box',
-            fontFamily: 'Arial, sans-serif',
-            zIndex: '9999',
-            pointerEvents: 'none',
-            background: 'linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.25))',
-            overflow: 'hidden'
-        });
-
-        // Basic text row builder (no icon) for score, streak, timer
-        const buildTextRow = (labelText, id, fontSizePx, color) => {
-            const el = document.createElement('div');
-            el.id = id;
-            el.style.fontWeight = 'bold';
-            el.style.fontSize = fontSizePx + 'px';
-            el.style.color = color;
-            el.style.textShadow = '2px 2px 3px #000';
-            el.textContent = labelText;
-            return el;
-        };
-
-        // Icon path mapping by course topic
-        const courseIconMap = {
-            python: 'python_logo.png',
-            java: 'java_logo.png',
-            c: 'c_logo.png',
-            'c++': 'cplus_logo.png',
-            cpp: 'cplus_logo.png',
-            csharp: 'csharp_logo.png',
-            'c#': 'csharp_logo.png',
-            webdesign: 'web-design_logo.png',
-            custom: 'CustomQuiz.png'
-        };
-        const iconBase = 'assets/img/comlab/icons/';
-        const courseKey = (this.courseTopic || '').toLowerCase();
-        const courseIconFile = courseIconMap[courseKey] || 'python_logo.png';
-
-        // Left stack (score + streak)
-        const left = document.createElement('div');
-        left.style.display = 'flex';
-        left.style.flexDirection = 'column';
-        left.style.gap = '4px';
-
-    const scoreFs = isMobileLike ? 18 : 22;
-    const streakFs = isMobileLike ? 14 : 18;
-    this.domScoreEl = buildTextRow(`Score: ${this.score || 0}`, 'hud-score', scoreFs, '#ffffff');
-    this.domStreakEl = buildTextRow(`Streak: ${this.streak || 0}`, 'hud-streak', streakFs, '#ffff00');
-    left.appendChild(this.domScoreEl);
-    left.appendChild(this.domStreakEl);
-
-        // Center (timer)
-    const center = document.createElement('div');
-    center.style.cssText = 'position:absolute;left:50%;top:6px;transform:translateX(-50%);font-weight:bold;font-size:30px;color:#fff;text-shadow:2px 2px 4px #000';
-    const timerFs = isMobileLike ? 24 : 30;
-    center.style.cssText = `position:absolute;left:50%;top:${isMobileLike ? 4 : 6}px;transform:translateX(-50%);font-weight:bold;font-size:${timerFs}px;color:#fff;text-shadow:2px 2px 4px #000`;
-    this.domTimerEl = document.createElement('div');
-    this.domTimerEl.textContent = this.timerText ? this.timerText.text : '1:00';
-    center.appendChild(this.domTimerEl);
-
-        // Right (course)
-    const right = document.createElement('div');
-    right.style.cssText = 'display:flex;align-items:center;gap:6px;font-weight:bold;font-size:20px;color:#0ff;text-shadow:2px 2px 3px #000;';
-    const courseIcon = document.createElement('img');
-    courseIcon.src = iconBase + courseIconFile;
-    courseIcon.alt = 'Course';
-    const courseFs = isMobileLike ? 16 : 20;
-    right.style.cssText = `display:flex;align-items:center;gap:6px;font-weight:bold;font-size:${courseFs}px;color:#0ff;text-shadow:2px 2px 3px #000;`;
-    const iconSize = isMobileLike ? 24 : 28;
-    courseIcon.style.width = iconSize + 'px';
-    courseIcon.style.height = iconSize + 'px';
-    courseIcon.style.objectFit = 'contain';
-    courseIcon.style.filter = 'drop-shadow(0 0 3px rgba(0,0,0,0.6))';
-    this.domCourseEl = document.createElement('div');
-    // Use a simplified course name without emoji since we now show an icon
-    this.domCourseEl.textContent = this.getFormattedCourseName(this.courseTopic).replace(/^[^A-Z0-9]*\s*/, '');
-    right.appendChild(courseIcon);
-    right.appendChild(this.domCourseEl);
-
-        wrapper.appendChild(left);
-        wrapper.appendChild(center);
-        wrapper.appendChild(right);
-
-    const parent = this.game.canvas.parentNode || document.body;
-    parent.style.position = parent.style.position || 'relative';
-    parent.appendChild(wrapper);
-    this.domHudWrapper = wrapper;
-    this.domHudActive = true;
-
-        // Hide Phaser HUD (texts already hidden) and mark active
-        if (this.desktopHudContainer) this.desktopHudContainer.setVisible(false);
-        this.domHudActive = true;
-        // Immediate syncs to guarantee visibility and correct bounds
-        this.updateDomHudBounds();
-        this.syncDomHud();
-        setTimeout(() => { this.updateDomHudBounds(); this.syncDomHud(); }, 0);
-        requestAnimationFrame(() => { this.updateDomHudBounds(); this.syncDomHud(); });
-
-        // Keep HUD aligned with canvas on window and Phaser resizes
-        this._hudBoundsHandler = () => this.updateDomHudBounds();
-        window.addEventListener('resize', this._hudBoundsHandler);
-        this._scaleHudBoundsHandler = () => this.updateDomHudBounds();
-        if (this.scale) this.scale.on('resize', this._scaleHudBoundsHandler, this);
-    }
-
-    updateDomHudBounds() {
-        if (!this.domHudActive) return;
-        const canvas = this.game && this.game.canvas;
-        const wrapper = this.domHudWrapper || document.getElementById('desktop-game-hud');
-        if (!canvas || !wrapper) return;
-        const parent = canvas.parentNode || document.body;
-        const canvasRect = canvas.getBoundingClientRect();
-        const parentRect = parent.getBoundingClientRect();
-        const left = Math.max(0, Math.round(canvasRect.left - parentRect.left));
-        const top = Math.max(0, Math.round(canvasRect.top - parentRect.top));
-        const width = Math.round(canvas.clientWidth || canvasRect.width);
-        wrapper.style.left = left + 'px';
-        wrapper.style.top = top + 'px';
-        wrapper.style.width = width + 'px';
-        wrapper.style.overflow = 'hidden';
-    }
+    updateDomHudBounds() { if (this._domHud) this._domHud.updateBounds(); }
 
     syncDomHud() {
-        if (!this.domHudActive) return;
-        if (this.domScoreEl) this.domScoreEl.textContent = `Score: ${this.score || 0}`;
-        if (this.domStreakEl) this.domStreakEl.textContent = `Streak: ${this.streak || 0}`;
-        if (this.domTimerEl) this.domTimerEl.textContent = this.getCurrentTimeString ? this.getCurrentTimeString() : (this.timerText ? this.timerText.text : '1:00');
-        if (this.domCourseEl) this.domCourseEl.textContent = this.getFormattedCourseName(this.courseTopic);
+        if (this._domHud) {
+            const courseName = this.getFormattedCourseName(this.courseTopic).replace(/^[^A-Z0-9]*\s*/, '');
+            this._domHud.sync({ score: this.score, streak: this.streak, seconds: this.gameTimer, course: courseName });
+        }
     }
 
     // NEW: Explicitly remove / clean up DOM HUD elements (prevents lingering in other scenes on some mobile browsers)
-    removeDomHud() {
-        if (typeof document === 'undefined') return;
-        const hud = document.getElementById('desktop-game-hud');
-        if (hud) hud.remove();
-        // Remove listeners added for bounds syncing
-        if (this._hudBoundsHandler) {
-            window.removeEventListener('resize', this._hudBoundsHandler);
-            this._hudBoundsHandler = null;
-        }
-        if (this._scaleHudBoundsHandler && this.scale) {
-            this.scale.off('resize', this._scaleHudBoundsHandler, this);
-            this._scaleHudBoundsHandler = null;
-        }
-        this.domHudActive = false;
-        this.domScoreEl = null;
-        this.domStreakEl = null;
-        this.domTimerEl = null;
-        this.domCourseEl = null;
-    }
+    removeDomHud() { if (this._domHud) this._domHud.destroy(); }
 
     getCurrentTimeString() {
         // Always compute from numeric state so DOM HUD stays accurate even if Phaser text hidden
@@ -1054,6 +913,12 @@ export default class MainGameplay extends BaseScene {
     }
 
     updateTimer() {
+        if (this.__dlog__) this.__dlog__('Timer', 'tick-guard', {
+            gameStarted: this.gameStarted,
+            freeze: this.freezeGameplay,
+            quiz: this.quizActive,
+            powerUp: this.powerUpActive
+        });
         // Do not tick the timer when gameplay isn't actively running
         if (!this.gameStarted || this.freezeGameplay || this.quizActive || this.powerUpActive) {
             return;
@@ -1096,6 +961,7 @@ export default class MainGameplay extends BaseScene {
     }
 
     onTimerExpired() {
+        if (this.__dlog__) this.__dlog__('Timer', 'expired');
         // Prevent duplicate handling
         if (this._timeUpHandled) return;
         this._timeUpHandled = true;
@@ -1124,6 +990,7 @@ export default class MainGameplay extends BaseScene {
     }
 
     startCountdown() {
+        if (this.__dlog__) this.__dlog__('Countdown', 'start');
         // Create countdown text at the center of the screen
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2;
@@ -1175,6 +1042,7 @@ export default class MainGameplay extends BaseScene {
     }
 
     updateCountdown() {
+        if (this.__dlog__) this.__dlog__('Countdown', 'tick', { next: this.countdownTimer - 1 });
         this.countdownTimer--;
         
         if (this.countdownTimer > 0) {
@@ -1193,6 +1061,7 @@ export default class MainGameplay extends BaseScene {
     }
 
     startGame() {
+        if (this.__dlog__) this.__dlog__('Game', 'startGame');
         // Remove countdown text and instruction
         if (this.countdownText) {
             this.countdownText.destroy();
@@ -1239,12 +1108,14 @@ export default class MainGameplay extends BaseScene {
             callbackScope: this,
             loop: true
         });
+        if (this.__dlog__) this.__dlog__('Timer', 'event created');
         
         // Mark game as started and ensure it's not frozen
         this.gameStarted = true;
         this.freezeGameplay = false;
         this.enemiesMoving = false; // Reset to allow enemy movement to start fresh
         this.syncDomHud();
+        if (this.__dlog__) this.__dlog__('HUD', 'synced after start');
         
     }
 
