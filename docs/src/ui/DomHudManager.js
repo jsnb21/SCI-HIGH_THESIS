@@ -56,7 +56,8 @@ export default class DomHudManager {
     const courseIconFile = courseIconMap[courseKey] || 'python_logo.png';
 
     // Left stack (score + streak)
-    const left = document.createElement('div');
+  const left = document.createElement('div');
+  left.id = 'hud-left';
     left.style.display = 'flex';
     left.style.flexDirection = 'column';
     left.style.gap = '4px';
@@ -69,15 +70,18 @@ export default class DomHudManager {
     left.appendChild(this.domStreakEl);
 
     // Center (timer)
-    const center = document.createElement('div');
+  const center = document.createElement('div');
+  center.id = 'hud-center';
     const timerFs = isMobileLike ? 24 : 30;
     center.style.cssText = `position:absolute;left:50%;top:${isMobileLike ? 4 : 6}px;transform:translateX(-50%);font-weight:bold;font-size:${timerFs}px;color:#fff;text-shadow:2px 2px 4px #000`;
-    this.domTimerEl = document.createElement('div');
+  this.domTimerEl = document.createElement('div');
+  this.domTimerEl.id = 'hud-timer';
     this.domTimerEl.textContent = this.scene.getCurrentTimeString ? this.scene.getCurrentTimeString() : '1:00';
     center.appendChild(this.domTimerEl);
 
     // Right (course)
-    const right = document.createElement('div');
+  const right = document.createElement('div');
+  right.id = 'hud-right';
     const courseFs = isMobileLike ? 16 : 20;
     right.style.cssText = `display:flex;align-items:center;gap:6px;font-weight:bold;font-size:${courseFs}px;color:#0ff;text-shadow:2px 2px 3px #000;`;
     const courseIcon = document.createElement('img');
@@ -88,7 +92,8 @@ export default class DomHudManager {
     courseIcon.style.height = iconSize + 'px';
     courseIcon.style.objectFit = 'contain';
     courseIcon.style.filter = 'drop-shadow(0 0 3px rgba(0,0,0,0.6))';
-    this.domCourseEl = document.createElement('div');
+  this.domCourseEl = document.createElement('div');
+  this.domCourseEl.id = 'hud-course-name';
     const name = this.scene.getFormattedCourseName ? this.scene.getFormattedCourseName(this.scene.courseTopic).replace(/^[^A-Z0-9]*\s*/, '') : (this.scene.courseTopic || 'PROGRAMMING');
     this.domCourseEl.textContent = name;
     right.appendChild(courseIcon);
@@ -104,9 +109,9 @@ export default class DomHudManager {
     this.domHudWrapper = wrapper;
     this.domHudActive = true;
 
-    this._hudBoundsHandler = () => this.updateBounds();
-    window.addEventListener('resize', this._hudBoundsHandler);
-    this._scaleHudBoundsHandler = () => this.updateBounds();
+  this._hudBoundsHandler = () => this._scheduleBoundsUpdate();
+  window.addEventListener('resize', this._hudBoundsHandler);
+  this._scaleHudBoundsHandler = () => this._scheduleBoundsUpdate();
     if (this.scene.scale) this.scene.scale.on('resize', this._scaleHudBoundsHandler);
 
     this.updateBounds();
@@ -115,10 +120,43 @@ export default class DomHudManager {
 
   _wireExistingEls() {
     if (!this.domHudWrapper) return;
+    const left = this.domHudWrapper.querySelector('#hud-left') || this.domHudWrapper;
+    const center = this.domHudWrapper.querySelector('#hud-center') || this.domHudWrapper;
+    const right = this.domHudWrapper.querySelector('#hud-right') || this.domHudWrapper;
+
+    // Score
     this.domScoreEl = this.domHudWrapper.querySelector('#hud-score');
+    if (!this.domScoreEl) {
+      this.domScoreEl = document.createElement('div');
+      this.domScoreEl.id = 'hud-score';
+      this.domScoreEl.style.cssText = 'font-weight:bold;font-size:20px;color:#fff;text-shadow:2px 2px 4px #000;';
+      left.appendChild(this.domScoreEl);
+    }
+
+    // Streak
     this.domStreakEl = this.domHudWrapper.querySelector('#hud-streak');
-    // Timer and course might not have IDs; leave as null if missing
-    this.domTimerEl = this.domHudWrapper.querySelector('#hud-timer') || this.domHudWrapper.querySelector('div');
+    if (!this.domStreakEl) {
+      this.domStreakEl = document.createElement('div');
+      this.domStreakEl.id = 'hud-streak';
+      this.domStreakEl.style.cssText = 'font-weight:bold;font-size:16px;color:#ffff00;text-shadow:2px 2px 4px #000;';
+      left.appendChild(this.domStreakEl);
+    }
+
+    // Timer
+    this.domTimerEl = this.domHudWrapper.querySelector('#hud-timer');
+    if (!this.domTimerEl) {
+      this.domTimerEl = document.createElement('div');
+      this.domTimerEl.id = 'hud-timer';
+      center.appendChild(this.domTimerEl);
+    }
+
+    // Course name
+    this.domCourseEl = this.domHudWrapper.querySelector('#hud-course-name');
+    if (!this.domCourseEl) {
+      this.domCourseEl = document.createElement('div');
+      this.domCourseEl.id = 'hud-course-name';
+      right.appendChild(this.domCourseEl);
+    }
   }
 
   updateBounds() {
@@ -136,6 +174,48 @@ export default class DomHudManager {
     wrapper.style.top = top + 'px';
     wrapper.style.width = width + 'px';
     wrapper.style.overflow = 'hidden';
+    // Update height and font sizes responsively
+    this._updateResponsiveStyles();
+    // If width momentarily measures as 0 during resize, schedule a follow-up update
+    if (width <= 0 && typeof window !== 'undefined') {
+      requestAnimationFrame(() => this.updateBounds());
+      setTimeout(() => this.updateBounds(), 50);
+    }
+  }
+
+  _scheduleBoundsUpdate() {
+    if (this._rafId) {
+      try { cancelAnimationFrame(this._rafId); } catch (_) {}
+      this._rafId = null;
+    }
+    this._rafId = requestAnimationFrame(() => {
+      this._rafId = null;
+      this.updateBounds();
+    });
+  }
+
+  _updateResponsiveStyles() {
+    if (!this.domHudActive) return;
+    const vw = (typeof window !== 'undefined') ? window.innerWidth : (this.scene.scale ? this.scene.scale.width : 800);
+    const isMobileLike = vw < 768;
+    const baseHeight = isMobileLike ? 76 : 64;
+    if (this.domHudWrapper) {
+      this.domHudWrapper.style.height = baseHeight + 'px';
+      this.domHudWrapper.style.padding = (isMobileLike ? '8px 12px 4px 12px' : '6px 20px 4px 20px');
+    }
+    // Adjust font sizes
+    if (this.domScoreEl) this.domScoreEl.style.fontSize = (isMobileLike ? 18 : 22) + 'px';
+    if (this.domStreakEl) this.domStreakEl.style.fontSize = (isMobileLike ? 14 : 18) + 'px';
+    const center = this.domHudWrapper && this.domHudWrapper.querySelector('#hud-center');
+    if (center) center.style.top = (isMobileLike ? 4 : 6) + 'px';
+    if (center) center.style.fontSize = (isMobileLike ? 24 : 30) + 'px';
+    if (this.domCourseEl) this.domCourseEl.parentElement && (this.domCourseEl.parentElement.style.fontSize = (isMobileLike ? 16 : 20) + 'px');
+    const courseIcon = this.domHudWrapper && this.domHudWrapper.querySelector('#hud-right img');
+    if (courseIcon) {
+      const iconSize = isMobileLike ? 24 : 28;
+      courseIcon.style.width = iconSize + 'px';
+      courseIcon.style.height = iconSize + 'px';
+    }
   }
 
   sync({ score, streak, seconds, course }) {
@@ -164,5 +244,60 @@ export default class DomHudManager {
     this.domStreakEl = null;
     this.domTimerEl = null;
     this.domCourseEl = null;
+  }
+
+  // Briefly flash the timer element color for feedback (e.g., green on add, red on subtract)
+  flashTimerColor(color = '#00ff66', durationMs = 250) {
+    if (!this.domHudActive || !this.domTimerEl) return;
+    const el = this.domTimerEl;
+    const parent = el.parentElement;
+    const prevColor = el.style.color;
+    // Apply inline color to override inherited center color
+    try {
+      el.style.transition = el.style.transition || 'color 0.2s ease';
+      el.style.color = color;
+      // Optionally echo on parent for stronger effect across browsers
+      if (parent) {
+        const prevParentColor = parent.style.color;
+        parent.style.color = color;
+        setTimeout(() => {
+          parent.style.color = prevParentColor || '';
+        }, durationMs);
+      }
+      setTimeout(() => {
+        el.style.color = prevColor || '';
+      }, durationMs);
+    } catch (_) {}
+  }
+
+  flashTimerDelta(delta, durationMs = 250) {
+    const color = delta > 0 ? '#00ff66' : '#ff3333';
+    this.flashTimerColor(color, durationMs);
+  }
+
+  // Centralized timer threshold coloring and optional shake/glow for DOM HUD
+  updateTimerVisual(seconds) {
+    if (!this.domHudActive || !this.domTimerEl) return;
+    try {
+      const baseColor = seconds > 30 ? '#ffffff' : (seconds > 10 ? '#ffff00' : '#ff3333');
+      this.domTimerEl.style.color = baseColor;
+      // Optional emphasis when critically low: gentle pulse via CSS animation
+      if (seconds <= 10) {
+        if (!this._lowPulseApplied) {
+          this._lowPulseApplied = true;
+          this.domTimerEl.style.animation = 'dom-timer-pulse 0.8s ease-in-out infinite';
+          // Inject keyframes once
+          if (!document.getElementById('domTimerPulseKeyframes')) {
+            const style = document.createElement('style');
+            style.id = 'domTimerPulseKeyframes';
+            style.textContent = `@keyframes dom-timer-pulse { 0%{ transform:translateX(-50%) scale(1); } 50%{ transform:translateX(-50%) scale(1.06); } 100%{ transform:translateX(-50%) scale(1); } }`;
+            document.head.appendChild(style);
+          }
+        }
+      } else {
+        this._lowPulseApplied = false;
+        this.domTimerEl.style.animation = '';
+      }
+    } catch (_) {}
   }
 }

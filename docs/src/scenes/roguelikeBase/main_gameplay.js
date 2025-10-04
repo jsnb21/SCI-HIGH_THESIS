@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import BaseScene from '../BaseScene.js';
 import { playExclusiveBGM, updateSoundVolumes } from '../../audioUtils.js';
 import DomHudManager from '../../ui/DomHudManager.js';
+import TimerController from '../../components/TimerController.js';
 
 export default class MainGameplay extends BaseScene {
     constructor() {
@@ -77,10 +78,11 @@ export default class MainGameplay extends BaseScene {
         this.nextSpawnPositions = []; // Pre-calculated spawn positions
         this.spawnIndicatorsShown = false; // Prevent repeated showSpawnIndicators calls
         
-        // Timer system
-        this.gameTimer = 60; // 1 minute in seconds
-        this.timerText = null;
-        this.timerEvent = null;
+    // Timer system
+    this.gameTimer = 60; // 1 minute in seconds
+    this.timerText = null;
+    this.timerEvent = null; // legacy field; TimerController now manages ticking
+    this._timer = null; // TimerController instance
         
         // Timer icons system
         this.timerIcons = [];
@@ -369,20 +371,22 @@ export default class MainGameplay extends BaseScene {
         this.addMobileControlHint();
 
         // Unified HUD (DOM for all devices) via DomHudManager
-        if (this.scoreText) this.scoreText.setVisible(false);
-        if (this.streakText) this.streakText.setVisible(false);
-        if (this.timerText) this.timerText.setVisible(false);
-        if (this.courseDisplay) this.courseDisplay.setVisible(false);
         this.time.delayedCall(0, () => {
             if (!this._domHud) this._domHud = new DomHudManager(this);
             this._domHud.init();
-            this.syncDomHud();
+            // Optional: mirror element refs for compatibility with legacy code
+            this.domHudActive = this._domHud.domHudActive;
+            this.domScoreEl = this._domHud.domScoreEl;
+            this.domStreakEl = this._domHud.domStreakEl;
+            this.domTimerEl = this._domHud.domTimerEl;
+            this.domCourseEl = this._domHud.domCourseEl;
+            // Kick a sync on next frame after DOM is attached
             requestAnimationFrame(() => this.syncDomHud());
         });
         this.time.delayedCall(150, () => this.syncDomHud());
         
-        // Add resize listener to keep board centered
-        this.scale.on('resize', this.onResize, this);
+    // Add resize listener: lightweight handler that debounces heavy work
+    this.scale.on('resize', this.onResizeEvent, this);
         if (this.__dlog__) this.__dlog__('Scene', 'resize listener attached');
     }
 
@@ -417,12 +421,37 @@ export default class MainGameplay extends BaseScene {
         if (this.streakText) this.streakText.setVisible(false);
         if (this.timerText) this.timerText.setVisible(false);
         if (this.courseDisplay) this.courseDisplay.setVisible(false);
-        if (!this._domHud) this._domHud = new DomHudManager(this);
-        this._domHud.init();
-        this.syncDomHud();
-        this.updateDomHudBounds();
+    if (!this._domHud) this._domHud = new DomHudManager(this);
+    this._domHud.init();
+    // Ensure HUD text reflects current state after any DOM re-creation
+    this.syncDomHud();
+    // Rebind to canvas and update responsive sizes
+    this.updateDomHudBounds();
         // Update HUD positions for responsive design (mobile or after recreation)
         this.updateHudPositions();
+    }
+
+    // Lightweight event handler for Phaser scale resize; coalesces frequent events
+    onResizeEvent() {
+        // Cancel any in-flight scheduled work
+        if (this._resizeRaf) {
+            try { cancelAnimationFrame(this._resizeRaf); } catch (_) {}
+            this._resizeRaf = null;
+        }
+        if (this._resizeTimer) {
+            clearTimeout(this._resizeTimer);
+            this._resizeTimer = null;
+        }
+
+        // Schedule on next animation frame for smoothness
+        this._resizeRaf = requestAnimationFrame(() => {
+            this._resizeRaf = null;
+            // Minor debounce to coalesce rapid sequences
+            this._resizeTimer = setTimeout(() => {
+                this._resizeTimer = null;
+                if (typeof this.onResize === 'function') this.onResize();
+            }, 16); // ~1 frame at 60fps
+        });
     }
 
     updateHudPositions() {
@@ -775,86 +804,48 @@ export default class MainGameplay extends BaseScene {
     }
 
     createTimer() {
-        // Calculate responsive positions based on screen size
-        const screenWidth = this.scale.width;
-        const screenHeight = this.scale.height;
-        const isMobile = screenWidth < 768;
-        
-        // Center the timer horizontally
-        const centerX = screenWidth / 2;
-        const timerY = isMobile ? Math.min(30, screenHeight * 0.05) : 30;
-        
-        // Responsive font size
-        const timerFontSize = isMobile ? Math.max(24, screenWidth * 0.04) : 32;
-        
-        this.timerText = this.add.text(centerX, timerY, '1:00', {
-            fontFamily: 'Arial',
-            fontSize: `${timerFontSize}px`,
-            fontWeight: 'bold',
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 3,
-            shadow: {
-                offsetX: 2,
-                offsetY: 2,
-                color: '#000000',
-                blur: 3,
-                fill: true
-            }
-        }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(1000);
-        
+        // DOM HUD only: don't create Phaser timer text
+        this.timerText = null;
         // Don't start the timer event yet - will be started after countdown
         this.timerEvent = null;
+        // Initialize TimerController (do not start here)
+        this._initTimerController();
+    }
+
+    _initTimerController() {
+        // Clean up any previous instance
+        if (this._timer) {
+            try { this._timer.destroy(); } catch (_) {}
+            this._timer = null;
+        }
+    // Allow ticking during quizzes; still pause for power-up scenes and freezes
+    const shouldTick = () => !!(this.gameStarted && !this.freezeGameplay && !this.powerUpActive);
+        this._timer = new TimerController(this, {
+            initial: this.gameTimer,
+            cap: 60,
+            shouldTick,
+            onTick: (secs) => {
+                // Mirror seconds to scene state for existing helpers/HUD
+                this.gameTimer = secs;
+                if (this.timerText && !this.domHudActive) {
+                    const m = Math.floor(secs / 60);
+                    const s = secs % 60;
+                    this.timerText.setText(`${m}:${s.toString().padStart(2, '0')}`);
+                }
+                // Keep DOM HUD and color/shake behavior consistent
+                if (typeof this.syncDomHud === 'function') this.syncDomHud();
+                if (typeof this.updateTimerDisplay === 'function') this.updateTimerDisplay();
+            },
+            onExpired: () => {
+                this.onTimerExpired();
+            }
+        });
     }
 
     createScoreDisplay() {
-        // Calculate responsive positions based on screen size
-        const screenWidth = this.scale.width;
-        const screenHeight = this.scale.height;
-        const isMobile = screenWidth < 768;
-        
-        // Use responsive positioning
-        const scoreX = isMobile ? Math.min(20, screenWidth * 0.03) : 20;
-        const scoreY = isMobile ? Math.min(30, screenHeight * 0.05) : 30;
-        const streakY = isMobile ? Math.min(65, screenHeight * 0.11) : 65;
-        
-        // Responsive font sizes
-        const scoreFontSize = isMobile ? Math.max(18, screenWidth * 0.03) : 24;
-        const streakFontSize = isMobile ? Math.max(14, screenWidth * 0.025) : 18;
-        
-        // Create score text at the top left of the screen
-        this.scoreText = this.add.text(scoreX, scoreY, 'Score: 0', {
-            fontFamily: 'Arial',
-            fontSize: `${scoreFontSize}px`,
-            fontWeight: 'bold',
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 2,
-            shadow: {
-                offsetX: 2,
-                offsetY: 2,
-                color: '#000000',
-                blur: 3,
-                fill: true
-            }
-        }).setOrigin(0, 0).setScrollFactor(0).setDepth(1000);
-        
-        // Create streak display below the score
-        this.streakText = this.add.text(scoreX, streakY, 'Streak: 0', {
-            fontFamily: 'Arial',
-            fontSize: `${streakFontSize}px`,
-            fontWeight: 'bold',
-            color: '#ffff00',
-            stroke: '#000000',
-            strokeThickness: 2,
-            shadow: {
-                offsetX: 2,
-                offsetY: 2,
-                color: '#000000',
-                blur: 3,
-                fill: true
-            }
-        }).setOrigin(0, 0).setScrollFactor(0).setDepth(1000);
+        // DOM HUD only: don't create Phaser score/streak texts
+        this.scoreText = null;
+        this.streakText = null;
     }
 
     getFormattedCourseName(topic) {
@@ -901,15 +892,17 @@ export default class MainGameplay extends BaseScene {
         if (this.scoreText && !this.domHudActive) this.scoreText.setText(`Score: ${this.score}`);
         this.syncDomHud();
         
-        // Add visual effect for score increase
-        this.tweens.add({
-            targets: this.scoreText,
-            scaleX: 1.2,
-            scaleY: 1.2,
-            duration: 200,
-            ease: 'Power2',
-            yoyo: true
-        });
+        // Add visual effect for score increase (Phaser HUD only)
+        if (this.scoreText) {
+            this.tweens.add({
+                targets: this.scoreText,
+                scaleX: 1.2,
+                scaleY: 1.2,
+                duration: 200,
+                ease: 'Power2',
+                yoyo: true
+            });
+        }
     }
 
     updateTimer() {
@@ -919,44 +912,11 @@ export default class MainGameplay extends BaseScene {
             quiz: this.quizActive,
             powerUp: this.powerUpActive
         });
-        // Do not tick the timer when gameplay isn't actively running
-        if (!this.gameStarted || this.freezeGameplay || this.quizActive || this.powerUpActive) {
-            return;
-        }
-        // Prevent timer from going negative
-        this.gameTimer = Math.max(0, this.gameTimer - 1);
-        
-        // Format time as MM:SS
-        const minutes = Math.floor(this.gameTimer / 60);
-        const seconds = this.gameTimer % 60;
-        const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
-    if (this.timerText && !this.domHudActive) this.timerText.setText(timeString);
-    // Always sync DOM HUD (it computes from gameTimer directly)
-    this.syncDomHud();
-        
-        // Change color when time is running out
-        if (!this.domHudActive && this.timerText) {
-            if (this.gameTimer <= 10) {
-                this.timerText.setColor('#ff0000');
-                this.tweens.add({
-                    targets: this.timerText,
-                    x: this.timerText.x + Phaser.Math.Between(-5, 5),
-                    y: this.timerText.y + Phaser.Math.Between(-3, 3),
-                    duration: 50,
-                    ease: 'Power2',
-                    yoyo: true,
-                    repeat: 3,
-                    onComplete: () => { this.timerText.setPosition(this.scale.width / 2, 30); }
-                });
-            } else if (this.gameTimer <= 30) {
-                this.timerText.setColor('#ffff00');
-            }
-        }
-        
-        // Handle timer expiration
-        if (this.gameTimer <= 0) {
-            this.onTimerExpired();
+        // Delegate to TimerController's ticking; if called directly, do a guarded sub
+    // Keep ticking during quizzes; only stop when frozen or power-up popup is active
+    if (!this.gameStarted || this.freezeGameplay || this.powerUpActive) return;
+        if (this._timer) {
+            this._timer.sub(1);
         }
     }
 
@@ -969,11 +929,9 @@ export default class MainGameplay extends BaseScene {
         // Emit timer expired event for any listening scenes (like QuizScene)
         this.events.emit('timer-expired');
 
-        // Stop the ticking timer event
-        if (this.timerEvent) {
-            this.timerEvent.remove();
-            this.timerEvent = null;
-        }
+        // Stop the ticking timer (controller + legacy event if any)
+        if (this._timer) this._timer.stop();
+        if (this.timerEvent) { try { this.timerEvent.remove(); } catch (_) {} this.timerEvent = null; }
 
         // Freeze core gameplay systems (inputs/movement/spawns)
         this.freezeGameplay = true;
@@ -1097,18 +1055,11 @@ export default class MainGameplay extends BaseScene {
             }
         });
         
-        // Start the actual game timer (ensure we don't create duplicate events)
-        if (this.timerEvent) {
-            try { this.timerEvent.remove(); } catch (_) {}
-            this.timerEvent = null;
-        }
-        this.timerEvent = this.time.addEvent({
-            delay: 1000, // 1 second
-            callback: this.updateTimer,
-            callbackScope: this,
-            loop: true
-        });
-        if (this.__dlog__) this.__dlog__('Timer', 'event created');
+        // Start the actual game timer (via TimerController; prevent duplicate events)
+        if (!this._timer) this._initTimerController();
+        this._timer.setSeconds(this.gameTimer);
+        this._timer.start();
+        if (this.__dlog__) this.__dlog__('Timer', 'controller started');
         
         // Mark game as started and ensure it's not frozen
         this.gameStarted = true;
@@ -1227,11 +1178,11 @@ export default class MainGameplay extends BaseScene {
     }
 
     addTime(seconds) {
-        // Add time but cap at 60 seconds (1 minute)
-           const before = this.gameTimer;
-           this.gameTimer = Math.min(this.gameTimer + seconds, 60);
-           const gained = this.gameTimer - before;
-           if (gained !== 0) this.animateTimeDelta(gained);
+        // Use controller to handle cap/emit
+        if (!this._timer) this._initTimerController();
+        const gained = this._timer.add(seconds);
+        this.gameTimer = this._timer.getSeconds();
+        if (gained !== 0) this.animateTimeDelta(gained);
     }
 
     collectTimerIcon(icon) {
@@ -1543,9 +1494,9 @@ export default class MainGameplay extends BaseScene {
         }
         
         // Reduce game timer and animate delta
-        const before = this.gameTimer;
-        this.gameTimer = Math.max(0, this.gameTimer - this.goblinThugTimePenalty);
-        const lost = before - this.gameTimer;
+    const before = this._timer ? this._timer.getSeconds() : this.gameTimer;
+    const lost = this._timer ? this._timer.sub(this.goblinThugTimePenalty) : Math.min(before, this.goblinThugTimePenalty);
+    this.gameTimer = this._timer ? this._timer.getSeconds() : Math.max(0, this.gameTimer - this.goblinThugTimePenalty);
         if (lost !== 0) this.animateTimeDelta(-lost);
         this.updateTimerDisplay();
         
@@ -1845,7 +1796,9 @@ export default class MainGameplay extends BaseScene {
         
         // Restore game state
         this.score = gameState.score;
-        this.gameTimer = gameState.gameTimer;
+    this.gameTimer = gameState.gameTimer;
+    if (!this._timer) this._initTimerController();
+    this._timer.setSeconds(this.gameTimer);
         this.gameStarted = gameState.gameStarted;
         
         // Update displays
@@ -2088,7 +2041,7 @@ export default class MainGameplay extends BaseScene {
     updateStreakDisplay() {
         if (this.streakText) {
             // Stop any existing shake animation
-            this.tweens.killTweensOf(this.streakText);
+            if (this.streakText) this.tweens.killTweensOf(this.streakText);
             
             if (this.streak > 0) {
                 this.streakText.setText(`Streak: ${this.streak}x`);
@@ -2188,6 +2141,8 @@ export default class MainGameplay extends BaseScene {
     }
 
     addStreakShake(intensity, duration, delay) {
+        // If Phaser streak text isn't present (DOM HUD only), skip tweening entirely
+        if (!this.streakText) return;
         // Store original position
         const originalX = 20;
         const originalY = 65;
@@ -2204,7 +2159,7 @@ export default class MainGameplay extends BaseScene {
             delay: delay * 1000,
             onComplete: () => {
                 // Reset to original position when done
-                this.streakText.setPosition(originalX, originalY);
+                if (this.streakText) this.streakText.setPosition(originalX, originalY);
             }
         });
     }
@@ -2385,6 +2340,10 @@ export default class MainGameplay extends BaseScene {
                 }
             }
         }
+        // Always update DOM HUD timer visuals via DomHudManager (centralized threshold coloring)
+        if (this._domHud && this._domHud.domHudActive && typeof this._domHud.updateTimerVisual === 'function') {
+            this._domHud.updateTimerVisual(this.gameTimer);
+        }
     }
 
     startTimerShake() {
@@ -2417,8 +2376,32 @@ export default class MainGameplay extends BaseScene {
         const color = delta > 0 ? '#00ff66' : '#ff3333';
         const textStr = `${sign}${delta}s`;
 
+        // Flash the timer itself green/red briefly for feedback
+        const flashPhaserTimer = () => {
+            if (!this.timerText) return;
+            const originalColor = this.timerText.style.color || '#ffffff';
+            // Set to green/red
+            this.timerText.setColor(color);
+            // Brief flash then revert using existing updateTimerDisplay for threshold color
+            this.time.delayedCall(250, () => {
+                try {
+                    this.updateTimerDisplay();
+                } catch (_) {
+                    this.timerText.setColor(originalColor);
+                }
+            });
+        };
+
+        const flashDomTimer = () => {
+            if (this._domHud && this._domHud.domHudActive && typeof this._domHud.flashTimerDelta === 'function') {
+                this._domHud.flashTimerDelta(delta);
+            }
+        };
+
         // If DOM HUD is active (desktop), create a floating DOM element instead of Phaser text (since timerText is hidden)
-        if (this.domHudActive && this.domTimerEl) {
+        if (this._domHud && this._domHud.domHudActive && this._domHud.domTimerEl) {
+            // DOM HUD: flash timer element color
+            flashDomTimer();
             const label = document.createElement('div');
             label.textContent = textStr;
             Object.assign(label.style, {
@@ -2461,7 +2444,8 @@ export default class MainGameplay extends BaseScene {
             return; // Skip Phaser-based floating text
         }
 
-        // Phaser text fallback (mobile or when DOM HUD not active)
+    // Phaser text fallback (mobile or when DOM HUD not active)
+    flashPhaserTimer();
         const baseX = this.timerText ? this.timerText.x : this.scale.width / 2;
         // Place below timer so it doesn't overlap the digits, then rises past them
         const baseY = (this.timerText ? this.timerText.y : 30) + 42;
@@ -3956,6 +3940,10 @@ export default class MainGameplay extends BaseScene {
     showResultScreen(courseCompleted = false) {
         if (this._resultShown) return; // prevent duplicate calls
         this._resultShown = true;
+        // Stop timers to prevent background ticking during transition
+        if (this._timer) this._timer.stop();
+        if (this.timerEvent) { try { this.timerEvent.remove(); } catch (_) {} this.timerEvent = null; }
+        if (this.countdownEvent) { try { this.countdownEvent.remove(); } catch (_) {} this.countdownEvent = null; }
         // Ensure streak does not carry over after gameplay ends
         if (typeof this.resetStreak === 'function') this.resetStreak();
         // Ensure power-ups and related cadence are cleared on exit
@@ -4480,6 +4468,10 @@ export default class MainGameplay extends BaseScene {
 
     // Clean up when scene is shutdown
     shutdown() {
+        // Stop and dispose timers/events
+        if (this._timer) { try { this._timer.destroy(); } catch (_) {} this._timer = null; }
+        if (this.timerEvent) { try { this.timerEvent.remove(); } catch (_) {} this.timerEvent = null; }
+        if (this.countdownEvent) { try { this.countdownEvent.remove(); } catch (_) {} this.countdownEvent = null; }
         // Defensive: ensure streak is reset if scene ends abruptly
         if (typeof this.resetStreak === 'function') this.resetStreak();
         // Defensive: also clear any active power-up states
