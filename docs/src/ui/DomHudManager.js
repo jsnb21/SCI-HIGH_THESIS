@@ -15,6 +15,7 @@ export default class DomHudManager {
     this._lowPulseApplied = false;
     this._flashActive = false;
     this._flashTimeoutId = null;
+    this._flashParentTimeoutId = null;
   }
 
   init() {
@@ -236,6 +237,14 @@ export default class DomHudManager {
   destroy() {
     if (!this.domHudActive) return;
     try {
+      // Clear any pending flash timers to avoid lingering styles
+      if (this._flashTimeoutId) { try { clearTimeout(this._flashTimeoutId); } catch (_) {} this._flashTimeoutId = null; }
+      if (this._flashParentTimeoutId) { try { clearTimeout(this._flashParentTimeoutId); } catch (_) {} this._flashParentTimeoutId = null; }
+      this._flashActive = false;
+      if (this.domTimerEl) {
+        this.domTimerEl.style.textShadow = '';
+        this.domTimerEl.style.animation = '';
+      }
       const hud = document.getElementById('desktop-game-hud');
       if (hud && hud.parentNode) hud.parentNode.removeChild(hud);
       if (this._hudBoundsHandler) window.removeEventListener('resize', this._hudBoundsHandler);
@@ -260,7 +269,9 @@ export default class DomHudManager {
     try {
       // Mark flash active so updateTimerVisual doesn't override during the flash window
       this._flashActive = true;
-      if (this._flashTimeoutId) { try { clearTimeout(this._flashTimeoutId); } catch (_) {} }
+      // Clear any previous timers so we don't race and leave styles behind
+      if (this._flashTimeoutId) { try { clearTimeout(this._flashTimeoutId); } catch (_) {} this._flashTimeoutId = null; }
+      if (this._flashParentTimeoutId) { try { clearTimeout(this._flashParentTimeoutId); } catch (_) {} this._flashParentTimeoutId = null; }
       el.style.transition = el.style.transition || 'color 0.2s ease, text-shadow 0.2s ease';
       el.style.color = color;
       // Add a quick colored glow for stronger feedback
@@ -269,8 +280,9 @@ export default class DomHudManager {
       if (parent) {
         const prevParentColor = parent.style.color;
         parent.style.color = color;
-        this._flashTimeoutId = setTimeout(() => {
+        this._flashParentTimeoutId = setTimeout(() => {
           parent.style.color = prevParentColor || '';
+          this._flashParentTimeoutId = null;
         }, durationMs);
       }
       this._flashTimeoutId = setTimeout(() => {
@@ -299,6 +311,8 @@ export default class DomHudManager {
       // Avoid overriding color during an active flash
       if (!this._flashActive) {
         this.domTimerEl.style.color = baseColor;
+        // Also ensure no lingering glow when not flashing
+        if (!this._lowPulseApplied) this.domTimerEl.style.textShadow = '';
       }
       // Ensure scaling happens around the center so it doesn't shift
       this.domTimerEl.style.transformOrigin = 'center';
@@ -320,6 +334,8 @@ export default class DomHudManager {
       } else {
         this._lowPulseApplied = false;
         this.domTimerEl.style.animation = '';
+        // When leaving low-time pulse, ensure glow is cleared if not actively flashing
+        if (!this._flashActive) this.domTimerEl.style.textShadow = '';
       }
     } catch (_) {}
   }

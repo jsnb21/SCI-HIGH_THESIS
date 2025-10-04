@@ -33,32 +33,25 @@ export default class ResultScreen extends BaseScene {
         
         let rank = 'F';
         let rankColor = '#ff0000';
-        let rankGlow = '#ff0000';
-        
+        // No separate glow color needed; glow effects removed
         if (accuracy >= 95) {
             rank = 'S';
             rankColor = '#ffd700';
-            rankGlow = '#ffff00';
         } else if (accuracy >= 90) {
             rank = 'A';
             rankColor = '#00ff00';
-            rankGlow = '#88ff88';
         } else if (accuracy >= 80) {
             rank = 'B';
             rankColor = '#00ffff';
-            rankGlow = '#88ffff';
         } else if (accuracy >= 70) {
             rank = 'C';
             rankColor = '#ffff00';
-            rankGlow = '#ffff88';
         } else if (accuracy >= 60) {
             rank = 'D';
             rankColor = '#ff8000';
-            rankGlow = '#ffaa00';
         } else if (accuracy >= 50) {
             rank = 'E';
             rankColor = '#ff4000';
-            rankGlow = '#ff6600';
         }
 
         // Use QuizScene scaling system
@@ -143,8 +136,8 @@ export default class ResultScreen extends BaseScene {
         const rightSideX = contentWidth * 0.3; // Rank positioned on right side  
         const statsStartY = -contentHeight/2 + titleHeight + 40; // Proper spacing after title
 
-        // Create title with flashy styling
-        const titleText = 'RESULTS'; // Simplified title
+        // Create title (no glow)
+        const titleText = 'RESULTS';
         const title = this.add.text(0, -contentHeight/2 + titleHeight/2, titleText, {
             fontFamily: 'Arial',
             fontSize: `${titleFontPx}px`,
@@ -153,24 +146,9 @@ export default class ResultScreen extends BaseScene {
             stroke: '#000000',
             strokeThickness: 4,
             align: 'center',
-            shadow: {
-                offsetX: 0,
-                offsetY: 0,
-                color: '#00ffff',
-                blur: 15,
-                fill: true
-            }
+            shadow: { offsetX: 0, offsetY: 0, color: '#000000', blur: 0, fill: false }
         }).setOrigin(0.5);
-        
-        // Add title glow effect
-        const titleGlow = this.add.text(0, -contentHeight/2 + titleHeight/2, titleText, {
-            fontFamily: 'Arial',
-            fontSize: `${titleFontPx}px`,
-            fontWeight: '900',
-            color: '#00ffff',
-            alpha: 0.3
-        }).setOrigin(0.5);
-        this.resultContainer.add([titleGlow, title]);
+        this.resultContainer.add([title]);
 
         // Store elements for animation
         this.statElements = [];
@@ -180,19 +158,12 @@ export default class ResultScreen extends BaseScene {
         statsData.forEach((stat, index) => {
             const yPos = statsStartY + (index * (statRowHeight + statGap));
             
-            // Icon positioned like in reference image with glow
+            // Icon positioned (no glow)
             const iconText = this.add.text(leftSideX - 50, yPos, stat.icon, {
                 fontFamily: 'Arial',
                 fontSize: `${statFontPx}px`,
                 fontWeight: 'bold',
-                color: stat.color,
-                shadow: {
-                    offsetX: 0,
-                    offsetY: 0,
-                    color: stat.color,
-                    blur: 8,
-                    fill: true
-                }
+                color: stat.color
             }).setOrigin(0, 0.5);
 
             // Label text positioned next to icon with enhanced styling
@@ -212,21 +183,14 @@ export default class ResultScreen extends BaseScene {
                 }
             }).setOrigin(0, 0.5);
 
-            // Value positioned far right with enhanced glow
+            // Value positioned far right (no glow)
             const valueText = this.add.text(leftSideX + 420, yPos, stat.value.toString(), {
                 fontFamily: 'Arial',
                 fontSize: `${statFontPx}px`,
                 fontWeight: '900',
                 color: stat.color,
                 stroke: '#000000',
-                strokeThickness: 2,
-                shadow: {
-                    offsetX: 0,
-                    offsetY: 0,
-                    color: stat.color,
-                    blur: 10,
-                    fill: true
-                }
+                strokeThickness: 2
             }).setOrigin(1, 0.5);
 
             // Special styling for TOTAL SCORE with dramatic effects
@@ -234,97 +198,46 @@ export default class ResultScreen extends BaseScene {
                 labelText.x = leftSideX - 10; // Keep same alignment as other labels
                 valueText.x = leftSideX + 420; // Keep same alignment as other values
                 labelText.setFontSize(`${Math.floor(statFontPx * 1.2)}px`);
-                labelText.setStyle({ 
-                    fontWeight: '900',
-                    color: '#ffd700',
-                    stroke: '#ff8800',
-                    strokeThickness: 3,
-                    shadow: {
-                        offsetX: 0,
-                        offsetY: 0,
-                        color: '#ffff00',
-                        blur: 15,
-                        fill: true
-                    }
-                });
+                labelText.setStyle({ fontWeight: '900', color: '#ffd700', stroke: '#ff8800', strokeThickness: 3 });
                 valueText.setFontSize(`${Math.floor(statFontPx * 1.4)}px`);
-                valueText.setStyle({
-                    fontWeight: '900',
-                    color: '#ffd700',
-                    stroke: '#ff8800',
-                    strokeThickness: 3,
-                    shadow: {
-                        offsetX: 0,
-                        offsetY: 0,
-                        color: '#ffff00',
-                        blur: 15,
-                        fill: true
-                    }
-                });
+                valueText.setStyle({ fontWeight: '900', color: '#ffd700', stroke: '#ff8800', strokeThickness: 3 });
             }
 
             this.resultContainer.add([iconText, labelText, valueText]);
             this.statElements.push({ icon: iconText, label: labelText, value: valueText });
         });
 
-        // Create rank on right side with redesigned multi-layer glow effect
+    // Create rank on right side (no glow layers)
         const rankCenterY = statsStartY + (2 * (statRowHeight + statGap)); // Center with middle stat (Highest Streak)
 
-        // Create multiple background layers for depth
-        const rankBgOuter = this.add.circle(rightSideX, rankCenterY, rankSize/2 + 15, 0x000000, 0.6);
-        const rankBg = this.add.circle(rightSideX, rankCenterY, rankSize/2, 0x1a1a2e, 0.95);
+    // Removed filled background circles behind rank letter (no bg circles)
         
-        // Enhanced multi-layer glow system
-        const rankGlow5 = this.add.circle(rightSideX, rankCenterY, rankSize/2 + 50, parseInt(rankColor.replace('#', '0x')), 0.05);
-        const rankGlow4 = this.add.circle(rightSideX, rankCenterY, rankSize/2 + 40, parseInt(rankColor.replace('#', '0x')), 0.1);
-        const rankGlow3 = this.add.circle(rightSideX, rankCenterY, rankSize/2 + 30, parseInt(rankColor.replace('#', '0x')), 0.15);
-        const rankGlow2 = this.add.circle(rightSideX, rankCenterY, rankSize/2 + 20, parseInt(rankColor.replace('#', '0x')), 0.25);
-        const rankGlow1 = this.add.circle(rightSideX, rankCenterY, rankSize/2 + 10, parseInt(rankColor.replace('#', '0x')), 0.4);
-        
-        // Main border with enhanced styling
-        const rankBorder = this.add.circle(rightSideX, rankCenterY, rankSize/2);
-        rankBorder.setStrokeStyle(8, parseInt(rankColor.replace('#', '0x')));
-        
-        // Inner border for extra detail
-        const rankInnerBorder = this.add.circle(rightSideX, rankCenterY, rankSize/2 - 8);
-        rankInnerBorder.setStrokeStyle(3, parseInt(rankColor.replace('#', '0x')), 0.7);
+    // Borders removed (no outer/inner stroke circles)
 
-        // Enhanced rank text with multiple shadow layers
+        // Rank text (no glow)
         const rankText = this.add.text(rightSideX, rankCenterY, rank, {
             fontFamily: 'Arial',
             fontSize: `${rankFontPx}px`,
             fontWeight: '900',
             color: rankColor,
             stroke: '#000000',
-            strokeThickness: 6,
-            shadow: {
-                offsetX: 0,
-                offsetY: 0,
-                color: rankGlow,
-                blur: 25,
-                fill: true
-            }
+            strokeThickness: 6
         }).setOrigin(0.5);
+    this.rankText = rankText;
 
-        // Enhanced "RANK" label with glow
+        // "RANK" label (no glow)
         const rankLabel = this.add.text(rightSideX, rankCenterY - rankSize/2 - 40, 'RANK', {
             fontFamily: 'Arial',
             fontSize: `${Math.floor(statFontPx * 1.2)}px`,
             fontWeight: '800',
             color: '#ffffff',
             stroke: '#000000',
-            strokeThickness: 2,
-            shadow: {
-                offsetX: 0,
-                offsetY: 0,
-                color: rankColor,
-                blur: 10,
-                fill: true
-            }
+            strokeThickness: 2
         }).setOrigin(0.5);
+    this.rankLabel = rankLabel;
 
-        this.resultContainer.add([rankGlow5, rankGlow4, rankGlow3, rankGlow2, rankGlow1, rankBgOuter, rankBg, rankBorder, rankInnerBorder, rankText, rankLabel]);
-        this.rankElements = [rankGlow5, rankGlow4, rankGlow3, rankGlow2, rankGlow1, rankBgOuter, rankBg, rankBorder, rankInnerBorder, rankText, rankLabel];
+    this.resultContainer.add([rankText, rankLabel]);
+    this.rankElements = [rankText, rankLabel];
 
         // Create back button - position it at the bottom with proper spacing
         const buttonY = contentHeight/2 - 60; // Proper bottom positioning
@@ -369,8 +282,7 @@ export default class ResultScreen extends BaseScene {
             element.setAlpha(0).setScale(0.8);
         });
 
-        title.setAlpha(0).setScale(0.8);
-        titleGlow.setAlpha(0).setScale(0.8);
+    title.setAlpha(0).setScale(0.8);
         buttonBg.setAlpha(0).setScale(0.8);
         buttonText.setAlpha(0).setScale(0.8);
 
@@ -381,28 +293,14 @@ export default class ResultScreen extends BaseScene {
     createSequentialAnimations() {
         const animationDelay = 300; // Delay between each stat animation
 
-        // 1. Title appears first with glow
+        // 1. Title appears first (no glow)
         this.tweens.add({
-            targets: [this.resultContainer.list[1], this.resultContainer.list[2]], // titleGlow and title
+            targets: [this.resultContainer.list[1]], // title only
             alpha: 1,
             scaleX: 1,
             scaleY: 1,
             duration: 500,
             ease: 'Back.out'
-        });
-        
-        // Add pulsing effect to title glow
-        this.time.delayedCall(500, () => {
-            this.tweens.add({
-                targets: this.resultContainer.list[1], // titleGlow
-                alpha: 0.5,
-                scaleX: 1.1,
-                scaleY: 1.1,
-                duration: 2000,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut'
-            });
         });
 
         // 2. Stats appear sequentially (Correct -> Wrong -> Streak -> Accuracy -> Score)
@@ -432,7 +330,7 @@ export default class ResultScreen extends BaseScene {
             });
         });
 
-        // 3. Rank appears last with special effects
+        // 3. Rank appears last with subtle effects (no glow)
         const rankDelay = 500 + (this.statElements.length * animationDelay) + 200;
         
         this.tweens.add({
@@ -444,14 +342,14 @@ export default class ResultScreen extends BaseScene {
             delay: rankDelay,
             ease: 'Back.out',
             onComplete: () => {
-                // Start continuous glow animation for rank
+                // Start subtle pulse animation for rank elements
                 this.createRankGlowAnimation();
                 
                 // Create particle effect for high ranks
-                const rankText = this.rankElements[5]; // rankText is at index 5
-                const rank = rankText.text;
-                if (rank === 'S' || rank === 'A') {
-                    this.createParticleEffects(rankText.x, rankText.y, rankText.style.color);
+                const rt = this.rankText;
+                const r = rt.text;
+                if (r === 'S' || r === 'A') {
+                    this.createParticleEffects(rt.x, rt.y, rt.style.color);
                 }
             }
         });
@@ -471,69 +369,31 @@ export default class ResultScreen extends BaseScene {
     }
 
     createRankGlowAnimation() {
-        // Enhanced multi-layer glow animation with different speeds
-        const outerGlowElements = this.rankElements.slice(0, 3); // Outer glow layers
-        const innerGlowElements = this.rankElements.slice(3, 5); // Inner glow layers
-        
-        // Outer glow - slower, more dramatic
-        this.tweens.add({
-            targets: outerGlowElements,
-            alpha: 0.8,
-            scaleX: 1.3,
-            scaleY: 1.3,
-            duration: 2500,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
-        
-        // Inner glow - faster pulse
-        this.tweens.add({
-            targets: innerGlowElements,
-            alpha: 0.9,
-            scaleX: 1.15,
-            scaleY: 1.15,
-            duration: 1200,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Power2.easeInOut'
-        });
-
-        // Rank text with enhanced sparkle effect
-        const rankText = this.rankElements[9]; // rankText is now at index 9
-        this.tweens.add({
-            targets: rankText,
-            scaleX: 1.08,
-            scaleY: 1.08,
-            duration: 1800,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
-        
-        // Border pulsing effect
-        const rankBorder = this.rankElements[7]; // rankBorder at index 7
-        this.tweens.add({
-            targets: rankBorder,
-            alpha: 0.8,
-            duration: 1000,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Power2.easeInOut'
-        });
-        
-        // Rank label subtle glow
-        const rankLabel = this.rankElements[10]; // rankLabel at index 10
-        this.tweens.add({
-            targets: rankLabel,
-            alpha: 0.9,
-            scaleX: 1.02,
-            scaleY: 1.02,
-            duration: 3000,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
+        // Subtle, non-glow animations for rank elements
+        if (this.rankText) {
+            this.tweens.add({
+                targets: this.rankText,
+                scaleX: 1.08,
+                scaleY: 1.08,
+                duration: 1800,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        }
+        // Borders removed; no border pulse
+        if (this.rankLabel) {
+            this.tweens.add({
+                targets: this.rankLabel,
+                alpha: 0.95,
+                scaleX: 1.02,
+                scaleY: 1.02,
+                duration: 3000,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        }
     }
 
     createParticleEffects(x, y, color) {

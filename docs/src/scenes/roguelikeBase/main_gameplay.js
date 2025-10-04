@@ -213,6 +213,14 @@ export default class MainGameplay extends BaseScene {
             this.player.speed = this.originalPlayerSpeed;
             // Reset power-up cadence counter
             this.correctAnswersSincePowerUp = 0;
+
+            // Also reset PowerUpScene's level tracking so a fresh game starts at LVL 1
+            try {
+                const powerUpScene = this.scene.get('PowerUpScene');
+                if (powerUpScene && typeof powerUpScene.resetPowerUpLevels === 'function') {
+                    powerUpScene.resetPowerUpLevels();
+                }
+            } catch (_) { /* scene may not be available yet; ignore */ }
             
         } else {
             // Resuming from quiz - load saved state
@@ -1712,6 +1720,15 @@ export default class MainGameplay extends BaseScene {
     }
 
     handleQuizCompletion(data) {
+        // Prevent double application if inline path already handled rewards
+        if (this.quizRewardApplied) {
+            // Still clean up enemy if provided
+            if (data && data.enemyToDestroy) {
+                this.destroyEnemy(data.enemyToDestroy);
+            }
+            this.quizActive = false;
+            return;
+        }
         // Initialize per-session bloom stats holder
         if (!this.sessionBloomStats) {
             this.sessionBloomStats = {
@@ -1779,6 +1796,8 @@ export default class MainGameplay extends BaseScene {
             this.addTime(10);
             this.updateTimerDisplay();
             this.updateStreakDisplay();
+            // Prevent duplicate reward application from any other path
+            this.quizRewardApplied = true;
             
             // Play sound effect based on streak
             if (this.streak >= 3) {
@@ -1847,6 +1866,8 @@ export default class MainGameplay extends BaseScene {
             }
             
             this.updateStreakDisplay();
+            // Prevent duplicate reward application from any other path
+            this.quizRewardApplied = true;
             this.updatePlayerSpeed(); // Update speed in case speed boost is active
         }
         
