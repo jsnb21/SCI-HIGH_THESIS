@@ -3207,6 +3207,9 @@ export default class MainGameplay extends BaseScene {
             if (currentDistance <= 2) {
                 score += 100;
             }
+
+            // Add hazard avoidance scoring: penalize being near thugs or next spawn tiles
+            score += this._hazardProximityPenalty(newTileX, newTileY);
             
             return { ...move, score, x: newTileX, y: newTileY };
         });
@@ -3230,10 +3233,38 @@ export default class MainGameplay extends BaseScene {
         if (tileX === playerTileX && tileY === playerTileY) {
             return false;
         }
+        // Avoid hazard tiles: active goblin thugs or tiles flagged for next spawn
+        if (this._isHazardTile(tileX, tileY)) {
+            return false;
+        }
+
         // Check if position is occupied by another enemy
         return !this.enemies.some(enemy => 
             enemy !== movingEnemy && enemy.tileX === tileX && enemy.tileY === tileY
         );
+    }
+
+    // Helpers: hazard detection and proximity penalty for enemy AI
+    _isHazardTile(tileX, tileY) {
+        // Active goblin thugs
+        if (this.goblinThugs && this.goblinThugs.some(t => t.tileX === tileX && t.tileY === tileY)) return true;
+        // Imminent spawn positions (from spawn indicators)
+        if (this.nextSpawnPositions && this.nextSpawnPositions.some(p => p.x === tileX && p.y === tileY)) return true;
+        return false;
+    }
+
+    _hazardProximityPenalty(tileX, tileY) {
+        // Direct hazard: strong penalty (though isValidEnemyMove blocks exact hazard tiles)
+        let penalty = this._isHazardTile(tileX, tileY) ? -200 : 0;
+        const offsets1 = [ [1,0], [-1,0], [0,1], [0,-1] ];
+        const offsets2 = [ [2,0], [-2,0], [0,2], [0,-2], [1,1], [1,-1], [-1,1], [-1,-1] ];
+        const inBounds = (x,y)=> x>=0 && y>=0 && x<this.MAP_WIDTH && y<this.MAP_HEIGHT;
+        const nearHazard = (offs) => offs.some(([dx,dy]) => {
+            const x = tileX + dx, y = tileY + dy; return inBounds(x,y) && this._isHazardTile(x,y);
+        });
+        if (nearHazard(offsets1)) penalty -= 90; // ring 1
+        if (nearHazard(offsets2)) penalty -= 45; // ring 2
+        return penalty;
     }
 
     setupInput() {
