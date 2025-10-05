@@ -7,6 +7,16 @@
         "correctIndex": 2
       },
       {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Tap the Block with the Correct Syntax",
+        "blocks": [
+          { "code": "if 5 > 3 {\n    print(\"Hello World\");\n}", "correct": false },
+          { "code": "if 5 > 3:\n    print(\"Hello World\")", "correct": true },
+          { "code": "if (5 > 3) {\n    print(\"Hello World\");\n}", "correct": false }
+        ]
+      },
+      {
         "question": "Which function is used to display output in Python?",
         "options": ["show()", "echo()", "print()", "display()"],
         "correctIndex": 2
@@ -104,6 +114,108 @@
     ]
   },
   "intensity2": {
+    "syntaxBlock": [
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Choose the valid for loop printing numbers 0-4",
+        "blocks": [
+          { "code": "for i in range(5):\n    print(i)", "correct": true },
+          { "code": "for (i = 0; i < 5; i++)\n    print(i)", "correct": false },
+          { "code": "loop i in 0..5 { print(i) }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Choose the valid if/else structure",
+        "blocks": [
+          { "code": "if x > 10:\n    print('big')\nelse:\n    print('small')", "correct": true },
+          { "code": "if (x > 10) then\n    print('big')\nelse print('small')", "correct": false },
+          { "code": "if x > 10 { print('big') } else { print('small') }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Function that returns sum of a and b",
+        "blocks": [
+          { "code": "def add(a, b):\n    return a + b", "correct": true },
+          { "code": "function add(a,b) => a + b", "correct": false },
+          { "code": "def add(a,b) { return a + b }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "List comprehension making squares 1..5",
+        "blocks": [
+          { "code": "squares = [n*n for n in range(1,6)]", "correct": true },
+          { "code": "squares = for n in range(1,6) { n*n }", "correct": false },
+          { "code": "squares = (n*n in range(1,6))", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Open a file and read text",
+        "blocks": [
+          { "code": "with open('data.txt','r') as f:\n    text = f.read()", "correct": true },
+          { "code": "with open 'data.txt' as f:\n    text = f.read()", "correct": false },
+          { "code": "file f = open('data.txt'); text = f.read();", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Dictionary iteration printing keys",
+        "blocks": [
+          { "code": "for k in data.keys():\n    print(k)", "correct": true },
+          { "code": "for (k : data.keys()) { print(k) }", "correct": false },
+          { "code": "foreach k in data { print k }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Try/except catching ValueError",
+        "blocks": [
+          { "code": "try:\n    v = int(s)\nexcept ValueError:\n    print('bad')", "correct": true },
+          { "code": "catch ValueError as e:\n    v = int(s)\nelse:\n    print('bad')", "correct": false },
+          { "code": "try { v = int(s) } catch(ValueError) { print('bad') }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Class with __init__ storing name",
+        "blocks": [
+          { "code": "class User:\n    def __init__(self,name):\n        self.name = name", "correct": true },
+          { "code": "class User(name):\n    init { self.name = name }", "correct": false },
+          { "code": "class User { def __init__(self,name): self.name = name }", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Lambda adding 3 to x",
+        "blocks": [
+          { "code": "add3 = lambda x: x + 3", "correct": true },
+          { "code": "add3(x) = x + 3", "correct": false },
+          { "code": "lambda add3(x) => x + 3", "correct": false }
+        ]
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Import math and use sqrt",
+        "blocks": [
+          { "code": "import math\nval = math.sqrt(9)", "correct": true },
+          { "code": "include math; val = sqrt(9);", "correct": false },
+          { "code": "using math:\n    val = sqrt(9)", "correct": false }
+        ]
+      }
+    ],
     "multipleChoice": [
       {
         "question": "What is the output of this code? print(2 + 3)",

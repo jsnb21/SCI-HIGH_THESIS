@@ -17,7 +17,7 @@
     <!-- Firebase Compat SDKs (static order to avoid race) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <script>
       (async function(){
         try {
@@ -216,6 +216,35 @@
     </style>
   </head>
   <body>
+    <!-- Maintenance overlay -->
+    <div id="maintenance-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);color:#fff;z-index:10002;align-items:center;justify-content:center;text-align:center;padding:20px;font-family: 'Orbitron', monospace;">
+      <div>
+        <img src="public/assets/img/logo/SCI-HIGH_LOGO.png" alt="SCI-HIGH" style="height:96px;margin-bottom:16px;filter:drop-shadow(0 0 8px rgba(244,206,20,0.35));" />
+        <h2 style="font-size:28px;color:#F4CE14;margin-bottom:8px;">Under Maintenance</h2>
+        <p id="maint-msg" style="opacity:.9;margin-bottom:8px;">Scheduled maintenance in progress.</p>
+        <p id="maint-ends" style="opacity:.8;margin-bottom:16px;"></p>
+        <button onclick="window.location.href='index.html'" style="background:linear-gradient(to right,#F4CE14,#FFD700);color:#1a1a2e;border:none;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer;">Return to Home</button>
+      </div>
+    </div>
+    <!-- Admin bypass ribbon (hidden by default) -->
+    <div id="bypass-ribbon" style="display:none;position:fixed;top:8px;right:8px;z-index:10003;background:linear-gradient(90deg,#8b5cf6,#ec4899);color:#fff;padding:6px 10px;border-radius:8px;font-family:'Orbitron', monospace;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.4)">Maintenance BYPASS</div>
+    <!-- Admin bypass auth overlay -->
+    <div id="bypass-auth-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);color:#fff;z-index:10004;align-items:center;justify-content:center;text-align:center;padding:20px;font-family: 'Orbitron', monospace;">
+      <div style="max-width:420px;margin:auto;padding:20px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;backdrop-filter:blur(6px)">
+        <h3 style="font-size:20px;margin-bottom:10px;color:#F4CE14">Admin Verification</h3>
+        <p style="opacity:.85;margin-bottom:12px">Enter the admin password to bypass maintenance and load the game.</p>
+        <input id="bypass-pass" type="password" placeholder="Admin password" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;outline:none" />
+        <div style="display:flex;align-items:center;gap:8px;margin:8px 0 4px 0;justify-content:center">
+          <input id="bypass-show" type="checkbox" />
+          <label for="bypass-show" style="font-size:12px;opacity:.9">Show password</label>
+        </div>
+        <div id="bypass-pass-error" style="display:none;color:#fda4af;font-size:12px;margin:6px 0">Incorrect password. Try again.</div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:10px">
+          <button id="bypass-submit" style="background:linear-gradient(to right,#8b5cf6,#ec4899);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer">Continue</button>
+          <button id="bypass-cancel" style="background:transparent;color:#ddd;border:1px solid rgba(255,255,255,0.25);padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer">Cancel</button>
+        </div>
+      </div>
+    </div>
     <!-- Authentication overlay -->
     <div id="auth-overlay">
   <!-- Removed buko_productions branding logo -->
@@ -236,6 +265,103 @@
     <!-- Debug notify button removed -->
 
     <script>
+      // Admin maintenance bypass helpers
+      function shouldBypassMaintenance(){
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const admin = params.get('admin') === '1';
+          const bypass = params.get('bypass') === '1' || params.get('maintenance') === 'off';
+          const lsBypass = (localStorage.getItem('SCI_BYPASS_MAINT') === '1');
+          return (admin && bypass) || lsBypass;
+        } catch { return false; }
+      }
+      function showBypassRibbon(){
+        const r = document.getElementById('bypass-ribbon');
+        if (r) r.style.display = 'block';
+      }
+      let __bypassPwCache = null;
+      async function loadAdminPassword(){
+        if (__bypassPwCache !== null) return __bypassPwCache;
+        try {
+          const res = await fetch('./admin-password.txt?_=' + Date.now(), { cache: 'no-store' });
+          if (!res.ok) throw new Error('admin-password.txt not found');
+          const raw = await res.text();
+          const firstLine = raw.split(/\r?\n/).map(l => l.trim()).find(l => l && !l.startsWith('#')) || '';
+          __bypassPwCache = firstLine;
+          return __bypassPwCache;
+        } catch {
+          __bypassPwCache = '';
+          return __bypassPwCache;
+        }
+      }
+      function promptBypassPassword(){
+        const overlay = document.getElementById('bypass-auth-overlay');
+        const input = document.getElementById('bypass-pass');
+        const show = document.getElementById('bypass-show');
+        const err = document.getElementById('bypass-pass-error');
+        const submit = document.getElementById('bypass-submit');
+        const cancel = document.getElementById('bypass-cancel');
+        if (!overlay) return Promise.resolve(false);
+        overlay.style.display = 'flex';
+        input.value = '';
+        err.style.display = 'none';
+        show.checked = false; input.type = 'password';
+        const cleanup = () => {
+          overlay.style.display = 'none';
+          submit.onclick = null; cancel.onclick = null; show.onchange = null;
+        };
+        show.onchange = () => { input.type = show.checked ? 'text' : 'password'; };
+        return new Promise((resolve) => {
+          cancel.onclick = () => { cleanup(); resolve(false); };
+          submit.onclick = async () => {
+            const serverPw = await loadAdminPassword();
+            const ok = serverPw && (input.value.trim() === serverPw.trim());
+            if (!ok) { err.style.display = 'block'; return; }
+            sessionStorage.setItem('SCI_BYPASS_AUTH', '1');
+            cleanup();
+            resolve(true);
+          };
+        });
+      }
+      async function ensureBypassAuthorized(){
+        if (!shouldBypassMaintenance()) return false;
+        if (sessionStorage.getItem('SCI_BYPASS_AUTH') === '1') return true;
+        return await promptBypassPassword();
+      }
+
+      // Maintenance check - if active, block game
+      (async function checkMaintenance(){
+        try {
+          if (shouldBypassMaintenance()) {
+            const ok = await ensureBypassAuthorized();
+            if (ok) { showBypassRibbon(); return; }
+          }
+          if (!window.firebaseConfig) return; // config manager
+          if (!window.firebaseConfig.isInitialized()) { await window.firebaseConfig.initializeFirebase(); }
+          if (firebase && firebase.auth && !firebase.auth().currentUser) {
+            try { await firebase.auth().signInAnonymously(); } catch(e) {}
+          }
+          const snap = await firebase.database().ref('system/maintenance').once('value');
+          const val = snap.val() || {};
+          const now = Date.now();
+          const startsAtMs = val.startsAtMs ?? (val.startsAt ? Date.parse(val.startsAt) : 0);
+          const endsAtMs = val.endsAtMs ?? (val.endsAt ? Date.parse(val.endsAt) : 0);
+          const active = !!(val.enabled && (!startsAtMs || now >= startsAtMs) && (!endsAtMs || now < endsAtMs));
+          if (active) {
+            const ov = document.getElementById('maintenance-overlay');
+            const msg = document.getElementById('maint-msg');
+            const ends = document.getElementById('maint-ends');
+            if (msg) msg.textContent = val.message || 'Scheduled maintenance in progress.';
+            if (ends && endsAtMs) ends.textContent = 'Ends: ' + new Date(endsAtMs).toLocaleString();
+            if (ov) ov.style.display = 'flex';
+          }
+        } catch (e) {
+          // non-blocking
+          console.warn('Maintenance check failed:', e.message);
+        }
+      })();
+
+      // Maintenance toast intentionally not shown on game page
       // Function to check if device is mobile
       function isMobileDevice() {
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -310,7 +436,62 @@
       handleOrientation();
     </script>
 
-    <script type="module" src="./src/game.js"></script>
+    <script>
+      // Load the game only if maintenance is NOT active
+      (async function loadGameWithMaintenanceGate() {
+        // Bypass: load game immediately for admins or when local override is set
+        try {
+          if (typeof shouldBypassMaintenance === 'function' && shouldBypassMaintenance()) {
+            const ok = await ensureBypassAuthorized();
+            if (ok) {
+              showBypassRibbon();
+              await import('./src/game.js');
+              return;
+            }
+          }
+        } catch {}
+
+        const showOverlay = (val) => {
+          try {
+            const ov = document.getElementById('maintenance-overlay');
+            const msg = document.getElementById('maint-msg');
+            const ends = document.getElementById('maint-ends');
+            if (msg) msg.textContent = (val && val.message) || 'Scheduled maintenance in progress.';
+            const endsAtMs = val?.endsAtMs ?? (val?.endsAt ? Date.parse(val.endsAt) : 0);
+            if (ends && endsAtMs) ends.textContent = 'Ends: ' + new Date(endsAtMs).toLocaleString();
+            if (ov) ov.style.display = 'flex';
+          } catch {}
+        };
+
+        try {
+          if (!window.firebaseConfig) {
+            // No config manager available; allow game to load to avoid hard block
+            await import('./src/game.js');
+            return;
+          }
+          if (!window.firebaseConfig.isInitialized()) {
+            await window.firebaseConfig.initializeFirebase();
+          }
+          if (window.firebase && firebase.auth && !firebase.auth().currentUser) {
+            try { await firebase.auth().signInAnonymously(); } catch {}
+          }
+          const snap = await firebase.database().ref('system/maintenance').once('value');
+          const val = snap.val() || {};
+          const now = Date.now();
+          const startsAtMs = val.startsAtMs ?? (val.startsAt ? Date.parse(val.startsAt) : 0);
+          const endsAtMs = val.endsAtMs ?? (val.endsAt ? Date.parse(val.endsAt) : 0);
+          const active = !!(val.enabled && (!startsAtMs || now >= startsAtMs) && (!endsAtMs || now < endsAtMs));
+          if (active) {
+            showOverlay(val);
+            return; // do not load game during maintenance
+          }
+          await import('./src/game.js');
+        } catch (e) {
+          // On any failure to check maintenance, fail-open and load game
+          try { await import('./src/game.js'); } catch {}
+        }
+      })();
+    </script>
     <!-- Notification debug scripts removed after verification -->
   </body>
 </html>

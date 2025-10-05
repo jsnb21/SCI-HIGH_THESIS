@@ -78,7 +78,7 @@ class Carousel {
 
         // Removed black dimmed shadow rectangle beneath the background panel
         this.bgPanel = this.scene.add.graphics();
-        this.bgPanel.fillStyle(0x23233a, 0.92);
+        this.bgPanel.fillStyle(0x23233a, 0.6); // Reduced from 0.92 to 0.6 for less opacity
         this.bgPanel.fillRoundedRect(
             -5, // Start slightly before left edge to ensure full coverage
             iconCenterY - panelHeight / 2,

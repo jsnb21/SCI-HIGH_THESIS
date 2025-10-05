@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import BaseScene from '../BaseScene.js';
 import { playExclusiveBGM, updateSoundVolumes } from '../../audioUtils.js';
+import DomHudManager from '../../ui/DomHudManager.js';
+import TimerController from '../../components/TimerController.js';
 
 export default class MainGameplay extends BaseScene {
     constructor() {
@@ -42,6 +44,8 @@ export default class MainGameplay extends BaseScene {
         this.streak = 0;
         this.highestStreak = 0;
         this.baseScore = 100;
+    // Phase 1: DOM HUD manager instance
+    this._domHud = null;
         
         // INTENSITY system
         this.enemiesDefeated = 0;
@@ -74,10 +78,11 @@ export default class MainGameplay extends BaseScene {
         this.nextSpawnPositions = []; // Pre-calculated spawn positions
         this.spawnIndicatorsShown = false; // Prevent repeated showSpawnIndicators calls
         
-        // Timer system
-        this.gameTimer = 60; // 1 minute in seconds
-        this.timerText = null;
-        this.timerEvent = null;
+    // Timer system
+    this.gameTimer = 60; // 1 minute in seconds
+    this.timerText = null;
+    this.timerEvent = null; // legacy field; TimerController now manages ticking
+    this._timer = null; // TimerController instance
         
         // Timer icons system
         this.timerIcons = [];
@@ -98,19 +103,20 @@ export default class MainGameplay extends BaseScene {
         this.currentQuiz = null;
         this.quizContainer = null;
         
-        // Answered questions tracking system - prevents question repetition
+        // Answered questions tracking system - prevents question repetition (use arrays)
         this.answeredQuestions = {
             intensity1: {
-                multipleChoice: new Set()
+                multipleChoice: []
             },
             intensity2: {
-                multipleChoice: new Set(),
-                dragDrop: new Set()
+                multipleChoice: [],
+                dragDrop: [],
+                syntaxBlock: []
             },
             intensity3: {
-                multipleChoice: new Set(),
-                codeArrangement: new Set(),
-                combined: new Set() // For combined cycling system
+                multipleChoice: [],
+                codeArrangement: [],
+                combined: [] // For combined cycling system across all types at intensity 3
             }
         };
         
@@ -181,19 +187,20 @@ export default class MainGameplay extends BaseScene {
             this.intensity3PowerUpCounter = 0;
             this.intensity = 1;
             
-            // Reset answered questions tracking for new sessions
+            // Reset answered questions tracking for new sessions (use arrays)
             this.answeredQuestions = {
                 intensity1: {
-                    multipleChoice: new Set()
+                    multipleChoice: []
                 },
                 intensity2: {
-                    multipleChoice: new Set(),
-                    dragDrop: new Set()
+                    multipleChoice: [],
+                    dragDrop: [],
+                    syntaxBlock: []
                 },
                 intensity3: {
-                    multipleChoice: new Set(),
-                    codeArrangement: new Set(),
-                    combined: new Set() // For combined cycling system
+                    multipleChoice: [],
+                    codeArrangement: [],
+                    combined: [] // For combined cycling system
                 }
             };
             
@@ -208,6 +215,14 @@ export default class MainGameplay extends BaseScene {
             this.player.speed = this.originalPlayerSpeed;
             // Reset power-up cadence counter
             this.correctAnswersSincePowerUp = 0;
+
+            // Also reset PowerUpScene's level tracking so a fresh game starts at LVL 1
+            try {
+                const powerUpScene = this.scene.get('PowerUpScene');
+                if (powerUpScene && typeof powerUpScene.resetPowerUpLevels === 'function') {
+                    powerUpScene.resetPowerUpLevels();
+                }
+            } catch (_) { /* scene may not be available yet; ignore */ }
             
         } else {
             // Resuming from quiz - load saved state
@@ -301,6 +316,14 @@ export default class MainGameplay extends BaseScene {
 
     create() {
         super.create(); // Call BaseScene create method
+        // Phase 0: lightweight debug hooks (no behavior change)
+        try {
+            // eslint-disable-next-line global-require, import/no-unresolved
+            const dbg = require('../../utils/debug.js');
+            this.__DEBUG__ = dbg && dbg.DEBUG;
+            this.__dlog__ = (scope, ...args) => (dbg && dbg.DEBUG && dbg.dlog ? dbg.dlog(scope, ...args) : null);
+            if (this.__dlog__) this.__dlog__('Scene', 'create()', { topic: this.courseTopic });
+        } catch (_) { /* ignore if module not present in build */ }
         
         // Reset all freezing/blocking flags to ensure fresh gameplay state
         this.freezeGameplay = false;
@@ -351,26 +374,29 @@ export default class MainGameplay extends BaseScene {
         // Setup input controls
         this.setupInput();
 
-        // Add course topic display
-        this.addCourseDisplay();
+    // Course topic is displayed in the DOM HUD; no Phaser text needed
         
         // Add mobile control hint
         this.addMobileControlHint();
 
-        // Unified HUD (DOM for all devices)
-        if (this.scoreText) this.scoreText.setVisible(false);
-        if (this.streakText) this.streakText.setVisible(false);
-        if (this.timerText) this.timerText.setVisible(false);
-        if (this.courseDisplay) this.courseDisplay.setVisible(false);
+        // Unified HUD (DOM for all devices) via DomHudManager
         this.time.delayedCall(0, () => {
-            this.ensureDomHud();
-            this.syncDomHud();
+            if (!this._domHud) this._domHud = new DomHudManager(this);
+            this._domHud.init();
+            // Optional: mirror element refs for compatibility with legacy code
+            this.domHudActive = this._domHud.domHudActive;
+            this.domScoreEl = this._domHud.domScoreEl;
+            this.domStreakEl = this._domHud.domStreakEl;
+            this.domTimerEl = this._domHud.domTimerEl;
+            this.domCourseEl = this._domHud.domCourseEl;
+            // Kick a sync on next frame after DOM is attached
             requestAnimationFrame(() => this.syncDomHud());
         });
         this.time.delayedCall(150, () => this.syncDomHud());
         
-        // Add resize listener to keep board centered
-        this.scale.on('resize', this.onResize, this);
+    // Add resize listener: lightweight handler that debounces heavy work
+    this.scale.on('resize', this.onResizeEvent, this);
+        if (this.__dlog__) this.__dlog__('Scene', 'resize listener attached');
     }
 
     onResize() {
@@ -399,16 +425,42 @@ export default class MainGameplay extends BaseScene {
         // Legacy desktopHudContainer no longer used; remove if exists
         if (this.desktopHudContainer) { this.desktopHudContainer.destroy(); this.desktopHudContainer = null; }
 
-        // Always use DOM HUD; keep Phaser text HUD hidden
-        if (this.scoreText) this.scoreText.setVisible(false);
-        if (this.streakText) this.streakText.setVisible(false);
-        if (this.timerText) this.timerText.setVisible(false);
-        if (this.courseDisplay) this.courseDisplay.setVisible(false);
-        this.ensureDomHud();
-        this.syncDomHud();
-        this.updateDomHudBounds();
+    // Always use DOM HUD; Phaser HUD texts are not used
+    this.scoreText = null;
+    this.streakText = null;
+    this.timerText = null;
+    this.courseDisplay = null;
+    if (!this._domHud) this._domHud = new DomHudManager(this);
+    this._domHud.init();
+    // Ensure HUD text reflects current state after any DOM re-creation
+    this.syncDomHud();
+    // Rebind to canvas and update responsive sizes
+    this.updateDomHudBounds();
         // Update HUD positions for responsive design (mobile or after recreation)
         this.updateHudPositions();
+    }
+
+    // Lightweight event handler for Phaser scale resize; coalesces frequent events
+    onResizeEvent() {
+        // Cancel any in-flight scheduled work
+        if (this._resizeRaf) {
+            try { cancelAnimationFrame(this._resizeRaf); } catch (_) {}
+            this._resizeRaf = null;
+        }
+        if (this._resizeTimer) {
+            clearTimeout(this._resizeTimer);
+            this._resizeTimer = null;
+        }
+
+        // Schedule on next animation frame for smoothness
+        this._resizeRaf = requestAnimationFrame(() => {
+            this._resizeRaf = null;
+            // Minor debounce to coalesce rapid sequences
+            this._resizeTimer = setTimeout(() => {
+                this._resizeTimer = null;
+                if (typeof this.onResize === 'function') this.onResize();
+            }, 16); // ~1 frame at 60fps
+        });
     }
 
     updateHudPositions() {
@@ -421,277 +473,25 @@ export default class MainGameplay extends BaseScene {
             // DOM HUD supersedes this; proceed no further
             return;
         }
-        // If DOM HUD active we may still keep Phaser texts hidden; skip heavy reposition if texts missing
-        const texts = [this.scoreText, this.streakText, this.timerText, this.courseDisplay];
-        const anyDestroyed = texts.some(t => t && (t._destroyed || t.active === false));
-        if (anyDestroyed) {
-            if (!this._hudWarned) {
-                console.warn('HUD texts were destroyed before reposition. Skipping updateHudPositions this frame.');
-                this._hudWarned = true;
-            }
-            return;
-        }
-        // Desktop now uses a camera-anchored HUD (independent overlay)
-        const cam = this.cameras.main;
-        const screenWidth = this.scale.width;
-        const screenHeight = this.scale.height;
-        const isVerySmall = screenWidth < 480;
-        const isDesktop = screenWidth >= 768; // treat tablets as mobile style
-
-        // Base margins (screen-space intent)
-        const marginX = Math.min(20, screenWidth * 0.035);
-        const topMargin = 6;
-
-        // Font sizes remain responsive to raw screen width
-        const scoreFontSize = Math.max(20, screenWidth * 0.03);
-        const streakFontSize = Math.max(16, screenWidth * 0.025);
-        const timerFontSize = Math.max(26, screenWidth * 0.04);
-        const courseFontSize = Math.max(18, screenWidth * 0.028);
-
-        // For desktop we anchor using camera worldView (so zoom has no shrinking effect)
-        let originX = 0;
-        let originY = 0;
-        if (isDesktop) {
-            originX = cam.worldView.x;
-            originY = cam.worldView.y; // top edge of visible world after zoom
-        }
-        // For mobile we keep the prior absolute approach
-        const scoreX = isDesktop ? originX + marginX : marginX;
-        const scoreY = isDesktop ? originY + topMargin : topMargin;
-        const streakY = scoreY + (isVerySmall ? 25 : 30);
-        const timerY = scoreY; // top aligned
-        const courseY = scoreY;
-        const centerX = isDesktop ? originX + (cam.worldView.width / 2) : screenWidth / 2;
-        const courseX = isDesktop ? originX + cam.worldView.width - marginX : screenWidth - marginX;
-        
-        // Update score text position and font size
-        try {
-            if (this.scoreText) {
-                this.scoreText.setPosition(scoreX, scoreY);
-                this.scoreText.setFontSize(`${scoreFontSize}px`);
-                this.scoreText.setStroke('#000000', 4);
-                this.scoreText.setShadow(2, 2, '#000000', 2, true, false);
-            }
-        } catch (e) { /* swallow to avoid crashing draw cycle */ }
-        
-        // Update streak text position and font size
-        try {
-            if (this.streakText) {
-                this.streakText.setPosition(scoreX, streakY);
-                this.streakText.setFontSize(`${streakFontSize}px`);
-                this.streakText.setStroke('#000000', 3);
-                this.streakText.setShadow(2, 2, '#000000', 2, true, false);
-            }
-        } catch (e) {}
-        
-        // Update timer position and font size - centered at top
-        try {
-            if (this.timerText) {
-                this.timerText.setPosition(centerX, timerY);
-                this.timerText.setFontSize(`${timerFontSize}px`);
-                this.timerText.setStroke('#000080', 4);
-                this.timerText.setShadow(2, 2, '#000040', 3, true, false);
-            }
-        } catch (e) {}
-        
-        // Update course display for mobile - top positioning only on mobile
-        try {
-            if (this.courseDisplay) {
-                this.courseDisplay.setPosition(courseX, courseY);
-                this.courseDisplay.setFontSize(`${courseFontSize}px`);
-                this.courseDisplay.setOrigin(1, 0);
-                this.courseDisplay.setStroke('#000080', 3);
-                this.courseDisplay.setShadow(2, 2, '#000040', 2, true, false);
-            }
-        } catch (e) {}
-
-        // Safety clamp: ensure none of the texts drift outside (rare but defensive)
-        // Clamp only for mobile where absolute screen bounds apply
-        if (!isDesktop) {
-            const clampMargin = 2;
-            const maxX = screenWidth - clampMargin;
-            const maxY = screenHeight - clampMargin;
-            [this.scoreText, this.streakText, this.timerText, this.courseDisplay].forEach(txt => {
-                if (txt) {
-                    if (txt.x < clampMargin) txt.x = clampMargin;
-                    if (txt.y < clampMargin) txt.y = clampMargin;
-                    if (txt.x > maxX) txt.x = maxX;
-                    if (txt.y > maxY) txt.y = maxY;
-                }
-            });
-        }
+        // DOM-only HUD: no Phaser HUD elements to reposition
+        return;
     }
 
     createDesktopHUD() { /* deprecated: replaced by DOM HUD */ }
 
-    ensureDomHud() {
-        // Unified DOM HUD overlay for all devices (desktop + mobile)
-        if (document.getElementById('desktop-game-hud')) return; // Already exists
+    ensureDomHud() { if (!this._domHud) this._domHud = new DomHudManager(this); this._domHud.init(); }
 
-        const vw = (typeof window !== 'undefined') ? window.innerWidth : this.scale.width;
-        const isMobileLike = vw < 768;
-    const baseHeight = isMobileLike ? 76 : 64;
-
-        const wrapper = document.createElement('div');
-        wrapper.id = 'desktop-game-hud';
-        Object.assign(wrapper.style, {
-            position: 'absolute',
-            top: '0', // precise left/width set by updateDomHudBounds()
-            left: '0',
-            width: '0px',
-            height: baseHeight + 'px',
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            padding: (isMobileLike ? '8px 12px 4px 12px' : '6px 20px 4px 20px'),
-            boxSizing: 'border-box',
-            fontFamily: 'Arial, sans-serif',
-            zIndex: '9999',
-            pointerEvents: 'none',
-            background: 'linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.25))',
-            overflow: 'hidden'
-        });
-
-        // Basic text row builder (no icon) for score, streak, timer
-        const buildTextRow = (labelText, id, fontSizePx, color) => {
-            const el = document.createElement('div');
-            el.id = id;
-            el.style.fontWeight = 'bold';
-            el.style.fontSize = fontSizePx + 'px';
-            el.style.color = color;
-            el.style.textShadow = '2px 2px 3px #000';
-            el.textContent = labelText;
-            return el;
-        };
-
-        // Icon path mapping by course topic
-        const courseIconMap = {
-            python: 'python_logo.png',
-            java: 'java_logo.png',
-            c: 'c_logo.png',
-            'c++': 'cplus_logo.png',
-            cpp: 'cplus_logo.png',
-            csharp: 'csharp_logo.png',
-            'c#': 'csharp_logo.png',
-            webdesign: 'web-design_logo.png',
-            custom: 'CustomQuiz.png'
-        };
-        const iconBase = 'assets/img/comlab/icons/';
-        const courseKey = (this.courseTopic || '').toLowerCase();
-        const courseIconFile = courseIconMap[courseKey] || 'python_logo.png';
-
-        // Left stack (score + streak)
-        const left = document.createElement('div');
-        left.style.display = 'flex';
-        left.style.flexDirection = 'column';
-        left.style.gap = '4px';
-
-    const scoreFs = isMobileLike ? 18 : 22;
-    const streakFs = isMobileLike ? 14 : 18;
-    this.domScoreEl = buildTextRow(`Score: ${this.score || 0}`, 'hud-score', scoreFs, '#ffffff');
-    this.domStreakEl = buildTextRow(`Streak: ${this.streak || 0}`, 'hud-streak', streakFs, '#ffff00');
-    left.appendChild(this.domScoreEl);
-    left.appendChild(this.domStreakEl);
-
-        // Center (timer)
-    const center = document.createElement('div');
-    center.style.cssText = 'position:absolute;left:50%;top:6px;transform:translateX(-50%);font-weight:bold;font-size:30px;color:#fff;text-shadow:2px 2px 4px #000';
-    const timerFs = isMobileLike ? 24 : 30;
-    center.style.cssText = `position:absolute;left:50%;top:${isMobileLike ? 4 : 6}px;transform:translateX(-50%);font-weight:bold;font-size:${timerFs}px;color:#fff;text-shadow:2px 2px 4px #000`;
-    this.domTimerEl = document.createElement('div');
-    this.domTimerEl.textContent = this.timerText ? this.timerText.text : '1:00';
-    center.appendChild(this.domTimerEl);
-
-        // Right (course)
-    const right = document.createElement('div');
-    right.style.cssText = 'display:flex;align-items:center;gap:6px;font-weight:bold;font-size:20px;color:#0ff;text-shadow:2px 2px 3px #000;';
-    const courseIcon = document.createElement('img');
-    courseIcon.src = iconBase + courseIconFile;
-    courseIcon.alt = 'Course';
-    const courseFs = isMobileLike ? 16 : 20;
-    right.style.cssText = `display:flex;align-items:center;gap:6px;font-weight:bold;font-size:${courseFs}px;color:#0ff;text-shadow:2px 2px 3px #000;`;
-    const iconSize = isMobileLike ? 24 : 28;
-    courseIcon.style.width = iconSize + 'px';
-    courseIcon.style.height = iconSize + 'px';
-    courseIcon.style.objectFit = 'contain';
-    courseIcon.style.filter = 'drop-shadow(0 0 3px rgba(0,0,0,0.6))';
-    this.domCourseEl = document.createElement('div');
-    // Use a simplified course name without emoji since we now show an icon
-    this.domCourseEl.textContent = this.getFormattedCourseName(this.courseTopic).replace(/^[^A-Z0-9]*\s*/, '');
-    right.appendChild(courseIcon);
-    right.appendChild(this.domCourseEl);
-
-        wrapper.appendChild(left);
-        wrapper.appendChild(center);
-        wrapper.appendChild(right);
-
-    const parent = this.game.canvas.parentNode || document.body;
-    parent.style.position = parent.style.position || 'relative';
-    parent.appendChild(wrapper);
-    this.domHudWrapper = wrapper;
-    this.domHudActive = true;
-
-        // Hide Phaser HUD (texts already hidden) and mark active
-        if (this.desktopHudContainer) this.desktopHudContainer.setVisible(false);
-        this.domHudActive = true;
-        // Immediate syncs to guarantee visibility and correct bounds
-        this.updateDomHudBounds();
-        this.syncDomHud();
-        setTimeout(() => { this.updateDomHudBounds(); this.syncDomHud(); }, 0);
-        requestAnimationFrame(() => { this.updateDomHudBounds(); this.syncDomHud(); });
-
-        // Keep HUD aligned with canvas on window and Phaser resizes
-        this._hudBoundsHandler = () => this.updateDomHudBounds();
-        window.addEventListener('resize', this._hudBoundsHandler);
-        this._scaleHudBoundsHandler = () => this.updateDomHudBounds();
-        if (this.scale) this.scale.on('resize', this._scaleHudBoundsHandler, this);
-    }
-
-    updateDomHudBounds() {
-        if (!this.domHudActive) return;
-        const canvas = this.game && this.game.canvas;
-        const wrapper = this.domHudWrapper || document.getElementById('desktop-game-hud');
-        if (!canvas || !wrapper) return;
-        const parent = canvas.parentNode || document.body;
-        const canvasRect = canvas.getBoundingClientRect();
-        const parentRect = parent.getBoundingClientRect();
-        const left = Math.max(0, Math.round(canvasRect.left - parentRect.left));
-        const top = Math.max(0, Math.round(canvasRect.top - parentRect.top));
-        const width = Math.round(canvas.clientWidth || canvasRect.width);
-        wrapper.style.left = left + 'px';
-        wrapper.style.top = top + 'px';
-        wrapper.style.width = width + 'px';
-        wrapper.style.overflow = 'hidden';
-    }
+    updateDomHudBounds() { if (this._domHud) this._domHud.updateBounds(); }
 
     syncDomHud() {
-        if (!this.domHudActive) return;
-        if (this.domScoreEl) this.domScoreEl.textContent = `Score: ${this.score || 0}`;
-        if (this.domStreakEl) this.domStreakEl.textContent = `Streak: ${this.streak || 0}`;
-        if (this.domTimerEl) this.domTimerEl.textContent = this.getCurrentTimeString ? this.getCurrentTimeString() : (this.timerText ? this.timerText.text : '1:00');
-        if (this.domCourseEl) this.domCourseEl.textContent = this.getFormattedCourseName(this.courseTopic);
+        if (this._domHud) {
+            const courseName = this.getFormattedCourseName(this.courseTopic).replace(/^[^A-Z0-9]*\s*/, '');
+            this._domHud.sync({ score: this.score, streak: this.streak, seconds: this.gameTimer, course: courseName });
+        }
     }
 
     // NEW: Explicitly remove / clean up DOM HUD elements (prevents lingering in other scenes on some mobile browsers)
-    removeDomHud() {
-        if (typeof document === 'undefined') return;
-        const hud = document.getElementById('desktop-game-hud');
-        if (hud) hud.remove();
-        // Remove listeners added for bounds syncing
-        if (this._hudBoundsHandler) {
-            window.removeEventListener('resize', this._hudBoundsHandler);
-            this._hudBoundsHandler = null;
-        }
-        if (this._scaleHudBoundsHandler && this.scale) {
-            this.scale.off('resize', this._scaleHudBoundsHandler, this);
-            this._scaleHudBoundsHandler = null;
-        }
-        this.domHudActive = false;
-        this.domScoreEl = null;
-        this.domStreakEl = null;
-        this.domTimerEl = null;
-        this.domCourseEl = null;
-    }
+    removeDomHud() { if (this._domHud) this._domHud.destroy(); }
 
     getCurrentTimeString() {
         // Always compute from numeric state so DOM HUD stays accurate even if Phaser text hidden
@@ -916,86 +716,48 @@ export default class MainGameplay extends BaseScene {
     }
 
     createTimer() {
-        // Calculate responsive positions based on screen size
-        const screenWidth = this.scale.width;
-        const screenHeight = this.scale.height;
-        const isMobile = screenWidth < 768;
-        
-        // Center the timer horizontally
-        const centerX = screenWidth / 2;
-        const timerY = isMobile ? Math.min(30, screenHeight * 0.05) : 30;
-        
-        // Responsive font size
-        const timerFontSize = isMobile ? Math.max(24, screenWidth * 0.04) : 32;
-        
-        this.timerText = this.add.text(centerX, timerY, '1:00', {
-            fontFamily: 'Arial',
-            fontSize: `${timerFontSize}px`,
-            fontWeight: 'bold',
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 3,
-            shadow: {
-                offsetX: 2,
-                offsetY: 2,
-                color: '#000000',
-                blur: 3,
-                fill: true
-            }
-        }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(1000);
-        
+        // DOM HUD only: don't create Phaser timer text
+        this.timerText = null;
         // Don't start the timer event yet - will be started after countdown
         this.timerEvent = null;
+        // Initialize TimerController (do not start here)
+        this._initTimerController();
+    }
+
+    _initTimerController() {
+        // Clean up any previous instance
+        if (this._timer) {
+            try { this._timer.destroy(); } catch (_) {}
+            this._timer = null;
+        }
+    // Allow ticking during quizzes; still pause for power-up scenes and freezes
+    const shouldTick = () => !!(this.gameStarted && !this.freezeGameplay && !this.powerUpActive);
+        this._timer = new TimerController(this, {
+            initial: this.gameTimer,
+            cap: 60,
+            shouldTick,
+            onTick: (secs) => {
+                // Mirror seconds to scene state for existing helpers/HUD
+                this.gameTimer = secs;
+                if (this.timerText && !this.domHudActive) {
+                    const m = Math.floor(secs / 60);
+                    const s = secs % 60;
+                    this.timerText.setText(`${m}:${s.toString().padStart(2, '0')}`);
+                }
+                // Keep DOM HUD and color/shake behavior consistent
+                if (typeof this.syncDomHud === 'function') this.syncDomHud();
+                if (typeof this.updateTimerDisplay === 'function') this.updateTimerDisplay();
+            },
+            onExpired: () => {
+                this.onTimerExpired();
+            }
+        });
     }
 
     createScoreDisplay() {
-        // Calculate responsive positions based on screen size
-        const screenWidth = this.scale.width;
-        const screenHeight = this.scale.height;
-        const isMobile = screenWidth < 768;
-        
-        // Use responsive positioning
-        const scoreX = isMobile ? Math.min(20, screenWidth * 0.03) : 20;
-        const scoreY = isMobile ? Math.min(30, screenHeight * 0.05) : 30;
-        const streakY = isMobile ? Math.min(65, screenHeight * 0.11) : 65;
-        
-        // Responsive font sizes
-        const scoreFontSize = isMobile ? Math.max(18, screenWidth * 0.03) : 24;
-        const streakFontSize = isMobile ? Math.max(14, screenWidth * 0.025) : 18;
-        
-        // Create score text at the top left of the screen
-        this.scoreText = this.add.text(scoreX, scoreY, 'Score: 0', {
-            fontFamily: 'Arial',
-            fontSize: `${scoreFontSize}px`,
-            fontWeight: 'bold',
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 2,
-            shadow: {
-                offsetX: 2,
-                offsetY: 2,
-                color: '#000000',
-                blur: 3,
-                fill: true
-            }
-        }).setOrigin(0, 0).setScrollFactor(0).setDepth(1000);
-        
-        // Create streak display below the score
-        this.streakText = this.add.text(scoreX, streakY, 'Streak: 0', {
-            fontFamily: 'Arial',
-            fontSize: `${streakFontSize}px`,
-            fontWeight: 'bold',
-            color: '#ffff00',
-            stroke: '#000000',
-            strokeThickness: 2,
-            shadow: {
-                offsetX: 2,
-                offsetY: 2,
-                color: '#000000',
-                blur: 3,
-                fill: true
-            }
-        }).setOrigin(0, 0).setScrollFactor(0).setDepth(1000);
+        // DOM HUD only: don't create Phaser score/streak texts
+        this.scoreText = null;
+        this.streakText = null;
     }
 
     getFormattedCourseName(topic) {
@@ -1042,56 +804,36 @@ export default class MainGameplay extends BaseScene {
         if (this.scoreText && !this.domHudActive) this.scoreText.setText(`Score: ${this.score}`);
         this.syncDomHud();
         
-        // Add visual effect for score increase
-        this.tweens.add({
-            targets: this.scoreText,
-            scaleX: 1.2,
-            scaleY: 1.2,
-            duration: 200,
-            ease: 'Power2',
-            yoyo: true
-        });
+        // Add visual effect for score increase (Phaser HUD only)
+        if (this.scoreText) {
+            this.tweens.add({
+                targets: this.scoreText,
+                scaleX: 1.2,
+                scaleY: 1.2,
+                duration: 200,
+                ease: 'Power2',
+                yoyo: true
+            });
+        }
     }
 
     updateTimer() {
-        // Prevent timer from going negative
-        this.gameTimer = Math.max(0, this.gameTimer - 1);
-        
-        // Format time as MM:SS
-        const minutes = Math.floor(this.gameTimer / 60);
-        const seconds = this.gameTimer % 60;
-        const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
-    if (this.timerText && !this.domHudActive) this.timerText.setText(timeString);
-    // Always sync DOM HUD (it computes from gameTimer directly)
-    this.syncDomHud();
-        
-        // Change color when time is running out
-        if (!this.domHudActive && this.timerText) {
-            if (this.gameTimer <= 10) {
-                this.timerText.setColor('#ff0000');
-                this.tweens.add({
-                    targets: this.timerText,
-                    x: this.timerText.x + Phaser.Math.Between(-5, 5),
-                    y: this.timerText.y + Phaser.Math.Between(-3, 3),
-                    duration: 50,
-                    ease: 'Power2',
-                    yoyo: true,
-                    repeat: 3,
-                    onComplete: () => { this.timerText.setPosition(this.scale.width / 2, 30); }
-                });
-            } else if (this.gameTimer <= 30) {
-                this.timerText.setColor('#ffff00');
-            }
-        }
-        
-        // Handle timer expiration
-        if (this.gameTimer <= 0) {
-            this.onTimerExpired();
+        if (this.__dlog__) this.__dlog__('Timer', 'tick-guard', {
+            gameStarted: this.gameStarted,
+            freeze: this.freezeGameplay,
+            quiz: this.quizActive,
+            powerUp: this.powerUpActive
+        });
+        // Delegate to TimerController's ticking; if called directly, do a guarded sub
+    // Keep ticking during quizzes; only stop when frozen or power-up popup is active
+    if (!this.gameStarted || this.freezeGameplay || this.powerUpActive) return;
+        if (this._timer) {
+            this._timer.sub(1);
         }
     }
 
     onTimerExpired() {
+        if (this.__dlog__) this.__dlog__('Timer', 'expired');
         // Prevent duplicate handling
         if (this._timeUpHandled) return;
         this._timeUpHandled = true;
@@ -1099,11 +841,9 @@ export default class MainGameplay extends BaseScene {
         // Emit timer expired event for any listening scenes (like QuizScene)
         this.events.emit('timer-expired');
 
-        // Stop the ticking timer event
-        if (this.timerEvent) {
-            this.timerEvent.remove();
-            this.timerEvent = null;
-        }
+        // Stop the ticking timer (controller + legacy event if any)
+        if (this._timer) this._timer.stop();
+        if (this.timerEvent) { try { this.timerEvent.remove(); } catch (_) {} this.timerEvent = null; }
 
         // Freeze core gameplay systems (inputs/movement/spawns)
         this.freezeGameplay = true;
@@ -1120,6 +860,7 @@ export default class MainGameplay extends BaseScene {
     }
 
     startCountdown() {
+        if (this.__dlog__) this.__dlog__('Countdown', 'start');
         // Create countdown text at the center of the screen
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2;
@@ -1171,6 +912,7 @@ export default class MainGameplay extends BaseScene {
     }
 
     updateCountdown() {
+        if (this.__dlog__) this.__dlog__('Countdown', 'tick', { next: this.countdownTimer - 1 });
         this.countdownTimer--;
         
         if (this.countdownTimer > 0) {
@@ -1189,6 +931,7 @@ export default class MainGameplay extends BaseScene {
     }
 
     startGame() {
+        if (this.__dlog__) this.__dlog__('Game', 'startGame');
         // Remove countdown text and instruction
         if (this.countdownText) {
             this.countdownText.destroy();
@@ -1224,19 +967,18 @@ export default class MainGameplay extends BaseScene {
             }
         });
         
-        // Start the actual game timer
-        this.timerEvent = this.time.addEvent({
-            delay: 1000, // 1 second
-            callback: this.updateTimer,
-            callbackScope: this,
-            loop: true
-        });
+        // Start the actual game timer (via TimerController; prevent duplicate events)
+        if (!this._timer) this._initTimerController();
+        this._timer.setSeconds(this.gameTimer);
+        this._timer.start();
+        if (this.__dlog__) this.__dlog__('Timer', 'controller started');
         
         // Mark game as started and ensure it's not frozen
         this.gameStarted = true;
         this.freezeGameplay = false;
         this.enemiesMoving = false; // Reset to allow enemy movement to start fresh
         this.syncDomHud();
+        if (this.__dlog__) this.__dlog__('HUD', 'synced after start');
         
     }
 
@@ -1348,11 +1090,11 @@ export default class MainGameplay extends BaseScene {
     }
 
     addTime(seconds) {
-        // Add time but cap at 60 seconds (1 minute)
-           const before = this.gameTimer;
-           this.gameTimer = Math.min(this.gameTimer + seconds, 60);
-           const gained = this.gameTimer - before;
-           if (gained !== 0) this.animateTimeDelta(gained);
+        // Use controller to handle cap/emit
+        if (!this._timer) this._initTimerController();
+        const gained = this._timer.add(seconds);
+        this.gameTimer = this._timer.getSeconds();
+        if (gained !== 0) this.animateTimeDelta(gained);
     }
 
     collectTimerIcon(icon) {
@@ -1664,9 +1406,9 @@ export default class MainGameplay extends BaseScene {
         }
         
         // Reduce game timer and animate delta
-        const before = this.gameTimer;
-        this.gameTimer = Math.max(0, this.gameTimer - this.goblinThugTimePenalty);
-        const lost = before - this.gameTimer;
+    const before = this._timer ? this._timer.getSeconds() : this.gameTimer;
+    const lost = this._timer ? this._timer.sub(this.goblinThugTimePenalty) : Math.min(before, this.goblinThugTimePenalty);
+    this.gameTimer = this._timer ? this._timer.getSeconds() : Math.max(0, this.gameTimer - this.goblinThugTimePenalty);
         if (lost !== 0) this.animateTimeDelta(-lost);
         this.updateTimerDisplay();
         
@@ -1966,7 +1708,9 @@ export default class MainGameplay extends BaseScene {
         
         // Restore game state
         this.score = gameState.score;
-        this.gameTimer = gameState.gameTimer;
+    this.gameTimer = gameState.gameTimer;
+    if (!this._timer) this._initTimerController();
+    this._timer.setSeconds(this.gameTimer);
         this.gameStarted = gameState.gameStarted;
         
         // Update displays
@@ -1978,6 +1722,34 @@ export default class MainGameplay extends BaseScene {
     }
 
     handleQuizCompletion(data) {
+        // Prevent double application if inline path already handled rewards
+        if (this.quizRewardApplied) {
+            // Still clean up enemy if provided
+            if (data && data.enemyToDestroy) {
+                this.destroyEnemy(data.enemyToDestroy);
+            }
+            this.quizActive = false;
+            return;
+        }
+        // Initialize per-session bloom stats holder
+        if (!this.sessionBloomStats) {
+            this.sessionBloomStats = {
+                remembering: { correct: 0, total: 0 },
+                understanding: { correct: 0, total: 0 },
+                applying: { correct: 0, total: 0 },
+                analyzing: { correct: 0, total: 0 },
+                evaluating: { correct: 0, total: 0 },
+                creating: { correct: 0, total: 0 }
+            };
+        }
+        if (data && data.bloomTarget) {
+            const bt = data.bloomTarget;
+            if (!this.sessionBloomStats[bt]) {
+                this.sessionBloomStats[bt] = { correct: 0, total: 0 };
+            }
+            this.sessionBloomStats[bt].total += 1;
+            if (data.correct) this.sessionBloomStats[bt].correct += 1;
+        }
         // Track the answered question to prevent repetition
         if (data.questionData) {
             this.trackAnsweredQuestion(data.questionData, data.questionType, this.intensity);
@@ -2026,6 +1798,8 @@ export default class MainGameplay extends BaseScene {
             this.addTime(10);
             this.updateTimerDisplay();
             this.updateStreakDisplay();
+            // Prevent duplicate reward application from any other path
+            this.quizRewardApplied = true;
             
             // Play sound effect based on streak
             if (this.streak >= 3) {
@@ -2094,6 +1868,8 @@ export default class MainGameplay extends BaseScene {
             }
             
             this.updateStreakDisplay();
+            // Prevent duplicate reward application from any other path
+            this.quizRewardApplied = true;
             this.updatePlayerSpeed(); // Update speed in case speed boost is active
         }
         
@@ -2120,34 +1896,31 @@ export default class MainGameplay extends BaseScene {
         const intensityKey = `intensity${intensity}`;
         
         if (intensity === 1) {
-            // Intensity 1: Only multiple choice
-            this.answeredQuestions[intensityKey].multipleChoice.add(questionId);
+            const arr = this.answeredQuestions[intensityKey]?.multipleChoice;
+            if (arr && !arr.includes(questionId)) arr.push(questionId);
         } else if (intensity === 2) {
-            // Intensity 2: Multiple choice or drag-drop
-            if (questionType === 'dragDrop' || questionData.type === 'drag-and-drop') {
-                this.answeredQuestions[intensityKey].dragDrop.add(questionId);
-            } else {
-                this.answeredQuestions[intensityKey].multipleChoice.add(questionId);
+            // Syntax block only
+            if (questionType === 'syntaxBlock' || questionData.type === 'syntaxBlock') {
+                const arr = this.answeredQuestions[intensityKey]?.syntaxBlock;
+                if (arr && !arr.includes(questionId)) arr.push(questionId);
             }
         } else if (intensity === 3) {
-            // Intensity 3: Enhanced tracking for combined question system
-            
-            // Track in appropriate individual category
-            if (questionType === 'codeArrangement' || questionData.type === 'drag-and-drop' || questionData.isDragDrop) {
-                this.answeredQuestions[intensityKey].codeArrangement.add(questionId);
-            } else {
-                // Multiple choice questions in intensity 3
-                if (!this.answeredQuestions[intensityKey].multipleChoice) {
-                    this.answeredQuestions[intensityKey].multipleChoice = new Set();
-                }
-                this.answeredQuestions[intensityKey].multipleChoice.add(questionId);
+            // Code arrangement only
+            if (questionType === 'codeArrangement' || questionData.isDragDrop || questionData.type === 'drag-and-drop') {
+                const arr = this.answeredQuestions[intensityKey]?.codeArrangement;
+                if (arr && !arr.includes(questionId)) arr.push(questionId);
+                const combined = this.answeredQuestions[intensityKey]?.combined;
+                if (combined && !combined.includes(questionId)) combined.push(questionId);
             }
-            
-            // Also track in combined pool for cycling system
-            if (!this.answeredQuestions[intensityKey].combined) {
-                this.answeredQuestions[intensityKey].combined = new Set();
-            }
-            this.answeredQuestions[intensityKey].combined.add(questionId);
+        } else if (intensity >= 4) {
+            // MAX intensity: track all in combined pool plus specific type
+            const bucket = this.answeredQuestions.intensity4 || (this.answeredQuestions.intensity4 = { multipleChoice:[], syntaxBlock:[], codeArrangement:[], dragDrop:[], combined:[] });
+            const pushUnique = (a) => { if (!a.includes(questionId)) a.push(questionId); };
+            if (questionType === 'syntaxBlock') pushUnique(bucket.syntaxBlock);
+            else if (questionType === 'codeArrangement') pushUnique(bucket.codeArrangement);
+            else if (questionType === 'dragDrop') pushUnique(bucket.dragDrop);
+            else pushUnique(bucket.multipleChoice);
+            pushUnique(bucket.combined);
         }
     }
 
@@ -2199,7 +1972,7 @@ export default class MainGameplay extends BaseScene {
     updateStreakDisplay() {
         if (this.streakText) {
             // Stop any existing shake animation
-            this.tweens.killTweensOf(this.streakText);
+            if (this.streakText) this.tweens.killTweensOf(this.streakText);
             
             if (this.streak > 0) {
                 this.streakText.setText(`Streak: ${this.streak}x`);
@@ -2227,7 +2000,80 @@ export default class MainGameplay extends BaseScene {
         }
     }
 
+    // Reset current streak and sync both Phaser and DOM HUDs
+    resetStreak() {
+        this.streak = 0;
+        // Update Phaser HUD text via existing helper
+        try { this.updateStreakDisplay(); } catch (_) {}
+        // Update DOM HUD if active
+        if (this.domHudActive && this.domStreakEl) {
+            try { this.domStreakEl.textContent = 'Streak: 0'; } catch (_) {}
+        }
+        // Ensure unified HUD reflects latest values
+        if (typeof this.syncDomHud === 'function') {
+            try { this.syncDomHud(); } catch (_) {}
+        }
+    }
+
+    // Reset all power-up related state so nothing carries to the next scene/session
+    resetPowerUps() {
+        try {
+            // Flags and references
+            this.powerUpActive = false;
+            this.currentPowerUp = null;
+
+            // Ensure container exists, then clear flags
+            this.activePowerUps = this.activePowerUps || {};
+            this.activePowerUps.streakProtection = false;
+            this.activePowerUps.goblinImmunityReady = false;
+            this.activePowerUps.goblinImmunityActive = false;
+
+            // Structured/leveled power-ups
+            if (this.activePowerUps.streakShield) {
+                this.activePowerUps.streakShield.active = false;
+                this.activePowerUps.streakShield = null;
+            }
+            if (this.activePowerUps.goblinWard) {
+                this.activePowerUps.goblinWard.active = false;
+                this.activePowerUps.goblinWard = null;
+            }
+            if (this.activePowerUps.swiftSteps) {
+                this.activePowerUps.swiftSteps.active = false;
+                this.activePowerUps.swiftSteps = null;
+            }
+
+            // Cadence/progression tied to power-ups
+            this.correctAnswersSincePowerUp = 0;
+            this.intensity3PowerUpCounter = 0;
+
+            // Restore player speed baseline
+            if (this.player) {
+                const base = this.originalPlayerSpeed != null ? this.originalPlayerSpeed : 200;
+                this.player.speed = base;
+            }
+
+            // Destroy lingering board power-up sprites
+            if (Array.isArray(this.powerUpSprites)) {
+                try {
+                    this.powerUpSprites.forEach(s => {
+                        try { if (this.tweens && this.tweens.killTweensOf && s) this.tweens.killTweensOf(s); } catch {}
+                        if (s && s.destroy && !s.destroyed) s.destroy();
+                    });
+                } finally {
+                    this.powerUpSprites = [];
+                }
+            }
+            if (Array.isArray(this.powerUps)) {
+                this.powerUps = [];
+            }
+        } catch (e) {
+            console.warn('resetPowerUps encountered an issue:', e);
+        }
+    }
+
     addStreakShake(intensity, duration, delay) {
+        // If Phaser streak text isn't present (DOM HUD only), skip tweening entirely
+        if (!this.streakText) return;
         // Store original position
         const originalX = 20;
         const originalY = 65;
@@ -2244,30 +2090,28 @@ export default class MainGameplay extends BaseScene {
             delay: delay * 1000,
             onComplete: () => {
                 // Reset to original position when done
-                this.streakText.setPosition(originalX, originalY);
+                if (this.streakText) this.streakText.setPosition(originalX, originalY);
             }
         });
     }
 
     checkIntensityIncrease() {
-        if (this.correctAnswers >= this.intensityThreshold2 && this.intensity === 2) {
-            this.intensity = 3;
-            
-            // Play intensity increase sound
-            this.sound.play('se_combo', { volume: 0.8 });
-            
-            // Show INTENSITY 3 increase notification
-            this.showIntensityNotification();
-            
-        } else if (this.correctAnswers >= this.intensityThreshold && this.intensity === 1) {
+        // Threshold logic reused; assume thresholds remain meaning of steps between intensities.
+        if (this.correctAnswers >= this.intensityThreshold && this.intensity === 1) {
+            // Move to intensity 2 (syntax block)
             this.intensity = 2;
-            
-            // Play intensity increase sound
             this.sound.play('se_combo', { volume: 0.7 });
-            
-            // Show INTENSITY increase notification
             this.showIntensityNotification();
-            
+        } else if (this.correctAnswers >= this.intensityThreshold2 && this.intensity === 2) {
+            // Move to intensity 3 (code arrangement)
+            this.intensity = 3;
+            this.sound.play('se_combo', { volume: 0.8 });
+            this.showIntensityNotification();
+        } else if (this.correctAnswers >= this.intensityThreshold2 + 5 && this.intensity === 3) {
+            // Simple additional rule: after some extra correct answers escalate to MAX (4)
+            this.intensity = 4;
+            this.sound.play('se_combo', { volume: 0.9 });
+            this.showIntensityNotification();
         }
     }
 
@@ -2278,9 +2122,11 @@ export default class MainGameplay extends BaseScene {
         
         let notificationText = '';
         if (this.intensity === 2) {
-            notificationText = 'INTENSITY LEVEL 2\nDRAG & DROP MODE!';
+            notificationText = 'INTENSITY LEVEL 2\nSYNTAX CHECK MODE!';
         } else if (this.intensity === 3) {
-            notificationText = 'INTENSITY LEVEL 3\nCODE ARRANGEMENT!';
+            notificationText = 'INTENSITY LEVEL 3\nCODE ARRANGEMENT MODE!';
+        } else if (this.intensity >= 4) {
+            notificationText = 'MAX INTENSITY\nALL QUESTION TYPES!';
         }
         
         const notification = this.add.text(centerX, centerY, notificationText, {
@@ -2425,6 +2271,10 @@ export default class MainGameplay extends BaseScene {
                 }
             }
         }
+        // Always update DOM HUD timer visuals via DomHudManager (centralized threshold coloring)
+        if (this._domHud && this._domHud.domHudActive && typeof this._domHud.updateTimerVisual === 'function') {
+            this._domHud.updateTimerVisual(this.gameTimer);
+        }
     }
 
     startTimerShake() {
@@ -2457,8 +2307,32 @@ export default class MainGameplay extends BaseScene {
         const color = delta > 0 ? '#00ff66' : '#ff3333';
         const textStr = `${sign}${delta}s`;
 
+        // Flash the timer itself green/red briefly for feedback
+        const flashPhaserTimer = () => {
+            if (!this.timerText) return;
+            const originalColor = this.timerText.style.color || '#ffffff';
+            // Set to green/red
+            this.timerText.setColor(color);
+            // Brief flash then revert using existing updateTimerDisplay for threshold color
+            this.time.delayedCall(250, () => {
+                try {
+                    this.updateTimerDisplay();
+                } catch (_) {
+                    this.timerText.setColor(originalColor);
+                }
+            });
+        };
+
+        const flashDomTimer = () => {
+            if (this._domHud && this._domHud.domHudActive && typeof this._domHud.flashTimerDelta === 'function') {
+                this._domHud.flashTimerDelta(delta);
+            }
+        };
+
         // If DOM HUD is active (desktop), create a floating DOM element instead of Phaser text (since timerText is hidden)
-        if (this.domHudActive && this.domTimerEl) {
+        if (this._domHud && this._domHud.domHudActive && this._domHud.domTimerEl) {
+            // DOM HUD: flash timer element color
+            flashDomTimer();
             const label = document.createElement('div');
             label.textContent = textStr;
             Object.assign(label.style, {
@@ -2501,7 +2375,8 @@ export default class MainGameplay extends BaseScene {
             return; // Skip Phaser-based floating text
         }
 
-        // Phaser text fallback (mobile or when DOM HUD not active)
+    // Phaser text fallback (mobile or when DOM HUD not active)
+    flashPhaserTimer();
         const baseX = this.timerText ? this.timerText.x : this.scale.width / 2;
         // Place below timer so it doesn't overlap the digits, then rises past them
         const baseY = (this.timerText ? this.timerText.y : 30) + 42;
@@ -3332,6 +3207,9 @@ export default class MainGameplay extends BaseScene {
             if (currentDistance <= 2) {
                 score += 100;
             }
+
+            // Add hazard avoidance scoring: penalize being near thugs or next spawn tiles
+            score += this._hazardProximityPenalty(newTileX, newTileY);
             
             return { ...move, score, x: newTileX, y: newTileY };
         });
@@ -3355,10 +3233,38 @@ export default class MainGameplay extends BaseScene {
         if (tileX === playerTileX && tileY === playerTileY) {
             return false;
         }
+        // Avoid hazard tiles: active goblin thugs or tiles flagged for next spawn
+        if (this._isHazardTile(tileX, tileY)) {
+            return false;
+        }
+
         // Check if position is occupied by another enemy
         return !this.enemies.some(enemy => 
             enemy !== movingEnemy && enemy.tileX === tileX && enemy.tileY === tileY
         );
+    }
+
+    // Helpers: hazard detection and proximity penalty for enemy AI
+    _isHazardTile(tileX, tileY) {
+        // Active goblin thugs
+        if (this.goblinThugs && this.goblinThugs.some(t => t.tileX === tileX && t.tileY === tileY)) return true;
+        // Imminent spawn positions (from spawn indicators)
+        if (this.nextSpawnPositions && this.nextSpawnPositions.some(p => p.x === tileX && p.y === tileY)) return true;
+        return false;
+    }
+
+    _hazardProximityPenalty(tileX, tileY) {
+        // Direct hazard: strong penalty (though isValidEnemyMove blocks exact hazard tiles)
+        let penalty = this._isHazardTile(tileX, tileY) ? -200 : 0;
+        const offsets1 = [ [1,0], [-1,0], [0,1], [0,-1] ];
+        const offsets2 = [ [2,0], [-2,0], [0,2], [0,-2], [1,1], [1,-1], [-1,1], [-1,-1] ];
+        const inBounds = (x,y)=> x>=0 && y>=0 && x<this.MAP_WIDTH && y<this.MAP_HEIGHT;
+        const nearHazard = (offs) => offs.some(([dx,dy]) => {
+            const x = tileX + dx, y = tileY + dy; return inBounds(x,y) && this._isHazardTile(x,y);
+        });
+        if (nearHazard(offsets1)) penalty -= 90; // ring 1
+        if (nearHazard(offsets2)) penalty -= 45; // ring 2
+        return penalty;
     }
 
     setupInput() {
@@ -3467,63 +3373,7 @@ export default class MainGameplay extends BaseScene {
         
     }
 
-    addCourseDisplay() {
-        // Add stylized course topic display in the top-right corner
-        if (this.courseTopic) {
-            const courseDisplayName = this.getFormattedCourseName(this.courseTopic);
-            
-            // Enhanced mobile-responsive positioning and styling
-            const isMobile = this.scale.width < 768;
-            const isSmallMobile = this.scale.width < 480;
-            
-            let fontSize, strokeThickness, courseX, courseY;
-            if (isSmallMobile) {
-                fontSize = '16px';
-                strokeThickness = 3;
-                courseX = this.scale.width - 15;
-                courseY = 5; // Absolute top
-            } else if (isMobile) {
-                fontSize = '18px';
-                strokeThickness = 3;
-                courseX = this.scale.width - 20;
-                courseY = 5; // Absolute top
-            } else {
-                fontSize = '20px';
-                strokeThickness = 2;
-                courseX = this.scale.width - 20;
-                courseY = 30; // Original position for desktop
-            }
-            
-            this.courseDisplay = this.add.text(courseX, courseY, courseDisplayName, {
-                fontFamily: 'Arial',
-                fontSize: fontSize,
-                fontWeight: 'bold',
-                color: '#00ffff', // Cyan color
-                stroke: '#000080', // Dark blue stroke
-                strokeThickness: strokeThickness,
-                shadow: {
-                    offsetX: 2,
-                    offsetY: 2,
-                    color: '#000040',
-                    blur: 4,
-                    fill: true
-                }
-            });
-            this.courseDisplay.setOrigin(1, 0);
-            this.courseDisplay.setScrollFactor(0);
-            this.courseDisplay.setDepth(100);
-            
-            // Add subtle glow effect to course name
-            this.tweens.add({
-                targets: this.courseDisplay,
-                alpha: 0.7,
-                duration: 1500,
-                ease: 'Sine.easeInOut',
-                yoyo: true,
-                repeat: -1
-            });
-        }
-    }
+    addCourseDisplay() { /* DOM HUD shows course; Phaser text removed */ }
 
     addMobileControlHint() {
         // Only show hint on mobile devices
@@ -3996,6 +3846,14 @@ export default class MainGameplay extends BaseScene {
     showResultScreen(courseCompleted = false) {
         if (this._resultShown) return; // prevent duplicate calls
         this._resultShown = true;
+        // Stop timers to prevent background ticking during transition
+        if (this._timer) this._timer.stop();
+        if (this.timerEvent) { try { this.timerEvent.remove(); } catch (_) {} this.timerEvent = null; }
+        if (this.countdownEvent) { try { this.countdownEvent.remove(); } catch (_) {} this.countdownEvent = null; }
+        // Ensure streak does not carry over after gameplay ends
+        if (typeof this.resetStreak === 'function') this.resetStreak();
+        // Ensure power-ups and related cadence are cleared on exit
+        if (typeof this.resetPowerUps === 'function') this.resetPowerUps();
         // Prepare data for ResultScreen
         const resultData = {
             correctAnswers: this.correctAnswers,
@@ -4091,17 +3949,10 @@ export default class MainGameplay extends BaseScene {
     }
 
     removeDesktopHud() {
-        // Remove DOM HUD if present
+        // Remove DOM HUD if present; Phaser HUD is not used
         const domHud = typeof document !== 'undefined' ? document.getElementById('desktop-game-hud') : null;
-        if (domHud) {
-            domHud.remove();
-        }
+        if (domHud) domHud.remove();
         this.domHudActive = false;
-        // Re-show Phaser HUD texts (in case we return to gameplay later without full reload)
-        if (this.scoreText) this.scoreText.setVisible(true);
-        if (this.streakText) this.streakText.setVisible(true);
-        if (this.timerText) this.timerText.setVisible(true);
-        if (this.courseDisplay) this.courseDisplay.setVisible(true);
     }
 
     async uploadGameplayDataInBackground(resultData) {
@@ -4184,7 +4035,8 @@ export default class MainGameplay extends BaseScene {
                     sessionDuration: Date.now() - (resultData.startTime || Date.now()),
                     timestamp: new Date().toISOString(),
                     accuracyPercentage: resultData.correctAnswers + resultData.wrongAnswers > 0 ? 
-                        ((resultData.correctAnswers / (resultData.correctAnswers + resultData.wrongAnswers)) * 100).toFixed(1) : 0
+                        ((resultData.correctAnswers / (resultData.correctAnswers + resultData.wrongAnswers)) * 100).toFixed(1) : 0,
+                    bloomStats: this.sessionBloomStats || null
                 }
             };
             
@@ -4515,6 +4367,14 @@ export default class MainGameplay extends BaseScene {
 
     // Clean up when scene is shutdown
     shutdown() {
+        // Stop and dispose timers/events
+        if (this._timer) { try { this._timer.destroy(); } catch (_) {} this._timer = null; }
+        if (this.timerEvent) { try { this.timerEvent.remove(); } catch (_) {} this.timerEvent = null; }
+        if (this.countdownEvent) { try { this.countdownEvent.remove(); } catch (_) {} this.countdownEvent = null; }
+        // Defensive: ensure streak is reset if scene ends abruptly
+        if (typeof this.resetStreak === 'function') this.resetStreak();
+        // Defensive: also clear any active power-up states
+        if (typeof this.resetPowerUps === 'function') this.resetPowerUps();
         if (this.playerGlow) {
             this.playerGlow.destroy();
             this.playerGlow = null;

@@ -189,11 +189,10 @@ export default class MainHub extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('MainHubBG', 'assets/img/mainhub/MainHubBG.png');
+        this.load.image('MainHubBG', 'assets/img/bg/BinaryBG.png');
         this.load.image('icon1', 'assets/img/mainhub/CLASSROOM_ICON.png');
         this.load.image('icon2', 'assets/img/mainhub/LIBRARY_ICON.png');
         this.load.image('icon3', 'assets/img/mainhub/COMLAB_ICON.png');
-        // this.load.image('icon5', 'assets/img/mainhub/canteenIcon.png');
 
         // Load Secretary image for dialogue
         this.load.image('Secretary', 'assets/sprites/npcs/secretary.png');
@@ -227,6 +226,10 @@ export default class MainHub extends Phaser.Scene {
     }
 
     async createUI() {
+        // Concurrency guard: prevent overlapping async invocations (resize + intro completion)
+        this._createUiRunId = (this._createUiRunId || 0) + 1;
+        const runId = this._createUiRunId;
+
         if (this.uiElements.length) {
             this.uiElements.forEach(el => el.destroy());
             this.uiElements = [];
@@ -258,6 +261,7 @@ export default class MainHub extends Phaser.Scene {
 
         this.bg = this.add.tileSprite(0, 0, width, height, 'MainHubBG').setOrigin(0, 0);
         this.bg.setAlpha(0.5);
+        this.bg.setDepth(-10); // Ensure background renders behind all other elements
         if (this.cameras && this.cameras.main) {
             this.cameras.main.setBackgroundColor('#87ceeb');
         }
@@ -320,6 +324,8 @@ export default class MainHub extends Phaser.Scene {
                 this.hideSecretary();
                 onceOnlyFlags.setSeen('mainhub_intro');
                 // Show UI elements after cutscene
+                // If a newer createUI run started while cutscene was playing, abort this one
+                if (runId !== this._createUiRunId) { return; }
                 this.showUIElementsAfterCutscene();
                 this.createCarousel(iconKeys, iconInfo);
                 
@@ -338,6 +344,8 @@ export default class MainHub extends Phaser.Scene {
             } else {
             }
             
+            // Abort if superseded by a newer run (e.g., rapid resize)
+            if (runId !== this._createUiRunId) { return; }
             this.createCarousel(iconKeys, iconInfo);
             
             // Skip tutorial as well for returning students with Firebase data
@@ -346,7 +354,7 @@ export default class MainHub extends Phaser.Scene {
             } else if (!onceOnlyFlags.hasSeen('mainhub_tutorial')) {
                 // Start tutorial after carousel is created (if first time visiting hub)
                 this.time.delayedCall(300, () => {
-                    this.startHubTutorial();
+                    if (runId === this._createUiRunId) this.startHubTutorial();
                 });
             }
         }
@@ -488,16 +496,16 @@ export default class MainHub extends Phaser.Scene {
         const scale = Math.min(width / 816, height / 624); // Calculate scale factor
         
         this.carousel = new Carousel(this, {
-            iconCenterY: 200, // Moved up from 220 to 200 to give more room for text
-            largeScale: 0.3,  
+            iconCenterY: 200,
+            largeScale: 0.3,
             smallScale: 0.15,
-            iconToTitleGap: 140, // Increased gap between icon and title
-            iconToDescGap: 80,   // Increased gap between title and description
+            iconToTitleGap: 120,
+            iconToDescGap: 60,
             headingStyle: {
-                fontSize: Math.max(32, 56 * scale) // Responsive font size with minimum
+                fontSize: 48
             },
             descStyle: {
-                fontSize: Math.max(24, 36 * scale) // Responsive font size with minimum
+                fontSize: 26
             },
             sounds: {
                 hover: 'se_hoverSound',
@@ -550,7 +558,9 @@ export default class MainHub extends Phaser.Scene {
 
     update() {
         if (this.bg) {
-            this.bg.tilePositionY -= 1;
+            // Enhanced scrolling background behind carousel
+            this.bg.tilePositionY -= 0.5; // Slower vertical scroll for more subtle effect
+            this.bg.tilePositionX -= 0.2; // Add slight horizontal drift for dynamic feel
         }
         // Update points display if it exists and is still valid
         if (this.pointsDisplay && this.pointsDisplay.update) {

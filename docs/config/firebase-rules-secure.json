@@ -58,5 +58,45 @@
         }
       }
     }
+    ,
+    "system": {
+      ".read": true,
+      "maintenance": {
+        ".read": true,
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['enabled']) && newData.child('enabled').isBoolean()",
+        "enabled": { ".validate": "newData.isBoolean()" },
+  "message": { ".validate": "!newData.exists() || newData.isString()" },
+  "startsAt": { ".validate": "!newData.exists() || newData.isString()" },
+  "startsAtMs": { ".validate": "!newData.exists() || newData.isNumber()" },
+        "startedAt": { ".validate": "!newData.exists() || newData.isString()" },
+        "endsAt": { ".validate": "!newData.exists() || newData.isString()" },
+        "endsAtMs": { ".validate": "!newData.exists() || newData.isNumber()" },
+        "durationMinutes": { ".validate": "!newData.exists() || newData.isNumber()" },
+        "updatedAt": { ".validate": "!newData.exists() || newData.isString()" }
+      },
+      "leaderboards": {
+        ".read": true,
+        "contest": {
+          ".read": true,
+          ".write": "auth != null",
+          "startsAt": { ".validate": "!newData.exists() || newData.isString()" },
+          "startsAtMs": { ".validate": "!newData.exists() || newData.isNumber()" },
+          "endsAt": { ".validate": "!newData.exists() || newData.isString()" },
+          "endsAtMs": { ".validate": "!newData.exists() || newData.isNumber()" },
+          "header": { ".validate": "!newData.exists() || newData.isString()" },
+          "description": { ".validate": "!newData.exists() || newData.isString()" },
+          "visible": { ".validate": "!newData.exists() || newData.isBoolean()" },
+          "updatedAt": { ".validate": "!newData.exists() || newData.isString()" }
+        },
+        "contestEnd": {
+          ".read": true,
+          ".write": "auth != null",
+          "endsAt": { ".validate": "!newData.exists() || newData.isString()" },
+          "endsAtMs": { ".validate": "!newData.exists() || newData.isNumber()" },
+          "updatedAt": { ".validate": "!newData.exists() || newData.isString()" }
+        }
+      }
+    }
   }
 }

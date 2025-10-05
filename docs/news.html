@@ -17,6 +17,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
     <!-- Modern Notification System -->
     <script defer src="js/notifications.js"></script>
+  <!-- Reusable Maintenance Toast module -->
+  <script defer src="js/maintenanceToast.js"></script>
     <script>
       // Fallback functions in case notifications.js hasn't loaded yet
       window.ensureNotifications = function() {
@@ -156,6 +158,16 @@
     </style>
   </head>
   <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed min-h-screen flex flex-col">
+    <script>
+      // Initialize maintenance toast on News page
+      (function(){
+        try {
+          if (window.MaintenanceToast && typeof window.MaintenanceToast.init === 'function') {
+            window.MaintenanceToast.init();
+          }
+        } catch(e) { /* ignore */ }
+      })();
+    </script>
     <!-- Particle Background Effect -->
     <div id="particles" class="fixed inset-0 pointer-events-none z-0"></div>
     

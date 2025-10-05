@@ -18,6 +18,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
   <!-- Modern Notification System -->
   <script defer src="js/notifications.js"></script>
+  <!-- Reusable Maintenance Toast module -->
+  <script defer src="js/maintenanceToast.js"></script>
     <script>
       // Fallback functions in case notifications.js hasn't loaded yet
       window.ensureNotifications = function() {
@@ -3156,8 +3158,57 @@
 
   // Updated Start Game Button Event Listener
       if (startGameBtn) {
-        startGameBtn.addEventListener('click', () => {
-          
+        // Maintenance observer (via reusable module)
+        (async () => {
+          try {
+            await authManager.ensureAuthenticated();
+            const setBtnState = (active) => {
+              if (!startGameBtn) return;
+              if (active) {
+                startGameBtn.disabled = true;
+                startGameBtn.classList.add('opacity-60', 'cursor-not-allowed');
+              } else {
+                startGameBtn.disabled = false;
+                startGameBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+              }
+            };
+            if (window.MaintenanceToast && typeof window.MaintenanceToast.init === 'function') {
+              window.MaintenanceToast.init({
+                onChange: (active, val) => {
+                  const now = Date.now();
+                  const startsAtMs = val?.startsAtMs ?? (val?.startsAt ? Date.parse(val.startsAt) : 0);
+                  const endsAtMs = val?.endsAtMs ?? (val?.endsAt ? Date.parse(val.endsAt) : 0);
+                  const isActive = !!(val && val.enabled && (!startsAtMs || now >= startsAtMs) && (!endsAtMs || now < endsAtMs));
+                  setBtnState(isActive, val?.message, endsAtMs);
+                }
+              });
+            } else {
+              console.warn('MaintenanceToast module not available; falling back to no toast.');
+            }
+          } catch (e) {
+            console.warn('Maintenance observer failed:', e.message);
+          }
+        })();
+
+        startGameBtn.addEventListener('click', async (ev) => {
+          // If maintenance active, block and show message
+          try {
+            const snap = await firebase.database().ref('system/maintenance').once('value');
+            const val = snap.val() || {};
+            const now = Date.now();
+            const startsAtMs = val.startsAtMs ?? (val.startsAt ? Date.parse(val.startsAt) : 0);
+            const endsAtMs = val.endsAtMs ?? (val.endsAt ? Date.parse(val.endsAt) : 0);
+            const active = !!(val.enabled && (!startsAtMs || now >= startsAtMs) && (!endsAtMs || now < endsAtMs));
+            if (active) {
+              ev.preventDefault();
+              const endsStr = endsAtMs ? new Date(endsAtMs).toLocaleString() : '';
+              const msg = (val.message || 'Site is under maintenance.') + (endsStr ? `\n\nEnds: ${endsStr}` : '');
+              if (window.showWarning) { window.showWarning(msg, { title: 'Maintenance Mode' }); }
+              else { alert(msg); }
+              return;
+            }
+          } catch {}
+
           // Check if user is already authenticated
           if (authManager.isAuthenticated()) {
             authManager.redirectToGame();
@@ -5119,6 +5170,8 @@ Please provide a helpful, engaging response about SCI-HIGH or the thesis researc
 
       // Load news when page loads
       document.addEventListener('DOMContentLoaded', loadLatestNews);
+
+      // Admin tools moved to separate page: admin.html
     </script>
   </body>
 </html>

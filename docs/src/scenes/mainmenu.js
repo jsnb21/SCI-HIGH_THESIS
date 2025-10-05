@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { DEFAULT_TEXT_STYLE } from '../game';
 import { updateSoundVolumes, playExclusiveBGM } from '../audioUtils';
+import { showStyledConfirm } from '../ui/StyledModal.js';
 import { getAllSaveKeys, loadGame, hasExistingSave, clearCurrentUserSave, syncSaveDataOnLogin } from '../save';
 import gameManager, { onceOnlyFlags } from '../gameManager.js';
 import LoadingScreen from '../ui/LoadingScreen';
@@ -319,7 +320,22 @@ export default class MainMenu extends Phaser.Scene {
 
             const menuButtons = [
                 { label: 'Start Adventure', x: leftX, y: topRowY, onClick: async () => { se_confirmSound.play(); await this.handleAdventureStart(); } },
-                { label: 'View Progress', x: rightX, y: topRowY, onClick: () => { se_confirmSound.play(); window.location.href = 'leaderboards.html'; } },
+                { label: 'View Progress', x: rightX, y: topRowY, onClick: async () => { 
+                    se_confirmSound.play();
+                    try {
+                        const ok = await showStyledConfirm(this, {
+                            title: 'Open Leaderboards?',
+                            body: 'Open the leaderboards and progress tracking page in a new tab?',
+                            confirmText: 'Open',
+                            cancelText: 'Cancel',
+                            fontSizeBody: 24
+                        });
+                        if (ok) window.open('leaderboards.html', '_blank');
+                    } catch (e) {
+                        console.warn('showStyledConfirm failed, opening directly', e);
+                        window.open('leaderboards.html', '_blank');
+                    }
+                } },
                 { label: 'Options', x: leftX, y: bottomRowY, onClick: () => { se_confirmSound.play(); LoadingScreen.transitionToScene(this, 'OptionsScene', 'Loading...', 800); } },
                 { label: 'Quit', x: rightX, y: bottomRowY, onClick: () => { se_confirmSound.play(); this.showQuitConfirmation(se_hoverSound, se_confirmSound); } },
             ];
@@ -334,7 +350,22 @@ export default class MainMenu extends Phaser.Scene {
 
             const menuButtons = [
                 { label: 'Start Adventure', onClick: async () => { se_confirmSound.play(); await this.handleAdventureStart(); } },
-                { label: 'View Progress', onClick: () => { se_confirmSound.play(); window.location.href = 'leaderboards.html'; } },
+                { label: 'View Progress', onClick: async () => { 
+                    se_confirmSound.play();
+                    try {
+                        const ok = await showStyledConfirm(this, {
+                            title: 'Open Leaderboards?',
+                            body: 'Open the leaderboards and progress tracking page in a new tab?',
+                            confirmText: 'Open',
+                            cancelText: 'Cancel',
+                            fontSizeBody: 24
+                        });
+                        if (ok) window.open('leaderboards.html', '_blank');
+                    } catch (e) {
+                        console.warn('showStyledConfirm failed, opening directly', e);
+                        window.open('leaderboards.html', '_blank');
+                    }
+                } },
                 { label: 'Options', onClick: () => { se_confirmSound.play(); LoadingScreen.transitionToScene(this, 'OptionsScene', 'Loading...', 800); } },
                 { label: 'Quit', onClick: () => { se_confirmSound.play(); this.showQuitConfirmation(se_hoverSound, se_confirmSound); } },
             ];

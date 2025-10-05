@@ -17,7 +17,7 @@ export default class ComputerLab extends Phaser.Scene {
     preload() {
     
         // Load background and icon images
-        this.load.image('MainHubBG', 'assets/img/mainhub/MainHubBG.png');
+        this.load.image('BinaryBG', 'assets/img/bg/BinaryBG.png');
         this.load.image('Web_Design', 'assets/img/comlab/icons/web-design_logo.png');
         this.load.image('Python', 'assets/img/comlab/icons/python_logo.png');
         this.load.image('Java', 'assets/img/comlab/icons/java_logo.png');
@@ -41,14 +41,19 @@ export default class ComputerLab extends Phaser.Scene {
 
     async create() {
 
-        // Set up background
-        this.cameras.main.setBackgroundColor('#D6C8F2');
+        // Set up scrolling binary background (same as MainHub)
+        const { width, height } = this.scale;
+        this.bg = this.add.tileSprite(0, 0, width, height, 'BinaryBG').setOrigin(0, 0);
+        this.bg.setAlpha(0.5);
+        this.bg.setDepth(-10); // Ensure background renders behind all other elements
+        if (this.cameras && this.cameras.main) {
+            this.cameras.main.setBackgroundColor('#d6c8f2');
+        }
 
     // Create a back button to return to the MainHub
     const backBtn = createBackButton(this, 'MainHub');
 
-        // Add points display in top-right corner
-        const { width } = this.scale;
+        // Add points display in top-right corner (reuse width from above)
         const scaleFactor = Math.min(width / 816, this.scale.height / 624); // Using BASE_WIDTH and BASE_HEIGHT
         const pointsDisplay = gameManager.createPointsDisplay(this, width - 100 * scaleFactor, 40 * scaleFactor, scaleFactor);
         this.pointsDisplay = pointsDisplay;
@@ -116,8 +121,10 @@ export default class ComputerLab extends Phaser.Scene {
         this.carousel = new Carousel(this, {
             centerY: 400,
             spacing: 400,
-            largeScale: 0.25,  // 70% smaller than 0.2
-            smallScale: 0.1,   // Also specify smallScale to be proportionally smaller
+            largeScale: 0.25,
+            smallScale: 0.1,
+            headingStyle: { fontSize: 48 },
+            descStyle: { fontSize: 26 },
             sounds: {
                 hover: 'se_hoverSound',
                 confirm: 'se_confirmSound'
@@ -160,6 +167,12 @@ export default class ComputerLab extends Phaser.Scene {
         }, lockedStates);
     }
     update() {
+        if (this.bg) {
+            // Enhanced scrolling background behind carousel (same as MainHub)
+            this.bg.tilePositionY -= 0.5; // Slower vertical scroll for more subtle effect
+            this.bg.tilePositionX -= 0.2; // Add slight horizontal drift for dynamic feel
+        }
+        
         // Update points display if it exists
         if (this.pointsDisplay) {
             this.pointsDisplay.update();
