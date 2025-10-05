@@ -39,14 +39,22 @@
     <!-- Authentication Check -->
     <script>
       function checkAuthentication() {
-        const isAuthenticated = sessionStorage.getItem('sci_high_authenticated');
+        // Allow direct access for admin bypass links
+        try {
+          const p = new URLSearchParams(window.location.search);
+          const isBypassLink = (p.get('admin') === '1') && (p.get('maintenance') === 'off' || p.get('bypass') === '1');
+          if (isBypassLink) return true;
+        } catch {}
+
         const savedUser = localStorage.getItem('sci_high_user');
-        if (!isAuthenticated || !savedUser) {
-          alert('Please log in to access the game.');
-          window.location.href = 'index.html';
-          return false;
-        }
-        return true;
+        const isSessionAuthed = sessionStorage.getItem('sci_high_authenticated') === 'true';
+        // Prefer session flag, but allow persisted user fallback so opening game.html in a new tab works
+        if (isSessionAuthed && savedUser) return true;
+        if (savedUser) return true; // fallback: user previously logged in
+
+        alert('Please log in to access the game.');
+        window.location.href = 'index.html';
+        return false;
       }
       if (!checkAuthentication()) {
         document.documentElement.innerHTML = '<body style="background: #1a1a2e; color: white; text-align: center; padding: 50px;"><h1>Redirecting to login...</h1></body>';
@@ -279,6 +287,12 @@
         const r = document.getElementById('bypass-ribbon');
         if (r) r.style.display = 'block';
       }
+      function hideMaintenanceOverlay(){
+        try {
+          const ov = document.getElementById('maintenance-overlay');
+          if (ov) ov.style.display = 'none';
+        } catch {}
+      }
       let __bypassPwCache = null;
       async function loadAdminPassword(){
         if (__bypassPwCache !== null) return __bypassPwCache;
@@ -334,7 +348,7 @@
         try {
           if (shouldBypassMaintenance()) {
             const ok = await ensureBypassAuthorized();
-            if (ok) { showBypassRibbon(); return; }
+            if (ok) { showBypassRibbon(); hideMaintenanceOverlay(); return; }
           }
           if (!window.firebaseConfig) return; // config manager
           if (!window.firebaseConfig.isInitialized()) { await window.firebaseConfig.initializeFirebase(); }
@@ -445,6 +459,7 @@
             const ok = await ensureBypassAuthorized();
             if (ok) {
               showBypassRibbon();
+              hideMaintenanceOverlay();
               await import('./src/game.js');
               return;
             }
