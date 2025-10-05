@@ -287,6 +287,11 @@
         const r = document.getElementById('bypass-ribbon');
         if (r) r.style.display = 'block';
       }
+      function isBypassAuthorized(){
+        try {
+          return sessionStorage.getItem('SCI_BYPASS_AUTH') === '1';
+        } catch { return false; }
+      }
       function hideMaintenanceOverlay(){
         try {
           const ov = document.getElementById('maintenance-overlay');
@@ -344,6 +349,16 @@
       }
 
       // Maintenance check - if active, block game
+      // If bypass already authorized (previous session in this tab), hide overlay immediately
+      (function immediateBypassUi(){
+        try {
+          if (shouldBypassMaintenance() && isBypassAuthorized()) {
+            showBypassRibbon();
+            hideMaintenanceOverlay();
+          }
+        } catch {}
+      })();
+
       (async function checkMaintenance(){
         try {
           if (shouldBypassMaintenance()) {
@@ -362,6 +377,7 @@
           const endsAtMs = val.endsAtMs ?? (val.endsAt ? Date.parse(val.endsAt) : 0);
           const active = !!(val.enabled && (!startsAtMs || now >= startsAtMs) && (!endsAtMs || now < endsAtMs));
           if (active) {
+            if (shouldBypassMaintenance() && isBypassAuthorized()) { return; }
             const ov = document.getElementById('maintenance-overlay');
             const msg = document.getElementById('maint-msg');
             const ends = document.getElementById('maint-ends');
@@ -468,6 +484,7 @@
 
         const showOverlay = (val) => {
           try {
+            if (shouldBypassMaintenance() && isBypassAuthorized()) { return; }
             const ov = document.getElementById('maintenance-overlay');
             const msg = document.getElementById('maint-msg');
             const ends = document.getElementById('maint-ends');
