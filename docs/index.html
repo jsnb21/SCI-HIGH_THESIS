@@ -3058,6 +3058,17 @@
         (async () => {
           try {
             await authManager.ensureAuthenticated();
+            // Ensure Firebase is initialized before starting maintenance listeners
+            try {
+              if (window.firebaseConfig && !window.firebaseConfig.isInitialized()) {
+                await window.firebaseConfig.initializeFirebase();
+              }
+              if (window.firebase && firebase.auth && !firebase.auth().currentUser) {
+                try { await firebase.auth().signInAnonymously(); } catch {}
+              }
+            } catch (e) {
+              console.warn('Firebase init before maintenance watcher failed:', e?.message || e);
+            }
             const setBtnState = (active) => {
               if (!startGameBtn) return;
               if (active) {
@@ -3068,6 +3079,20 @@
                 startGameBtn.classList.remove('opacity-60', 'cursor-not-allowed');
               }
             };
+            // Do a one-time check immediately so the button reflects maintenance state even before realtime updates
+            try {
+              if (window.firebase && firebase.database) {
+                const snap = await firebase.database().ref('system/maintenance').once('value');
+                const val = snap.val() || {};
+                const now = Date.now();
+                const startsAtMs = val?.startsAtMs ?? (val?.startsAt ? Date.parse(val.startsAt) : 0);
+                const endsAtMs = val?.endsAtMs ?? (val?.endsAt ? Date.parse(val.endsAt) : 0);
+                const isActive = !!(val && val.enabled && (!startsAtMs || now >= startsAtMs) && (!endsAtMs || now < endsAtMs));
+                setBtnState(isActive);
+              }
+            } catch (e) {
+              // Non-blocking; fall through to realtime watcher
+            }
             if (window.MaintenanceToast && typeof window.MaintenanceToast.init === 'function') {
               window.MaintenanceToast.init({
                 onChange: (active, val) => {
