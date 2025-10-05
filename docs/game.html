@@ -295,6 +295,8 @@
         const r = document.getElementById('bypass-ribbon');
         if (r) r.style.display = 'block';
       }
+      function getQueryParam(key){ try { return new URLSearchParams(window.location.search).get(key); } catch { return null; } }
+      function forceBypassPrompt(){ return getQueryParam('prompt') === '1'; }
       function isBypassAuthorized(){
         try {
           return sessionStorage.getItem('SCI_BYPASS_AUTH') === '1';
@@ -352,8 +354,22 @@
       }
       async function ensureBypassAuthorized(){
         if (!shouldBypassMaintenance()) return false;
+        try { if (forceBypassPrompt()) sessionStorage.removeItem('SCI_BYPASS_AUTH'); } catch {}
         if (sessionStorage.getItem('SCI_BYPASS_AUTH') === '1') return true;
         return await promptBypassPassword();
+      }
+
+      // Robust loader that waits for the module preloader Vite rewrites in production
+      async function loadGameBundle(){
+        // Wait for the module preloader to define window.__loadGame
+        for (let i = 0; i < 60; i++) { // up to ~6s
+          if (typeof window.__loadGame === 'function') {
+            try { return await window.__loadGame(); } catch (e) { console.error('loadGame via preloader failed', e); break; }
+          }
+          await new Promise(r => setTimeout(r, 100));
+        }
+        // Fallback: try dynamic import (dev or if preloader failed)
+        try { return await import('./src/game.js'); } catch (e) { console.error('Fallback import failed', e); throw e; }
       }
 
       // Maintenance check - if active, block game
@@ -476,6 +492,7 @@
 
     <script>
       // Load the game only if maintenance is NOT active
+      document.addEventListener('DOMContentLoaded', () => {
       (async function loadGameWithMaintenanceGate() {
         // Bypass: load game immediately for admins or when local override is set
         try {
@@ -484,7 +501,7 @@
             if (ok) {
               showBypassRibbon();
               hideMaintenanceOverlay();
-              if (window.__loadGame) { await window.__loadGame(); }
+              await loadGameBundle();
               return;
             }
           }
@@ -525,12 +542,13 @@
             showOverlay(val);
             return; // do not load game during maintenance
           }
-          if (window.__loadGame) { await window.__loadGame(); }
+          await loadGameBundle();
         } catch (e) {
           // On any failure to check maintenance, fail-open and load game
-          try { if (window.__loadGame) { await window.__loadGame(); } } catch {}
+          try { await loadGameBundle(); } catch {}
         }
       })();
+      });
     </script>
     <!-- Notification debug scripts removed after verification -->
   </body>
