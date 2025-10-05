@@ -115,17 +115,37 @@ export async function initCountdown(options) {
     loadData // optional: async () => Array
   } = options || {};
 
-  // Allow fallback to centralized config when targetISO not provided
-  let targetDate;
-  if (targetISO) {
-    targetDate = new Date(targetISO);
-  } else {
-    try {
-      const cfg = await import('./config.js');
-      targetDate = cfg.getContestEndDate();
-    } catch {
-      targetDate = new Date('2025-10-12T00:00:00');
-    }
+  // Resolve target dates: prefer explicit end, else try Firebase, then config fallback
+  let endDate; // contest end
+  let startDate = null; // optional contest start
+  let headerText = null;
+  let descriptionText = null;
+  let visible = true;
+    if (targetISO) {
+      endDate = new Date(targetISO);
+    } else {
+      // Try Firebase-configured end first
+      try {
+        const { ensureFirebaseReady } = await import('./firebaseClient.js');
+        await ensureFirebaseReady();
+        const snap = await firebase.database().ref('system/leaderboards/contest').once('value');
+        const v = snap.val() || {};
+        const endMs = v.endsAtMs ?? (v.endsAt ? Date.parse(v.endsAt) : 0);
+        const startMs = v.startsAtMs ?? (v.startsAt ? Date.parse(v.startsAt) : 0);
+        if (startMs) startDate = new Date(startMs);
+        if (endMs) endDate = new Date(endMs);
+        if (typeof v.header === 'string') headerText = v.header;
+        if (typeof v.description === 'string') descriptionText = v.description;
+        if (typeof v.visible === 'boolean') visible = v.visible;
+      } catch {}
+      if (!endDate) {
+        try {
+          const cfg = await import('./config.js');
+          endDate = cfg.getContestEndDate ? cfg.getContestEndDate() : new Date(cfg.CONTEST_END_ISO || '2025-10-12T00:00:00');
+        } catch {
+          endDate = new Date('2025-10-12T00:00:00');
+        }
+      }
   }
   const daysEl = qs(selectors.days);
   const hoursEl = qs(selectors.hours);
@@ -133,7 +153,14 @@ export async function initCountdown(options) {
   const secsEl = qs(selectors.secs);
   const statusEl = statusId ? document.getElementById(statusId) : null;
   const container = containerId ? document.getElementById(containerId) : null;
+  const titleEl = document.getElementById('mini-contest-title');
+  const descEl = document.getElementById('mini-contest-desc');
   let snapshotTaken = false;
+
+  // Apply static texts and visibility if provided
+  if (titleEl && headerText) titleEl.textContent = headerText;
+  if (descEl && descriptionText) descEl.textContent = descriptionText;
+  if (container) container.style.display = (visible ? '' : 'none');
 
   async function getFullLeaderboardData() {
     try {
@@ -154,7 +181,7 @@ export async function initCountdown(options) {
 
   async function generateSnapshot(label = 'Contest') {
     const data = await getFullLeaderboardData();
-    const snapshot = buildSnapshotStructure(data, targetDate);
+    const snapshot = buildSnapshotStructure(data, endDate);
     addDownloadButtons(snapshot);
     console.info('[MiniContestSnapshot] ' + label + ' snapshot generated', snapshot);
   }
@@ -198,8 +225,17 @@ export async function initCountdown(options) {
   if (daysEl && hoursEl && minsEl && secsEl) {
     function updateCountdown() {
       const now = new Date();
-      const diff = targetDate.getTime() - now.getTime();
+      const beforeStart = startDate && now.getTime() < startDate.getTime();
+      const target = beforeStart ? startDate : endDate;
+      const diff = target.getTime() - now.getTime();
+
       if (diff <= 0) {
+        // If we just crossed the start, switch to counting down to end
+        if (beforeStart) {
+          if (statusEl) statusEl.textContent = 'Contest started! Counting down to end...';
+          return; // next tick will use endDate
+        }
+        // Past end time → finalize
         daysEl.textContent = '0';
         hoursEl.textContent = '00';
         minsEl.textContent = '00';
@@ -208,6 +244,7 @@ export async function initCountdown(options) {
         if (container) container.classList.add('ring', 'ring-primary/50');
         return; // stop updating further values; keep zeros
       }
+
       const totalSeconds = Math.floor(diff / 1000);
       const days = Math.floor(totalSeconds / 86400);
       const hours = Math.floor((totalSeconds % 86400) / 3600);
@@ -217,7 +254,12 @@ export async function initCountdown(options) {
       hoursEl.textContent = hours.toString().padStart(2, '0');
       minsEl.textContent = minutes.toString().padStart(2, '0');
       secsEl.textContent = seconds.toString().padStart(2, '0');
-      if (statusEl) statusEl.textContent = 'Time remaining until contest ends';
+      if (statusEl) {
+        const endStr = endDate ? endDate.toLocaleString() : '';
+        statusEl.textContent = beforeStart
+          ? 'Starts in (ends at ' + endStr + ')'
+          : 'Time remaining until contest ends (ends at ' + endStr + ')';
+      }
     }
     updateCountdown();
     setInterval(updateCountdown, 1000);
