@@ -3,153 +3,268 @@
     "multipleChoice": [
       {
         "question": "What does HTML stand for?",
-        "options": ["Hyper Text Markup Language", "High Tech Machine Learning", "Hyperlinks and Text Markup Language", "Home Tool Markup Language"],
-        "correctIndex": 0
+        "options": [
+          "Hyper Text Markup Language",
+          "High Tech Machine Learning",
+          "Hyperlinks and Text Markup Language",
+          "Home Tool Markup Language"
+        ],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
       },
       {
         "question": "Which HTML tag is used to create a hyperlink?",
         "options": ["<link>", "<a>", "<href>", "<hyper>"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
         "question": "Which tag is used for inserting an image?",
         "options": ["<img>", "<picture>", "<src>", "<graphic>"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
       },
       {
         "question": "What attribute specifies the URL of an image in HTML?",
         "options": ["alt", "src", "href", "url"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which HTML element is used to define a table row?",
         "options": ["<td>", "<tr>", "<th>", "<row>"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
         "question": "Which of the following is a block-level element?",
         "options": ["<span>", "<div>", "<b>", "<i>"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
         "question": "Which HTML tag is used to define the largest heading?",
         "options": ["<h6>", "<h1>", "<head>", "<title>"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
         "question": "Which attribute is used to provide alternative text for an image?",
         "options": ["src", "alt", "title", "name"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "What is the correct HTML for creating a numbered list?",
         "options": ["<ul>", "<ol>", "<list>", "<number>"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which element is used to insert a line break?",
         "options": ["<lb>", "<br>", "<break>", "<newline>"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
         "question": "Which HTML tag defines a checkbox?",
         "options": ["<input type=\"checkbox\">", "<checkbox>", "<input=\"check\">", "<input checkbox>"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
       },
       {
         "question": "Which element is used to define emphasized text?",
         "options": ["<i>", "<em>", "<b>", "<strong>"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which HTML tag is used to play video files?",
         "options": ["<media>", "<movie>", "<video>", "<play>"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
         "question": "What does the <title> element define?",
-        "options": ["The page's heading", "The browser tab title", "The largest text on page", "A tooltip"],
-        "correctIndex": 1
+        "options": [
+          "The page's heading",
+          "The browser tab title",
+          "The largest text on page",
+          "A tooltip"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which attribute specifies where to open a linked document?",
         "options": ["src", "target", "href", "open"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which HTML element is used to define a footer?",
         "options": ["<bottom>", "<footer>", "<foot>", "<end>"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "What does the <th> element represent in a table?",
         "options": ["Table row", "Table header cell", "Table data cell", "Table head"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which HTML5 element is used to draw graphics?",
         "options": ["<graphics>", "<canvas>", "<draw>", "<svg>"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which element is used for inline styling of text?",
         "options": ["<style>", "<span>", "<div>", "<font>"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which attribute makes a form field mandatory?",
         "options": ["required", "validate", "mustfill", "needed"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which element is used to define navigation links?",
         "options": ["<menu>", "<nav>", "<links>", "<navbar>"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which HTML attribute is used to uniquely identify an element?",
         "options": ["class", "id", "name", "key"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which tag is used to display preformatted text?",
         "options": ["<text>", "<pre>", "<code>", "<p>"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which input type is used to define a slider control?",
         "options": ["range", "slider", "scroll", "input-slide"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which tag defines the document body?",
         "options": ["<body>", "<main>", "<html>", "<content>"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which HTML tag defines a dropdown list?",
         "options": ["<list>", "<dropdown>", "<select>", "<option>"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which HTML tag is used for inline frames?",
         "options": ["<frame>", "<iframe>", "<window>", "<embed>"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "What does the <meta charset=\"UTF-8\"> tag do?",
-        "options": ["Defines the website language", "Specifies character encoding", "Adds metadata description", "Links a CSS file"],
-        "correctIndex": 1
+        "options": [
+          "Defines the website language",
+          "Specifies character encoding",
+          "Adds metadata description",
+          "Links a CSS file"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which HTML element defines the main content of a document?",
         "options": ["<main>", "<section>", "<article>", "<content>"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which input type is used for selecting a date?",
-        "options": ["<input type=\"datetime\">", "<input type=\"calendar\">", "<input type=\"date\">", "<input type=\"time\">"],
-        "correctIndex": 2
+        "options": [
+          "<input type=\"datetime\">",
+          "<input type=\"calendar\">",
+          "<input type=\"date\">",
+          "<input type=\"time\">"
+        ],
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "What does CSS stand for?",
+        "options": [
+          "Cascading Style Sheets",
+          "Computed Style System",
+          "Creative Styling Syntax",
+          "Central Style Source"
+        ],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which HTML element contains metadata like <title> and <meta>?",
+        "options": ["<body>", "<head>", "<header>", "<section>"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which tag defines a paragraph?",
+        "options": ["<para>", "<p>", "<text>", "<paragraph>"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which element represents main page content unique to the document?",
+        "options": ["<section>", "<article>", "<main>", "<div>"],
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which tag defines a list item?",
+        "options": ["<item>", "<li>", "<list-item>", "<ul-li>"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which target value opens a link in a new browser tab/window?",
+        "options": ["_self", "_parent", "_blank", "_top"],
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which input type hides characters as they are typed?",
+        "options": ["text", "password", "hidden", "secure"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which tag creates an unordered (bulleted) list?",
+        "options": ["<ol>", "<ul>", "<list>", "<items>"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which element creates a clickable button?",
+        "options": ["<btn>", "<button>", "<click>", "<input-button>"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which attribute provides a short tooltip on hover?",
+        "options": ["name", "tip", "title", "data-hover"],
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       }
     ]
   },
@@ -163,7 +278,8 @@
           { "code": "<img src=\"logo.png\" alt=\"Logo\">", "correct": true },
           { "code": "<img alt=logo.png src=Logo>", "correct": false },
           { "code": "<image src=\"logo.png\" text=\"Logo\">", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -173,7 +289,8 @@
           { "code": "<link rel=\"stylesheet\" href=\"styles.css\">", "correct": true },
           { "code": "<link stylesheet=styles.css>", "correct": false },
           { "code": "<style link=\"styles.css\"></style>", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -183,7 +300,8 @@
           { "code": ".btn {\n  background:#3498db;\n  color:#fff;\n}", "correct": true },
           { "code": "btn { background:#3498db; color:#fff }", "correct": false },
           { "code": ".btn: { background:#3498db; color:#fff; }", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -193,7 +311,8 @@
           { "code": ".row {\n  display:flex;\n  justify-content:center;\n}", "correct": true },
           { "code": ".row { flex-display: center; }", "correct": false },
           { "code": ".row { display:flex-center; }", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -203,7 +322,8 @@
           { "code": "function greet(name) {\n  console.log(name);\n}", "correct": true },
           { "code": "greet(name) => { console.log(name) }", "correct": false },
           { "code": "function:greet(name){ print name }", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -213,7 +333,8 @@
           { "code": "const add = (a,b) => a + b;", "correct": true },
           { "code": "const add(a,b) => { return a + b }", "correct": false },
           { "code": "let add = a,b => a + b", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -223,7 +344,8 @@
           { "code": "@media (max-width:600px) {\n  body { font-size:14px; }\n}", "correct": true },
           { "code": "@media max-width=600px { body { font-size:14px } }", "correct": false },
           { "code": "@screen (600px) { body { font-size:14px } }", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -233,7 +355,8 @@
           { "code": "<input type=\"email\" name=\"user\">", "correct": true },
           { "code": "<input email name=\"user\">", "correct": false },
           { "code": "<input type=email() user>", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -243,169 +366,358 @@
           { "code": ":root { --main:#222; }\n.box { color: var(--main); }", "correct": true },
           { "code": "root { main=#222 } .box { color: main(); }", "correct": false },
           { "code": ":root main:#222; .box { color: var(main); }", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
         "question": "Select the Correct Syntax",
         "instruction": "Fetch API basic pattern",
         "blocks": [
-          { "code": "fetch('/data.json')\n  .then(r => r.json())\n  .then(d => console.log(d));", "correct": true },
+          {
+            "code": "fetch('/data.json')\n  .then(r => r.json())\n  .then(d => console.log(d));",
+            "correct": true
+          },
           { "code": "fetch('/data.json').json().then(d => log(d));", "correct": false },
           { "code": "get('/data.json', data => console.log(data));", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Open link in new tab with safe rel",
+        "blocks": [
+          {
+            "code": "<a href=\"/page\" target=\"_blank\" rel=\"noopener noreferrer\">Open</a>",
+            "correct": true
+          },
+          { "code": "<a target=\"_blank\" href=\"/page\">Open</a>", "correct": false },
+          { "code": "<a href=\"/page\" target=\"new\" rel=\"external\">Open</a>", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS Grid two equal columns",
+        "blocks": [
+          { "code": ".grid{\n  display:grid;\n  grid-template-columns: 1fr 1fr;\n}", "correct": true },
+          { "code": ".grid{ grid-columns: 1 1; display:grid; }", "correct": false },
+          { "code": ".grid{ display:grid; columns: 2; }", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Add a class to an element via JS",
+        "blocks": [
+          {
+            "code": "document.querySelector('.box').classList.add('active');",
+            "correct": true
+          },
+          { "code": "document.find('.box').addClass('active');", "correct": false },
+          { "code": "query('.box').class('active', add);", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Required text input with placeholder",
+        "blocks": [
+          { "code": "<input type=\"text\" placeholder=\"Name\" required>", "correct": true },
+          { "code": "<input placeholder=\"Name\" require>", "correct": false },
+          { "code": "<input type=\"text\" placeholder=\"Name\" must>", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Async/Await fetch JSON",
+        "blocks": [
+          {
+            "code": "const res = await fetch('/data.json');\nconst data = await res.json();",
+            "correct": true
+          },
+          { "code": "await const res = fetch('/data.json').json();", "correct": false },
+          { "code": "const data = await fetch.json('/data.json');", "correct": false }
+        ],
+        "bloomTarget": "applying"
       }
     ],
     "multipleChoice": [
       {
-        "question": "Which CSS property is used to change the text color of an element?",
+        "question": "Which CSS property changes text color?",
         "options": ["font-color", "color", "text-style", "text-color"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which CSS property controls the size of text?",
+        "question": "Which CSS property sets the font size?",
         "options": ["font-size", "text-size", "font-style", "size"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "How do you select an element with the id \"header\"?",
+        "question": "Which selector targets an element with id 'header'?",
         "options": [".header", "header", "#header", "*header"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which CSS property is used to change the background color?",
+        "question": "Which CSS property sets the background color?",
         "options": ["bgcolor", "background-color", "color-background", "back-color"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
-        "question": "Which CSS property controls the space between content and its border?",
+        "question": "Which property controls the space inside an element's border?",
         "options": ["margin", "padding", "spacing", "border-gap"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "What is the correct syntax to link an external CSS file?",
-        "options": ["<style src=\"style.css\">", "<link rel=\"stylesheet\" href=\"style.css\">", "<css link=\"style.css\">", "<stylesheet>style.css</stylesheet>"],
-        "correctIndex": 1
+        "question": "What is the correct HTML to link an external CSS file?",
+        "options": [
+          "<style src=\"style.css\">",
+          "<link rel=\"stylesheet\" href=\"style.css\">",
+          "<css link=\"style.css\">",
+          "<stylesheet>style.css</stylesheet>"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which CSS property makes text bold?",
+        "question": "Which property controls the boldness of text?",
         "options": ["text-weight", "font-bold", "font-weight", "bold"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which CSS value hides an element but keeps its space reserved?",
+        "question": "Which CSS declaration hides an element but preserves layout space?",
         "options": ["display: none", "visibility: hidden", "opacity: 0", "hidden: true"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which CSS property sets the space outside the border of an element?",
+        "question": "Which property controls the space outside an element's border?",
         "options": ["padding", "spacing", "margin", "outline"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "How do you select all <p> elements inside a <div>?",
+        "question": "Which selector selects all <p> elements inside a <div>?",
         "options": ["p.div", "div p", "div+p", "div.p"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which CSS property changes the mouse pointer?",
+        "question": "Which CSS property changes the mouse cursor style?",
         "options": ["mouse", "cursor", "pointer", "icon"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which CSS property controls underlining of text?",
+        "question": "Which CSS property adds underlines or overlines to text?",
         "options": ["font-decoration", "text-decoration", "decoration", "text-style"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which position value places an element relative to its nearest positioned ancestor?",
+        "question": "Which position value removes an element from normal flow?",
         "options": ["absolute", "fixed", "relative", "static"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which CSS unit is relative to the root element's font size?",
+        "question": "Which unit is relative to the root element's font size?",
         "options": ["%", "em", "rem", "px"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
         "question": "What does z-index control?",
-        "options": ["Element size", "Element transparency", "Element stacking order", "Element alignment"],
-        "correctIndex": 2
+        "options": [
+          "Element size",
+          "Element transparency",
+          "Element stacking order",
+          "Element alignment"
+        ],
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which syntax allows multiple background images?",
-        "options": ["bg()", "background()", "background-image()", "background-image with comma"],
-        "correctIndex": 3
+        "question": "How do you specify multiple background images in CSS?",
+        "options": [
+          "bg()",
+          "background()",
+          "background-image()",
+          "background-image with comma"
+        ],
+        "correctIndex": 3,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which property controls transparency of an element?",
+        "question": "Which property controls overall element transparency?",
         "options": ["opacity", "transparency", "alpha", "visible"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which CSS property transforms text to uppercase?",
+        "question": "Which property converts text to uppercase/lowercase/capitalize?",
         "options": ["text-transform", "font-style", "text-uppercase", "capitalize"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which pseudo-class styles an element when the mouse hovers over it?",
+        "question": "Which pseudo-class applies when hovering over an element?",
         "options": [":focus", ":hover", ":active", ":visited"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which CSS property creates rounded corners?",
+        "question": "Which property rounds the corners of an element?",
         "options": ["border-style", "border-round", "border-radius", "round-corner"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which display value allows block properties but stays inline?",
+        "question": "Which display value allows width/height and flows inline?",
         "options": ["block", "inline", "inline-block", "flex"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which CSS property aligns text horizontally?",
+        "question": "Which property horizontally aligns inline content?",
         "options": ["align-text", "text-align", "horizontal-align", "align"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which CSS property defines thickness of text?",
+        "question": "Which property controls the thickness of characters?",
         "options": ["font-style", "text-weight", "font-weight", "boldness"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which CSS rule adapts styles for screen sizes?",
+        "question": "Which at-rule defines media queries?",
         "options": ["@resize", "@responsive", "@media", "@query"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which position keeps an element fixed relative to the viewport?",
         "options": ["static", "absolute", "relative", "fixed"],
-        "correctIndex": 3
+        "correctIndex": 3,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which property sets the order of flex items?",
+        "question": "Which property sets the visual order of flex items?",
         "options": ["flex-order", "item-order", "order", "align-order"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which property sets column layout in CSS Grid?",
-        "options": ["grid-template-columns", "grid-columns", "columns-template", "grid-structure"],
-        "correctIndex": 0
+        "question": "Which property defines columns in CSS Grid?",
+        "options": [
+          "grid-template-columns",
+          "grid-columns",
+          "columns-template",
+          "grid-structure"
+        ],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which property makes an element a flex container?",
-        "options": ["flex-container", "display: flex", "flex: container", "container: flex"],
-        "correctIndex": 1
+        "question": "Which declaration creates a flex container?",
+        "options": [
+          "flex-container",
+          "display: flex",
+          "flex: container",
+          "container: flex"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
-        "question": "Which function applies transformations (rotate, scale, etc.)?",
+        "question": "Which CSS function applies 2D/3D transformations?",
         "options": ["transform()", "translate()", "effect()", "modify()"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
       },
       {
-        "question": "Which property allows smooth transitions between styles?",
+        "question": "Which property animates changes between CSS states?",
         "options": ["animate", "transition", "ease", "timing"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which property sets the space between lines of text?",
+        "options": ["line-gap", "line-height", "text-spacing", "row-height"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which selector targets elements with class 'btn'?",
+        "options": ["#btn", ".btn", "btn", "*btn"],
+        "correctIndex": 1,
+        "bloomTarget": "applying"
+      },
+      {
+        "question": "Which unit is relative to the viewport width?",
+        "options": ["vw", "vh", "rem", "em"],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which property adds a drop shadow around a box?",
+        "options": ["box-shadow", "drop-shadow", "shadow", "outline"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which CSS declaration makes a flex item grow to fill remaining space?",
+        "options": ["flex-grow", "flex-basis", "flex: 1", "order"],
+        "correctIndex": 2,
+        "bloomTarget": "applying"
+      },
+      {
+        "question": "Which HTML attribute connects a <label> to an <input> by id?",
+        "options": ["href", "for", "label", "name"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which meta tag helps with responsive scaling on mobile?",
+        "options": [
+          "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
+          "<meta name=\"device\" content=\"responsive\">",
+          "<meta viewport=\"yes\">",
+          "<meta name=\"scale\" content=\"1.0\">"
+        ],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which property controls space between letters?",
+        "options": ["letter-spacing", "word-spacing", "text-indent", "kerning"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which color function supports an alpha (transparency) channel?",
+        "options": ["rgb()", "rgba()", "hex #RRGGBB", "hsl()"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which positioning value keeps an element in normal flow?",
+        "options": ["absolute", "fixed", "relative", "static"],
+        "correctIndex": 3,
+        "bloomTarget": "remembering"
       }
     ]
   },
@@ -413,53 +725,145 @@
     "multipleChoice": [
       {
         "question": "Where is the best place to put a JavaScript <script> tag for faster loading?",
-        "options": ["In the <head>", "At the end of <body>", "In the <title>", "Before <!DOCTYPE html>"],
-        "correctIndex": 1
+        "options": [
+          "In the <head>",
+          "At the end of <body>",
+          "In the <title>",
+          "Before <!DOCTYPE html>"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which symbol is used for a single-line comment in JavaScript?",
         "options": ["<!-- -->", "#", "//", "/**/"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
       },
       {
         "question": "What does console.log(\"Hello\"); do?",
-        "options": ["Shows a pop-up with \"Hello\"", "Prints \"Hello\" in the browser console", "Writes \"Hello\" on the webpage", "Gives an error"],
-        "correctIndex": 1
+        "options": [
+          "Shows a pop-up with \"Hello\"",
+          "Prints \"Hello\" in the browser console",
+          "Writes \"Hello\" on the webpage",
+          "Gives an error"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which keyword declares a variable that can change later?",
         "options": ["var", "let", "const", "define"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
         "question": "What is the data type of \"123\"?",
         "options": ["number", "string", "integer", "undefined"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which keyword is used to declare a constant value?",
         "options": ["let", "var", "const", "static"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
       },
       {
         "question": "Which operator checks both value and type?",
         "options": ["==", "===", "=", "!="],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "What is the result of 5 + \"5\"?",
         "options": ["10", "55", "NaN", "Error"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "analyzing"
       },
       {
         "question": "Which operator is used for multiplication?",
         "options": ["+", "*", "=", "&&"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
         "question": "What does the else block do?",
-        "options": ["Runs when condition is true", "Runs when condition is false", "Repeats code", "Stops the program"],
-        "correctIndex": 1
+        "options": [
+          "Runs when condition is true",
+          "Runs when condition is false",
+          "Repeats code",
+          "Stops the program"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "What does event.preventDefault() do when called inside a submit handler?",
+        "options": [
+          "Stops JavaScript execution",
+          "Prevents the form's default submission",
+          "Reloads the page",
+          "Cancels all event listeners"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "analyzing"
+      },
+      {
+        "question": "Which statement about const objects in JavaScript is true?",
+        "options": [
+          "They cannot have properties modified",
+          "They cannot be reassigned to a new value",
+          "They are deeply immutable",
+          "They are block-scoped and hoisted as initialized"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Result of [1,2,3].map(parseInt) is:",
+        "options": ["[1, 2, 3]", "[1, NaN, NaN]", "[1, 10, 11]", "Throws an error"],
+        "correctIndex": 1,
+        "bloomTarget": "analyzing"
+      },
+      {
+        "question": "Which selector has the highest specificity?",
+        "options": [".nav li a", "#header .nav li", "li a", "header nav a"],
+        "correctIndex": 1,
+        "bloomTarget": "analyzing"
+      },
+      {
+        "question": "What does the defer attribute on a <script> tag do?",
+        "options": [
+          "Executes the script immediately before parsing",
+          "Downloads in parallel and executes after HTML parsing, in order",
+          "Blocks HTML parsing until the script finishes",
+          "Only loads the script on hover"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "An absolutely positioned element is positioned relative to:",
+        "options": [
+          "The viewport",
+          "The nearest ancestor with a non-static position",
+          "The document root",
+          "The nearest flex container"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "analyzing"
+      },
+      {
+        "question": "Which practice best improves image accessibility?",
+        "options": [
+          "Use empty alt on all images",
+          "Use meaningful alt text describing the image's purpose",
+          "Put the description only in the caption",
+          "Rely on file names for screen readers"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "evaluating"
       }
     ],
     "codeArrangement": [
@@ -471,7 +875,8 @@
           "<html>",
           "<head><title>My Page</title></head>"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the CSS code blocks in correct order:",
@@ -481,7 +886,8 @@
           "    background-color: blue;",
           "    color: white;"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the JavaScript code blocks in correct order:",
@@ -491,7 +897,8 @@
           "button.addEventListener('click', function() {",
           "    console.log('Button clicked!');"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the HTML/CSS code blocks in correct order:",
@@ -501,7 +908,8 @@
           "<ul>",
           "    <li><a href=\"#home\">Home</a></li>"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the CSS code blocks in correct order:",
@@ -511,7 +919,8 @@
           "    display: flex;",
           "    justify-content: center;"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the JavaScript code blocks in correct order:",
@@ -521,7 +930,8 @@
           "form.addEventListener('submit', function(e) {",
           "    if (!form.checkValidity()) {"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the CSS code blocks in correct order:",
@@ -531,7 +941,8 @@
           "    .container {",
           "        width: 100%;"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the JavaScript code blocks in correct order:",
@@ -541,7 +952,52 @@
           "    .then(response => response.json())",
           "    .then(data => console.log(data))"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the JS code to run after DOM is ready:",
+        "description": "Initialize app when DOM content is loaded",
+        "blocks": [
+          "document.addEventListener('DOMContentLoaded', () => {",
+          "  initApp();",
+          "});"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "title": "Arrange CSS Grid for three equal columns:",
+        "description": "Create a 3-column grid layout",
+        "blocks": [
+          ".grid {",
+          "  display: grid;",
+          "  grid-template-columns: 1fr 1fr 1fr;"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange HTML to link external CSS:",
+        "description": "Add stylesheet link inside head",
+        "blocks": [
+          "<head>",
+          "  <link rel=\"stylesheet\" href=\"styles.css\">",
+          "</head>"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange JS form submit handler with preventDefault:",
+        "description": "Stop default submit and log form data",
+        "blocks": [
+          "form.addEventListener('submit', e => {",
+          "  e.preventDefault();",
+          "  console.log('submitted');"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       }
     ]
   }
