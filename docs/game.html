@@ -18,6 +18,14 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <!-- Module preloader to make Vite bundle the game module and expose a runtime loader -->
+    <script type="module">
+      // This import will be rewritten by Vite in production builds
+      window.__loadGame = async () => {
+        const mod = await import('./src/game.js');
+        return mod;
+      };
+    </script>
     <script>
       (async function(){
         try {
@@ -476,7 +484,7 @@
             if (ok) {
               showBypassRibbon();
               hideMaintenanceOverlay();
-              await import('./src/game.js');
+              if (window.__loadGame) { await window.__loadGame(); }
               return;
             }
           }
@@ -517,10 +525,10 @@
             showOverlay(val);
             return; // do not load game during maintenance
           }
-          await import('./src/game.js');
+          if (window.__loadGame) { await window.__loadGame(); }
         } catch (e) {
           // On any failure to check maintenance, fail-open and load game
-          try { await import('./src/game.js'); } catch {}
+          try { if (window.__loadGame) { await window.__loadGame(); } } catch {}
         }
       })();
     </script>
