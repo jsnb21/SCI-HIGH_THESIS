@@ -44,14 +44,15 @@ export default defineConfig({
   publicDir: 'public',
   plugins: [
     {
-      name: 'copy-notifications',
+      name: 'copy-static-js',
       writeBundle() {
-        // Copy notifications.js to maintain the same path structure
+        // Copy non-bundled JS utilities that are referenced directly by HTML
         try {
           mkdirSync('./dist/js', { recursive: true });
           copyFileSync('./js/notifications.js', './dist/js/notifications.js');
+          copyFileSync('./js/maintenanceToast.js', './dist/js/maintenanceToast.js');
         } catch (error) {
-          console.error('Failed to copy notifications.js:', error);
+          console.error('Failed to copy static js files:', error);
         }
       }
     },
