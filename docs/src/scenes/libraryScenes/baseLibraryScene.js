@@ -1,6 +1,7 @@
 // Enhanced Library Scene with Direct Book Links
 
 import Carousel from '../../ui/carouselUI.js';
+import { showStyledConfirm } from '../../ui/StyledModal.js';
 import { createBackButton } from '../../components/buttons/backbutton.js';
 import { onceOnlyFlags } from '../../gameManager';
 import TutorialManager from '../../components/TutorialManager.js';
@@ -32,7 +33,14 @@ class BaseLibraryScene extends Phaser.Scene {
         // Load JSON data files
         this.load.json('booksData', `library/books.json`);
         
-        // Load programming language icons from comlab folder
+        // Load NEW dedicated library book cover images
+        // Files placed in public/assets/img/library : html_book.png, css_book.png, javascript_book.png, python_book.png, java_book.png
+        this.load.image('html_book', 'assets/img/library/html_book.png');
+        this.load.image('css_book', 'assets/img/library/css_book.png');
+        this.load.image('javascript_book', 'assets/img/library/javascript_book.png');
+        this.load.image('python_book', 'assets/img/library/python_book.png');
+        this.load.image('java_book', 'assets/img/library/java_book.png');
+        // Backwards compatibility: keep older icons if some books still reference legacy icon keys
         this.load.image('web-design_logo', 'assets/img/comlab/icons/web-design_logo.png');
         this.load.image('python_logo', 'assets/img/comlab/icons/python_logo.png');
         this.load.image('java_logo', 'assets/img/comlab/icons/java_logo.png');
@@ -44,6 +52,11 @@ class BaseLibraryScene extends Phaser.Scene {
         this.load.audio('se_select', 'assets/audio/se/se_select.wav');
         this.load.audio('se_confirm', 'assets/audio/se/se_confirm.wav');
         this.load.audio('bgm_library', 'assets/audio/bgm/bgm_library.mp3');
+
+        // Font (match MainHub usage if not already loaded globally)
+        if (this.load.font) {
+            this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
+        }
     }
 
     createBookIcons() {
@@ -53,18 +66,29 @@ class BaseLibraryScene extends Phaser.Scene {
             return;
         }
 
+        // Mapping from book title (normalized) or legacy icon field to new cover image keys
+        const coverMap = {
+            'html': 'html_book',
+            'css': 'css_book',
+            'javascript': 'javascript_book',
+            'python': 'python_book',
+            'java': 'java_book'
+        };
+
         this.booksData.books.forEach((book, index) => {
             const iconKey = `book_${book.id}`;
-            const sourceIconKey = book.icon; // This will be like 'python_logo', 'java_logo', etc.
+            const normalizedTitle = (book.title || '').toLowerCase();
+            // Prefer explicit new cover by title; fall back to legacy icon property
+            let sourceIconKey = coverMap[normalizedTitle] || book.icon;
             
             
             // Check if the source icon exists in the texture manager
-            if (this.textures.exists(sourceIconKey)) {
+            if (sourceIconKey && this.textures.exists(sourceIconKey)) {
                 // Create a copy of the texture with our book-specific key
                 const sourceTexture = this.textures.get(sourceIconKey);
                 this.textures.addImage(iconKey, sourceTexture.source[0].image);
             } else {
-                console.warn(`Source icon ${sourceIconKey} not found for book ${book.title}`);
+                console.warn(`Source icon ${sourceIconKey} not found for book ${book.title}. Using fallback generated texture.`);
                 // Fallback: create a simple colored rectangle as backup
                 const graphics = this.add.graphics();
                 graphics.fillStyle(0x4a90e2, 0.8);
@@ -98,23 +122,26 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     create() {
-        // Load books data first
-        this.loadBooksData();
-        
-        // Create book icons after data is loaded
-        this.createBookIcons();
-        
-        // Setup scene
-        this.setupBackground();
-        this.createLibraryTitle();
-        this.createBooksCarousel();
-        this.createBackButton();
+        // Establish responsive scale similar to MainHub
+        this.BASE_WIDTH = 816; this.BASE_HEIGHT = 624;
+        const { width, height } = this.scale;
+        this.scaleFactor = Math.min(width / this.BASE_WIDTH, height / this.BASE_HEIGHT);
+        const scaleFont = (size) => Math.round(size * this.scaleFactor);
 
-        // Initialize sound effects and background music
+        // Background + audio
+        this.setupBackground();
         this.se_hoverSound = this.sound.add('se_select');
         this.se_confirmSound = this.sound.add('se_confirm');
         playExclusiveBGM(this, 'bgm_library', { loop: true });
         updateSoundVolumes(this);
+
+        // Data + icons
+        this.loadBooksData();
+        this.createBookIcons();
+
+    // Removed header & side stats per redesign; just carousel + back
+    this.createBooksCarousel();
+    this.createBackButton();
 
         // Initialize tutorial manager
         this.tutorialManager = new TutorialManager(this);
@@ -150,31 +177,18 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     setupBackground() {
-        // Add library background
         const bg = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'libraryBg');
         bg.setDisplaySize(this.cameras.main.width, this.cameras.main.height);
         bg.setDepth(-10);
+        bg.setAlpha(0.85);
+        this.bg = bg;
     }
 
-    createLibraryTitle() {
-        const title = this.add.text(this.cameras.main.centerX, 80, 'DIGITAL LIBRARY', {
-            fontSize: '48px',
-            fontFamily: 'Arial',
-            color: '#ffe066',
-            stroke: '#111122',
-            strokeThickness: 8,
-            shadow: { offsetX: 0, offsetY: 4, color: '#000', blur: 12, fill: true }
-        }).setOrigin(0.5).setDepth(100);
+    // Header removed in minimal redesign
 
-        const subtitle = this.add.text(this.cameras.main.centerX, 130, 'Click on any book to open it in a new tab', {
-            fontSize: '24px',
-            fontFamily: 'Arial',
-            color: '#e0e0ff',
-            stroke: '#111122',
-            strokeThickness: 4,
-            shadow: { offsetX: 0, offsetY: 2, color: '#000', blur: 8, fill: true }
-        }).setOrigin(0.5).setDepth(100);
-    }
+    positionBackButton() { /* no-op after header removal */ }
+
+    createSideStatsPanel() { /* removed per redesign */ }
 
     createBooksCarousel() {
         // Get books from books data
@@ -196,13 +210,17 @@ class BaseLibraryScene extends Phaser.Scene {
 
 
         // Create carousel
+        // Align vertical position with MainHub (iconCenterY ~200) and reduce size ~30%
         this.carousel = new Carousel(this, {
-            iconYOffset: 50,
-            iconSpacing: 200,
+            iconCenterY: 200, // Same as MainHub
+            iconYOffset: 0,
+            iconSpacing: 220,
             iconToTitleGap: 120,
             iconToDescGap: 60,
-            smallScale: 0.15,  // Further reduced from 0.3 to make icons much smaller
-            largeScale: 0.25   // Further reduced from 0.5 to make icons much smaller
+            smallScale: 0.1 * this.scaleFactor,
+            largeScale: 0.22 * this.scaleFactor,
+            headingStyle: { fontSize: 48 },
+            descStyle: { fontSize: 26 }
         });
 
         this.carousel.create(
@@ -212,115 +230,10 @@ class BaseLibraryScene extends Phaser.Scene {
             [] // No locked books
         );
 
-        // Add book names above each icon
-        this.createBookNameLabels();
-
-        // Override carousel's move method to update our book name labels
-        const originalMove = this.carousel.move.bind(this.carousel);
-        this.carousel.move = (direction) => {
-            originalMove(direction);
-            // Update book name labels after carousel moves
-            this.time.delayedCall(50, () => {
-                this.updateBookNameLabels();
-            });
-        };
+        // Removed overlay labels for cleaner look
     }
 
-    createBookNameLabels() {
-        const books = this.booksData.books || [];
-        const scale = this.carousel.getScale();
-        const iconSpacing = 200 * scale;
-        const iconYOffset = 50 * scale;
-        
-        let iconCenterX, iconCenterY;
-        if (this.cameras && this.cameras.main) {
-            iconCenterX = this.cameras.main.centerX;
-            iconCenterY = this.cameras.main.centerY + iconYOffset;
-        } else {
-            iconCenterX = this.scale.width / 2;
-            iconCenterY = this.scale.height / 2 + iconYOffset;
-        }
-
-        this.bookNameLabels = [];
-
-        books.forEach((book, index) => {
-            // Calculate position relative to carousel center
-            let relativePos = index - this.carousel.carouselIndex;
-            const iconCount = books.length;
-            if (relativePos > Math.floor(iconCount / 2)) relativePos -= iconCount;
-            else if (relativePos < -Math.floor(iconCount / 2)) relativePos += iconCount;
-            
-            const x = iconCenterX + relativePos * iconSpacing;
-            const y = iconCenterY - 80 * scale; // Position above the icon
-
-            const nameLabel = this.add.text(x, y, book.title, {
-                fontSize: `${Math.round(16 * scale)}px`,
-                fontFamily: 'Arial',
-                color: index === this.carousel.carouselIndex ? '#ffe066' : '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 2,
-                align: 'center',
-                wordWrap: { width: 120 * scale, useAdvancedWrap: true }
-            }).setOrigin(0.5).setDepth(200);
-
-            // Set initial alpha based on selection
-            nameLabel.setAlpha(index === this.carousel.carouselIndex ? 1.0 : 0.7);
-            
-            // Store reference for updates
-            nameLabel.bookIndex = index;
-            this.bookNameLabels.push(nameLabel);
-        });
-    }
-
-    updateBookNameLabels() {
-        if (!this.bookNameLabels) return;
-        
-        const books = this.booksData.books || [];
-        const scale = this.carousel.getScale();
-        const iconSpacing = 200 * scale;
-        const iconYOffset = 50 * scale;
-        
-        let iconCenterX, iconCenterY;
-        if (this.cameras && this.cameras.main) {
-            iconCenterX = this.cameras.main.centerX;
-            iconCenterY = this.cameras.main.centerY + iconYOffset;
-        } else {
-            iconCenterX = this.scale.width / 2;
-            iconCenterY = this.scale.height / 2 + iconYOffset;
-        }
-
-        this.bookNameLabels.forEach((label, arrayIndex) => {
-            const bookIndex = label.bookIndex;
-            
-            // Calculate new position
-            let relativePos = bookIndex - this.carousel.carouselIndex;
-            const iconCount = books.length;
-            if (relativePos > Math.floor(iconCount / 2)) relativePos -= iconCount;
-            else if (relativePos < -Math.floor(iconCount / 2)) relativePos += iconCount;
-            
-            const x = iconCenterX + relativePos * iconSpacing;
-            const y = iconCenterY - 80 * scale;
-
-            // Animate to new position
-            this.tweens.add({
-                targets: label,
-                x: x,
-                y: y,
-                duration: 300,
-                ease: 'Power2'
-            });
-
-            // Update styling based on selection
-            const isSelected = bookIndex === this.carousel.carouselIndex;
-            label.setColor(isSelected ? '#ffe066' : '#ffffff');
-            this.tweens.add({
-                targets: label,
-                alpha: isSelected ? 1.0 : 0.7,
-                duration: 200,
-                ease: 'Power2'
-            });
-        });
-    }
+    // Removed createBookNameLabels and updateBookNameLabels (overlay labels)
 
     onBookSelected(selectedData) {
         
@@ -348,8 +261,7 @@ class BaseLibraryScene extends Phaser.Scene {
             // Confirm with the player before opening a new tab
             const proceed = await this.confirmOpenBook(book);
             if (!proceed) {
-                // Optional: subtle canceled feedback
-                this.showTransientTip('Opening canceled');
+                // Opening canceled silently per request
                 return;
             }
             
@@ -358,18 +270,31 @@ class BaseLibraryScene extends Phaser.Scene {
                 this.se_confirmSound.play();
             }
             
-            // Show visual feedback
-            this.showOpeningFeedback(book);
+            // Removed opening feedback popup per request
             
-            // Open in a new window/tab with better security
-            const newWindow = window.open(book.link, '_blank', 'noopener,noreferrer');
-            
-            // Handle popup blocker
-            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-                console.warn('Popup blocked for:', book.link);
-                this.showPopupBlockedMessage(book);
-                return;
+            // Open in a new tab
+            // NOTE: Some browsers initially return a WindowProxy object that appears 'closed' until the event loop cycles.
+            // We do a deferred validation to reduce false positives.
+            let newWindow = null;
+            try {
+                newWindow = window.open(book.link, '_blank'); // keep minimal features to reduce blocker triggers
+            } catch (err) {
+                console.warn('window.open threw, treating as blocked', err);
             }
+
+            const validatePopup = () => {
+                // True block conditions: null OR explicitly undefined OR (no focus method AND no closed property), extremely rare.
+                const blocked = !newWindow || typeof newWindow.closed === 'undefined' && typeof newWindow.focus !== 'function';
+                if (blocked) {
+                    console.warn('Likely popup blocked for:', book.link);
+                    this.showPopupBlockedMessage(book);
+                } else {
+                    // Attempt a focus (may be ignored depending on browser policy)
+                    try { newWindow.focus(); } catch {}
+                }
+            };
+            // Defer check to allow browser to finalize tab creation
+            this.time.delayedCall(120, validatePopup);
             
             
             // Mark as reading and save progress
@@ -401,104 +326,10 @@ class BaseLibraryScene extends Phaser.Scene {
             }
         } catch (_) { /* fall through to Phaser UI */ }
 
-        // Fallback: Phaser in-scene confirmation UI
-        return this.showConfirmOverlay(message, { confirmText: 'Open', cancelText: 'Cancel' });
+        // Fallback: Reusable styled confirm modal
+        return await showStyledConfirm(this, { title: 'Open Book?', body: message, confirmText: 'Open', cancelText: 'Cancel', fontSizeBody: 24 });
     }
-
-    showConfirmOverlay(message, { confirmText = 'OK', cancelText = 'Cancel' } = {}) {
-        if (this._confirmOverlayActive) return Promise.resolve(false);
-        this._confirmOverlayActive = true;
-
-        const depth = 10_000;
-        const w = this.scale.width;
-        const h = this.scale.height;
-        const panelW = Math.min(520, Math.max(360, w * 0.7));
-        const panelH = Math.min(260, Math.max(200, h * 0.28));
-
-        const bg = this.add.rectangle(w / 2, h / 2, w, h, 0x000000, 0.75)
-            .setOrigin(0.5)
-            .setDepth(depth)
-            .setInteractive();
-
-        const panel = this.add.rectangle(w / 2, h / 2, panelW, panelH, 0x111318, 1)
-            .setOrigin(0.5)
-            .setStrokeStyle(2, 0xF4CE14, 0.6)
-            .setDepth(depth + 1);
-
-        const title = this.add.text(w / 2, h / 2 - panelH / 2 + 36, 'Leave Game Tab?', {
-            fontFamily: 'Arial Black, Arial',
-            fontSize: '20px',
-            color: '#ffffff'
-        }).setOrigin(0.5).setDepth(depth + 2);
-
-        const body = this.add.text(w / 2, title.y + 34, message, {
-            fontFamily: 'Arial',
-            fontSize: '16px',
-            color: '#d1d5db',
-            wordWrap: { width: panelW - 40, useAdvancedWrap: true },
-            align: 'center'
-        }).setOrigin(0.5).setDepth(depth + 2);
-
-        const btnY = h / 2 + panelH / 2 - 44;
-
-        const makeButton = (x, label, primary) => {
-            const btnW = 128, btnH = 40;
-            const bgRect = this.add.rectangle(x, btnY, btnW, btnH, primary ? 0xF4CE14 : 0x1F2937, 1)
-                .setOrigin(0.5)
-                .setStrokeStyle(1, primary ? 0xFDE68A : 0x374151, 0.9)
-                .setDepth(depth + 2)
-                .setInteractive({ useHandCursor: true });
-            const txt = this.add.text(x, btnY, label, {
-                fontFamily: 'Arial',
-                fontSize: '16px',
-                color: primary ? '#111827' : '#e5e7eb',
-                fontStyle: 'bold'
-            }).setOrigin(0.5).setDepth(depth + 3);
-
-            bgRect.on('pointerover', () => {
-                this.tweens.add({ targets: [bgRect, txt], scaleX: 1.04, scaleY: 1.04, duration: 120, ease: 'Power2' });
-                if (!primary) bgRect.setFillStyle(0x374151, 1);
-            });
-            bgRect.on('pointerout', () => {
-                this.tweens.add({ targets: [bgRect, txt], scaleX: 1, scaleY: 1, duration: 120, ease: 'Power2' });
-                if (!primary) bgRect.setFillStyle(0x1F2937, 1);
-            });
-
-            return { bgRect, txt };
-        };
-
-        const spacing = 160;
-        const okBtn = makeButton(w / 2 - spacing / 2, confirmText, true);
-        const cancelBtn = makeButton(w / 2 + spacing / 2, cancelText, false);
-
-        return new Promise(resolve => {
-            const cleanup = () => {
-                [bg, panel, title, body, okBtn.bgRect, okBtn.txt, cancelBtn.bgRect, cancelBtn.txt].forEach(el => el && el.destroy());
-                this._confirmOverlayActive = false;
-            };
-
-            okBtn.bgRect.on('pointerdown', () => {
-                if (this.se_confirmSound) this.se_confirmSound.play();
-                cleanup();
-                resolve(true);
-            });
-            cancelBtn.bgRect.on('pointerdown', () => {
-                cleanup();
-                resolve(false);
-            });
-
-            // Keyboard shortcuts
-            const esc = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
-            const enter = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
-            const onEsc = () => { cleanup(); resolve(false); };
-            const onEnter = () => { cleanup(); resolve(true); };
-            esc?.once('down', onEsc);
-            enter?.once('down', onEnter);
-
-            // Close by clicking the dark background (acts like cancel)
-            bg.once('pointerdown', onEsc);
-        });
-    }
+    // Removed showConfirmOverlay (replaced by reusable UI)
 
     showTransientTip(text) {
         try {
@@ -509,28 +340,7 @@ class BaseLibraryScene extends Phaser.Scene {
         } catch { /* no-op */ }
     }
 
-    showOpeningFeedback(book) {
-        // Create a temporary feedback message
-        const feedback = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY - 100, 
-            `Opening "${book.title}"...`, {
-            fontSize: '20px',
-            fontFamily: 'Arial',
-            color: '#00ff00',
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            padding: { x: 20, y: 10 },
-            borderRadius: 10
-        }).setOrigin(0.5).setDepth(300);
-
-        // Animate and remove feedback
-        this.tweens.add({
-            targets: feedback,
-            alpha: 0,
-            y: feedback.y - 50,
-            duration: 2000,
-            ease: 'Power2.easeOut',
-            onComplete: () => feedback.destroy()
-        });
-    }
+    // Removed showOpeningFeedback method (no longer needed)
 
     showPopupBlockedMessage(book) {
         // Show popup blocked message

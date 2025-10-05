@@ -4,14 +4,22 @@ const BASE_WIDTH = 816;
 const BASE_HEIGHT = 624;
 
 export default class VNDialogueBox {
-  constructor(scene, dialogueLines, onComplete) {
+  constructor(scene, dialogueLines, onComplete, options = {}) {
     this.scene = scene;
     this.dialogueLines = dialogueLines;
     this.onComplete = onComplete;
     this.dialogueIndex = 0;
-    this.text = this.dialogueLines[this.dialogueIndex];
+    this.text = this.dialogueLines[this.dialogueIndex] || '';
     this.displayedText = '';
     this.typingEvent = null;
+    
+    // Choice system properties
+    this.showChoices = options.showChoices || false;
+    this.choices = options.choices || [];
+    this.onChoiceSelected = options.onChoiceSelected || null;
+    this.choiceButtons = [];
+    this.choicesContainer = null;
+    this.choicesActive = false; // Track if choices are currently being shown
 
     // --- Scaling logic START ---
     const { width, height } = scene.scale;
@@ -46,28 +54,43 @@ export default class VNDialogueBox {
     });
     this.textObject.setDepth(11); // Text should be above the dialogue box
 
-    // Sound
-    this.selectSound = scene.sound.get('se_select') || scene.sound.add('se_select');
+  // Sounds (guard if missing)
+  this.hoverSound = scene.sound.get('se_select') || (scene.sound.add ? scene.sound.add('se_select') : null);
+  this.confirmSound = scene.sound.get('se_confirm') || (scene.sound.add ? scene.sound.add('se_confirm') : null);
 
     // Create continue indicator (initially hidden)
     this.createContinueIndicator(boxX, boxY, boxWidth, boxHeight, scale);
 
-    // Input handler
-    this.pointerHandler = () => {
-      if (this.typingEvent) {
-        this.finishTyping();
-      } else {
-        this.nextDialogue();
-      }
-    };
-    scene.input.on('pointerdown', this.pointerHandler);
-
-    // Begin typing
-    this.typeText(this.text);
-
-    // Store scale values
+    // Store scale values (must be before displayChoices)
     this._scale = scale;
     this._boxParams = { boxX, boxY, boxWidth, boxHeight, borderRadius, borderThickness };
+
+    // Input handler (only if not showing choices)
+    if (!this.showChoices) {
+      this.pointerHandler = () => {
+        if (this.typingEvent) {
+          // First click finishes current line instantly
+            this.finishTyping();
+            return;
+        }
+        // Advance or complete
+        this.nextDialogue();
+      };
+      scene.input.on('pointerdown', this.pointerHandler);
+      this.typeText(this.text);
+    } else {
+      // Show choices immediately if this is a choice dialogue
+      // But first display the text if there is any
+      if (this.text) {
+        this.displayedText = this.text;
+        this.textObject.setText(this.text);
+        // Ensure typing is marked as complete
+        this.typingEvent = null;
+        // Don't show continue indicator when choices are present
+        this.hideContinueIndicator();
+      }
+      this.displayChoices();
+    }
   }
 
   createContinueIndicator(boxX, boxY, boxWidth, boxHeight, scale) {
@@ -143,20 +166,35 @@ export default class VNDialogueBox {
   }
 
   nextDialogue() {
+    // If already completed, ignore
+    if (this._completed) return;
+    // If last line already shown (no typing event), complete now
+    if (this.dialogueIndex >= this.dialogueLines.length - 1 && !this.typingEvent) {
+      this.completeDialogue();
+      return;
+    }
+    // Otherwise move to next line
     this.dialogueIndex++;
     if (this.dialogueIndex < this.dialogueLines.length) {
       this.text = this.dialogueLines[this.dialogueIndex];
-      if (this.selectSound) this.selectSound.play();
+  if (this.hoverSound) this.hoverSound.play();
       this.typeText(this.text);
     } else {
-      // Hide the continue indicator for the final dialogue
-      this.hideContinueIndicator();
-      this.scene.input.off('pointerdown', this.pointerHandler);
-      this.scene.input.once('pointerdown', () => {
-        this.destroy();
-        if (this.onComplete) this.onComplete();
-      });
+      // Safety: if out of range, just complete
+      this.completeDialogue();
     }
+  }
+
+  completeDialogue() {
+    if (this._completed) return;
+    this._completed = true;
+    this.hideContinueIndicator();
+    if (this.pointerHandler) this.scene.input.off('pointerdown', this.pointerHandler);
+    // Delay destroy slightly to allow any sounds or chained logic
+    this.scene.time.delayedCall(0, () => {
+      this.destroy();
+      if (this.onComplete) this.onComplete();
+    });
   }
 
   showContinueIndicator() {
@@ -177,6 +215,88 @@ export default class VNDialogueBox {
     }
   }
 
+  displayChoices() {
+    this.choicesActive = true;
+    // Set dialogue to final index to prevent nextDialogue from continuing
+    this.dialogueIndex = this.dialogueLines.length;
+    
+    const { boxX, boxY, boxWidth, boxHeight } = this._boxParams;
+    const scale = this._scale;
+    
+    // Create container for choices above the dialogue box
+    const choiceStartY = boxY - 60 * scale; // Position above dialogue box
+    const choiceHeight = 40 * scale;
+    const choiceSpacing = 10 * scale;
+    
+    this.choices.forEach((choiceText, index) => {
+      const choiceY = choiceStartY - (index * (choiceHeight + choiceSpacing));
+      
+      // Create choice background
+      const choiceButton = this.scene.add.rectangle(
+        boxX + boxWidth / 2, 
+        choiceY, 
+        boxWidth - 40 * scale, 
+        choiceHeight, 
+        0x444466, 
+        0.9
+      );
+      choiceButton.setStrokeStyle(2 * scale, 0xffffff, 1);
+      choiceButton.setDepth(10);
+      choiceButton.setInteractive({ useHandCursor: true });
+      
+      // Create choice text
+      const choiceTextObj = this.scene.add.text(
+        boxX + boxWidth / 2,
+        choiceY,
+        choiceText,
+        {
+          fontFamily: 'Caprasimo-Regular',
+          fontSize: `${Math.round(18 * scale)}px`,
+          color: '#ffffff',
+          align: 'center',
+          wordWrap: { width: boxWidth - 60 * scale }
+        }
+      );
+      choiceTextObj.setOrigin(0.5);
+      choiceTextObj.setDepth(11);
+      
+      // Hover effects with sound (debounced to not spam)
+      let hoverArmed = true;
+      choiceButton.on('pointerover', () => {
+        choiceButton.setFillStyle(0x5566aa, 0.9);
+        if (hoverArmed && this.hoverSound) {
+          this.hoverSound.play();
+          hoverArmed = false;
+          // Re-arm after short delay to avoid rapid fire
+          this.scene.time.delayedCall(120, () => { hoverArmed = true; });
+        }
+      });
+      choiceButton.on('pointerout', () => {
+        choiceButton.setFillStyle(0x444466, 0.9);
+      });
+      
+      // Click handler with confirm sound
+      choiceButton.on('pointerdown', () => {
+        if (this.confirmSound) this.confirmSound.play();
+        this.destroyChoices();
+        if (this.onChoiceSelected) {
+          this.onChoiceSelected(index, choiceText);
+        }
+      });
+      
+      this.choiceButtons.push({ button: choiceButton, text: choiceTextObj });
+    });
+  }
+
+  destroyChoices() {
+    this.choicesActive = false;
+    this.choiceButtons.forEach(choice => {
+      if (choice.button && choice.button.destroy) choice.button.destroy();
+      if (choice.text && choice.text.destroy) choice.text.destroy();
+    });
+    this.choiceButtons = [];
+  }
+
   destroy() {
     if (this.textObject && this.textObject.destroy) {
       this.textObject.destroy();
@@ -194,6 +314,9 @@ export default class VNDialogueBox {
       this.blinkTween.remove();
       this.blinkTween = null;
     }
-    this.scene.input.off('pointerdown', this.pointerHandler);
+    this.destroyChoices();
+    if (this.pointerHandler) {
+      this.scene.input.off('pointerdown', this.pointerHandler);
+    }
   }
 }

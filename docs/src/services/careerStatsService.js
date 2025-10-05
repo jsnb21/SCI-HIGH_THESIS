@@ -304,6 +304,27 @@ class CareerStatsService {
                 strandYear: additionalData.strandYear || 'Unknown'
             };
 
+            // Merge Bloom stats (sessionData.bloomStats -> cumulative careerStats.bloomStats)
+            try {
+                const sessionBloom = sessionData.bloomStats;
+                if (sessionBloom && typeof sessionBloom === 'object') {
+                    const existingBloom = currentStats.careerStats.bloomStats || {};
+                    const merged = { ...existingBloom };
+                    const levels = ['remembering','understanding','applying','analyzing','evaluating','creating'];
+                    levels.forEach(l => {
+                        const prev = merged[l] || { correct:0, total:0 };
+                        const curr = sessionBloom[l] || { correct:0, total:0 };
+                        merged[l] = {
+                            correct: (parseInt(prev.correct)||0) + (parseInt(curr.correct)||0),
+                            total: (parseInt(prev.total)||0) + (parseInt(curr.total)||0)
+                        };
+                    });
+                    updatedStats.careerStats.bloomStats = merged;
+                }
+            } catch(e) {
+                console.warn('Bloom stats merge failed:', e);
+            }
+
             // Sanitize the data to remove any NaN values before saving
             const sanitizedStats = this.sanitizeDataForFirebase(updatedStats);
             

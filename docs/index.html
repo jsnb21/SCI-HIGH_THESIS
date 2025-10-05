@@ -18,6 +18,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
   <!-- Modern Notification System -->
   <script defer src="js/notifications.js"></script>
+  <!-- Reusable Maintenance Toast module -->
+  <script defer src="js/maintenanceToast.js"></script>
     <script>
       // Fallback functions in case notifications.js hasn't loaded yet
       window.ensureNotifications = function() {
@@ -467,15 +469,6 @@
         <div class="mb-6 sm:mb-12 animate-slide-in">
           <div class="mb-4 sm:mb-8 relative">
             <div class="absolute inset-0 bg-primary/20 blur-2xl sm:blur-3xl rounded-full animate-pulse-glow"></div>
-          </div>
-          
-          <!-- Testing Phase Notice (same design as leaderboards, different color) -->
-          <div class="bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-400/50 rounded-lg p-4 mb-6 sm:mb-8 text-center">
-            <p class="font-gaming text-amber-200 text-base sm:text-lg">To <span class="italic">Testing Phase</span>,</p>
-            <p class="text-amber-300 text-sm sm:text-base mt-1">
-              <span class="text-amber-200 font-semibold mt-2 text-sm sm:text-base">The game will undergo maintenance on ⏰ October 5, 2025, at 12:00 PM</span>, marking the end of the testing phase. The leaderboards will be reset once maintenance is complete and all major bugs are resolved, ensuring that all respondents can experience the finalized version of the system. This will also help ensure that the official contest week is <em><b>fair and balanced</b></em> for all participants.
-            </p>
-            <p class="text-amber-200 font-semibold mt-2 text-sm sm:text-base">‼️The leaderboard reset and game update will go live on October 5, 2025, at 6:00 PM‼️</p>
           </div>
           
           <!-- Replaced tagline text with SCI-HIGH logo image -->
@@ -2657,101 +2650,6 @@
         const screenshotsModal = globalScreenshotsModal;
         const startGameBtn = document.getElementById('start-game-btn');
 
-        // Temporary maintenance window: disable Start Adventure starting at 12:00 PM on Oct 5, 2025 for 12 hours (local time)
-        // Adjust these times as needed
-        const maintenanceWindow = {
-          start: new Date(2025, 9, 5, 12, 0, 0), // Months are 0-indexed: 9 = October
-          end: new Date(2025, 9, 6, 0, 0, 0) // 12 hours later (midnight)
-        };
-        const MAINTENANCE_MSG = 'The Start Adventure button is temporarily unavailable due to scheduled maintenance. Please try again after 12:00 AM.';
-
-        // Optional admin/testing override via URL query
-        // Usage examples:
-        //   ?admin&maintenance=on  -> force disabled
-        //   ?admin&maintenance=off -> force enabled
-        //   ?admin                 -> show a small dev ribbon and honor time window
-        const search = new URLSearchParams(window.location.search);
-        const isAdmin = search.has('admin');
-        const maintenanceOverride = isAdmin ? (search.get('maintenance') || '').toLowerCase() : '';
-
-        function isWithinMaintenanceWindow(now = new Date()) {
-          if (maintenanceOverride === 'on') return true;
-          if (maintenanceOverride === 'off') return false;
-          return now >= maintenanceWindow.start && now < maintenanceWindow.end;
-        }
-
-        function setStartBtnDisabled(disabled) {
-          if (!startGameBtn) return;
-          // Use aria/data flags and styling instead of the native disabled attribute so we can show a message on click
-          startGameBtn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-          startGameBtn.dataset.disabled = disabled ? 'true' : 'false';
-          startGameBtn.classList.toggle('opacity-50', disabled);
-          startGameBtn.classList.toggle('cursor-not-allowed', disabled);
-          startGameBtn.classList.toggle('hover:scale-105', !disabled);
-          // Update inner label subtly to indicate maintenance
-          const label = startGameBtn.querySelector('span.relative.z-10');
-          if (label) {
-            if (disabled) {
-              label.textContent = '⚠️ Maintenance';
-            } else {
-              label.textContent = '⚡ Start Adventure';
-            }
-          }
-        }
-
-        function updateStartBtnForMaintenance() {
-          setStartBtnDisabled(isWithinMaintenanceWindow());
-        }
-
-  // Initialize state and keep it updated during the window
-        updateStartBtnForMaintenance();
-        const maintenanceInterval = setInterval(updateStartBtnForMaintenance, 30000);
-        // Safety: clear the interval after the window plus a small buffer
-        const clearAt = new Date(maintenanceWindow.end.getTime() + 2 * 60 * 1000);
-        const clearTimer = setInterval(() => {
-          if (new Date() >= clearAt) {
-            clearInterval(maintenanceInterval);
-            clearInterval(clearTimer);
-          }
-        }, 30000);
-
-        // Intercept clicks during maintenance to show an info message
-        if (startGameBtn) {
-          startGameBtn.addEventListener('click', (e) => {
-            if (isWithinMaintenanceWindow()) {
-              e.preventDefault();
-              e.stopImmediatePropagation();
-              if (typeof window.ensureNotifications === 'function') {
-                window.ensureNotifications();
-              }
-              if (typeof window.modernAlert === 'function') {
-                const title = isAdmin ? 'Scheduled Maintenance (admin override active)' : 'Scheduled Maintenance';
-                window.modernAlert(MAINTENANCE_MSG, { title });
-              } else {
-                alert(MAINTENANCE_MSG);
-              }
-            }
-          }, { capture: true });
-        }
-
-        // Optional: show a tiny ribbon if admin mode is on
-        if (isAdmin) {
-          const ribbon = document.createElement('div');
-          ribbon.textContent = 'ADMIN MODE';
-          ribbon.style.position = 'fixed';
-          ribbon.style.top = '8px';
-          ribbon.style.right = '8px';
-          ribbon.style.background = 'rgba(156, 39, 176, 0.9)';
-          ribbon.style.color = '#fff';
-          ribbon.style.padding = '4px 8px';
-          ribbon.style.fontFamily = 'Orbitron, monospace';
-          ribbon.style.fontSize = '12px';
-          ribbon.style.zIndex = '9999';
-          ribbon.style.borderRadius = '6px';
-          ribbon.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-          document.body.appendChild(ribbon);
-        }
-
       // User Type Selection Elements
       const userTypeSelection = document.getElementById('user-type-selection');
       const professorForm = document.getElementById('professor-form');
@@ -3154,10 +3052,59 @@
         current = idx;
       }
 
-  // Updated Start Game Button Event Listener
+      // Updated Start Game Button Event Listener
       if (startGameBtn) {
-        startGameBtn.addEventListener('click', () => {
-          
+        // Maintenance observer (via reusable module)
+        (async () => {
+          try {
+            await authManager.ensureAuthenticated();
+            const setBtnState = (active) => {
+              if (!startGameBtn) return;
+              if (active) {
+                startGameBtn.disabled = true;
+                startGameBtn.classList.add('opacity-60', 'cursor-not-allowed');
+              } else {
+                startGameBtn.disabled = false;
+                startGameBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+              }
+            };
+            if (window.MaintenanceToast && typeof window.MaintenanceToast.init === 'function') {
+              window.MaintenanceToast.init({
+                onChange: (active, val) => {
+                  const now = Date.now();
+                  const startsAtMs = val?.startsAtMs ?? (val?.startsAt ? Date.parse(val.startsAt) : 0);
+                  const endsAtMs = val?.endsAtMs ?? (val?.endsAt ? Date.parse(val.endsAt) : 0);
+                  const isActive = !!(val && val.enabled && (!startsAtMs || now >= startsAtMs) && (!endsAtMs || now < endsAtMs));
+                  setBtnState(isActive, val?.message, endsAtMs);
+                }
+              });
+            } else {
+              console.warn('MaintenanceToast module not available; falling back to no toast.');
+            }
+          } catch (e) {
+            console.warn('Maintenance observer failed:', e.message);
+          }
+        })();
+
+        startGameBtn.addEventListener('click', async (ev) => {
+          // If maintenance active, block and show message
+          try {
+            const snap = await firebase.database().ref('system/maintenance').once('value');
+            const val = snap.val() || {};
+            const now = Date.now();
+            const startsAtMs = val.startsAtMs ?? (val.startsAt ? Date.parse(val.startsAt) : 0);
+            const endsAtMs = val.endsAtMs ?? (val.endsAt ? Date.parse(val.endsAt) : 0);
+            const active = !!(val.enabled && (!startsAtMs || now >= startsAtMs) && (!endsAtMs || now < endsAtMs));
+            if (active) {
+              ev.preventDefault();
+              const endsStr = endsAtMs ? new Date(endsAtMs).toLocaleString() : '';
+              const msg = (val.message || 'Site is under maintenance.') + (endsStr ? `\n\nEnds: ${endsStr}` : '');
+              if (window.showWarning) { window.showWarning(msg, { title: 'Maintenance Mode' }); }
+              else { alert(msg); }
+              return;
+            }
+          } catch {}
+
           // Check if user is already authenticated
           if (authManager.isAuthenticated()) {
             authManager.redirectToGame();
@@ -5119,6 +5066,8 @@ Please provide a helpful, engaging response about SCI-HIGH or the thesis researc
 
       // Load news when page loads
       document.addEventListener('DOMContentLoaded', loadLatestNews);
+
+      // Admin tools moved to separate page: admin.html
     </script>
   </body>
 </html>

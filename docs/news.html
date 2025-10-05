@@ -17,6 +17,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
     <!-- Modern Notification System -->
     <script defer src="js/notifications.js"></script>
+  <!-- Reusable Maintenance Toast module -->
+  <script defer src="js/maintenanceToast.js"></script>
     <script>
       // Fallback functions in case notifications.js hasn't loaded yet
       window.ensureNotifications = function() {
@@ -156,6 +158,16 @@
     </style>
   </head>
   <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed min-h-screen flex flex-col">
+    <script>
+      // Initialize maintenance toast on News page
+      (function(){
+        try {
+          if (window.MaintenanceToast && typeof window.MaintenanceToast.init === 'function') {
+            window.MaintenanceToast.init();
+          }
+        } catch(e) { /* ignore */ }
+      })();
+    </script>
     <!-- Particle Background Effect -->
     <div id="particles" class="fixed inset-0 pointer-events-none z-0"></div>
     
@@ -245,32 +257,6 @@
             <article class="news-card bg-cardBg/80 rounded-xl p-6 sm:p-8 animate-fade-in border-2 border-primary/50" style="animation-delay: 0.05s;">
               <div class="flex flex-wrap items-center gap-3 mb-4">
                 <span class="badge-new text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">New</span>
-                <span class="text-gray-400 text-sm font-gaming">OCTOBER 4, 2025 - 11:15PM</span>
-              </div>
-              <h2 class="font-gaming text-xl sm:text-2xl font-bold text-primary mb-4">
-                ‼️LEADERBOARD RESET & PROPER CONTEST START ‼️
-              </h2>
-              <p class="text-gray-300 leading-relaxed mb-4">
-
-                The testing phase will conclude on October 5, 2025, at 6:00 PM, and the leaderboards will be reset at the same time.
-
-                To prepare for this update, there will be a maintenance period from 12:00 PM to 6:00 PM on the same day. During this time, the game will be temporarily unavailable.
-
-                This reset and maintenance are necessary to ensure a fair start for all players as we implement major updates and fix bug and score-related exploits ahead of the final week and official contest.
-
-                Thank you for your patience and understanding!
-
-              </p>
-              <div class="flex flex-wrap gap-2 text-sm">
-                <span class="bg-primary/20 text-primary px-2 py-1 rounded">News</span>
-                <span class="bg-cyan/20 text-cyan px-2 py-1 rounded">Updates</span>
-                <span class="bg-purple/20 text-purple px-2 py-1 rounded">Platform</span>
-              </div>
-            </article>
-
-            <article class="news-card bg-cardBg/80 rounded-xl p-6 sm:p-8 animate-fade-in border-2 border-primary/50" style="animation-delay: 0.05s;">
-              <div class="flex flex-wrap items-center gap-3 mb-4">
-                <span class="badge-new text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">New</span>
                 <span class="text-gray-400 text-sm font-gaming">OCTOBER 2, 2025 - 1:15PM</span>
               </div>
               <h2 class="font-gaming text-xl sm:text-2xl font-bold text-primary mb-4">
@@ -290,6 +276,7 @@
 
             <article class="news-card bg-cardBg/80 rounded-xl p-6 sm:p-8 animate-fade-in border-2 border-primary/50" style="animation-delay: 0.05s;">
               <div class="flex flex-wrap items-center gap-3 mb-4">
+                <span class="badge-new text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">New</span>
                 <span class="text-gray-400 text-sm font-gaming">OCTOBER 2, 2025 - 2:00AM</span>
               </div>
               <h2 class="font-gaming text-xl sm:text-2xl font-bold text-primary mb-4">

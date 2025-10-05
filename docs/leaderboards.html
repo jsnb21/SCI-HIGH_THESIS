@@ -17,6 +17,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
   <!-- Modern Notification System -->
   <script defer src="js/notifications.js"></script>
+  <!-- Reusable Maintenance Toast module -->
+  <script defer src="js/maintenanceToast.js"></script>
     <script>
       // Suppress SES security warnings (they're informational only)
       const originalConsoleWarn = console.warn;
@@ -28,7 +30,8 @@
         }
         originalConsoleWarn.apply(console, args);
       };
-
+    </script>
+    <script>
       // Fallback functions in case notifications.js hasn't loaded yet
       window.ensureNotifications = function() {
         if (typeof window.modernConfirm === 'undefined') {
@@ -67,6 +70,16 @@
       }
     </script>
     <script>
+      // Initialize maintenance toast on Leaderboards page
+      (function(){
+        try {
+          if (window.MaintenanceToast && typeof window.MaintenanceToast.init === 'function') {
+            window.MaintenanceToast.init();
+          }
+        } catch(e) { /* ignore */ }
+      })();
+    </script>
+    <script>
       tailwind.config = {
         theme: {
           extend: {
@@ -94,6 +107,41 @@
           }
         }
       }
+    </script>
+    <script>
+      // Lightweight on-demand Chart.js loader (prevents ReferenceError if not bundled)
+      window.ensureChartJs = function(){
+        return new Promise((resolve,reject)=>{
+          if (window.Chart) return resolve(window.Chart);
+          const existing = document.querySelector('script[data-chartjs]');
+          if (existing){
+            existing.addEventListener('load', ()=> resolve(window.Chart));
+            existing.addEventListener('error', ()=> reject(new Error('Chart.js failed to load (existing tag).')));
+            return;
+          }
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+          s.async = true;
+          s.setAttribute('data-chartjs','true');
+          s.onload = ()=> window.Chart ? resolve(window.Chart) : reject(new Error('Chart.js loaded but Chart undefined'));
+          s.onerror = ()=> reject(new Error('Chart.js network load error'));
+          document.head.appendChild(s);
+        });
+      };
+      // Apply a global white text theme for all charts once Chart is available
+      window.applyChartWhiteTheme = function(){
+        if(!window.Chart) return;
+        const d = window.Chart.defaults;
+        d.color = '#ffffff';
+        d.font = d.font || {}; // keep existing family if Chart sets one later
+        if(d.plugins){
+          if(d.plugins.legend && d.plugins.legend.labels){
+            d.plugins.legend.labels.color = '#ffffff';
+          }
+          if(d.plugins.title){ d.plugins.title.color = '#ffffff'; }
+          if(d.plugins.tooltip){ /* tooltip text inherits defaults.color */ }
+        }
+      };
     </script>
     <style>
       @keyframes pulse-glow {
@@ -273,21 +321,44 @@
             </p>
             <p class="text-gray-300 text-sm mt-1">Only registered students appear on the leaderboards. Scores are linked to official student records.</p>
           </div>
-
-          <!-- Testing Phase Notice (same design, different color) -->
-          <div class="bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-400/50 rounded-lg p-4 mb-6 sm:mb-8 text-center">
-            <p class="font-gaming text-amber-200 text-base sm:text-lg">To <span class="italic">Testing Phase</span>,</p>
-            <p class="text-amber-300 text-sm sm:text-base mt-1">
-              <span class="text-amber-200 font-semibold mt-2 text-sm sm:text-base">The game will undergo maintenance on  ⏰ October 5, 2025, at 12:00 PM</span>, marking the end of the testing phase. The leaderboards will be reset once maintenance is complete and all major bugs are resolved, ensuring that all respondents can experience the finalized version of the system. This will also help ensure that the official contest week is <em><b>fair and balanced</b></em> for all participants.
-            </p>
-            <p class="text-amber-200 font-semibold mt-2 text-sm sm:text-base">‼️The leaderboard reset and game update will go live on October 5, 2025, at 6:00 PM‼️</p>
-          </div>
         </div>
       </section>
 
       <!-- Leaderboard Section -->
       <section class="px-6 pb-16">
         <div class="max-w-6xl mx-auto">
+          <!-- MINI-CONTEST Countdown -->
+          <div id="mini-contest-countdown" class="mb-8 relative overflow-hidden rounded-xl border-2 border-primary/40 bg-gradient-to-r from-dark/80 via-light/70 to-dark/80 backdrop-blur-sm p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-yellow-400 flex items-center justify-center shadow-lg shadow-primary/30 animate-pulse-glow">
+                <span class="text-3xl" aria-hidden="true">⏳</span>
+              </div>
+              <div>
+                <h3 id="mini-contest-title" class="font-gaming text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">MINI-CONTEST Countdown</h3>
+                <p id="mini-contest-desc" class="text-xs text-gray-300 mt-1"></p>
+                <p class="text-gray-300 text-sm font-body">Contest ends: Oct 12, 2025 00:00 (local time)</p>
+                <p id="mini-contest-status" class="text-cyan text-xs mt-1 font-gaming tracking-wider"></p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-auto text-center">
+              <div class="count-box px-4 py-3 rounded-lg bg-dark/60 border border-primary/30 shadow-inner">
+                <div id="mc-days" class="font-gaming text-3xl md:text-4xl font-black text-primary">0</div>
+                <div class="text-xs tracking-wider text-gray-300 font-gaming mt-1">DAYS</div>
+              </div>
+              <div class="count-box px-4 py-3 rounded-lg bg-dark/60 border border-primary/30 shadow-inner">
+                <div id="mc-hours" class="font-gaming text-3xl md:text-4xl font-black text-primary">00</div>
+                <div class="text-xs tracking-wider text-gray-300 font-gaming mt-1">HRS</div>
+              </div>
+              <div class="count-box px-4 py-3 rounded-lg bg-dark/60 border border-primary/30 shadow-inner">
+                <div id="mc-mins" class="font-gaming text-3xl md:text-4xl font-black text-primary">00</div>
+                <div class="text-xs tracking-wider text-gray-300 font-gaming mt-1">MINS</div>
+              </div>
+              <div class="count-box px-4 py-3 rounded-lg bg-dark/60 border border-primary/30 shadow-inner">
+                <div id="mc-secs" class="font-gaming text-3xl md:text-4xl font-black text-primary">00</div>
+                <div class="text-xs tracking-wider text-gray-300 font-gaming mt-1">SECS</div>
+              </div>
+            </div>
+          </div>
           <div class="neon-border rounded-xl backdrop-blur-sm p-8">
             <div class="flex items-center justify-between mb-8">
               <h2 class="font-gaming text-2xl font-bold text-primary flex items-center gap-3">
@@ -571,7 +642,7 @@
                 </div>
                 
                 <!-- Stats Bar -->
-                <div class="mt-6 grid grid-cols-2 lg:grid-cols-6 gap-4 text-center">
+                <div class="mt-6 grid grid-cols-2 lg:grid-cols-5 gap-4 text-center">
                   <div class="bg-cardBg rounded-lg p-3 neon-border">
                     <div class="text-xs opacity-75 font-gaming">Ranked Score</div>
                     <div id="ranked-score" class="text-lg font-gaming font-bold text-primary">0</div>
@@ -587,10 +658,6 @@
                   <div class="bg-cardBg rounded-lg p-3 neon-border">
                     <div class="text-xs opacity-75 font-gaming">Total Score</div>
                     <div id="total-score" class="text-lg font-gaming font-bold text-purple">0</div>
-                  </div>
-                  <div class="bg-cardBg rounded-lg p-3 neon-border">
-                    <div class="text-xs opacity-75 font-gaming">Questions</div>
-                    <div id="total-questions" class="text-lg font-gaming font-bold text-gray-300">0</div>
                   </div>
                   <div class="bg-cardBg rounded-lg p-3 neon-border">
                     <div class="text-xs opacity-75 font-gaming">Max Combo</div>
@@ -612,10 +679,7 @@
                   </div>
                 </div>
               </div>
-              <div class="text-right">
-                <div class="text-sm text-gray-400 font-gaming">Total Play Time</div>
-                <div id="total-playtime" class="font-gaming font-bold text-accent">0h 0m</div>
-              </div>
+              <!-- Removed Total Play Time (no data) -->
             </div>
           </div>
           
@@ -645,68 +709,10 @@
       </div>
     </footer>
     <script>
-      // Secure Firebase initialization with fallback configuration
+      // Firebase initialization is centralized in firebaseClient.js
       async function initializeFirebase() {
-        try {
-          // Try multiple paths for GitHub Pages compatibility
-          const configPaths = [
-            './config/firebase-config.js',
-            '/SCI-HIGH_THESIS/config/firebase-config.js',
-            'config/firebase-config.js'
-          ];
-          
-          let configLoaded = false;
-          
-          for (const configPath of configPaths) {
-            try {
-              const script = document.createElement('script');
-              script.src = configPath;
-              
-              await new Promise((resolve, reject) => {
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
-              });
-              
-              if (window.firebaseConfig) {
-                await window.firebaseConfig.initializeFirebase();
-                configLoaded = true;
-                break;
-              }
-            } catch (error) {
-              console.warn(`Failed to load config from ${configPath}:`, error);
-              continue;
-            }
-          }
-          
-          if (!configLoaded) {
-            // Initialize with minimal public configuration (no sensitive data)
-            if (typeof firebase !== 'undefined' && firebase.apps.length === 0) {
-              // Use environment variables or minimal public config
-              const publicConfig = {
-                authDomain: "sci-high-website.firebaseapp.com",
-                databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-                projectId: "sci-high-website",
-                storageBucket: "sci-high-website.appspot.com"
-                // Note: API key should be loaded securely or use Firebase Anonymous Auth
-              };
-              
-              try {
-                firebase.initializeApp(publicConfig);
-                console.warn('Firebase initialized with minimal config. Some features may be limited.');
-              } catch (initError) {
-                console.error('Failed to initialize Firebase with minimal config:', initError);
-                throw new Error('Firebase initialization failed completely');
-              }
-            }
-          }
-          
-          // Initialize Firebase services after successful initialization
-          window.db = firebase.database();
-        } catch (error) {
-          console.error('Error loading Firebase configuration:', error);
-          throw error;
-        }
+        const mod = await import('./js/leaderboards/firebaseClient.js');
+        return mod.initFirebase();
       }
 
       // Initialize Firebase when page loads and wait for completion
@@ -720,15 +726,10 @@
         throw error;
       });
 
-      // Helper function to ensure Firebase is ready before using database
+      // Helper function to ensure Firebase is ready before using database (delegates to firebaseClient)
       async function ensureFirebaseReady() {
-        if (!firebaseInitialized) {
-          await firebaseInitPromise;
-        }
-        if (!db) {
-          throw new Error('Firebase database not available');
-        }
-        return db;
+        const mod = await import('./js/leaderboards/firebaseClient.js');
+        return mod.ensureFirebaseReady();
       }
 
       // Helper function to format course names properly
@@ -749,438 +750,42 @@
         return courseMap[courseTopic.toLowerCase()] || courseTopic.charAt(0).toUpperCase() + courseTopic.slice(1);
       }
 
-      // Load Career Stats Data from Firebase
+      // Load Career Stats Data via dataService with injected db provider
       async function loadCareerStatsData(filter = 'overall') {
         try {
-          
-          // Ensure Firebase is ready before using database
-          const database = await ensureFirebaseReady();
-          
-          // Get career stats data
-          const careerSnapshot = await database.ref('student_career_stats').once('value');
-          const careerData = careerSnapshot.val();
-          
-          if (!careerData) {
-            return [];
+          const [fb, dataMod, cacheMod] = await Promise.all([
+            import('./js/leaderboards/firebaseClient.js'),
+            import('./js/leaderboards/dataService.js'),
+            import('./js/leaderboards/cache.js')
+          ]);
+          const cache = cacheMod.default || (window && window.leaderboardCache);
+          const key = `career:${filter}`;
+          const ttlMs = 30000; // 30s cache to avoid double fetches on quick filter changes
+          if (cache && typeof cache.cached === 'function') {
+            return await cache.cached(key, ttlMs, () => dataMod.loadCareerStatsAggregated(() => fb.ensureFirebaseReady(), filter));
           }
-
-          // Try to get main student data for correct names (fallback if permission denied)
-          let studentNameMap = {};
-          try {
-            const studentsSnapshot = await database.ref('students').once('value');
-            const studentsData = studentsSnapshot.val();
-            
-            if (studentsData) {
-              Object.values(studentsData).forEach(student => {
-                if (student.studentId) {
-                  studentNameMap[student.studentId] = {
-                    name: student.name || student.fullName || 'Unknown Student',
-                    department: student.department || 'Unknown'
-                  };
-                }
-              });
-            }
-          } catch (error) {
-            console.warn('Could not access students database (permission denied), using career stats names:', error.message);
-            // Continue without student names map - will use career stats names
-          }
-
-          // Use Map to accumulate data for students (to handle duplicates)
-          const studentAccumulator = new Map();
-          
-          Object.entries(careerData).forEach(([studentId, statsData]) => {
-            if (!statsData.careerStats || !statsData.studentInfo) {
-              return; // Skip incomplete records
-            }
-
-            const career = statsData.careerStats;
-            const info = statsData.studentInfo;
-            
-            // Get correct student name from main database, fallback to career stats
-            const studentInfo = studentNameMap[studentId];
-            
-            // Enhanced name construction with better fallback logic
-            let studentName = 'Unknown Student';
-            
-            if (studentInfo?.name) {
-              // Use name from main students database
-              studentName = studentInfo.name;
-            } else if (info.fullName) {
-              // Use fullName from career stats studentInfo
-              studentName = info.fullName;
-            } else if (statsData.firstName || statsData.lastName) {
-              // Construct name from firstName and lastName, handling missing parts
-              const firstName = statsData.firstName || '';
-              const lastName = statsData.lastName || '';
-              const middleName = statsData.middleName || '';
-              
-              if (firstName && lastName) {
-                // If we have both first and last name
-                studentName = middleName ? `${firstName} ${middleName} ${lastName}` : `${firstName} ${lastName}`;
-              } else if (firstName) {
-                // Only first name available
-                studentName = firstName;
-              } else if (lastName) {
-                // Only last name available
-                studentName = lastName;
-              }
-            } else if (statsData.studentInfo?.studentName) {
-              // Check for alternative name field
-              studentName = statsData.studentInfo.studentName;
-            }
-            
-            // Ensure we don't have empty or just whitespace names
-            studentName = studentName.trim() || `Student ${studentId}`;
-          
-            
-            // Determine department from main database first, then fallback
-            let department = studentInfo?.department || statsData.department || 'Unknown';
-            let departmentType = 'other';
-            
-            if (department) {
-              departmentType = department.toLowerCase().includes('college') ? 'college' : 
-                              department.toLowerCase().includes('senior') ? 'seniorhigh' : 
-                              department.toLowerCase().includes('junior') ? 'juniorhigh' : 'other';
-            }
-
-            // Apply filter
-            if (filter !== 'overall') {
-              if (filter === 'college' && departmentType !== 'college') return;
-              if (filter === 'seniorhigh' && departmentType !== 'seniorhigh') return;
-              if (filter === 'juniorhigh' && departmentType !== 'juniorhigh') return;
-            }
-
-            // Use student name as key to accumulate data for same students
-            const accumulatorKey = `${studentName}_${department}`.toLowerCase();
-            
-            if (studentAccumulator.has(accumulatorKey)) {
-              // Accumulate existing student data
-              const existing = studentAccumulator.get(accumulatorKey);
-              
-              // Add up scores and sessions
-              existing.score += career.totalPoints || 0;
-              existing.totalSessions += career.totalSessions || 0;
-              
-              // Calculate weighted average for accuracy
-              const totalQuestions = existing.totalQuestions + (career.totalQuestions || 0);
-              const totalCorrectAnswers = existing.totalCorrectAnswers + (career.totalCorrectAnswers || 0);
-              existing.averageAccuracy = totalQuestions > 0 ? Math.round((totalCorrectAnswers / totalQuestions) * 100) : 0;
-              existing.totalQuestions = totalQuestions;
-              existing.totalCorrectAnswers = totalCorrectAnswers;
-              
-              // Keep highest streak
-              existing.highestStreak = Math.max(existing.highestStreak, career.highestStreak || 0);
-              
-              // Merge course completion status
-              const existingCompletion = existing.courseCompletionStatus;
-              const newCompletion = career.courseCompletionStatus || {};
-              Object.entries(newCompletion).forEach(([course, completed]) => {
-                if (completed) existingCompletion[course] = true;
-              });
-              
-              // Update completion percentage
-              const totalCourses = Object.keys(existingCompletion).length;
-              const completedCourses = Object.values(existingCompletion).filter(Boolean).length;
-              existing.completedCourses = completedCourses;
-              existing.totalCourses = totalCourses;
-              existing.completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
-              
-              // Update last updated time
-              if (info.lastUpdated && (!existing.lastUpdated || new Date(info.lastUpdated) > new Date(existing.lastUpdated))) {
-                existing.lastUpdated = info.lastUpdated;
-              }
-              
-            } else {
-              // First time seeing this student
-              const completionStatus = career.courseCompletionStatus || {};
-              const totalCourses = Object.keys(completionStatus).length;
-              const completedCourses = Object.values(completionStatus).filter(Boolean).length;
-              const completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
-
-              studentAccumulator.set(accumulatorKey, {
-                studentId: studentId,
-                userId: studentId, // For compatibility
-                name: studentName,
-                firstName: statsData.firstName || '',
-                lastName: statsData.lastName || '',
-                department: department,
-                strandYear: statsData.strandYear || '',
-                score: career.totalPoints || 0,
-                totalSessions: career.totalSessions || 0,
-                averageAccuracy: career.averageAccuracy || 0,
-                totalQuestions: career.totalQuestions || 0,
-                totalCorrectAnswers: career.totalCorrectAnswers || 0,
-                highestStreak: career.highestStreak || 0,
-                completedCourses: completedCourses,
-                totalCourses: totalCourses,
-                completionPercentage: completionPercentage,
-                courseCompletionStatus: completionStatus,
-                lastUpdated: info.lastUpdated || '',
-                recentSessions: statsData.recentSessions || {}
-              });
-            }
-          });
-
-          // Convert Map back to array
-          const leaderboardData = Array.from(studentAccumulator.values());
-
-          // Sort by total accumulated points (descending)
-          leaderboardData.sort((a, b) => b.score - a.score);
-          
-          return leaderboardData;
-
+          // Fallback: no cache available
+          return await dataMod.loadCareerStatsAggregated(() => fb.ensureFirebaseReady(), filter);
         } catch (error) {
           console.error('Error loading career stats data:', error);
           return [];
         }
       }
 
-      // Enhanced Leaderboard Rendering with Career Stats
-      function renderLeaderboard(data) {
-        const container = document.getElementById('leaderboard-list');
-        if (!data || data.length === 0) {
-          container.innerHTML = '<p class="text-gray-500 text-center font-gaming">No career stats available yet. Complete some quiz sessions!</p>';
-          return;
-        }
-
-        let html = `
-          <div class="overflow-x-auto">
-            <table class="w-full text-left bg-dark/50 rounded-lg overflow-hidden">
-              <thead class="bg-gradient-to-r from-primary to-accent">
-                <tr class="text-dark font-gaming">
-                  <th class="py-4 px-4 font-bold">Rank</th>
-                  <th class="py-4 px-4 font-bold">Student</th>
-                  <th class="py-4 px-4 font-bold">Total Points</th>
-                  <th class="py-4 px-4 font-bold">Sessions</th>
-                  <th class="py-4 px-4 font-bold">Avg Accuracy</th>
-                  <th class="py-4 px-4 font-bold">Courses</th>
-                  <th class="py-4 px-4 font-bold">Department</th>
-                </tr>
-              </thead>
-              <tbody>
-        `;
-
-        data.forEach((entry, index) => {
-          const rank = index + 1;
-          let rankBadge = '';
-          let rowClass = 'border-b border-light/30 hover:bg-light/20 transition-colors';
-          
-          if (rank === 1) {
-            rankBadge = '👑';
-            rowClass += ' bg-gradient-to-r from-yellow-400/10 to-yellow-600/10';
-          } else if (rank === 2) {
-            rankBadge = '🥈';
-            rowClass += ' bg-gradient-to-r from-gray-300/10 to-gray-500/10';
-          } else if (rank === 3) {
-            rankBadge = '🥉';
-            rowClass += ' bg-gradient-to-r from-orange-400/10 to-orange-600/10';
-          }
-
-          const playerNameHtml = `
-            <button class="player-name-link text-primary hover:text-accent underline cursor-pointer font-medium transition-colors" 
-                    onclick="showPlayerProfile('${entry.studentId}')">
-              ${entry.name}
-            </button>
-          `;
-
-          const coursesHtml = `
-            <div class="text-center">
-              <span class="text-accent font-bold">${entry.completedCourses}/${entry.totalCourses}</span>
-              <div class="text-xs text-gray-400">${entry.completionPercentage}%</div>
-            </div>
-          `;
-
-          html += `
-            <tr class="${rowClass}">
-              <td class="py-3 px-4">
-                <div class="flex items-center space-x-2">
-                  <span class="font-gaming font-bold text-primary">#${rank}</span>
-                  <span class="text-lg">${rankBadge}</span>
-                </div>
-              </td>
-              <td class="py-3 px-4">
-                <div>
-                  ${playerNameHtml}
-                  <div class="text-xs text-gray-400">
-                    ${entry.strand ? `${entry.strand}` : ''}${entry.strand && entry.year ? ' - ' : ''}${entry.year ? `${entry.year}` : ''}${!entry.strand && !entry.year && entry.strandYear ? entry.strandYear : ''}
-                  </div>
-                </div>
-              </td>
-              <td class="py-3 px-4">
-                <span class="font-gaming font-bold text-primary text-lg">${entry.score.toLocaleString()}</span>
-              </td>
-              <td class="py-3 px-4 text-center">
-                <span class="font-gaming text-accent">${entry.totalSessions}</span>
-              </td>
-              <td class="py-3 px-4 text-center">
-                <span class="font-gaming text-cyan">${entry.averageAccuracy}%</span>
-              </td>
-              <td class="py-3 px-4">
-                ${coursesHtml}
-              </td>
-              <td class="py-3 px-4">
-                <span class="text-sm text-gray-300">${entry.department}</span>
-              </td>
-            </tr>
-          `;
-        });
-
-        html += '</tbody></table></div>';
-        container.innerHTML = html;
-      }
-
-      // Enhanced Player Cards with Career Stats
-      function renderPlayerCards(data) {
-        const container = document.getElementById('player-cards-grid');
-        const loading = document.getElementById('player-cards-loading');
-        
-        if (!container) {
-          console.error('ERROR: player-cards-grid element not found!');
-          return;
-        }
-        
-        if (!data || data.length === 0) {
-          if (loading) {
-            loading.innerHTML = '<p class="text-gray-400 text-center font-gaming">No students with career stats found</p>';
-            loading.style.display = 'block';
-          }
-          return;
-        }
-        
-        // Hide loading and show cards
-        if (loading) {
-          loading.style.display = 'none';
-        }
-        
-        // Take only top 3 players for featured cards and reorder to show 2nd, 1st, 3rd (with 1st in the center)
-        const rawTop = data.slice(0, 3);
-        let ordered;
-        if (rawTop.length === 3) {
-          // rawTop[0]=1st, rawTop[1]=2nd, rawTop[2]=3rd
-          ordered = [rawTop[1], rawTop[0], rawTop[2]]; // 2nd, 1st, 3rd
-        } else {
-          ordered = rawTop; // fallback for <3 players
-        }
-        
-        let cardsHtml = '';
-        ordered.forEach((player, visualIndex) => {
-          // Compute original rank index for styling (1-based rank derived from score order)
-          const originalRank = data.indexOf(player) + 1;
-          // Safe name handling
-          let playerName = player.name || 'Unknown Student';
-          
-          // Safe initials generation
-          let initials = '??';
-          try {
-            if (playerName && typeof playerName === 'string' && playerName.trim().length > 0) {
-              const words = playerName.trim().split(' ').filter(word => word.length > 0);
-              if (words.length > 0) {
-                initials = words.map(word => word[0] ? word[0].toUpperCase() : '').join('').substring(0, 2);
-                if (!initials || initials.length === 0) initials = playerName.substring(0, 2).toUpperCase();
-              }
-            }
-          } catch (e) {
-            console.warn('Error generating initials:', e);
-            initials = '??';
-          }
-          
-          // Special styling for each position
-          let cardStyle, rankIcon, rankColor;
-          if (originalRank === 1) {
-            cardStyle = 'from-yellow-400/20 to-yellow-600/20';
-            rankIcon = '👑';
-            rankColor = 'from-yellow-400 to-yellow-600';
-          } else if (originalRank === 2) {
-            cardStyle = 'from-gray-300/20 to-gray-500/20';
-            rankIcon = '🥈';
-            rankColor = 'from-gray-300 to-gray-500';
-          } else {
-            cardStyle = 'from-orange-400/20 to-orange-600/20';
-            rankIcon = '🥉';
-            rankColor = 'from-orange-400 to-orange-600';
-          }
-          
-          // Emphasize middle (original rank 1) by scaling and raising slightly
-          const emphasizeClass = originalRank === 1 ? 'md:scale-110 md:-mt-2 z-10' : 'md:scale-100';
-          cardsHtml += `
-            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105 ${emphasizeClass}" onclick="showPlayerProfile('${player.studentId}')">
-              <div class="neon-border bg-gradient-to-br ${cardStyle} rounded-lg p-6 backdrop-blur-sm relative overflow-hidden">
-                <!-- Rank Badge -->
-                <div class="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br ${rankColor} rounded-full flex items-center justify-center text-lg font-bold text-white border-3 border-white shadow-xl z-10">
-                  ${rankIcon}
-                </div>
-                
-                <!-- Player Avatar -->
-                <div class="flex flex-col items-center mb-4">
-                  <div class="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-2xl font-bold text-dark mb-3 border-3 border-primary/50 shadow-lg">
-                    ${initials}
-                  </div>
-                  <div class="text-center">
-                    <h3 class="font-gaming text-primary text-lg font-bold">${playerName}</h3>
-                    <p class="text-gray-400 text-sm">${player.department || 'Unknown'}</p>
-                  </div>
-                </div>
-                
-                <!-- Enhanced Player Stats -->
-                <div class="space-y-3">
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-300 text-sm font-gaming">Career Points</span>
-                    <span class="text-primary font-gaming font-bold text-lg">${(player.score || 0).toLocaleString()}</span>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-300 text-sm font-gaming">Global Rank</span>
-                    <span class="text-accent font-gaming font-bold text-lg">#${originalRank}</span>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-300 text-sm font-gaming">Sessions</span>
-                    <span class="text-cyan font-gaming font-bold">${player.totalSessions || 0}</span>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-300 text-sm font-gaming">Accuracy</span>
-                    <span class="text-purple font-gaming font-bold">${player.averageAccuracy || 0}%</span>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-300 text-sm font-gaming">Courses</span>
-                    <span class="text-orange-400 font-gaming font-bold">${player.completedCourses}/${player.totalCourses}</span>
-                  </div>
-                </div>
-                
-                <!-- Course Progress Bar -->
-                <div class="mt-4">
-                  <div class="flex justify-between text-xs text-gray-400 mb-1">
-                    <span>Course Progress</span>
-                    <span>${player.completionPercentage}%</span>
-                  </div>
-                  <div class="w-full bg-gray-700 rounded-full h-2">
-                    <div class="bg-gradient-to-r from-accent to-cyan h-2 rounded-full transition-all duration-300" style="width: ${player.completionPercentage}%"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `;
-        });
-        
-        container.innerHTML = cardsHtml;
-      }
+      // Rendering moved to renderService.js (imported where used)
 
       // Enhanced Fetch Leaderboard using Career Stats
       async function fetchLeaderboard(filter) {
         try {
-          
-          // Load career stats data using the new function
-          const careerStatsData = await loadCareerStatsData(filter);
-          
-          
-          // Render results
-          renderPlayerCards(careerStatsData.slice(0, 3));
-          
-          renderLeaderboard(careerStatsData);
-          
+          const renderMod = await import('./js/leaderboards/renderService.js');
+          const data = await loadCareerStatsData(filter);
+          renderMod.renderPlayerCards(data.slice(0, 3));
+          renderMod.renderLeaderboard(data);
         } catch (error) {
           console.error('Error fetching career stats leaderboard:', error);
           console.error('Error details:', error.message);
           
-          // Show error message
+          // Show error message in list container
           const leaderboardList = document.getElementById('leaderboard-list');
           if (leaderboardList) {
             leaderboardList.innerHTML = `<div class="text-center py-8 text-red-400">⚠️ Database error: ${error.message}</div>`;
@@ -1195,22 +800,104 @@
         }
       }
 
-      // Filter button logic
-      document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('bg-primary', 'text-dark'));
-          this.classList.add('bg-primary', 'text-dark');
-          fetchLeaderboard(this.dataset.filter);
-        });
-      });
+      // State-driven filter logic with URL sync
+      (function(){
+        const VALID = new Set(['overall','college','seniorhigh','juniorhigh']);
+        const defaultFilter = 'overall';
 
-      // Initial load: overall
-      fetchLeaderboard('overall');
+        function getFilterFromURL(){
+          try {
+            const params = new URLSearchParams(window.location.search);
+            const f = (params.get('filter') || '').toLowerCase();
+            return VALID.has(f) ? f : defaultFilter;
+          } catch(_) { return defaultFilter; }
+        }
+
+        function setURLFilter(filter, replace){
+          try {
+            const url = new URL(window.location.href);
+            if (filter === defaultFilter) {
+              url.searchParams.delete('filter');
+            } else {
+              url.searchParams.set('filter', filter);
+            }
+            const newUrl = url.toString();
+            if (replace) window.history.replaceState({ filter }, '', newUrl);
+            else window.history.pushState({ filter }, '', newUrl);
+          } catch(_){}
+        }
+
+        function setActiveButton(filter){
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('bg-primary', 'text-dark'));
+          const activeBtn = document.querySelector(`.filter-btn[data-filter="${filter}"]`);
+          if (activeBtn) activeBtn.classList.add('bg-primary', 'text-dark');
+        }
+
+        function toggleSections(filter){
+          const dept = document.getElementById('department-leaderboard');
+          const glob = document.getElementById('global-leaderboard');
+          if (!dept || !glob) return;
+          if (filter === 'overall') {
+            glob.classList.remove('hidden');
+            dept.classList.add('hidden');
+          } else {
+            glob.classList.remove('hidden'); // keep global visible by default
+            dept.classList.remove('hidden');
+            const subtitle = document.getElementById('department-subtitle');
+            if (subtitle) {
+              const label = filter === 'college' ? 'College Leaders' : filter === 'seniorhigh' ? 'Senior High Leaders' : 'Junior High Leaders';
+              subtitle.textContent = `Elite warriors of the department • ${label}`;
+            }
+          }
+        }
+
+        async function applyFilter(filter, options = { fromPopState: false }){
+          const f = VALID.has(filter) ? filter : defaultFilter;
+          setActiveButton(f);
+          toggleSections(f);
+          if (!options.fromPopState) setURLFilter(f, false);
+          await fetchLeaderboard(f);
+          // If department filter, auto-jump to Top 3 section
+          if (f !== 'overall') {
+            const el = document.getElementById('featured-players');
+            if (el) {
+              // account for sticky nav ~72px; adjust if header size changes
+              const headerOffset = 80;
+              const rect = el.getBoundingClientRect();
+              const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+              const targetY = rect.top + scrollTop - headerOffset;
+              window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+            }
+          }
+        }
+
+        // Wire clicks
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const f = btn.dataset.filter;
+            applyFilter(f);
+          });
+        });
+
+        // Hydrate initial state from URL (no history push)
+        const initialFilter = getFilterFromURL();
+        setActiveButton(initialFilter);
+        toggleSections(initialFilter);
+        setURLFilter(initialFilter, true); // normalize URL (replace state)
+        fetchLeaderboard(initialFilter);
+
+        // Handle back/forward
+        window.addEventListener('popstate', (ev) => {
+          const f = (ev && ev.state && ev.state.filter) ? ev.state.filter : getFilterFromURL();
+          applyFilter(f, { fromPopState: true });
+        });
+      })();
 
       // Add missing functions for leaderboard API
       async function addScore(userId, playerName, score, department = 'Unknown', gameData = {}) {
         try {
           // Ensure Firebase is ready before using database
+          const { ensureFirebaseReady } = await import('./js/leaderboards/firebaseClient.js');
           const database = await ensureFirebaseReady();
           
           const scoreData = {
@@ -1233,6 +920,7 @@
       async function updateBestScore(userId, playerName, score, department = 'Unknown', gameData = {}) {
         try {
           // Ensure Firebase is ready before using database
+          const { ensureFirebaseReady } = await import('./js/leaderboards/firebaseClient.js');
           const database = await ensureFirebaseReady();
           
           const snapshot = await database.ref('leaderboards/' + userId).once('value');
@@ -1263,6 +951,7 @@
       async function getPlayerBestScore(userId) {
         try {
           // Ensure Firebase is ready before using database
+          const { ensureFirebaseReady } = await import('./js/leaderboards/firebaseClient.js');
           const database = await ensureFirebaseReady();
           
           const snapshot = await database.ref('leaderboards/' + userId).once('value');
@@ -1408,13 +1097,21 @@
         document.getElementById('dept-rank').textContent = '#' + rankings.departmentRank;
         
         // Update stats with career data
-        document.getElementById('ranked-score').textContent = (career.totalPoints || 0).toLocaleString();
-        document.getElementById('accuracy').textContent = (career.averageAccuracy || 0).toFixed(1) + '%';
-        document.getElementById('quiz-count').textContent = career.totalSessions || 0;
-        document.getElementById('total-score').textContent = (career.totalPoints || 0).toLocaleString();
-        document.getElementById('total-questions').textContent = career.totalQuestions || 0;
-        document.getElementById('max-combo').textContent = career.highestStreak || 0;
-        document.getElementById('total-playtime').textContent = formatPlayTime(career.totalPlayTime || 0);
+        // Safe setter helper to avoid null dereference when legacy IDs are removed
+        const safeSetText = (id, value) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = value;
+        };
+
+        safeSetText('ranked-score', (career.totalPoints || 0).toLocaleString());
+        safeSetText('accuracy', (career.averageAccuracy || 0).toFixed(1) + '%');
+        safeSetText('quiz-count', career.totalSessions || 0);
+        safeSetText('total-score', (career.totalPoints || 0).toLocaleString());
+        // Removed total-questions display
+        safeSetText('max-combo', career.highestStreak || 0);
+        // total-playtime element was removed from DOM; guard its update
+        const playTimeEl = document.getElementById('total-playtime');
+        if (playTimeEl) playTimeEl.textContent = formatPlayTime(career.totalPlayTime || 0);
         
   // Derive achievements using shared utility (dynamic import for code splitting)
   let derivedAchievements;
@@ -1452,6 +1149,7 @@
             </div>
             <div class="flex items-center flex-wrap gap-3 mb-4 text-[10px] font-mono">
               <span class="px-2 py-0.5 rounded bg-gray-700/40 border border-gray-600 text-gray-300">Legend:</span>
+              <span class="px-2 py-0.5 rounded bg-fuchsia-500/20 border border-fuchsia-400 text-fuchsia-300">Mythic</span>
               <span class="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400 text-amber-300">Epic</span>
               <span class="px-2 py-0.5 rounded bg-purple-500/20 border border-purple-400 text-purple-300">Rare</span>
               <span class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400 text-emerald-300">Common</span>
@@ -1533,8 +1231,38 @@
             </div>
           </div>
 
-          <!-- Career Summary -->
-          <div class="bg-cardBg p-6 rounded-lg neon-border">
+          <!-- Bloom Taxonomy Performance -->
+          <div class="grid lg:grid-cols-2 gap-6">
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-primary mb-4 font-gaming flex items-center gap-2">
+                <span>🧠</span> Bloom Level Distribution
+              </h3>
+              <div class="relative h-64 mb-4 bg-dark/50 rounded-lg flex items-center justify-center overflow-hidden">
+                <canvas id="bloomDistributionChart" class="max-w-full max-h-full"></canvas>
+                <div id="bloomDistributionFallback" class="text-gray-400 text-center absolute inset-0 flex flex-col items-center justify-center">
+                  <div class="text-4xl mb-2">🧠</div>
+                  <div>Loading Bloom data...</div>
+                </div>
+              </div>
+              <div class="text-sm text-gray-300 text-center" id="bloom-distribution-summary">Cognitive engagement overview</div>
+            </div>
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-accent mb-4 font-gaming flex items-center gap-2">
+                <span>🎯</span> Bloom Accuracy by Level
+              </h3>
+              <div class="relative h-64 mb-4 bg-dark/50 rounded-lg flex items-center justify-center overflow-hidden">
+                <canvas id="bloomAccuracyChart" class="max-w-full max-h-full"></canvas>
+                <div id="bloomAccuracyFallback" class="text-gray-400 text-center absolute inset-0 flex flex-col items-center justify-center">
+                  <div class="text-4xl mb-2">🎯</div>
+                  <div>Loading accuracy data...</div>
+                </div>
+              </div>
+              <div class="text-sm text-gray-300 text-center" id="bloom-accuracy-summary">Accuracy per cognitive level</div>
+            </div>
+          </div>
+
+          <!-- Career Summary (moved below Bloom charts) -->
+          <div class="bg-cardBg p-6 rounded-lg neon-border mt-6">
             <h3 class="text-lg font-semibold text-cyan mb-4 font-gaming">Career Summary</h3>
             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div class="bg-dark/50 p-4 rounded text-center neon-border">
@@ -1558,8 +1286,21 @@
         `;
         
         // Initialize charts with career stats data
-        setTimeout(() => {
-          initializeCareerStatsCharts(career, completionStatus, recentSessions);
+        setTimeout(async () => {
+          try {
+            const chartsMod = await import('./js/leaderboards/chartsService.js');
+            chartsMod.initializeCareerStatsCharts(career, completionStatus, recentSessions);
+          } catch (e) { console.warn('[Charts] init failed:', e); }
+          // Load Chart.js if needed, then build Bloom charts
+          window.ensureChartJs().then(async ()=>{
+            try {
+              window.applyChartWhiteTheme && window.applyChartWhiteTheme();
+              const chartsMod = await import('./js/leaderboards/chartsService.js');
+              chartsMod.buildBloomChartsFromCareer(career);
+            } catch(e) { console.warn('Bloom charts skipped:', e); }
+          }).catch(err=>{
+            console.warn('[BloomCharts] Chart.js not available:', err.message);
+          });
         }, 100);
       }
 
@@ -1598,14 +1339,15 @@
         document.getElementById('global-rank').textContent = '#' + estimatedGlobalRank;
         document.getElementById('dept-rank').textContent = '#' + estimatedDeptRank;
         
-        // Update stats
-        document.getElementById('ranked-score').textContent = playerData.score.toLocaleString();
-        document.getElementById('accuracy').textContent = estimatedAccuracy.toFixed(1) + '%';
-        document.getElementById('quiz-count').textContent = estimatedQuizCount;
-        document.getElementById('total-score').textContent = (gameData.totalPoints || playerData.score).toLocaleString();
-        document.getElementById('total-questions').textContent = estimatedTotalQuestions;
-        document.getElementById('max-combo').textContent = maxCombo;
-        document.getElementById('total-playtime').textContent = playTimeFormatted;
+    // Update stats (guard missing elements)
+    const safeSetText2 = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    safeSetText2('ranked-score', playerData.score.toLocaleString());
+    safeSetText2('accuracy', estimatedAccuracy.toFixed(1) + '%');
+    safeSetText2('quiz-count', estimatedQuizCount);
+    safeSetText2('total-score', (gameData.totalPoints || playerData.score).toLocaleString());
+    // Removed total-questions estimated display
+    safeSetText2('max-combo', maxCombo);
+    // total-playtime element removed
         
         // Generate level badges
         generateLevelBadges(gameData.achievementCount || 0);
@@ -1625,13 +1367,13 @@
             ${(gameData.achievementCount || 0) === 0 ? '<p class="text-gray-400 text-center mt-4">No badges earned yet. Keep playing to unlock achievements!</p>' : ''}
           </div>
 
-          <!-- Performance Charts Section -->
+          <!-- Performance Charts Section (wider full-width charts on large screens) -->
           <div class="grid lg:grid-cols-2 gap-6">
             <!-- Topic Performance Chart -->
-            <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
               <h3 class="text-lg font-semibold text-accent mb-4 font-gaming">Topic Performance</h3>
               ${Object.keys(topicPoints).length > 0 ? `
-                <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
+                <div class="relative h-80 mb-4 bg-white rounded-lg p-4 w-full">
                   <canvas id="topicChart"></canvas>
                 </div>
                 <div class="text-sm text-gray-300 text-center">
@@ -1648,9 +1390,9 @@
             </div>
 
             <!-- Score Analysis Chart -->
-            <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
               <h3 class="text-lg font-semibold text-cyan mb-4 font-gaming">Score Analysis</h3>
-              <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
+              <div class="relative h-80 mb-4 bg-white rounded-lg p-4 w-full">
                 <canvas id="scoreChart"></canvas>
               </div>
               <div class="text-sm text-gray-300 text-center">
@@ -1659,13 +1401,13 @@
             </div>
           </div>
 
-          <!-- Detailed Statistics -->
+          <!-- Detailed Statistics (wider charts) -->
           <div class="grid lg:grid-cols-2 gap-6">
             <!-- Performance Metrics -->
-            <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
               <h3 class="text-lg font-semibold text-purple mb-4 font-gaming">Performance Radar</h3>
-              <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
-                <canvas id="radarChart"></canvas>
+              <div class="relative h-[28rem] mb-4 bg-white rounded-lg p-2 w-full flex items-center justify-center">
+                <canvas id="radarChart" class="w-full h-full"></canvas>
               </div>
               <div class="text-sm text-gray-300 text-center">
                 Overall performance across all metrics
@@ -1674,17 +1416,17 @@
 
             <!-- Course Progress -->
             ${gameData.courseProgress ? `
-            <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
               <h3 class="text-lg font-semibold text-primary mb-4 font-gaming">Course Progress</h3>
-              <div class="relative h-64 mb-4 bg-white rounded-lg p-4">
-                <canvas id="progressChart"></canvas>
+              <div class="relative h-80 mb-4 bg-white rounded-lg p-4 w-full">
+                <canvas id="progressChart" class="w-full h-full"></canvas>
               </div>
               <div class="text-sm text-gray-300 text-center">
                 ${formatCourseProgress(gameData.courseProgress)}
               </div>
             </div>
             ` : `
-            <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
               <h3 class="text-lg font-semibold text-accent mb-4 font-gaming">Recent Activity</h3>
               <div class="space-y-3">
                 <div class="flex items-center gap-3 p-3 bg-dark/50 rounded neon-border">
@@ -1768,9 +1510,16 @@
           </div>
         `;
 
-        // Create charts after DOM is updated
-        setTimeout(() => {
-          createPlayerCharts(playerData, topicPoints, gameData);
+        // Create charts after DOM is updated, ensuring Chart.js is loaded (reuse same loader as Bloom)
+        setTimeout(async () => {
+          const launchCharts = async () => {
+            try { const chartsMod = await import('./js/leaderboards/chartsService.js'); chartsMod.createPlayerCharts(playerData, topicPoints, gameData); } catch(e){ console.warn('[PlayerCharts] build failed:', e); }
+          };
+          if(window.Chart){ window.applyChartWhiteTheme && window.applyChartWhiteTheme(); launchCharts(); }
+          else {
+            window.ensureChartJs().then(()=>{ window.applyChartWhiteTheme && window.applyChartWhiteTheme(); launchCharts(); })
+              .catch(err=> console.warn('[PlayerCharts] Chart.js load failed:', err.message));
+          }
         }, 100);
       }
 
@@ -1823,7 +1572,8 @@
                 position: 'bottom',
                 labels: {
                   padding: 15,
-                  usePointStyle: true
+                  usePointStyle: true,
+                  color: '#ffffff'
                 }
               },
               tooltip: {
@@ -1890,11 +1640,10 @@
             scales: {
               y: {
                 beginAtZero: true,
-                title: {
-                  display: true,
-                  text: 'Points'
-                }
-              }
+                ticks: { color: '#ffffff' },
+                title: { display: true, text: 'Points', color:'#ffffff' }
+              },
+              x: { ticks: { color:'#ffffff' } }
             }
           }
         });
@@ -1930,7 +1679,8 @@
                 position: 'bottom',
                 labels: {
                   padding: 10,
-                  usePointStyle: true
+                  usePointStyle: true,
+                  color:'#ffffff'
                 }
               },
               tooltip: {
@@ -1987,6 +1737,7 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { top: 30, bottom: 30, left: 30, right: 30 } },
             plugins: {
               legend: {
                 display: false
@@ -1998,12 +1749,17 @@
                 max: 10,
                 ticks: {
                   display: false
-                }
+                },
+                pointLabels: { color: '#ffffff', font: { size: 14 } },
+                angleLines: { color: 'rgba(255,255,255,0.25)' },
+                grid: { color: 'rgba(255,255,255,0.15)' }
               }
             }
           }
         });
       }
+
+      // Bloom chart builders moved to chartsService.js
 
       // Utility Functions for Charts
       function generateChartColors(count) {
@@ -2090,12 +1846,13 @@
         if (!achievementsState) return '';
         const { unlocked = [], locked = [] } = achievementsState.unlocked ? achievementsState : { unlocked: [], locked: [], ...achievementsState };
         const rarityStyles = {
-          'Common': 'border-emerald-400 text-emerald-300 bg-emerald-500/10',
-          'Uncommon': 'border-blue-400 text-blue-300 bg-blue-500/10',
+          'Mythic': 'border-fuchsia-400 text-fuchsia-300 bg-fuchsia-500/10 shadow-[0_0_6px_rgba(255,0,255,0.4)]',
+          'Epic': 'border-amber-400 text-amber-300 bg-amber-500/10',
           'Rare': 'border-purple-400 text-purple-300 bg-purple-500/10',
-          'Epic': 'border-amber-400 text-amber-300 bg-amber-500/10'
+          'Uncommon': 'border-blue-400 text-blue-300 bg-blue-500/10',
+          'Common': 'border-emerald-400 text-emerald-300 bg-emerald-500/10'
         };
-        const order = ['Epic','Rare','Common','Uncommon'];
+        const order = ['Mythic','Epic','Rare','Uncommon','Common'];
 
         function card(a, isLocked) {
           const style = rarityStyles[a.tier] || 'border-primary/30 text-primary bg-primary/10';
@@ -2492,243 +2249,13 @@
         }).join('');
       }
       
-      function initializeCareerStatsCharts(career, completionStatus, recentSessions) {
-        
-        // Create Career Performance Line Chart
-        createCareerLineChart(career);
-        
-        // Create Performance Radar Chart
-        createPerformanceRadarChart(career, completionStatus);
-        
-      }
+      // Chart initializers moved to chartsService.js
 
-      // Lightweight Line Chart for Career Performance
-      function createCareerLineChart(career) {
-        const canvas = document.getElementById('careerChart');
-        if (!canvas) return;
-        
-        const ctx = canvas.getContext('2d');
-        const container = canvas.parentElement;
-        
-        // Set canvas size to match container with proper centering
-        const containerRect = container.getBoundingClientRect();
-        const size = Math.min(containerRect.width, containerRect.height) * 0.9; // 90% of container
-        
-        canvas.width = size * window.devicePixelRatio;
-        canvas.height = size * window.devicePixelRatio;
-        canvas.style.width = size + 'px';
-        canvas.style.height = size + 'px';
-        
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        
-        const width = size;
-        const height = size;
-        const padding = 30;
-        
-        // Clear canvas
-        ctx.clearRect(0, 0, width, height);
-        
-        // Chart data
-        const totalPoints = career.totalPoints || 0;
-        const data = [
-          0,
-          Math.floor(totalPoints * 0.2),
-          Math.floor(totalPoints * 0.5),
-          Math.floor(totalPoints * 0.8),
-          totalPoints
-        ];
-        const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current'];
-        
-        const maxValue = Math.max(...data) || 100;
-        
-        // Draw background
-        ctx.fillStyle = 'rgba(26, 26, 46, 0.8)';
-        ctx.fillRect(0, 0, width, height);
-        
-        // Draw grid lines
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.lineWidth = 1;
-        
-        for (let i = 0; i <= 4; i++) {
-          const y = padding + (i * (height - 2 * padding)) / 4;
-          ctx.beginPath();
-          ctx.moveTo(padding, y);
-          ctx.lineTo(width - padding, y);
-          ctx.stroke();
-        }
-        
-        // Draw data line
-        ctx.strokeStyle = '#00ff88';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        
-        for (let i = 0; i < data.length; i++) {
-          const x = padding + (i * (width - 2 * padding)) / (data.length - 1);
-          const y = height - padding - (data[i] / maxValue) * (height - 2 * padding);
-          
-          if (i === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
-        }
-        ctx.stroke();
-        
-        // Draw data points
-        ctx.fillStyle = '#00ff88';
-        for (let i = 0; i < data.length; i++) {
-          const x = padding + (i * (width - 2 * padding)) / (data.length - 1);
-          const y = height - padding - (data[i] / maxValue) * (height - 2 * padding);
-          
-          ctx.beginPath();
-          ctx.arc(x, y, 4, 0, 2 * Math.PI);
-          ctx.fill();
-        }
-        
-        // Draw labels
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        
-        for (let i = 0; i < labels.length; i++) {
-          const x = padding + (i * (width - 2 * padding)) / (labels.length - 1);
-          ctx.fillText(labels[i], x, height - 10);
-        }
-        
-        // Draw values
-        ctx.textAlign = 'left';
-        for (let i = 0; i <= 4; i++) {
-          const value = Math.round((maxValue * (4 - i)) / 4);
-          const y = padding + (i * (height - 2 * padding)) / 4;
-          ctx.fillText(value.toString(), 5, y + 4);
-        }
-        
-        // Hide fallback
-        const fallback = document.getElementById('careerChartFallback');
-        if (fallback) fallback.style.display = 'none';
-        
-      }
+      // Revamped Career Performance (multi-metric line/area using Chart.js)
+      // createCareerLineChart moved to chartsService.js
 
-      // Lightweight Radar Chart for Performance Metrics
-      function createPerformanceRadarChart(career, completionStatus) {
-        const canvas = document.getElementById('performanceRadar');
-        if (!canvas) return;
-        
-        const ctx = canvas.getContext('2d');
-        const container = canvas.parentElement;
-        
-        // Set canvas size to match container with proper centering
-        const containerRect = container.getBoundingClientRect();
-        const size = Math.min(containerRect.width, containerRect.height) * 0.9; // 90% of container
-        
-        canvas.width = size * window.devicePixelRatio;
-        canvas.height = size * window.devicePixelRatio;
-        canvas.style.width = size + 'px';
-        canvas.style.height = size + 'px';
-        
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        
-        const width = size;
-        const height = size;
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const radius = Math.min(width, height) / 2 - 30;
-        
-        // Clear canvas
-        ctx.clearRect(0, 0, width, height);
-        
-        // Chart data
-        const completedCourses = Object.values(completionStatus).filter(Boolean).length;
-        const totalCourses = Object.keys(completionStatus).length;
-        const completionPercentage = totalCourses > 0 ? (completedCourses / totalCourses) * 100 : 0;
-        
-        const data = [
-          career.averageAccuracy || 0,
-          Math.min(100, (career.totalSessions || 0) * 10),
-          Math.min(100, (career.highestStreak || 0) * 5),
-          completedCourses * 16.67,
-          completionPercentage
-        ];
-        
-        const labels = ['Accuracy', 'Speed', 'Consistency', 'Difficulty', 'Completion'];
-        const angles = labels.map((_, i) => (i * 2 * Math.PI) / labels.length - Math.PI / 2);
-        
-        // Draw background
-        ctx.fillStyle = 'rgba(26, 26, 46, 0.8)';
-        ctx.fillRect(0, 0, width, height);
-        
-        // Draw grid circles
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.lineWidth = 1;
-        
-        for (let i = 1; i <= 5; i++) {
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, (radius * i) / 5, 0, 2 * Math.PI);
-          ctx.stroke();
-        }
-        
-        // Draw grid lines
-        for (let i = 0; i < angles.length; i++) {
-          ctx.beginPath();
-          ctx.moveTo(centerX, centerY);
-          ctx.lineTo(
-            centerX + Math.cos(angles[i]) * radius,
-            centerY + Math.sin(angles[i]) * radius
-          );
-          ctx.stroke();
-        }
-        
-        // Draw data area
-        ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
-        ctx.strokeStyle = '#00ff88';
-        ctx.lineWidth = 2;
-        
-        ctx.beginPath();
-        for (let i = 0; i < data.length; i++) {
-          const value = data[i] / 100; // Normalize to 0-1
-          const x = centerX + Math.cos(angles[i]) * radius * value;
-          const y = centerY + Math.sin(angles[i]) * radius * value;
-          
-          if (i === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        
-        // Draw data points
-        ctx.fillStyle = '#00ff88';
-        for (let i = 0; i < data.length; i++) {
-          const value = data[i] / 100;
-          const x = centerX + Math.cos(angles[i]) * radius * value;
-          const y = centerY + Math.sin(angles[i]) * radius * value;
-          
-          ctx.beginPath();
-          ctx.arc(x, y, 3, 0, 2 * Math.PI);
-          ctx.fill();
-        }
-        
-        // Draw labels
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        
-        for (let i = 0; i < labels.length; i++) {
-          const labelRadius = radius + 20;
-          const x = centerX + Math.cos(angles[i]) * labelRadius;
-          const y = centerY + Math.sin(angles[i]) * labelRadius;
-          
-          ctx.fillText(labels[i], x, y + 4);
-        }
-        
-        // Hide fallback
-        const fallback = document.getElementById('radarChartFallback');
-        if (fallback) fallback.style.display = 'none';
-        
-      }
+      // Revamped Performance Metrics Radar using Chart.js
+      // createPerformanceRadarChart moved to chartsService.js
 
       // Enhanced API for external access
       window.leaderboardAPI = {
@@ -2744,6 +2271,27 @@
       document.addEventListener('DOMContentLoaded', () => {
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
+        // MINI-CONTEST Countdown initialization (refactored into module)
+        (async () => {
+          try {
+            const [mod, cfg] = await Promise.all([
+              import('./js/leaderboards/countdownSnapshot.js'),
+              import('./js/leaderboards/config.js')
+            ]);
+            const loadData = window.leaderboardAPI && window.leaderboardAPI.loadCareerStatsData
+              ? window.leaderboardAPI.loadCareerStatsData
+              : undefined;
+            await mod.initCountdown({
+              containerId: 'mini-contest-countdown',
+              selectors: { days: '#mc-days', hours: '#mc-hours', mins: '#mc-mins', secs: '#mc-secs' },
+              statusId: 'mini-contest-status',
+              enableAdminButton: true,
+              loadData
+            });
+          } catch (e) {
+            console.warn('[MiniContestCountdown] module init failed:', e.message);
+          }
+        })();
         
         if (mobileMenuBtn && mobileMenu) {
           mobileMenuBtn.addEventListener('click', () => {

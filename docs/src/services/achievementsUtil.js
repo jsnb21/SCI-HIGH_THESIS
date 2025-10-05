@@ -5,11 +5,13 @@ export const ACHIEVEMENT_DEFINITIONS = [
   { id:'first_quiz', name:'First Steps', icon:'👟', tier:'Common', description:'Completed your first quiz session', goal:1, prop:'totalSessions' },
   { id:'quiz_apprentice', name:'Quiz Apprentice', icon:'📘', tier:'Common', description:'Completed 5 quiz sessions', goal:5, prop:'totalSessions' },
   { id:'quiz_veteran', name:'Quiz Veteran', icon:'📗', tier:'Uncommon', description:'Completed 20 quiz sessions', goal:20, prop:'totalSessions' },
-  { id:'marathon_1', name:'Marathon I', icon:'⏱️', tier:'Common', description:'Played for 1 hour total', goal:3600, prop:'totalPlayTimeSeconds', transform:v=>v },
-  { id:'marathon_2', name:'Marathon II', icon:'🕒', tier:'Uncommon', description:'Played for 3 hours total', goal:10800, prop:'totalPlayTimeSeconds', transform:v=>v },
+  // Marathon series repurposed: now counts completed quiz sessions instead of elapsed time
+  { id:'marathon_1', name:'Marathon I', icon:'⏱️', tier:'Common', description:'Complete 10 quiz sessions', goal:10, prop:'totalSessions' },
+  { id:'marathon_2', name:'Marathon II', icon:'🕒', tier:'Uncommon', description:'Complete 50 quiz sessions', goal:50, prop:'totalSessions' },
   { id:'points_1k', name:'Scholar', icon:'📚', tier:'Common', description:'Earned 1,000 total points', goal:1000, prop:'totalPoints' },
   { id:'points_5k', name:'Top Scorer', icon:'🏆', tier:'Rare', description:'Earned 5,000 total points', goal:5000, prop:'totalPoints' },
   { id:'points_10k', name:'Legend', icon:'👑', tier:'Epic', description:'Earned 10,000 total points', goal:10000, prop:'totalPoints' },
+  { id:'points_5m', name:'Mythic Scholar', icon:'🌌', tier:'Mythic', description:'Accumulate 5,000,000 total points', goal:5000000, prop:'totalPoints' },
   { id:'accuracy_ace', name:'Accuracy Ace', icon:'🎯', tier:'Uncommon', description:'Reach 80% average accuracy', goal:80, prop:'averageAccuracy' },
   { id:'accuracy_master', name:'Accuracy Master', icon:'💠', tier:'Rare', description:'Reach 90%+ average accuracy', goal:90, prop:'averageAccuracy' },
   { id:'combo_starter', name:'Combo Starter', icon:'🔥', tier:'Common', description:'Achieve a 10+ answer streak', goal:10, prop:'highestStreak' },
@@ -17,8 +19,10 @@ export const ACHIEVEMENT_DEFINITIONS = [
   { id:'course_finisher', name:'Course Finisher', icon:'✅', tier:'Uncommon', description:'Complete at least one course', goal:1, prop:'completedCourses' },
   { id:'multi_talented', name:'Multi-Talented', icon:'🧠', tier:'Rare', description:'Complete 3+ courses', goal:3, prop:'completedCourses' },
   { id:'completionist', name:'Completionist', icon:'🌟', tier:'Epic', description:'Complete all courses', dynamicGoal: stats => Math.max(Object.keys(stats.courseCompletionStatus||{}).length,1), prop:'completedCourses' },
-  { id:'perfect_quiz', name:'Perfectionist', icon:'💯', tier:'Epic', description:'Achieve a perfect quiz session', goal:1, special: 'perfectSession' },
-  { id:'speed_demon', name:'Speed Demon', icon:'⚡', tier:'Uncommon', description:'Average <= 5s per question in a session', goal:1, special: 'fastSession' }
+  { id:'perfect_quiz', name:'Perfectionist', icon:'💯', tier:'Epic', description:'Achieve a perfect quiz session', goal:1, special: 'perfectSession' }
+  ,{ id:'accuracy_grandmaster', name:'Accuracy Grandmaster', icon:'🎯', tier:'Mythic', description:'Reach 95%+ average accuracy', goal:95, prop:'averageAccuracy' }
+  ,{ id:'unbreakable', name:'Unbreakable', icon:'🛡️', tier:'Mythic', description:'Achieve a 75+ answer streak', goal:75, prop:'highestStreak' }
+  ,{ id:'endurance_master', name:'Endurance Master', icon:'🏁', tier:'Mythic', description:'Complete 500 quiz sessions', goal:500, prop:'totalSessions' }
 ];
 
 export function evaluateAchievements(careerStats, recentSessions = {}, existingUnlocked = {}) {
@@ -27,7 +31,7 @@ export function evaluateAchievements(careerStats, recentSessions = {}, existingU
   const completedCourses = Object.values(courseCompletionStatus).filter(Boolean).length;
   const sessionsArr = Object.values(recentSessions);
   const perfectSession = sessionsArr.some(s => (s.accuracyPercentage || 0) >= 100);
-  const fastSession = sessionsArr.some(s => (s.averageTimePerQuestion || 0) > 0 && s.averageTimePerQuestion <= 5);
+  // fastSession logic removed (Speed Demon retired)
 
   const context = {
     totalSessions: careerStats.totalSessions || 0,
@@ -37,7 +41,6 @@ export function evaluateAchievements(careerStats, recentSessions = {}, existingU
     completedCourses,
     totalPlayTimeSeconds,
     perfectSession: perfectSession ? 1 : 0,
-    fastSession: fastSession ? 1 : 0,
     courseCompletionStatus
   };
 

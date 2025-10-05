@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SCI-HIGH Admin Tools</title>
+  <link rel="icon" href="./vite.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --primary:#F4CE14; --accent:#00ADB5; }
+    body { font-family: 'Chakra Petch', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    .neon-border { box-shadow: 0 0 0 1px rgba(244,206,20,.25), 0 0 16px rgba(244,206,20,.12), inset 0 0 12px rgba(0,173,181,.14); }
+  </style>
+</head>
+<body class="bg-[#0B132B] text-gray-100 min-h-screen">
+  <header class="border-b border-white/10 bg-black/20 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <img src="./vite.svg" alt="logo" class="w-6 h-6" />
+        <h1 class="text-lg font-bold tracking-wide">SCI-HIGH Admin</h1>
+      </div>
+      <nav class="text-sm">
+        <a href="./index.html" class="text-gray-300 hover:text-white">Home</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Password Gate -->
+    <section id="password-gate" class="max-w-md mx-auto">
+      <div class="neon-border rounded-xl p-6 bg-black/40">
+        <h2 class="text-xl font-bold text-[var(--primary)] mb-2">Admin Access</h2>
+        <p class="text-gray-300 text-sm mb-4">Enter the admin password to continue.</p>
+        <form id="password-form" class="space-y-3">
+          <div>
+            <label for="admin-pass" class="block text-sm text-gray-300 mb-1">Password</label>
+            <input id="admin-pass" type="password" class="w-full px-3 py-2 rounded bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" placeholder="••••••••" autocomplete="current-password" />
+          </div>
+          <label class="flex items-center gap-2 text-xs text-gray-300 select-none">
+            <input id="toggle-pass" type="checkbox" class="accent-[var(--accent)]" />
+            Show password
+          </label>
+          <button type="submit" class="w-full px-4 py-2 rounded bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-black font-bold tracking-wide">Unlock Admin</button>
+          <p id="pass-error" class="text-red-400 text-sm hidden">Incorrect password. Try again.</p>
+        </form>
+        <p class="mt-3 text-xs text-gray-400">Password is read from <code>admin-password.txt</code>. Don’t commit real secrets publicly.</p>
+      </div>
+    </section>
+
+    <!-- Admin Tools -->
+    <section id="admin-tools" class="hidden">
+      <!-- Maintenance Mode -->
+      <div class="neon-border rounded-xl p-6 bg-black/40 mb-6">
+        <h3 class="text-lg font-bold text-[var(--primary)] mb-2">Maintenance Mode</h3>
+        <p class="text-gray-300 text-sm mb-3">Disable Start button on homepage and block game access for a set duration.</p>
+        <!-- Status row -->
+        <div class="flex flex-wrap items-center gap-2 mb-4">
+          <span class="text-xs text-gray-400">Current:</span>
+          <span id="maint-current-state" class="text-xs px-2 py-1 rounded bg-white/5 border border-white/10">-</span>
+          <span class="text-xs text-gray-400">Starts:</span>
+          <span id="maint-starts-at" class="text-xs px-2 py-1 rounded bg-white/5 border border-white/10">-</span>
+          <span class="text-xs text-gray-400">Ends:</span>
+          <span id="maint-ends-at" class="text-xs px-2 py-1 rounded bg-white/5 border border-white/10">-</span>
+          <span class="text-xs text-gray-400">Countdown:</span>
+          <span id="maint-countdown" class="text-xs">-</span>
+        </div>
+        <!-- Message full width -->
+        <div class="grid gap-3 mb-3">
+          <div>
+            <label class="block text-xs text-gray-300 mb-1">Message (shown to users)</label>
+            <input id="maint-message" type="text" placeholder="Scheduled maintenance for improvements." class="w-full px-3 py-2 rounded bg-white/5 border border-white/10" />
+          </div>
+        </div>
+        <!-- Date/time grid -->
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs text-gray-300 mb-1">Start date</label>
+            <input id="maint-start-date" type="date" class="w-full px-3 py-2 rounded bg-white/5 border border-white/10" />
+            <label class="block text-xs text-gray-300 mt-2 mb-1">Start time</label>
+            <input id="maint-start-time" type="time" step="60" class="w-full px-3 py-2 rounded bg-white/5 border border-white/10" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-300 mb-1">End date</label>
+            <input id="maint-end-date" type="date" class="w-full px-3 py-2 rounded bg-white/5 border border-white/10" />
+            <label class="block text-xs text-gray-300 mt-2 mb-1">End time</label>
+            <input id="maint-end-time" type="time" step="60" class="w-full px-3 py-2 rounded bg-white/5 border border-white/10" />
+          </div>
+        </div>
+        <!-- Actions -->
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button id="btn-start-maint" class="px-3 py-2 rounded bg-yellow-500/20 border border-yellow-400/40 hover:bg-yellow-500/30">Start Maintenance</button>
+          <button id="btn-stop-maint" class="px-3 py-2 rounded bg-green-500/20 border border-green-400/40 hover:bg-green-500/30">End Maintenance Now</button>
+          <button id="btn-refresh-maint" class="px-3 py-2 rounded border border-white/20 hover:bg-white/5">Refresh Status</button>
+        </div>
+      </div>
+
+      <!-- Quick info -->
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="neon-border rounded-xl p-6 bg-black/40">
+          <h3 class="text-lg font-bold text-[var(--primary)] mb-2">Leaderboards Timer</h3>
+          <p class="text-gray-300 text-sm mb-3">Set the start and end date/time for the Leaderboards mini-contest countdown.</p>
+          <div class="grid md:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-xs text-gray-300 mb-1">Header</label>
+              <input id="lb-header" type="text" placeholder="MINI-CONTEST Countdown" class="w-full px-3 py-2 rounded bg-white/5 border border-white/10" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-300 mb-1">Show timer</label>
+              <div class="flex items-center gap-2">
+                <input id="lb-visible" type="checkbox" class="accent-[var(--primary)]" checked />
+                <span class="text-xs text-gray-300">Visible on Leaderboards</span>
+              </div>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs text-gray-300 mb-1">Description</label>
+              <textarea id="lb-description" rows="2" placeholder="Short description displayed under the title" class="w-full px-3 py-2 rounded bg-white/5 border border-white/10"></textarea>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs text-gray-400">Starts:</span>
+            <span id="lb-starts-at" class="text-xs px-2 py-1 rounded bg-white/5 border border-white/10">-</span>
+            <span class="text-xs text-gray-400">Ends:</span>
+            <span id="lb-ends-at" class="text-xs px-2 py-1 rounded bg-white/5 border border-white/10">-</span>
+            <span class="text-xs text-gray-400">Countdown:</span>
+            <span id="lb-countdown" class="text-xs">-</span>
+          </div>
+          <div class="grid md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-gray-300 mb-1">Start date</label>
+              <input id="lb-start-date" type="date" class="w-full px-3 py-2 rounded bg-white/5 border border-white/10" />
+              <label class="block text-xs text-gray-300 mt-2 mb-1">Start time</label>
+              <input id="lb-start-time" type="time" step="60" class="w-full px-3 py-2 rounded bg-white/5 border border-white/10" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-300 mb-1">End date</label>
+              <input id="lb-end-date" type="date" class="w-full px-3 py-2 rounded bg-white/5 border border-white/10" />
+              <label class="block text-xs text-gray-300 mt-2 mb-1">End time</label>
+              <input id="lb-end-time" type="time" step="60" class="w-full px-3 py-2 rounded bg-white/5 border border-white/10" />
+            </div>
+            <div class="flex flex-col justify-end gap-2 md:col-span-2">
+              <button id="btn-save-lb" class="px-3 py-2 rounded bg-cyan-500/20 border border-cyan-400/40 hover:bg-cyan-500/30">Save Countdown</button>
+              <button id="btn-clear-lb" class="px-3 py-2 rounded bg-red-500/20 border border-red-400/40 hover:bg-red-500/30">Clear Countdown</button>
+              <button id="btn-refresh-lb" class="px-3 py-2 rounded border border-white/20 hover:bg-white/5">Refresh</button>
+            </div>
+          </div>
+        </div>
+        <div class="neon-border rounded-xl p-6 bg-black/40">
+          <h3 class="text-lg font-bold text-[var(--primary)] mb-2">Exports</h3>
+          <p class="text-gray-300 text-sm mb-3">Download JSON snapshots from Realtime Database.</p>
+          <div class="grid gap-2">
+            <button id="btn-export-all" class="px-4 py-2 rounded border border-yellow-300/40 bg-yellow-400/10 hover:bg-yellow-400/20">Export All JSON</button>
+            <button id="btn-export-students" class="px-4 py-2 rounded border border-yellow-300/40 bg-yellow-400/10 hover:bg-yellow-400/20">Export Students Only</button>
+            <button id="btn-export-career" class="px-4 py-2 rounded border border-cyan-300/40 bg-cyan-400/10 hover:bg-cyan-400/20">Export Career Stats Only</button>
+            <button id="btn-export-lb" class="px-4 py-2 rounded border border-cyan-300/40 bg-cyan-400/10 hover:bg-cyan-400/20">Export Leaderboards Only</button>
+          </div>
+        </div>
+
+        <div class="neon-border rounded-xl p-6 bg-black/40">
+          <h3 class="text-lg font-bold text-[var(--primary)] mb-2">Reset Tools</h3>
+          <p class="text-gray-300 text-sm mb-3">Apply targeted resets. Changes are immediate.</p>
+          <div class="space-y-2">
+            <div class="border border-white/10 rounded p-3">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="font-semibold">Reset All Career Points</div>
+                  <div class="text-xs text-gray-400">Sets <code>student_career_stats/*/careerStats/totalPoints</code> = 0</div>
+                </div>
+                <button id="btn-reset-points" class="px-3 py-2 rounded bg-red-500/20 border border-red-400/40 hover:bg-red-500/30">Reset All</button>
+              </div>
+              <div class="mt-2 text-xs text-gray-400">
+                <button id="btn-preview-reset" class="underline hover:text-gray-200">Preview count</button>
+                <span id="preview-result" class="ml-2"></span>
+              </div>
+              <!-- Confirm reset all -->
+              <div id="confirm-reset-all" class="mt-3 p-3 rounded border border-red-500/40 bg-red-500/10 hidden">
+                <div class="text-sm text-red-300 mb-2">Warning: This will set totalPoints = 0 for ALL students. Proceed?</div>
+                <div class="flex gap-2">
+                  <button id="btn-confirm-reset-all" class="px-3 py-2 rounded bg-red-500/30 border border-red-400/60 hover:bg-red-500/40">Confirm Reset All</button>
+                  <button id="btn-cancel-reset-all" class="px-3 py-2 rounded border border-white/20 hover:bg-white/5">Cancel</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="border border-white/10 rounded p-3">
+              <div class="font-semibold mb-2">Reset Single Student</div>
+              <div class="flex gap-2">
+                <input id="single-student-id" placeholder="Student ID (e.g., S12345)" class="flex-1 px-3 py-2 rounded bg-white/5 border border-white/10" />
+                <button id="btn-reset-single" class="px-3 py-2 rounded bg-red-500/20 border border-red-400/40 hover:bg-red-500/30">Reset</button>
+              </div>
+              <p class="mt-2 text-xs text-gray-400">Only sets careerStats.totalPoints = 0 for the given studentId.</p>
+              <!-- Confirm reset single -->
+              <div id="confirm-reset-single" class="mt-3 p-3 rounded border border-red-500/40 bg-red-500/10 hidden">
+                <div class="text-sm text-red-300 mb-2">Warning: Reset career points for <code id="confirm-student-id" class="text-red-200"></code>?</div>
+                <div class="flex gap-2">
+                  <button id="btn-confirm-reset-single" class="px-3 py-2 rounded bg-red-500/30 border border-red-400/60 hover:bg-red-500/40">Confirm Reset</button>
+                  <button id="btn-cancel-reset-single" class="px-3 py-2 rounded border border-white/20 hover:bg-white/5">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="status-area" class="mt-6 text-sm text-gray-300"></div>
+    </section>
+  </main>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="./config/firebase-config.js"></script>
+
+  <script>
+    // Minimal helpers
+    const $ = (sel) => document.querySelector(sel);
+    const setStatus = (msg, type = 'info') => {
+      const el = document.getElementById('status-area');
+      const color = type === 'error' ? 'text-red-400' : type === 'success' ? 'text-emerald-400' : 'text-gray-300';
+      el.innerHTML = `<div class="${color}">${msg}</div>`;
+    };
+
+    async function ensureFirebaseReady() {
+      if (window.firebaseConfig && !window.firebaseConfig.isInitialized()) {
+        await window.firebaseConfig.initializeFirebase();
+      }
+      if (!firebase || !firebase.auth) throw new Error('Firebase not available');
+      if (!firebase.auth().currentUser) {
+        await firebase.auth().signInAnonymously();
+      }
+      return firebase.database();
+    }
+
+    // Maintenance Mode logic
+  const MAINT_PATH = 'system/maintenance';
+  const LB_PATH = 'system/leaderboards/contest';
+    let maintTimer = null;
+    function fmtCountdown(ms) {
+      if (!ms || ms <= 0) return '0s';
+      const s = Math.floor(ms / 1000);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      const parts = [];
+      if (h) parts.push(h + 'h');
+      if (m) parts.push(m + 'm');
+      if (!h && !m) parts.push(sec + 's');
+      return parts.join(' ');
+    }
+    function renderMaintenance(data) {
+      const stateEl = document.getElementById('maint-current-state');
+      const startsEl = document.getElementById('maint-starts-at');
+      const endsEl = document.getElementById('maint-ends-at');
+      const cdEl = document.getElementById('maint-countdown');
+      const now = Date.now();
+      const startsAtMs = data?.startsAtMs ?? (data?.startsAt ? Date.parse(data.startsAt) : 0);
+      const endsAtMs = data?.endsAtMs ?? (data?.endsAt ? Date.parse(data.endsAt) : 0);
+      const active = !!(data && data.enabled && (!startsAtMs || now >= startsAtMs) && (!endsAtMs || now < endsAtMs));
+      if (stateEl) {
+        let label = 'INACTIVE';
+        let cls = 'bg-white/5 border border-white/10';
+        if (active) { label = 'ACTIVE'; cls = 'bg-red-500/20 border border-red-400/40'; }
+        else if (data?.enabled && startsAtMs && now < startsAtMs) { label = 'SCHEDULED'; cls = 'bg-yellow-500/20 border border-yellow-400/40'; }
+        stateEl.textContent = label;
+        stateEl.className = 'text-xs px-2 py-1 rounded ' + cls;
+      }
+      if (startsEl) startsEl.textContent = startsAtMs ? new Date(startsAtMs).toLocaleString() : 'n/a';
+      if (endsEl) endsEl.textContent = endsAtMs ? new Date(endsAtMs).toLocaleString() : 'n/a';
+      if (maintTimer) { clearInterval(maintTimer); maintTimer = null; }
+      if (cdEl) {
+        if (active && endsAtMs) {
+          const tick = () => cdEl.textContent = fmtCountdown(endsAtMs - Date.now());
+          tick();
+          maintTimer = setInterval(tick, 1000);
+        } else if (data?.enabled && startsAtMs && now < startsAtMs) {
+          const tick = () => cdEl.textContent = fmtCountdown(startsAtMs - Date.now());
+          tick();
+          maintTimer = setInterval(tick, 1000);
+        } else {
+          cdEl.textContent = '-';
+        }
+      }
+    }
+    async function fetchMaintenanceOnce() {
+      try {
+        const db = await ensureFirebaseReady();
+        const snap = await db.ref(MAINT_PATH).once('value');
+        renderMaintenance(snap.val());
+      } catch (e) {
+        setStatus('Failed to load maintenance status: ' + e.message, 'error');
+      }
+    }
+    async function startMaintenance() {
+      try {
+        const db = await ensureFirebaseReady();
+        const msgEl = document.getElementById('maint-message');
+        const sd = (document.getElementById('maint-start-date')?.value || '').trim();
+        const st = (document.getElementById('maint-start-time')?.value || '').trim();
+        const ed = (document.getElementById('maint-end-date')?.value || '').trim();
+        const et = (document.getElementById('maint-end-time')?.value || '').trim();
+
+        if (!sd || !st || !ed || !et) { alert('Please set both Start and End date/time.'); return; }
+
+        const parseParts = (dateStr, timeStr) => {
+          const [y, m, d] = dateStr.split('-').map(n => parseInt(n, 10));
+          const [hh, mm = '0'] = timeStr.split(':');
+          const h = parseInt(hh, 10); const min = parseInt(mm, 10);
+          const dt = new Date(y, (m - 1), d, h, min, 0, 0);
+          return dt.getTime();
+        };
+
+        const startsAtMs = parseParts(sd, st);
+        const endsAtMs = parseParts(ed, et);
+        if (isNaN(startsAtMs) || isNaN(endsAtMs)) { alert('Invalid Start/End date or time.'); return; }
+        if (endsAtMs <= startsAtMs) { alert('End must be after Start.'); return; }
+        const durationMinutes = Math.round((endsAtMs - startsAtMs) / 60000);
+
+        const payload = {
+          enabled: true,
+          message: (msgEl?.value || 'Scheduled maintenance in progress.').trim(),
+          startedAt: new Date().toISOString(),
+          startsAt: new Date(startsAtMs).toISOString(),
+          startsAtMs,
+          endsAt: new Date(endsAtMs).toISOString(),
+          endsAtMs,
+          durationMinutes,
+          updatedAt: new Date().toISOString()
+        };
+        await db.ref(MAINT_PATH).set(payload);
+        const statusMsg = (Date.now() < startsAtMs)
+          ? `Maintenance scheduled from ${new Date(startsAtMs).toLocaleString()} to ${new Date(endsAtMs).toLocaleString()}`
+          : `Maintenance started until ${new Date(endsAtMs).toLocaleString()}`;
+        setStatus(statusMsg, 'success');
+        renderMaintenance(payload);
+      } catch (e) {
+        setStatus('Failed to start maintenance: ' + e.message, 'error');
+      }
+    }
+    async function stopMaintenance() {
+      try {
+        const db = await ensureFirebaseReady();
+        await db.ref(MAINT_PATH).update({ enabled: false, message: '', updatedAt: new Date().toISOString() });
+        setStatus('Maintenance ended.', 'success');
+        await fetchMaintenanceOnce();
+      } catch (e) {
+        setStatus('Failed to end maintenance: ' + e.message, 'error');
+      }
+    }
+    async function watchMaintenance() {
+      try {
+        const db = await ensureFirebaseReady();
+        db.ref(MAINT_PATH).on('value', snap => renderMaintenance(snap.val()));
+      } catch (e) {
+        console.warn('Maintenance watcher error:', e.message);
+      }
+    }
+
+    // Leaderboards Timer logic
+    let lbTimer = null;
+  function renderLeaderboardTimer(val){
+      const startEl = document.getElementById('lb-starts-at');
+      const endEl = document.getElementById('lb-ends-at');
+      const cdEl = document.getElementById('lb-countdown');
+  const now = Date.now();
+  const headEl = document.getElementById('lb-header');
+  const descEl = document.getElementById('lb-description');
+  const visEl = document.getElementById('lb-visible');
+      const startsAtMs = val?.startsAtMs ?? (val?.startsAt ? Date.parse(val.startsAt) : 0);
+      const endsAtMs = val?.endsAtMs ?? (val?.endsAt ? Date.parse(val.endsAt) : 0);
+  if (headEl) headEl.value = (val && typeof val.header === 'string') ? val.header : '';
+  if (descEl) descEl.value = (val && typeof val.description === 'string') ? val.description : '';
+  if (visEl) visEl.checked = (val && typeof val.visible === 'boolean') ? val.visible : true;
+  if (startEl) startEl.textContent = startsAtMs ? new Date(startsAtMs).toLocaleString() : 'n/a';
+      if (endEl) endEl.textContent = endsAtMs ? new Date(endsAtMs).toLocaleString() : 'n/a';
+      if (lbTimer) { clearInterval(lbTimer); lbTimer = null; }
+      if (cdEl && (startsAtMs || endsAtMs)) {
+        const target = (startsAtMs && now < startsAtMs) ? startsAtMs : endsAtMs;
+        const label = (startsAtMs && now < startsAtMs) ? 'Starts in' : 'Time remaining';
+        const tick = () => {
+          const rem = Math.max(0, target - Date.now());
+          const totalMin = Math.floor(rem / 60000);
+          const h = Math.floor(totalMin / 60);
+          const m = totalMin % 60;
+          cdEl.textContent = `${label}: ${h > 0 ? h + 'h ' : ''}${m}m`;
+        };
+        tick();
+        lbTimer = setInterval(tick, 1000);
+      } else if (cdEl) {
+        cdEl.textContent = '-';
+      }
+    }
+
+    async function fetchLeaderboardTimerOnce(){
+      try {
+        const db = await ensureFirebaseReady();
+        const snap = await db.ref(LB_PATH).once('value');
+        renderLeaderboardTimer(snap.val());
+      } catch(e){ console.warn('Leaderboards timer fetch error:', e.message); }
+    }
+
+    async function watchLeaderboardTimer(){
+      try {
+        const db = await ensureFirebaseReady();
+        db.ref(LB_PATH).on('value', snap => renderLeaderboardTimer(snap.val()));
+      } catch(e){ console.warn('Leaderboards timer watch error:', e.message); }
+    }
+
+  async function saveLeaderboardTimer(){
+      try {
+        const db = await ensureFirebaseReady();
+        const sd = (document.getElementById('lb-start-date')?.value || '').trim();
+        const st = (document.getElementById('lb-start-time')?.value || '').trim();
+        const ed = (document.getElementById('lb-end-date')?.value || '').trim();
+        const et = (document.getElementById('lb-end-time')?.value || '').trim();
+  const header = (document.getElementById('lb-header')?.value || '').trim();
+  const description = (document.getElementById('lb-description')?.value || '').trim();
+  const visible = !!(document.getElementById('lb-visible')?.checked);
+  if (!sd || !st || !ed || !et) { alert('Please set both Start and End date/time.'); return; }
+        const parseParts = (dateStr, timeStr) => {
+          const [y, m, d] = dateStr.split('-').map(n => parseInt(n, 10));
+          const [hh, mm = '0'] = timeStr.split(':');
+          return new Date(y, (m-1), d, parseInt(hh,10), parseInt(mm,10), 0, 0).getTime();
+        };
+        const startsAtMs = parseParts(sd, st);
+        const endsAtMs = parseParts(ed, et);
+        if (isNaN(startsAtMs) || isNaN(endsAtMs)) { alert('Invalid date/time.'); return; }
+        if (endsAtMs <= startsAtMs) { alert('End must be after Start.'); return; }
+        const payload = { startsAt: new Date(startsAtMs).toISOString(), startsAtMs, endsAt: new Date(endsAtMs).toISOString(), endsAtMs, header, description, visible, updatedAt: new Date().toISOString() };
+        await db.ref(LB_PATH).set(payload);
+        setStatus('Leaderboards countdown updated.', 'success');
+        renderLeaderboardTimer(payload);
+      } catch(e){ setStatus('Failed to save countdown: ' + e.message, 'error'); }
+    }
+
+    async function clearLeaderboardTimer(){
+      try {
+        const db = await ensureFirebaseReady();
+  await db.ref(LB_PATH).set({ startsAt: '', startsAtMs: 0, endsAt: '', endsAtMs: 0, header: '', description: '', visible: true, updatedAt: new Date().toISOString() });
+        setStatus('Leaderboards countdown cleared.', 'success');
+        renderLeaderboardTimer({});
+      } catch(e){ setStatus('Failed to clear countdown: ' + e.message, 'error'); }
+    }
+
+    // Password gate
+    let serverPassword = null;
+    async function loadAdminPassword() {
+      try {
+        const res = await fetch('./admin-password.txt?_=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) throw new Error('admin-password.txt not found');
+        const raw = await res.text();
+        // Use only the first non-empty, non-comment line as the password
+        const firstLine = raw
+          .split(/\r?\n/)
+          .map(l => l.trim())
+          .filter(l => l.length > 0 && !l.startsWith('#'))[0];
+        serverPassword = firstLine || null;
+      } catch (e) {
+        console.warn('Failed to load admin-password.txt:', e.message);
+        serverPassword = null;
+      }
+    }
+
+    async function handlePasswordSubmit(evt) {
+      evt.preventDefault();
+      const input = $('#admin-pass').value.trim();
+      const err = $('#pass-error');
+      err.classList.add('hidden');
+      if (!serverPassword) {
+        err.textContent = 'Password file missing. Add admin-password.txt.';
+        err.classList.remove('hidden');
+        return;
+      }
+      if (input !== serverPassword) {
+        err.textContent = 'Incorrect password. Try again.';
+        err.classList.remove('hidden');
+        return;
+      }
+      // Unlock
+      $('#password-gate').classList.add('hidden');
+      $('#admin-tools').classList.remove('hidden');
+      setStatus('Admin unlocked. Initializing Firebase...');
+      try {
+        await ensureFirebaseReady();
+        setStatus('Firebase ready.', 'success');
+        // Start live status after unlock
+        try { await fetchMaintenanceOnce(); } catch {}
+        try { await fetchLeaderboardTimerOnce(); } catch {}
+        try { await watchMaintenance(); } catch {}
+        try { await watchLeaderboardTimer(); } catch {}
+      } catch (e) {
+        setStatus('Firebase init failed: ' + e.message, 'error');
+      }
+    }
+
+    // Export helpers
+    const nowIso = () => new Date().toISOString();
+    const downloadJson = (filename, data) => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    };
+
+    async function fetchStudentsRaw() {
+      const db = await ensureFirebaseReady();
+      const snap = await db.ref('students').once('value');
+      return snap.val() || {};
+    }
+    function normalizeStudentsById(raw) {
+      const byId = {};
+      Object.values(raw || {}).forEach(rec => { if (rec && rec.studentId) byId[rec.studentId] = rec; });
+      return byId;
+    }
+    async function fetchCareerStats() {
+      const db = await ensureFirebaseReady();
+      const snap = await db.ref('student_career_stats').once('value');
+      return snap.val() || {};
+    }
+    async function fetchLeaderboards() {
+      const db = await ensureFirebaseReady();
+      const snap = await db.ref('leaderboards').once('value');
+      return snap.val() || {};
+    }
+
+    async function onExportAll() {
+      try {
+        setStatus('Exporting all...');
+        const [studentsRaw, careerStats, leaderboards] = await Promise.all([
+          fetchStudentsRaw(), fetchCareerStats(), fetchLeaderboards()
+        ]);
+        const studentsById = normalizeStudentsById(studentsRaw);
+        const payload = {
+          meta: {
+            type: 'all', exportedAt: nowIso(),
+            counts: {
+              studentsRaw: Object.keys(studentsRaw).length,
+              studentsById: Object.keys(studentsById).length,
+              careerStats: Object.keys(careerStats).length,
+              leaderboards: Object.keys(leaderboards).length
+            }, version: '1'
+          },
+          students: { raw: studentsRaw, byId: studentsById },
+          careerStats, leaderboards
+        };
+        downloadJson(`sci-high-export-${Date.now()}.json`, payload);
+        setStatus('All data exported.', 'success');
+      } catch (e) { setStatus('Export failed: ' + e.message, 'error'); }
+    }
+    async function onExportStudents() {
+      try {
+        setStatus('Exporting students...');
+        const raw = await fetchStudentsRaw();
+        const normalized = normalizeStudentsById(raw);
+        const payload = { meta: { type: 'students', exportedAt: nowIso(), counts: { raw: Object.keys(raw).length, byId: Object.keys(normalized).length } }, studentsRaw: raw, studentsById: normalized };
+        downloadJson(`sci-high-students-${Date.now()}.json`, payload);
+        setStatus('Students exported.', 'success');
+      } catch (e) { setStatus('Export failed: ' + e.message, 'error'); }
+    }
+    async function onExportCareer() {
+      try {
+        setStatus('Exporting career stats...');
+        const stats = await fetchCareerStats();
+        const payload = { meta: { type: 'career_stats', exportedAt: nowIso(), count: Object.keys(stats).length }, careerStats: stats };
+        downloadJson(`sci-high-career-stats-${Date.now()}.json`, payload);
+        setStatus('Career stats exported.', 'success');
+      } catch (e) { setStatus('Export failed: ' + e.message, 'error'); }
+    }
+    async function onExportLeaderboards() {
+      try {
+        setStatus('Exporting leaderboards...');
+        const lb = await fetchLeaderboards();
+        const payload = { meta: { type: 'leaderboards', exportedAt: nowIso(), count: Object.keys(lb).length }, leaderboards: lb };
+        downloadJson(`sci-high-leaderboards-${Date.now()}.json`, payload);
+        setStatus('Leaderboards exported.', 'success');
+      } catch (e) { setStatus('Export failed: ' + e.message, 'error'); }
+    }
+
+    // Reset tools
+    async function previewResetCount() {
+      try {
+        setStatus('Counting students to reset...');
+        const stats = await fetchCareerStats();
+        const count = Object.keys(stats).length;
+        $('#preview-result').textContent = `${count} student(s) found`;
+        setStatus('Preview ready.', 'success');
+      } catch (e) { setStatus('Preview failed: ' + e.message, 'error'); }
+    }
+
+    async function resetAllCareerPoints() {
+      try {
+        await ensureFirebaseReady();
+        setStatus('Preparing reset...');
+        const db = firebase.database();
+        const snap = await db.ref('student_career_stats').once('value');
+        const data = snap.val() || {};
+        const updates = {};
+        let affected = 0;
+        Object.keys(data).forEach(studentId => {
+          updates[`${studentId}/careerStats/totalPoints`] = 0;
+          affected++;
+        });
+        if (affected === 0) { setStatus('No records to reset.'); return; }
+        await db.ref('student_career_stats').update(updates);
+        setStatus(`Reset complete. Affected students: ${affected}`, 'success');
+        // Hide confirm block after success
+        const ca = document.getElementById('confirm-reset-all'); if (ca) ca.classList.add('hidden');
+      } catch (e) { setStatus('Reset failed: ' + e.message, 'error'); }
+    }
+
+    async function resetSingleStudent() {
+      try {
+        const id = $('#single-student-id').value.trim();
+        if (!id) { alert('Enter a Student ID.'); return; }
+        await ensureFirebaseReady();
+        const ref = firebase.database().ref(`student_career_stats/${id}/careerStats/totalPoints`);
+        await ref.set(0);
+        setStatus(`Reset career points for ${id}.`, 'success');
+        const cs = document.getElementById('confirm-reset-single'); if (cs) cs.classList.add('hidden');
+      } catch (e) { setStatus('Reset failed: ' + e.message, 'error'); }
+    }
+
+    // Wire up
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadAdminPassword();
+      $('#password-form').addEventListener('submit', handlePasswordSubmit);
+      const toggle = $('#toggle-pass');
+      if (toggle) {
+        toggle.addEventListener('change', (e) => {
+          const fld = $('#admin-pass');
+          if (fld) fld.type = e.target.checked ? 'text' : 'password';
+        });
+      }
+      $('#btn-export-all').addEventListener('click', onExportAll);
+      $('#btn-export-students').addEventListener('click', onExportStudents);
+      $('#btn-export-career').addEventListener('click', onExportCareer);
+      $('#btn-export-lb').addEventListener('click', onExportLeaderboards);
+      $('#btn-preview-reset').addEventListener('click', (e) => { e.preventDefault(); previewResetCount(); });
+      // Maintenance buttons and presets
+      document.querySelectorAll('[data-preset]')?.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const v = parseInt(btn.getAttribute('data-preset'), 10);
+          const dur = document.getElementById('maint-duration');
+          const unit = document.getElementById('maint-unit');
+          if (unit) unit.value = 'minutes';
+          if (dur) dur.value = isNaN(v) ? 60 : v;
+        });
+      });
+      const btnStart = document.getElementById('btn-start-maint');
+      const btnStop = document.getElementById('btn-stop-maint');
+      const btnRefresh = document.getElementById('btn-refresh-maint');
+      if (btnStart) btnStart.addEventListener('click', startMaintenance);
+      if (btnStop) btnStop.addEventListener('click', stopMaintenance);
+      if (btnRefresh) btnRefresh.addEventListener('click', fetchMaintenanceOnce);
+  // Leaderboards timer wires
+  const btnSaveLb = document.getElementById('btn-save-lb');
+  const btnClearLb = document.getElementById('btn-clear-lb');
+  const btnRefreshLb = document.getElementById('btn-refresh-lb');
+  if (btnSaveLb) btnSaveLb.addEventListener('click', saveLeaderboardTimer);
+  if (btnClearLb) btnClearLb.addEventListener('click', clearLeaderboardTimer);
+  if (btnRefreshLb) btnRefreshLb.addEventListener('click', fetchLeaderboardTimerOnce);
+  // Start listening
+  watchLeaderboardTimer();
+      // Two-step confirm for reset all
+      $('#btn-reset-points').addEventListener('click', () => {
+        const blk = document.getElementById('confirm-reset-all');
+        if (blk) blk.classList.remove('hidden');
+      });
+      $('#btn-cancel-reset-all').addEventListener('click', () => {
+        const blk = document.getElementById('confirm-reset-all');
+        if (blk) blk.classList.add('hidden');
+      });
+      $('#btn-confirm-reset-all').addEventListener('click', resetAllCareerPoints);
+
+      // Two-step confirm for reset single
+      $('#btn-reset-single').addEventListener('click', () => {
+        const id = $('#single-student-id').value.trim();
+        if (!id) { alert('Enter a Student ID.'); return; }
+        const label = document.getElementById('confirm-student-id');
+        if (label) label.textContent = id;
+        const blk = document.getElementById('confirm-reset-single');
+        if (blk) blk.classList.remove('hidden');
+      });
+      $('#btn-cancel-reset-single').addEventListener('click', () => {
+        const blk = document.getElementById('confirm-reset-single');
+        if (blk) blk.classList.add('hidden');
+      });
+      $('#btn-confirm-reset-single').addEventListener('click', resetSingleStudent);
+    });
+
+    // (watchers start after unlock in handlePasswordSubmit)
+  </script>
+</body>
+</html>

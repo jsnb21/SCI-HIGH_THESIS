@@ -67,6 +67,18 @@ export default class PowerUpScene extends BaseScene {
         this.MAX_POWER_UP_LEVEL = 3;
     }
 
+    // Reset power-up levels for a fresh game session
+    resetPowerUpLevels() {
+        this.powerUpLevels = {
+            goblinWard: 1,
+            streakShield: 1,
+            swiftSteps: 1
+        };
+        // Also clear any selection state just in case
+        this.selectedPowerUp = null;
+        this.powerUpSelected = false;
+    }
+
     init(data) {
         // Receive data from main gameplay scene
         this.powerUpData = data.powerUpToCollect;
