@@ -368,11 +368,37 @@
   const headEl = document.getElementById('lb-header');
   const descEl = document.getElementById('lb-description');
   const visEl = document.getElementById('lb-visible');
+  const startDateInput = document.getElementById('lb-start-date');
+  const startTimeInput = document.getElementById('lb-start-time');
+  const endDateInput = document.getElementById('lb-end-date');
+  const endTimeInput = document.getElementById('lb-end-time');
       const startsAtMs = val?.startsAtMs ?? (val?.startsAt ? Date.parse(val.startsAt) : 0);
       const endsAtMs = val?.endsAtMs ?? (val?.endsAt ? Date.parse(val.endsAt) : 0);
   if (headEl) headEl.value = (val && typeof val.header === 'string') ? val.header : '';
   if (descEl) descEl.value = (val && typeof val.description === 'string') ? val.description : '';
   if (visEl) visEl.checked = (val && typeof val.visible === 'boolean') ? val.visible : true;
+  // Prefill editable inputs so admins can modify existing schedules
+  const pad2 = (n) => String(n).padStart(2, '0');
+  if (startsAtMs && startDateInput && startTimeInput) {
+    const d = new Date(startsAtMs);
+    const yyyy = d.getFullYear();
+    const mm = pad2(d.getMonth() + 1);
+    const dd = pad2(d.getDate());
+    const hh = pad2(d.getHours());
+    const mi = pad2(d.getMinutes());
+    startDateInput.value = `${yyyy}-${mm}-${dd}`;
+    startTimeInput.value = `${hh}:${mi}`;
+  }
+  if (endsAtMs && endDateInput && endTimeInput) {
+    const d = new Date(endsAtMs);
+    const yyyy = d.getFullYear();
+    const mm = pad2(d.getMonth() + 1);
+    const dd = pad2(d.getDate());
+    const hh = pad2(d.getHours());
+    const mi = pad2(d.getMinutes());
+    endDateInput.value = `${yyyy}-${mm}-${dd}`;
+    endTimeInput.value = `${hh}:${mi}`;
+  }
   if (startEl) startEl.textContent = startsAtMs ? new Date(startsAtMs).toLocaleString() : 'n/a';
       if (endEl) endEl.textContent = endsAtMs ? new Date(endsAtMs).toLocaleString() : 'n/a';
       if (lbTimer) { clearInterval(lbTimer); lbTimer = null; }
@@ -702,8 +728,7 @@
   if (btnSaveLb) btnSaveLb.addEventListener('click', saveLeaderboardTimer);
   if (btnClearLb) btnClearLb.addEventListener('click', clearLeaderboardTimer);
   if (btnRefreshLb) btnRefreshLb.addEventListener('click', fetchLeaderboardTimerOnce);
-  // Start listening
-  watchLeaderboardTimer();
+  // Start listening ONLY after unlock (handled in handlePasswordSubmit)
       // Two-step confirm for reset all
       $('#btn-reset-points').addEventListener('click', () => {
         const blk = document.getElementById('confirm-reset-all');
