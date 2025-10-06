@@ -228,9 +228,25 @@ export default class QuizScene extends BaseScene {
                 normalized.sort((a,b)=> (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999));
                 const top = normalized[0];
                 if (top && Array.isArray(top.options)) {
-                    this.currentQuestion = { question: top.question, options: top.options.slice(), correctIndex: top.correctIndex, type: 'multiple-choice' };
+                    // Carry forward the stable hashed id so mastery tracking matches rerank candidates
+                    this.currentQuestion = { id: top.id, question: top.question, options: top.options.slice(), correctIndex: top.correctIndex, type: 'multiple-choice' };
                     // Ensure a single, correct shuffle after adaptive pick
                     if (this.currentQuestion.options.length > 2) this.randomizeAnswerChoices();
+
+                    // If the UI was already rendered using the initial random pick,
+                    // refresh it now to match the newly selected adaptive question.
+                    // Guard against refreshing after an answer was submitted or timer expired.
+                    try {
+                        if (this.quizContainer && !this.answerSubmitted && !this.timerExpired) {
+                            this.quizContainer.destroy(true);
+                            this.quizContainer = null;
+                            this.answerButtons = [];
+                            this.selectedAnswer = null;
+                            this.createQuizInterface();
+                        }
+                    } catch (e) {
+                        console.warn('[QuizScene] Failed to refresh UI after AI rerank:', e);
+                    }
                 }
             }).catch(()=>{});
         } catch {}
@@ -1203,9 +1219,9 @@ export default class QuizScene extends BaseScene {
         }
         try {
             const bloom = this.getBloomLevel();
-            const id = this.createQuestionId(this.currentQuestion);
-            masteryService.recordOutcome(id, { topic: this.normalizeTopic(this.courseTopic), bloom: this.mapBloomName(bloom), correct: isCorrect, timeSec: null, difficulty: 3 });
-            masteryService.markSeen(id);
+            const qid = this.currentQuestion?.id || this.createQuestionId(this.currentQuestion);
+            masteryService.recordOutcome(qid, { topic: this.normalizeTopic(this.courseTopic), bloom: this.mapBloomName(bloom), correct: isCorrect, timeSec: null, difficulty: 3 });
+            masteryService.markSeen(qid);
         } catch {}
     }
 
@@ -1801,9 +1817,9 @@ export default class QuizScene extends BaseScene {
         // Telemetry
         try {
             const bloom = this.getBloomLevel();
-            const id = this.createQuestionId(this.currentQuestion);
-            masteryService.recordOutcome(id, { topic: this.normalizeTopic(this.courseTopic), bloom: this.mapBloomName(bloom), correct: isCorrect, timeSec: null, difficulty: 4 });
-            masteryService.markSeen(id);
+            const qid = this.currentQuestion?.id || this.createQuestionId(this.currentQuestion);
+            masteryService.recordOutcome(qid, { topic: this.normalizeTopic(this.courseTopic), bloom: this.mapBloomName(bloom), correct: isCorrect, timeSec: null, difficulty: 4 });
+            masteryService.markSeen(qid);
         } catch {}
         // Update tooltip immediately (only if timer hasn't expired)
         if (!this.timerExpired) {
@@ -2048,9 +2064,9 @@ export default class QuizScene extends BaseScene {
         // Telemetry
         try {
             const bloom = this.getBloomLevel();
-            const id = this.createQuestionId(this.currentQuestion);
-            masteryService.recordOutcome(id, { topic: this.normalizeTopic(this.courseTopic), bloom: this.mapBloomName(bloom), correct: isCorrect, timeSec: null, difficulty: 2 });
-            masteryService.markSeen(id);
+            const qid = this.currentQuestion?.id || this.createQuestionId(this.currentQuestion);
+            masteryService.recordOutcome(qid, { topic: this.normalizeTopic(this.courseTopic), bloom: this.mapBloomName(bloom), correct: isCorrect, timeSec: null, difficulty: 2 });
+            masteryService.markSeen(qid);
         } catch {}
         
         // Update tooltip immediately (only if timer hasn't expired)
