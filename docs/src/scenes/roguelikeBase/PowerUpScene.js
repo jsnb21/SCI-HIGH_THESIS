@@ -28,9 +28,9 @@ export default class PowerUpScene extends BaseScene {
                 icon: '🔆', // shield icon
                 color: 0xFF1744, // red
                 descriptions: {
-                    1: 'Protects you from goblin attacks for a limited time',
-                    2: 'Hitting goblins creates explosions that remove nearby thugs',
-                    3: 'Hitting goblins doubles your movement speed temporarily'
+                    1: 'Provides one-time protection from goblin thugs.',
+                    2: 'Hitting goblin thugs creates explosions that remove nearby thugs',
+                    3: 'Hitting goblin thugs doubles your movement speed temporarily'
                 }
             },
             {
