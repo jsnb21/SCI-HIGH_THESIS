@@ -228,7 +228,9 @@ export default class QuizScene extends BaseScene {
                 normalized.sort((a,b)=> (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999));
                 const top = normalized[0];
                 if (top && Array.isArray(top.options)) {
-                    this.currentQuestion = { question: top.question, options: top.options, correctIndex: top.correctIndex, type: 'multiple-choice' };
+                    this.currentQuestion = { question: top.question, options: top.options.slice(), correctIndex: top.correctIndex, type: 'multiple-choice' };
+                    // Ensure a single, correct shuffle after adaptive pick
+                    if (this.currentQuestion.options.length > 2) this.randomizeAnswerChoices();
                 }
             }).catch(()=>{});
         } catch {}
@@ -643,30 +645,23 @@ export default class QuizScene extends BaseScene {
     }
 
     randomizeAnswerChoices() {
-        if (!this.currentQuestion || !this.currentQuestion.options || this.currentQuestion.options.length <= 2) {
-            return; // Don't randomize if there are 2 or fewer options
-        }
-        
-        const originalOptions = [...this.currentQuestion.options];
-        const originalCorrectIndex = this.currentQuestion.correctIndex;
-        const correctAnswer = originalOptions[originalCorrectIndex];
-        
+        if (!this.currentQuestion || !this.currentQuestion.options || this.currentQuestion.options.length <= 2) return;
+        if (this.currentQuestion._shuffled) return; // idempotent guard
+
+        const originalOptions = this.currentQuestion.options.slice();
+        const originalCorrectIndex = this.currentQuestion.correctIndex ?? 0;
+
         // Create array of indices to shuffle
         const indices = Array.from({ length: originalOptions.length }, (_, i) => i);
-        
-        // Shuffle the indices using Phaser's shuffle utility
         Phaser.Utils.Array.Shuffle(indices);
-        
-        // Create new shuffled options array
-        const shuffledOptions = indices.map(index => originalOptions[index]);
-        
-        // Find the new position of the correct answer
-        const newCorrectIndex = shuffledOptions.findIndex(option => option === correctAnswer);
-        
-        // Update the question with shuffled options and new correct index
+
+        // Rebuild options by index mapping and compute new correct index by index, not by text
+        const shuffledOptions = indices.map(idx => originalOptions[idx]);
+        const newCorrectIndex = indices.findIndex(idx => idx === originalCorrectIndex);
+
         this.currentQuestion.options = shuffledOptions;
-        this.currentQuestion.correctIndex = newCorrectIndex;
-        
+        this.currentQuestion.correctIndex = (newCorrectIndex >= 0 ? newCorrectIndex : 0);
+        this.currentQuestion._shuffled = true;
     }
 
     filterCombinedQuestions(questions) {
