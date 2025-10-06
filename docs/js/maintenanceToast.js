@@ -129,6 +129,12 @@
     return !!(val && val.enabled && (!startsAtMs || now >= startsAtMs) && (!endsAtMs || now < endsAtMs));
   }
 
+  function computeScheduled(val){
+    const now = Date.now();
+    const startsAtMs = val?.startsAtMs ?? (val?.startsAt ? Date.parse(val.startsAt) : 0);
+    return !!(val && val.enabled && startsAtMs && now < startsAtMs);
+  }
+
   async function init(options = {}){
     const { onChange, position = 'bottom-left', path = DEFAULT_PATH } = options;
     const ok = await ensureFirebaseReady(options);
@@ -146,7 +152,8 @@
     ref.on('value', (snap) => {
       const val = snap.val() || {};
       const active = computeActive(val);
-      if (val && val.enabled) {
+      const scheduled = computeScheduled(val);
+      if (val && val.enabled && (active || scheduled)) {
         renderToast(val);
       } else {
         if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
