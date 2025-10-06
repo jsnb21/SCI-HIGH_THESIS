@@ -39,6 +39,18 @@ jobs:
         cd docs
         npm ci
         
+    - name: Inject AI key (runtime config)
+      shell: bash
+      run: |
+        mkdir -p docs/config
+        cat << 'EOF' > docs/config/ai-key.js
+        // Auto-generated at deploy time. Do not commit.
+        window.SCI_HIGH = window.SCI_HIGH || {};
+        window.SCI_HIGH.GOOGLE_AI_API_KEY = '${{ secrets.SCI_HIGH_GOOGLE_AI_API_KEY }}';
+        // Keep aggregates off by default in public deploys; flip to true if desired
+        window.SCI_HIGH.ALLOW_FIREBASE_AGGREGATE_SYNC = false;
+        EOF
+
     - name: Build
       run: |
         cd docs
