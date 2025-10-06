@@ -354,8 +354,19 @@ const aiRerankService = {
         pairs = discovered;
         saveCachedPairs(pairs);
       }
+    } else if (overridePairs) {
+      // Even with an override, append discovered models as backups to avoid hard failures
+      const discovered = await discoverAvailablePairs(apiKey);
+      if (discovered && discovered.length) {
+        const seen = new Set(overridePairs.map(p=>`${p.endpoint}|${p.model||p.url||''}`));
+        const extras = discovered.filter(p=>{
+          const k = `${p.endpoint}|${p.model||p.url||''}`;
+          if (seen.has(k)) return false; seen.add(k); return true;
+        });
+        pairs = [...overridePairs, ...extras];
+      }
     }
-    // Fallback to defaults if discovery failed
+    // Fallback to defaults if discovery failed; limit attempts
     pairs = (pairs || DEFAULT_MODEL_ENDPOINT_PAIRS).slice(0, 4);
 
     const body = {
