@@ -165,8 +165,8 @@
             <div class="border border-white/10 rounded p-3">
               <div class="flex items-center justify-between gap-3">
                 <div>
-                  <div class="font-semibold">Reset All Career Points</div>
-                  <div class="text-xs text-gray-400">Sets <code>student_career_stats/*/careerStats/totalPoints</code> = 0</div>
+                  <div class="font-semibold">Reset All Career Stats</div>
+                  <div class="text-xs text-gray-400">Resets key fields under <code>student_career_stats/*</code>: totalPoints, totalSessions, averageAccuracy, highestStreak, totalCorrect/ Wrong, per-course aggregates, Bloom stats, and recentSessions.</div>
                 </div>
                 <button id="btn-reset-points" class="px-3 py-2 rounded bg-red-500/20 border border-red-400/40 hover:bg-red-500/30">Reset All</button>
               </div>
@@ -176,7 +176,7 @@
               </div>
               <!-- Confirm reset all -->
               <div id="confirm-reset-all" class="mt-3 p-3 rounded border border-red-500/40 bg-red-500/10 hidden">
-                <div class="text-sm text-red-300 mb-2">Warning: This will set totalPoints = 0 for ALL students. Proceed?</div>
+                <div class="text-sm text-red-300 mb-2">Warning: This will reset ALL core stats for ALL students (points, sessions, accuracy, streak, per-course aggregates, Bloom stats, recent sessions). Proceed?</div>
                 <div class="flex gap-2">
                   <button id="btn-confirm-reset-all" class="px-3 py-2 rounded bg-red-500/30 border border-red-400/60 hover:bg-red-500/40">Confirm Reset All</button>
                   <button id="btn-cancel-reset-all" class="px-3 py-2 rounded border border-white/20 hover:bg-white/5">Cancel</button>
@@ -190,10 +190,10 @@
                 <input id="single-student-id" placeholder="Student ID (e.g., S12345)" class="flex-1 px-3 py-2 rounded bg-white/5 border border-white/10" />
                 <button id="btn-reset-single" class="px-3 py-2 rounded bg-red-500/20 border border-red-400/40 hover:bg-red-500/30">Reset</button>
               </div>
-              <p class="mt-2 text-xs text-gray-400">Only sets careerStats.totalPoints = 0 for the given studentId.</p>
+              <p class="mt-2 text-xs text-gray-400">Resets all core stats for the specified student (points, sessions, accuracy, streak, per-course aggregates, Bloom stats, recent sessions).</p>
               <!-- Confirm reset single -->
               <div id="confirm-reset-single" class="mt-3 p-3 rounded border border-red-500/40 bg-red-500/10 hidden">
-                <div class="text-sm text-red-300 mb-2">Warning: Reset career points for <code id="confirm-student-id" class="text-red-200"></code>?</div>
+                <div class="text-sm text-red-300 mb-2">Warning: Reset ALL core stats for <code id="confirm-student-id" class="text-red-200"></code>?</div>
                 <div class="flex gap-2">
                   <button id="btn-confirm-reset-single" class="px-3 py-2 rounded bg-red-500/30 border border-red-400/60 hover:bg-red-500/40">Confirm Reset</button>
                   <button id="btn-cancel-reset-single" class="px-3 py-2 rounded border border-white/20 hover:bg-white/5">Cancel</button>
@@ -590,6 +590,41 @@
       } catch (e) { setStatus('Preview failed: ' + e.message, 'error'); }
     }
 
+    // Build updates object to reset all core stats for a given student record
+    function buildFullResetUpdates(studentId, current) {
+      const base = {};
+      const path = (p) => `${studentId}/${p}`;
+      // Core aggregates
+      base[path('careerStats/totalPoints')] = 0;
+      base[path('careerStats/totalSessions')] = 0;
+      base[path('careerStats/totalCorrectAnswers')] = 0;
+      base[path('careerStats/totalWrongAnswers')] = 0;
+      base[path('careerStats/averageAccuracy')] = 0;
+      base[path('careerStats/highestStreak')] = 0;
+      // Course completion status (known keys)
+      base[path('careerStats/courseCompletionStatus/python')] = false;
+      base[path('careerStats/courseCompletionStatus/java')] = false;
+      base[path('careerStats/courseCompletionStatus/csharp')] = false;
+      base[path('careerStats/courseCompletionStatus/cpp')] = false;
+      base[path('careerStats/courseCompletionStatus/c')] = false;
+      base[path('careerStats/courseCompletionStatus/webdesign')] = false;
+      // Per-course aggregates: reset whole object
+      base[path('careerStats/coursesCompleted')] = {};
+      // Bloom stats: reset known levels to 0
+      const levels = ['remembering','understanding','applying','analyzing','evaluating','creating'];
+      levels.forEach(l => {
+        base[path(`careerStats/bloomStats/${l}/correct`)] = 0;
+        base[path(`careerStats/bloomStats/${l}/total`)] = 0;
+      });
+      // Recent sessions
+      base[path('recentSessions')] = {};
+      // Touch lastUpdated if structure exists
+      if (current && current.studentInfo) {
+        base[path('studentInfo/lastUpdated')] = new Date().toISOString();
+      }
+      return base;
+    }
+
     async function resetAllCareerPoints() {
       try {
         await ensureFirebaseReady();
@@ -597,10 +632,12 @@
         const db = firebase.database();
         const snap = await db.ref('student_career_stats').once('value');
         const data = snap.val() || {};
-        const updates = {};
+        let updates = {};
         let affected = 0;
         Object.keys(data).forEach(studentId => {
-          updates[`${studentId}/careerStats/totalPoints`] = 0;
+          const current = data[studentId] || {};
+          const u = buildFullResetUpdates(studentId, current);
+          updates = { ...updates, ...u };
           affected++;
         });
         if (affected === 0) { setStatus('No records to reset.'); return; }
@@ -616,9 +653,12 @@
         const id = $('#single-student-id').value.trim();
         if (!id) { alert('Enter a Student ID.'); return; }
         await ensureFirebaseReady();
-        const ref = firebase.database().ref(`student_career_stats/${id}/careerStats/totalPoints`);
-        await ref.set(0);
-        setStatus(`Reset career points for ${id}.`, 'success');
+        const db = firebase.database();
+        const snap = await db.ref(`student_career_stats/${id}`).once('value');
+        if (!snap.exists()) { setStatus(`No career stats found for ${id}.`, 'error'); return; }
+        const updates = buildFullResetUpdates(id, snap.val());
+        await db.ref('student_career_stats').update(updates);
+        setStatus(`Reset all core stats for ${id}.`, 'success');
         const cs = document.getElementById('confirm-reset-single'); if (cs) cs.classList.add('hidden');
       } catch (e) { setStatus('Reset failed: ' + e.message, 'error'); }
     }
@@ -673,7 +713,7 @@
         const blk = document.getElementById('confirm-reset-all');
         if (blk) blk.classList.add('hidden');
       });
-      $('#btn-confirm-reset-all').addEventListener('click', resetAllCareerPoints);
+  $('#btn-confirm-reset-all').addEventListener('click', resetAllCareerPoints);
 
       // Two-step confirm for reset single
       $('#btn-reset-single').addEventListener('click', () => {

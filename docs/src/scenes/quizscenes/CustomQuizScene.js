@@ -1,5 +1,7 @@
 
 import Phaser from 'phaser';
+import aiRerankService from '../../services/aiRerankService.js';
+import masteryService from '../../services/masteryService.js';
 
 /**
  * CustomQuizScene (Standalone)
@@ -31,7 +33,7 @@ export default class CustomQuizScene extends Phaser.Scene {
 
   create(){
     if(this.cameras?.main){ this.cameras.main.setBackgroundColor('#142 twelve'); }
-    this.startQuiz();
+    this.prepareAdaptiveOrdering().then(()=> this.startQuiz());
     this.input.keyboard.on('keydown-ESC', ()=> this.scene.start('MainHub'));
   }
 
@@ -47,6 +49,30 @@ export default class CustomQuizScene extends Phaser.Scene {
     if(this.isQuizStarted) return;
     this.isQuizStarted = true;
     this.showQuestion();
+  }
+
+  async prepareAdaptiveOrdering(){
+    try {
+      // Build candidates
+      const candidates = aiRerankService.buildCandidates(this.questions, { topic: this.topic });
+      // Prefilter
+      const session = { maxItems: Math.min(30, this.questions.length), avoidRecentDays: 3, difficultyBand: [1,5] };
+      const bloomMix = { Remember: 0.15, Understand: 0.25, Apply: 0.35, Analyze: 0.2, Evaluate: 0.05, Create: 0.0 };
+      const pool = aiRerankService.prefilter(candidates, { avoidRecentDays: session.avoidRecentDays, difficultyBand: session.difficultyBand, maxPool: 60, includeNovelPct: 0.2 });
+      if (!pool.length) return; // keep original order
+      // Rerank
+      const { ranked } = await aiRerankService.rerank({ candidates: pool, session: { maxItems: session.maxItems, avoidRecentDays: session.avoidRecentDays, difficultyBand: session.difficultyBand }, bloomMix });
+      if (!ranked || !ranked.length) return;
+      // Reorder local questions by ranked IDs first then the rest
+      const byId = new Map(this.questions.map(q => [q.id || q._id || q.question, q]));
+      const ordered = [];
+      ranked.forEach(r => { const q = byId.get(r.id); if (q) { ordered.push(q); byId.delete(r.id); } });
+      // append remaining unseen
+      for (const q of byId.values()) ordered.push(q);
+      this.questions = ordered;
+    } catch (e) {
+      // Silent fallback
+    }
   }
 
   showQuestion(){
@@ -96,11 +122,14 @@ export default class CustomQuizScene extends Phaser.Scene {
       if(window?.pushGameMessage){
         window.pushGameMessage('Correct','Nice!');
       }
+      masteryService.recordOutcome(q.id || `Q_${this.currentQuestionIndex}`, { topic: q.topic || this.topic, bloom: q.bloom || q.bloomLevel || q.bloomTarget || 'Understand', correct: true, timeSec: null, difficulty: typeof q.difficulty==='number'? q.difficulty : 2 });
     } else {
       if(window?.pushGameMessage){
         window.pushGameMessage('Incorrect','Try the next one');
       }
+      masteryService.recordOutcome(q.id || `Q_${this.currentQuestionIndex}`, { topic: q.topic || this.topic, bloom: q.bloom || q.bloomLevel || q.bloomTarget || 'Understand', correct: false, timeSec: null, difficulty: typeof q.difficulty==='number'? q.difficulty : 2 });
     }
+    masteryService.markSeen(q.id || `Q_${this.currentQuestionIndex}`);
     this.currentQuestionIndex++;
     this._scoreText?.setText(`Score: ${this.score}`);
     this.time.delayedCall(350, ()=> this.showQuestion());

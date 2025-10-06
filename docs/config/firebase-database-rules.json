@@ -108,6 +108,22 @@
         "lily": { ".validate": "newData.hasChildren(['chapter','scene','completed']) && newData.child('chapter').isNumber() && newData.child('scene').isNumber() && newData.child('completed').isBoolean()" },
         "damian": { ".validate": "newData.hasChildren(['chapter','scene','completed']) && newData.child('chapter').isNumber() && newData.child('scene').isNumber() && newData.child('completed').isBoolean()" }
       }
+    },
+
+    "mastery_aggregates": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['mastery','updatedAt'])",
+        "mastery": {
+          "$topic": {
+            "$bloom": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"
+            }
+          }
+        },
+        "updatedAt": { ".validate": "newData.isString()" }
+      }
     }
   }
 }

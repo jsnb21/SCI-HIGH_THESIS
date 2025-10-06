@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import BaseScene from '../BaseScene.js';
 import { getScaleInfo } from '../../utils/mobileUtils.js';
+import aiRerankService from '../../services/aiRerankService.js';
+import masteryService from '../../services/masteryService.js';
 
 // Quiz UI color palette (centralized for easy tweaking)
 // Panel: semi-transparent dark background (80% opacity)
@@ -163,11 +165,81 @@ export default class QuizScene extends BaseScene {
         }
         // intensity 1
         this.loadMultipleChoiceQuestion(1);
+        // Adaptive ordering for intensity 1
+        this.applyAdaptiveOrderingIfAvailable(1);
         if (!this.currentQuestion) {
             // fallback search higher pools
             this.loadMultipleChoiceQuestion(2);
             if (!this.currentQuestion) this.loadMultipleChoiceQuestion(3);
         }
+    }
+
+    applyAdaptiveOrderingIfAvailable(level){
+        try {
+            const topic = this.courseTopic || 'python';
+            let quizData = null;
+            switch (topic.toLowerCase()) {
+                case 'python': quizData = this.cache.json.get('pythonQuiz'); break;
+                case 'java': quizData = this.cache.json.get('javaQuiz'); break;
+                case 'webdesign': quizData = this.cache.json.get('webdesignQuiz'); break;
+                case 'c': quizData = this.cache.json.get('cQuiz'); break;
+                case 'c++': quizData = this.cache.json.get('cppQuiz'); break;
+                case 'c#':
+                case 'csharp': quizData = this.cache.json.get('csharpQuiz'); break;
+                default: quizData = this.cache.json.get('pythonQuiz'); break;
+            }
+            if (!quizData) return;
+
+            let pool = [];
+            const add = (arr) => { if (Array.isArray(arr)) pool = pool.concat(arr); };
+            if (level === 1) {
+                add(quizData.intensity1?.multipleChoice);
+                if (pool.length === 0) add(quizData.questions);
+            } else if (level === 2) {
+                add(quizData.intensity2?.syntaxBlock);
+                add((quizData.intensity2?.multipleChoice||[]).filter(q=>q.type==='syntaxBlock'));
+            } else if (level === 3) {
+                add(quizData.intensity3?.codeArrangement);
+                add(quizData.intensity3?.multipleChoice);
+            } else {
+                ['intensity3','intensity2','intensity1'].forEach(k=>{ const b=quizData[k]; if (b){ add(b.multipleChoice); add(b.syntaxBlock); add(b.dragDrop); add(b.codeArrangement); }});
+                add(quizData.questions);
+            }
+            if (!pool.length) return;
+            const normalized = pool.map(q => ({
+                id: this.hashId(q),
+                topic: this.normalizeTopic(topic),
+                bloom: this.mapBloomName(this.getBloomLevel(q)),
+                difficulty: typeof q.difficulty==='number'? q.difficulty : (level>=3?4: level===2?3:2),
+                estSec: typeof q.estSec==='number'? q.estSec : (level>=3?75: level===2?60:45),
+                question: q.question || q.prompt || q.title || 'Untitled',
+                options: q.options,
+                correctIndex: typeof q.correctIndex==='number'? q.correctIndex : 0,
+                _ref: q
+            }));
+            const session = { maxItems: Math.min(30, normalized.length), avoidRecentDays: 3, difficultyBand: [1,5] };
+            const candidates = aiRerankService.buildCandidates(normalized, { topic: this.normalizeTopic(topic) });
+            const prefiltered = aiRerankService.prefilter(candidates, session);
+            if (!prefiltered.length) return;
+            const bloomMix = { Remember: 0.15, Understand: 0.25, Apply: 0.35, Analyze: 0.2, Evaluate: 0.05, Create: 0.0 };
+            aiRerankService.rerank({ candidates: prefiltered, session, bloomMix }).then(({ ranked }) => {
+                if (!ranked || !ranked.length) return;
+                const order = new Map(ranked.map((r,i)=>[r.id,i]));
+                normalized.sort((a,b)=> (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999));
+                const top = normalized[0];
+                if (top && Array.isArray(top.options)) {
+                    this.currentQuestion = { question: top.question, options: top.options, correctIndex: top.correctIndex, type: 'multiple-choice' };
+                }
+            }).catch(()=>{});
+        } catch {}
+    }
+
+    hashId(q){
+        try {
+            const s = JSON.stringify({ q: q.question || q.prompt || q.title, a: q.options, c: q.correctIndex, t: q.type, co: q.correctOrder, b: q.blocks });
+            let h = 2166136261 >>> 0; for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+            return 'Q' + (h>>>0).toString(16);
+        } catch { return 'Q_' + Math.random().toString(36).slice(2,9); }
     }
 
     loadCustomQuizQuestion() {
@@ -1134,6 +1206,12 @@ export default class QuizScene extends BaseScene {
             }
             this.handleAnswerResult(false, 'syntaxBlock');
         }
+        try {
+            const bloom = this.getBloomLevel();
+            const id = this.createQuestionId(this.currentQuestion);
+            masteryService.recordOutcome(id, { topic: this.normalizeTopic(this.courseTopic), bloom: this.mapBloomName(bloom), correct: isCorrect, timeSec: null, difficulty: 3 });
+            masteryService.markSeen(id);
+        } catch {}
     }
 
     // Unified answer result handler (added to support syntaxBlock integration)
@@ -1673,7 +1751,7 @@ export default class QuizScene extends BaseScene {
             this.currentQuestion.blocks[index]
         );
         
-        const isCorrect = userOrder.every((text, index) => text === correctTexts[index]);
+    const isCorrect = userOrder.every((text, index) => text === correctTexts[index]);
         
         
         // Visual feedback for drag and drop blocks
@@ -1725,6 +1803,13 @@ export default class QuizScene extends BaseScene {
             });
         }
         
+        // Telemetry
+        try {
+            const bloom = this.getBloomLevel();
+            const id = this.createQuestionId(this.currentQuestion);
+            masteryService.recordOutcome(id, { topic: this.normalizeTopic(this.courseTopic), bloom: this.mapBloomName(bloom), correct: isCorrect, timeSec: null, difficulty: 4 });
+            masteryService.markSeen(id);
+        } catch {}
         // Update tooltip immediately (only if timer hasn't expired)
         if (!this.timerExpired) {
             this.updateTooltip(isCorrect);
@@ -1965,6 +2050,13 @@ export default class QuizScene extends BaseScene {
             // Disable interaction
             button.hitArea.removeInteractive();
         });
+        // Telemetry
+        try {
+            const bloom = this.getBloomLevel();
+            const id = this.createQuestionId(this.currentQuestion);
+            masteryService.recordOutcome(id, { topic: this.normalizeTopic(this.courseTopic), bloom: this.mapBloomName(bloom), correct: isCorrect, timeSec: null, difficulty: 2 });
+            masteryService.markSeen(id);
+        } catch {}
         
         // Update tooltip immediately (only if timer hasn't expired)
         if (!this.timerExpired) {
@@ -2069,5 +2161,18 @@ export default class QuizScene extends BaseScene {
             mainScene.events.off('timer-expired', this.handleTimerExpired, this);
         }
         super.destroy();
+    }
+
+    // Helpers for adaptive services
+    normalizeTopic(t) { return (t || 'General').toString().replace(/\s+/g,'_'); }
+    mapBloomName(b) {
+        const m = String(b || '').toLowerCase();
+        if (m.startsWith('remem')) return 'Remember';
+        if (m.startsWith('under')) return 'Understand';
+        if (m.startsWith('apply')) return 'Apply';
+        if (m.startsWith('analy')) return 'Analyze';
+        if (m.startsWith('evalu')) return 'Evaluate';
+        if (m.startsWith('creat')) return 'Create';
+        return 'Understand';
     }
 }

@@ -12,6 +12,10 @@
   <meta name="theme-color" content="#0f1524" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
     <title>SCI-HIGH: A Byte-Size Learning Adventure!</title>
+  <!-- Optional: runtime AI key (local only; do not commit real keys) -->
+  <!-- Copy config/ai-key.example.js -> config/ai-key.js and add your key; safe to omit in prod -->
+  <!-- Note: no defer here so the key is available to any inline scripts that run during parsing -->
+  <script src="config/ai-key.js"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts for Gaming Feel -->
@@ -3993,6 +3997,17 @@ Always provide helpful, encouraging responses that match the gaming theme. Use a
         
         async loadApiKeyFromFile() {
           try {
+            // 0) Prefer globally-injected key if present (from config/ai-key.js)
+            try {
+              const injected = window?.SCI_HIGH?.GOOGLE_AI_API_KEY || window?.env?.GOOGLE_AI_API_KEY;
+              if (injected && this.validateApiKey(injected)) {
+                this.apiKey = injected;
+                this.keyExpiry = Date.now() + this.maxKeyAge;
+                this.updateAIStatus(true);
+                return;
+              }
+            } catch {}
+
             // Try to load from env-config.json
             const possiblePaths = [
               this.configFile,

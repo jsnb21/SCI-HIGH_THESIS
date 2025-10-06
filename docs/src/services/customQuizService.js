@@ -102,13 +102,37 @@ class CustomQuizService {
    * Normalize quiz questions into BaseQuizScene expected format
    */
   normalizeQuestions(rawQuestions) {
+    const hashId = (obj) => {
+      try {
+        const s = JSON.stringify(obj);
+        let h = 2166136261 >>> 0; // FNV-1a 32-bit
+        for (let i = 0; i < s.length; i++) {
+          h ^= s.charCodeAt(i);
+          h = Math.imul(h, 16777619);
+        }
+        return 'Q' + (h >>> 0).toString(16);
+      } catch { return 'Q_' + Math.random().toString(36).slice(2, 9); }
+    };
+    const attachMeta = (q) => {
+      const topic = q.topic || 'Custom';
+      const bloom = q.bloom || q.bloomLevel || q.bloomTarget || 'Understand';
+      const difficulty = typeof q.difficulty === 'number' ? q.difficulty : 2;
+      const estSec = typeof q.estSec === 'number' ? q.estSec : 45;
+      const id = q.id || hashId({ question: q.question, options: q.options, correctIndex: q.correctIndex, topic, bloom, difficulty });
+      return { ...q, id, topic, bloom, difficulty, estSec };
+    };
     // Case 1: Already an array (legacy flat format)
     if (Array.isArray(rawQuestions)) {
-      return rawQuestions.map(q => ({
+      return rawQuestions.map(q => attachMeta({
         question: q.question || q.text || 'Untitled Question',
         options: q.options || q.choices || [],
         correctIndex: typeof q.correctIndex === 'number' ? q.correctIndex : (q.answerIndex || 0),
-        type: q.type || 'multiple-choice'
+        type: q.type || 'multiple-choice',
+        bloom: q.bloom || q.bloomLevel || q.bloomTarget,
+        topic: q.topic,
+        difficulty: q.difficulty,
+        estSec: q.estSec,
+        id: q.id,
       }));
     }
     // Case 2: Passed full quiz object with intensity* structure
@@ -120,12 +144,17 @@ class CustomQuizService {
         if (Array.isArray(node.multipleChoice)) {
           node.multipleChoice.forEach(q => {
             if (q && (q.options || q.choices)) {
-              collected.push({
+              collected.push(attachMeta({
                 question: q.question || 'Untitled Question',
                 options: q.options || q.choices || [],
                 correctIndex: typeof q.correctIndex === 'number' ? q.correctIndex : 0,
-                type: 'multiple-choice'
-              });
+                type: 'multiple-choice',
+                bloom: q.bloom || q.bloomLevel || q.bloomTarget,
+                topic: q.topic,
+                difficulty: q.difficulty,
+                estSec: q.estSec,
+                id: q.id,
+              }));
             }
           });
         }
@@ -133,12 +162,17 @@ class CustomQuizService {
         if (Array.isArray(node.questions)) {
           node.questions.forEach(q => {
             if (q && (q.options || q.choices)) {
-              collected.push({
+              collected.push(attachMeta({
                 question: q.question || 'Untitled Question',
                 options: q.options || q.choices || [],
                 correctIndex: typeof q.correctIndex === 'number' ? q.correctIndex : 0,
-                type: 'multiple-choice'
-              });
+                type: 'multiple-choice',
+                bloom: q.bloom || q.bloomLevel || q.bloomTarget,
+                topic: q.topic,
+                difficulty: q.difficulty,
+                estSec: q.estSec,
+                id: q.id,
+              }));
             }
           });
         }
