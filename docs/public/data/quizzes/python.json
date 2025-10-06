@@ -4,8 +4,165 @@
       {
         "question": "Which symbol is used to start a comment in Python?",
         "options": ["//", "<!-- -->", "#", "%"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
       },
+      {
+        "question": "Which function is used to display output in Python?",
+        "options": ["show()", "echo()", "print()", "display()"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which function is used to take input from the user in Python?",
+        "options": ["scan()", "read()", "input()", "get()"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What is the correct extension for a Python file?",
+        "options": [".java", ".html", ".py", ".exe"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which of these is a correct variable name in Python?",
+        "options": ["2name", "first_name", "my-name", "class"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What is the correct way to create a string variable in Python?",
+        "options": ["name = \"Alice\"", "name = Alice", "name = 'Alice\"", "string name = \"Alice\""],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which of these is a floating-point number in Python?",
+        "options": ["10", "10.0", "\"10\"", "'10'"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which keyword is used to create a function in Python?",
+        "options": ["method", "func", "def", "function"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which data type is used to store True or False values in Python?",
+        "options": ["bool", "int", "str", "char"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What is the first index of a list in Python?",
+        "options": ["0", "1", "-1", "any number"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which of the following creates a list in Python?",
+        "options": [
+          "list = \"apple\", \"banana\", \"cherry\"",
+          "list = [\"apple\", \"banana\", \"cherry\"]",
+          "list = (\"apple\", \"banana\", \"cherry\")",
+          "list = {\"apple\", \"banana\", \"cherry\"}"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "How do you create a dictionary in Python?",
+        "options": [
+          "dict = [key:value]",
+          "dict = {key:value}",
+          "dict = (key:value)",
+          "dict = key:value"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "A Python file must always end with the extension .py.",
+        "options": ["True", "False"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "The print() function in Python can only display text, not numbers.",
+        "options": ["True", "False"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "The input() function always returns user input as a string, even if you type numbers.",
+        "options": ["True", "False"],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "In Python, variable names can begin with a number.",
+        "options": ["True", "False"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Lists in Python can store mixed data types, like numbers and strings together.",
+        "options": ["True", "False"],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "The first index of a list in Python starts at 1.",
+        "options": ["True", "False"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "The keyword def is used to create a function in Python.",
+        "options": ["True", "False"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "In Python, # is used to write a comment.",
+        "options": ["True", "False"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which operator raises a number to a power in Python?",
+        "options": ["^", "**", "pow", "//"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What is the value of len([1, 2, 3])?",
+        "options": ["2", "3", "4", "Error"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which method adds an item to the end of a list?",
+        "options": ["add()", "push()", "append()", "extend()"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What is the type of the value None?",
+        "options": ["str", "NoneType", "bool", "null"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What does this slice return? 'Python'[0:2]",
+        "options": ["Py", "Pyt", "on", ""],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
+      }
+    ],
+    "syntaxBlock": [
       {
         "type": "syntaxBlock",
         "question": "Select the Correct Syntax",
@@ -14,102 +171,8 @@
           { "code": "if 5 > 3 {\n    print(\"Hello World\");\n}", "correct": false },
           { "code": "if 5 > 3:\n    print(\"Hello World\")", "correct": true },
           { "code": "if (5 > 3) {\n    print(\"Hello World\");\n}", "correct": false }
-        ]
-      },
-      {
-        "question": "Which function is used to display output in Python?",
-        "options": ["show()", "echo()", "print()", "display()"],
-        "correctIndex": 2
-      },
-      {
-        "question": "Which function is used to take input from the user in Python?",
-        "options": ["scan()", "read()", "input()", "get()"],
-        "correctIndex": 2
-      },
-      {
-        "question": "What is the correct extension for a Python file?",
-        "options": [".java", ".html", ".py", ".exe"],
-        "correctIndex": 2
-      },
-      {
-        "question": "Which of these is a correct variable name in Python?",
-        "options": ["2name", "first_name", "my-name", "class"],
-        "correctIndex": 1
-      },
-      {
-        "question": "What is the correct way to create a string variable in Python?",
-        "options": ["name = \"Alice\"", "name = Alice", "name = 'Alice\"", "string name = \"Alice\""],
-        "correctIndex": 0
-      },
-      {
-        "question": "Which of these is a floating-point number in Python?",
-        "options": ["10", "10.0", "\"10\"", "'10'"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Which keyword is used to create a function in Python?",
-        "options": ["method", "func", "def", "function"],
-        "correctIndex": 2
-      },
-      {
-        "question": "Which data type is used to store True or False values in Python?",
-        "options": ["bool", "int", "str", "char"],
-        "correctIndex": 0
-      },
-      {
-        "question": "What is the first index of a list in Python?",
-        "options": ["0", "1", "-1", "any number"],
-        "correctIndex": 0
-      },
-      {
-        "question": "Which of the following creates a list in Python?",
-        "options": ["list = \"apple\", \"banana\", \"cherry\"", "list = [\"apple\", \"banana\", \"cherry\"]", "list = (\"apple\", \"banana\", \"cherry\")", "list = {\"apple\", \"banana\", \"cherry\"}"],
-        "correctIndex": 1
-      },
-      {
-        "question": "How do you create a dictionary in Python?",
-        "options": ["dict = [key:value]", "dict = {key:value}", "dict = (key:value)", "dict = key:value"],
-        "correctIndex": 1
-      },
-      {
-        "question": "A Python file must always end with the extension .py.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "The print() function in Python can only display text, not numbers.",
-        "options": ["True", "False"],
-        "correctIndex": 1
-      },
-      {
-        "question": "The input() function always returns user input as a string, even if you type numbers.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "In Python, variable names can begin with a number.",
-        "options": ["True", "False"],
-        "correctIndex": 1
-      },
-      {
-        "question": "Lists in Python can store mixed data types, like numbers and strings together.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "The first index of a list in Python starts at 1.",
-        "options": ["True", "False"],
-        "correctIndex": 1
-      },
-      {
-        "question": "The keyword def is used to create a function in Python.",
-        "options": ["True", "False"],
-        "correctIndex": 0
-      },
-      {
-        "question": "In Python, # is used to write a comment.",
-        "options": ["True", "False"],
-        "correctIndex": 0
+        ],
+        "bloomTarget": "understanding"
       }
     ]
   },
@@ -123,7 +186,8 @@
           { "code": "for i in range(5):\n    print(i)", "correct": true },
           { "code": "for (i = 0; i < 5; i++)\n    print(i)", "correct": false },
           { "code": "loop i in 0..5 { print(i) }", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -133,7 +197,8 @@
           { "code": "if x > 10:\n    print('big')\nelse:\n    print('small')", "correct": true },
           { "code": "if (x > 10) then\n    print('big')\nelse print('small')", "correct": false },
           { "code": "if x > 10 { print('big') } else { print('small') }", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -143,7 +208,8 @@
           { "code": "def add(a, b):\n    return a + b", "correct": true },
           { "code": "function add(a,b) => a + b", "correct": false },
           { "code": "def add(a,b) { return a + b }", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -153,7 +219,8 @@
           { "code": "squares = [n*n for n in range(1,6)]", "correct": true },
           { "code": "squares = for n in range(1,6) { n*n }", "correct": false },
           { "code": "squares = (n*n in range(1,6))", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -163,7 +230,8 @@
           { "code": "with open('data.txt','r') as f:\n    text = f.read()", "correct": true },
           { "code": "with open 'data.txt' as f:\n    text = f.read()", "correct": false },
           { "code": "file f = open('data.txt'); text = f.read();", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -173,7 +241,8 @@
           { "code": "for k in data.keys():\n    print(k)", "correct": true },
           { "code": "for (k : data.keys()) { print(k) }", "correct": false },
           { "code": "foreach k in data { print k }", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -183,7 +252,8 @@
           { "code": "try:\n    v = int(s)\nexcept ValueError:\n    print('bad')", "correct": true },
           { "code": "catch ValueError as e:\n    v = int(s)\nelse:\n    print('bad')", "correct": false },
           { "code": "try { v = int(s) } catch(ValueError) { print('bad') }", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -193,7 +263,8 @@
           { "code": "class User:\n    def __init__(self,name):\n        self.name = name", "correct": true },
           { "code": "class User(name):\n    init { self.name = name }", "correct": false },
           { "code": "class User { def __init__(self,name): self.name = name }", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -203,7 +274,8 @@
           { "code": "add3 = lambda x: x + 3", "correct": true },
           { "code": "add3(x) = x + 3", "correct": false },
           { "code": "lambda add3(x) => x + 3", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
       },
       {
         "type": "syntaxBlock",
@@ -213,109 +285,232 @@
           { "code": "import math\nval = math.sqrt(9)", "correct": true },
           { "code": "include math; val = sqrt(9);", "correct": false },
           { "code": "using math:\n    val = sqrt(9)", "correct": false }
-        ]
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Slice list to get last 3 elements",
+        "blocks": [
+          { "code": "arr[-3:]", "correct": true },
+          { "code": "arr[:-3]", "correct": false },
+          { "code": "arr[last3]", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Dictionary comprehension",
+        "blocks": [
+          { "code": "squares = {n: n*n for n in range(5)}", "correct": true },
+          { "code": "squares = dict(n => n*n for n in range(5))", "correct": false },
+          { "code": "squares = {n -> n*n in range(5)}", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Use enumerate in a loop",
+        "blocks": [
+          { "code": "for i, val in enumerate(items):\n    print(i, val)", "correct": true },
+          { "code": "for (i, val) in items.enumerate():\n    print(i, val)", "correct": false },
+          { "code": "foreach (i, val) of items:\n    print(i, val)", "correct": false }
+        ],
+        "bloomTarget": "applying"
       }
     ],
     "multipleChoice": [
       {
         "question": "What is the output of this code? print(2 + 3)",
         "options": ["23", "5", "\"2+3\"", "Error"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which operator is used for multiplication in Python?",
         "options": ["×", "*", "x", "mul"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
         "question": "What is the output of this code? print(10 // 3)",
         "options": ["3", "3.33", "4", "0"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
         "question": "What is the output of this code? x = 5; print(x > 3)",
         "options": ["True", "False", "5", "3"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which symbol is used for equality comparison in Python?",
         "options": ["=", "==", "===", ":="],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
         "question": "Which keyword is used to define a class in Python?",
         "options": ["def", "class", "object", "struct"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
         "question": "Which keyword is used for decision-making in Python?",
         "options": ["switch", "if", "choose", "case"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
         "question": "Which function gives the length of a list in Python?",
         "options": ["count()", "size()", "len()", "length()"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
       },
       {
         "question": "What is the output of this code? print(type(\"Hello\"))",
         "options": ["int", "string", "str", "text"],
-        "correctIndex": 2
+        "correctIndex": 2,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which operator is used to find the remainder in Python?",
         "options": ["%", "/", "//", "mod"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
       },
       {
         "question": "Which of these is NOT a valid Python data type?",
         "options": ["int", "str", "float", "real"],
-        "correctIndex": 3
+        "correctIndex": 3,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which loop is best if you want to repeat code a known number of times?",
         "options": ["while loop", "for loop", "repeat loop", "do loop"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "What will this code print? x = \"Python\"; print(x[0])",
         "options": ["P", "y", "0", "Error"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Which function converts a string into an integer in Python?",
         "options": ["str()", "int()", "float()", "toInt()"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
       },
       {
         "question": "In Python, indentation (spaces) is optional when writing code blocks.",
         "options": ["True", "False"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "The expression 5 == \"5\" evaluates to True.",
         "options": ["True", "False"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "A while loop in Python continues running until its condition becomes False.",
         "options": ["True", "False"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
         "question": "A dictionary in Python stores data as key–value pairs.",
         "options": ["True", "False"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
       },
       {
         "question": "Strings in Python are mutable, meaning you can change characters directly.",
         "options": ["True", "False"],
-        "correctIndex": 1
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
       },
       {
         "question": "The keyword class is used to define a new class in Python.",
         "options": ["True", "False"],
-        "correctIndex": 0
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What is the result of [1, 2] + [3, 4]?",
+        "options": ["[1, 2, 3, 4]", "[1, 2, [3, 4]]", "Error", "[4, 3, 2, 1]"],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which method adds all items from list B to list A?",
+        "options": ["append(B)", "extend(B)", "addAll(B)", "push(B)"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which statement about tuples is true?",
+        "options": ["They are mutable", "They are immutable", "They are unordered", "They cannot be indexed"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which expression returns the last element of list L?",
+        "options": ["L[-1]", "L[len(L)]", "L[last]", "L[end]"],
+        "correctIndex": 0,
+        "bloomTarget": "applying"
+      },
+      {
+        "question": "Which method retrieves a value from a dictionary with a default?",
+        "options": [
+          "dict.value(key, default)",
+          "dict.get(key, default)",
+          "dict.fetch(key, default)",
+          "dict.find(key, default)"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What is the difference between '==' and 'is'?",
+        "options": [
+          "No difference",
+          "'==' compares values; 'is' compares identities",
+          "'is' compares values; '==' compares identities",
+          "Both compare identities"
+        ],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which call sorts a list of strings by length?",
+        "options": [
+          "sorted(names, key=len)",
+          "sorted(names, by=len)",
+          "names.sort(length)",
+          "sort(names, len)"
+        ],
+        "correctIndex": 0,
+        "bloomTarget": "applying"
+      },
+      {
+        "question": "Which expression creates a set of unique letters from 'hello'?",
+        "options": ["set('hello')", "{'h','e','l','o'}", "unique('hello')", "letters('hello')"],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which built-in converts a float to an int by truncation?",
+        "options": ["round()", "ceil()", "int()", "floor()"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
       }
     ]
   },
@@ -329,7 +524,8 @@
           "greeting = \"Hello, \" + name",
           "print(greeting)"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -339,7 +535,8 @@
           "    area = length * width",
           "    return area"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -349,7 +546,8 @@
           "for num in numbers:",
           "    print(f\"Checked {num}\")"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -359,7 +557,8 @@
           "content = file.read()",
           "print(content)"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -369,7 +568,8 @@
           "    def add(self, x, y):",
           "        return x + y"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -379,7 +579,8 @@
           "for name, score in students.items():",
           "    print(f\"{name}: {score}\")"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -389,7 +590,8 @@
           "even_numbers = [num for num in numbers if num % 2 == 0]",
           "squared_evens = [num ** 2 for num in even_numbers]"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -399,7 +601,8 @@
           "radius = 5",
           "area = math.pi * radius ** 2"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -409,7 +612,8 @@
           "result = 10 / value",
           "print(result)"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -419,7 +623,8 @@
           "set2 = {3, 4, 5, 6}",
           "intersection = set1 & set2"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -429,7 +634,8 @@
           "    a, b = 0, 1",
           "    for _ in range(n):"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
       },
       {
         "title": "Arrange the Python code blocks in correct order:",
@@ -439,7 +645,19 @@
           "    def wrapper(*args, **kwargs):",
           "        import time"
         ],
-        "correctOrder": [0, 1, 2]
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange to write text to a file:",
+        "description": "Open file, write a line, and close",
+        "blocks": [
+          "f = open('out.txt', 'w')",
+          "f.write('hello')",
+          "f.close()"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
       }
     ]
   }
