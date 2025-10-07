@@ -501,7 +501,23 @@ export default class Classroom extends Phaser.Scene {
             return;
         }
 
-        const tutorialSteps = CLASSROOM_TUTORIAL_STEPS.map(step => ({ ...step }));
+        // Use the configured first-time classroom steps and resolve dynamic targets
+        const tutorialSteps = [...(CLASSROOM_TUTORIAL_STEPS.firstTimeClassroom || [])].map(step => ({ ...step }));
+
+        // Map any string targets to actual scene elements (e.g., carousel)
+        tutorialSteps.forEach(step => {
+            switch (step.target) {
+                case 'carousel':
+                    // Prefer bgPanel (used by Carousel), fallback to container if available
+                    if (this.carousel && (this.carousel.bgPanel || this.carousel.container)) {
+                        step.target = this.carousel.bgPanel || this.carousel.container;
+                    }
+                    break;
+                default:
+                    // No-op for steps without targets or with already-resolved objects
+                    break;
+            }
+        });
 
         // Start the tutorial
         this.tutorialManager.init(tutorialSteps, {

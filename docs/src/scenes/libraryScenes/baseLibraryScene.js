@@ -497,7 +497,10 @@ class BaseLibraryScene extends Phaser.Scene {
         };
         
         // Create back button - it will automatically use our custom goBackToPreviousScene method
-        createBackButton(this, this.previousScene || 'MainHub');
+        const back = createBackButton(this, this.previousScene || 'MainHub');
+        // Keep references for tutorial targeting if needed
+        this.backButtonBg = back.buttonBg;
+        this.backButton = back.backButton;
     }
 
     startLibraryTutorial() {
@@ -507,13 +510,16 @@ class BaseLibraryScene extends Phaser.Scene {
         tutorialSteps.forEach(step => {
             switch(step.target) {
                 case 'carousel':
-                    if (this.carousel && this.carousel.container) {
-                        step.target = this.carousel.container;
+                    if (this.carousel && (this.carousel.bgPanel)) {
+                        step.target = this.carousel.bgPanel;
                     }
                     break;
                 case 'backButton':
-                    // The back button will be found automatically by the tutorial system
-                    // or we can set it to a specific element if needed
+                    if (this.backButtonBg) {
+                        step.target = this.backButtonBg;
+                    } else if (this.backButton) {
+                        step.target = this.backButton;
+                    }
                     break;
             }
         });
