@@ -30,14 +30,14 @@ export default class DomHudManager {
 
     const vw = (typeof window !== 'undefined') ? window.innerWidth : this.scene.scale.width;
     const isMobileLike = vw < 768;
-    const baseHeight = isMobileLike ? 76 : 64;
+    const baseHeight = isMobileLike ? 128 : 120;
 
     const wrapper = document.createElement('div');
     wrapper.id = 'desktop-game-hud';
     Object.assign(wrapper.style, {
       position: 'absolute', top: '0', left: '0', width: '0px', height: baseHeight + 'px',
       display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-      padding: (isMobileLike ? '8px 12px 4px 12px' : '6px 20px 4px 20px'), boxSizing: 'border-box',
+      padding: (isMobileLike ? '12px 16px 6px 16px' : '10px 24px 6px 24px'), boxSizing: 'border-box',
       fontFamily: 'Arial, sans-serif', zIndex: '9999', pointerEvents: 'none',
       background: 'linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.25))', overflow: 'hidden'
     });
@@ -63,11 +63,11 @@ export default class DomHudManager {
   const left = document.createElement('div');
   left.id = 'hud-left';
     left.style.display = 'flex';
-    left.style.flexDirection = 'column';
-    left.style.gap = '4px';
+  left.style.flexDirection = 'column';
+  left.style.gap = '6px';
 
-    const scoreFs = isMobileLike ? 18 : 22;
-    const streakFs = isMobileLike ? 14 : 18;
+  const scoreFs = isMobileLike ? 22 : 24;
+  const streakFs = isMobileLike ? 18 : 20;
     this.domScoreEl = buildTextRow(`Score: ${this.scene.score || 0}`, 'hud-score', scoreFs, '#ffffff');
     this.domStreakEl = buildTextRow(`Streak: ${this.scene.streak || 0}`, 'hud-streak', streakFs, '#ffff00');
     left.appendChild(this.domScoreEl);
@@ -76,8 +76,8 @@ export default class DomHudManager {
     // Center (timer)
   const center = document.createElement('div');
   center.id = 'hud-center';
-    const timerFs = isMobileLike ? 24 : 30;
-    center.style.cssText = `position:absolute;left:50%;top:${isMobileLike ? 4 : 6}px;transform:translateX(-50%);font-weight:bold;font-size:${timerFs}px;color:#fff;text-shadow:2px 2px 4px #000`;
+    const timerFs = isMobileLike ? 32 : 36;
+    center.style.cssText = `position:absolute;left:50%;top:${isMobileLike ? 6 : 8}px;transform:translateX(-50%);font-weight:bold;font-size:${timerFs}px;color:#fff;text-shadow:2px 2px 4px #000`;
   this.domTimerEl = document.createElement('div');
   this.domTimerEl.id = 'hud-timer';
     this.domTimerEl.textContent = this.scene.getCurrentTimeString ? this.scene.getCurrentTimeString() : '1:00';
@@ -86,12 +86,12 @@ export default class DomHudManager {
     // Right (course)
   const right = document.createElement('div');
   right.id = 'hud-right';
-    const courseFs = isMobileLike ? 16 : 20;
-    right.style.cssText = `display:flex;align-items:center;gap:6px;font-weight:bold;font-size:${courseFs}px;color:#0ff;text-shadow:2px 2px 3px #000;`;
+  const courseFs = isMobileLike ? 20 : 22;
+  right.style.cssText = `position:relative;display:flex;align-items:center;gap:8px;font-weight:bold;font-size:${courseFs}px;color:#0ff;text-shadow:2px 2px 3px #000;`;
     const courseIcon = document.createElement('img');
     courseIcon.src = iconBase + courseIconFile;
     courseIcon.alt = 'Course';
-    const iconSize = isMobileLike ? 24 : 28;
+  const iconSize = isMobileLike ? 32 : 36;
     courseIcon.style.width = iconSize + 'px';
     courseIcon.style.height = iconSize + 'px';
     courseIcon.style.objectFit = 'contain';
@@ -202,24 +202,25 @@ export default class DomHudManager {
     if (!this.domHudActive) return;
     const vw = (typeof window !== 'undefined') ? window.innerWidth : (this.scene.scale ? this.scene.scale.width : 800);
     const isMobileLike = vw < 768;
-    const baseHeight = isMobileLike ? 76 : 64;
+    const baseHeight = isMobileLike ? 128 : 120;
     if (this.domHudWrapper) {
       this.domHudWrapper.style.height = baseHeight + 'px';
-      this.domHudWrapper.style.padding = (isMobileLike ? '8px 12px 4px 12px' : '6px 20px 4px 20px');
+      this.domHudWrapper.style.padding = (isMobileLike ? '12px 16px 6px 16px' : '10px 24px 6px 24px');
     }
     // Adjust font sizes
-    if (this.domScoreEl) this.domScoreEl.style.fontSize = (isMobileLike ? 18 : 22) + 'px';
-    if (this.domStreakEl) this.domStreakEl.style.fontSize = (isMobileLike ? 14 : 18) + 'px';
+    if (this.domScoreEl) this.domScoreEl.style.fontSize = (isMobileLike ? 22 : 24) + 'px';
+    if (this.domStreakEl) this.domStreakEl.style.fontSize = (isMobileLike ? 18 : 20) + 'px';
     const center = this.domHudWrapper && this.domHudWrapper.querySelector('#hud-center');
-    if (center) center.style.top = (isMobileLike ? 4 : 6) + 'px';
-    if (center) center.style.fontSize = (isMobileLike ? 24 : 30) + 'px';
-    if (this.domCourseEl) this.domCourseEl.parentElement && (this.domCourseEl.parentElement.style.fontSize = (isMobileLike ? 16 : 20) + 'px');
+    if (center) center.style.top = (isMobileLike ? 6 : 8) + 'px';
+    if (center) center.style.fontSize = (isMobileLike ? 32 : 36) + 'px';
+    if (this.domCourseEl) this.domCourseEl.parentElement && (this.domCourseEl.parentElement.style.fontSize = (isMobileLike ? 20 : 22) + 'px');
     const courseIcon = this.domHudWrapper && this.domHudWrapper.querySelector('#hud-right img');
     if (courseIcon) {
-      const iconSize = isMobileLike ? 24 : 28;
+      const iconSize = isMobileLike ? 32 : 36;
       courseIcon.style.width = iconSize + 'px';
       courseIcon.style.height = iconSize + 'px';
     }
+  // No padding-top on right; pause button is positioned dynamically below course name
   }
 
   sync({ score, streak, seconds, course }) {

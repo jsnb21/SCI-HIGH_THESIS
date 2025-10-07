@@ -3,6 +3,7 @@ import BaseScene from '../BaseScene.js';
 import { playExclusiveBGM, updateSoundVolumes } from '../../audioUtils.js';
 import DomHudManager from '../../ui/DomHudManager.js';
 import TimerController from '../../components/TimerController.js';
+import PauseManager from '../../components/PauseManager.js';
 
 export default class MainGameplay extends BaseScene {
     constructor() {
@@ -35,6 +36,8 @@ export default class MainGameplay extends BaseScene {
         // Freeze/timeout state
         this.freezeGameplay = false; // when true, block input and game loops
         this._timeUpHandled = false; // guard to handle timer expiry once
+    // Pause manager (handles pause/resume and overlay)
+    this._pause = null;
         
         // Course data
         this.courseTopic = null;
@@ -374,6 +377,9 @@ export default class MainGameplay extends BaseScene {
         // Setup input controls
         this.setupInput();
 
+    // Create PauseManager after inputs are ready
+    this._pause = new PauseManager(this);
+
     // Course topic is displayed in the DOM HUD; no Phaser text needed
         
         // Add mobile control hint
@@ -393,6 +399,7 @@ export default class MainGameplay extends BaseScene {
             requestAnimationFrame(() => this.syncDomHud());
         });
         this.time.delayedCall(150, () => this.syncDomHud());
+
         
     // Add resize listener: lightweight handler that debounces heavy work
     this.scale.on('resize', this.onResizeEvent, this);
@@ -438,6 +445,7 @@ export default class MainGameplay extends BaseScene {
     this.updateDomHudBounds();
         // Update HUD positions for responsive design (mobile or after recreation)
         this.updateHudPositions();
+    // Pause button is managed by PauseManager
     }
 
     // Lightweight event handler for Phaser scale resize; coalesces frequent events
@@ -3429,6 +3437,8 @@ export default class MainGameplay extends BaseScene {
         });
     }
 
+    // (Pause button UI moved into PauseManager)
+
     handlePointerInput(pointer) {
         // Skip if quiz is active, game hasn't started, or gameplay is frozen
         if (this.quizActive || !this.gameStarted || this.freezeGameplay) {
@@ -3654,6 +3664,8 @@ export default class MainGameplay extends BaseScene {
             this.spawnIndicatorsShown = false; // Reset for next cycle
         }
     }
+
+    // (Pause logic moved to PauseManager)
 
     handleKeyboardInput() {
         if (this.isMoving) return; // Prevent movement spam
