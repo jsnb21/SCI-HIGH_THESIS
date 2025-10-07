@@ -8,8 +8,13 @@ export default class VNDialogueBox {
     this.scene = scene;
     this.dialogueLines = dialogueLines;
     this.onComplete = onComplete;
+    this._vnOptions = options || {};
     this.dialogueIndex = 0;
-    this.text = this.dialogueLines[this.dialogueIndex] || '';
+  // Support either string lines or { speaker, text } objects
+  const firstLine = this.dialogueLines[this.dialogueIndex] || '';
+  const parts = this._getLineParts(firstLine);
+  this.text = parts.text;
+  this.speaker = parts.speaker;
     this.displayedText = '';
     this.typingEvent = null;
     
@@ -20,6 +25,14 @@ export default class VNDialogueBox {
     this.choiceButtons = [];
     this.choicesContainer = null;
     this.choicesActive = false; // Track if choices are currently being shown
+
+    // Speaker color map (defaults; can be overridden via options.speakerColors)
+    this.speakerColors = Object.assign({
+      'Lily': '#ff79c6',     // pink
+      'Damian': '#61dafb',   // cyan/blue
+      'Finley': '#7CFC00',   // lawn green
+      'Secretary': '#ffe066' // gold
+    }, options.speakerColors || {});
 
     // --- Scaling logic START ---
     const { width, height } = scene.scale;
@@ -45,8 +58,20 @@ export default class VNDialogueBox {
     this.border.fillRoundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius);
     this.border.setDepth(10); // Set high depth for dialogue box
 
+    // Speaker label (optional)
+    const speakerStyle = {
+      fontFamily: 'Caprasimo-Regular',
+      fontSize: `${Math.round(20 * scale)}px`,
+      color: '#ffe066',
+      stroke: '#000000',
+      strokeThickness: 2
+    };
+  this.speakerObject = scene.add.text(boxX + 20 * scale, boxY + 8 * scale, '', speakerStyle);
+    this.speakerObject.setDepth(11);
+
     // Create text object
-    this.textObject = scene.add.text(boxX + 20 * scale, boxY + 15 * scale, '', {
+    const baseTextY = this.speaker ? (boxY + 36 * scale) : (boxY + 15 * scale);
+    this.textObject = scene.add.text(boxX + 20 * scale, baseTextY, '', {
       fontFamily: 'Caprasimo-Regular',
       fontSize: `${Math.round(24 * scale)}px`,
       color: '#ffffff',
@@ -77,6 +102,8 @@ export default class VNDialogueBox {
         this.nextDialogue();
       };
       scene.input.on('pointerdown', this.pointerHandler);
+      this._updateSpeakerUI();
+      this._applyPortraitEmphasis(this.speaker);
       this.typeText(this.text);
     } else {
       // Show choices immediately if this is a choice dialogue
@@ -84,6 +111,8 @@ export default class VNDialogueBox {
       if (this.text) {
         this.displayedText = this.text;
         this.textObject.setText(this.text);
+        this._updateSpeakerUI();
+        this._applyPortraitEmphasis(this.speaker);
         // Ensure typing is marked as complete
         this.typingEvent = null;
         // Don't show continue indicator when choices are present
@@ -91,6 +120,75 @@ export default class VNDialogueBox {
       }
       this.displayChoices();
     }
+  }
+
+  _getLineParts(line) {
+    if (line && typeof line === 'object' && 'text' in line) {
+      return { speaker: line.speaker || null, text: String(line.text ?? '') };
+    }
+    return { speaker: null, text: String(line ?? '') };
+  }
+
+  _updateSpeakerUI() {
+    const { boxY, boxHeight } = this._boxParams;
+    const scale = this._scale;
+    const hasSpeaker = !!this.speaker;
+    if (this.speakerObject) {
+      this.speakerObject.setText(hasSpeaker ? `${this.speaker}:` : '');
+      // Apply speaker-specific color if available
+      if (hasSpeaker && this.speakerColors && this.speakerColors[this.speaker]) {
+        this.speakerObject.setColor(this.speakerColors[this.speaker]);
+      } else {
+        this.speakerObject.setColor('#ffe066');
+      }
+      this.speakerObject.setVisible(hasSpeaker);
+    }
+    if (this.textObject) {
+      const textY = hasSpeaker ? (boxY + 36 * scale) : (boxY + 15 * scale);
+      this.textObject.setY(textY);
+    }
+  }
+
+  _applyPortraitEmphasis(activeSpeaker) {
+    const portraits = this._vnOptions.portraits || null;
+    if (!portraits) return; // Nothing to do if not provided
+
+    const cfg = Object.assign({
+      activeScale: 1.08,
+      inactiveScale: 0.92,
+      activeAlpha: 1.0,
+      inactiveAlpha: 0.55,
+      duration: 280,
+      ease: 'Sine.easeInOut'
+    }, this._vnOptions.portraitEmphasis || {});
+
+    const hasActive = activeSpeaker && portraits[activeSpeaker];
+    Object.keys(portraits).forEach(name => {
+      const obj = portraits[name];
+      if (!obj || !obj.setAlpha) return;
+      // Cache base scale if not cached yet
+      const baseScaleX = obj.getData && obj.getData('baseScaleX') != null ? obj.getData('baseScaleX') : obj.scaleX;
+      const baseScaleY = obj.getData && obj.getData('baseScaleY') != null ? obj.getData('baseScaleY') : obj.scaleY;
+      if (obj.setData) {
+        if (obj.getData('baseScaleX') == null) obj.setData('baseScaleX', baseScaleX);
+        if (obj.getData('baseScaleY') == null) obj.setData('baseScaleY', baseScaleY);
+      }
+
+      const isActive = hasActive && name === activeSpeaker;
+      const targetScaleX = baseScaleX * (isActive ? cfg.activeScale : cfg.inactiveScale);
+      const targetScaleY = baseScaleY * (isActive ? cfg.activeScale : cfg.inactiveScale);
+      const targetAlpha = isActive ? cfg.activeAlpha : cfg.inactiveAlpha;
+
+      // Tween scale and alpha together for a smooth emphasis change
+      this.scene.tweens.add({
+        targets: obj,
+        scaleX: targetScaleX,
+        scaleY: targetScaleY,
+        alpha: targetAlpha,
+        duration: cfg.duration,
+        ease: cfg.ease
+      });
+    });
   }
 
   createContinueIndicator(boxX, boxY, boxWidth, boxHeight, scale) {
@@ -176,8 +274,12 @@ export default class VNDialogueBox {
     // Otherwise move to next line
     this.dialogueIndex++;
     if (this.dialogueIndex < this.dialogueLines.length) {
-      this.text = this.dialogueLines[this.dialogueIndex];
+      const parts = this._getLineParts(this.dialogueLines[this.dialogueIndex]);
+      this.text = parts.text;
+      this.speaker = parts.speaker;
   if (this.hoverSound) this.hoverSound.play();
+      this._updateSpeakerUI();
+      this._applyPortraitEmphasis(this.speaker);
       this.typeText(this.text);
     } else {
       // Safety: if out of range, just complete

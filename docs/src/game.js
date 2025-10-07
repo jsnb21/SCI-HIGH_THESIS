@@ -21,6 +21,7 @@ import ComputerLab from './scenes/computerlab.js';
 
 // Roguelike Scenes
 import MainGameplay from '/src/scenes/roguelikeBase/main_gameplay.js';
+import SampleGameplayScene from './scenes/roguelikeBase/SampleGameplayScene.js';
 import QuizScene from '/src/scenes/roguelikeBase/QuizScene.js';
 import PowerUpScene from '/src/scenes/roguelikeBase/PowerUpScene.js';
 import ResultScreen from './scenes/roguelikeBase/ResultScreen.js';
@@ -84,6 +85,7 @@ const config = {
     ComputerLab,
     /* Roguelike Scenes */
     MainGameplay,
+    SampleGameplayScene,
     QuizScene,
     PowerUpScene,
     ResultScreen,
