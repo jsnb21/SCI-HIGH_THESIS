@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { char1, char2, char3, char4, char5 } from '../gameManager';
+// Removed char1, char2, char3, char4, char5 import as we use chibi versions loaded in preload()
 import { createBackButton } from '../components/buttons/backbutton';
 import Carousel from '../ui/carouselUI';
 import VNDialogueBox from '../ui/VNDialogueBox';

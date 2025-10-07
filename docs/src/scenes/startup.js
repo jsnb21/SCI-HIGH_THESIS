@@ -23,6 +23,7 @@ export default class StartupScene extends Phaser.Scene {
         this.logoElements = [];
         this.isTransitioning = false; // prevent redraw/races during FS transition
         this._logoStarted = false; // guard to avoid double-start
+        this._skipAIDisclaimer = false; // cached flag
     }
 
     preload() {
@@ -46,12 +47,13 @@ export default class StartupScene extends Phaser.Scene {
             }
         } catch {}
 
-        // If user previously acknowledged privacy (and disclaimer), skip directly to logo sequence
+        // If user previously acknowledged privacy, still show AI disclaimer (don't skip it)
         const acknowledged = this.getPrivacyAcknowledged();
         if (acknowledged) {
-            this.time.delayedCall(60, () => this.playLogoSequence());
+            // Privacy already acknowledged → proceed with AI disclaimer then logo
+            this.time.delayedCall(80, () => this.showAIDisclaimerThenLogo());
         } else {
-            // New order: privacy first -> AI disclaimer -> logo
+            // First-time flow: privacy → AI disclaimer → logo
             this.time.delayedCall(80, () => this.showDataPrivacyNotice());
         }
     }
@@ -66,8 +68,21 @@ export default class StartupScene extends Phaser.Scene {
         try { window.localStorage.setItem('scigame_privacy_ack','1'); } catch {}
     }
 
+    // AI disclaimer skip flag helpers (separate from privacy)
+    getAIDisclaimerAcknowledged() {
+        try { return window.localStorage.getItem('scigame_ai_ack') === '1'; } catch { return false; }
+    }
+    setAIDisclaimerAcknowledged() {
+        try { window.localStorage.setItem('scigame_ai_ack', '1'); } catch {}
+    }
+
     // Display a brief AI assets disclaimer due to time/resource constraints, then proceed
     showAIDisclaimerThenLogo() {
+        // Respect independent AI skip if previously acknowledged
+        if (this.getAIDisclaimerAcknowledged()) {
+            this.playLogoSequence();
+            return;
+        }
         const { width, height } = this.scale;
         const isSmall = width < 480;
         const isMobile = width < 768;
@@ -127,7 +142,7 @@ export default class StartupScene extends Phaser.Scene {
         this.tweens.add({ targets: header, alpha: 1, duration: 550, ease: 'Power2', delay: 120 });
         this.tweens.add({ targets: bodyText, alpha: 1, duration: 600, ease: 'Power2', delay: 300 });
 
-        this._disclaimerElems = [bg, header, bodyText];
+    this._disclaimerElems = [bg, header, bodyText];
 
         const proceed = () => {
             if (this._disclaimerDone) return;
@@ -149,9 +164,39 @@ export default class StartupScene extends Phaser.Scene {
         };
 
         // Allow skip or auto-continue (slightly longer to read)
-        this.time.delayedCall(4000, proceed);
-        this.input.once('pointerdown', proceed, this);
-        if (this.enterKey) this.enterKey.once('down', proceed, this);
+        // Add a small "Don't show again" checkbox in the bottom-right
+        const cbText = this.add.text(width - 20, height - 24, "Don't show again", {
+            fontFamily: 'Arial',
+            fontSize: (isSmall ? 10 : 12) + 'px',
+            color: '#cccccc'
+        }).setOrigin(1, 0.5).setAlpha(0);
+        const boxSize = isSmall ? 12 : 14;
+        const cbBox = this.add.rectangle(cbText.x - cbText.width - 8, cbText.y, boxSize, boxSize, 0xffffff, 0.05)
+            .setStrokeStyle(1, 0xffffff, 0.6)
+            .setOrigin(1, 0.5)
+            .setAlpha(0);
+        let cbChecked = false;
+        const cbTick = this.add.text(cbBox.x - boxSize/2 + 1, cbBox.y - 1, '✓', { fontFamily: 'Arial', fontSize: (boxSize - 2) + 'px', color: '#00ff88' })
+            .setOrigin(0.5)
+            .setVisible(false)
+            .setAlpha(0);
+        // include in cleanup list
+        this._disclaimerElems.push(cbText, cbBox, cbTick);
+        const toggleCb = () => { cbChecked = !cbChecked; cbTick.setVisible(cbChecked); };
+        cbBox.setInteractive({ useHandCursor: true }).on('pointerdown', toggleCb);
+        cbText.setInteractive({ useHandCursor: true }).on('pointerdown', toggleCb);
+
+        this.tweens.add({ targets: [cbText, cbBox], alpha: 1, duration: 400, ease: 'Power2', delay: 450 });
+
+        // Proceed handlers - if checked, persist skip
+        const proceedWrapper = () => {
+            if (cbChecked) this.setAIDisclaimerAcknowledged();
+            proceed();
+        };
+
+        this.time.delayedCall(4000, proceedWrapper);
+        this.input.once('pointerdown', proceedWrapper, this);
+        if (this.enterKey) this.enterKey.once('down', proceedWrapper, this);
     }
 
     // Data Privacy Notice (must acknowledge to proceed)
