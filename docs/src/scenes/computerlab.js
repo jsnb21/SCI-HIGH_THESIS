@@ -13,6 +13,7 @@ export default class ComputerLab extends Phaser.Scene {
     constructor() {
         super({ key: 'ComputerLab' });
         this.tutorialManager = null;
+        this.cutsceneActive = false; // prevent tutorial while cutscene is running
 
         // Firebase initialization properties
         this.isFirebaseInitialized = false;
@@ -306,6 +307,13 @@ export default class ComputerLab extends Phaser.Scene {
     }
 
     startComLabTutorial() {
+        // Block if cutscene active or tutorial already active/completed
+        if (onceOnlyFlags.hasSeen('computerlab_tutorial')) return;
+        if (this.cutsceneActive) {
+            this.time.delayedCall(250, () => this.startComLabTutorial());
+            return;
+        }
+        if (this.tutorialManager && this.tutorialManager.isActive) return;
         const tutorialSteps = [...COMPUTER_LAB_TUTORIAL_STEPS.firstTimeComLab];
         
         // Set dynamic targets
@@ -374,6 +382,7 @@ export default class ComputerLab extends Phaser.Scene {
 
     showSecretary() {
         const { width, height } = this.scale;
+        // Match MainHub positioning so half of the body is covered by the dialogue box
         const characterX = width * 0.25;
         const characterY = height * 0.7;
         const characterScale = (width < 768 || height < 600) ? 0.35 : 0.8;
@@ -407,6 +416,7 @@ export default class ComputerLab extends Phaser.Scene {
         return new Promise((resolve) => {
             this.hideUIElementsForCutscene();
             this.showSecretary();
+            this.cutsceneActive = true;
 
             const lines = [
                 "Welcome to the Computer Lab! Here, you'll practice coding across different courses.",
@@ -418,6 +428,7 @@ export default class ComputerLab extends Phaser.Scene {
             const box = new VNDialogueBox(this, lines, () => {
                 this.hideSecretary();
                 onceOnlyFlags.setSeen('computerlab_intro');
+                this.cutsceneActive = false;
                 this.time.delayedCall(50, () => {
                     this.showUIElementsAfterCutscene();
                     resolve();

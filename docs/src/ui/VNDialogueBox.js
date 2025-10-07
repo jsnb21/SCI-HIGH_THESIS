@@ -400,9 +400,15 @@ export default class VNDialogueBox {
   }
 
   destroy() {
+    // Destroy main dialogue text
     if (this.textObject && this.textObject.destroy) {
       this.textObject.destroy();
       this.textObject = null;
+    }
+    // Destroy speaker label (prevents leftover 'Secretary:' etc.)
+    if (this.speakerObject && this.speakerObject.destroy) {
+      this.speakerObject.destroy();
+      this.speakerObject = null;
     }
     if (this.border && this.border.destroy) {
       this.border.destroy();

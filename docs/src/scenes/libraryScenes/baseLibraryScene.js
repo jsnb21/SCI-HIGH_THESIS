@@ -7,6 +7,8 @@ import { onceOnlyFlags } from '../../gameManager';
 import TutorialManager from '../../components/TutorialManager.js';
 import { LIBRARY_TUTORIAL_STEPS } from '../../components/TutorialConfig.js';
 import { playExclusiveBGM, updateSoundVolumes } from '../../audioUtils.js';
+import VNDialogueBox from '../../ui/VNDialogueBox.js';
+import { getScaleInfo } from '../../utils/mobileUtils.js';
 
 class BaseLibraryScene extends Phaser.Scene {
     constructor() {
@@ -17,6 +19,7 @@ class BaseLibraryScene extends Phaser.Scene {
         this.carousel = null;
         this.booksData = null;
         this.tutorialManager = null;
+        this.cutsceneActive = false; // prevent overlap with tutorials
     }
 
     init(data) {
@@ -140,8 +143,35 @@ class BaseLibraryScene extends Phaser.Scene {
         this.createBookIcons();
 
     // Removed header & side stats per redesign; just carousel + back
-    this.createBooksCarousel();
-    this.createBackButton();
+    // First-time Library cutscene: Secretary explains the Library
+    const hasSeen = onceOnlyFlags.hasSeen('library_intro');
+    if (!hasSeen) {
+        this.hideUIElementsForCutscene();
+        this.showSecretary();
+        this.cutsceneActive = true;
+        const lines = [
+            { speaker: 'Secretary', text: "Welcome to the Library! Here, you'll find curated ebooks and references to help you study." },
+            { speaker: 'Secretary', text: "Browse the shelves, pick a book, and open it directly to learn concepts at your own pace." },
+            { speaker: 'Secretary', text: "Use this space to prepare before tackling the coding challenges in the Computer Lab." }
+        ];
+        this.vnBox = new VNDialogueBox(this, lines, () => {
+            this.hideSecretary();
+            onceOnlyFlags.setSeen('library_intro');
+            this.cutsceneActive = false;
+            this.showUIElementsAfterCutscene();
+            this.createBooksCarousel();
+            this.createBackButton();
+            if (!onceOnlyFlags.hasSeen('library_tutorial')) {
+                this.time.delayedCall(300, () => this.startLibraryTutorial());
+            }
+        }, { portraits: { 'Secretary': this.secretaryDisplay } });
+    } else {
+        this.createBooksCarousel();
+        this.createBackButton();
+        if (!onceOnlyFlags.hasSeen('library_tutorial')) {
+            this.time.delayedCall(300, () => this.startLibraryTutorial());
+        }
+    }
 
         // Initialize tutorial manager
         this.tutorialManager = new TutorialManager(this);
@@ -185,6 +215,54 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     // Header removed in minimal redesign
+    hideUIElementsForCutscene() {
+        if (this.carousel && this.carousel.fadeTo) this.carousel.fadeTo(0, 200);
+        if (this.carousel && this.carousel.setInteractive) this.carousel.setInteractive(false);
+        if (this.carousel && this.carousel.setSoundsEnabled) this.carousel.setSoundsEnabled(false);
+        if (this.backButtonBg) this.backButtonBg.setVisible(false);
+        if (this.backButton) this.backButton.setVisible(false);
+    }
+
+    showUIElementsAfterCutscene() {
+        if (this.carousel && this.carousel.fadeTo) this.carousel.fadeTo(1, 200);
+        if (this.carousel && this.carousel.setInteractive) this.carousel.setInteractive(true);
+        if (this.carousel && this.carousel.setSoundsEnabled) this.carousel.setSoundsEnabled(true);
+        if (this.backButtonBg) this.backButtonBg.setVisible(true);
+        if (this.backButton) this.backButton.setVisible(true);
+    }
+
+    showSecretary() {
+        // Match MainHub positioning so half of the body is covered by the dialogue box
+        const scaleInfo = getScaleInfo(this);
+        const { width, height } = scaleInfo;
+        const isMobile = width < 768 || height < 600;
+        const characterX = width * 0.25;
+    const characterY = height * 0.9; // Lowered further by ~20% overall
+        const characterScale = isMobile ? 0.35 : 0.8;
+        if (!this.textures.exists('Secretary')) {
+            // Try to load if not present; otherwise, fallback silently
+        }
+        this.secretaryDisplay = this.add.image(characterX, characterY, 'Secretary');
+        this.secretaryDisplay.setOrigin(0.5);
+        this.secretaryDisplay.setScale(characterScale);
+        this.secretaryDisplay.setDepth(5);
+        this.secretaryDisplay.setAlpha(0);
+        this.tweens.add({ targets: this.secretaryDisplay, alpha: 1, duration: 300, ease: 'Power2' });
+    }
+
+    hideSecretary() {
+        if (this.secretaryDisplay) {
+            this.tweens.add({
+                targets: this.secretaryDisplay,
+                alpha: 0,
+                duration: 300,
+                ease: 'Power2',
+                onComplete: () => {
+                    if (this.secretaryDisplay) { this.secretaryDisplay.destroy(); this.secretaryDisplay = null; }
+                }
+            });
+        }
+    }
 
     positionBackButton() { /* no-op after header removal */ }
 
@@ -504,6 +582,13 @@ class BaseLibraryScene extends Phaser.Scene {
     }
 
     startLibraryTutorial() {
+        // Guard against overlap with active cutscenes or running tutorial
+        if (onceOnlyFlags.hasSeen('library_tutorial')) return;
+        if (this.cutsceneActive) {
+            this.time.delayedCall(250, () => this.startLibraryTutorial());
+            return;
+        }
+        if (this.tutorialManager && this.tutorialManager.isActive) return;
         const tutorialSteps = [...LIBRARY_TUTORIAL_STEPS.firstTimeLibrary];
         
         // Set dynamic targets for tutorial steps

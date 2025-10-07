@@ -19,6 +19,7 @@ export default class Classroom extends Phaser.Scene {
     constructor() {
         super('Classroom');
         this.tutorialManager = null;
+        this.cutsceneActive = false; // prevent tutorial overlap during cutscenes
         
         // Firebase initialization properties
         this.isFirebaseInitialized = false;
@@ -273,17 +274,19 @@ export default class Classroom extends Phaser.Scene {
             
             // Show Secretary character image
             this.showSecretary();
+            this.cutsceneActive = true;
             
             this.vnBox = new VNDialogueBox(this, [
-                "Welcome to the classroom! I see you followed my advice.",
-                "These are your classmates, they are all profecient in different programming languages.",
-                "Each of them can teach you the basics of their specialty before you tackle the challenges in the Computer Lab.",
-                "Lily knows Web Design, Damian is great with Java, and Finley is our C++ prodigy.",
-                "Make sure to talk to them and learn from their experience. They'll help you prepare for the coding challenges ahead!"
+                { speaker: 'Secretary', text: "Welcome to the classroom! I see you followed my advice." },
+                { speaker: 'Secretary', text: "These are your classmates, they are all profecient in different programming languages." },
+                { speaker: 'Secretary', text: "Each of them can teach you the basics of their specialty before you tackle the challenges in the Computer Lab." },
+                { speaker: 'Secretary', text: "Lily knows Web Design, Damian is great with Java, and Finley is our C++ prodigy." },
+                { speaker: 'Secretary', text: "Make sure to talk to them and learn from their experience. They'll help you prepare for the coding challenges ahead!" }
             ], () => {
                 // Hide Secretary when dialogue ends
                 this.hideSecretary();
                 onceOnlyFlags.setSeen('classroom_intro');
+                this.cutsceneActive = false;
                 // Show UI elements after cutscene
                 this.showUIElementsAfterCutscene();
                 this.createCarousel(charKeys, charInfo);
@@ -294,6 +297,8 @@ export default class Classroom extends Phaser.Scene {
                         this.startClassroomTutorial();
                     });
                 }
+            }, {
+                portraits: { 'Secretary': this.secretaryDisplay }
             });
         } else {
             if (hasFirebaseData) {
@@ -315,7 +320,7 @@ export default class Classroom extends Phaser.Scene {
         }
 
         // Initialize tutorial manager
-        this.tutorialManager = new TutorialManager(this);
+    this.tutorialManager = new TutorialManager(this);
 
         // Debug feature: Add a key to manually trigger the tutorial (T key)
         this.input.keyboard.on('keydown-T', () => {
@@ -430,22 +435,21 @@ export default class Classroom extends Phaser.Scene {
     // showCharacterBox removed (direct navigation implemented)
 
     showSecretary() {
+        // Match MainHub positioning so half of the body is covered by the dialogue box
         const scaleInfo = getScaleInfo(this);
         const { width, height } = scaleInfo;
-        
-        // Position character so half of his body is covered by the dialogue box
         const characterX = width * 0.25; // 25% from left edge
-        const characterY = height * 0.7; // Lower position so dialogue box covers upper half
-        
-        // Responsive scaling for mobile devices - increased size
+    const characterY = height * 0.9; // Lowered further by ~20% overall
+
+        // Responsive scaling (same as MainHub)
         const isMobile = width < 768 || height < 600;
-        const characterScale = isMobile ? 0.35 : 0.8; // Larger scale for more presence
+        const characterScale = isMobile ? 0.35 : 0.8;
         
         // Add Secretary character image
         this.secretaryDisplay = this.add.image(characterX, characterY, 'Secretary');
         this.secretaryDisplay.setOrigin(0.5, 0.5);
         this.secretaryDisplay.setScale(characterScale);
-        this.secretaryDisplay.setDepth(5); // Behind dialogue box but above background
+    this.secretaryDisplay.setDepth(5); // Behind dialogue box but above background
         
         // Add a subtle fade-in effect
         this.secretaryDisplay.setAlpha(0);
@@ -496,6 +500,13 @@ export default class Classroom extends Phaser.Scene {
     }
 
     startClassroomTutorial() {
+        // Guard against overlapping with cutscenes or already active tutorial
+        if (onceOnlyFlags.hasSeen('classroom_tutorial')) return;
+        if (this.cutsceneActive) {
+            this.time.delayedCall(250, () => this.startClassroomTutorial());
+            return;
+        }
+        if (this.tutorialManager && this.tutorialManager.isActive) return;
         if (!this.tutorialManager) {
             console.warn('Tutorial manager not initialized');
             return;

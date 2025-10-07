@@ -26,6 +26,7 @@ export default class MainHub extends Phaser.Scene {
         this.uiElements = [];
         this.tutorialManager = null;
         this.isResizing = false; // Prevent infinite resize loops
+        this.cutsceneActive = false; // Prevent tutorials overlapping with cutscenes
         
         // Firebase initialization properties
         this.isFirebaseInitialized = false;
@@ -312,17 +313,20 @@ export default class MainHub extends Phaser.Scene {
             
             // Show Secretary character image
             this.showSecretary();
+            // Mark cutscene active so tutorials are deferred
+            this.cutsceneActive = true;
             
             this.vnBox = new VNDialogueBox(this, [
-                "Welcome! You must be the new student.",
-                "I am the Principal's Secretary. I am happy to guide you on your first day.",
-                "I'd recommend starting with the classroom to meet your classmates first.",
-                "Building connections with your peers is just as important as learning!",
-                "After that, feel free to explore the library for research and the computer lab for hands-on coding practice."
+                { speaker: 'Secretary', text: "Welcome! You must be the new student." },
+                { speaker: 'Secretary', text: "I am the Principal's Secretary. I am happy to guide you on your first day." },
+                { speaker: 'Secretary', text: "I'd recommend starting with the classroom to meet your classmates first." },
+                { speaker: 'Secretary', text: "Building connections with your peers is just as important as learning!" },
+                { speaker: 'Secretary', text: "After that, feel free to explore the library for research and the computer lab for hands-on coding practice." }
             ], () => {
                 // Hide Secretary when dialogue ends
                 this.hideSecretary();
                 onceOnlyFlags.setSeen('mainhub_intro');
+                this.cutsceneActive = false;
                 // Show UI elements after cutscene
                 // If a newer createUI run started while cutscene was playing, abort this one
                 if (runId !== this._createUiRunId) { return; }
@@ -335,6 +339,8 @@ export default class MainHub extends Phaser.Scene {
                         this.startHubTutorial();
                     });
                 }
+            }, {
+                portraits: { 'Secretary': this.secretaryDisplay }
             });
             this.uiElements.push(this.vnBox);
         } else {
@@ -433,6 +439,13 @@ export default class MainHub extends Phaser.Scene {
     }
 
     startHubTutorial() {
+        // Guard: defer if a cutscene is still active, or if tutorial already active/completed
+        if (onceOnlyFlags.hasSeen('mainhub_tutorial')) return;
+        if (this.cutsceneActive) {
+            this.time.delayedCall(250, () => this.startHubTutorial());
+            return;
+        }
+        if (this.tutorialManager && this.tutorialManager.isActive) return;
         // Prepare tutorial steps with dynamic targets
         const tutorialSteps = [...MAIN_HUB_TUTORIAL_STEPS.firstTimeHub];
         
