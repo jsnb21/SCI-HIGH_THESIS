@@ -51,7 +51,14 @@
       } catch (e) { console.warn('⚠️ Error loading API key from file:', e.message); }
       this.updateAIStatus(false);
     }
-    updateAIStatus(hasApiKey){ const icon = document.getElementById('assistant-toggle').querySelector('span'); icon.textContent = hasApiKey ? '🤖✨' : '🤖'; }
+    updateAIStatus(hasApiKey){
+      const iconWrap = document.getElementById('assistant-toggle');
+      if (!iconWrap) return;
+      const icon = iconWrap.querySelector('span');
+      if (!icon) return;
+      // Always show robot only, no star decoration
+      icon.textContent = '🤖';
+    }
     setupSecurityMeasures(){ window.addEventListener('beforeunload', () => { this.clearApiKey(); }); this.setupKeyExpiration(); document.addEventListener('visibilitychange', () => { if (document.hidden) {} }); }
     setupKeyExpiration(){ setInterval(()=>{ if (this.keyExpiry && Date.now() > this.keyExpiry) { this.clearApiKey(); this.showSecurityNotice('API key expired for security. Please re-enter if needed.'); } }, 60000); }
     clearApiKey(){ this.apiKey=''; this.keyExpiry=null; const input=document.getElementById('api-key-input'); if (input) input.value=''; }
