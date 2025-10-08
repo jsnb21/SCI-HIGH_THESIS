@@ -7,13 +7,19 @@
       this.isRecording = false;
       this.currentRecognition = null;
       this.apiKey = '';
-      // Prefer stable v1 endpoints; fall back to legacy if needed
+      // Prefer stable v1 endpoints; fall back to other variants if needed
       this.apiEndpoints = [
         'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent',
         'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro-latest:generateContent',
+        // Common older or non-alias variants
+        'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent',
+        'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent',
+        'https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro-latest:generateContent',
+        'https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro:generateContent',
         // Legacy fallback
         'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
       ];
+      this.discoveredModelUrls = null; // populated from /models list lazily
       this.keyExpiry = null;
       this.maxKeyAge = 30 * 60 * 1000;
       this.configFile = 'config/env-config.json';
@@ -90,40 +96,102 @@
 
     async callGemini(prompt){
       const payload = {
-        contents: [{ parts: [{ text: prompt }]}],
+        contents: [{ role: 'user', parts: [{ text: prompt }]}],
         generationConfig: { temperature: 0.7, maxOutputTokens: 256 }
       };
       let lastErr;
-      for (const url of this.apiEndpoints){
-        try {
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': this.apiKey
-            },
-            body: JSON.stringify(payload)
-          });
-          if (response.ok){
-            const data = await response.json();
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (text) return text;
-            lastErr = new Error('Empty AI response');
-          } else {
-            // Try next model on 404 (not found) or 400 unsupported model
-            if (response.status === 404 || response.status === 400) {
-              continue;
-            }
-            const errData = await response.json().catch(()=>({}));
-            // Clear key on auth issues
-            if (response.status===401 || response.status===403){ this.clearApiKey(); }
-            lastErr = new Error(errData.error?.message || `HTTP ${response.status}`);
-          }
-        } catch (e) {
-          lastErr = e;
-        }
+
+      // Build candidate URL list (static + discovered)
+      const candidateUrls = [...this.apiEndpoints];
+      if (Array.isArray(this.discoveredModelUrls) && this.discoveredModelUrls.length) {
+        candidateUrls.push(...this.discoveredModelUrls);
       }
+
+      const attempt = async (url) => {
+        const headers = { 'Content-Type': 'application/json', 'x-goog-api-key': this.apiKey };
+        const body = JSON.stringify(payload);
+        // Try header-based auth first
+        const res = await fetch(url, { method: 'POST', headers, body });
+        if (res.ok){
+          const data = await res.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return { ok: true, text };
+          return { ok: false, err: new Error('Empty AI response') };
+        }
+        // On 404/400, try query param key as a secondary attempt and signal retry
+        if (res.status === 404 || res.status === 400) {
+          try {
+            const withKey = url.includes('?') ? `${url}&key=${encodeURIComponent(this.apiKey)}` : `${url}?key=${encodeURIComponent(this.apiKey)}`;
+            const res2 = await fetch(withKey, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+            if (res2.ok){
+              const data2 = await res2.json();
+              const text2 = data2.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (text2) return { ok: true, text: text2 };
+            }
+          } catch {}
+          return { ok: false, retry: true };
+        }
+        const errData = await res.json().catch(()=>({}));
+        if (res.status===401 || res.status===403){ this.clearApiKey(); }
+        return { ok: false, err: new Error(errData.error?.message || `HTTP ${res.status}`) };
+      };
+
+      // First pass over candidates
+      for (const url of candidateUrls){
+        try {
+          const out = await attempt(url);
+          if (out?.ok) return out.text;
+          if (out?.retry) continue;
+          if (out?.err) lastErr = out.err;
+        } catch (e) { lastErr = e; }
+      }
+
+      // Discover accessible models for this key and try them
+      try {
+        if (!this.discoveredModelUrls) {
+          this.discoveredModelUrls = await this.discoverModelUrls();
+        }
+        for (const url of this.discoveredModelUrls){
+          try {
+            const out = await attempt(url);
+            if (out?.ok) return out.text;
+            if (out?.retry) continue;
+            if (out?.err) lastErr = out.err;
+          } catch (e) { lastErr = e; }
+        }
+      } catch (e) {
+        lastErr = lastErr || e;
+      }
+
       if (lastErr) throw lastErr; else return null;
+    }
+
+    async discoverModelUrls(){
+      const urls = [];
+      const headers = { 'Content-Type': 'application/json', 'x-goog-api-key': this.apiKey };
+      // Try v1 models list
+      try {
+        const res = await fetch('https://generativelanguage.googleapis.com/v1/models', { headers });
+        if (res.ok){
+          const data = await res.json();
+          const names = (data.models || []).map(m => m.name).filter(Boolean); // e.g., 'models/gemini-1.0-pro'
+          names.forEach(n => urls.push(`https://generativelanguage.googleapis.com/v1/${n}:generateContent`));
+        }
+      } catch {}
+      // Fallback to v1beta list if needed
+      if (urls.length === 0) {
+        try {
+          const res2 = await fetch('https://generativelanguage.googleapis.com/v1beta/models', { headers });
+          if (res2.ok){
+            const data2 = await res2.json();
+            const names2 = (data2.models || []).map(m => m.name).filter(Boolean);
+            names2.forEach(n => urls.push(`https://generativelanguage.googleapis.com/v1beta/${n}:generateContent`));
+          }
+        } catch {}
+      }
+      // Prefer latest aliases first
+      urls.sort((a,b)=> a.includes('-latest') ? -1 : b.includes('-latest') ? 1 : 0);
+      return [...new Set(urls)];
     }
     showStatus(message,type){ const statusEl=document.getElementById('api-status'); statusEl.className=`text-xs text-center p-2 rounded-lg ${type==='success'?'bg-accent/20 text-accent': type==='error'?'bg-red-500/20 text-red-400':'bg-purple/20 text-purple'}`; statusEl.textContent=message; statusEl.classList.remove('hidden'); if(type!=='info'){ setTimeout(()=>statusEl.classList.add('hidden'),3000);} }
     bindEvents(){ const toggle=document.getElementById('assistant-toggle'); const close=document.getElementById('assistant-close'); const settings=document.getElementById('assistant-settings'); const settingsClose=document.getElementById('settings-close'); const saveKey=document.getElementById('save-api-key'); const testAI=document.getElementById('test-ai'); const sendBtn=document.getElementById('send-message'); const input=document.getElementById('chat-input'); const voiceBtn=document.getElementById('voice-input'); const quickBtns=document.querySelectorAll('.quick-btn'); const suggestionBtns=document.querySelectorAll('.suggestion-btn'); const exportChat=document.getElementById('export-chat'); const clearChat=document.getElementById('clear-chat');
