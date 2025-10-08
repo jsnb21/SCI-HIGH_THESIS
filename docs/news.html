@@ -84,78 +84,7 @@
         }
       }
     </script>
-    <style>
-      @keyframes pulse-glow {
-        from { box-shadow: 0 0 20px #F4CE14; }
-        to { box-shadow: 0 0 30px #F4CE14, 0 0 40px #F4CE14; }
-      }
-      @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-      }
-      @keyframes slide-in {
-        from { opacity: 0; transform: translateY(50px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      @keyframes bounce-in {
-        from { opacity: 0; transform: scale(0.3); }
-        50% { transform: scale(1.05); }
-        to { opacity: 1; transform: scale(1); }
-      }
-      @keyframes fade-in {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-
-      /* Gaming background */
-      .game-bg {
-        background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e  50%, #0f0f23 75%, #1a1a2e 100%);
-        background-size: 400% 400%;
-        animation: gradientShift 15s ease infinite;
-      }
-
-      @keyframes gradientShift {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-      }
-
-      /* Particle effect */
-      .particle {
-        position: absolute;
-        width: 2px;
-        height: 2px;
-        background: #F4CE14;
-        border-radius: 50%;
-        animation: particle-float 8s linear infinite;
-        opacity: 0.6;
-      }
-
-      @keyframes particle-float {
-        0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-        10% { opacity: 0.6; }
-        90% { opacity: 0.6; }
-        100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
-      }
-
-      /* News card hover effects */
-      .news-card {
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(244, 206, 20, 0.2);
-        transition: all 0.3s ease;
-      }
-
-      .news-card:hover {
-        border-color: rgba(244, 206, 20, 0.5);
-        box-shadow: 0 10px 30px rgba(244, 206, 20, 0.2);
-        transform: translateY(-5px);
-      }
-
-      /* Badge styles */
-      .badge-new { background: linear-gradient(135deg, #ff4757, #ff3838); }
-      .badge-update { background: linear-gradient(135deg, #3742fa, #2f3542); }
-      .badge-feature { background: linear-gradient(135deg, #2ed573, #1e90ff); }
-      .badge-maintenance { background: linear-gradient(135deg, #ffa502, #ff6348); }
-    </style>
+    <link rel="stylesheet" href="public/assets/css/news.css" />
   </head>
   <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed min-h-screen flex flex-col">
     <script>
