@@ -20,6 +20,7 @@
         'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
       ];
       this.discoveredModelUrls = null; // populated from /models list lazily
+      this.preferredModelUrl = null;   // cache the first working model URL
       this.keyExpiry = null;
       this.maxKeyAge = 30 * 60 * 1000;
       this.configFile = 'config/env-config.json';
@@ -52,14 +53,14 @@
       try {
         try {
           const injected = window?.SCI_HIGH?.GOOGLE_AI_API_KEY || window?.env?.GOOGLE_AI_API_KEY;
-          if (injected && this.validateApiKey(injected)) { this.apiKey = injected; this.keyExpiry = Date.now() + this.maxKeyAge; this.updateAIStatus(true); return; }
+          if (injected && this.validateApiKey(injected)) { this.apiKey = injected; this.keyExpiry = Date.now() + this.maxKeyAge; this.updateAIStatus(true); this.primeModels(); return; }
         } catch {}
         const possible = [this.configFile,'./config/env-config.json','/SCI-HIGH_THESIS/config/env-config.json','config/env-config.json'];
         let ok = false;
         for (const path of possible) {
           try { const response = await fetch(path); if (response.ok) { const cfg = await response.json(); if (cfg.geminiApiKey && cfg.geminiApiKey !== 'YOUR_GEMINI_API_KEY_HERE' && this.validateApiKey(cfg.geminiApiKey)) { this.apiKey = cfg.geminiApiKey; this.keyExpiry = Date.now() + this.maxKeyAge; ok = true; break; } } } catch {}
         }
-        if (ok) { this.updateAIStatus(true); return; } else { console.warn('⚠️ Could not load API key config file. Manual entry will be required.'); }
+        if (ok) { this.updateAIStatus(true); this.primeModels(); return; } else { console.warn('⚠️ Could not load API key config file. Manual entry will be required.'); }
       } catch (e) { console.warn('⚠️ Error loading API key from file:', e.message); }
       this.updateAIStatus(false);
     }
@@ -75,7 +76,7 @@
     setupKeyExpiration(){ setInterval(()=>{ if (this.keyExpiry && Date.now() > this.keyExpiry) { this.clearApiKey(); this.showSecurityNotice('API key expired for security. Please re-enter if needed.'); } }, 60000); }
     clearApiKey(){ this.apiKey=''; this.keyExpiry=null; const input=document.getElementById('api-key-input'); if (input) input.value=''; }
     showSecurityNotice(message){ if (this.isOpen) this.addAssistantMessage(`🔒 Security Notice: ${message}`, 'security'); }
-    saveApiKey(){ const input=document.getElementById('api-key-input'); const key=input.value.trim(); if (key){ if(!this.validateApiKey(key)){ this.showStatus('❌ Invalid API key format','error'); return;} this.apiKey=key; this.keyExpiry=Date.now()+this.maxKeyAge; this.saveApiKeyToFile(key); input.value=''; this.updateAIStatus(true); this.showStatus(`🔒 API key saved to config file!\nAuto-expires in ${this.maxKeyAge/60000} minutes per session`,'success'); setTimeout(()=>this.hideSettings(),2000);} else { this.showStatus('Please enter a valid API key','error'); } }
+  saveApiKey(){ const input=document.getElementById('api-key-input'); const key=input.value.trim(); if (key){ if(!this.validateApiKey(key)){ this.showStatus('❌ Invalid API key format','error'); return;} this.apiKey=key; this.keyExpiry=Date.now()+this.maxKeyAge; this.preferredModelUrl=null; this.discoveredModelUrls=null; this.saveApiKeyToFile(key); input.value=''; this.updateAIStatus(true); this.primeModels(); this.showStatus(`🔒 API key saved to config file!\nAuto-expires in ${this.maxKeyAge/60000} minutes per session`,'success'); setTimeout(()=>this.hideSettings(),2000);} else { this.showStatus('Please enter a valid API key','error'); } }
     async saveApiKeyToFile(key){ try{ const blob=new Blob([`# Google AI Studio API Key\n# Replace \"your-api-key-here\" with your actual API key from https://makersuite.google.com/app/apikey\n# Keep this file secure and never commit it to version control!\n\n${key}`],{type:'text/plain'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='env-config.json'; a.style.display='none'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); this.showStatus('📁 Config file downloaded! Place it in the config/ folder','info'); } catch(e){ console.warn('Could not create config file download:', e); } }
     validateApiKey(key){ return key.length>20 && /^[A-Za-z0-9_-]+$/.test(key); }
     async testAI(){
@@ -101,16 +102,26 @@
       };
       let lastErr;
 
-      // Build candidate URL list (static + discovered)
-      const candidateUrls = [...this.apiEndpoints];
-      if (Array.isArray(this.discoveredModelUrls) && this.discoveredModelUrls.length) {
-        candidateUrls.push(...this.discoveredModelUrls);
+      // Ensure we have discovered models before trying static fallbacks, to avoid 404 spam
+      if (!this.discoveredModelUrls && this.apiKey) {
+        try { this.discoveredModelUrls = await this.discoverModelUrls(); } catch {}
       }
+
+      // Build candidate URL list with preferred first
+      const candidateUrls = [];
+      if (this.preferredModelUrl) candidateUrls.push(this.preferredModelUrl);
+      if (Array.isArray(this.discoveredModelUrls) && this.discoveredModelUrls.length) {
+        candidateUrls.push(...this.rankModelUrls(this.discoveredModelUrls));
+      }
+      candidateUrls.push(...this.apiEndpoints);
+
+      // Deduplicate
+      const seen = new Set();
+      const uniqueUrls = candidateUrls.filter(u => (u && !seen.has(u) && seen.add(u)));
 
       const attempt = async (url) => {
         const headers = { 'Content-Type': 'application/json', 'x-goog-api-key': this.apiKey };
         const body = JSON.stringify(payload);
-        // Try header-based auth first
         const res = await fetch(url, { method: 'POST', headers, body });
         if (res.ok){
           const data = await res.json();
@@ -118,17 +129,8 @@
           if (text) return { ok: true, text };
           return { ok: false, err: new Error('Empty AI response') };
         }
-        // On 404/400, try query param key as a secondary attempt and signal retry
+        // Silent skip for expected model/route mismatches
         if (res.status === 404 || res.status === 400) {
-          try {
-            const withKey = url.includes('?') ? `${url}&key=${encodeURIComponent(this.apiKey)}` : `${url}?key=${encodeURIComponent(this.apiKey)}`;
-            const res2 = await fetch(withKey, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-            if (res2.ok){
-              const data2 = await res2.json();
-              const text2 = data2.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (text2) return { ok: true, text: text2 };
-            }
-          } catch {}
           return { ok: false, retry: true };
         }
         const errData = await res.json().catch(()=>({}));
@@ -136,31 +138,20 @@
         return { ok: false, err: new Error(errData.error?.message || `HTTP ${res.status}`) };
       };
 
-      // First pass over candidates
-      for (const url of candidateUrls){
+      let tries = 0;
+      const maxTries = Math.min(uniqueUrls.length, 6); // limit attempts per call
+      for (const url of uniqueUrls){
+        if (tries >= maxTries) break;
+        tries++;
         try {
           const out = await attempt(url);
-          if (out?.ok) return out.text;
+          if (out?.ok) {
+            this.preferredModelUrl = url; // cache winner for future calls
+            return out.text;
+          }
           if (out?.retry) continue;
           if (out?.err) lastErr = out.err;
         } catch (e) { lastErr = e; }
-      }
-
-      // Discover accessible models for this key and try them
-      try {
-        if (!this.discoveredModelUrls) {
-          this.discoveredModelUrls = await this.discoverModelUrls();
-        }
-        for (const url of this.discoveredModelUrls){
-          try {
-            const out = await attempt(url);
-            if (out?.ok) return out.text;
-            if (out?.retry) continue;
-            if (out?.err) lastErr = out.err;
-          } catch (e) { lastErr = e; }
-        }
-      } catch (e) {
-        lastErr = lastErr || e;
       }
 
       if (lastErr) throw lastErr; else return null;
@@ -191,7 +182,37 @@
       }
       // Prefer latest aliases first
       urls.sort((a,b)=> a.includes('-latest') ? -1 : b.includes('-latest') ? 1 : 0);
-      return [...new Set(urls)];
+      const unique = [...new Set(urls)];
+      return unique;
+    }
+
+    async primeModels(){
+      try {
+        if (!this.apiKey) return;
+        const urls = await this.discoverModelUrls();
+        if (urls && urls.length) {
+          const ranked = this.rankModelUrls(urls);
+          this.discoveredModelUrls = ranked;
+          // Choose the first preferred as initial cache
+          this.preferredModelUrl = ranked[0];
+        }
+      } catch {}
+    }
+
+    rankModelUrls(urls){
+      // Score models: prefer v1, prefer gemini-1.5 (flash/pro), then 1.0-pro, de-prioritize 2.5 for stability
+      const score = (u) => {
+        let s = 0;
+        if (u.includes('/v1/')) s += 10; else if (u.includes('/v1beta/')) s += 5;
+        if (u.includes('gemini-1.5-')) s += 8;
+        if (u.includes('flash')) s += 3;
+        if (u.includes('pro')) s += 2;
+        if (u.includes('gemini-1.0-pro')) s += 1;
+        if (u.includes('gemini-2.5')) s -= 5; // de-prioritize if unstable for this key
+        if (u.includes('-latest')) s += 1;
+        return -s; // sort ascending -> highest score first by negating
+      };
+      return [...urls].sort((a,b)=> score(a) - score(b));
     }
     showStatus(message,type){ const statusEl=document.getElementById('api-status'); statusEl.className=`text-xs text-center p-2 rounded-lg ${type==='success'?'bg-accent/20 text-accent': type==='error'?'bg-red-500/20 text-red-400':'bg-purple/20 text-purple'}`; statusEl.textContent=message; statusEl.classList.remove('hidden'); if(type!=='info'){ setTimeout(()=>statusEl.classList.add('hidden'),3000);} }
     bindEvents(){ const toggle=document.getElementById('assistant-toggle'); const close=document.getElementById('assistant-close'); const settings=document.getElementById('assistant-settings'); const settingsClose=document.getElementById('settings-close'); const saveKey=document.getElementById('save-api-key'); const testAI=document.getElementById('test-ai'); const sendBtn=document.getElementById('send-message'); const input=document.getElementById('chat-input'); const voiceBtn=document.getElementById('voice-input'); const quickBtns=document.querySelectorAll('.quick-btn'); const suggestionBtns=document.querySelectorAll('.suggestion-btn'); const exportChat=document.getElementById('export-chat'); const clearChat=document.getElementById('clear-chat');
