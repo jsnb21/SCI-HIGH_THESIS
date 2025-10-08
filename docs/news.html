@@ -251,6 +251,71 @@
         <div class="max-w-4xl mx-auto">
           <!-- Latest News -->
           <div id="news-grid" class="grid gap-6 sm:gap-8">
+
+            <!-- New: Adaptive Reranking -->
+            <article class="news-card bg-cardBg/80 rounded-xl p-6 sm:p-8 animate-fade-in border-2 border-primary/50" style="animation-delay: 0.02s;">
+              <div class="flex flex-wrap items-center gap-3 mb-4">
+                <span class="badge-feature text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Feature</span>
+                <span class="text-gray-400 text-sm font-gaming">OCTOBER 8, 2025</span>
+              </div>
+              <h2 class="font-gaming text-xl sm:text-2xl font-bold text-primary mb-2">🎯 Adaptive Reranking (Bloom-aware)</h2>
+              <p class="text-gray-300 leading-relaxed mb-4">
+                Quizzes now adapt the order of upcoming questions to your mastery—without sending question content to any AI. We only pass anonymized metadata (IDs, Bloom levels, difficulty, tags), and the AI returns a JSON list of IDs to re-rank a small candidate set. Guardrails include strict JSON-only output, low temperature/tokens, timeouts, caching, cooldowns, per-day budget caps, and local fallbacks. Integrated in custom and roguelike quiz scenes.
+              </p>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <span class="bg-primary/20 text-primary px-2 py-1 rounded">Quizzes</span>
+                <span class="bg-cyan/20 text-cyan px-2 py-1 rounded">Adaptive</span>
+                <span class="bg-purple/20 text-purple px-2 py-1 rounded">Bloom</span>
+              </div>
+            </article>
+
+            <!-- New: Bloom Question Authoring Guide -->
+            <article class="news-card bg-cardBg/80 rounded-xl p-6 sm:p-8 animate-fade-in border-2 border-primary/50" style="animation-delay: 0.03s;">
+              <div class="flex flex-wrap items-center gap-3 mb-4">
+                <span class="badge-update text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Docs</span>
+                <span class="text-gray-400 text-sm font-gaming">OCTOBER 8, 2025</span>
+              </div>
+              <h2 class="font-gaming text-xl sm:text-2xl font-bold text-primary mb-2">📚 Bloom-aligned Authoring Guide</h2>
+              <p class="text-gray-300 leading-relaxed mb-4">
+                We published a concise guide for tagging questions with Bloom’s taxonomy so dashboards and mastery graphs stay accurate. Always set <code>bloomTarget</code> using one of: <em>remembering</em>, <em>understanding</em>, <em>applying</em>, <em>analyzing</em>, <em>evaluating</em>, <em>creating</em>. See <code>docs/documentation/BloomQuestionAuthoring.md</code>.
+              </p>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <span class="bg-purple/20 text-purple px-2 py-1 rounded">Docs</span>
+                <span class="bg-cyan/20 text-cyan px-2 py-1 rounded">Bloom</span>
+              </div>
+            </article>
+
+            <!-- New: Pause Button & HUD improvements -->
+            <article class="news-card bg-cardBg/80 rounded-xl p-6 sm:p-8 animate-fade-in border-2 border-primary/50" style="animation-delay: 0.04s;">
+              <div class="flex flex-wrap items-center gap-3 mb-4">
+                <span class="badge-update text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Update</span>
+                <span class="text-gray-400 text-sm font-gaming">OCTOBER 8, 2025</span>
+              </div>
+              <h2 class="font-gaming text-xl sm:text-2xl font-bold text-primary mb-2">⏸️ Pause Button + HUD Scaling</h2>
+              <p class="text-gray-300 leading-relaxed mb-4">
+                Introduced a dedicated PauseManager with overlay, audio pause/resume, hotkeys (P/Esc), and a DOM pause button. We also increased HUD and pause UI sizes for both mobile and desktop, improved accessibility (focus rings, keyboard nav), and refined placement (pause button below quiz name).
+              </p>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <span class="bg-primary/20 text-primary px-2 py-1 rounded">UI/UX</span>
+                <span class="bg-cyan/20 text-cyan px-2 py-1 rounded">Accessibility</span>
+              </div>
+            </article>
+
+            <!-- New: Mini-Contest Extension -->
+            <article class="news-card bg-cardBg/80 rounded-xl p-6 sm:p-8 animate-fade-in border-2 border-primary/50" style="animation-delay: 0.05s;">
+              <div class="flex flex-wrap items-center gap-3 mb-4">
+                <span class="badge-new text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">News</span>
+                <span class="text-gray-400 text-sm font-gaming">OCTOBER 8, 2025</span>
+              </div>
+              <h2 class="font-gaming text-xl sm:text-2xl font-bold text-primary mb-2">📅 Mini-Contest Extended by 3 Days</h2>
+              <p class="text-gray-300 leading-relaxed mb-4">
+                We extended the mini-contest deadline by 3 days to accommodate the last SHS group who haven’t been onboarded yet. The countdown and snapshot/export tools have been updated accordingly. New end date: <strong>Oct 15, 2025, 00:00 (local)</strong>.
+              </p>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <span class="bg-primary/20 text-primary px-2 py-1 rounded">Leaderboards</span>
+                <span class="bg-accent/20 text-accent px-2 py-1 rounded">Events</span>
+              </div>
+            </article>
             
             <!-- LATEST NEWS -->
 

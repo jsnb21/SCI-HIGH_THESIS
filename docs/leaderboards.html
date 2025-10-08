@@ -336,7 +336,7 @@
               <div>
                 <h3 id="mini-contest-title" class="font-gaming text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">MINI-CONTEST Countdown</h3>
                 <p id="mini-contest-desc" class="text-xs text-gray-300 mt-1"></p>
-                <p class="text-gray-300 text-sm font-body">Contest ends: Oct 12, 2025 00:00 (local time)</p>
+                <p class="text-gray-300 text-sm font-body">Contest ends: Oct 15, 2025 00:00 (local time)</p>
                 <p id="mini-contest-status" class="text-cyan text-xs mt-1 font-gaming tracking-wider"></p>
               </div>
             </div>
@@ -2282,6 +2282,7 @@
               ? window.leaderboardAPI.loadCareerStatsData
               : undefined;
             await mod.initCountdown({
+              targetISO: cfg.getContestEndDate(),
               containerId: 'mini-contest-countdown',
               selectors: { days: '#mc-days', hours: '#mc-hours', mins: '#mc-mins', secs: '#mc-secs' },
               statusId: 'mini-contest-status',
