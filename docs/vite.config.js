@@ -15,8 +15,8 @@ export default defineConfig({
         process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
       ].filter(Boolean);
       if (candidates.length === 0) {
-        // Default allow list can include known tunnels or domains used by the project
-        return ['subradiative-aidan-unexotically.ngrok-free.dev'];
+        // Default allow list: localhost, loopback, and common tunnel wildcard
+        return ['localhost', '127.0.0.1', '.ngrok-free.app'];
       }
       // Support comma or space separated values
       return candidates

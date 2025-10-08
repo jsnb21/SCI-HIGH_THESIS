@@ -14,6 +14,30 @@
     }
 
     async loadConfig() {
+      // 0) Prefer injected runtime globals if present (set by CI or inline script)
+      try {
+        const injected = (window && (window.SCI_HIGH && window.SCI_HIGH.FIREBASE)) || (window && window.env && window.env.FIREBASE);
+        if (injected && typeof injected === 'object') {
+          const raw = injected;
+          const normalized = Object.create(null);
+          Object.keys(raw).forEach(k => { normalized[k.toLowerCase()] = raw[k]; });
+          const apiKey = raw.apiKey || raw.FIREBASE_API_KEY || normalized['apikey'] || normalized['firebase_api_key'];
+          if (apiKey) {
+            const cfg = {
+              apiKey,
+              authDomain: raw.authDomain || raw.FIREBASE_AUTH_DOMAIN || normalized['firebase_auth_domain'] || 'sci-high-website.firebaseapp.com',
+              databaseURL: raw.databaseURL || raw.FIREBASE_DATABASE_URL || normalized['firebase_database_url'] || 'https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app',
+              projectId: raw.projectId || raw.FIREBASE_PROJECT_ID || normalized['firebase_project_id'] || 'sci-high-website',
+              storageBucket: raw.storageBucket || raw.FIREBASE_STORAGE_BUCKET || normalized['firebase_storage_bucket'] || 'sci-high-website.appspot.com',
+              messagingSenderId: raw.messagingSenderId || raw.FIREBASE_MESSAGING_SENDER_ID || normalized['firebase_messaging_sender_id'] || '949069635878',
+              appId: raw.appId || raw.FIREBASE_APP_ID || normalized['firebase_app_id'] || '1:949069635878:web:dcf4d6e8c4f1b8f8b8e7c2'
+            };
+            this.config = cfg;
+            return this.config;
+          }
+        }
+      } catch {}
+
       // Candidate paths (attempt both relative & base-prefixed for GitHub Pages deployments)
       const candidates = [
         './config/env-config.json',

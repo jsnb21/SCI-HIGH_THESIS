@@ -10,6 +10,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/SCI-HIGH_THESIS/assets/css/admin.css" />
+  <!-- Optional: runtime Firebase config injected by CI. Safe to omit locally. -->
+  <script>
+    (function(){
+      try {
+        var s = document.createElement('script');
+        s.src = 'config/firebase-init.js';
+        s.onerror = function(){};
+        document.currentScript.parentNode.insertBefore(s, document.currentScript);
+      } catch {}
+    })();
+  </script>
 </head>
 <body class="bg-[#0B132B] text-gray-100 min-h-screen">
   <header class="border-b border-white/10 bg-black/20 backdrop-blur sticky top-0 z-30">

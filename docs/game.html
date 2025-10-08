@@ -15,6 +15,17 @@
     <!-- Optional: runtime AI key (local only; do not commit real keys) -->
     <!-- Copy config/ai-key.example.js -> config/ai-key.js and add your key; safe to omit in prod -->
     <script src="config/ai-key.js"></script>
+    <!-- Optional: runtime Firebase config injected by CI. Safe to omit locally. -->
+    <script>
+      (function(){
+        try {
+          var s = document.createElement('script');
+          s.src = 'config/firebase-init.js';
+          s.onerror = function(){};
+          document.currentScript.parentNode.insertBefore(s, document.currentScript);
+        } catch {}
+      })();
+    </script>
     
     <!-- Firebase Config Manager FIRST -->
     <script src="config/firebase-config.js"></script>

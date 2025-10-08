@@ -23,6 +23,15 @@
       document.currentScript.parentNode.insertBefore(s, document.currentScript);
     })();
   </script>
+  <!-- Optional: runtime Firebase web config (injected by CI). Guard-load if present. -->
+  <script>
+    (function(){
+      var s = document.createElement('script');
+      s.src = 'config/firebase-init.js';
+      s.onerror = function(){ /* optional file; ignore missing */ };
+      document.currentScript.parentNode.insertBefore(s, document.currentScript);
+    })();
+  </script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts for Gaming Feel -->
