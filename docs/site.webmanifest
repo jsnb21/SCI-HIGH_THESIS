@@ -7,17 +7,17 @@
   "theme_color": "#0f1524",
   "icons": [
     {
-      "src": "public/assets/img/Website/SCI-HIGH_ICON.png",
+  "src": "/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png",
       "sizes": "32x32",
       "type": "image/png"
     },
     {
-      "src": "public/assets/img/Website/SCI-HIGH_ICON.png",
+  "src": "/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "public/assets/img/Website/SCI-HIGH_ICON.png",
+  "src": "/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png",
       "sizes": "512x512",
       "type": "image/png"
     }

@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
-import { copyFileSync, mkdirSync } from 'fs';
-import { dirname } from 'path';
+import { copyFileSync, mkdirSync, readdirSync, statSync, existsSync } from 'fs';
+import { dirname, join } from 'path';
 
 export default defineConfig({
   base: '/SCI-HIGH_THESIS/',
@@ -44,15 +44,40 @@ export default defineConfig({
   publicDir: 'public',
   plugins: [
     {
-      name: 'copy-static-js',
+      name: 'copy-static-resources',
       writeBundle() {
-        // Copy non-bundled JS utilities that are referenced directly by HTML
+        // Recursively copy selected folders/files that are referenced directly by HTML (not bundled)
+        const copyDir = (src, dest) => {
+          try {
+            if (!existsSync(src)) return;
+            mkdirSync(dest, { recursive: true });
+            for (const entry of readdirSync(src)) {
+              const s = join(src, entry);
+              const d = join(dest, entry);
+              const st = statSync(s);
+              if (st.isDirectory()) {
+                copyDir(s, d);
+              } else {
+                copyFileSync(s, d);
+              }
+            }
+          } catch (e) {
+            console.warn(`Failed to copy directory ${src} -> ${dest}:`, e.message);
+          }
+        };
+
         try {
+          // Ensure js root exists
           mkdirSync('./dist/js', { recursive: true });
-          copyFileSync('./js/notifications.js', './dist/js/notifications.js');
-          copyFileSync('./js/maintenanceToast.js', './dist/js/maintenanceToast.js');
+          // Individual utility files
+          if (existsSync('./js/notifications.js')) copyFileSync('./js/notifications.js', './dist/js/notifications.js');
+          if (existsSync('./js/maintenanceToast.js')) copyFileSync('./js/maintenanceToast.js', './dist/js/maintenanceToast.js');
+          // Page-specific scripts (kept as plain scripts vs bundling)
+          copyDir('./js/pages', './dist/js/pages');
+          // Leaderboards page modules used via dynamic import()
+          copyDir('./js/leaderboards', './dist/js/leaderboards');
         } catch (error) {
-          console.error('Failed to copy static js files:', error);
+          console.error('Failed to copy static resources:', error);
         }
       }
     },
