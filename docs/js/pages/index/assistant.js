@@ -7,7 +7,13 @@
       this.isRecording = false;
       this.currentRecognition = null;
       this.apiKey = '';
-      this.apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+      // Prefer stable v1 endpoints; fall back to legacy if needed
+      this.apiEndpoints = [
+        'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent',
+        'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro-latest:generateContent',
+        // Legacy fallback
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
+      ];
       this.keyExpiry = null;
       this.maxKeyAge = 30 * 60 * 1000;
       this.configFile = 'config/env-config.json';
@@ -66,7 +72,59 @@
     saveApiKey(){ const input=document.getElementById('api-key-input'); const key=input.value.trim(); if (key){ if(!this.validateApiKey(key)){ this.showStatus('❌ Invalid API key format','error'); return;} this.apiKey=key; this.keyExpiry=Date.now()+this.maxKeyAge; this.saveApiKeyToFile(key); input.value=''; this.updateAIStatus(true); this.showStatus(`🔒 API key saved to config file!\nAuto-expires in ${this.maxKeyAge/60000} minutes per session`,'success'); setTimeout(()=>this.hideSettings(),2000);} else { this.showStatus('Please enter a valid API key','error'); } }
     async saveApiKeyToFile(key){ try{ const blob=new Blob([`# Google AI Studio API Key\n# Replace \"your-api-key-here\" with your actual API key from https://makersuite.google.com/app/apikey\n# Keep this file secure and never commit it to version control!\n\n${key}`],{type:'text/plain'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='env-config.json'; a.style.display='none'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); this.showStatus('📁 Config file downloaded! Place it in the config/ folder','info'); } catch(e){ console.warn('Could not create config file download:', e); } }
     validateApiKey(key){ return key.length>20 && /^[A-Za-z0-9_-]+$/.test(key); }
-    async testAI(){ if(!this.apiKey){ this.showStatus('Please enter an API key first','error'); return;} if(this.keyExpiry && Date.now()>this.keyExpiry){ this.clearApiKey(); this.showStatus('API key expired. Please enter again.','error'); return;} this.showStatus('Testing AI connection... 🔄','info'); try{ const response=await fetch(`${this.apiUrl}?key=${this.apiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:'Say "Hello! AI is working!" in a friendly way with an emoji.'}]}],generationConfig:{temperature:0.7,maxOutputTokens:50,}})}); if(response.ok){ const data=await response.json(); const aiResponse=data.candidates?.[0]?.content?.parts?.[0]?.text; if(aiResponse){ this.showStatus(`✅ AI Test Successful!\n"${aiResponse}"`,'success'); } else { this.showStatus('❌ Unexpected AI response format','error'); } } else { const errorData=await response.json(); this.showStatus(`❌ API Error: ${errorData.error?.message || 'Unknown error'}`,'error'); if (response.status===401||response.status===403){ this.clearApiKey(); } } } catch(error){ this.showStatus(`❌ Connection Error: ${error.message}`,'error'); } }
+    async testAI(){
+      if(!this.apiKey){ this.showStatus('Please enter an API key first','error'); return; }
+      if(this.keyExpiry && Date.now()>this.keyExpiry){ this.clearApiKey(); this.showStatus('API key expired. Please enter again.','error'); return; }
+      this.showStatus('Testing AI connection... 🔄','info');
+      try{
+        const aiResponse = await this.callGemini('Say "Hello! AI is working!" in a friendly way with an emoji.');
+        if (aiResponse) {
+          this.showStatus(`✅ AI Test Successful!\n"${aiResponse}"`,'success');
+        } else {
+          this.showStatus('❌ AI test failed: No response','error');
+        }
+      } catch(error){
+        this.showStatus(`❌ Connection Error: ${error.message}`,'error');
+      }
+    }
+
+    async callGemini(prompt){
+      const payload = {
+        contents: [{ parts: [{ text: prompt }]}],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 256 }
+      };
+      let lastErr;
+      for (const url of this.apiEndpoints){
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': this.apiKey
+            },
+            body: JSON.stringify(payload)
+          });
+          if (response.ok){
+            const data = await response.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) return text;
+            lastErr = new Error('Empty AI response');
+          } else {
+            // Try next model on 404 (not found) or 400 unsupported model
+            if (response.status === 404 || response.status === 400) {
+              continue;
+            }
+            const errData = await response.json().catch(()=>({}));
+            // Clear key on auth issues
+            if (response.status===401 || response.status===403){ this.clearApiKey(); }
+            lastErr = new Error(errData.error?.message || `HTTP ${response.status}`);
+          }
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      if (lastErr) throw lastErr; else return null;
+    }
     showStatus(message,type){ const statusEl=document.getElementById('api-status'); statusEl.className=`text-xs text-center p-2 rounded-lg ${type==='success'?'bg-accent/20 text-accent': type==='error'?'bg-red-500/20 text-red-400':'bg-purple/20 text-purple'}`; statusEl.textContent=message; statusEl.classList.remove('hidden'); if(type!=='info'){ setTimeout(()=>statusEl.classList.add('hidden'),3000);} }
     bindEvents(){ const toggle=document.getElementById('assistant-toggle'); const close=document.getElementById('assistant-close'); const settings=document.getElementById('assistant-settings'); const settingsClose=document.getElementById('settings-close'); const saveKey=document.getElementById('save-api-key'); const testAI=document.getElementById('test-ai'); const sendBtn=document.getElementById('send-message'); const input=document.getElementById('chat-input'); const voiceBtn=document.getElementById('voice-input'); const quickBtns=document.querySelectorAll('.quick-btn'); const suggestionBtns=document.querySelectorAll('.suggestion-btn'); const exportChat=document.getElementById('export-chat'); const clearChat=document.getElementById('clear-chat');
       toggle.addEventListener('click',()=>this.togglePanel()); close.addEventListener('click',()=>this.closePanel()); settings.addEventListener('click',()=>this.showSettings()); settingsClose.addEventListener('click',()=>this.hideSettings()); saveKey.addEventListener('click',()=>this.saveApiKey()); testAI.addEventListener('click',()=>this.testAI()); sendBtn.addEventListener('click',()=>this.sendMessage()); voiceBtn.addEventListener('click',()=>this.toggleVoiceInput()); exportChat.addEventListener('click',()=>this.exportChatHistory()); clearChat.addEventListener('click',()=>this.clearChatHistory()); input.addEventListener('keydown',(e)=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); this.sendMessage(); } }); input.addEventListener('input',()=>{ this.updateCharCounter(); this.autoResize(); }); input.addEventListener('focus',()=>{ document.getElementById('input-status').classList.remove('hidden'); }); input.addEventListener('blur',()=>{ document.getElementById('input-status').classList.add('hidden'); }); quickBtns.forEach(btn=>{ btn.addEventListener('click',()=>{ const question=btn.getAttribute('data-question'); this.handleQuickQuestion(question); }); }); suggestionBtns.forEach(btn=>{ btn.addEventListener('click',()=>{ const text=btn.getAttribute('data-text'); input.value=text; this.updateCharCounter(); this.autoResize(); input.focus(); }); }); }
@@ -90,7 +148,35 @@
     addAssistantMessage(message, type='info'){ const messagesContainer=document.getElementById('chat-messages'); const div=document.createElement('div'); div.className='assistant-message mb-3 animate-bounce-in'; const bgColor = type==='game' ? 'bg-gradient-to-r from-accent/20 to-green-500/20' : type==='thesis' ? 'bg-gradient-to-r from-purple/20 to-indigo-500/20' : type==='technical' ? 'bg-gradient-to-r from-cyan/20 to-blue-500/20' : type==='ai' ? 'bg-gradient-to-r from-purple/20 to-cyan/20' : type==='security' ? 'bg-gradient-to-r from-red-500/20 to-orange-500/20' : 'bg-gradient-to-r from-purple/20 to-cyan/20'; const borderColor = type==='game' ? 'border-accent/30' : type==='thesis' ? 'border-purple/30' : type==='technical' ? 'border-cyan/30' : type==='ai' ? 'border-purple/30' : type==='security' ? 'border-red-500/30' : 'border-purple/30'; const textColor = type==='security' ? 'text-red-300' : 'text-white'; const typeIcon = type==='game' ? '🎮' : type==='thesis' ? '📚' : type==='technical' ? '⚙️' : type==='ai' ? '🤖' : type==='security' ? '🔒' : '🤖'; div.innerHTML = `<div class="${bgColor} rounded-lg p-2 max-w-xs md:p-3 border ${borderColor}"><div class="flex items-start space-x-2"><div class="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-dark font-bold text-xs flex-shrink-0">${typeIcon}</div><div class="flex-1 ${textColor}">${this.formatMessage(message)}</div></div></div>`; messagesContainer.appendChild(div); messagesContainer.scrollTop=messagesContainer.scrollHeight; }
     formatMessage(message){ return message.replace(/\*\*(.*?)\*\*/g,'<strong class="text-primary">$1</strong>').replace(/\*(.*?)\*/g,'<em class="text-accent">$1</em>').replace(/`(.*?)`/g,'<code class="bg-dark/50 px-1 py-0.5 rounded text-cyan text-xs">$1</code>').replace(/\n•/g,'\n<span class="text-primary">•</span>').replace(/(\d+\.)/g,'<span class="text-primary font-bold">$1</span>').replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" class="text-cyan hover:text-primary underline">$1</a>').replace(/#{1,6}\s?(.*)/g,'<strong class="text-primary text-sm">$1</strong>'); }
     generateResponse(userMessage){ const message=userMessage.toLowerCase(); this.showTypingIndicator(); if (this.apiKey && this.apiKey.length>0) { this.generateAIResponse(userMessage); } else { this.generateFallbackResponse(message); } }
-    async generateAIResponse(userMessage){ if (this.keyExpiry && Date.now() > this.keyExpiry) { this.clearApiKey(); this.hideTypingIndicator(); this.addAssistantMessage('🔒 API key expired for security. Using fallback responses.','security'); this.generateFallbackResponse(userMessage.toLowerCase()); return; } try { const conversationContext = this.conversationHistory.map(m=>`${m.role}: ${m.content}`).slice(-this.maxHistoryLength).join('\n'); const enhancedPrompt = `${this.systemContext}\n\nPrevious conversation context:\n${conversationContext}\n\nCurrent user question: ${userMessage}\n\nPlease provide a helpful, engaging response about SCI-HIGH or the thesis research. Consider the conversation context to provide more personalized and relevant answers. Keep responses concise (under 250 words) and include relevant emojis. Match the gaming/educational theme and maintain conversation flow.`; const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ contents:[{ parts:[{ text: enhancedPrompt }] }], generationConfig:{ temperature:0.7, maxOutputTokens:256 } }) }); if (response.ok){ const data=await response.json(); const aiResponse=data.candidates?.[0]?.content?.parts?.[0]?.text; if (aiResponse){ this.hideTypingIndicator(); this.addToHistory('assistant', aiResponse); this.addAssistantMessage(aiResponse,'ai'); this.addFollowUpSuggestions(aiResponse); return; } } else { if (response.status===401 || response.status===403) { this.clearApiKey(); this.hideTypingIndicator(); this.addAssistantMessage('🔒 API key invalid or expired. Cleared for security.','security'); } } } catch (error) { console.warn('AI API failed, using fallback:', error); } this.generateFallbackResponse(userMessage.toLowerCase()); }
+    async generateAIResponse(userMessage){
+      if (this.keyExpiry && Date.now() > this.keyExpiry) {
+        this.clearApiKey();
+        this.hideTypingIndicator();
+        this.addAssistantMessage('🔒 API key expired for security. Using fallback responses.','security');
+        this.generateFallbackResponse(userMessage.toLowerCase());
+        return;
+      }
+      try {
+        const conversationContext = this.conversationHistory
+          .map(m=>`${m.role}: ${m.content}`)
+          .slice(-this.maxHistoryLength)
+          .join('\n');
+        const enhancedPrompt = `${this.systemContext}\n\nPrevious conversation context:\n${conversationContext}\n\nCurrent user question: ${userMessage}\n\nPlease provide a helpful, engaging response about SCI-HIGH or the thesis research. Consider the conversation context to provide more personalized and relevant answers. Keep responses concise (under 250 words) and include relevant emojis. Match the gaming/educational theme and maintain conversation flow.`;
+
+        const aiResponse = await this.callGemini(enhancedPrompt);
+        if (aiResponse){
+          this.hideTypingIndicator();
+          this.addToHistory('assistant', aiResponse);
+          this.addAssistantMessage(aiResponse,'ai');
+          this.addFollowUpSuggestions(aiResponse);
+          return;
+        }
+      } catch (error) {
+        console.warn('AI API failed, using fallback:', error);
+        this.addAssistantMessage(`🤖 AI notice: ${error.message}. Using built-in responses for now.`, 'security');
+      }
+      this.generateFallbackResponse(userMessage.toLowerCase());
+    }
     addFollowUpSuggestions(aiResponse){ const response=aiResponse.toLowerCase(); if (response.includes('story mode') || response.includes('character')) { this.updateSuggestionButtons(['Tell me more about Noah\'s Web Dev path','What challenges does Lily face in Python?','How does Damian\'s Java story unfold?']); } else if (response.includes('research') || response.includes('thesis')) { this.updateSuggestionButtons(['What methods were used to measure engagement?','Can you summarize the key results?','What\'s the sample size and demographics?']); } else if (response.includes('technical') || response.includes('programming')) { this.updateSuggestionButtons(['How is Phaser.js used in the game?','How does Firebase power real-time features?','What about mobile performance optimization?']); } }
     updateSuggestionButtons(newSuggestions){ const container=document.getElementById('input-suggestions'); if (!container) return; newSuggestions.forEach((suggestion, index)=>{ setTimeout(()=>{ const btn=document.createElement('button'); btn.className='suggestion-btn text-xs bg-dark/40 hover:bg-dark/60 text-gray-300 rounded px-2 py-1'; btn.setAttribute('data-text', suggestion); btn.textContent=suggestion; container.appendChild(btn); setTimeout(()=>{ if (btn && btn.parentElement) btn.remove(); }, 30000); }, index*200); }); }
     generateFallbackResponse(message){ let response=null; let responseType='info'; const patterns=[ { keywords:['what is sci-high','sci-high','what is the game'], response:this.responses['what is sci-high'] }, { keywords:['about game','about','features','info'], response:this.responses['about game'] }, { keywords:['thesis','research','study'], response:this.responses['thesis research'] }, { keywords:['language','languages','programming'], response:this.responses['programming languages'] }, { keywords:['start','begin','getting started'], response:this.responses['how to start'] }, { keywords:['technical','tech details','stack'], response:this.responses['technical details'] }, { keywords:['help','support','assist'], response:this.responses['help'] } ]; for (const pattern of patterns){ if (pattern.keywords.some(k=>message.includes(k))){ response = pattern.response.response; responseType = pattern.response.type; break; } }
