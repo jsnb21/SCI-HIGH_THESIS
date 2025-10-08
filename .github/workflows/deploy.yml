@@ -43,12 +43,20 @@ jobs:
       shell: bash
       run: |
         mkdir -p docs/config
+        # Create a JS file that sets a global for immediate use
         cat << 'EOF' > docs/config/ai-key.js
         // Auto-generated at deploy time. Do not commit.
         window.SCI_HIGH = window.SCI_HIGH || {};
         window.SCI_HIGH.GOOGLE_AI_API_KEY = '${{ secrets.SCI_HIGH_GOOGLE_AI_API_KEY }}';
         // Keep aggregates off by default in public deploys; flip to true if desired
         window.SCI_HIGH.ALLOW_FIREBASE_AGGREGATE_SYNC = false;
+        EOF
+        
+        # Additionally create env-config.json for fetch-based loading
+        cat << 'EOF' > docs/config/env-config.json
+        {
+          "geminiApiKey": "${{ secrets.SCI_HIGH_GOOGLE_AI_API_KEY }}"
+        }
         EOF
 
     - name: Build

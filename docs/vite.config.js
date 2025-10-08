@@ -87,8 +87,22 @@ export default defineConfig({
         // Copy config directory to maintain the same path structure
         try {
           mkdirSync('./dist/config', { recursive: true });
-          copyFileSync('./config/firebase-config.js', './dist/config/firebase-config.js');
-          copyFileSync('./config/env-config.json', './dist/config/env-config.json');
+          // Copy all files under ./config (if present), e.g., firebase-config.js, env-config.json, ai-key.js
+          try {
+            const configDir = './config';
+            if (existsSync(configDir)) {
+              for (const entry of readdirSync(configDir)) {
+                const src = join(configDir, entry);
+                const st = statSync(src);
+                if (st.isFile()) {
+                  const dest = join('./dist/config', entry);
+                  copyFileSync(src, dest);
+                }
+              }
+            }
+          } catch (innerErr) {
+            console.warn('Could not copy some config files:', innerErr.message);
+          }
           // Also copy admin-password.txt to the root of the dist folder so admin.html can fetch it
           try {
             copyFileSync('./admin-password.txt', './dist/admin-password.txt');
@@ -100,8 +114,10 @@ export default defineConfig({
           console.warn('Some config files could not be copied:', error.message);
           // Still try to copy the essential firebase config
           try {
-            copyFileSync('./config/firebase-config.js', './dist/config/firebase-config.js');
-            copyFileSync('./config/env-config.json', './dist/config/env-config.json');
+            // Fallback: try copying known essential files if they exist
+            if (existsSync('./config/firebase-config.js')) copyFileSync('./config/firebase-config.js', './dist/config/firebase-config.js');
+            if (existsSync('./config/env-config.json')) copyFileSync('./config/env-config.json', './dist/config/env-config.json');
+            if (existsSync('./config/ai-key.js')) copyFileSync('./config/ai-key.js', './dist/config/ai-key.js');
             try {
               copyFileSync('./admin-password.txt', './dist/admin-password.txt');
             } catch (passErr) {
