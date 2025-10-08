@@ -374,10 +374,7 @@
         "question": "Select the Correct Syntax",
         "instruction": "Fetch API basic pattern",
         "blocks": [
-          {
-            "code": "fetch('/data.json')\n  .then(r => r.json())\n  .then(d => console.log(d));",
-            "correct": true
-          },
+          { "code": "fetch('/data.json')\n  .then(r => r.json())\n  .then(d => console.log(d));", "correct": true },
           { "code": "fetch('/data.json').json().then(d => log(d));", "correct": false },
           { "code": "get('/data.json', data => console.log(data));", "correct": false }
         ],
@@ -388,10 +385,7 @@
         "question": "Select the Correct Syntax",
         "instruction": "Open link in new tab with safe rel",
         "blocks": [
-          {
-            "code": "<a href=\"/page\" target=\"_blank\" rel=\"noopener noreferrer\">Open</a>",
-            "correct": true
-          },
+          { "code": "<a href=\"/page\" target=\"_blank\" rel=\"noopener noreferrer\">Open</a>", "correct": true },
           { "code": "<a target=\"_blank\" href=\"/page\">Open</a>", "correct": false },
           { "code": "<a href=\"/page\" target=\"new\" rel=\"external\">Open</a>", "correct": false }
         ],
@@ -413,10 +407,7 @@
         "question": "Select the Correct Syntax",
         "instruction": "Add a class to an element via JS",
         "blocks": [
-          {
-            "code": "document.querySelector('.box').classList.add('active');",
-            "correct": true
-          },
+          { "code": "document.querySelector('.box').classList.add('active');", "correct": true },
           { "code": "document.find('.box').addClass('active');", "correct": false },
           { "code": "query('.box').class('active', add);", "correct": false }
         ],
@@ -438,286 +429,442 @@
         "question": "Select the Correct Syntax",
         "instruction": "Async/Await fetch JSON",
         "blocks": [
-          {
-            "code": "const res = await fetch('/data.json');\nconst data = await res.json();",
-            "correct": true
-          },
+          { "code": "const res = await fetch('/data.json');\nconst data = await res.json();", "correct": true },
           { "code": "await const res = fetch('/data.json').json();", "correct": false },
           { "code": "const data = await fetch.json('/data.json');", "correct": false }
         ],
         "bloomTarget": "applying"
-      }
-    ],
-    "multipleChoice": [
-      {
-        "question": "Which CSS property changes text color?",
-        "options": ["font-color", "color", "text-style", "text-color"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
       },
+
       {
-        "question": "Which CSS property sets the font size?",
-        "options": ["font-size", "text-size", "font-style", "size"],
-        "correctIndex": 0,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which selector targets an element with id 'header'?",
-        "options": [".header", "header", "#header", "*header"],
-        "correctIndex": 2,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which CSS property sets the background color?",
-        "options": ["bgcolor", "background-color", "color-background", "back-color"],
-        "correctIndex": 1,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "Which property controls the space inside an element's border?",
-        "options": ["margin", "padding", "spacing", "border-gap"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "What is the correct HTML to link an external CSS file?",
-        "options": [
-          "<style src=\"style.css\">",
-          "<link rel=\"stylesheet\" href=\"style.css\">",
-          "<css link=\"style.css\">",
-          "<stylesheet>style.css</stylesheet>"
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "HTML button with JavaScript onclick",
+        "blocks": [
+          { "code": "<button onclick=\"alert('Hi')\">Click</button>", "correct": true },
+          { "code": "<button onClick=alert('Hi')>Click</button>", "correct": false },
+          { "code": "<button click=\"alert('Hi')\">Click</button>", "correct": false }
         ],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which property controls the boldness of text?",
-        "options": ["text-weight", "font-bold", "font-weight", "bold"],
-        "correctIndex": 2,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which CSS declaration hides an element but preserves layout space?",
-        "options": ["display: none", "visibility: hidden", "opacity: 0", "hidden: true"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which property controls the space outside an element's border?",
-        "options": ["padding", "spacing", "margin", "outline"],
-        "correctIndex": 2,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which selector selects all <p> elements inside a <div>?",
-        "options": ["p.div", "div p", "div+p", "div.p"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which CSS property changes the mouse cursor style?",
-        "options": ["mouse", "cursor", "pointer", "icon"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which CSS property adds underlines or overlines to text?",
-        "options": ["font-decoration", "text-decoration", "decoration", "text-style"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which position value removes an element from normal flow?",
-        "options": ["absolute", "fixed", "relative", "static"],
-        "correctIndex": 0,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which unit is relative to the root element's font size?",
-        "options": ["%", "em", "rem", "px"],
-        "correctIndex": 2,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "What does z-index control?",
-        "options": [
-          "Element size",
-          "Element transparency",
-          "Element stacking order",
-          "Element alignment"
-        ],
-        "correctIndex": 2,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "How do you specify multiple background images in CSS?",
-        "options": [
-          "bg()",
-          "background()",
-          "background-image()",
-          "background-image with comma"
-        ],
-        "correctIndex": 3,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which property controls overall element transparency?",
-        "options": ["opacity", "transparency", "alpha", "visible"],
-        "correctIndex": 0,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which property converts text to uppercase/lowercase/capitalize?",
-        "options": ["text-transform", "font-style", "text-uppercase", "capitalize"],
-        "correctIndex": 0,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which pseudo-class applies when hovering over an element?",
-        "options": [":focus", ":hover", ":active", ":visited"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which property rounds the corners of an element?",
-        "options": ["border-style", "border-round", "border-radius", "round-corner"],
-        "correctIndex": 2,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which display value allows width/height and flows inline?",
-        "options": ["block", "inline", "inline-block", "flex"],
-        "correctIndex": 2,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which property horizontally aligns inline content?",
-        "options": ["align-text", "text-align", "horizontal-align", "align"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which property controls the thickness of characters?",
-        "options": ["font-style", "text-weight", "font-weight", "boldness"],
-        "correctIndex": 2,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which at-rule defines media queries?",
-        "options": ["@resize", "@responsive", "@media", "@query"],
-        "correctIndex": 2,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which position keeps an element fixed relative to the viewport?",
-        "options": ["static", "absolute", "relative", "fixed"],
-        "correctIndex": 3,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which property sets the visual order of flex items?",
-        "options": ["flex-order", "item-order", "order", "align-order"],
-        "correctIndex": 2,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which property defines columns in CSS Grid?",
-        "options": [
-          "grid-template-columns",
-          "grid-columns",
-          "columns-template",
-          "grid-structure"
-        ],
-        "correctIndex": 0,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which declaration creates a flex container?",
-        "options": [
-          "flex-container",
-          "display: flex",
-          "flex: container",
-          "container: flex"
-        ],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which CSS function applies 2D/3D transformations?",
-        "options": ["transform()", "translate()", "effect()", "modify()"],
-        "correctIndex": 0,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "Which property animates changes between CSS states?",
-        "options": ["animate", "transition", "ease", "timing"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which property sets the space between lines of text?",
-        "options": ["line-gap", "line-height", "text-spacing", "row-height"],
-        "correctIndex": 1,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "Which selector targets elements with class 'btn'?",
-        "options": ["#btn", ".btn", "btn", "*btn"],
-        "correctIndex": 1,
         "bloomTarget": "applying"
       },
       {
-        "question": "Which unit is relative to the viewport width?",
-        "options": ["vw", "vh", "rem", "em"],
-        "correctIndex": 0,
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "HTML video tag with controls",
+        "blocks": [
+          { "code": "<video src=\"movie.mp4\" controls></video>", "correct": true },
+          { "code": "<video file=\"movie.mp4\"></video>", "correct": false },
+          { "code": "<media controls src=movie.mp4>", "correct": false }
+        ],
         "bloomTarget": "understanding"
       },
       {
-        "question": "Which property adds a drop shadow around a box?",
-        "options": ["box-shadow", "drop-shadow", "shadow", "outline"],
-        "correctIndex": 0,
-        "bloomTarget": "remembering"
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS animation keyframes example",
+        "blocks": [
+          { "code": "@keyframes spin {\n  from { transform: rotate(0deg); }\n  to { transform: rotate(360deg); }\n}", "correct": true },
+          { "code": "@frames spin { rotate: 0 to 360; }", "correct": false },
+          { "code": "animation spin { start:0; end:360; }", "correct": false }
+        ],
+        "bloomTarget": "creating"
       },
       {
-        "question": "Which CSS declaration makes a flex item grow to fill remaining space?",
-        "options": ["flex-grow", "flex-basis", "flex: 1", "order"],
-        "correctIndex": 2,
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Center text inside a div",
+        "blocks": [
+          { "code": ".box { text-align:center; }", "correct": true },
+          { "code": ".box { align:center; }", "correct": false },
+          { "code": ".box { justify-text:center; }", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "JavaScript template literal with variable",
+        "blocks": [
+          { "code": "let msg = `Hello ${name}`;", "correct": true },
+          { "code": "let msg = 'Hello ${name}';", "correct": false },
+          { "code": "let msg = Hello ${name};", "correct": false }
+        ],
         "bloomTarget": "applying"
       },
       {
-        "question": "Which HTML attribute connects a <label> to an <input> by id?",
-        "options": ["href", "for", "label", "name"],
-        "correctIndex": 1,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "Which meta tag helps with responsive scaling on mobile?",
-        "options": [
-          "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
-          "<meta name=\"device\" content=\"responsive\">",
-          "<meta viewport=\"yes\">",
-          "<meta name=\"scale\" content=\"1.0\">"
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS hover pseudo-class",
+        "blocks": [
+          { "code": "button:hover { background:red; }", "correct": true },
+          { "code": "button.hover { background:red; }", "correct": false },
+          { "code": "hover(button) { background:red; }", "correct": false }
         ],
-        "correctIndex": 0,
         "bloomTarget": "understanding"
       },
       {
-        "question": "Which property controls space between letters?",
-        "options": ["letter-spacing", "word-spacing", "text-indent", "kerning"],
-        "correctIndex": 0,
-        "bloomTarget": "remembering"
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "JavaScript array destructuring",
+        "blocks": [
+          { "code": "const [a,b] = [1,2];", "correct": true },
+          { "code": "const a,b = [1,2];", "correct": false },
+          { "code": "let a,b <= [1,2];", "correct": false }
+        ],
+        "bloomTarget": "applying"
       },
       {
-        "question": "Which color function supports an alpha (transparency) channel?",
-        "options": ["rgb()", "rgba()", "hex #RRGGBB", "hsl()"],
-        "correctIndex": 1,
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "HTML semantic section element",
+        "blocks": [
+          { "code": "<section><h2>About</h2></section>", "correct": true },
+          { "code": "<div class='section'>About</div>", "correct": false },
+          { "code": "<part><h2>About</h2></part>", "correct": false }
+        ],
         "bloomTarget": "understanding"
       },
       {
-        "question": "Which positioning value keeps an element in normal flow?",
-        "options": ["absolute", "fixed", "relative", "static"],
-        "correctIndex": 3,
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS gradient background",
+        "blocks": [
+          { "code": "background: linear-gradient(to right, red, blue);", "correct": true },
+          { "code": "background-gradient(right, red, blue);", "correct": false },
+          { "code": "gradient: linear(right, red, blue);", "correct": false }
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "JS add event listener for click",
+        "blocks": [
+          { "code": "btn.addEventListener('click', () => alert('Hi'));", "correct": true },
+          { "code": "onClick(btn, alert('Hi'));", "correct": false },
+          { "code": "btn.click(alert('Hi'));", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "HTML unordered list with two items",
+        "blocks": [
+          { "code": "<ul><li>One</li><li>Two</li></ul>", "correct": true },
+          { "code": "<list><li>One</li><li>Two</list>", "correct": false },
+          { "code": "<ul><item>One</item><item>Two</item></ul>", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS rule to make text italic",
+        "blocks": [
+          { "code": "p { font-style: italic; }", "correct": true },
+          { "code": "p { text-style: italic; }", "correct": false },
+          { "code": "p { font: italic; }", "correct": false }
+        ],
         "bloomTarget": "remembering"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "JS conditional (ternary) operator",
+        "blocks": [
+          { "code": "let msg = age >= 18 ? 'Adult' : 'Minor';", "correct": true },
+          { "code": "let msg = age ?>= 18 'Adult' : 'Minor';", "correct": false },
+          { "code": "let msg = if(age>=18)?'Adult':'Minor';", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "HTML table with header row",
+        "blocks": [
+          { "code": "<table><tr><th>Name</th><th>Age</th></tr></table>", "correct": true },
+          { "code": "<table><td>Name</td><td>Age</td></table>", "correct": false },
+          { "code": "<table header><tr>Name Age</tr></table>", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS transition on background color",
+        "blocks": [
+          { "code": ".btn { transition: background 0.3s ease; }", "correct": true },
+          { "code": ".btn { animation: background 0.3s; }", "correct": false },
+          { "code": ".btn { effect: background 0.3; }", "correct": false }
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "HTML audio element with controls",
+        "blocks": [
+          { "code": "<audio controls src=\"sound.mp3\"></audio>", "correct": true },
+          { "code": "<sound src=\"sound.mp3\" control>", "correct": false },
+          { "code": "<audio file=\"sound.mp3\" play>", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS fixed navbar at top",
+        "blocks": [
+          { "code": ".nav { position: fixed; top: 0; width: 100%; }", "correct": true },
+          { "code": ".nav { fixed-top: true; }", "correct": false },
+          { "code": ".nav { place:top; }", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "JS object literal definition",
+        "blocks": [
+          { "code": "const user = { name: 'Ana', age: 21 };", "correct": true },
+          { "code": "const user = [ name='Ana', age=21 ];", "correct": false },
+          { "code": "const user = (name:'Ana', age:21);", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "HTML anchor linking external site",
+        "blocks": [
+          { "code": "<a href=\"https://example.com\">Visit</a>", "correct": true },
+          { "code": "<a link=\"https://example.com\">Visit</a>", "correct": false },
+          { "code": "<link href=\"https://example.com\">Visit</link>", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS selector for first child element",
+        "blocks": [
+          { "code": "li:first-child { color:red; }", "correct": true },
+          { "code": "li.first { color:red; }", "correct": false },
+          { "code": "li:first { color:red; }", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "JS forEach loop over array",
+        "blocks": [
+          { "code": "nums.forEach(n => console.log(n));", "correct": true },
+          { "code": "forEach(nums, n => log(n));", "correct": false },
+          { "code": "nums.each(n -> console.log(n));", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS border shorthand",
+        "blocks": [
+          { "code": "div { border: 1px solid #000; }", "correct": true },
+          { "code": "div { border-size:1 solid; }", "correct": false },
+          { "code": "div { border-width:1px color:#000; }", "correct": false }
+        ],
+        "bloomTarget": "remembering"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "HTML form submit button",
+        "blocks": [
+          { "code": "<button type=\"submit\">Send</button>", "correct": true },
+          { "code": "<input type=\"send\">", "correct": false },
+          { "code": "<submit>Send</submit>", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS box-shadow property",
+        "blocks": [
+          { "code": ".card { box-shadow: 0 2px 4px rgba(0,0,0,0.2); }", "correct": true },
+          { "code": ".card { shadow: 0 2 4 gray; }", "correct": false },
+          { "code": ".card { box-shadow-color: gray; }", "correct": false }
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "JS DOM get element by ID",
+        "blocks": [
+          { "code": "document.getElementById('title');", "correct": true },
+          { "code": "document.find('#title');", "correct": false },
+          { "code": "get('#title');", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "HTML meta charset declaration",
+        "blocks": [
+          { "code": "<meta charset=\"UTF-8\">", "correct": true },
+          { "code": "<meta encoding=\"UTF8\">", "correct": false },
+          { "code": "<charset meta=\"UTF-8\">", "correct": false }
+        ],
+        "bloomTarget": "remembering"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS display grid layout",
+        "blocks": [
+          { "code": ".container { display: grid; gap: 10px; }", "correct": true },
+          { "code": ".container { grid: on; }", "correct": false },
+          { "code": ".container { layout: grid; }", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "JS string interpolation with backticks",
+        "blocks": [
+          { "code": "console.log(`Hello ${user}`);", "correct": true },
+          { "code": "console.log('Hello ${user}');", "correct": false },
+          { "code": "console.log(\"Hello ${user}\");", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS pseudo-element first line",
+        "blocks": [
+          { "code": "p::first-line { font-weight:bold; }", "correct": true },
+          { "code": "p:first-line { font:bold; }", "correct": false },
+          { "code": "first-line(p) { bold; }", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "HTML image figure with caption",
+        "blocks": [
+          { "code": "<figure><img src=\"img.png\"><figcaption>Sample</figcaption></figure>", "correct": true },
+          { "code": "<figure><caption>Sample</caption><img src=\"img.png\"></figure>", "correct": false },
+          { "code": "<img figcaption=\"Sample\">", "correct": false }
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "JS arrow function implicit return",
+        "blocks": [
+          { "code": "const double = n => n*2;", "correct": true },
+          { "code": "const double(n) => { n*2 };", "correct": false },
+          { "code": "double = (n) return n*2;", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS variable declaration and usage",
+        "blocks": [
+          { "code": ":root { --clr: red; } p { color: var(--clr); }", "correct": true },
+          { "code": ":root clr:red; p { color: clr; }", "correct": false },
+          { "code": "root { var clr:red; }", "correct": false }
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "HTML5 semantic header element",
+        "blocks": [
+          { "code": "<header><h1>Title</h1></header>", "correct": true },
+          { "code": "<head><h1>Title</h1></head>", "correct": false },
+          { "code": "<div class='header'>Title</div>", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS flex align center both axes",
+        "blocks": [
+          { "code": ".box { display:flex; align-items:center; justify-content:center; }", "correct": true },
+          { "code": ".box { flex:center; }", "correct": false },
+          { "code": ".box { align:center both; }", "correct": false }
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "JS function default parameter",
+        "blocks": [
+          { "code": "function greet(name='Guest'){console.log(name);}", "correct": true },
+          { "code": "function greet(name='Guest');console.log(name);", "correct": false },
+          { "code": "function greet='Guest'(name){console.log(name)}", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS nth-child selector",
+        "blocks": [
+          { "code": "li:nth-child(2) { color: blue; }", "correct": true },
+          { "code": "li:nth(2) { color: blue; }", "correct": false },
+          { "code": "li:child(2) { color: blue; }", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "HTML input type password",
+        "blocks": [
+          { "code": "<input type=\"password\" name=\"pass\">", "correct": true },
+          { "code": "<password name=\"pass\">", "correct": false },
+          { "code": "<input pass name=\"pass\">", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "JS try-catch block",
+        "blocks": [
+          { "code": "try { risky(); } catch(e) { console.log(e); }", "correct": true },
+          { "code": "catch(e) { console.log(e); } try { risky(); }", "correct": false },
+          { "code": "try risky() catch(e) console.log(e);", "correct": false }
+        ],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "CSS linear gradient background",
+        "blocks": [
+          { "code": "background: linear-gradient(red, yellow);", "correct": true },
+          { "code": "background-gradient: red, yellow;", "correct": false },
+          { "code": "gradient(linear, red, yellow);", "correct": false }
+        ],
+        "bloomTarget": "creating"
       }
     ]
   },
