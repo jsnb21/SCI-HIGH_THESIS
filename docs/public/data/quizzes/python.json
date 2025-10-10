@@ -160,6 +160,126 @@
         "options": ["Py", "Pyt", "on", ""],
         "correctIndex": 0,
         "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which of the following creates a tuple in Python?",
+        "options": ["('a', 'b')", "['a', 'b']", "{'a', 'b'}", "tuple<a,b>"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "What is the length of the string 'Python'?",
+        "options": [5, 6, 7, "Error"],
+        "correctIndex": 1,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which list method removes and returns the last item?",
+        "options": ["remove()", "pop()", "delete()", "shift()"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "How do you convert a list named L to a set of unique elements?",
+        "options": ["set(L)", "toSet(L)", "Set(L)", "unique(L)"],
+        "correctIndex": 0,
+        "bloomTarget": "applying"
+      },
+      {
+        "question": "Which operator concatenates two strings in Python?",
+        "options": ["+", "&", "||", "."],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which type is a mutable sequence in Python?",
+        "options": ["list", "tuple", "str", "int"],
+        "correctIndex": 0,
+        "bloomTarget": "understanding"
+      },
+      {
+        "question": "Which keyword checks if an element exists in a list?",
+        "options": ["has", "in", "contains", "exists"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which keyword exits a loop immediately?",
+        "options": ["exit", "stop", "break", "continue"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which keyword skips to the next iteration of a loop?",
+        "options": ["pass", "skip", "continue", "break"],
+        "correctIndex": 2,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which function creates a sequence 0 to 9?",
+        "options": ["range(10)", "seq(0,9)", "series(10)", "list(0..9)"],
+        "correctIndex": 0,
+        "bloomTarget": "applying"
+      },
+      {
+        "question": "Which expression makes a shallow copy of list L?",
+        "options": ["L[:]", "copy(L)", "clone(L)", "L.copyAll()"],
+        "correctIndex": 0,
+        "bloomTarget": "applying"
+      },
+      {
+        "question": "Which method converts all characters in a string s to uppercase?",
+        "options": ["upper(s)", "s.upper()", "toUpper(s)", "s.toUpperCase()"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which call joins a list of strings words with commas?",
+        "options": ["join(',', words)", "','.join(words)", "words.join(',')", "concat(',', words)"],
+        "correctIndex": 1,
+        "bloomTarget": "applying"
+      },
+      {
+        "question": "Which method finds the index of value x in list L (or errors if missing)?",
+        "options": ["L.position(x)", "L.index(x)", "L.find(x)", "indexOf(L, x)"],
+        "correctIndex": 1,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which dictionary method returns a default value if key is missing?",
+        "options": ["get()", "find()", "value()", "fetch()"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which expression checks if key 'k' exists in dictionary d?",
+        "options": ["d.has('k')", "'k' in d", "d.contains('k')", "exists d['k']"],
+        "correctIndex": 1,
+        "bloomTarget": "applying"
+      },
+      {
+        "question": "Which expression returns a slice of list L from index 2 (inclusive) to 5 (exclusive)?",
+        "options": ["L[2:5]", "L(2..5)", "slice(L,2,5)", "L[2..5]"],
+        "correctIndex": 0,
+        "bloomTarget": "applying"
+      },
+      {
+        "question": "Which function returns the absolute value of -7?",
+        "options": ["abs(-7)", "|-7|", "absolute(-7)", "absValue(-7)"],
+        "correctIndex": 0,
+        "bloomTarget": "remembering"
+      },
+      {
+        "question": "Which call sorts list L in-place ascending?",
+        "options": ["L.sort()", "sorted(L)", "sort(L)", "L.sorted()"],
+        "correctIndex": 0,
+        "bloomTarget": "applying"
+      },
+      {
+        "question": "Which expression formats name and age using an f-string?",
+        "options": ["f('Name: {name}, Age: {age}')", "f\"Name: {name}, Age: {age}\"", "format(f, name, age)", "'Name: ' + name + ', Age: ' + age"],
+        "correctIndex": 1,
+        "bloomTarget": "applying"
       }
     ],
     "syntaxBlock": [
@@ -171,6 +291,50 @@
           { "code": "if 5 > 3 {\n    print(\"Hello World\");\n}", "correct": false },
           { "code": "if 5 > 3:\n    print(\"Hello World\")", "correct": true },
           { "code": "if (5 > 3) {\n    print(\"Hello World\");\n}", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "If/elif/else structure printing size category",
+        "blocks": [
+          { "code": "if n > 10:\n    print('large')\nelif n > 5:\n    print('medium')\nelse:\n    print('small')", "correct": true },
+          { "code": "if n > 10 then:\n    print('large')\nelseif n > 5:\n    print('medium')\nelse print('small')", "correct": false },
+          { "code": "if (n > 10) { print('large') } else if (n > 5) { print('medium') } else { print('small') }", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Write to a file using a context manager",
+        "blocks": [
+          { "code": "with open('out.txt','w') as f:\n    f.write('hello')", "correct": true },
+          { "code": "with open 'out.txt' as f:\n    write(f, 'hello')", "correct": false },
+          { "code": "file f = open('out.txt','w'); f.write('hello'); close(f);", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "List comprehension filtering even numbers",
+        "blocks": [
+          { "code": "evens = [x for x in nums if x % 2 == 0]", "correct": true },
+          { "code": "evens = [x in nums where x % 2 == 0]", "correct": false },
+          { "code": "evens = for x in nums: if x % 2 == 0 then x", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Function with a default argument",
+        "blocks": [
+          { "code": "def greet(name='World'):\n    print(f'Hello {name}')", "correct": true },
+          { "code": "def greet(name: 'World'):\n    print('Hello ' + name)", "correct": false },
+          { "code": "function greet(name='World') { print('Hello ' + name) }", "correct": false }
         ],
         "bloomTarget": "understanding"
       }
@@ -320,197 +484,413 @@
           { "code": "foreach (i, val) of items:\n    print(i, val)", "correct": false }
         ],
         "bloomTarget": "applying"
-      }
-    ],
-    "multipleChoice": [
-      {
-        "question": "What is the output of this code? print(2 + 3)",
-        "options": ["23", "5", "\"2+3\"", "Error"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
       },
       {
-        "question": "Which operator is used for multiplication in Python?",
-        "options": ["×", "*", "x", "mul"],
-        "correctIndex": 1,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "What is the output of this code? print(10 // 3)",
-        "options": ["3", "3.33", "4", "0"],
-        "correctIndex": 0,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "What is the output of this code? x = 5; print(x > 3)",
-        "options": ["True", "False", "5", "3"],
-        "correctIndex": 0,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which symbol is used for equality comparison in Python?",
-        "options": ["=", "==", "===", ":="],
-        "correctIndex": 1,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "Which keyword is used to define a class in Python?",
-        "options": ["def", "class", "object", "struct"],
-        "correctIndex": 1,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "Which keyword is used for decision-making in Python?",
-        "options": ["switch", "if", "choose", "case"],
-        "correctIndex": 1,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "Which function gives the length of a list in Python?",
-        "options": ["count()", "size()", "len()", "length()"],
-        "correctIndex": 2,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "What is the output of this code? print(type(\"Hello\"))",
-        "options": ["int", "string", "str", "text"],
-        "correctIndex": 2,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which operator is used to find the remainder in Python?",
-        "options": ["%", "/", "//", "mod"],
-        "correctIndex": 0,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "Which of these is NOT a valid Python data type?",
-        "options": ["int", "str", "float", "real"],
-        "correctIndex": 3,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which loop is best if you want to repeat code a known number of times?",
-        "options": ["while loop", "for loop", "repeat loop", "do loop"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "What will this code print? x = \"Python\"; print(x[0])",
-        "options": ["P", "y", "0", "Error"],
-        "correctIndex": 0,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which function converts a string into an integer in Python?",
-        "options": ["str()", "int()", "float()", "toInt()"],
-        "correctIndex": 1,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "In Python, indentation (spaces) is optional when writing code blocks.",
-        "options": ["True", "False"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "The expression 5 == \"5\" evaluates to True.",
-        "options": ["True", "False"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "A while loop in Python continues running until its condition becomes False.",
-        "options": ["True", "False"],
-        "correctIndex": 0,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "A dictionary in Python stores data as key–value pairs.",
-        "options": ["True", "False"],
-        "correctIndex": 0,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Strings in Python are mutable, meaning you can change characters directly.",
-        "options": ["True", "False"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "The keyword class is used to define a new class in Python.",
-        "options": ["True", "False"],
-        "correctIndex": 0,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "What is the result of [1, 2] + [3, 4]?",
-        "options": ["[1, 2, 3, 4]", "[1, 2, [3, 4]]", "Error", "[4, 3, 2, 1]"],
-        "correctIndex": 0,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which method adds all items from list B to list A?",
-        "options": ["append(B)", "extend(B)", "addAll(B)", "push(B)"],
-        "correctIndex": 1,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "Which statement about tuples is true?",
-        "options": ["They are mutable", "They are immutable", "They are unordered", "They cannot be indexed"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which expression returns the last element of list L?",
-        "options": ["L[-1]", "L[len(L)]", "L[last]", "L[end]"],
-        "correctIndex": 0,
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Join a list of strings with commas",
+        "blocks": [
+          { "code": "joined = ','.join(words)", "correct": true },
+          { "code": "joined = join(',', words)", "correct": false },
+          { "code": "joined = words.join(',')", "correct": false }
+        ],
         "bloomTarget": "applying"
       },
       {
-        "question": "Which method retrieves a value from a dictionary with a default?",
-        "options": [
-          "dict.value(key, default)",
-          "dict.get(key, default)",
-          "dict.fetch(key, default)",
-          "dict.find(key, default)"
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Unpack a tuple into variables",
+        "blocks": [
+          { "code": "a, b, c = tup", "correct": true },
+          { "code": "(a := b := c) = tup", "correct": false },
+          { "code": "let (a, b, c) = tup", "correct": false }
         ],
-        "correctIndex": 1,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "What is the difference between '==' and 'is'?",
-        "options": [
-          "No difference",
-          "'==' compares values; 'is' compares identities",
-          "'is' compares values; '==' compares identities",
-          "Both compare identities"
-        ],
-        "correctIndex": 1,
         "bloomTarget": "understanding"
       },
       {
-        "question": "Which call sorts a list of strings by length?",
-        "options": [
-          "sorted(names, key=len)",
-          "sorted(names, by=len)",
-          "names.sort(length)",
-          "sort(names, len)"
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Use a conditional expression (ternary)",
+        "blocks": [
+          { "code": "result = 'even' if n % 2 == 0 else 'odd'", "correct": true },
+          { "code": "result = if n % 2 == 0 ? 'even' : 'odd'", "correct": false },
+          { "code": "result = (n % 2 == 0) ? 'even' : 'odd'", "correct": false }
         ],
-        "correctIndex": 0,
         "bloomTarget": "applying"
       },
       {
-        "question": "Which expression creates a set of unique letters from 'hello'?",
-        "options": ["set('hello')", "{'h','e','l','o'}", "unique('hello')", "letters('hello')"],
-        "correctIndex": 0,
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Calculate sum of squares 1..10",
+        "blocks": [
+          { "code": "total = sum(x*x for x in range(1,11))", "correct": true },
+          { "code": "total = sum([x*x in range(1,11)])", "correct": false },
+          { "code": "total = sum{x*x | x in 1..10}", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Sort strings by length",
+        "blocks": [
+          { "code": "sorted_names = sorted(names, key=len)", "correct": true },
+          { "code": "sorted_names = sort(names, len)", "correct": false },
+          { "code": "sorted_names = names.sorted(by=len)", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Read JSON from a file",
+        "blocks": [
+          { "code": "import json\nwith open('data.json') as f:\n    data = json.load(f)", "correct": true },
+          { "code": "include json\nwith open('data.json') as f:\n    data = f.json()", "correct": false },
+          { "code": "using json:\n    data = json.read('data.json')", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Write JSON to a file",
+        "blocks": [
+          { "code": "import json\nwith open('out.json','w') as f:\n    json.dump(data, f)", "correct": true },
+          { "code": "import json\nwith open('out.json','w') as f:\n    f.write(json.dumps(data), f)", "correct": false },
+          { "code": "using json:\n    write('out.json', data)", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "for/else construct searching for a value",
+        "blocks": [
+          { "code": "for x in items:\n    if x == 3:\n        break\nelse:\n    print('not found')", "correct": true },
+          { "code": "for x in items:\n    if x == 3:\n        stop\nelse:\n    print('not found')", "correct": false },
+          { "code": "foreach x in items:\n    if x == 3:\n        break\notherwise:\n    print('not found')", "correct": false }
+        ],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "while loop decreasing to zero",
+        "blocks": [
+          { "code": "while n > 0:\n    n -= 1", "correct": true },
+          { "code": "while (n > 0) { n-- }", "correct": false },
+          { "code": "while n > 0 do n = n - 1", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Use zip to iterate two lists",
+        "blocks": [
+          { "code": "for a, b in zip(A, B):\n    print(a, b)", "correct": true },
+          { "code": "for (a, b) of zip(A, B) {\n    print(a, b)\n}", "correct": false },
+          { "code": "foreach a,b in A.zip(B):\n    print a, b", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Set comprehension building squares",
+        "blocks": [
+          { "code": "s = {x*x for x in range(5)}", "correct": true },
+          { "code": "s = set{x*x | x in range(5)}", "correct": false },
+          { "code": "s = { x*x in range(5) }", "correct": false }
+        ],
         "bloomTarget": "understanding"
       },
       {
-        "question": "Which built-in converts a float to an int by truncation?",
-        "options": ["round()", "ceil()", "int()", "floor()"],
-        "correctIndex": 2,
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Dictionary comprehension with condition",
+        "blocks": [
+          { "code": "d = {x: x%2==0 for x in range(6)}", "correct": true },
+          { "code": "d = dict{x -> x%2==0 for x in range(6)}", "correct": false },
+          { "code": "d = {x => x%2==0 in range(6)}", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Use any() to test condition",
+        "blocks": [
+          { "code": "has_neg = any(x < 0 for x in nums)", "correct": true },
+          { "code": "has_neg = any[x < 0 in nums]", "correct": false },
+          { "code": "has_neg = any(x < 0, nums)", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Use all() to test condition",
+        "blocks": [
+          { "code": "all_pos = all(x > 0 for x in nums)", "correct": true },
+          { "code": "all_pos = all[x > 0 in nums]", "correct": false },
+          { "code": "all_pos = every(x > 0 for x in nums)", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Max with key to get longest string",
+        "blocks": [
+          { "code": "longest = max(words, key=len)", "correct": true },
+          { "code": "longest = max(words, by=len)", "correct": false },
+          { "code": "longest = words.max(length)", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Use a context manager with encoding",
+        "blocks": [
+          { "code": "with open('data.txt', 'r', encoding='utf-8') as f:\n    text = f.read()", "correct": true },
+          { "code": "with open('data.txt', encoding='utf-8') as f:\n    text = f.read('r')", "correct": false },
+          { "code": "open with('data.txt','r','utf-8') as f:\n    text = f.read()", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Raise a ValueError",
+        "blocks": [
+          { "code": "raise ValueError('bad value')", "correct": true },
+          { "code": "throw ValueError('bad value')", "correct": false },
+          { "code": "raise new ValueError('bad value')", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Try/except/else/finally structure",
+        "blocks": [
+          { "code": "try:\n    x = int(s)\nexcept ValueError:\n    x = 0\nelse:\n    print('ok')\nfinally:\n    print('done')", "correct": true },
+          { "code": "try:\n    x = int(s)\nelse\n    print('ok')\ncatch ValueError:\n    x = 0\nfinally:\n    print('done')", "correct": false },
+          { "code": "try { x = int(s) } catch(ValueError) { x = 0 } then { print('ok') } finally { print('done') }", "correct": false }
+        ],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Define a class with __str__",
+        "blocks": [
+          { "code": "class User:\n    def __init__(self, name):\n        self.name = name\n    def __str__(self):\n        return self.name", "correct": true },
+          { "code": "class User(name):\n    def toString(self): return name", "correct": false },
+          { "code": "class User { __str__(self): return self.name }", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "@property getter",
+        "blocks": [
+          { "code": "class Point:\n    def __init__(self,x,y):\n        self._x = x\n    @property\n    def x(self):\n        return self._x", "correct": true },
+          { "code": "class Point:\n    property x { get: return _x }", "correct": false },
+          { "code": "class Point:\n    def property x(self): return self._x", "correct": false }
+        ],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Define a staticmethod",
+        "blocks": [
+          { "code": "class Math:\n    @staticmethod\n    def add(a,b):\n        return a+b", "correct": true },
+          { "code": "class Math:\n    static def add(a,b): return a+b", "correct": false },
+          { "code": "class Math { static add(a,b) { return a+b } }", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "List extend vs append",
+        "blocks": [
+          { "code": "a.extend(b)", "correct": true },
+          { "code": "a.append(*b)", "correct": false },
+          { "code": "extend(a, b)", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Create a shallow copy of a list",
+        "blocks": [
+          { "code": "copy = L[:]", "correct": true },
+          { "code": "copy = L.copyAll()", "correct": false },
+          { "code": "copy := L", "correct": false }
+        ],
         "bloomTarget": "remembering"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Enumerate with start index 1",
+        "blocks": [
+          { "code": "for i, v in enumerate(items, start=1):\n    print(i, v)", "correct": true },
+          { "code": "for i, v in enumerate(items, 1= start):\n    print(i, v)", "correct": false },
+          { "code": "for i, v of enumerate(items, from=1):\n    print(i, v)", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Map with lambda to square",
+        "blocks": [
+          { "code": "squares = list(map(lambda x: x*x, nums))", "correct": true },
+          { "code": "squares = map(lambda x => x*x, nums)", "correct": false },
+          { "code": "squares = map(x -> x*x, nums).toList()", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Filter with lambda to keep positives",
+        "blocks": [
+          { "code": "positives = list(filter(lambda x: x > 0, nums))", "correct": true },
+          { "code": "positives = filter(nums, x => x > 0)", "correct": false },
+          { "code": "positives = nums.filter(x -> x > 0)", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Flatten a list of lists (single level)",
+        "blocks": [
+          { "code": "flat = [x for sub in lists for x in sub]", "correct": true },
+          { "code": "flat = [for sub in lists x in sub]", "correct": false },
+          { "code": "flat = lists.flatten(1)", "correct": false }
+        ],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Set union, intersection, difference",
+        "blocks": [
+          { "code": "u = A | B\ni = A & B\nd = A - B", "correct": true },
+          { "code": "u = union(A,B)\ni = inter(A,B)\nd = diff(A,B)", "correct": false },
+          { "code": "u = A + B\ni = A * B\nd = A / B", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "for loop with continue",
+        "blocks": [
+          { "code": "for x in nums:\n    if x % 2 == 1:\n        continue\n    print(x)", "correct": true },
+          { "code": "for x in nums:\n    if x % 2 == 1:\n        skip\n    print(x)", "correct": false },
+          { "code": "foreach x in nums:\n    if x % 2 == 1 then continue\n    print x", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Define a function with type hints",
+        "blocks": [
+          { "code": "def add(a: int, b: int) -> int:\n    return a + b", "correct": true },
+          { "code": "def add(int a, int b) -> int:\n    return a + b", "correct": false },
+          { "code": "int add(a, b): return a + b", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Import with alias",
+        "blocks": [
+          { "code": "import numpy as np", "correct": true },
+          { "code": "include numpy alias np", "correct": false },
+          { "code": "using numpy -> np", "correct": false }
+        ],
+        "bloomTarget": "remembering"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "From import specific function",
+        "blocks": [
+          { "code": "from math import sqrt", "correct": true },
+          { "code": "import sqrt from math", "correct": false },
+          { "code": "using math.sqrt", "correct": false }
+        ],
+        "bloomTarget": "remembering"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Use dict.get with default",
+        "blocks": [
+          { "code": "val = d.get('key', 0)", "correct": true },
+          { "code": "val = d.value('key', 0)", "correct": false },
+          { "code": "val = get(d, 'key', or=0)", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Open file and iterate lines",
+        "blocks": [
+          { "code": "with open('data.txt') as f:\n    for line in f:\n        print(line.strip())", "correct": true },
+          { "code": "with open('data.txt') as f:\n    foreach line of f:\n        print(line.strip())", "correct": false },
+          { "code": "open 'data.txt' as f:\n    for line in f:\n        print(line)", "correct": false }
+        ],
+        "bloomTarget": "applying"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Reverse a list without modifying original",
+        "blocks": [
+          { "code": "rev = list(reversed(L))", "correct": true },
+          { "code": "rev = reversed(L).to_list()", "correct": false },
+          { "code": "rev = L.reverse() and L", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "List slicing with step of 2",
+        "blocks": [
+          { "code": "evens = L[::2]", "correct": true },
+          { "code": "evens = L[:;2]", "correct": false },
+          { "code": "evens = slice(L, step=2)", "correct": false }
+        ],
+        "bloomTarget": "understanding"
+      },
+      {
+        "type": "syntaxBlock",
+        "question": "Select the Correct Syntax",
+        "instruction": "Use f-string to format float with 2 decimals",
+        "blocks": [
+          { "code": "s = f'{value:.2f}'", "correct": true },
+          { "code": "s = f'{value:2f}'", "correct": false },
+          { "code": "s = formatf(value, 2)", "correct": false }
+        ],
+        "bloomTarget": "applying"
       }
     ]
   },
@@ -655,6 +1035,413 @@
           "f = open('out.txt', 'w')",
           "f.write('hello')",
           "f.close()"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Square a number from user input and print",
+        "blocks": [
+          "n = int(input('Enter a number: '))",
+          "sq = n * n",
+          "print(sq)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Check if a string is a palindrome",
+        "blocks": [
+          "s = input('Word: ')",
+          "is_pal = s == s[::-1]",
+          "print(is_pal)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Compute factorial of n using a loop",
+        "blocks": [
+          "n = int(input('n: '))",
+          "fact = 1",
+          "for i in range(2, n+1):\n    fact *= i"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Sum of list elements using sum()",
+        "blocks": [
+          "nums = [1,2,3,4]",
+          "total = sum(nums)",
+          "print(total)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Filter even numbers using list comprehension",
+        "blocks": [
+          "nums = [1,2,3,4,5,6]",
+          "evens = [n for n in nums if n % 2 == 0]",
+          "print(evens)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Read lines from a file and count",
+        "blocks": [
+          "with open('data.txt') as f:",
+          "    lines = f.readlines()",
+          "print(len(lines))"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Create dict from two lists using zip",
+        "blocks": [
+          "keys = ['a','b','c']",
+          "vals = [1,2,3]",
+          "d = dict(zip(keys, vals))"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Use enumerate to print index and value",
+        "blocks": [
+          "items = ['x','y','z']",
+          "for i, v in enumerate(items):",
+          "    print(i, v)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Find maximum by length using key",
+        "blocks": [
+          "words = ['hi','hello','hey']",
+          "longest = max(words, key=len)",
+          "print(longest)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Create set of unique characters",
+        "blocks": [
+          "s = 'banana'",
+          "letters = set(s)",
+          "print(letters)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "understanding"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Build a list of squares with range",
+        "blocks": [
+          "squares = [n*n for n in range(1,6)]",
+          "total = sum(squares)",
+          "print(total)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Count words in a sentence",
+        "blocks": [
+          "text = 'one two three two'",
+          "words = text.split()",
+          "print(len(words))"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Format output with f-string",
+        "blocks": [
+          "name = 'Ada'",
+          "age = 30",
+          "print(f'{name} is {age} years old')"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "understanding"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Sort a list of tuples by second element",
+        "blocks": [
+          "pairs = [('a',3), ('b',1), ('c',2)]",
+          "pairs.sort(key=lambda kv: kv[1])",
+          "print(pairs)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Use dict.get with default",
+        "blocks": [
+          "d = {'a': 1}",
+          "val = d.get('b', 0)",
+          "print(val)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Open file and print first line",
+        "blocks": [
+          "with open('data.txt') as f:",
+          "    first = f.readline()",
+          "print(first)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Create a simple dictionary and iterate",
+        "blocks": [
+          "scores = {'Ann': 90, 'Ben': 85}",
+          "for name, score in scores.items():",
+          "    print(name, score)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "understanding"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Compute average from a list",
+        "blocks": [
+          "nums = [10, 20, 30]",
+          "avg = sum(nums) / len(nums)",
+          "print(avg)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Use set intersection",
+        "blocks": [
+          "a = {1,2,3}",
+          "b = {2,3,4}",
+          "print(a & b)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "understanding"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Create a simple class and instantiate",
+        "blocks": [
+          "class User:",
+          "    def __init__(self, name):",
+          "        self.name = name"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Compute squares with map and list",
+        "blocks": [
+          "nums = [1,2,3]",
+          "squares = list(map(lambda x: x*x, nums))",
+          "print(squares)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Filter with filter and lambda",
+        "blocks": [
+          "nums = [1,2,3,4,5]",
+          "odds = list(filter(lambda x: x % 2 == 1, nums))",
+          "print(odds)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Create and use a generator expression",
+        "blocks": [
+          "gen = (x*x for x in range(5))",
+          "total = sum(gen)",
+          "print(total)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Format a float to 2 decimal places",
+        "blocks": [
+          "price = 12.3456",
+          "s = f'{price:.2f}'",
+          "print(s)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Combine two sets with union",
+        "blocks": [
+          "A = {1,2}",
+          "B = {2,3}",
+          "print(A | B)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "understanding"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Create a list from 0 to 4",
+        "blocks": [
+          "nums = list(range(5))",
+          "print(nums)",
+          "# end"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "remembering"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Reverse a list without modifying it",
+        "blocks": [
+          "nums = [1,2,3,4]",
+          "rev = list(reversed(nums))",
+          "print(rev)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Read JSON file to dict",
+        "blocks": [
+          "import json",
+          "data = json.loads('{\"a\": 1}')",
+          "print(data['a'])"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Use try/except to handle int conversion",
+        "blocks": [
+          "s = '12'",
+          "try:\n    n = int(s)\nexcept ValueError:\n    n = 0",
+          "print(n)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Open file and write a line",
+        "blocks": [
+          "with open('log.txt','w') as f:",
+          "    f.write('done')",
+          "# file closed automatically"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Compute min and max of a list",
+        "blocks": [
+          "nums = [8, 3, 5]",
+          "print(min(nums))",
+          "print(max(nums))"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "understanding"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Create a dict with comprehension",
+        "blocks": [
+          "nums = [1,2,3]",
+          "d = {n: n*n for n in nums}",
+          "print(d)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Use enumerate starting at 1",
+        "blocks": [
+          "items = ['a','b']",
+          "for i, v in enumerate(items, start=1):",
+          "    print(i, v)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Build a greeting with format",
+        "blocks": [
+          "name = 'Sam'",
+          "greet = f'Hello, {name}'",
+          "print(greet)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "understanding"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Create a list of even squares",
+        "blocks": [
+          "nums = range(1, 11)",
+          "even_squares = [n*n for n in nums if n % 2 == 0]",
+          "print(even_squares)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "creating"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "Compute length of each word",
+        "blocks": [
+          "words = ['hi','hello']",
+          "lengths = [len(w) for w in words]",
+          "print(lengths)"
+        ],
+        "correctOrder": [0, 1, 2],
+        "bloomTarget": "applying"
+      },
+      {
+        "title": "Arrange the Python code blocks in correct order:",
+        "description": "From list to dict with indices",
+        "blocks": [
+          "vals = ['a','b','c']",
+          "d = {i: v for i, v in enumerate(vals)}",
+          "print(d)"
         ],
         "correctOrder": [0, 1, 2],
         "bloomTarget": "creating"
