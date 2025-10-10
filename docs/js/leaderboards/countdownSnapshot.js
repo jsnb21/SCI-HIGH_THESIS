@@ -122,7 +122,7 @@ export async function initCountdown(options) {
   let descriptionText = null;
   let visible = true;
     if (targetISO) {
-      endDate = new Date(targetISO);
+      endDate = (targetISO instanceof Date) ? targetISO : new Date(targetISO);
     } else {
       // Try Firebase-configured end first
       try {
@@ -141,9 +141,9 @@ export async function initCountdown(options) {
       if (!endDate) {
         try {
           const cfg = await import('./config.js');
-          endDate = cfg.getContestEndDate ? cfg.getContestEndDate() : new Date(cfg.CONTEST_END_ISO || '2025-10-12T00:00:00');
+          endDate = cfg.getContestEndDate ? cfg.getContestEndDate() : new Date(cfg.CONTEST_END_ISO || '2025-10-15T00:00:00');
         } catch {
-          endDate = new Date('2025-10-12T00:00:00');
+          endDate = new Date('2025-10-15T00:00:00');
         }
       }
   }

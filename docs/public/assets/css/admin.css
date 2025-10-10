@@ -1,0 +1,4 @@
+/* Admin page styles extracted from admin.html */
+:root { --primary:#F4CE14; --accent:#00ADB5; }
+body { font-family: 'Chakra Petch', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+.neon-border { box-shadow: 0 0 0 1px rgba(244,206,20,.25), 0 0 16px rgba(244,206,20,.12), inset 0 0 12px rgba(0,173,181,.14); }

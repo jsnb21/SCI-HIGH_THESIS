@@ -2,11 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-  <link rel="preload" as="image" href="assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="apple-touch-icon" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="preload" as="image" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="apple-touch-icon" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
   <link rel="manifest" href="site.webmanifest" />
   <meta name="theme-color" content="#0f1524" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -143,88 +143,7 @@
         }
       };
     </script>
-    <style>
-      @keyframes pulse-glow {
-        from { box-shadow: 0 0 20px #F4CE14; }
-        to { box-shadow: 0 0 30px #F4CE14, 0 0 40px #F4CE14; }
-      }
-      @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-      }
-      @keyframes slide-in {
-        from { transform: translateX(-100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-      @keyframes bounce-in {
-        0% { transform: scale(0); opacity: 0; }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); opacity: 1; }
-      }
-      @keyframes rank-glow {
-        0%, 100% { box-shadow: 0 0 10px rgba(244, 206, 20, 0.3); }
-        50% { box-shadow: 0 0 20px rgba(244, 206, 20, 0.8); }
-      }
-      
-      .game-bg {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
-        position: relative;
-        overflow-x: hidden;
-      }
-      
-      .game-bg::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-image: 
-          radial-gradient(circle at 20% 80%, rgba(244, 206, 20, 0.1) 0%, transparent 50%),
-          radial-gradient(circle at 80% 20%, rgba(55, 151, 119, 0.1) 0%, transparent 50%),
-          radial-gradient(circle at 40% 40%, rgba(156, 39, 176, 0.1) 0%, transparent 50%);
-        animation: float 8s ease-in-out infinite;
-        pointer-events: none;
-        z-index: -1;
-      }
-      
-      .neon-border {
-        border: 2px solid #F4CE14;
-        background: rgba(22, 33, 62, 0.8);
-        box-shadow: 0 0 10px rgba(244, 206, 20, 0.3);
-      }
-      
-      /* Custom modal animations */
-      .modal-enter {
-        animation: modalFadeIn 0.3s ease-out;
-      }
-      
-      @keyframes modalFadeIn {
-        from {
-          opacity: 0;
-          transform: scale(0.9);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
-      
-      /* Gaming rank styles */
-      .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
-      .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); }
-      .rank-3 { background: linear-gradient(135deg, #CD7F32, #B8860B); }
-      
-      /* Hover effects for clickable names */
-      .player-name-link {
-        transition: all 0.2s ease;
-      }
-      
-      .player-name-link:hover {
-        transform: translateY(-1px);
-        text-shadow: 0 2px 4px rgba(244, 206, 20, 0.5);
-      }
-    </style>
+  <link rel="stylesheet" href="/SCI-HIGH_THESIS/assets/css/leaderboards.css" />
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -336,7 +255,7 @@
               <div>
                 <h3 id="mini-contest-title" class="font-gaming text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">MINI-CONTEST Countdown</h3>
                 <p id="mini-contest-desc" class="text-xs text-gray-300 mt-1"></p>
-                <p class="text-gray-300 text-sm font-body">Contest ends: Oct 12, 2025 00:00 (local time)</p>
+                <p class="text-gray-300 text-sm font-body">Contest ends: Oct 15, 2025 00:00 (local time)</p>
                 <p id="mini-contest-status" class="text-cyan text-xs mt-1 font-gaming tracking-wider"></p>
               </div>
             </div>
@@ -490,7 +409,7 @@
                   <div id="global-empty" class="text-center py-16 hidden">
                     <div class="flex flex-col items-center space-y-4">
                       <div class="w-24 h-24 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl flex items-center justify-center">
-                        <img src="public/assets/img/mainhub/PLAY_BUTTON.png" alt="Play" class="w-16 h-16 object-contain" />
+                        <img src="/SCI-HIGH_THESIS/assets/img/mainhub/PLAY_BUTTON.png" alt="Play" class="w-16 h-16 object-contain" />
                       </div>
                       <h3 class="text-xl font-gaming font-bold text-gray-300">No Champions Yet</h3>
                       <p class="text-gray-400 font-body">Be the first to join the leaderboard!</p>
@@ -507,7 +426,7 @@
                     <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                       <div class="flex items-center space-x-4">
                         <div class="w-16 h-16 bg-gradient-to-br from-accent to-cyan-400 rounded-xl flex items-center justify-center neon-border animate-float">
-                          <img src="public/assets/img/mainhub/office_icon.png" alt="Office" class="w-10 h-10 object-contain" />
+                          <img src="/SCI-HIGH_THESIS/assets/img/mainhub/office_icon.png" alt="Office" class="w-10 h-10 object-contain" />
                         </div>
                         <div>
                           <h2 class="font-gaming text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-accent to-cyan-400">Department Leaders</h2>
@@ -582,7 +501,7 @@
                   <div id="department-empty" class="text-center py-16 hidden">
                     <div class="flex flex-col items-center space-y-4">
                       <div class="w-24 h-24 bg-gradient-to-br from-accent/20 to-cyan-400/20 rounded-xl flex items-center justify-center">
-                        <img src="public/assets/img/mainhub/office_icon.png" alt="Office" class="w-16 h-16 object-contain" />
+                        <img src="/SCI-HIGH_THESIS/assets/img/mainhub/office_icon.png" alt="Office" class="w-16 h-16 object-contain" />
                       </div>
                       <h3 class="text-xl font-gaming font-bold text-gray-300">No Department Champions</h3>
                       <p class="text-gray-400 font-body">Rise up and claim your department's glory!</p>
@@ -698,7 +617,7 @@
     <footer class="relative z-10 bg-gradient-to-r from-dark to-light border-t-2 border-primary/30 py-12 mt-auto">
       <div class="max-w-6xl mx-auto px-6 text-center">
         <div class="flex items-center justify-center space-x-4 mb-6">
-          <img src="public/assets/img/Website/buko_productions-logo.png" alt="Buko Productions" class="w-16 h-16" />
+          <img src="/SCI-HIGH_THESIS/assets/img/Website/buko_productions-logo.png" alt="Buko Productions" class="w-16 h-16" />
           <div>
             <h3 class="font-gaming text-2xl font-bold text-primary">SCI-HIGH</h3>
             <p class="text-gray-400 text-sm">Level up your knowledge!</p>
@@ -2282,6 +2201,7 @@
               ? window.leaderboardAPI.loadCareerStatsData
               : undefined;
             await mod.initCountdown({
+              targetISO: cfg.getContestEndDate(),
               containerId: 'mini-contest-countdown',
               selectors: { days: '#mc-days', hours: '#mc-hours', mins: '#mc-mins', secs: '#mc-secs' },
               statusId: 'mini-contest-status',

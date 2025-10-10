@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
   <title>SCI-HIGH: Playing!</title>
-  <link rel="preload" as="image" href="assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="apple-touch-icon" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="preload" as="image" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="apple-touch-icon" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
   <link rel="manifest" href="site.webmanifest" />
   <meta name="theme-color" content="#0f1524" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -15,6 +15,17 @@
     <!-- Optional: runtime AI key (local only; do not commit real keys) -->
     <!-- Copy config/ai-key.example.js -> config/ai-key.js and add your key; safe to omit in prod -->
     <script src="config/ai-key.js"></script>
+    <!-- Optional: runtime Firebase config injected by CI. Safe to omit locally. -->
+    <script>
+      (function(){
+        try {
+          var s = document.createElement('script');
+          s.src = 'config/firebase-init.js';
+          s.onerror = function(){};
+          document.currentScript.parentNode.insertBefore(s, document.currentScript);
+        } catch {}
+      })();
+    </script>
     
     <!-- Firebase Config Manager FIRST -->
     <script src="config/firebase-config.js"></script>
@@ -73,173 +84,13 @@
       }
     </script>
     
-    <style>
-      /* Reset everything */
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      
-      /* Authentication overlay */
-      #auth-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
-        display: none;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 10001;
-        color: white;
-        font-family: 'Orbitron', monospace;
-        text-align: center;
-        padding: 20px;
-      }
-      
-      #auth-overlay .logo {
-        width: 120px;
-        height: 120px;
-        margin-bottom: 30px;
-        animation: pulse 2s ease-in-out infinite;
-      }
-      
-      @keyframes pulse {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.8; transform: scale(1.05); }
-      }
-      
-      #auth-overlay h2 {
-        font-size: 28px;
-        margin-bottom: 15px;
-        color: #F4CE14;
-      }
-      
-      #auth-overlay p {
-        font-size: 16px;
-        opacity: 0.8;
-        margin-bottom: 30px;
-      }
-      
-      #auth-overlay button {
-        background: linear-gradient(to right, #F4CE14, #FFD700);
-        color: #1a1a2e;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-family: 'Orbitron', monospace;
-        font-weight: bold;
-        cursor: pointer;
-        transition: transform 0.3s ease;
-      }
-      
-      #auth-overlay button:hover {
-        transform: scale(1.05);
-      }
-      
-      /* Orientation overlay */
-      #orientation-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.9);
-        display: none;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-        color: white;
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding: 20px;
-      }
-
-      #orientation-overlay .rotate-icon {
-        font-size: 80px;
-        margin-bottom: 20px;
-        animation: rotate 2s linear infinite;
-      }
-
-      @keyframes rotate {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-
-      #orientation-overlay h2 {
-        font-size: 24px;
-        margin-bottom: 10px;
-      }
-
-      #orientation-overlay p {
-        font-size: 16px;
-        opacity: 0.8;
-      }
-
-      /* Base page and game container sizing */
-      html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden; /* Prevent scrollbars */
-        background-color: #000; /* Match black to avoid visible gaps */
-      }
-      body {
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: linear-gradient(135deg, #181818 0%, #333 100%);
-        position: relative;
-        overflow: hidden;
-      }
-      #game {
-        position: relative;
-        width: 100vw;
-        /* Use dynamic viewport units to avoid mobile address bar jump and stretching */
-        height: 100vh;   /* fallback */
-        height: 100svh;  /* small viewport height */
-        height: 100dvh;  /* dynamic viewport height */
-        overflow: hidden;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-      /* Target the canvas element directly */
-      canvas {
-        display: block !important;
-        margin: 0 auto !important;
-        max-width: 100% !important;
-        max-height: 100% !important;
-      }
-      /* Removed the glowing border effect */
-      #game::after { display: none; }
-      @keyframes cloudmove {
-        0% { left: -30vw; }
-        100% { left: 110vw; }
-      }
-      @keyframes cloudmove2 {
-        0% { left: -40vw; }
-        100% { left: 120vw; }
-      }
-      @keyframes cloudmove3 {
-        0% { left: -50vw; }
-        100% { left: 130vw; }
-      }
-      
-  /* Responsive tweaks */
-  /* Let Phaser Scale FIT manage aspect ratio and letterboxing. */
-    </style>
+  <link rel="stylesheet" href="/SCI-HIGH_THESIS/assets/css/game.css" />
   </head>
   <body>
     <!-- Maintenance overlay -->
     <div id="maintenance-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);color:#fff;z-index:10002;align-items:center;justify-content:center;text-align:center;padding:20px;font-family: 'Orbitron', monospace;">
       <div>
-        <img src="public/assets/img/logo/SCI-HIGH_LOGO.png" alt="SCI-HIGH" style="height:96px;margin-bottom:16px;filter:drop-shadow(0 0 8px rgba(244,206,20,0.35));" />
+  <img src="/SCI-HIGH_THESIS/assets/img/logo/SCI-HIGH_LOGO.png" alt="SCI-HIGH" style="height:96px;margin-bottom:16px;filter:drop-shadow(0 0 8px rgba(244,206,20,0.35));" />
         <h2 style="font-size:28px;color:#F4CE14;margin-bottom:8px;">Under Maintenance</h2>
         <p id="maint-msg" style="opacity:.9;margin-bottom:8px;">Scheduled maintenance in progress.</p>
         <p id="maint-ends" style="opacity:.8;margin-bottom:16px;"></p>

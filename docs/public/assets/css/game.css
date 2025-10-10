@@ -1,0 +1,33 @@
+/* Game page styles extracted from game.html */
+/* Reset everything */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* Authentication overlay */
+#auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10001; color: white; font-family: 'Orbitron', monospace; text-align: center; padding: 20px; }
+#auth-overlay .logo { width: 120px; height: 120px; margin-bottom: 30px; animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.05); } }
+#auth-overlay h2 { font-size: 28px; margin-bottom: 15px; color: #F4CE14; }
+#auth-overlay p { font-size: 16px; opacity: 0.8; margin-bottom: 30px; }
+#auth-overlay button { background: linear-gradient(to right, #F4CE14, #FFD700); color: #1a1a2e; border: none; padding: 12px 24px; border-radius: 8px; font-family: 'Orbitron', monospace; font-weight: bold; cursor: pointer; transition: transform 0.3s ease; }
+#auth-overlay button:hover { transform: scale(1.05); }
+
+/* Orientation overlay */
+#orientation-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; color: white; font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+#orientation-overlay .rotate-icon { font-size: 80px; margin-bottom: 20px; animation: rotate 2s linear infinite; }
+@keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+#orientation-overlay h2 { font-size: 24px; margin-bottom: 10px; }
+#orientation-overlay p { font-size: 16px; opacity: 0.8; }
+
+/* Base page and game container sizing */
+html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #000; }
+body { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #181818 0%, #333 100%); position: relative; overflow: hidden; }
+#game { position: relative; width: 100vw; height: 100vh; height: 100svh; height: 100dvh; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+canvas { display: block !important; margin: 0 auto !important; max-width: 100% !important; max-height: 100% !important; }
+/* Removed the glowing border effect */
+#game::after { display: none; }
+@keyframes cloudmove { 0% { left: -30vw; } 100% { left: 110vw; } }
+@keyframes cloudmove2 { 0% { left: -40vw; } 100% { left: 120vw; } }
+@keyframes cloudmove3 { 0% { left: -50vw; } 100% { left: 130vw; } }
+
+/* Responsive tweaks */
+/* Let Phaser Scale FIT manage aspect ratio and letterboxing. */

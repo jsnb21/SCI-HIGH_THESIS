@@ -1,0 +1,5 @@
+/* Developer Console page styles extracted from developer.html */
+.game-bg { background: linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f172a 100%); }
+.dev-card { background: rgba(22,33,62,.9); border:2px solid #379777; border-radius:14px; padding:24px; }
+.danger-card { border-color:#dc2626; box-shadow:0 0 18px rgba(220,38,38,0.25);} 
+.code-block { background:#0f0f0f; border:1px solid #333; border-radius:8px; padding:12px; font-family: 'Courier New', monospace; font-size:12px; color:#00ff90; white-space:pre-wrap; }

@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
-import { copyFileSync, mkdirSync } from 'fs';
-import { dirname } from 'path';
+import { copyFileSync, mkdirSync, readdirSync, statSync, existsSync } from 'fs';
+import { dirname, join } from 'path';
 
 export default defineConfig({
   base: '/SCI-HIGH_THESIS/',
@@ -15,8 +15,8 @@ export default defineConfig({
         process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
       ].filter(Boolean);
       if (candidates.length === 0) {
-        // Default allow list can include known tunnels or domains used by the project
-        return ['subradiative-aidan-unexotically.ngrok-free.dev'];
+        // Default allow list: localhost, loopback, and common tunnel wildcard
+        return ['localhost', '127.0.0.1', '.ngrok-free.app'];
       }
       // Support comma or space separated values
       return candidates
@@ -44,15 +44,40 @@ export default defineConfig({
   publicDir: 'public',
   plugins: [
     {
-      name: 'copy-static-js',
+      name: 'copy-static-resources',
       writeBundle() {
-        // Copy non-bundled JS utilities that are referenced directly by HTML
+        // Recursively copy selected folders/files that are referenced directly by HTML (not bundled)
+        const copyDir = (src, dest) => {
+          try {
+            if (!existsSync(src)) return;
+            mkdirSync(dest, { recursive: true });
+            for (const entry of readdirSync(src)) {
+              const s = join(src, entry);
+              const d = join(dest, entry);
+              const st = statSync(s);
+              if (st.isDirectory()) {
+                copyDir(s, d);
+              } else {
+                copyFileSync(s, d);
+              }
+            }
+          } catch (e) {
+            console.warn(`Failed to copy directory ${src} -> ${dest}:`, e.message);
+          }
+        };
+
         try {
+          // Ensure js root exists
           mkdirSync('./dist/js', { recursive: true });
-          copyFileSync('./js/notifications.js', './dist/js/notifications.js');
-          copyFileSync('./js/maintenanceToast.js', './dist/js/maintenanceToast.js');
+          // Individual utility files
+          if (existsSync('./js/notifications.js')) copyFileSync('./js/notifications.js', './dist/js/notifications.js');
+          if (existsSync('./js/maintenanceToast.js')) copyFileSync('./js/maintenanceToast.js', './dist/js/maintenanceToast.js');
+          // Page-specific scripts (kept as plain scripts vs bundling)
+          copyDir('./js/pages', './dist/js/pages');
+          // Leaderboards page modules used via dynamic import()
+          copyDir('./js/leaderboards', './dist/js/leaderboards');
         } catch (error) {
-          console.error('Failed to copy static js files:', error);
+          console.error('Failed to copy static resources:', error);
         }
       }
     },
@@ -62,8 +87,22 @@ export default defineConfig({
         // Copy config directory to maintain the same path structure
         try {
           mkdirSync('./dist/config', { recursive: true });
-          copyFileSync('./config/firebase-config.js', './dist/config/firebase-config.js');
-          copyFileSync('./config/env-config.json', './dist/config/env-config.json');
+          // Copy all files under ./config (if present), e.g., firebase-config.js, env-config.json, ai-key.js
+          try {
+            const configDir = './config';
+            if (existsSync(configDir)) {
+              for (const entry of readdirSync(configDir)) {
+                const src = join(configDir, entry);
+                const st = statSync(src);
+                if (st.isFile()) {
+                  const dest = join('./dist/config', entry);
+                  copyFileSync(src, dest);
+                }
+              }
+            }
+          } catch (innerErr) {
+            console.warn('Could not copy some config files:', innerErr.message);
+          }
           // Also copy admin-password.txt to the root of the dist folder so admin.html can fetch it
           try {
             copyFileSync('./admin-password.txt', './dist/admin-password.txt');
@@ -75,8 +114,10 @@ export default defineConfig({
           console.warn('Some config files could not be copied:', error.message);
           // Still try to copy the essential firebase config
           try {
-            copyFileSync('./config/firebase-config.js', './dist/config/firebase-config.js');
-            copyFileSync('./config/env-config.json', './dist/config/env-config.json');
+            // Fallback: try copying known essential files if they exist
+            if (existsSync('./config/firebase-config.js')) copyFileSync('./config/firebase-config.js', './dist/config/firebase-config.js');
+            if (existsSync('./config/env-config.json')) copyFileSync('./config/env-config.json', './dist/config/env-config.json');
+            if (existsSync('./config/ai-key.js')) copyFileSync('./config/ai-key.js', './dist/config/ai-key.js');
             try {
               copyFileSync('./admin-password.txt', './dist/admin-password.txt');
             } catch (passErr) {

@@ -2,11 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-  <link rel="preload" as="image" href="./assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="./assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="./assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="apple-touch-icon" href="./assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="preload" as="image" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="apple-touch-icon" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
   <link rel="manifest" href="site.webmanifest" />
   <meta name="theme-color" content="#0f1524" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,157 +17,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
     <!-- Modern Notification System -->
     <script defer src="js/notifications.js"></script>
-  <!-- Reusable Maintenance Toast module -->
-  <script defer src="js/maintenanceToast.js"></script>
-    <script>
-      // Fallback functions in case notifications.js hasn't loaded yet
-      window.ensureNotifications = function() {
-        if (typeof window.modernConfirm === 'undefined') {
-          window.modernConfirm = function(message, options = {}) {
-            return Promise.resolve(confirm(message));
-          };
-          window.modernAlert = function(message, options = {}) {
-            alert(message);
-            return Promise.resolve(true);
-          };
-          window.showSuccess = function(message, options = {}) {
-            alert('✅ ' + message);
-            return Promise.resolve(true);
-          };
-          window.showError = function(message, options = {}) {
-            alert('❌ ' + message);
-            return Promise.resolve(true);
-          };
-          window.showWarning = function(message, options = {}) {
-            alert('⚠️ ' + message);
-            return Promise.resolve(true);
-          };
-          window.showInfo = function(message, options = {}) {
-            alert('ℹ️ ' + message);
-            return Promise.resolve(true);
-          };
-        }
-      };
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => window.ensureNotifications());
-      } else {
-        window.ensureNotifications();
-      }
-    </script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              primary: '#F4CE14', // yellow
-              accent: '#379777', // green
-              dark: '#1a1a2e',   // darker navy
-              light: '#16213e',  // dark blue
-              purple: '#9c27b0', // gaming purple
-              cyan: '#00bcd4',   // gaming cyan
-              textColor: '#ffffff',
-              cardBg: 'rgba(22, 33, 62, 0.8)',
-            },
-            fontFamily: {
-              gaming: ['Orbitron', 'monospace'],
-              body: ['Exo 2', 'sans-serif'],
-            },
-            animation: {
-              'pulse-glow': 'pulse-glow 2s ease-in-out infinite alternate',
-              'float': 'float 6s ease-in-out infinite',
-              'slide-in': 'slide-in 0.8s ease-out',
-              'bounce-in': 'bounce-in 1s ease-out',
-              'fade-in': 'fade-in 0.6s ease-out',
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      @keyframes pulse-glow {
-        from { box-shadow: 0 0 20px #F4CE14; }
-        to { box-shadow: 0 0 30px #F4CE14, 0 0 40px #F4CE14; }
-      }
-      @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-      }
-      @keyframes slide-in {
-        from { opacity: 0; transform: translateY(50px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      @keyframes bounce-in {
-        from { opacity: 0; transform: scale(0.3); }
-        50% { transform: scale(1.05); }
-        to { opacity: 1; transform: scale(1); }
-      }
-      @keyframes fade-in {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-
-      /* Gaming background */
-      .game-bg {
-        background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e  50%, #0f0f23 75%, #1a1a2e 100%);
-        background-size: 400% 400%;
-        animation: gradientShift 15s ease infinite;
-      }
-
-      @keyframes gradientShift {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-      }
-
-      /* Particle effect */
-      .particle {
-        position: absolute;
-        width: 2px;
-        height: 2px;
-        background: #F4CE14;
-        border-radius: 50%;
-        animation: particle-float 8s linear infinite;
-        opacity: 0.6;
-      }
-
-      @keyframes particle-float {
-        0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-        10% { opacity: 0.6; }
-        90% { opacity: 0.6; }
-        100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
-      }
-
-      /* News card hover effects */
-      .news-card {
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(244, 206, 20, 0.2);
-        transition: all 0.3s ease;
-      }
-
-      .news-card:hover {
-        border-color: rgba(244, 206, 20, 0.5);
-        box-shadow: 0 10px 30px rgba(244, 206, 20, 0.2);
-        transform: translateY(-5px);
-      }
-
-      /* Badge styles */
-      .badge-new { background: linear-gradient(135deg, #ff4757, #ff3838); }
-      .badge-update { background: linear-gradient(135deg, #3742fa, #2f3542); }
-      .badge-feature { background: linear-gradient(135deg, #2ed573, #1e90ff); }
-      .badge-maintenance { background: linear-gradient(135deg, #ffa502, #ff6348); }
-    </style>
+    <!-- Reusable Maintenance Toast module -->
+    <script defer src="js/maintenanceToast.js"></script>
+    <!-- Local fallbacks and Tailwind runtime config -->
+    <script defer src="js/pages/news/notifications-fallback.js"></script>
+    <script src="js/pages/news/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/SCI-HIGH_THESIS/assets/css/news.css" />
   </head>
   <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed min-h-screen flex flex-col">
-    <script>
-      // Initialize maintenance toast on News page
-      (function(){
-        try {
-          if (window.MaintenanceToast && typeof window.MaintenanceToast.init === 'function') {
-            window.MaintenanceToast.init();
-          }
-        } catch(e) { /* ignore */ }
-      })();
-    </script>
+    <!-- Maintenance toast init -->
+    <script defer src="js/pages/news/maintenance-init.js"></script>
     <!-- Particle Background Effect -->
     <div id="particles" class="fixed inset-0 pointer-events-none z-0"></div>
     
@@ -251,6 +110,71 @@
         <div class="max-w-4xl mx-auto">
           <!-- Latest News -->
           <div id="news-grid" class="grid gap-6 sm:gap-8">
+
+            <!-- New: Adaptive Reranking -->
+            <article class="news-card bg-cardBg/80 rounded-xl p-6 sm:p-8 animate-fade-in border-2 border-primary/50" style="animation-delay: 0.02s;">
+              <div class="flex flex-wrap items-center gap-3 mb-4">
+                <span class="badge-feature text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Feature</span>
+                <span class="text-gray-400 text-sm font-gaming">OCTOBER 8, 2025</span>
+              </div>
+              <h2 class="font-gaming text-xl sm:text-2xl font-bold text-primary mb-2">🎯 Adaptive Reranking (Bloom-aware)</h2>
+              <p class="text-gray-300 leading-relaxed mb-4">
+                Quizzes now adapt the order of upcoming questions to your mastery—without sending question content to any AI. We only pass anonymized metadata (IDs, Bloom levels, difficulty, tags), and the AI returns a JSON list of IDs to re-rank a small candidate set. Guardrails include strict JSON-only output, low temperature/tokens, timeouts, caching, cooldowns, per-day budget caps, and local fallbacks. Integrated in custom and roguelike quiz scenes.
+              </p>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <span class="bg-primary/20 text-primary px-2 py-1 rounded">Quizzes</span>
+                <span class="bg-cyan/20 text-cyan px-2 py-1 rounded">Adaptive</span>
+                <span class="bg-purple/20 text-purple px-2 py-1 rounded">Bloom</span>
+              </div>
+            </article>
+
+            <!-- New: Bloom Question Authoring Guide -->
+            <article class="news-card bg-cardBg/80 rounded-xl p-6 sm:p-8 animate-fade-in border-2 border-primary/50" style="animation-delay: 0.03s;">
+              <div class="flex flex-wrap items-center gap-3 mb-4">
+                <span class="badge-update text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Docs</span>
+                <span class="text-gray-400 text-sm font-gaming">OCTOBER 8, 2025</span>
+              </div>
+              <h2 class="font-gaming text-xl sm:text-2xl font-bold text-primary mb-2">📚 Bloom-aligned Authoring Guide</h2>
+              <p class="text-gray-300 leading-relaxed mb-4">
+                We published a concise guide for tagging questions with Bloom’s taxonomy so dashboards and mastery graphs stay accurate. Always set <code>bloomTarget</code> using one of: <em>remembering</em>, <em>understanding</em>, <em>applying</em>, <em>analyzing</em>, <em>evaluating</em>, <em>creating</em>. See <code>docs/documentation/BloomQuestionAuthoring.md</code>.
+              </p>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <span class="bg-purple/20 text-purple px-2 py-1 rounded">Docs</span>
+                <span class="bg-cyan/20 text-cyan px-2 py-1 rounded">Bloom</span>
+              </div>
+            </article>
+
+            <!-- New: Pause Button & HUD improvements -->
+            <article class="news-card bg-cardBg/80 rounded-xl p-6 sm:p-8 animate-fade-in border-2 border-primary/50" style="animation-delay: 0.04s;">
+              <div class="flex flex-wrap items-center gap-3 mb-4">
+                <span class="badge-update text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Update</span>
+                <span class="text-gray-400 text-sm font-gaming">OCTOBER 8, 2025</span>
+              </div>
+              <h2 class="font-gaming text-xl sm:text-2xl font-bold text-primary mb-2">⏸️ Pause Button + HUD Scaling</h2>
+              <p class="text-gray-300 leading-relaxed mb-4">
+                Introduced a dedicated PauseManager with overlay, audio pause/resume, hotkeys (P/Esc), and a DOM pause button. We also increased HUD and pause UI sizes for both mobile and desktop, improved accessibility (focus rings, keyboard nav), and refined placement (pause button below quiz name).
+              </p>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <span class="bg-primary/20 text-primary px-2 py-1 rounded">UI/UX</span>
+                <span class="bg-cyan/20 text-cyan px-2 py-1 rounded">Accessibility</span>
+              </div>
+            </article>
+
+            <!-- New: Mini-Contest Extension -->
+            <article class="news-card bg-cardBg/80 rounded-xl p-6 sm:p-8 animate-fade-in border-2 border-primary/50" style="animation-delay: 0.05s;">
+              <div class="flex flex-wrap items-center gap-3 mb-4">
+                <span class="badge-new text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">News</span>
+                <span class="text-gray-400 text-sm font-gaming">OCTOBER 8, 2025</span>
+              </div>
+              <h2 class="font-gaming text-xl sm:text-2xl font-bold text-primary mb-2">📅 Mini-Contest Extended by 3 Days</h2>
+              <p class="text-gray-300 leading-relaxed mb-4">
+                We extended the mini-contest deadline by 3 days to accommodate the last SHS group who haven’t been onboarded yet. The countdown and snapshot/export tools have been updated accordingly. New end date: <strong>Oct 15, 2025, 00:00 (local)</strong>.
+              </p>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <span class="bg-primary/20 text-primary px-2 py-1 rounded">Leaderboards</span>
+                <span class="bg-accent/20 text-accent px-2 py-1 rounded">Events</span>
+              </div>
+            </article>
             
             <!-- LATEST NEWS -->
 
@@ -482,194 +406,8 @@
       </div>
     </footer>
 
-    <!-- Scripts -->
-    <script>
-      // Particle background effect
-      function createParticles() {
-        const particlesContainer = document.getElementById('particles');
-        if (!particlesContainer) return;
-        
-        for (let i = 0; i < 50; i++) {
-          const particle = document.createElement('div');
-          particle.className = 'particle';
-          particle.style.left = Math.random() * 100 + '%';
-          particle.style.animationDelay = Math.random() * 8 + 's';
-          particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
-          particlesContainer.appendChild(particle);
-        }
-      }
-
-      // Mobile menu functionality
-      function initializeMobileMenu() {
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const mobileMenu = document.getElementById('mobile-menu');
-        
-        if (mobileMenuBtn && mobileMenu) {
-          mobileMenuBtn.addEventListener('click', () => {
-            const isOpen = mobileMenu.style.display !== 'none';
-            mobileMenu.style.display = isOpen ? 'none' : 'block';
-            mobileMenuBtn.setAttribute('aria-expanded', !isOpen);
-          });
-
-          // Close mobile menu when clicking outside
-          document.addEventListener('click', (event) => {
-            if (!mobileMenuBtn.contains(event.target) && !mobileMenu.contains(event.target)) {
-              mobileMenu.style.display = 'none';
-              mobileMenuBtn.setAttribute('aria-expanded', false);
-            }
-          });
-        }
-      }
-
-      // Smooth scrolling for anchor links
-      function initializeSmoothScrolling() {
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-          anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-              target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-              });
-            }
-          });
-        });
-      }
-
-      // Initialize everything when DOM is loaded
-      document.addEventListener('DOMContentLoaded', () => {
-        console.log('News page loaded successfully');
-        createParticles();
-        initializeMobileMenu();
-        initializeSmoothScrolling();
-        
-        // Note: Staggered animation now handled by pagination system
-      });
-
-      // Add gaming hover effects
-      document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('.gaming-nav-link').forEach(link => {
-          link.addEventListener('mouseenter', () => {
-            link.style.textShadow = '0 0 10px currentColor';
-          });
-          
-          link.addEventListener('mouseleave', () => {
-            link.style.textShadow = 'none';
-          });
-        });
-      });
-
-      // News pagination system
-      let currentlyVisible = 5; // Show 5 articles initially
-      let isLoading = false;
-
-      function initializeNewsPagination() {
-        const newsGrid = document.getElementById('news-grid');
-        const loadMoreBtn = document.getElementById('load-more-btn');
-        const loadStatus = document.getElementById('load-status');
-        const noMoreArticles = document.getElementById('no-more-articles');
-        
-        if (!newsGrid) return;
-        
-        // Get all news articles
-        const allArticles = Array.from(newsGrid.querySelectorAll('article.news-card'));
-        const totalArticles = allArticles.length;
-        
-        // Hide articles beyond the first 5
-        function updateVisibleArticles() {
-          allArticles.forEach((article, index) => {
-            if (index < currentlyVisible) {
-              article.style.display = 'block';
-              // Add staggered animation
-              article.style.animationDelay = `${index * 0.1}s`;
-            } else {
-              article.style.display = 'none';
-            }
-          });
-          
-          // Update button visibility
-          if (currentlyVisible >= totalArticles) {
-            loadMoreBtn.style.display = 'none';
-            noMoreArticles.classList.remove('hidden');
-          } else {
-            loadMoreBtn.style.display = 'inline-flex';
-            noMoreArticles.classList.add('hidden');
-          }
-        }
-        
-        // Load more functionality
-        function loadMoreArticles() {
-          if (isLoading || currentlyVisible >= totalArticles) return;
-          
-          isLoading = true;
-          loadMoreBtn.disabled = true;
-          loadMoreBtn.innerHTML = '<span class="mr-3">⏳</span>Loading...<span class="ml-3">⏳</span>';
-          loadStatus.classList.remove('hidden');
-          
-          // Simulate loading delay for better UX
-          setTimeout(() => {
-            const previousVisible = currentlyVisible;
-            currentlyVisible = Math.min(currentlyVisible + 5, totalArticles);
-            
-            // Show new articles with animation
-            for (let i = previousVisible; i < currentlyVisible; i++) {
-              if (allArticles[i]) {
-                allArticles[i].style.display = 'block';
-                allArticles[i].style.animationDelay = `${(i - previousVisible) * 0.1}s`;
-                
-                // Add a smooth reveal animation
-                allArticles[i].style.opacity = '0';
-                allArticles[i].style.transform = 'translateY(30px)';
-                
-                setTimeout(() => {
-                  allArticles[i].style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
-                  allArticles[i].style.opacity = '1';
-                  allArticles[i].style.transform = 'translateY(0)';
-                }, (i - previousVisible) * 100);
-              }
-            }
-            
-            // Update UI
-            updateVisibleArticles();
-            loadStatus.classList.add('hidden');
-            loadMoreBtn.disabled = false;
-            
-            if (currentlyVisible >= totalArticles) {
-              loadMoreBtn.style.display = 'none';
-              noMoreArticles.classList.remove('hidden');
-            } else {
-              loadMoreBtn.innerHTML = '<span class="mr-3">📰</span>Load More Articles<span class="ml-3">↓</span>';
-            }
-            
-            isLoading = false;
-            
-            // Scroll to the first newly loaded article
-            if (allArticles[previousVisible]) {
-              setTimeout(() => {
-                allArticles[previousVisible].scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'center'
-                });
-              }, 300);
-            }
-          }, 800); // Loading delay
-        }
-        
-        // Initialize
-        updateVisibleArticles();
-        
-        // Add event listener
-        if (loadMoreBtn) {
-          loadMoreBtn.addEventListener('click', loadMoreArticles);
-        }
-      }
-      
-      // Initialize pagination when DOM is ready
-      document.addEventListener('DOMContentLoaded', () => {
-        // Small delay to ensure all other initialization is complete
-        setTimeout(initializeNewsPagination, 100);
-      });
-    </script>
+    <!-- Page scripts -->
+    <script defer src="js/pages/news/visuals.js"></script>
+    <script defer src="js/pages/news/pagination.js"></script>
   </body>
 </html>

@@ -1,0 +1,4 @@
+/* 404 redirect page styles */
+body { background:#0f172a; color:#fff; font-family:Arial; display:flex; align-items:center; justify-content:center; height:100vh; }
+h1 { font-size:20px; margin-bottom:10px; }
+a { color:#F4CE14; }
