@@ -1144,15 +1144,34 @@ export default class QuizScene extends BaseScene {
             }).setOrigin(0.5);
             this.quizContainer.add(numberLabel);
 
-            // Code text inside (monospace style look via bold + spacing)
+            // Code text inside (monospace look). Enable advanced wrapping + wrap hints for long tokens.
+            const codeFontPxBase = isMobile ? 22 : 20;
             const codeStyle = {
                 fontFamily: 'Courier New',
-                fontSize: isMobile ? '22px' : '20px',
+                fontSize: codeFontPxBase + 'px',
                 color: '#000000',
                 align: 'left',
-                wordWrap: { width: baseBlockWidth - 40 }
+                wordWrap: { width: baseBlockWidth - 40, useAdvancedWrap: true },
+                fixedWidth: baseBlockWidth - 40,
+                lineSpacing: isMobile ? 4 : 4
             };
-            const codeText = this.add.text(x - baseBlockWidth/2 + 20, blockY - blockHeight/2 + 20, blk.code || '', codeStyle).setOrigin(0,0);
+            const codeText = this.add.text(
+                x - baseBlockWidth/2 + 20,
+                blockY - blockHeight/2 + 20,
+                this._insertWrapHints(blk.code || ''),
+                codeStyle
+            ).setOrigin(0,0);
+
+            // Auto-shrink font size to fit within the block height if needed (minimum readable size)
+            let sizePx = codeFontPxBase;
+            const minPx = isMobile ? 16 : 14;
+            const maxTextHeight = blockHeight - 40; // padding top+bottom ~20px each
+            if (codeText.height > maxTextHeight) {
+                while (codeText.height > maxTextHeight && sizePx > minPx) {
+                    sizePx -= 2;
+                    codeText.setFontSize(sizePx);
+                }
+            }
             this.quizContainer.add(codeText);
 
             // Hover / pointer styling
@@ -1196,6 +1215,21 @@ export default class QuizScene extends BaseScene {
             duration: 450,
             ease: 'Back.easeOut'
         });
+    }
+
+    // Insert zero-width spaces after common punctuation so Phaser can wrap long code lines nicely
+    _insertWrapHints(text){
+        try {
+            if (typeof text !== 'string') return text;
+            // Add wrap opportunities after punctuation and around brackets/parentheses/dots/commas/colons
+            // Avoid splitting operators like '==' or '**' by not adding for math/comparison operators.
+            const WRAP_AFTER = /([\.,:()\[\]{}])/g; // dot, comma, colon, parens, brackets, braces
+            // Also add a hint before a dot in method chains if missing space
+            let t = text.replace(WRAP_AFTER, '$1\u200b');
+            return t;
+        } catch {
+            return text;
+        }
     }
 
     handleSyntaxBlockSelection(index, rect){

@@ -2,12 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+  <!-- Vite base for dev/prod consistency -->
+  <script>window.__APP_BASE__ = '%BASE_URL%';</script>
   <!-- Primary favicon & PWA meta -->
-  <link rel="preload" as="image" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="apple-touch-icon" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="preload" as="image" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="apple-touch-icon" href="assets/img/Website/SCI-HIGH_ICON.png" />
   <link rel="manifest" href="site.webmanifest" />
   <meta name="theme-color" content="#0f1524" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
@@ -44,7 +46,23 @@
   <script defer src="js/pages/index/notifications-fallback.js"></script>
   <!-- Tailwind runtime config extracted (non-deferred to apply during parse like original) -->
   <script src="js/pages/index/tailwind-config.js"></script>
-    <link rel="stylesheet" href="/SCI-HIGH_THESIS/assets/css/index.css" />
+  <script>
+    // Localhost helper: surface a soft warning if Firebase isn't configured
+    (function(){
+      try {
+        const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname);
+        if (!isLocal) return;
+        window.addEventListener('load', () => {
+          setTimeout(() => {
+            if (!window.firebaseConfig || (window.firebaseConfig && !window.firebaseConfig.isInitialized())) {
+              console.info('[DEV] Firebase not initialized. Using offline/limited mode. You can add config in docs/config/env-config.local.json');
+            }
+          }, 1000);
+        });
+      } catch {}
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/css/index.css" />
   </head>
   <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed">
     <!-- Particle Background Effect -->
@@ -251,7 +269,7 @@
           
           <!-- Replaced tagline text with SCI-HIGH logo image -->
           <div class="flex justify-center mb-3 sm:mb-4 animate-bounce-in px-2" style="animation-delay: 0.2s;">
-            <img src="/SCI-HIGH_THESIS/assets/img/logo/SCI-HIGH_LOGO.png" alt="SCI-HIGH Logo" class="h-[5.625rem] xs:h-[6.75rem] sm:h-[11.25rem] md:h-[15.75rem] object-contain drop-shadow-lg transition-transform duration-300 ease-out hover:scale-110" />
+            <img src="assets/img/logo/SCI-HIGH_LOGO.png" alt="SCI-HIGH Logo" class="h-[5.625rem] xs:h-[6.75rem] sm:h-[11.25rem] md:h-[15.75rem] object-contain drop-shadow-lg transition-transform duration-300 ease-out hover:scale-110" />
           </div>
           
           <p class="text-sm xs:text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-6 sm:mb-12 px-4 sm:px-6 animate-bounce-in leading-relaxed" style="animation-delay: 0.4s;">
@@ -306,7 +324,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mt-12 animate-bounce-in" style="animation-delay: 1s;">
           <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
             <div class="w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-              <img src="/SCI-HIGH_THESIS/assets/img/mainhub/CLASSROOM_ICON.png" alt="Classroom" class="w-12 h-12 object-contain" />
+              <img src="assets/img/mainhub/CLASSROOM_ICON.png" alt="Classroom" class="w-12 h-12 object-contain" />
             </div>
             <h4 class="font-gaming text-purple text-md mb-2">Interactive Lessons</h4>
             <p class="text-gray-400 text-xs">Learn through story-driven lessons and put your skills to the test with quizzes.</p>
@@ -314,7 +332,7 @@
 
           <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
             <div class="w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-              <img src="/SCI-HIGH_THESIS/assets/img/mainhub/PUZZLE.png" alt="Bloom Authoring" class="w-12 h-12 object-contain" />
+              <img src="assets/img/mainhub/PUZZLE.png" alt="Bloom Authoring" class="w-12 h-12 object-contain" />
             </div>
             <h4 class="font-gaming text-primary text-md mb-2">Bloom-aligned Authoring Guide</h4>
             <p class="text-gray-400 text-xs">Tag each question with <code>bloomTarget</code> (remembering → creating) to power mastery graphs and adaptive flows.</p>
@@ -322,7 +340,7 @@
 
           <div class="neon-border bg-cardBg rounded-lg p-6 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
             <div class="w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-              <img src="/SCI-HIGH_THESIS/assets/img/mainhub/COMLAB_ICON.png" alt="Computer Lab" class="w-12 h-12 object-contain" />
+              <img src="assets/img/mainhub/COMLAB_ICON.png" alt="Computer Lab" class="w-12 h-12 object-contain" />
             </div>
             <h4 class="font-gaming text-accent text-md mb-2">Real-time Leaderboards</h4>
             <p class="text-gray-400 text-xs">Rise through the ranks as you compete with others.</p>
@@ -633,7 +651,7 @@
           <div class="relative w-full flex items-center justify-center">
             <button id="carousel-prev" class="absolute left-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-primary to-yellow-300 border-none rounded-full w-12 h-12 flex items-center justify-center text-xl text-dark shadow-lg hover:shadow-primary/50 transition-all duration-300 transform hover:scale-110 z-10">‹</button>
             <div class="w-full flex items-center justify-center px-16">
-              <img id="carousel-image" src="/SCI-HIGH_THESIS/assets/img/bg/classroom_day.png" alt="Game Screenshot" class="rounded-lg object-cover h-64 w-full max-w-md transition-all duration-500 shadow-2xl border-2 border-primary/30" />
+              <img id="carousel-image" src="assets/img/bg/classroom_day.png" alt="Game Screenshot" class="rounded-lg object-cover h-64 w-full max-w-md transition-all duration-500 shadow-2xl border-2 border-primary/30" />
             </div>
             <button id="carousel-next" class="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-primary to-yellow-300 border-none rounded-full w-12 h-12 flex items-center justify-center text-xl text-dark shadow-lg hover:shadow-primary/50 transition-all duration-300 transform hover:scale-110 z-10">›</button>
           </div>
@@ -694,7 +712,7 @@
         <!-- Hero Banner with Gaming Style -->
         <div class="neon-border rounded-xl overflow-hidden shadow-2xl mb-12 transform transition-all duration-300 hover:scale-105">
           <div class="relative">
-            <img src="/SCI-HIGH_THESIS/assets/img/Website/ABOUT_US.jpg" alt="About Us - SCI-HIGH Team" class="w-full h-80 object-cover object-top" />
+            <img src="assets/img/Website/ABOUT_US.jpg" alt="About Us - SCI-HIGH Team" class="w-full h-80 object-cover object-top" />
             <div class="absolute inset-0 bg-gradient-to-t from-dark/80 via-transparent to-transparent"></div>
             <div class="absolute bottom-6 left-6 right-6">
               <h3 class="font-gaming text-2xl font-bold text-primary mb-2">The Development Team</h3>
@@ -799,15 +817,15 @@
         <!-- Programming Languages Section -->
         <div class="mt-16">
           <div class="flex items-center justify-center gap-4 mb-8">
-            <img src="/SCI-HIGH_THESIS/assets/img/mainhub/PLAY_BUTTON.png" alt="Play" class="w-8 h-8 object-contain" />
+            <img src="assets/img/mainhub/PLAY_BUTTON.png" alt="Play" class="w-8 h-8 object-contain" />
             <h3 class="font-gaming text-3xl text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Master These Languages</h3>
-            <img src="/SCI-HIGH_THESIS/assets/img/mainhub/PLAY_BUTTON.png" alt="Play" class="w-8 h-8 object-contain" />
+            <img src="assets/img/mainhub/PLAY_BUTTON.png" alt="Play" class="w-8 h-8 object-contain" />
           </div>
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 max-w-6xl mx-auto">
             <!-- HTML/CSS/JavaScript -->
             <div class="neon-border bg-cardBg rounded-lg p-4 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
               <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
-                <img src="/SCI-HIGH_THESIS/assets/img/comlab/icons/web-design_logo.png" alt="Web Design" class="w-10 h-10 object-contain" />
+                <img src="assets/img/comlab/icons/web-design_logo.png" alt="Web Design" class="w-10 h-10 object-contain" />
               </div>
               <h4 class="font-gaming text-primary text-sm">HTML/CSS/JS</h4>
               <div class="w-full bg-dark/50 rounded-full h-2 mt-2">
@@ -818,7 +836,7 @@
             <!-- Python -->
             <div class="neon-border bg-cardBg rounded-lg p-4 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
               <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
-                <img src="/SCI-HIGH_THESIS/assets/img/comlab/icons/python_logo.png" alt="Python" class="w-10 h-10 object-contain" />
+                <img src="assets/img/comlab/icons/python_logo.png" alt="Python" class="w-10 h-10 object-contain" />
               </div>
               <h4 class="font-gaming text-accent text-sm">Python</h4>
               <div class="w-full bg-dark/50 rounded-full h-2 mt-2">
@@ -829,7 +847,7 @@
             <!-- C# -->
             <div class="neon-border bg-cardBg rounded-lg p-4 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
               <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
-                <img src="/SCI-HIGH_THESIS/assets/img/comlab/icons/csharp_logo.png" alt="C#" class="w-10 h-10 object-contain" />
+                <img src="assets/img/comlab/icons/csharp_logo.png" alt="C#" class="w-10 h-10 object-contain" />
               </div>
               <h4 class="font-gaming text-accent text-sm">C#</h4>
               <div class="w-full bg-dark/50 rounded-full h-2 mt-2">
@@ -840,7 +858,7 @@
             <!-- Java -->
             <div class="neon-border bg-cardBg rounded-lg p-4 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
               <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
-                <img src="/SCI-HIGH_THESIS/assets/img/comlab/icons/java_logo.png" alt="Java" class="w-10 h-10 object-contain" />
+                <img src="assets/img/comlab/icons/java_logo.png" alt="Java" class="w-10 h-10 object-contain" />
               </div>
               <h4 class="font-gaming text-orange-400 text-sm">Java</h4>
               <div class="w-full bg-dark/50 rounded-full h-2 mt-2">
@@ -851,7 +869,7 @@
             <!-- C -->
             <div class="neon-border bg-cardBg rounded-lg p-4 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
               <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
-                <img src="/SCI-HIGH_THESIS/assets/img/comlab/icons/c_logo.png" alt="C" class="w-10 h-10 object-contain" />
+                <img src="assets/img/comlab/icons/c_logo.png" alt="C" class="w-10 h-10 object-contain" />
               </div>
               <h4 class="font-gaming text-blue-300 text-sm">C</h4>
               <div class="w-full bg-dark/50 rounded-full h-2 mt-2">
@@ -862,7 +880,7 @@
             <!-- C++ -->
             <div class="neon-border bg-cardBg rounded-lg p-4 backdrop-blur-sm transform transition-all duration-300 hover:scale-105 text-center">
               <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
-                <img src="/SCI-HIGH_THESIS/assets/img/comlab/icons/cplus_logo.png" alt="C++" class="w-10 h-10 object-contain" />
+                <img src="assets/img/comlab/icons/cplus_logo.png" alt="C++" class="w-10 h-10 object-contain" />
               </div>
               <h4 class="font-gaming text-indigo-300 text-sm">C++</h4>
               <div class="w-full bg-dark/50 rounded-full h-2 mt-2">
@@ -973,7 +991,7 @@
     <footer class="relative z-10 bg-gradient-to-r from-dark to-light border-t-2 border-primary/30 py-12">
       <div class="max-w-6xl mx-auto px-6 text-center">
         <div class="flex items-center justify-center space-x-4 mb-6">
-          <img src="/SCI-HIGH_THESIS/assets/img/Website/buko_productions-logo.png" alt="Buko Productions" class="w-16 h-16" />
+          <img src="assets/img/Website/buko_productions-logo.png" alt="Buko Productions" class="w-16 h-16" />
           <div>
             <h3 class="font-gaming text-2xl font-bold text-primary">SCI-HIGH</h3>
             <p class="text-gray-400 text-sm">Level up your knowledge!</p>

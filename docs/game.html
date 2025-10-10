@@ -2,12 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+  <script>window.__APP_BASE__ = '%BASE_URL%';</script>
   <title>SCI-HIGH: Playing!</title>
-  <link rel="preload" as="image" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
-  <link rel="apple-touch-icon" href="/SCI-HIGH_THESIS/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="preload" as="image" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="apple-touch-icon" href="assets/img/Website/SCI-HIGH_ICON.png" />
   <link rel="manifest" href="site.webmanifest" />
   <meta name="theme-color" content="#0f1524" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -55,6 +56,12 @@
         
         } catch (e) {
           console.error('Firebase init sequence failed', e);
+          try {
+            const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname);
+            if (isLocal) {
+              console.info('[DEV] Continuing without Firebase (offline/limited mode).');
+            }
+          } catch {}
         }
       })();
     </script>
@@ -84,14 +91,14 @@
       }
     </script>
     
-  <link rel="stylesheet" href="/SCI-HIGH_THESIS/assets/css/game.css" />
+  <link rel="stylesheet" href="assets/css/game.css" />
   </head>
   <body>
     <!-- Maintenance overlay -->
     <div id="maintenance-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);color:#fff;z-index:10002;align-items:center;justify-content:center;text-align:center;padding:20px;font-family: 'Orbitron', monospace;">
       <div>
-  <img src="/SCI-HIGH_THESIS/assets/img/logo/SCI-HIGH_LOGO.png" alt="SCI-HIGH" style="height:96px;margin-bottom:16px;filter:drop-shadow(0 0 8px rgba(244,206,20,0.35));" />
-        <h2 style="font-size:28px;color:#F4CE14;margin-bottom:8px;">Under Maintenance</h2>
+  <img src="assets/img/logo/SCI-HIGH_LOGO.png" alt="SCI-HIGH" style="height:96px;margin-bottom:16px;filter:drop-shadow(0 0 8px rgba(244,206,20,0.35));" />
+          <h2 style="font-size:28px;color:#F4CE14;margin-bottom:8px;">Under Maintenance</h2>
         <p id="maint-msg" style="opacity:.9;margin-bottom:8px;">Scheduled maintenance in progress.</p>
         <p id="maint-ends" style="opacity:.8;margin-bottom:16px;"></p>
         <button onclick="window.location.href='index.html'" style="background:linear-gradient(to right,#F4CE14,#FFD700);color:#1a1a2e;border:none;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer;">Return to Home</button>

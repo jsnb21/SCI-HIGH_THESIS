@@ -120,7 +120,8 @@
         if (window.firebaseConfig) {
           try { await window.firebaseConfig.initializeFirebase(); return true; } catch (error) { console.warn('Firebase config exists but initialization failed:', error.message); return false; }
         }
-        const configPaths = ['./config/firebase-config.js','/SCI-HIGH_THESIS/config/firebase-config.js','config/firebase-config.js'];
+  const base = (window.__APP_BASE__ || '/');
+  const configPaths = ['./config/firebase-config.js', base + 'config/firebase-config.js', 'config/firebase-config.js'];
         for (const configPath of configPaths) {
           try {
             const existingScript = document.querySelector(`script[src*="firebase-config.js"]`);
