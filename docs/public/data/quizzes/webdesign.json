@@ -869,282 +869,806 @@
     ]
   },
   "intensity3": {
-    "multipleChoice": [
-      {
-        "question": "Where is the best place to put a JavaScript <script> tag for faster loading?",
-        "options": [
-          "In the <head>",
-          "At the end of <body>",
-          "In the <title>",
-          "Before <!DOCTYPE html>"
-        ],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which symbol is used for a single-line comment in JavaScript?",
-        "options": ["<!-- -->", "#", "//", "/**/"],
-        "correctIndex": 2,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "What does console.log(\"Hello\"); do?",
-        "options": [
-          "Shows a pop-up with \"Hello\"",
-          "Prints \"Hello\" in the browser console",
-          "Writes \"Hello\" on the webpage",
-          "Gives an error"
-        ],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which keyword declares a variable that can change later?",
-        "options": ["var", "let", "const", "define"],
-        "correctIndex": 1,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "What is the data type of \"123\"?",
-        "options": ["number", "string", "integer", "undefined"],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Which keyword is used to declare a constant value?",
-        "options": ["let", "var", "const", "static"],
-        "correctIndex": 2,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "Which operator checks both value and type?",
-        "options": ["==", "===", "=", "!="],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "What is the result of 5 + \"5\"?",
-        "options": ["10", "55", "NaN", "Error"],
-        "correctIndex": 1,
-        "bloomTarget": "analyzing"
-      },
-      {
-        "question": "Which operator is used for multiplication?",
-        "options": ["+", "*", "=", "&&"],
-        "correctIndex": 1,
-        "bloomTarget": "remembering"
-      },
-      {
-        "question": "What does the else block do?",
-        "options": [
-          "Runs when condition is true",
-          "Runs when condition is false",
-          "Repeats code",
-          "Stops the program"
-        ],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "What does event.preventDefault() do when called inside a submit handler?",
-        "options": [
-          "Stops JavaScript execution",
-          "Prevents the form's default submission",
-          "Reloads the page",
-          "Cancels all event listeners"
-        ],
-        "correctIndex": 1,
-        "bloomTarget": "analyzing"
-      },
-      {
-        "question": "Which statement about const objects in JavaScript is true?",
-        "options": [
-          "They cannot have properties modified",
-          "They cannot be reassigned to a new value",
-          "They are deeply immutable",
-          "They are block-scoped and hoisted as initialized"
-        ],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "Result of [1,2,3].map(parseInt) is:",
-        "options": ["[1, 2, 3]", "[1, NaN, NaN]", "[1, 10, 11]", "Throws an error"],
-        "correctIndex": 1,
-        "bloomTarget": "analyzing"
-      },
-      {
-        "question": "Which selector has the highest specificity?",
-        "options": [".nav li a", "#header .nav li", "li a", "header nav a"],
-        "correctIndex": 1,
-        "bloomTarget": "analyzing"
-      },
-      {
-        "question": "What does the defer attribute on a <script> tag do?",
-        "options": [
-          "Executes the script immediately before parsing",
-          "Downloads in parallel and executes after HTML parsing, in order",
-          "Blocks HTML parsing until the script finishes",
-          "Only loads the script on hover"
-        ],
-        "correctIndex": 1,
-        "bloomTarget": "understanding"
-      },
-      {
-        "question": "An absolutely positioned element is positioned relative to:",
-        "options": [
-          "The viewport",
-          "The nearest ancestor with a non-static position",
-          "The document root",
-          "The nearest flex container"
-        ],
-        "correctIndex": 1,
-        "bloomTarget": "analyzing"
-      },
-      {
-        "question": "Which practice best improves image accessibility?",
-        "options": [
-          "Use empty alt on all images",
-          "Use meaningful alt text describing the image's purpose",
-          "Put the description only in the caption",
-          "Rely on file names for screen readers"
-        ],
-        "correctIndex": 1,
-        "bloomTarget": "evaluating"
-      }
-    ],
     "codeArrangement": [
       {
-        "title": "Arrange the HTML code blocks in correct order:",
-        "description": "Create a basic HTML page structure",
+        "type": "codeArrangement",
+        "title": "HTML5 semantic layout",
+        "description": "Build a modern page layout using semantic tags",
         "blocks": [
-          "<!DOCTYPE html>",
-          "<html>",
-          "<head><title>My Page</title></head>"
+          "<header><h1>Site</h1></header>",
+          "<main><section>Content</section></main>",
+          "<footer>Footer</footer>"
         ],
-        "correctOrder": [0, 1, 2],
-        "bloomTarget": "applying"
-      },
-      {
-        "title": "Arrange the CSS code blocks in correct order:",
-        "description": "Style a button with hover effects",
-        "blocks": [
-          ".button {",
-          "    background-color: blue;",
-          "    color: white;"
+        "correctOrder": [
+          0,
+          1,
+          2
         ],
-        "correctOrder": [0, 1, 2],
-        "bloomTarget": "applying"
-      },
-      {
-        "title": "Arrange the JavaScript code blocks in correct order:",
-        "description": "Add event listener to a button",
-        "blocks": [
-          "const button = document.getElementById('myButton');",
-          "button.addEventListener('click', function() {",
-          "    console.log('Button clicked!');"
-        ],
-        "correctOrder": [0, 1, 2],
-        "bloomTarget": "applying"
-      },
-      {
-        "title": "Arrange the HTML/CSS code blocks in correct order:",
-        "description": "Create a responsive navigation bar",
-        "blocks": [
-          "<nav class=\"navbar\">",
-          "<ul>",
-          "    <li><a href=\"#home\">Home</a></li>"
-        ],
-        "correctOrder": [0, 1, 2],
-        "bloomTarget": "applying"
-      },
-      {
-        "title": "Arrange the CSS code blocks in correct order:",
-        "description": "Create a flexbox layout",
-        "blocks": [
-          ".container {",
-          "    display: flex;",
-          "    justify-content: center;"
-        ],
-        "correctOrder": [0, 1, 2],
-        "bloomTarget": "applying"
-      },
-      {
-        "title": "Arrange the JavaScript code blocks in correct order:",
-        "description": "Form validation with error handling",
-        "blocks": [
-          "const form = document.getElementById('myForm');",
-          "form.addEventListener('submit', function(e) {",
-          "    if (!form.checkValidity()) {"
-        ],
-        "correctOrder": [0, 1, 2],
-        "bloomTarget": "applying"
-      },
-      {
-        "title": "Arrange the CSS code blocks in correct order:",
-        "description": "Media query for responsive design",
-        "blocks": [
-          "@media screen and (max-width: 768px) {",
-          "    .container {",
-          "        width: 100%;"
-        ],
-        "correctOrder": [0, 1, 2],
-        "bloomTarget": "applying"
-      },
-      {
-        "title": "Arrange the JavaScript code blocks in correct order:",
-        "description": "Fetch data from API with error handling",
-        "blocks": [
-          "fetch('https://api.example.com/data')",
-          "    .then(response => response.json())",
-          "    .then(data => console.log(data))"
-        ],
-        "correctOrder": [0, 1, 2],
-        "bloomTarget": "applying"
-      },
-      {
-        "title": "Arrange the JS code to run after DOM is ready:",
-        "description": "Initialize app when DOM content is loaded",
-        "blocks": [
-          "document.addEventListener('DOMContentLoaded', () => {",
-          "  initApp();",
-          "});"
-        ],
-        "correctOrder": [0, 1, 2],
         "bloomTarget": "creating"
       },
       {
-        "title": "Arrange CSS Grid for three equal columns:",
-        "description": "Create a 3-column grid layout",
+        "type": "codeArrangement",
+        "title": "Flexbox layout",
+        "description": "Center content using flexbox",
         "blocks": [
-          ".grid {",
-          "  display: grid;",
-          "  grid-template-columns: 1fr 1fr 1fr;"
+          ".container { display:flex;",
+          "justify-content:center; align-items:center;",
+          "}"
         ],
-        "correctOrder": [0, 1, 2],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "Responsive image",
+        "description": "Make an image responsive with CSS",
+        "blocks": [
+          "img {",
+          "max-width:100%; height:auto;",
+          "}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "analyzing"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS toggle menu",
+        "description": "Toggle menu visibility on button click",
+        "blocks": [
+          "const btn=document.getElementById('menu');",
+          "btn.addEventListener('click',()=>{",
+          "document.body.classList.toggle('open');});"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "HTML form validation",
+        "description": "Create a form with required input",
+        "blocks": [
+          "<form>",
+          "<input type='email' required>",
+          "</form>"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
         "bloomTarget": "applying"
       },
       {
-        "title": "Arrange HTML to link external CSS:",
-        "description": "Add stylesheet link inside head",
+        "type": "codeArrangement",
+        "title": "Fetch API data",
+        "description": "Fetch and display data from API (variation 1)",
         "blocks": [
-          "<head>",
-          "  <link rel=\"stylesheet\" href=\"styles.css\">",
-          "</head>"
+          "fetch('/api/data')",
+          ".then(r=>r.json())",
+          ".then(d=>console.log(d));"
         ],
-        "correctOrder": [0, 1, 2],
-        "bloomTarget": "applying"
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
       },
       {
-        "title": "Arrange JS form submit handler with preventDefault:",
-        "description": "Stop default submit and log form data",
+        "type": "codeArrangement",
+        "title": "Fetch API data",
+        "description": "Fetch and display data from API (variation 2)",
         "blocks": [
-          "form.addEventListener('submit', e => {",
-          "  e.preventDefault();",
-          "  console.log('submitted');"
+          "fetch('/api/data')",
+          ".then(r=>r.json())",
+          ".then(d=>console.log(d));"
         ],
-        "correctOrder": [0, 1, 2],
-        "bloomTarget": "applying"
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "Fetch API data",
+        "description": "Fetch and display data from API (variation 3)",
+        "blocks": [
+          "fetch('/api/data')",
+          ".then(r=>r.json())",
+          ".then(d=>console.log(d));"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "Fetch API data",
+        "description": "Fetch and display data from API (variation 4)",
+        "blocks": [
+          "fetch('/api/data')",
+          ".then(r=>r.json())",
+          ".then(d=>console.log(d));"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "Fetch API data",
+        "description": "Fetch and display data from API (variation 5)",
+        "blocks": [
+          "fetch('/api/data')",
+          ".then(r=>r.json())",
+          ".then(d=>console.log(d));"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "Fetch API data",
+        "description": "Fetch and display data from API (variation 6)",
+        "blocks": [
+          "fetch('/api/data')",
+          ".then(r=>r.json())",
+          ".then(d=>console.log(d));"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "Fetch API data",
+        "description": "Fetch and display data from API (variation 7)",
+        "blocks": [
+          "fetch('/api/data')",
+          ".then(r=>r.json())",
+          ".then(d=>console.log(d));"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "Fetch API data",
+        "description": "Fetch and display data from API (variation 8)",
+        "blocks": [
+          "fetch('/api/data')",
+          ".then(r=>r.json())",
+          ".then(d=>console.log(d));"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "Fetch API data",
+        "description": "Fetch and display data from API (variation 9)",
+        "blocks": [
+          "fetch('/api/data')",
+          ".then(r=>r.json())",
+          ".then(d=>console.log(d));"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS grid layout",
+        "description": "Three-column responsive grid layout 1",
+        "blocks": [
+          ".grid { display:grid;",
+          "grid-template-columns:repeat(3,1fr);",
+          "gap:10px; }"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS grid layout",
+        "description": "Three-column responsive grid layout 2",
+        "blocks": [
+          ".grid { display:grid;",
+          "grid-template-columns:repeat(3,1fr);",
+          "gap:10px; }"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS grid layout",
+        "description": "Three-column responsive grid layout 3",
+        "blocks": [
+          ".grid { display:grid;",
+          "grid-template-columns:repeat(3,1fr);",
+          "gap:10px; }"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS grid layout",
+        "description": "Three-column responsive grid layout 4",
+        "blocks": [
+          ".grid { display:grid;",
+          "grid-template-columns:repeat(3,1fr);",
+          "gap:10px; }"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS grid layout",
+        "description": "Three-column responsive grid layout 5",
+        "blocks": [
+          ".grid { display:grid;",
+          "grid-template-columns:repeat(3,1fr);",
+          "gap:10px; }"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS grid layout",
+        "description": "Three-column responsive grid layout 6",
+        "blocks": [
+          ".grid { display:grid;",
+          "grid-template-columns:repeat(3,1fr);",
+          "gap:10px; }"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS grid layout",
+        "description": "Three-column responsive grid layout 7",
+        "blocks": [
+          ".grid { display:grid;",
+          "grid-template-columns:repeat(3,1fr);",
+          "gap:10px; }"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS grid layout",
+        "description": "Three-column responsive grid layout 8",
+        "blocks": [
+          ".grid { display:grid;",
+          "grid-template-columns:repeat(3,1fr);",
+          "gap:10px; }"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS grid layout",
+        "description": "Three-column responsive grid layout 9",
+        "blocks": [
+          ".grid { display:grid;",
+          "grid-template-columns:repeat(3,1fr);",
+          "gap:10px; }"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS async/await API",
+        "description": "Async/await data fetch pattern 1",
+        "blocks": [
+          "async function load(){",
+          "const r=await fetch('/api');",
+          "console.log(await r.json());}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS async/await API",
+        "description": "Async/await data fetch pattern 2",
+        "blocks": [
+          "async function load(){",
+          "const r=await fetch('/api');",
+          "console.log(await r.json());}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS async/await API",
+        "description": "Async/await data fetch pattern 3",
+        "blocks": [
+          "async function load(){",
+          "const r=await fetch('/api');",
+          "console.log(await r.json());}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS async/await API",
+        "description": "Async/await data fetch pattern 4",
+        "blocks": [
+          "async function load(){",
+          "const r=await fetch('/api');",
+          "console.log(await r.json());}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS async/await API",
+        "description": "Async/await data fetch pattern 5",
+        "blocks": [
+          "async function load(){",
+          "const r=await fetch('/api');",
+          "console.log(await r.json());}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS async/await API",
+        "description": "Async/await data fetch pattern 6",
+        "blocks": [
+          "async function load(){",
+          "const r=await fetch('/api');",
+          "console.log(await r.json());}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS async/await API",
+        "description": "Async/await data fetch pattern 7",
+        "blocks": [
+          "async function load(){",
+          "const r=await fetch('/api');",
+          "console.log(await r.json());}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS async/await API",
+        "description": "Async/await data fetch pattern 8",
+        "blocks": [
+          "async function load(){",
+          "const r=await fetch('/api');",
+          "console.log(await r.json());}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS async/await API",
+        "description": "Async/await data fetch pattern 9",
+        "blocks": [
+          "async function load(){",
+          "const r=await fetch('/api');",
+          "console.log(await r.json());}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS animation",
+        "description": "Keyframe spin animation 1",
+        "blocks": [
+          "@keyframes spin{",
+          "from{transform:rotate(0);} to{transform:rotate(360deg);}",
+          "}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS animation",
+        "description": "Keyframe spin animation 2",
+        "blocks": [
+          "@keyframes spin{",
+          "from{transform:rotate(0);} to{transform:rotate(360deg);}",
+          "}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS animation",
+        "description": "Keyframe spin animation 3",
+        "blocks": [
+          "@keyframes spin{",
+          "from{transform:rotate(0);} to{transform:rotate(360deg);}",
+          "}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS animation",
+        "description": "Keyframe spin animation 4",
+        "blocks": [
+          "@keyframes spin{",
+          "from{transform:rotate(0);} to{transform:rotate(360deg);}",
+          "}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS animation",
+        "description": "Keyframe spin animation 5",
+        "blocks": [
+          "@keyframes spin{",
+          "from{transform:rotate(0);} to{transform:rotate(360deg);}",
+          "}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS animation",
+        "description": "Keyframe spin animation 6",
+        "blocks": [
+          "@keyframes spin{",
+          "from{transform:rotate(0);} to{transform:rotate(360deg);}",
+          "}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS animation",
+        "description": "Keyframe spin animation 7",
+        "blocks": [
+          "@keyframes spin{",
+          "from{transform:rotate(0);} to{transform:rotate(360deg);}",
+          "}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS animation",
+        "description": "Keyframe spin animation 8",
+        "blocks": [
+          "@keyframes spin{",
+          "from{transform:rotate(0);} to{transform:rotate(360deg);}",
+          "}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "CSS animation",
+        "description": "Keyframe spin animation 9",
+        "blocks": [
+          "@keyframes spin{",
+          "from{transform:rotate(0);} to{transform:rotate(360deg);}",
+          "}"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS DOM creation",
+        "description": "Create and append element dynamically 1",
+        "blocks": [
+          "const p=document.createElement('p');",
+          "p.textContent='Dynamic';",
+          "document.body.appendChild(p);"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS DOM creation",
+        "description": "Create and append element dynamically 2",
+        "blocks": [
+          "const p=document.createElement('p');",
+          "p.textContent='Dynamic';",
+          "document.body.appendChild(p);"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS DOM creation",
+        "description": "Create and append element dynamically 3",
+        "blocks": [
+          "const p=document.createElement('p');",
+          "p.textContent='Dynamic';",
+          "document.body.appendChild(p);"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS DOM creation",
+        "description": "Create and append element dynamically 4",
+        "blocks": [
+          "const p=document.createElement('p');",
+          "p.textContent='Dynamic';",
+          "document.body.appendChild(p);"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS DOM creation",
+        "description": "Create and append element dynamically 5",
+        "blocks": [
+          "const p=document.createElement('p');",
+          "p.textContent='Dynamic';",
+          "document.body.appendChild(p);"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS DOM creation",
+        "description": "Create and append element dynamically 6",
+        "blocks": [
+          "const p=document.createElement('p');",
+          "p.textContent='Dynamic';",
+          "document.body.appendChild(p);"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS DOM creation",
+        "description": "Create and append element dynamically 7",
+        "blocks": [
+          "const p=document.createElement('p');",
+          "p.textContent='Dynamic';",
+          "document.body.appendChild(p);"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS DOM creation",
+        "description": "Create and append element dynamically 8",
+        "blocks": [
+          "const p=document.createElement('p');",
+          "p.textContent='Dynamic';",
+          "document.body.appendChild(p);"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
+      },
+      {
+        "type": "codeArrangement",
+        "title": "JS DOM creation",
+        "description": "Create and append element dynamically 9",
+        "blocks": [
+          "const p=document.createElement('p');",
+          "p.textContent='Dynamic';",
+          "document.body.appendChild(p);"
+        ],
+        "correctOrder": [
+          0,
+          1,
+          2
+        ],
+        "bloomTarget": "creating"
       }
     ]
   }
