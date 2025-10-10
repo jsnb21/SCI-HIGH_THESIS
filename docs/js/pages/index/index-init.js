@@ -212,9 +212,9 @@
     }
 
     const screenshots = [
-  '/SCI-HIGH_THESIS/assets/img/bg/classroom_day.png',
-  '/SCI-HIGH_THESIS/assets/img/bg/libraryBG.png',
-  '/SCI-HIGH_THESIS/assets/img/mainhub/MainHubBG.png'
+      'assets/img/bg/classroom_day.png',
+      'assets/img/bg/libraryBG.png',
+      'assets/img/mainhub/MainHubBG.png'
     ];
     const closeModalBtn = document.getElementById('close-screenshots-modal');
     const carouselImg = document.getElementById('carousel-image');

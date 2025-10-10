@@ -55,7 +55,8 @@
           const injected = window?.SCI_HIGH?.GOOGLE_AI_API_KEY || window?.env?.GOOGLE_AI_API_KEY;
           if (injected && this.validateApiKey(injected)) { this.apiKey = injected; this.keyExpiry = Date.now() + this.maxKeyAge; this.updateAIStatus(true); this.primeModels(); return; }
         } catch {}
-        const possible = [this.configFile,'./config/env-config.json','/SCI-HIGH_THESIS/config/env-config.json','config/env-config.json'];
+  const base = (window.__APP_BASE__ || '/');
+  const possible = [this.configFile,'./config/env-config.json', base + 'config/env-config.json','config/env-config.json'];
         let ok = false;
         for (const path of possible) {
           try { const response = await fetch(path); if (response.ok) { const cfg = await response.json(); if (cfg.geminiApiKey && cfg.geminiApiKey !== 'YOUR_GEMINI_API_KEY_HERE' && this.validateApiKey(cfg.geminiApiKey)) { this.apiKey = cfg.geminiApiKey; this.keyExpiry = Date.now() + this.maxKeyAge; ok = true; break; } } } catch {}
