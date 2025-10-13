@@ -629,6 +629,22 @@
       </div>
     </footer>
     <script>
+      // Initialize MINI-CONTEST countdown with new end date in case no remote config is present
+      (async () => {
+        try {
+          const mod = await import('./js/leaderboards/countdownSnapshot.js');
+          // If Firebase/system config exists, module already resolves end date; otherwise enforce Oct 17, 2025
+          await mod.initCountdown({
+            targetISO: '2025-10-17T00:00:00',
+            containerId: 'mini-contest-countdown',
+            selectors: { days: '#mc-days', hours: '#mc-hours', mins: '#mc-mins', secs: '#mc-secs' },
+            statusId: 'mini-contest-status',
+            enableAdminButton: true
+          });
+        } catch (e) { console.warn('Countdown init failed:', e); }
+      })();
+    </script>
+    <script>
       // Firebase initialization is centralized in firebaseClient.js
       async function initializeFirebase() {
         const mod = await import('./js/leaderboards/firebaseClient.js');
@@ -644,6 +660,17 @@
       }).catch(error => {
         console.error('Failed to initialize Firebase:', error);
         throw error;
+      });
+
+      // Listen for mini-contest end to inform users
+      document.addEventListener('mini-contest-ended', () => {
+        try {
+          if (window.showInfo) {
+            window.showInfo('The MINI-CONTEST has ended. Score submissions are now closed. 🏁', { title: 'Contest Ended' });
+          } else {
+            alert('The MINI-CONTEST has ended. Score submissions are now closed.');
+          }
+        } catch(_) {}
       });
 
       // Helper function to ensure Firebase is ready before using database (delegates to firebaseClient)
@@ -816,6 +843,11 @@
       // Add missing functions for leaderboard API
       async function addScore(userId, playerName, score, department = 'Unknown', gameData = {}) {
         try {
+          // Gate page-level submissions after contest end
+          if (window.__miniContestActive === false) {
+            if (window.showInfo) window.showInfo('Score submissions are closed. The MINI-CONTEST has ended. 🏁', { title: 'Contest Ended' });
+            return { success: false, reason: 'contest-ended' };
+          }
           // Ensure Firebase is ready before using database
           const { ensureFirebaseReady } = await import('./js/leaderboards/firebaseClient.js');
           const database = await ensureFirebaseReady();
@@ -839,6 +871,11 @@
 
       async function updateBestScore(userId, playerName, score, department = 'Unknown', gameData = {}) {
         try {
+          // Gate page-level submissions after contest end
+          if (window.__miniContestActive === false) {
+            if (window.showInfo) window.showInfo('Score submissions are closed. The MINI-CONTEST has ended. 🏁', { title: 'Contest Ended' });
+            return { success: false, reason: 'contest-ended' };
+          }
           // Ensure Firebase is ready before using database
           const { ensureFirebaseReady } = await import('./js/leaderboards/firebaseClient.js');
           const database = await ensureFirebaseReady();

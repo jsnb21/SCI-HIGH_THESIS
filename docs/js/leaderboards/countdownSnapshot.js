@@ -157,6 +157,9 @@ export async function initCountdown(options) {
   const descEl = document.getElementById('mini-contest-desc');
   let snapshotTaken = false;
 
+  // Expose a global flag so UI and services can check contest activity
+  try { window.__miniContestActive = true; } catch(_) {}
+
   // Apply static texts and visibility if provided
   if (titleEl && headerText) titleEl.textContent = headerText;
   if (descEl && descriptionText) descEl.textContent = descriptionText;
@@ -242,6 +245,9 @@ export async function initCountdown(options) {
         secsEl.textContent = '00';
         if (!snapshotTaken) takeSnapshot();
         if (container) container.classList.add('ring', 'ring-primary/50');
+        // Mark inactive and notify listeners once
+        try { window.__miniContestActive = false; } catch(_) {}
+        try { document.dispatchEvent(new CustomEvent('mini-contest-ended')); } catch(_) {}
         return; // stop updating further values; keep zeros
       }
 
