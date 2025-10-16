@@ -162,7 +162,14 @@ export async function initCountdown(options) {
 
   // Apply static texts and visibility if provided
   if (titleEl && headerText) titleEl.textContent = headerText;
-  if (descEl && descriptionText) descEl.textContent = descriptionText;
+  if (descEl) {
+    if (descriptionText) {
+      descEl.textContent = descriptionText;
+    } else if (endDate) {
+      // Default description using computed end date in local time
+      descEl.textContent = 'Contest ends: ' + endDate.toLocaleString() + ' (local time)';
+    }
+  }
   if (container) container.style.display = (visible ? '' : 'none');
 
   async function getFullLeaderboardData() {

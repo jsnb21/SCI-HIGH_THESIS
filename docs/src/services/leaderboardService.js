@@ -22,7 +22,23 @@ class LeaderboardService {
     // Contest end gate: resolve end date from leaderboard config or Firebase
     async getContestEndMs() {
         if (typeof this._contestEndMs === 'number') return this._contestEndMs;
-        // Try dynamic import of leaderboards config (built for docs runtime)
+
+        // 1) Prefer remote value from Firebase (same path the countdown uses)
+        try {
+            // Initialize Firebase lightly for a read; use existing instance if any
+            await this.ensureFirebaseInitialized();
+            if (this.db) {
+                const snap = await this.db.ref('system/leaderboards/contest').once('value');
+                const v = snap.val() || {};
+                const endMs = typeof v.endsAtMs === 'number' ? v.endsAtMs : (v.endsAt ? Date.parse(v.endsAt) : 0);
+                if (endMs && !Number.isNaN(endMs)) {
+                    this._contestEndMs = endMs;
+                    return this._contestEndMs;
+                }
+            }
+        } catch (_) { /* ignore and fall through */ }
+
+        // 2) Fall back to local leaderboards config single source of truth
         try {
             const mod = await import('../../js/leaderboards/config.js');
             if (mod && typeof mod.getContestEndDate === 'function') {
@@ -33,7 +49,8 @@ class LeaderboardService {
                 }
             }
         } catch (_) {}
-        // Fallback: hardcode Oct 17, 2025 local midnight
+
+        // 3) Final fallback: Oct 17, 2025 local midnight
         const fallback = new Date(2025, 9, 17, 0, 0, 0).getTime();
         this._contestEndMs = fallback;
         return this._contestEndMs;
