@@ -23,36 +23,25 @@ class LeaderboardService {
     async getContestEndMs() {
         if (typeof this._contestEndMs === 'number') return this._contestEndMs;
 
-        // 1) Prefer remote value from Firebase (same path the countdown uses)
-        try {
-            // Initialize Firebase lightly for a read; use existing instance if any
-            await this.ensureFirebaseInitialized();
-            if (this.db) {
-                const snap = await this.db.ref('system/leaderboards/contest').once('value');
-                const v = snap.val() || {};
-                const endMs = typeof v.endsAtMs === 'number' ? v.endsAtMs : (v.endsAt ? Date.parse(v.endsAt) : 0);
-                if (endMs && !Number.isNaN(endMs)) {
-                    this._contestEndMs = endMs;
-                    return this._contestEndMs;
-                }
-            }
-        } catch (_) { /* ignore and fall through */ }
-
-        // 2) Fall back to local leaderboards config single source of truth
+        // Single source of truth: local config date
+        let localEndMs = 0;
         try {
             const mod = await import('../../js/leaderboards/config.js');
             if (mod && typeof mod.getContestEndDate === 'function') {
                 const d = mod.getContestEndDate();
-                if (d && !isNaN(d.getTime())) {
-                    this._contestEndMs = d.getTime();
-                    return this._contestEndMs;
-                }
+                if (d && !isNaN(d.getTime())) localEndMs = d.getTime();
             }
         } catch (_) {}
-
-        // 3) Final fallback: Oct 17, 2025 local midnight
-        const fallback = new Date(2025, 9, 17, 0, 0, 0).getTime();
-        this._contestEndMs = fallback;
+        const chosen = localEndMs || new Date(2025, 9, 17, 23, 59, 59).getTime();
+        try {
+            console.info('[LeaderboardService][ContestEndMs]', {
+                localEndMs,
+                localEndLocal: localEndMs ? new Date(localEndMs).toString() : null,
+                chosen,
+                chosenLocal: new Date(chosen).toString()
+            });
+        } catch(_) {}
+        this._contestEndMs = chosen;
         return this._contestEndMs;
     }
 

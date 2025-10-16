@@ -1,7 +1,7 @@
 // Central configuration for Leaderboards
 // Contest end date and admin flag handling
 
-export const CONTEST_END_ISO = '2025-10-17T18:00:00';
+export const CONTEST_END_ISO = '2025-10-17T23:59:59';
 export const ADMIN_QUERY_PARAM = 'admin';
 
 export function getContestEndDate() {
@@ -13,7 +13,7 @@ export function getContestEndDate() {
     }
   } catch (_) {}
   // Fallback: construct explicitly in local time (Oct is month index 9)
-  return new Date(2025, 9, 17, 18, 0, 0);
+  return new Date(2025, 9, 17, 23, 59, 59);
 }
 
 export function isAdmin() {

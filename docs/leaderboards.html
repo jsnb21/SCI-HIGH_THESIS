@@ -627,22 +627,7 @@
         <p class="text-gray-400 font-gaming">&copy; 2025 SCI-HIGH Thesis Project. All rights reserved. Game on! 🎮</p>
       </div>
     </footer>
-    <script>
-      // Initialize MINI-CONTEST countdown with new end date in case no remote config is present
-      (async () => {
-        try {
-          const mod = await import('./js/leaderboards/countdownSnapshot.js');
-          // If Firebase/system config exists, module already resolves end date; otherwise enforce Oct 17, 2025
-          await mod.initCountdown({
-            targetISO: '2025-10-17T00:00:00',
-            containerId: 'mini-contest-countdown',
-            selectors: { days: '#mc-days', hours: '#mc-hours', mins: '#mc-mins', secs: '#mc-secs' },
-            statusId: 'mini-contest-status',
-            enableAdminButton: true
-          });
-        } catch (e) { console.warn('Countdown init failed:', e); }
-      })();
-    </script>
+    
     <script>
       // Firebase initialization is centralized in firebaseClient.js
       async function initializeFirebase() {
@@ -661,16 +646,21 @@
         throw error;
       });
 
-      // Listen for mini-contest end to inform users
-      document.addEventListener('mini-contest-ended', () => {
-        try {
-          if (window.showInfo) {
-            window.showInfo('The MINI-CONTEST has ended. Score submissions are now closed. 🏁', { title: 'Contest Ended' });
-          } else {
-            alert('The MINI-CONTEST has ended. Score submissions are now closed.');
-          }
-        } catch(_) {}
-      });
+      // Listen once for mini-contest end to inform users
+      (function(){
+        let notified = false;
+        document.addEventListener('mini-contest-ended', () => {
+          if (notified) return;
+          notified = true;
+          try {
+            if (window.showInfo) {
+              window.showInfo('The MINI-CONTEST has ended. Score submissions are now closed. 🏁', { title: 'Contest Ended' });
+            } else {
+              alert('The MINI-CONTEST has ended. Score submissions are now closed.');
+            }
+          } catch(_) {}
+        });
+      })();
 
       // Helper function to ensure Firebase is ready before using database (delegates to firebaseClient)
       async function ensureFirebaseReady() {
@@ -2238,7 +2228,7 @@
               ? window.leaderboardAPI.loadCareerStatsData
               : undefined;
             await mod.initCountdown({
-              targetISO: cfg.getContestEndDate(),
+              // Let module resolve end date (later-of Firebase vs local config)
               containerId: 'mini-contest-countdown',
               selectors: { days: '#mc-days', hours: '#mc-hours', mins: '#mc-mins', secs: '#mc-secs' },
               statusId: 'mini-contest-status',
