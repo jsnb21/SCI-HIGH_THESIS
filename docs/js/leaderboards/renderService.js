@@ -9,6 +9,10 @@ export function renderLeaderboard(data) {
     return;
   }
 
+  const MAX_INITIAL = 10;
+  const visible = data.slice(0, MAX_INITIAL);
+  const hidden = data.slice(MAX_INITIAL);
+
   let html = `
     <div class="overflow-x-auto">
       <table class="w-full text-left bg-dark/50 rounded-lg overflow-hidden">
@@ -26,7 +30,7 @@ export function renderLeaderboard(data) {
         <tbody>
   `;
 
-  data.forEach((entry, index) => {
+  const renderRow = (entry, index) => {
     const rank = index + 1;
     let rankBadge = '';
     let rowClass = 'border-b border-light/30 hover:bg-light/20 transition-colors';
@@ -47,7 +51,7 @@ export function renderLeaderboard(data) {
       </div>
     `;
 
-    html += `
+    return `
       <tr class="${rowClass}">
         <td class="py-3 px-4">
           <div class="flex items-center space-x-2">
@@ -78,10 +82,57 @@ export function renderLeaderboard(data) {
         </td>
       </tr>
     `;
-  });
+  };
+
+  visible.forEach((entry, idx) => { html += renderRow(entry, idx); });
+
+  if (hidden.length > 0) {
+    // Hidden rows container (collapsed by default)
+    html += `<tr id="lb-hidden-start" class="hidden"></tr>`; // marker for AOS observer grouping
+    hidden.forEach((entry, i) => {
+      const globalIndex = MAX_INITIAL + i;
+      html += renderRow(entry, globalIndex);
+    });
+  }
 
   html += '</tbody></table></div>';
+
+  if (hidden.length > 0) {
+    html += `
+      <div class="flex justify-center mt-4">
+        <button id="lb-toggle" class="px-4 py-2 rounded bg-primary text-dark font-gaming hover:opacity-90 transition-colors">
+          Show More
+        </button>
+      </div>
+    `;
+  }
   container.innerHTML = html;
+
+  // Wire up toggle logic if there are hidden rows
+  if (hidden.length > 0) {
+    const btn = document.getElementById('lb-toggle');
+    const tbody = container.querySelector('tbody');
+    let expanded = false;
+    if (btn && tbody) {
+      btn.addEventListener('click', () => {
+        expanded = !expanded;
+        // Toggle visibility by adding/removing a class on hidden section
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.forEach((tr, idx) => {
+          if (idx >= MAX_INITIAL) {
+            tr.classList.toggle('hidden', !expanded);
+          }
+        });
+        btn.textContent = expanded ? 'Show Less' : 'Show More';
+        // If AOS is loaded, refresh animations after expanding
+        try { if (window.AOS) window.AOS.refreshHard(); } catch (_) {}
+      });
+
+      // Initial state: hide extra rows
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      rows.forEach((tr, idx) => { if (idx >= MAX_INITIAL) tr.classList.add('hidden'); });
+    }
+  }
 }
 
 export function renderPlayerCards(data) {
