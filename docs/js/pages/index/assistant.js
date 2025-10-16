@@ -35,6 +35,69 @@
         'What browsers are supported?',
         'Is SCI-HIGH mobile-friendly?'
       ];
+      // Local project facts to avoid hallucinations
+      this.teamMembers = [
+        { name: 'Baronia, James Scott', role: 'Project Lead & Developer' },
+        { name: 'Dela Cruz, Richard Joseph', role: 'Documentation & QA Tester' },
+        { name: 'Verceles, James Edward', role: 'Lead Developer' }
+      ];
+      this.teamQueryKeywords = [
+        'who are the members', 'members of sci-high', 'team members', 'team of sci-high', 'sci-high team',
+        'developers', 'authors', 'contributors', 'thesis team', 'student researchers', 'project members'
+      ];
+      // Local KB: supported languages/courses
+      this.supportedLanguages = [
+        { name: 'HTML/CSS/JavaScript', emoji: '🌐', note: 'Front-end web fundamentals used in the Classroom and Web Dev paths' },
+        { name: 'Python', emoji: '🐍', note: 'Beginner-friendly with strong problem-solving focus' },
+        { name: 'Java', emoji: '☕', note: 'Strongly-typed OOP foundation' },
+        { name: 'C++', emoji: '🧩', note: 'Lower-level control and algorithms practice' }
+      ];
+      this.languageQueryKeywords = [
+        'what languages', 'supported languages', 'courses', 'what can i learn', 'programming languages', 'language list'
+      ];
+      // Local KB: achievements overview (synced with src/services/achievementsUtil.js)
+      this.achievementsByTier = {
+        Common: ['First Steps', 'Quiz Apprentice', 'Marathon I', 'Scholar', 'Combo Starter'],
+        Uncommon: ['Quiz Veteran', 'Marathon II', 'Accuracy Ace', 'Course Finisher'],
+        Rare: ['Top Scorer', 'Accuracy Master', 'Combo Master', 'Multi-Talented'],
+        Epic: ['Legend', 'Perfectionist', 'Completionist'],
+        Mythic: ['Mythic Scholar', 'Accuracy Grandmaster', 'Unbreakable', 'Endurance Master']
+      };
+      this.achievementQueryKeywords = [
+        'achievement', 'achievements', 'badges', 'tiers', 'how do achievements work', 'unlock achievements'
+      ];
+      // Local KB: modes
+      this.modeQueryKeywords = [
+        'story mode', 'computer lab', 'difference between story mode and computer lab', 'lab mode', 'classroom mode'
+      ];
+      // Local KB: leaderboards and contest
+      this.contestEndISO = '2025-10-17T00:00:00';
+      this.leaderboardQueryKeywords = [
+        'leaderboard', 'leaderboards', 'mini-contest', 'contest', 'when does the contest end', 'can i submit score', 'points after contest'
+      ];
+      // Local KB: AI reranking and privacy
+      this.privacyQueryKeywords = [
+        'privacy', 'gemini', 'rerank', 'reranking', 'google ai', 'do you send my answers', 'data sent to ai'
+      ];
+      // Local KB: Adaptive Reranking explainer
+      this.rerankingExplainKeywords = [
+        'adaptive reranking', 'what is adaptive reranking', 'reranking system', 'bloom-aware reranking', 'reorder questions', 'rank questions'
+      ];
+      // Local KB: accounts/auth
+      this.accountQueryKeywords = [
+        'account', 'login', 'guest', 'student', 'general user', 'professor', 'how to sign in'
+      ];
+      // Local KB: Firebase/runtime
+      this.firebaseQueryKeywords = [
+        'firebase', 'database', 'realtime database', 'config', 'env config', 'github pages'
+      ];
+      // Local KB: Browser support and mobile
+      this.browserSupportKeywords = [
+        'what browsers are supported', 'supported browsers', 'browser support', 'which browser', 'which browsers'
+      ];
+      this.mobileFriendlyKeywords = [
+        'mobile friendly', 'is sci-high mobile friendly', 'mobile support', 'phone support', 'tablet support', 'responsive'
+      ];
       this.systemContext = `You are an intelligent assistant for SCI-HIGH...`;
       this.responses = {
         "what is sci-high": { type: 'game', response: 'SCI-HIGH is a revolutionary educational RPG that transforms programming education! 🎮✨ ...' },
@@ -237,7 +300,120 @@
     addUserMessage(message){ const messagesContainer=document.getElementById('chat-messages'); const div=document.createElement('div'); div.className='user-message mb-3 text-right animate-bounce-in'; div.innerHTML = `<div class="bg-gradient-to-r from-primary/20 to-yellow-300/20 rounded-lg p-2 max-w-xs ml-auto md:p-3 border border-primary/30"><div class="text-xs md:text-sm text-white">${this.formatMessage(message)}</div></div>`; messagesContainer.appendChild(div); messagesContainer.scrollTop=messagesContainer.scrollHeight; }
     addAssistantMessage(message, type='info'){ const messagesContainer=document.getElementById('chat-messages'); const div=document.createElement('div'); div.className='assistant-message mb-3 animate-bounce-in'; const bgColor = type==='game' ? 'bg-gradient-to-r from-accent/20 to-green-500/20' : type==='thesis' ? 'bg-gradient-to-r from-purple/20 to-indigo-500/20' : type==='technical' ? 'bg-gradient-to-r from-cyan/20 to-blue-500/20' : type==='ai' ? 'bg-gradient-to-r from-purple/20 to-cyan/20' : type==='security' ? 'bg-gradient-to-r from-red-500/20 to-orange-500/20' : 'bg-gradient-to-r from-purple/20 to-cyan/20'; const borderColor = type==='game' ? 'border-accent/30' : type==='thesis' ? 'border-purple/30' : type==='technical' ? 'border-cyan/30' : type==='ai' ? 'border-purple/30' : type==='security' ? 'border-red-500/30' : 'border-purple/30'; const textColor = type==='security' ? 'text-red-300' : 'text-white'; const typeIcon = type==='game' ? '🎮' : type==='thesis' ? '📚' : type==='technical' ? '⚙️' : type==='ai' ? '🤖' : type==='security' ? '🔒' : '🤖'; div.innerHTML = `<div class="${bgColor} rounded-lg p-2 max-w-xs md:p-3 border ${borderColor}"><div class="flex items-start space-x-2"><div class="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-dark font-bold text-xs flex-shrink-0">${typeIcon}</div><div class="flex-1 ${textColor}">${this.formatMessage(message)}</div></div></div>`; messagesContainer.appendChild(div); messagesContainer.scrollTop=messagesContainer.scrollHeight; }
     formatMessage(message){ return message.replace(/\*\*(.*?)\*\*/g,'<strong class="text-primary">$1</strong>').replace(/\*(.*?)\*/g,'<em class="text-accent">$1</em>').replace(/`(.*?)`/g,'<code class="bg-dark/50 px-1 py-0.5 rounded text-cyan text-xs">$1</code>').replace(/\n•/g,'\n<span class="text-primary">•</span>').replace(/(\d+\.)/g,'<span class="text-primary font-bold">$1</span>').replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" class="text-cyan hover:text-primary underline">$1</a>').replace(/#{1,6}\s?(.*)/g,'<strong class="text-primary text-sm">$1</strong>'); }
-    generateResponse(userMessage){ const message=userMessage.toLowerCase(); this.showTypingIndicator(); if (this.apiKey && this.apiKey.length>0) { this.generateAIResponse(userMessage); } else { this.generateFallbackResponse(message); } }
+    generateResponse(userMessage){
+      const message = userMessage.toLowerCase();
+      this.showTypingIndicator();
+      // 1) Try local deterministic answers first
+      const local = this.getLocalAnswer(message);
+      if (local) {
+        const typingDelay = Math.min(Math.max(local.text.length * 10, 300), 1200);
+        setTimeout(()=>{ this.hideTypingIndicator(); this.addToHistory('assistant', local.text); this.addAssistantMessage(local.text, local.type || 'info'); }, typingDelay);
+        return;
+      }
+      // 2) Otherwise defer to AI if key exists; else use built-in fallback
+      if (this.apiKey && this.apiKey.length>0) { this.generateAIResponse(userMessage); } else { this.generateFallbackResponse(message); }
+    }
+
+    getLocalAnswer(message){
+      try {
+        // Team/members queries
+        if (this.teamQueryKeywords.some(k => message.includes(k))) {
+          const text = this.formatTeamMembersAnswer();
+          return { text, type: 'info' };
+        }
+        // Supported languages/courses
+        if (this.languageQueryKeywords.some(k => message.includes(k))) {
+          const text = this.formatSupportedLanguagesAnswer();
+          return { text, type: 'game' };
+        }
+        // Achievements overview
+        if (this.achievementQueryKeywords.some(k => message.includes(k))) {
+          const text = this.formatAchievementsOverview();
+          return { text, type: 'game' };
+        }
+        // Modes: Story vs Computer Lab
+        if (this.modeQueryKeywords.some(k => message.includes(k))) {
+          const text = this.formatModesAnswer();
+          return { text, type: 'game' };
+        }
+        // Leaderboards and contest rules
+        if (this.leaderboardQueryKeywords.some(k => message.includes(k))) {
+          const text = this.formatLeaderboardRulesAnswer();
+          return { text, type: 'game' };
+        }
+        // AI reranking and privacy
+        if (this.privacyQueryKeywords.some(k => message.includes(k))) {
+          const text = this.formatPrivacyAnswer();
+          return { text, type: 'technical' };
+        }
+        // Adaptive Reranking explainer
+        if (this.rerankingExplainKeywords.some(k => message.includes(k))) {
+          const text = this.formatAdaptiveRerankingAnswer();
+          return { text, type: 'technical' };
+        }
+        // Accounts/auth
+        if (this.accountQueryKeywords.some(k => message.includes(k))) {
+          const text = this.formatAccountsAnswer();
+          return { text, type: 'info' };
+        }
+        // Firebase/runtime config
+        if (this.firebaseQueryKeywords.some(k => message.includes(k))) {
+          const text = this.formatFirebaseAnswer();
+          return { text, type: 'technical' };
+        }
+        // Browser support
+        if (this.browserSupportKeywords.some(k => message.includes(k))) {
+          const text = this.formatBrowserSupportAnswer();
+          return { text, type: 'technical' };
+        }
+        // Mobile-friendly
+        if (this.mobileFriendlyKeywords.some(k => message.includes(k))) {
+          const text = this.formatMobileFriendlyAnswer();
+          return { text, type: 'technical' };
+        }
+        return null;
+      } catch { return null; }
+    }
+
+    formatTeamMembersAnswer(){
+      const lines = this.teamMembers.map(m => `• ${m.name}\n  ${m.role}`);
+      return `Here are the SCI-HIGH team members:\n\n${lines.join('\n\n')}`;
+    }
+    formatSupportedLanguagesAnswer(){
+      const lines = this.supportedLanguages.map(l => `${l.emoji} ${l.name} — ${l.note}`);
+      return `You can learn and practice the following in SCI-HIGH:\n\n${lines.join('\n')}\n\nTip: The Classroom and Web Dev paths emphasize HTML/CSS/JS, while the Computer Lab features fast-paced quizzes across all topics.`;
+    }
+    formatAchievementsOverview(){
+      const tierLines = Object.entries(this.achievementsByTier).map(([tier, names]) => `• ${tier}: ${names.join(', ')}`);
+      return `Achievements system overview:\n\n${tierLines.join('\n')}\n\nUnlocking basics:\n- Sessions completed and total points contribute to Common/Uncommon tiers.\n- Accuracy and streaks unlock Rare/Epic.\n- Mythic requires long-term mastery (e.g., 5M points, 95%+ accuracy, 75+ streak, 500 sessions).`;
+    }
+    formatModesAnswer(){
+      return `Modes in SCI-HIGH:\n\n• Story (Classroom): Narrative-driven learning with lessons and quizzes that progress your mastery.\n• Computer Lab: Quick, competitive sessions geared for practice and leaderboards.\n\nUse Story to learn concepts step-by-step, then jump into the Lab to test speed and retention.`;
+    }
+    formatLeaderboardRulesAnswer(){
+      const end = new Date(this.contestEndISO);
+      const local = new Date(end.getFullYear(), end.getMonth(), end.getDate(), end.getHours(), end.getMinutes(), end.getSeconds());
+      const when = `${local.toLocaleString()}`;
+      return `Leaderboards and MINI-CONTEST:\n\n• Real-time leaderboards are powered by Firebase.\n• The MINI-CONTEST accepts score submissions until: ${when} (local time).\n• After the deadline, new writes are blocked—existing rankings remain visible.\n• You’ll see a toast/alert when the contest ends.`;
+    }
+    formatPrivacyAnswer(){
+      return `AI reranking privacy:\n\n• We never send question text or your answers to AI.\n• Only anonymized metadata (IDs, Bloom level, difficulty, tags) is used to re-order a small candidate set.\n• Strict guardrails: JSON-only output, low temperature/tokens, timeouts, caching, cooldowns, and local fallbacks.`;
+    }
+    formatAccountsAnswer(){
+      return `Account types:\n\n• Guest: Instant play, no signup; some features limited.\n• Student: Anonymous sign-in via Firebase for gameplay; progress tracked.\n• General User: Personal account (email/password).\n• Professor: Email/password; access to professor dashboard if provisioned.\n\nNote: Authentication uses Firebase (compat SDK).`;
+    }
+    formatFirebaseAnswer(){
+      return `Platform and config:\n\n• Storage: Firebase Realtime Database (compat SDK).\n• Hosting: GitHub Pages with Vite’s base path configured.\n• Runtime config: env-config.json and firebase-init.js are optionally injected (via CI secrets).\n• The app guard-loads these files so missing configs don’t break the site.`;
+    }
+    formatAdaptiveRerankingAnswer(){
+      return `Adaptive Reranking (Bloom‑aware):\n\n• Purpose: Reorders a small set of upcoming questions to better match your current mastery and goals.\n• Signals used: Bloom level tags (remembering → creating), difficulty band, lightweight tags, and recent history.\n• Privacy: Only anonymized metadata (IDs, Bloom, difficulty, tags) is sent—no question text or your answers.\n• Guardrails: JSON‑only responses, low temperature/tokens, short timeouts, caching/cooldowns, and safe local fallbacks when AI isn’t available.`;
+    }
+    formatBrowserSupportAnswer(){
+      return `Browser support:\n\n• Best: Chrome and Microsoft Edge (recommended for voice input and WebGL performance).\n• Also works: Firefox (voice dictation is limited) and Safari (performance varies on iOS).\n• Requirements: Modern browser with ES modules, WebGL, and audio enabled.\n• Tip: Keep your browser up to date for the smoothest gameplay.`;
+    }
+    formatMobileFriendlyAnswer(){
+      return `Mobile friendliness:\n\n• The site and UI are responsive, and the game runs on many phones/tablets.\n• Best experience is still desktop or laptop (more GPU/CPU headroom).\n• On mobile, use landscape orientation and a modern Chromium browser (Chrome/Edge).\n• iOS notes: Safari may limit audio/voice input and can throttle WebGL in heavy scenes.`;
+    }
     async generateAIResponse(userMessage){
       if (this.keyExpiry && Date.now() > this.keyExpiry) {
         this.clearApiKey();
