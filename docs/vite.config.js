@@ -65,13 +65,23 @@ export default defineConfig({
             console.warn(`Failed to copy directory ${src} -> ${dest}:`, e.message);
           }
         };
+        const ensureParentDir = (filePath) => {
+          try { mkdirSync(dirname(filePath), { recursive: true }); } catch (_) {}
+        };
 
         try {
-          // Ensure js root exists
+          // Ensure roots exist
           mkdirSync('./dist/js', { recursive: true });
-          // Individual utility files
-          if (existsSync('./src/pages/index/notifications.js')) copyFileSync('./src/pages/index/notifications.js', './dist/src/pages/index/notifications.js');
-          if (existsSync('./src/pages/index/maintenanceToast.js')) copyFileSync('./src/pages/index/maintenanceToast.js', './dist/src/pages/index/maintenanceToast.js');
+          mkdirSync('./dist/src', { recursive: true });
+          // Individual utility files (guarded + ensure parent dir)
+          if (existsSync('./src/pages/index/notifications.js')) {
+            const dest = './dist/src/pages/index/notifications.js';
+            ensureParentDir(dest); copyFileSync('./src/pages/index/notifications.js', dest);
+          }
+          if (existsSync('./src/pages/index/maintenanceToast.js')) {
+            const dest = './dist/src/pages/index/maintenanceToast.js';
+            ensureParentDir(dest); copyFileSync('./src/pages/index/maintenanceToast.js', dest);
+          }
           // Page-specific scripts (kept as plain scripts vs bundling)
           copyDir('./js/pages', './dist/js/pages');
           // Leaderboards page modules used via dynamic import()
@@ -102,6 +112,23 @@ export default defineConfig({
             }
           } catch (innerErr) {
             console.warn('Could not copy some config files:', innerErr.message);
+          }
+          // Also copy src-based runtime config files expected by compatibility shim
+          try {
+            const srcConfigFile = './src/config/firebase-config.js';
+            if (existsSync(srcConfigFile)) {
+              const dest = './dist/src/config/firebase-config.js';
+              mkdirSync(dirname(dest), { recursive: true });
+              copyFileSync(srcConfigFile, dest);
+            }
+            const envJson = './src/config/env-config.json';
+            if (existsSync(envJson)) {
+              const dest = './dist/src/config/env-config.json';
+              mkdirSync(dirname(dest), { recursive: true });
+              copyFileSync(envJson, dest);
+            }
+          } catch (srcCfgErr) {
+            console.warn('Optional src config files not copied:', srcCfgErr.message);
           }
           // Also copy admin-password.txt to the root of the dist folder so admin.html can fetch it
           try {

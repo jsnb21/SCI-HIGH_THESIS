@@ -631,7 +631,7 @@
     <script>
       // Firebase initialization is centralized in firebaseClient.js
       async function initializeFirebase() {
-        const mod = await import('./src/features/leaderboards/firebaseClient.js');
+        const mod = await import('./src/features/leaderboards/utils/firebaseClient.js');
         return mod.initFirebase();
       }
 
@@ -664,7 +664,7 @@
 
       // Helper function to ensure Firebase is ready before using database (delegates to firebaseClient)
       async function ensureFirebaseReady() {
-        const mod = await import('./src/features/leaderboards/firebaseClient.js');
+        const mod = await import('./src/features/leaderboards/utils/firebaseClient.js');
         return mod.ensureFirebaseReady();
       }
 
@@ -690,9 +690,9 @@
       async function loadCareerStatsData(filter = 'overall') {
         try {
           const [fb, dataMod, cacheMod] = await Promise.all([
-            import('./src/features/leaderboards/firebaseClient.js'),
-            import('./src/features/leaderboards/dataService.js'),
-            import('./src/features/leaderboards/cache.js')
+            import('./src/features/leaderboards/utils/firebaseClient.js'),
+            import('./src/features/leaderboards/data/dataService.js'),
+            import('./src/features/leaderboards/data/cache.js')
           ]);
           const cache = cacheMod.default || (window && window.leaderboardCache);
           const key = `career:${filter}`;
@@ -713,7 +713,7 @@
       // Enhanced Fetch Leaderboard using Career Stats
       async function fetchLeaderboard(filter) {
         try {
-          const renderMod = await import('./src/features/leaderboards/renderService.js');
+          const renderMod = await import('./src/features/leaderboards/ui/renderService.js');
           const data = await loadCareerStatsData(filter);
           renderMod.renderPlayerCards(data.slice(0, 3));
           renderMod.renderLeaderboard(data);
@@ -838,7 +838,7 @@
             return { success: false, reason: 'contest-ended' };
           }
           // Ensure Firebase is ready before using database
-          const { ensureFirebaseReady } = await import('./src/features/leaderboards/firebaseClient.js');
+          const { ensureFirebaseReady } = await import('./src/features/leaderboards/utils/firebaseClient.js');
           const database = await ensureFirebaseReady();
           
           const scoreData = {
@@ -866,7 +866,7 @@
             return { success: false, reason: 'contest-ended' };
           }
           // Ensure Firebase is ready before using database
-          const { ensureFirebaseReady } = await import('./src/features/leaderboards/firebaseClient.js');
+          const { ensureFirebaseReady } = await import('./src/features/leaderboards/utils/firebaseClient.js');
           const database = await ensureFirebaseReady();
           
           const snapshot = await database.ref('leaderboards/' + userId).once('value');
@@ -897,7 +897,7 @@
       async function getPlayerBestScore(userId) {
         try {
           // Ensure Firebase is ready before using database
-          const { ensureFirebaseReady } = await import('./src/features/leaderboards/firebaseClient.js');
+          const { ensureFirebaseReady } = await import('./src/features/leaderboards/utils/firebaseClient.js');
           const database = await ensureFirebaseReady();
           
           const snapshot = await database.ref('leaderboards/' + userId).once('value');
@@ -1234,14 +1234,14 @@
         // Initialize charts with career stats data
         setTimeout(async () => {
           try {
-            const chartsMod = await import('./src/features/leaderboards/chartsService.js');
+            const chartsMod = await import('./src/features/leaderboards/ui/chartsService.js');
             chartsMod.initializeCareerStatsCharts(career, completionStatus, recentSessions);
           } catch (e) { console.warn('[Charts] init failed:', e); }
           // Load Chart.js if needed, then build Bloom charts
           window.ensureChartJs().then(async ()=>{
             try {
               window.applyChartWhiteTheme && window.applyChartWhiteTheme();
-              const chartsMod = await import('./src/features/leaderboards/chartsService.js');
+              const chartsMod = await import('./src/features/leaderboards/ui/chartsService.js');
               chartsMod.buildBloomChartsFromCareer(career);
             } catch(e) { console.warn('Bloom charts skipped:', e); }
           }).catch(err=>{
@@ -1459,7 +1459,7 @@
         // Create charts after DOM is updated, ensuring Chart.js is loaded (reuse same loader as Bloom)
         setTimeout(async () => {
           const launchCharts = async () => {
-            try { const chartsMod = await import('./src/features/leaderboards/chartsService.js'); chartsMod.createPlayerCharts(playerData, topicPoints, gameData); } catch(e){ console.warn('[PlayerCharts] build failed:', e); }
+            try { const chartsMod = await import('./src/features/leaderboards/ui/chartsService.js'); chartsMod.createPlayerCharts(playerData, topicPoints, gameData); } catch(e){ console.warn('[PlayerCharts] build failed:', e); }
           };
           if(window.Chart){ window.applyChartWhiteTheme && window.applyChartWhiteTheme(); launchCharts(); }
           else {
@@ -2221,8 +2221,8 @@
         (async () => {
           try {
             const [mod, cfg] = await Promise.all([
-              import('./src/features/leaderboards/countdownSnapshot.js'),
-              import('./src/features/leaderboards/config.js')
+              import('./src/features/leaderboards/utils/countdownSnapshot.js'),
+              import('./src/features/leaderboards/utils/config.js')
             ]);
             const loadData = window.leaderboardAPI && window.leaderboardAPI.loadCareerStatsData
               ? window.leaderboardAPI.loadCareerStatsData
@@ -2275,6 +2275,6 @@
       });
     </script>
     <!-- AOS animations loader for leaderboards -->
-    <script defer src="src/features/leaderboards/aos-init.js"></script>
+  <script type="module" src="src/features/leaderboards/ui/aos-init.js"></script>
   </body>
 </html>
