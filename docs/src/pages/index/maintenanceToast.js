@@ -1,6 +1,6 @@
 // Reusable Maintenance Toast module
 // Usage:
-//   <script src="js/maintenanceToast.js"></script>
+//   <script src="src/pages/index/maintenanceToast.js"></script>
 //   window.MaintenanceToast.init({ onChange: (active, data) => { /* optional UI updates */ } });
 (function(global){
   'use strict';

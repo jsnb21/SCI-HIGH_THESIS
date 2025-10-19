@@ -1,0 +1,59 @@
+{
+  "mappings": [
+    {"from": "docs/js/leaderboards/aos-init.js", "to": "docs/src/features/leaderboards/ui/aos-init.js", "group": "leaderboards"},
+    {"from": "docs/js/leaderboards/renderService.js", "to": "docs/src/features/leaderboards/ui/renderService.js", "group": "leaderboards"},
+    {"from": "docs/js/leaderboards/chartsService.js", "to": "docs/src/features/leaderboards/ui/chartsService.js", "group": "leaderboards"},
+    {"from": "docs/js/leaderboards/cache.js", "to": "docs/src/features/leaderboards/data/cache.js", "group": "leaderboards"},
+    {"from": "docs/js/leaderboards/dataService.js", "to": "docs/src/features/leaderboards/data/dataService.js", "group": "leaderboards"},
+    {"from": "docs/js/leaderboards/countdownSnapshot.js", "to": "docs/src/features/leaderboards/utils/countdownSnapshot.js", "group": "leaderboards"},
+    {"from": "docs/js/leaderboards/config.js", "to": "docs/src/features/leaderboards/utils/config.js", "group": "leaderboards"},
+    {"from": "docs/js/leaderboards/firebaseClient.js", "to": "docs/src/features/leaderboards/utils/firebaseClient.js", "group": "leaderboards"},
+
+    {"from": "docs/js/pages/admin/main.js", "to": "docs/src/pages/admin/main.js", "group": "pages-admin"},
+
+    {"from": "docs/js/pages/developer/main.js", "to": "docs/src/pages/developer/main.js", "group": "pages-developer"},
+    {"from": "docs/js/pages/developer/tailwind-config.js", "to": "docs/src/pages/developer/tailwind-config.js", "group": "pages-developer"},
+
+    {"from": "docs/js/pages/index/index-init.js", "to": "docs/src/pages/index/index-init.js", "group": "pages-index"},
+    {"from": "docs/js/pages/index/visuals.js", "to": "docs/src/pages/index/visuals.js", "group": "pages-index"},
+    {"from": "docs/js/pages/index/notifications-fallback.js", "to": "docs/src/pages/index/notifications-fallback.js", "group": "pages-index"},
+    {"from": "docs/js/pages/index/modals.js", "to": "docs/src/pages/index/modals.js", "group": "pages-index"},
+    {"from": "docs/js/pages/index/news.js", "to": "docs/src/pages/index/news.js", "group": "pages-index"},
+    {"from": "docs/js/pages/index/dev.js", "to": "docs/src/pages/index/dev.js", "group": "pages-index"},
+    {"from": "docs/js/pages/index/aos-init.js", "to": "docs/src/pages/index/aos-init.js", "group": "pages-index"},
+    {"from": "docs/js/pages/index/authManager.js", "to": "docs/src/pages/index/authManager.js", "group": "pages-index"},
+    {"from": "docs/js/pages/index/assistant.js", "to": "docs/src/pages/index/assistant.js", "group": "pages-index"},
+    {"from": "docs/js/pages/index/tailwind-config.js", "to": "docs/src/pages/index/tailwind-config.js", "group": "pages-index"},
+
+    {"from": "docs/js/pages/news/visuals.js", "to": "docs/src/pages/news/visuals.js", "group": "pages-news"},
+    {"from": "docs/js/pages/news/pagination.js", "to": "docs/src/pages/news/pagination.js", "group": "pages-news"},
+    {"from": "docs/js/pages/news/notifications-fallback.js", "to": "docs/src/pages/news/notifications-fallback.js", "group": "pages-news"},
+    {"from": "docs/js/pages/news/maintenance-init.js", "to": "docs/src/pages/news/maintenance-init.js", "group": "pages-news"},
+    {"from": "docs/js/pages/news/tailwind-config.js", "to": "docs/src/pages/news/tailwind-config.js", "group": "pages-news"},
+
+    {"from": "docs/js/main.js", "to": "docs/src/main.js", "group": "js-root"},
+    {"from": "docs/js/maintenanceToast.js", "to": "docs/src/pages/index/maintenanceToast.js", "group": "js-root"},
+    {"from": "docs/js/notifications.js", "to": "docs/src/pages/index/notifications.js", "group": "js-root"},
+
+    {"from": "docs/assets/firebaseClient.js", "to": "docs/src/services/firebase/firebaseClient.js", "group": "assets-to-src"},
+    {"from": "docs/assets/config.js", "to": "docs/src/config/config.js", "group": "assets-to-src"},
+
+    {"from": "docs/documentation/AdaptiveReranking.md", "to": "docs/project-docs/AdaptiveReranking.md", "group": "documentation"},
+    {"from": "docs/documentation/BloomQuestionAuthoring.md", "to": "docs/project-docs/BloomQuestionAuthoring.md", "group": "documentation"},
+    {"from": "docs/documentation/CustomQuizScene-README.txt", "to": "docs/project-docs/CustomQuizScene-README.txt", "group": "documentation"},
+    {"from": "docs/documentation/howToStart.txt", "to": "docs/project-docs/howToStart.txt", "group": "documentation"},
+    {"from": "docs/documentation/refactor-acceptance.md", "to": "docs/project-docs/refactor-acceptance.md", "group": "documentation"},
+
+    {"from": "docs/remove-logs/remove-console-logs.cjs", "to": "docs/tools/maintenance/remove-console-logs.cjs", "group": "remove-logs"},
+    {"from": "docs/remove-logs/remove-console-logs.ps1", "to": "docs/tools/maintenance/remove-console-logs.ps1", "group": "remove-logs"},
+    {"from": "docs/remove-logs/CONSOLE-LOG-CLEANER.md", "to": "docs/tools/maintenance/CONSOLE-LOG-CLEANER.md", "group": "remove-logs"},
+    {"from": "docs/remove-logs/test.js", "to": "docs/tools/maintenance/test.js", "group": "remove-logs"},
+
+    {"from": "docs/config/firebase-database-rules.json", "to": "docs/tools/firebase/rules/firebase-database-rules.json", "group": "rules-to-tools"},
+    {"from": "docs/config/firebase-rules-secure.json", "to": "docs/tools/firebase/rules/firebase-rules-secure.json", "group": "rules-to-tools"},
+    {"from": "docs/config/oldfirebaserules.json", "to": "docs/tools/firebase/rules/oldfirebaserules.json", "group": "rules-to-tools"},
+
+    {"from": "docs/config/firebase-config.js", "to": "docs/src/config/firebase-config.js", "group": "config-to-src"},
+    {"from": "docs/config/env-config.json", "to": "docs/src/config/env-config.json", "group": "config-to-src"}
+  ]
+}
