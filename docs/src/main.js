@@ -1,58 +1,24 @@
-// SCI-HIGH Main Application Logic
+import './style.css'
+import javascriptLogo from './javascript.svg'
+import viteLogo from '/vite.svg'
+import { setupCounter } from './counter.js'
 
-// Global Modal Functions
-function showLoginModal() {
-  const loginModal = document.getElementById('login-modal');
-  if (loginModal) {
-    loginModal.classList.remove('hidden');
-    showUserTypeSelection();
-  } else {
-    console.error('Login modal not found');
-  }
-}
-
-// Global Registration Success Modal Function
-function showRegistrationSuccessModal(fullName, studentId, academicLevel) {
-  const modal = document.getElementById('registration-success-modal');
-  const detailsDiv = document.getElementById('registration-details');
-  
-  // Set the registration details
-  detailsDiv.innerHTML = `
-    <div class="text-center space-y-2">
-      <p><span class="text-cyan-300 font-bold">👤 Name:</span> ${fullName}</p>
-      <p><span class="text-cyan-300 font-bold">🆔 Student ID:</span> ${studentId}</p>
-      <p><span class="text-cyan-300 font-bold">📚 Level:</span> ${academicLevel}</p>
-      <p class="text-green-400 font-gaming mt-4">🎮 Ready to start your learning adventure!</p>
+document.querySelector('#app').innerHTML = `
+  <div>
+    <a href="https://vite.dev" target="_blank">
+      <img src="${viteLogo}" class="logo" alt="Vite logo" />
+    </a>
+    <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
+      <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
+    </a>
+    <h1>Hello Vite!</h1>
+    <div class="card">
+      <button id="counter" type="button"></button>
     </div>
-  `;
-  
-  // Show the modal
-  modal.classList.remove('hidden');
-  
-  // Attach event listeners when modal is shown
-  const startGameBtn = document.getElementById('modal-start-game-btn');
-  const backToIndexBtn = document.getElementById('modal-back-to-index-btn');
-  
-  // Remove any existing listeners to prevent duplicates
-  const newStartGameBtn = startGameBtn.cloneNode(true);
-  const newBackToIndexBtn = backToIndexBtn.cloneNode(true);
-  startGameBtn.parentNode.replaceChild(newStartGameBtn, startGameBtn);
-  backToIndexBtn.parentNode.replaceChild(newBackToIndexBtn, backToIndexBtn);
-  
-  // Add fresh event listeners
-  newStartGameBtn.addEventListener('click', () => {
-    modal.classList.add('hidden');
-    if (window.authManager && typeof window.authManager.redirectToGame === 'function') {
-      window.authManager.redirectToGame();
-    } else {
-      console.error('authManager not available');
-      // Fallback redirect to correct game path
-      window.location.href = 'html-pages/game.html';
-    }
-  });
-  
-  newBackToIndexBtn.addEventListener('click', () => {
-    modal.classList.add('hidden');
-    // Stay on the current page
-  });
-}
+    <p class="read-the-docs">
+      Click on the Vite logo to learn more
+    </p>
+  </div>
+`
+
+setupCounter(document.querySelector('#counter'))
