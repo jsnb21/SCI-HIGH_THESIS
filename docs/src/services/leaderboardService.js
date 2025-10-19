@@ -26,7 +26,7 @@ class LeaderboardService {
         // Single source of truth: local config date
         let localEndMs = 0;
         try {
-            const mod = await import('../features/leaderboards/utils/config.js');
+            const mod = await import('../../src/features/leaderboards/config.js');
             if (mod && typeof mod.getContestEndDate === 'function') {
                 const d = mod.getContestEndDate();
                 if (d && !isNaN(d.getTime())) localEndMs = d.getTime();
