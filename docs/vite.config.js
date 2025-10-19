@@ -70,8 +70,8 @@ export default defineConfig({
           // Ensure js root exists
           mkdirSync('./dist/js', { recursive: true });
           // Individual utility files
-          if (existsSync('./src/pages/index/notifications.js')) copyFileSync('./src/pages/index/notifications.js', './dist/src/pages/index/notifications.js');
-          if (existsSync('./src/pages/index/maintenanceToast.js')) copyFileSync('./src/pages/index/maintenanceToast.js', './dist/src/pages/index/maintenanceToast.js');
+          if (existsSync('./js/notifications.js')) copyFileSync('./js/notifications.js', './dist/js/notifications.js');
+          if (existsSync('./js/maintenanceToast.js')) copyFileSync('./js/maintenanceToast.js', './dist/js/maintenanceToast.js');
           // Page-specific scripts (kept as plain scripts vs bundling)
           copyDir('./js/pages', './dist/js/pages');
           // Leaderboards page modules used via dynamic import()
