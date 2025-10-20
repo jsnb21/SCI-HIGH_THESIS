@@ -16,6 +16,40 @@ class LeaderboardService {
         this.isFirebaseInitialized = false;
         this.db = null;
         this.initializationPromise = null;
+        this._contestEndMs = null; // cached contest end timestamp
+    }
+
+    // Contest end gate: resolve end date from leaderboard config or Firebase
+    async getContestEndMs() {
+        if (typeof this._contestEndMs === 'number') return this._contestEndMs;
+
+        // Single source of truth: local config date
+        let localEndMs = 0;
+        try {
+            const mod = await import('../../js/leaderboards/config.js');
+            if (mod && typeof mod.getContestEndDate === 'function') {
+                const d = mod.getContestEndDate();
+                if (d && !isNaN(d.getTime())) localEndMs = d.getTime();
+            }
+        } catch (_) {}
+        const chosen = localEndMs || new Date(2025, 9, 17, 23, 59, 59).getTime();
+        try {
+            console.info('[LeaderboardService][ContestEndMs]', {
+                localEndMs,
+                localEndLocal: localEndMs ? new Date(localEndMs).toString() : null,
+                chosen,
+                chosenLocal: new Date(chosen).toString()
+            });
+        } catch(_) {}
+        this._contestEndMs = chosen;
+        return this._contestEndMs;
+    }
+
+    async isContestActive() {
+        try {
+            const endMs = await this.getContestEndMs();
+            return Date.now() < endMs;
+        } catch (_) { return true; }
     }
 
     // Determine if current session is a guest user (no server writes)
@@ -203,6 +237,13 @@ class LeaderboardService {
 
     // Submit score to leaderboard
     async submitScore(playerData) {
+        // Stop writes after contest ends
+        try {
+            const active = await this.isContestActive();
+            if (!active) {
+                return { success: false, reason: 'contest-ended', message: 'Mini-contest period has ended. Score submissions are closed.' };
+            }
+        } catch (_) {}
         // Guests should not write to Firebase; use local storage fallback
         if (this.isGuestUser()) {
             console.info('LeaderboardService: Guest user, saving to local storage only');
@@ -254,6 +295,13 @@ class LeaderboardService {
 
     // Update score only if it's better than current best
     async updateBestScore(playerData) {
+        // Stop writes after contest ends
+        try {
+            const active = await this.isContestActive();
+            if (!active) {
+                return { success: false, reason: 'contest-ended', message: 'Mini-contest period has ended. Score submissions are closed.' };
+            }
+        } catch (_) {}
         // Guests should not write to Firebase
         if (this.isGuestUser()) {
             return this.saveToLocalStorage(playerData);

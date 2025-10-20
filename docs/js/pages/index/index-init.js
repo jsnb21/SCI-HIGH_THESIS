@@ -67,7 +67,7 @@
       const studentId = studentIdInput.value.trim();
       const studentIdPattern = /^[0-9]{2}-[0-9]{4}-[0-9]{3}$/;
       if (!studentIdPattern.test(studentId)) {
-        window.showError('Invalid Student ID format!\n\nPlease use the format: XX-XXXX-XXX\nExample: 24-2024-001\n\n• XX = 2-digit year/batch\n• XXXX = 4-digit year\n• XXX = 3-digit sequence number', { title: 'Invalid Student ID Format' });
+        window.showError('Invalid Student ID format!\n\nPlease use the format: XX-XXXX-XXX\nExample: 24-2024-001\n', { title: 'Invalid Student ID Format' });
         return;
       }
       currentStudentId = studentId;

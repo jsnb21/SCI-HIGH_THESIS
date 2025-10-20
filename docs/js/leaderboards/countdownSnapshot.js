@@ -115,7 +115,7 @@ export async function initCountdown(options) {
     loadData // optional: async () => Array
   } = options || {};
 
-  // Resolve target dates: prefer explicit end, else try Firebase, then config fallback
+  // Resolve target date: prefer explicit end, else single-source from local config
   let endDate; // contest end
   let startDate = null; // optional contest start
   let headerText = null;
@@ -124,29 +124,25 @@ export async function initCountdown(options) {
     if (targetISO) {
       endDate = (targetISO instanceof Date) ? targetISO : new Date(targetISO);
     } else {
-      // Try Firebase-configured end first
+      try {
+        const cfg = await import('./config.js');
+        endDate = cfg.getContestEndDate ? cfg.getContestEndDate() : new Date(cfg.CONTEST_END_ISO || '2025-10-17T23:59:59');
+      } catch {
+        endDate = new Date('2025-10-17T23:59:59');
+      }
+      // Optionally read header/description/visible from Firebase but DO NOT use remote endsAt to ensure single-source of truth
       try {
         const { ensureFirebaseReady } = await import('./firebaseClient.js');
         await ensureFirebaseReady();
         const snap = await firebase.database().ref('system/leaderboards/contest').once('value');
         const v = snap.val() || {};
-        const endMs = v.endsAtMs ?? (v.endsAt ? Date.parse(v.endsAt) : 0);
-        const startMs = v.startsAtMs ?? (v.startsAt ? Date.parse(v.startsAt) : 0);
-        if (startMs) startDate = new Date(startMs);
-        if (endMs) endDate = new Date(endMs);
         if (typeof v.header === 'string') headerText = v.header;
         if (typeof v.description === 'string') descriptionText = v.description;
         if (typeof v.visible === 'boolean') visible = v.visible;
       } catch {}
-      if (!endDate) {
-        try {
-          const cfg = await import('./config.js');
-          endDate = cfg.getContestEndDate ? cfg.getContestEndDate() : new Date(cfg.CONTEST_END_ISO || '2025-10-15T00:00:00');
-        } catch {
-          endDate = new Date('2025-10-15T00:00:00');
-        }
-      }
-  }
+      try { window.__miniContestResolvedEndsAt = endDate.getTime(); } catch(_) {}
+      try { console.info('[MiniContest][Resolve]', { localEndMs: endDate.getTime(), localEndLocal: endDate.toString() }); } catch(_) {}
+    }
   const daysEl = qs(selectors.days);
   const hoursEl = qs(selectors.hours);
   const minsEl = qs(selectors.mins);
@@ -156,10 +152,22 @@ export async function initCountdown(options) {
   const titleEl = document.getElementById('mini-contest-title');
   const descEl = document.getElementById('mini-contest-desc');
   let snapshotTaken = false;
+  let endedEmitted = false;
+  let countdownInterval = null;
+
+  // Expose a global flag so UI and services can check contest activity
+  try { window.__miniContestActive = true; } catch(_) {}
 
   // Apply static texts and visibility if provided
   if (titleEl && headerText) titleEl.textContent = headerText;
-  if (descEl && descriptionText) descEl.textContent = descriptionText;
+  if (descEl) {
+    if (descriptionText) {
+      descEl.textContent = descriptionText;
+    } else if (endDate) {
+      // Default description using computed end date in local time
+      descEl.textContent = 'Contest ends: ' + endDate.toLocaleString() + ' (local time)';
+    }
+  }
   if (container) container.style.display = (visible ? '' : 'none');
 
   async function getFullLeaderboardData() {
@@ -242,6 +250,17 @@ export async function initCountdown(options) {
         secsEl.textContent = '00';
         if (!snapshotTaken) takeSnapshot();
         if (container) container.classList.add('ring', 'ring-primary/50');
+        // Mark inactive and notify listeners once
+        try { window.__miniContestActive = false; } catch(_) {}
+        if (!endedEmitted) {
+          endedEmitted = true;
+          try { document.dispatchEvent(new CustomEvent('mini-contest-ended')); } catch(_) {}
+        }
+        // Stop the interval to prevent repeated notifications
+        if (countdownInterval) {
+          clearInterval(countdownInterval);
+          countdownInterval = null;
+        }
         return; // stop updating further values; keep zeros
       }
 
@@ -262,6 +281,6 @@ export async function initCountdown(options) {
       }
     }
     updateCountdown();
-    setInterval(updateCountdown, 1000);
+    countdownInterval = setInterval(updateCountdown, 1000);
   }
 }
