@@ -169,7 +169,7 @@ export function renderPlayerCards(data) {
     const emphasizeClass = originalRank === 1 ? 'md:scale-110 md:-mt-2 z-10' : 'md:scale-100';
 
     cardsHtml += `
-      <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105 ${emphasizeClass}" onclick="showPlayerProfile('${player.studentId}')">
+      <div class="leaderboard-card relative group cursor-pointer transform transition-all duration-300 hover:scale-105 ${emphasizeClass} opacity-100" onclick="showPlayerProfile('${player.studentId}')">
         <div class="neon-border bg-gradient-to-br ${cardStyle} rounded-lg p-6 backdrop-blur-sm relative overflow-hidden">
           <div class="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br ${rankColor} rounded-full flex items-center justify-center text-lg font-bold text-white border-3 border-white shadow-xl z-10">${rankIcon}</div>
           <div class="flex flex-col items-center mb-4">
@@ -196,4 +196,32 @@ export function renderPlayerCards(data) {
   });
 
   container.innerHTML = cardsHtml;
+
+  // Ensure cards are visible even if AOS/animations left a parent hidden on some devices
+  try {
+    // If AOS is present, refresh to register newly injected elements
+    if (window.AOS) {
+      if (typeof window.AOS.refreshHard === 'function') window.AOS.refreshHard();
+      else if (typeof window.AOS.refresh === 'function') window.AOS.refresh();
+    }
+
+    // If any ancestor has data-aos but didn't animate, force it visible
+    const aosAncestor = container.closest('[data-aos]');
+    if (aosAncestor && !aosAncestor.classList.contains('aos-animate')) {
+      aosAncestor.classList.add('aos-animate');
+      aosAncestor.style.opacity = '';
+      aosAncestor.style.visibility = '';
+      aosAncestor.style.transform = '';
+    }
+  } catch (_) {}
+
+  // Extra safeguard: force cards to be visible
+  try {
+    requestAnimationFrame(() => {
+      container.querySelectorAll('.leaderboard-card').forEach(el => {
+        el.style.opacity = '1';
+        el.style.visibility = 'visible';
+      });
+    });
+  } catch (_) {}
 }
