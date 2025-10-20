@@ -178,7 +178,7 @@ export async function initCountdown(options) {
       const loader = await waitForLeaderboardLoader();
       if (loader) return await loader();
     } catch (e) {
-      console.warn('[MiniContestSnapshot] load failed', e);
+      console.warn('', e);
     }
     return [];
   }
@@ -191,7 +191,7 @@ export async function initCountdown(options) {
     const data = await getFullLeaderboardData();
     const snapshot = buildSnapshotStructure(data, endDate);
     addDownloadButtons(snapshot);
-    console.info('[MiniContestSnapshot] ' + label + ' snapshot generated', snapshot);
+    console.info('');
   }
 
   async function takeSnapshot() {
@@ -226,7 +226,7 @@ export async function initCountdown(options) {
       });
       container.appendChild(manualBtn);
     } catch (err) {
-      console.warn('[MiniContestSnapshot] manual button setup failed:', err);
+      console.warn('');
     }
   })();
 
