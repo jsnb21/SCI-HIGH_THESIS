@@ -227,26 +227,10 @@ export default class QuizScene extends BaseScene {
                 const order = new Map(ranked.map((r,i)=>[r.id,i]));
                 normalized.sort((a,b)=> (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999));
                 const top = normalized[0];
-                if (top && Array.isArray(top.options)) {
-                    // Carry forward the stable hashed id so mastery tracking matches rerank candidates
+                // Do not override the currently displayed first question; use adaptive ordering only if UI hasn't been created yet
+                if (!this.quizContainer && top && Array.isArray(top.options)) {
                     this.currentQuestion = { id: top.id, question: top.question, options: top.options.slice(), correctIndex: top.correctIndex, type: 'multiple-choice' };
-                    // Ensure a single, correct shuffle after adaptive pick
                     if (this.currentQuestion.options.length > 2) this.randomizeAnswerChoices();
-
-                    // If the UI was already rendered using the initial random pick,
-                    // refresh it now to match the newly selected adaptive question.
-                    // Guard against refreshing after an answer was submitted or timer expired.
-                    try {
-                        if (this.quizContainer && !this.answerSubmitted && !this.timerExpired) {
-                            this.quizContainer.destroy(true);
-                            this.quizContainer = null;
-                            this.answerButtons = [];
-                            this.selectedAnswer = null;
-                            this.createQuizInterface();
-                        }
-                    } catch (e) {
-                        console.warn('[QuizScene] Failed to refresh UI after AI rerank:', e);
-                    }
                 }
             }).catch(()=>{});
         } catch {}

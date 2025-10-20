@@ -63,7 +63,16 @@
     const cachedVal = get(key);
     if (cachedVal !== undefined) return cachedVal;
     const value = await loader();
-    set(key, value, ttlMs);
+    // Do not cache empty/falsy results to avoid sticky empty states on first load
+    const shouldSkipCache = (
+      value === undefined ||
+      value === null ||
+      (Array.isArray(value) && value.length === 0) ||
+      (value && value.__noCache === true)
+    );
+    if (!shouldSkipCache) {
+      set(key, value, ttlMs);
+    }
     return value;
   }
 
