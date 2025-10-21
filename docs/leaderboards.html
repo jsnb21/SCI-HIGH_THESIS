@@ -247,37 +247,7 @@
       <!-- Leaderboard Section -->
       <section class="px-6 pb-16">
         <div class="max-w-6xl mx-auto">
-          <!-- MINI-CONTEST Countdown -->
-          <div id="mini-contest-countdown" class="mb-8 relative overflow-hidden rounded-xl border-2 border-primary/40 bg-gradient-to-r from-dark/80 via-light/70 to-dark/80 backdrop-blur-sm p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div class="flex items-center gap-4">
-              <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-yellow-400 flex items-center justify-center shadow-lg shadow-primary/30 animate-pulse-glow">
-                <span class="text-3xl" aria-hidden="true">⏳</span>
-              </div>
-              <div>
-                <h3 id="mini-contest-title" class="font-gaming text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">MINI-CONTEST Countdown</h3>
-                <p id="mini-contest-desc" class="text-xs text-gray-300 mt-1"></p>
-                <p id="mini-contest-status" class="text-cyan text-xs mt-1 font-gaming tracking-wider"></p>
-              </div>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-auto text-center">
-              <div class="count-box px-4 py-3 rounded-lg bg-dark/60 border border-primary/30 shadow-inner">
-                <div id="mc-days" class="font-gaming text-3xl md:text-4xl font-black text-primary">0</div>
-                <div class="text-xs tracking-wider text-gray-300 font-gaming mt-1">DAYS</div>
-              </div>
-              <div class="count-box px-4 py-3 rounded-lg bg-dark/60 border border-primary/30 shadow-inner">
-                <div id="mc-hours" class="font-gaming text-3xl md:text-4xl font-black text-primary">00</div>
-                <div class="text-xs tracking-wider text-gray-300 font-gaming mt-1">HRS</div>
-              </div>
-              <div class="count-box px-4 py-3 rounded-lg bg-dark/60 border border-primary/30 shadow-inner">
-                <div id="mc-mins" class="font-gaming text-3xl md:text-4xl font-black text-primary">00</div>
-                <div class="text-xs tracking-wider text-gray-300 font-gaming mt-1">MINS</div>
-              </div>
-              <div class="count-box px-4 py-3 rounded-lg bg-dark/60 border border-primary/30 shadow-inner">
-                <div id="mc-secs" class="font-gaming text-3xl md:text-4xl font-black text-primary">00</div>
-                <div class="text-xs tracking-wider text-gray-300 font-gaming mt-1">SECS</div>
-              </div>
-            </div>
-          </div>
+          
           <div class="neon-border rounded-xl backdrop-blur-sm p-8">
             <div class="flex items-center justify-between mb-8">
               <h2 class="font-gaming text-2xl font-bold text-primary flex items-center gap-3">
@@ -646,21 +616,7 @@
         throw error;
       });
 
-      // Listen once for mini-contest end to inform users
-      (function(){
-        let notified = false;
-        document.addEventListener('mini-contest-ended', () => {
-          if (notified) return;
-          notified = true;
-          try {
-            if (window.showInfo) {
-              window.showInfo('The MINI-CONTEST has ended. Score submissions are now closed. 🏁', { title: 'Contest Ended' });
-            } else {
-              alert('The MINI-CONTEST has ended. Score submissions are now closed.');
-            }
-          } catch(_) {}
-        });
-      })();
+      // Removed mini-contest pop-up listener
 
       // Helper function to ensure Firebase is ready before using database (delegates to firebaseClient)
       async function ensureFirebaseReady() {
@@ -834,7 +790,7 @@
         try {
           // Gate page-level submissions after contest end
           if (window.__miniContestActive === false) {
-            if (window.showInfo) window.showInfo('Score submissions are closed. The MINI-CONTEST has ended. 🏁', { title: 'Contest Ended' });
+            // Silent no-op when contest has ended (no pop-up on this page)
             return { success: false, reason: 'contest-ended' };
           }
           // Ensure Firebase is ready before using database
@@ -862,7 +818,7 @@
         try {
           // Gate page-level submissions after contest end
           if (window.__miniContestActive === false) {
-            if (window.showInfo) window.showInfo('Score submissions are closed. The MINI-CONTEST has ended. 🏁', { title: 'Contest Ended' });
+            // Silent no-op when contest has ended (no pop-up on this page)
             return { success: false, reason: 'contest-ended' };
           }
           // Ensure Firebase is ready before using database
@@ -2217,28 +2173,7 @@
       document.addEventListener('DOMContentLoaded', () => {
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
-        // MINI-CONTEST Countdown initialization (refactored into module)
-        (async () => {
-          try {
-            const [mod, cfg] = await Promise.all([
-              import('./js/leaderboards/countdownSnapshot.js'),
-              import('./js/leaderboards/config.js')
-            ]);
-            const loadData = window.leaderboardAPI && window.leaderboardAPI.loadCareerStatsData
-              ? window.leaderboardAPI.loadCareerStatsData
-              : undefined;
-            await mod.initCountdown({
-              // Let module resolve end date (later-of Firebase vs local config)
-              containerId: 'mini-contest-countdown',
-              selectors: { days: '#mc-days', hours: '#mc-hours', mins: '#mc-mins', secs: '#mc-secs' },
-              statusId: 'mini-contest-status',
-              enableAdminButton: true,
-              loadData
-            });
-          } catch (e) {
-            console.warn('[MiniContestCountdown] module init failed:', e.message);
-          }
-        })();
+        // Removed MINI-CONTEST countdown initialization
         
         if (mobileMenuBtn && mobileMenu) {
           mobileMenuBtn.addEventListener('click', () => {
