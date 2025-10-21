@@ -8,6 +8,20 @@
 (function () {
   const AOS_CSS = "https://unpkg.com/aos@2.3.4/dist/aos.css";
   const AOS_JS = "https://unpkg.com/aos@2.3.4/dist/aos.js";
+  // Safety: ensure content remains visible until AOS is ready (or if disabled)
+  // We use a data attribute on <html> to gate visibility overrides
+  try {
+    document.documentElement.setAttribute('data-aos-prep', '');
+    const styleId = 'aos-safety-style';
+    if (!document.getElementById(styleId)) {
+      const st = document.createElement('style');
+      st.id = styleId;
+      st.textContent = `
+        html[data-aos-prep] [data-aos] { opacity: 1 !important; transform: none !important; }
+      `;
+      document.head.appendChild(st);
+    }
+  } catch(_) {}
 
   function loadCSS(href) {
     return new Promise((resolve, reject) => {
@@ -83,7 +97,7 @@
   }
 
   function initAOS() {
-    if (typeof AOS === 'undefined') return;
+    if (typeof AOS === 'undefined') return false;
     const disable = prefersReducedMotion();
     AOS.init({
       disable: () => disable,
@@ -94,12 +108,37 @@
       once: true,
       mirror: false,
     });
+    // After AOS is fully initialized, allow animations by removing the safety gate
+    // If AOS is disabled, we KEEP the safety gate so elements stay visible
+    try {
+      if (!disable) {
+        // Give AOS a moment to compute, then remove the prep flag
+        setTimeout(() => {
+          document.documentElement.removeAttribute('data-aos-prep');
+          // Clean up safety style once not needed
+          const style = document.getElementById('aos-safety-style');
+          if (style) style.parentElement && style.parentElement.removeChild(style);
+        }, 0);
+      }
+    } catch(_) {}
+
     window.addEventListener('load', () => { try { AOS.refreshHard(); } catch (_) {} });
     initObservers();
+    return true;
   }
 
   loadCSS(AOS_CSS)
     .then(() => loadScript(AOS_JS))
-    .then(() => { tagElementsForAOS(); initAOS(); console.info('[AOS][Leaderboards] Loaded'); })
-    .catch(err => console.info('[AOS][Leaderboards] Skipped (', err && err.message ? err.message : err, ')'));
+    .then(() => {
+      // Initialize first so AOS can immediately manage visibility
+      const ok = initAOS();
+      // Only tag elements if AOS is present; otherwise keep everything visible
+      if (ok) tagElementsForAOS();
+      console.info('[AOS][Leaderboards] Loaded');
+    })
+    .catch(err => {
+      // If we failed to load AOS JS, ensure elements remain visible
+      try { document.documentElement.setAttribute('data-aos-prep',''); } catch(_) {}
+      console.info('[AOS][Leaderboards] Skipped (', err && err.message ? err.message : err, ')');
+    });
 })();
