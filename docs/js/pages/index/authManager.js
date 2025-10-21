@@ -18,6 +18,30 @@
         if (savedUser) {
           this.currentUser = JSON.parse(savedUser);
           this.userType = this.currentUser.type;
+        } else {
+          // Fallback: infer session from leaderboard info if available
+          try {
+            const lbInfoStr = localStorage.getItem('sci_high_player_info');
+            if (lbInfoStr) {
+              const lbInfo = JSON.parse(lbInfoStr);
+              const name = lbInfo.name || lbInfo.playerName || 'Player';
+              const studentId = lbInfo.studentId || '';
+              const dept = lbInfo.department || 'General';
+              const isStudentId = /^[0-9]{2}-[0-9]{4}-[0-9]{3}$/.test(studentId);
+              // Create a lightweight, local-only session so Start Game can proceed without prompting
+              this.currentUser = {
+                uid: 'lb_' + (isStudentId ? studentId.replace(/[^A-Za-z0-9_\-]/g, '_') : (name || 'player').replace(/\s+/g, '_').toLowerCase()),
+                type: isStudentId ? 'student' : 'general',
+                studentId: isStudentId ? studentId : undefined,
+                profile: {
+                  fullName: name,
+                  department: dept,
+                  isLocalDerived: true
+                }
+              };
+              this.userType = this.currentUser.type;
+            }
+          } catch (_) { /* ignore */ }
         }
         this.updateProfessorTabVisibility();
         this.updateUserInterface();
@@ -477,11 +501,53 @@
             }
             return mergedStudentData;
           }
+          // Fallback: check leaderboard entries for this studentId to avoid forcing profile re-entry
+          try {
+            const lbSnap = await firebase.database().ref('leaderboards').orderByChild('studentId').equalTo(studentId).once('value');
+            if (lbSnap.exists()) {
+              const any = Object.values(lbSnap.val())[0] || null;
+              if (any) {
+                const name = any.name || any.playerName || 'Player';
+                const parts = (name + '').trim().split(/\s+/);
+                const firstName = parts[0] || 'Player';
+                const lastName = parts.slice(1).join(' ');
+                return {
+                  studentId,
+                  fullName: name,
+                  firstName,
+                  lastName,
+                  department: any.department || 'General',
+                  // Mark as derived from leaderboard so UI can still allow edits later
+                  derivedFromLeaderboard: true
+                };
+              }
+            }
+          } catch (_) { /* ignore and fall through to offline */ }
         }
       } catch (error) {}
+      // Offline fallbacks: first check saved offline students, then local leaderboard cache
       const offlineStudents = JSON.parse(localStorage.getItem('sci_high_offline_students') || '[]');
       const offlineResult = offlineStudents.find(s => s.studentId === studentId) || null;
-      return offlineResult;
+      if (offlineResult) return offlineResult;
+      try {
+        const localLb = JSON.parse(localStorage.getItem('sci_high_local_leaderboard') || '[]');
+        const match = localLb.find(e => (e.studentId || '') === studentId);
+        if (match) {
+          const name = match.playerName || match.name || 'Player';
+          const parts = (name + '').trim().split(/\s+/);
+          const firstName = parts[0] || 'Player';
+          const lastName = parts.slice(1).join(' ');
+          return {
+            studentId,
+            fullName: name,
+            firstName,
+            lastName,
+            department: match.department || 'General',
+            derivedFromLeaderboard: true
+          };
+        }
+      } catch(_) { /* ignore */ }
+      return null;
     };
     this.loginStudentWithProfile = async function(studentId, profileData) {
       try {

@@ -1842,6 +1842,14 @@ export default class MainGameplay extends BaseScene {
             
             // Increment wrong answers counter
             this.wrongAnswers++;
+
+            // Deduct time penalty for wrong answer
+            const penalty = 10;
+            const before = this._timer ? this._timer.getSeconds() : this.gameTimer;
+            const lost = this._timer ? this._timer.sub(penalty) : Math.min(before, penalty);
+            this.gameTimer = this._timer ? this._timer.getSeconds() : Math.max(0, this.gameTimer - penalty);
+            if (lost !== 0) this.animateTimeDelta(-lost);
+            this.updateTimerDisplay();
             
             // Check for streak shield power-up
             if (this.activePowerUps.streakShield && this.activePowerUps.streakShield.active && this.streak > 0) {

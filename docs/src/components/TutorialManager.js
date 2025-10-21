@@ -323,7 +323,15 @@ export default class TutorialManager {
      * @param {Object} arrowConfig - Arrow configuration
      */
     createArrow(arrowConfig) {
-        const { startX, startY, endX, endY, color = 0xFFFF00 } = arrowConfig;
+        const { startX, startY, endX, endY, color = 0xFFFF00 } = arrowConfig || {};
+
+        // Gracefully skip if coordinates are not provided (some configs may specify different arrow formats)
+        if (
+            typeof startX !== 'number' || typeof startY !== 'number' ||
+            typeof endX !== 'number' || typeof endY !== 'number'
+        ) {
+            return;
+        }
         
         this.arrowPointer = this.scene.add.graphics();
         this.arrowPointer.lineStyle(3, color, 1);

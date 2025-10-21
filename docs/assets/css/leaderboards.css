@@ -1,0 +1,23 @@
+/* Leaderboards page CSS overrides
+   This file is intentionally lightweight to avoid a 404 on GitHub Pages
+   when referenced from leaderboards.html. Tailwind provides most styling.
+*/
+
+:root {
+  --lb-primary: #F4CE14;
+  --lb-accent: #379777;
+}
+
+/* Subtle neon-border polish if Tailwind classes are missing */
+.neon-border {
+  box-shadow: 0 0 0 1px rgba(244,206,20,0.25), 0 0 20px rgba(55,151,119,0.15) inset;
+}
+
+/* Simple animation helper used by modal */
+.modal-enter {
+  animation: modal-enter 160ms ease-out;
+}
+@keyframes modal-enter {
+  from { opacity: 0; transform: translateY(4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}

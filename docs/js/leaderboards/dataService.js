@@ -33,10 +33,32 @@ export function aggregateCareerStats({ careerData, studentsData, filter = 'overa
   const studentAccumulator = new Map();
 
   Object.entries(careerData).forEach(([studentId, statsData]) => {
-    if (!statsData || !statsData.careerStats || !statsData.studentInfo) return;
+    if (!statsData || typeof statsData !== 'object') return;
 
-    const career = statsData.careerStats;
-    const info = statsData.studentInfo;
+    // Accept multiple shapes: { careerStats, studentInfo } preferred, otherwise derive from legacy flat fields
+    const rawCareer = statsData.careerStats || statsData.career || null;
+    const rawInfo = statsData.studentInfo || statsData.info || statsData.profile || null;
+
+    // If no career object, attempt to construct from common flat fields
+    const career = rawCareer || {
+      totalPoints: statsData.totalPoints || 0,
+      totalSessions: statsData.totalSessions || 0,
+      averageAccuracy: statsData.averageAccuracy || 0,
+      totalQuestions: statsData.totalQuestions || 0,
+      totalCorrectAnswers: statsData.totalCorrectAnswers || 0,
+      highestStreak: statsData.highestStreak || 0,
+      courseCompletionStatus: statsData.courseCompletionStatus || {}
+    };
+
+    // If constructed career has no signal, skip
+    const hasCareerSignal = (career.totalPoints || career.totalSessions || career.totalQuestions || 0) > 0 || (career.courseCompletionStatus && Object.keys(career.courseCompletionStatus).length > 0);
+    if (!rawCareer && !hasCareerSignal) return;
+
+    // Build info fallback
+    const info = rawInfo || {
+      fullName: statsData.fullName || statsData.name || ((statsData.firstName || '') + ' ' + (statsData.lastName || '')).trim(),
+      lastUpdated: statsData.lastUpdated || ''
+    };
 
     const studentInfo = studentNameMap[studentId];
 
@@ -57,7 +79,7 @@ export function aggregateCareerStats({ careerData, studentsData, filter = 'overa
     }
     studentName = (studentName || '').trim() || `Student ${studentId}`;
 
-    let department = studentInfo?.department || statsData.department || 'Unknown';
+  let department = studentInfo?.department || statsData.department || statsData.academicInfo?.department || 'Unknown';
     const departmentType = deptTypeFromString(department);
 
     if (filter !== 'overall') {

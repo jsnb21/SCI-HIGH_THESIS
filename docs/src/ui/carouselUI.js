@@ -16,6 +16,8 @@ class Carousel {
         this.leftArrow = null;
         this.rightArrow = null;
         this._selecting = false; // Add debounce flag
+    this._interactiveState = true; // Track whether interactions are enabled
+    this._soundsEnabled = true; // Track whether SFX should play
 
         this.scene.scale.on('resize', this.onResize, this);
     }
@@ -271,6 +273,7 @@ class Carousel {
             () => wheelListener.removeListener('wheel')
         ];
     }    move(direction) {
+        if (this._interactiveState === false) return; // Block when disabled
         if (!this._uiConfig) return;
         const iconCount = this.iconKeys.length; // Use iconKeys length instead of carouselIcons
         let newIndex = (this.carouselIndex + direction + iconCount) % iconCount;
@@ -369,6 +372,7 @@ class Carousel {
     }
 
     selectCurrentItem() {
+        if (this._interactiveState === false) return; // Block when disabled
         // Prevent rapid clicking/selection
         if (this._selecting) {
             return;
@@ -395,6 +399,7 @@ class Carousel {
     }
 
     playHoverSound() {
+        if (!this._soundsEnabled) return;
         if (this.scene[this.config.sounds?.hover]) {
             this.scene[this.config.sounds.hover].setVolume(seVolume);
             this.scene[this.config.sounds.hover].play();
@@ -402,6 +407,7 @@ class Carousel {
     }
 
     playConfirmSound() {
+        if (!this._soundsEnabled) return;
         if (this.scene[this.config.sounds?.confirm]) {
             this.scene[this.config.sounds.confirm].setVolume(seVolume);
             this.scene[this.config.sounds.confirm].play();
@@ -473,12 +479,32 @@ class Carousel {
             }
         }
 
-        // Disable keyboard input listeners if needed
-        if (this._inputListeners) {
-            this._inputListeners.forEach(listener => {
-                listener.enabled = enabled;
-            });
-        }
+        // Keyboard listeners remain attached; guards above block actions when disabled
+    }
+
+    setSoundsEnabled(enabled) {
+        this._soundsEnabled = !!enabled;
+    }
+
+    getAllElements() {
+        const elems = [];
+        if (this.bgPanel) elems.push(this.bgPanel);
+        if (this.carouselHeading) elems.push(this.carouselHeading);
+        if (this.carouselDesc) elems.push(this.carouselDesc);
+        if (this.leftArrow) elems.push(this.leftArrow);
+        if (this.rightArrow) elems.push(this.rightArrow);
+        if (this.carouselIcons && this.carouselIcons.length) elems.push(...this.carouselIcons);
+        return elems;
+    }
+
+    setAlpha(alpha) {
+        this.getAllElements().forEach(el => { if (el && el.setAlpha) el.setAlpha(alpha); });
+    }
+
+    fadeTo(alpha, duration = 300) {
+        const targets = this.getAllElements().filter(el => !!el);
+        if (!targets.length) return;
+        this.scene.tweens.add({ targets, alpha, duration, ease: 'Quad.easeInOut' });
     }
 }
 
