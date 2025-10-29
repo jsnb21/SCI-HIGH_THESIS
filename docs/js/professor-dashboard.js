@@ -207,7 +207,10 @@ class ProfessorDashboard {
       const map = { python: 'python.json', java: 'java.json', webdesign: 'webdesign.json' };
       const file = map[bankKey];
       if (!file) return;
-      const res = await fetch(`public/data/quizzes/${file}`);
+      const base = (window.__APP_BASE__ || '/');
+      // Vite serves `public/` at the web root, so omit `public/` in URLs
+      const url = `${base}data/quizzes/${file}`;
+      const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = await res.json();
       const extracted = this.extractQuestionsFromQuizJSON(json);
