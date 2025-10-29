@@ -22,7 +22,11 @@
         const candidates = [
           './config/runtime-env.js',
           'config/runtime-env.js',
-          base + 'config/runtime-env.js'
+          base + 'config/runtime-env.js',
+          // Support alternative filename used by existing workflow
+          './config/firebase-init.js',
+          'config/firebase-init.js',
+          base + 'config/firebase-init.js'
         ];
         for (const src of candidates) {
           try {
