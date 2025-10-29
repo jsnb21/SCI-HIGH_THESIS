@@ -705,46 +705,67 @@ class ProfessorDashboard {
       const studentsData = studentsSnap.val();
       const careerData = careerSnap && typeof careerSnap.val === 'function' ? (careerSnap.val() || {}) : {};
 
-      if (!studentsData) {
-        this.students = [];
-        this.filteredStudents = [];
-        this.visibleCount = 0;
-        this.renderStudentsTable();
-        this.renderAnalytics();
-        return;
-      }
+      // Build unified list from career stats (primary) and enrich with students data if present
+      const ids = new Set([...
+        Object.keys(careerData || {}),
+        ...Object.keys(studentsData || {})
+      ]);
 
-      this.students = Object.keys(studentsData).map(studentId => {
-        const student = studentsData[studentId];
-        const rawCareer = careerData[studentId] || null;
-        const career = this.normalizeCareer(rawCareer);
-        let strand = student.strand;
-        let year = student.year;
-        if (!strand && !year && student.strandYear) {
-          const parseResult = this.parseStrandYear(student.strandYear);
-          strand = parseResult.strand;
-          year = parseResult.year;
+      const buildName = (sid, sObj, cObj) => {
+        if (sObj) {
+          const full = `${sObj.firstName || ''} ${sObj.lastName || ''}`.trim();
+          if (full) return full;
+          if (sObj.fullName) return sObj.fullName;
+          if (sObj.name) return sObj.name;
         }
+        if (cObj) {
+          const info = cObj.studentInfo || cObj.info || cObj.profile || {};
+          if (info.fullName) return info.fullName;
+          if (cObj.fullName) return cObj.fullName;
+          if (info.studentName) return info.studentName;
+          if (cObj.name) return cObj.name;
+        }
+        return `Student ${sid}`;
+      };
+
+      this.students = Array.from(ids).map(studentId => {
+        const student = (studentsData && studentsData[studentId]) || null;
+        const rawCareer = careerData[studentId] || null;
+        const career = this.normalizeCareer(rawCareer) || {};
+
+        // Strand / Year inference
+        let strand = (student && student.strand) || '';
+        let year = (student && student.year) || '';
+        const strandYear = (student && student.strandYear) || rawCareer?.strandYear || '';
+        if ((!strand || !year) && strandYear) {
+          const { strand: pStrand, year: pYear } = this.parseStrandYear(strandYear);
+          strand = strand || pStrand;
+          year = year || pYear;
+        }
+
+        const department = (student && student.department) || rawCareer?.department || 'N/A';
+        const fullName = buildName(studentId, student, rawCareer);
+
         return {
           id: studentId,
-          studentId: student.studentId || studentId,
-          fullName: `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Unknown',
+          studentId: (student && student.studentId) || studentId,
+          fullName,
           academicInfo: {
-            level: student.department === 'College Department' ? 'college' : 'shs',
+            level: /college/i.test(department) ? 'college' : 'shs',
             strand: strand || 'N/A',
             year: year || 'N/A',
-            course: student.strandYear || 'N/A',
-            yearLevel: student.strandYear || 'N/A',
-            department: student.department || 'N/A'
+            course: strandYear || 'N/A',
+            yearLevel: strandYear || 'N/A',
+            department
           },
           accountStatus: {
             createdBy: 'system',
-            lastLogin: student.lastLogin || null,
-            isFirstLogin: !student.lastLogin
+            lastLogin: (student && student.lastLogin) || rawCareer?.lastUpdated || null,
+            isFirstLogin: !(student && student.lastLogin)
           },
           gameData: {
-            totalPoints: (career?.totalPoints || student.totalPoints || 0),
-            courseProgress: student.courseProgress || {}
+            totalPoints: (career.totalPoints || 0),
+            courseProgress: (student && student.courseProgress) || {}
           },
           career
         };
