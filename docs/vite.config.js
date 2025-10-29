@@ -72,6 +72,8 @@ export default defineConfig({
           // Individual utility files
           if (existsSync('./js/notifications.js')) copyFileSync('./js/notifications.js', './dist/js/notifications.js');
           if (existsSync('./js/maintenanceToast.js')) copyFileSync('./js/maintenanceToast.js', './dist/js/maintenanceToast.js');
+          // Professor dashboard script (served as plain script)
+          if (existsSync('./js/professor-dashboard.js')) copyFileSync('./js/professor-dashboard.js', './dist/js/professor-dashboard.js');
           // Page-specific scripts (kept as plain scripts vs bundling)
           copyDir('./js/pages', './dist/js/pages');
           // Leaderboards page modules used via dynamic import()
