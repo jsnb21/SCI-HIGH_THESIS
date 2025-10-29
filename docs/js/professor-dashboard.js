@@ -698,19 +698,11 @@ class ProfessorDashboard {
         return;
       }
 
-      const [studentsSnap, careerSnap] = await Promise.all([
-        this.database.ref('students').once('value'),
-        this.database.ref('student_career_stats').once('value').catch(() => ({ val: () => null }))
-      ]);
-      const studentsData = studentsSnap.val();
+      // 1) Fetch career stats first (primary source)
+      const careerSnap = await this.database.ref('student_career_stats').once('value').catch(() => ({ val: () => null }));
       const careerData = careerSnap && typeof careerSnap.val === 'function' ? (careerSnap.val() || {}) : {};
 
-      // Build unified list from career stats (primary) and enrich with students data if present
-      const ids = new Set([...
-        Object.keys(careerData || {}),
-        ...Object.keys(studentsData || {})
-      ]);
-
+      // Build initial list from career only
       const buildName = (sid, sObj, cObj) => {
         if (sObj) {
           const full = `${sObj.firstName || ''} ${sObj.lastName || ''}`.trim();
@@ -728,46 +720,89 @@ class ProfessorDashboard {
         return `Student ${sid}`;
       };
 
-      this.students = Array.from(ids).map(studentId => {
-        const student = (studentsData && studentsData[studentId]) || null;
+      const ids = Object.keys(careerData || {});
+      const baseStudents = ids.map(studentId => {
         const rawCareer = careerData[studentId] || null;
         const career = this.normalizeCareer(rawCareer) || {};
-
-        // Strand / Year inference
-        let strand = (student && student.strand) || '';
-        let year = (student && student.year) || '';
-        const strandYear = (student && student.strandYear) || rawCareer?.strandYear || '';
-        if ((!strand || !year) && strandYear) {
-          const { strand: pStrand, year: pYear } = this.parseStrandYear(strandYear);
-          strand = strand || pStrand;
-          year = year || pYear;
-        }
-
-        const department = (student && student.department) || rawCareer?.department || 'N/A';
-        const fullName = buildName(studentId, student, rawCareer);
-
+        const strandYear = rawCareer?.strandYear || '';
+        let { strand, year } = this.parseStrandYear(strandYear);
+        const dept = this.deptTypeFromString(rawCareer?.department || (rawCareer?.studentInfo?.department) || '');
+        const departmentLabel = rawCareer?.department || (rawCareer?.studentInfo?.department) || (dept === 'college' ? 'College Department' : 'Senior High');
+        const lastLogin = this.deriveLastActive(rawCareer) || null;
+        const fullName = buildName(studentId, null, rawCareer);
         return {
           id: studentId,
-          studentId: (student && student.studentId) || studentId,
+          studentId,
           fullName,
           academicInfo: {
-            level: /college/i.test(department) ? 'college' : 'shs',
+            level: dept === 'college' ? 'college' : 'shs',
             strand: strand || 'N/A',
             year: year || 'N/A',
             course: strandYear || 'N/A',
             yearLevel: strandYear || 'N/A',
-            department
+            department: departmentLabel || 'N/A'
           },
           accountStatus: {
             createdBy: 'system',
-            lastLogin: (student && student.lastLogin) || rawCareer?.lastUpdated || null,
-            isFirstLogin: !(student && student.lastLogin)
+            lastLogin,
+            isFirstLogin: !lastLogin
           },
           gameData: {
             totalPoints: (career.totalPoints || 0),
-            courseProgress: (student && student.courseProgress) || {}
+            courseProgress: {}
           },
           career
+        };
+      });
+
+      // Determine if enrichment is necessary (missing names or strandYear)
+      const needsEnrichment = baseStudents.some(s => !s.fullName || /Student\s+/i.test(s.fullName) || (!s.academicInfo.course || s.academicInfo.course === 'N/A'));
+
+      let studentsData = null;
+      if (needsEnrichment) {
+        try {
+          const studentsSnap = await this.database.ref('students').once('value');
+          studentsData = studentsSnap.val() || null;
+        } catch(_) { /* optional enrichment */ }
+      }
+
+      // Enrich fields from students if available
+      this.students = baseStudents.map(s => {
+        const student = studentsData ? studentsData[s.id] : null;
+        if (!student) return s;
+        const strandYear = student.strandYear || s.academicInfo.yearLevel || '';
+        let strand = student.strand || s.academicInfo.strand;
+        let year = student.year || s.academicInfo.year;
+        if ((!strand || !year) && strandYear) {
+          const p = this.parseStrandYear(strandYear);
+          strand = strand || p.strand;
+          year = year || p.year;
+        }
+        const fullName = (function(){
+          const built = `${student.firstName || ''} ${student.lastName || ''}`.trim();
+          return built || student.fullName || s.fullName;
+        })();
+        return {
+          ...s,
+          studentId: student.studentId || s.studentId,
+          fullName,
+          academicInfo: {
+            ...s.academicInfo,
+            strand: strand || s.academicInfo.strand,
+            year: year || s.academicInfo.year,
+            course: strandYear || s.academicInfo.course,
+            yearLevel: strandYear || s.academicInfo.yearLevel,
+            department: student.department || s.academicInfo.department
+          },
+          accountStatus: {
+            ...s.accountStatus,
+            lastLogin: student.lastLogin || s.accountStatus.lastLogin,
+            isFirstLogin: !(student.lastLogin)
+          },
+          gameData: {
+            ...s.gameData,
+            courseProgress: student.courseProgress || s.gameData.courseProgress
+          }
         };
       });
 
@@ -792,7 +827,7 @@ class ProfessorDashboard {
   normalizeCareer(statsData) {
     if (!statsData || typeof statsData !== 'object') return null;
     const rawCareer = statsData.careerStats || statsData.career || statsData;
-    const totalPoints = rawCareer.totalPoints || statsData.totalPoints || 0;
+    const totalPoints = rawCareer.totalPoints || rawCareer.score || rawCareer.points || statsData.totalPoints || statsData.score || 0;
     const courseCompletionStatus = rawCareer.courseCompletionStatus || statsData.courseCompletionStatus || {};
     const totalSessions = rawCareer.totalSessions || statsData.totalSessions || 0;
     const averageAccuracy = rawCareer.averageAccuracy || statsData.averageAccuracy || 0;
@@ -1057,6 +1092,30 @@ class ProfessorDashboard {
       }
     }
     return 0;
+  }
+
+  // Helpers to improve data quality from career stats
+  deptTypeFromString(dept) {
+    if (!dept) return 'other';
+    const d = String(dept).toLowerCase();
+    if (d.includes('college')) return 'college';
+    if (d.includes('senior')) return 'seniorhigh';
+    if (d.includes('junior')) return 'juniorhigh';
+    return 'other';
+  }
+
+  deriveLastActive(rawCareer) {
+    try {
+      if (!rawCareer) return null;
+      if (rawCareer.lastUpdated) return rawCareer.lastUpdated;
+      const sessions = rawCareer.recentSessions || (rawCareer.careerStats && rawCareer.careerStats.recentSessions) || {};
+      let latest = 0;
+      Object.values(sessions).forEach(s => {
+        const t = (s && (s.endTime || s.time || s.timestamp)) ? new Date(s.endTime || s.time || s.timestamp).getTime() : 0;
+        if (t > latest) latest = t;
+      });
+      return latest ? new Date(latest).toISOString() : null;
+    } catch(_) { return null; }
   }
 
   /* =============================
