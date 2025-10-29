@@ -140,10 +140,21 @@ class ProfessorDashboard {
     this.draftStatusEl = document.getElementById('draft-status');
     this.loadedBankCountEl = document.getElementById('loaded-bank-count');
     this.questionSearchInput = document.getElementById('question-search-input');
-    this.customQuestionForm = document.getElementById('custom-question-form');
-    this.customQuestionText = document.getElementById('custom-question-text');
-    this.customCorrectIndex = document.getElementById('custom-correct-index');
-    this.customOptionInputs = Array.from(document.querySelectorAll('.custom-opt-input'));
+  this.customQuestionForm = document.getElementById('custom-question-form');
+  this.customQuestionType = document.getElementById('custom-question-type');
+  this.customBloomTarget = document.getElementById('custom-bloom-target');
+  // Multiple choice refs
+  this.customQuestionText = document.getElementById('custom-question-text');
+  this.customCorrectIndex = document.getElementById('custom-correct-index');
+  this.customOptionInputs = Array.from(document.querySelectorAll('.custom-opt-input'));
+  // Syntax form refs
+  this.syntaxQuestion = document.getElementById('syntax-question');
+  this.syntaxInstruction = document.getElementById('syntax-instruction');
+  this.syntaxBlocksWrap = document.getElementById('syntax-blocks-wrap');
+  // Arrangement refs
+  this.arrangeTitle = document.getElementById('arrange-title');
+  this.arrangeDescription = document.getElementById('arrange-description');
+  this.arrangeBlocks = document.getElementById('arrange-blocks');
     // Existing quiz elements
     this.existingQuizzesContainer = document.getElementById('existing-quizzes-container');
     this.existingQuizzesStatus = document.getElementById('existing-quizzes-status');
@@ -157,6 +168,13 @@ class ProfessorDashboard {
     document.getElementById('add-custom-question-btn')?.addEventListener('click', () => this.toggleCustomQuestionForm(true));
     document.getElementById('cancel-custom-question')?.addEventListener('click', () => this.toggleCustomQuestionForm(false));
     document.getElementById('save-custom-question')?.addEventListener('click', () => this.addCustomQuestion());
+    // toggle forms by type
+    this.customQuestionType?.addEventListener('change', () => this.updateCustomFormVisibility());
+    // add syntax block dynamically
+    document.getElementById('syntax-add-block')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.addSyntaxBlockUI();
+    });
     this.questionSearchInput?.addEventListener('input', () => this.filterBank());
     refreshExistingBtn?.addEventListener('click', () => this.loadProfessorQuizzes());
     newQuizBtn?.addEventListener('click', () => {
@@ -213,7 +231,7 @@ class ProfessorDashboard {
       const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = await res.json();
-      const extracted = this.extractQuestionsFromQuizJSON(json);
+  const extracted = this.extractQuestionsFromQuizJSON(json);
       this.loadedBank = extracted;
       this.filteredBank = [...extracted];
       this.renderBank();
@@ -228,31 +246,32 @@ class ProfessorDashboard {
 
   extractQuestionsFromQuizJSON(json) {
     const results = [];
+    const pushMC = (q) => {
+      results.push({ type: 'multipleChoice', question: q.question, options: q.options || q.choices, correctIndex: q.correctIndex ?? 0, bloomTarget: q.bloomTarget || '' });
+    };
+    const pushSB = (q) => {
+      // ensure schema matches python.json
+      results.push({ type: 'syntaxBlock', question: q.question, instruction: q.instruction || '', blocks: Array.isArray(q.blocks) ? q.blocks : [], bloomTarget: q.bloomTarget || '' });
+    };
+    const pushCA = (q) => {
+      results.push({ type: 'codeArrangement', title: q.title || '', description: q.description || '', blocks: Array.isArray(q.blocks) ? q.blocks : [], correctOrder: Array.isArray(q.correctOrder) ? q.correctOrder : q.blocks?.map((_,i)=>i) || [], bloomTarget: q.bloomTarget || '' });
+    };
     const processGroup = (group) => {
-      if (!group) return; 
-      Object.values(group).forEach(section => {
-        if (Array.isArray(section)) {
-          section.forEach(q => {
-            if (q.question && (q.options || q.choices)) {
-              results.push({
-                question: q.question,
-                options: q.options || q.choices,
-                correctIndex: q.correctIndex ?? 0
-              });
-            }
-          });
-        } else if (section && typeof section === 'object') {
-          Object.values(section).forEach(inner => {
-            if (Array.isArray(inner)) {
-              inner.forEach(q => {
-                if (q.question && (q.options || q.choices)) {
-                  results.push({
-                    question: q.question,
-                    options: q.options || q.choices,
-                    correctIndex: q.correctIndex ?? 0
-                  });
-                }
-              });
+      if (!group || typeof group !== 'object') return;
+      // explicit known arrays
+      if (Array.isArray(group.multipleChoice)) group.multipleChoice.forEach(q => q?.question && (q.options||q.choices) && pushMC(q));
+      if (Array.isArray(group.syntaxBlock)) group.syntaxBlock.forEach(q => q && Array.isArray(q.blocks) && pushSB(q));
+      if (Array.isArray(group.codeArrangement)) group.codeArrangement.forEach(q => q && Array.isArray(q.blocks) && pushCA(q));
+      // also scan any nested arrays for robustness
+      Object.keys(group).forEach(k => {
+        const v = group[k];
+        if (Array.isArray(v)) {
+          v.forEach(q => {
+            if (!q || typeof q !== 'object') return;
+            if (q.question && (q.options || q.choices)) return pushMC(q);
+            if (q.type === 'syntaxBlock' || q.blocks) {
+              // try to infer syntaxBlock (has blocks with code/correct shape)
+              if (Array.isArray(q.blocks) && q.blocks.length && typeof q.blocks[0] === 'object' && 'code' in q.blocks[0]) return pushSB(q);
             }
           });
         }
@@ -262,14 +281,7 @@ class ProfessorDashboard {
     if (json.intensity1) processGroup(json.intensity1);
     if (json.intensity2) processGroup(json.intensity2);
     if (json.intensity3) processGroup(json.intensity3);
-
-    if (Array.isArray(json.questions)) {
-      json.questions.forEach(q => {
-        if (q.question && (q.options || q.choices)) {
-          results.push({ question: q.question, options: q.options || q.choices, correctIndex: q.correctIndex ?? 0 });
-        }
-      });
-    }
+    if (Array.isArray(json.questions)) json.questions.forEach(q => q?.question && (q.options||q.choices) && pushMC(q));
     return results;
   }
 
@@ -278,22 +290,58 @@ class ProfessorDashboard {
     if (!term) {
       this.filteredBank = [...this.loadedBank];
     } else {
-      this.filteredBank = this.loadedBank.filter(q => q.question.toLowerCase().includes(term));
+      this.filteredBank = this.loadedBank.filter(q => {
+        if (q.type === 'multipleChoice') return q.question.toLowerCase().includes(term);
+        if (q.type === 'syntaxBlock') return (q.question?.toLowerCase().includes(term) || q.instruction?.toLowerCase().includes(term));
+        if (q.type === 'codeArrangement') return (q.title?.toLowerCase().includes(term) || q.description?.toLowerCase().includes(term));
+        return false;
+      });
     }
     this.renderBank();
   }
 
   renderBank() {
     if (!this.bankQuestionsContainer) return;
-    this.bankQuestionsContainer.innerHTML = this.filteredBank.map((q, idx) => `
+    this.bankQuestionsContainer.innerHTML = this.filteredBank.map((q, idx) => {
+      if (q.type === 'multipleChoice') {
+        return `
       <div class="group border border-gray-700 rounded-lg p-3 bg-dark/40 hover:bg-dark/60 transition relative">
-        <p class="text-sm text-gray-200 mb-1 font-medium">${q.question}</p>
+        <div class="flex items-center justify-between mb-1">
+          <p class="text-sm text-gray-200 font-medium">${q.question}</p>
+          <span class="text-[10px] px-2 py-0.5 rounded bg-purple/30 border border-purple/40">Multiple Choice</span>
+        </div>
         <div class="grid grid-cols-2 gap-1 text-[11px] text-gray-400 font-mono">
           ${q.options.map((o,i)=>`<span class="px-1 py-0.5 rounded ${i===q.correctIndex?'bg-green-700 text-green-200':'bg-gray-700/50'}">${String.fromCharCode(65+i)}. ${o}</span>`).join('')}
         </div>
         <button data-add-bank="${idx}" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition px-2 py-1 bg-primary text-dark rounded text-xs font-gaming">Add</button>
-      </div>
-    `).join('');
+      </div>`;
+      } else if (q.type === 'syntaxBlock') {
+        const blockPreview = (q.blocks || []).slice(0,2).map(b=>`<pre class="text-[11px] bg-gray-800/70 p-2 rounded border border-gray-700 overflow-auto">${(b.code||'').replace(/</g,'&lt;')}</pre>`).join('');
+        return `
+      <div class="group border border-gray-700 rounded-lg p-3 bg-dark/40 hover:bg-dark/60 transition relative">
+        <div class="flex items-center justify-between mb-1">
+          <p class="text-sm text-gray-200 font-medium">${q.question}</p>
+          <span class="text-[10px] px-2 py-0.5 rounded bg-cyan/30 border border-cyan/40">Syntax Block</span>
+        </div>
+        <p class="text-[11px] text-gray-400 mb-2">${q.instruction || ''}</p>
+        <div class="space-y-1">${blockPreview}</div>
+        <button data-add-bank="${idx}" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition px-2 py-1 bg-primary text-dark rounded text-xs font-gaming">Add</button>
+      </div>`;
+      } else if (q.type === 'codeArrangement') {
+        const lines = (q.blocks || []).slice(0,3).map(l=>`<code class="block text-[11px] bg-gray-800/70 px-2 py-1 rounded border border-gray-700 overflow-auto">${(l||'').replace(/</g,'&lt;')}</code>`).join('');
+        return `
+      <div class="group border border-gray-700 rounded-lg p-3 bg-dark/40 hover:bg-dark/60 transition relative">
+        <div class="flex items-center justify-between mb-1">
+          <p class="text-sm text-gray-200 font-medium">${q.title || 'Arrange the code blocks'}</p>
+          <span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 border border-yellow-500/30">Code Arrangement</span>
+        </div>
+        <p class="text-[11px] text-gray-400 mb-2">${q.description || ''}</p>
+        <div class="space-y-1">${lines}</div>
+        <button data-add-bank="${idx}" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition px-2 py-1 bg-primary text-dark rounded text-xs font-gaming">Add</button>
+      </div>`;
+      }
+      return '';
+    }).join('');
 
     this.bankQuestionsContainer.querySelectorAll('[data-add-bank]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -316,21 +364,63 @@ class ProfessorDashboard {
       this.draftQuestionsContainer.innerHTML = `<div class="text-center text-gray-500 text-sm py-6">No questions added yet.</div>`;
       return;
     }
-    this.draftQuestionsContainer.innerHTML = this.quizDraft.questions.map((q, idx) => `
+    this.draftQuestionsContainer.innerHTML = this.quizDraft.questions.map((q, idx) => {
+      if (q.type === 'syntaxBlock') {
+        const blockPreview = (q.blocks||[]).slice(0,2).map(b=>`<pre class="text-[11px] bg-gray-800/70 p-2 rounded border border-gray-700 overflow-auto">${(b.code||'').replace(/</g,'&lt;')}</pre>`).join('');
+        return `
       <div class="border border-gray-700 rounded-lg p-3 bg-dark/50 relative group">
         <div class="flex justify-between items-start mb-1">
-          <p class="text-sm font-medium text-gray-200 pr-6">${idx+1}. ${q.question}</p>
-          <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition">
-            <button data-move-up="${idx}" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-[11px]">↑</button>
-            <button data-move-down="${idx}" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-[11px]">↓</button>
-            <button data-remove="${idx}" class="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-[11px]">✖</button>
+          <p class="text-sm font-medium text-gray-200 pr-2">${idx+1}. ${q.question}</p>
+          <div class="flex items-center space-x-2">
+            <span class="text-[10px] px-2 py-0.5 rounded bg-cyan/30 border border-cyan/40">Syntax Block</span>
+            <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition">
+              <button data-move-up="${idx}" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-[11px]">↑</button>
+              <button data-move-down="${idx}" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-[11px]">↓</button>
+              <button data-remove="${idx}" class="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-[11px]">✖</button>
+            </div>
+          </div>
+        </div>
+        <p class="text-[11px] text-gray-400 mb-2">${q.instruction || ''}</p>
+        <div class="space-y-1">${blockPreview}</div>
+      </div>`;
+      } else if (q.type === 'codeArrangement') {
+        const lines = (q.blocks||[]).slice(0,3).map(l=>`<code class=\"block text-[11px] bg-gray-800/70 px-2 py-1 rounded border border-gray-700 overflow-auto\">${(l||'').replace(/</g,'&lt;')}</code>`).join('');
+        return `
+      <div class="border border-gray-700 rounded-lg p-3 bg-dark/50 relative group">
+        <div class="flex justify-between items-start mb-1">
+          <p class="text-sm font-medium text-gray-200 pr-2">${idx+1}. ${q.title || 'Arrange the code blocks'}</p>
+          <div class="flex items-center space-x-2">
+            <span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 border border-yellow-500/30">Code Arrangement</span>
+            <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition">
+              <button data-move-up="${idx}" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-[11px]">↑</button>
+              <button data-move-down="${idx}" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-[11px]">↓</button>
+              <button data-remove="${idx}" class="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-[11px]">✖</button>
+            </div>
+          </div>
+        </div>
+        <p class="text-[11px] text-gray-400 mb-2">${q.description || ''}</p>
+        <div class="space-y-1">${lines}</div>
+      </div>`;
+      }
+      // default multiple choice
+      return `
+      <div class="border border-gray-700 rounded-lg p-3 bg-dark/50 relative group">
+        <div class="flex justify-between items-start mb-1">
+          <p class="text-sm font-medium text-gray-200 pr-2">${idx+1}. ${q.question}</p>
+          <div class="flex items-center space-x-2">
+            <span class="text-[10px] px-2 py-0.5 rounded bg-purple/30 border border-purple/40">Multiple Choice</span>
+            <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition">
+              <button data-move-up="${idx}" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-[11px]">↑</button>
+              <button data-move-down="${idx}" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-[11px]">↓</button>
+              <button data-remove="${idx}" class="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-[11px]">✖</button>
+            </div>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-1 text-[11px] font-mono">
           ${q.options.map((o,i)=>`<span class="px-1 py-0.5 rounded ${i===q.correctIndex?'bg-green-700 text-green-200':'bg-gray-700/60'}">${String.fromCharCode(65+i)}. ${o}</span>`).join('')}
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
 
     this.draftQuestionsContainer.querySelectorAll('[data-remove]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -373,13 +463,89 @@ class ProfessorDashboard {
       this.customQuestionForm.classList.add('hidden');
     }
     if (reset) {
+      if (this.customQuestionType) this.customQuestionType.value = 'multipleChoice';
+      if (this.customBloomTarget) this.customBloomTarget.value = '';
       if (this.customQuestionText) this.customQuestionText.value='';
       this.customOptionInputs?.forEach(inp=>inp.value='');
       if (this.customCorrectIndex) this.customCorrectIndex.value='0';
+      if (this.syntaxQuestion) this.syntaxQuestion.value='';
+      if (this.syntaxInstruction) this.syntaxInstruction.value='';
+      // reset syntax blocks to 3
+      if (this.syntaxBlocksWrap) {
+        this.syntaxBlocksWrap.querySelectorAll('.dynamic-syntax-block')?.forEach(el=>el.remove());
+        const radios = this.syntaxBlocksWrap.querySelectorAll('input[name="syntax-correct"]');
+        radios.forEach(r=>{ r.checked = false; });
+        const tas = this.syntaxBlocksWrap.querySelectorAll('.syntax-code-input');
+        tas.forEach(t=>{ if (t) t.value=''; });
+      }
+      if (this.arrangeTitle) this.arrangeTitle.value='';
+      if (this.arrangeDescription) this.arrangeDescription.value='';
+      if (this.arrangeBlocks) this.arrangeBlocks.value='';
+      this.updateCustomFormVisibility();
     }
   }
 
+  updateCustomFormVisibility() {
+    const type = this.customQuestionType?.value || 'multipleChoice';
+    const mc = document.getElementById('form-mc');
+    const sb = document.getElementById('form-syntax');
+    const ca = document.getElementById('form-arrangement');
+    if (mc) mc.classList.toggle('hidden', type !== 'multipleChoice');
+    if (sb) sb.classList.toggle('hidden', type !== 'syntaxBlock');
+    if (ca) ca.classList.toggle('hidden', type !== 'codeArrangement');
+  }
+
+  addSyntaxBlockUI() {
+    if (!this.syntaxBlocksWrap) return;
+    const idx = this.syntaxBlocksWrap.querySelectorAll('.dynamic-syntax-block').length + 3; // after first 3
+    const div = document.createElement('div');
+    div.className = 'p-2 border border-gray-700 rounded-lg bg-dark/50 dynamic-syntax-block';
+    div.innerHTML = `
+      <label class="text-xs text-gray-400 block mb-1">Block ${idx+1}</label>
+      <textarea class="syntax-code-input w-full px-2 py-2 bg-dark/60 border border-gray-600 rounded text-white text-sm" rows="3"></textarea>
+      <label class="inline-flex items-center mt-2 text-xs text-gray-300"><input type="radio" name="syntax-correct" class="mr-2" value="${idx}"> Correct</label>
+    `;
+    this.syntaxBlocksWrap.querySelector('.grid')?.appendChild(div);
+  }
+
   addCustomQuestion() {
+    const type = this.customQuestionType?.value || 'multipleChoice';
+    const bloom = (this.customBloomTarget?.value || '').trim();
+    if (type === 'syntaxBlock') {
+      const question = (this.syntaxQuestion?.value || '').trim();
+      const instruction = (this.syntaxInstruction?.value || '').trim();
+      const codeInputs = Array.from(this.customQuestionForm.querySelectorAll('.syntax-code-input'));
+      const blocks = codeInputs.map((ta, i) => ({ code: ta.value || '', correct: false })).filter(b=>b.code.trim() !== '');
+      const correctRadio = this.customQuestionForm.querySelector('input[name="syntax-correct"]:checked');
+      const correctIndex = correctRadio ? parseInt(correctRadio.value, 10) : -1;
+      if (!question || blocks.length < 2 || correctIndex < 0 || correctIndex >= blocks.length) {
+        this.showWarning('Provide question, at least 2 code blocks, and mark the correct one');
+        return;
+      }
+      // mark correct
+      blocks.forEach((b, i) => { b.correct = (i === correctIndex); });
+      this.quizDraft.questions.push({ type: 'syntaxBlock', question, instruction, blocks, bloomTarget: bloom });
+      this.renderDraft();
+      this.toggleCustomQuestionForm(false, true);
+      this.setDraftStatus('Custom syntaxBlock added');
+      return;
+    }
+    if (type === 'codeArrangement') {
+      const title = (this.arrangeTitle?.value || '').trim();
+      const description = (this.arrangeDescription?.value || '').trim();
+      const blocks = (this.arrangeBlocks?.value || '').split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      if (!title || blocks.length < 2) {
+        this.showWarning('Provide title and at least 2 lines for blocks');
+        return;
+      }
+      const correctOrder = blocks.map((_, i) => i);
+      this.quizDraft.questions.push({ type: 'codeArrangement', title, description, blocks, correctOrder, bloomTarget: bloom });
+      this.renderDraft();
+      this.toggleCustomQuestionForm(false, true);
+      this.setDraftStatus('Custom codeArrangement added');
+      return;
+    }
+    // default multipleChoice
     const text = (this.customQuestionText?.value || '').trim();
     const options = (this.customOptionInputs || []).map(i=>i.value.trim()).filter(v=>v);
     if (!text || options.length < 2) {
@@ -391,7 +557,7 @@ class ProfessorDashboard {
       this.showWarning('Correct option index exceeds number of options');
       return;
     }
-    this.quizDraft.questions.push({ question: text, options, correctIndex: correctIdx });
+    this.quizDraft.questions.push({ type: 'multipleChoice', question: text, options, correctIndex: correctIdx, bloomTarget: bloom });
     this.renderDraft();
     this.toggleCustomQuestionForm(false, true);
     this.setDraftStatus('Custom question added');
@@ -434,11 +600,28 @@ class ProfessorDashboard {
     const quizId = rawId.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'untitled-quiz';
     if (quizId !== rawId) this.showInfo(`Quiz ID normalized to: ${quizId}`);
 
-    const multipleChoice = this.quizDraft.questions.map(q => ({
+    // Group by type
+    const multipleChoice = this.quizDraft.questions.filter(q=>q.type==='multipleChoice' || (!q.type && q.options)).map(q => ({
       question: q.question,
       options: q.options,
-      correctIndex: q.correctIndex
+      correctIndex: typeof q.correctIndex === 'number' ? q.correctIndex : 0,
+      ...(q.bloomTarget ? { bloomTarget: q.bloomTarget } : {})
     }));
+    const syntaxBlock = this.quizDraft.questions.filter(q=>q.type==='syntaxBlock').map(q => ({
+      type: 'syntaxBlock',
+      question: q.question,
+      instruction: q.instruction || '',
+      blocks: q.blocks || [],
+      ...(q.bloomTarget ? { bloomTarget: q.bloomTarget } : {})
+    }));
+    const codeArrangement = this.quizDraft.questions.filter(q=>q.type==='codeArrangement').map(q => ({
+      title: q.title || '',
+      description: q.description || '',
+      blocks: q.blocks || [],
+      correctOrder: Array.isArray(q.correctOrder) ? q.correctOrder : (q.blocks||[]).map((_,i)=>i),
+      ...(q.bloomTarget ? { bloomTarget: q.bloomTarget } : {})
+    }));
+
     const payload = {
       meta: {
         title,
@@ -447,8 +630,11 @@ class ProfessorDashboard {
         createdBy: ownerUid,
         format: 'intensity-schema-v1'
       },
-      intensity1: { multipleChoice }
+      intensity1: {}
     };
+    if (multipleChoice.length) payload.intensity1.multipleChoice = multipleChoice;
+    if (syntaxBlock.length) payload.intensity1.syntaxBlock = syntaxBlock;
+    if (codeArrangement.length) payload.intensity1.codeArrangement = codeArrangement;
     let success = false;
     if (this.isFirebaseInitialized) {
       const path = `customQuizzes/${ownerUid}/${quizId}`;
@@ -514,7 +700,10 @@ class ProfessorDashboard {
     this.existingQuizzesContainer.innerHTML = entries.map(([quizId, data]) => {
       const title = data.meta?.title || quizId;
       const subject = data.meta?.subject || 'Custom';
-      const count = (data.intensity1?.multipleChoice || []).length;
+      const countMC = (data.intensity1?.multipleChoice || []).length;
+      const countSB = (data.intensity1?.syntaxBlock || []).length;
+      const countCA = (data.intensity1?.codeArrangement || []).length;
+      const count = countMC + countSB + countCA;
       return `
         <div class="group border border-gray-700 rounded-lg p-3 bg-dark/40 hover:bg-dark/60 transition relative">
           <div class="flex justify-between items-start">
@@ -553,11 +742,10 @@ class ProfessorDashboard {
     }
     if (this.quizTitleInput) this.quizTitleInput.value = data.meta?.title || '';
     if (this.quizSubjectInput) this.quizSubjectInput.value = data.meta?.subject || '';
-    const questions = (data.intensity1?.multipleChoice || []).map(q => ({
-      question: q.question,
-      options: q.options || [],
-      correctIndex: typeof q.correctIndex === 'number' ? q.correctIndex : 0
-    }));
+    const mc = (data.intensity1?.multipleChoice || []).map(q => ({ type: 'multipleChoice', question: q.question, options: q.options || [], correctIndex: typeof q.correctIndex === 'number' ? q.correctIndex : 0, bloomTarget: q.bloomTarget || '' }));
+    const sb = (data.intensity1?.syntaxBlock || []).map(q => ({ type: 'syntaxBlock', question: q.question, instruction: q.instruction || '', blocks: q.blocks || [], bloomTarget: q.bloomTarget || '' }));
+    const ca = (data.intensity1?.codeArrangement || []).map(q => ({ type: 'codeArrangement', title: q.title || '', description: q.description || '', blocks: q.blocks || [], correctOrder: Array.isArray(q.correctOrder) ? q.correctOrder : (q.blocks||[]).map((_,i)=>i), bloomTarget: q.bloomTarget || '' }));
+    const questions = [...mc, ...sb, ...ca];
     this.quizDraft = { meta: { ...data.meta }, questions };
     this.renderDraft();
     this.setDraftStatus(`Editing quiz: ${quizId}`);

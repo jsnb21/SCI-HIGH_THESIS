@@ -350,38 +350,115 @@
           <!-- Hidden Custom Question Form -->
           <div id="custom-question-form" class="neon-border rounded-xl p-4 bg-cardBg hidden">
             <h4 class="font-gaming text-lg text-accent mb-4 flex items-center space-x-2"><span>➕</span><span>Add Custom Question</span></h4>
-            <div class="space-y-3">
-              <div>
-                <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Question Text</label>
-                <textarea id="custom-question-text" rows="2" class="w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm resize-y"></textarea>
+            <div class="space-y-4">
+              <!-- Type Selector -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Question Type</label>
+                  <select id="custom-question-type" class="w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm">
+                    <option value="multipleChoice">Multiple Choice</option>
+                    <option value="syntaxBlock">Syntax Block</option>
+                    <option value="codeArrangement">Code Arrangement</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Bloom Target (optional)</label>
+                  <select id="custom-bloom-target" class="w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm">
+                    <option value="">—</option>
+                    <option>remembering</option>
+                    <option>understanding</option>
+                    <option>applying</option>
+                    <option>analyzing</option>
+                    <option>creating</option>
+                  </select>
+                </div>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+              <!-- Multiple Choice Form -->
+              <div id="form-mc" class="space-y-3">
                 <div>
-                  <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Option A</label>
-                  <input data-opt="0" class="custom-opt-input w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm" />
+                  <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Question Text</label>
+                  <textarea id="custom-question-text" rows="2" class="w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm resize-y"></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Option A</label>
+                    <input data-opt="0" class="custom-opt-input w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Option B</label>
+                    <input data-opt="1" class="custom-opt-input w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Option C</label>
+                    <input data-opt="2" class="custom-opt-input w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Option D</label>
+                    <input data-opt="3" class="custom-opt-input w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm" />
+                  </div>
                 </div>
                 <div>
-                  <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Option B</label>
-                  <input data-opt="1" class="custom-opt-input w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm" />
-                </div>
-                <div>
-                  <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Option C</label>
-                  <input data-opt="2" class="custom-opt-input w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm" />
-                </div>
-                <div>
-                  <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Option D</label>
-                  <input data-opt="3" class="custom-opt-input w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm" />
+                  <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Correct Option (A-D)</label>
+                  <select id="custom-correct-index" class="w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm">
+                    <option value="0">A</option>
+                    <option value="1">B</option>
+                    <option value="2">C</option>
+                    <option value="3">D</option>
+                  </select>
                 </div>
               </div>
-              <div>
-                <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Correct Option (A-D)</label>
-                <select id="custom-correct-index" class="w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm">
-                  <option value="0">A</option>
-                  <option value="1">B</option>
-                  <option value="2">C</option>
-                  <option value="3">D</option>
-                </select>
+
+              <!-- Syntax Block Form -->
+              <div id="form-syntax" class="space-y-3 hidden">
+                <div>
+                  <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Question</label>
+                  <input id="syntax-question" type="text" class="w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm" />
+                </div>
+                <div>
+                  <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Instruction (shown above blocks)</label>
+                  <input id="syntax-instruction" type="text" class="w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm" />
+                </div>
+                <div class="space-y-2" id="syntax-blocks-wrap">
+                  <div class="text-xs text-gray-400">Blocks (mark the correct one)</div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="p-2 border border-gray-700 rounded-lg bg-dark/50">
+                      <label class="text-xs text-gray-400 block mb-1">Block 1</label>
+                      <textarea class="syntax-code-input w-full px-2 py-2 bg-dark/60 border border-gray-600 rounded text-white text-sm" rows="3"></textarea>
+                      <label class="inline-flex items-center mt-2 text-xs text-gray-300"><input type="radio" name="syntax-correct" class="mr-2" value="0"> Correct</label>
+                    </div>
+                    <div class="p-2 border border-gray-700 rounded-lg bg-dark/50">
+                      <label class="text-xs text-gray-400 block mb-1">Block 2</label>
+                      <textarea class="syntax-code-input w-full px-2 py-2 bg-dark/60 border border-gray-600 rounded text-white text-sm" rows="3"></textarea>
+                      <label class="inline-flex items-center mt-2 text-xs text-gray-300"><input type="radio" name="syntax-correct" class="mr-2" value="1"> Correct</label>
+                    </div>
+                    <div class="p-2 border border-gray-700 rounded-lg bg-dark/50">
+                      <label class="text-xs text-gray-400 block mb-1">Block 3</label>
+                      <textarea class="syntax-code-input w-full px-2 py-2 bg-dark/60 border border-gray-600 rounded text-white text-sm" rows="3"></textarea>
+                      <label class="inline-flex items-center mt-2 text-xs text-gray-300"><input type="radio" name="syntax-correct" class="mr-2" value="2"> Correct</label>
+                    </div>
+                  </div>
+                  <button id="syntax-add-block" class="mt-2 px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs">+ Add Block</button>
+                </div>
               </div>
+
+              <!-- Code Arrangement Form -->
+              <div id="form-arrangement" class="space-y-3 hidden">
+                <div>
+                  <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Title</label>
+                  <input id="arrange-title" type="text" class="w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm" />
+                </div>
+                <div>
+                  <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Description</label>
+                  <input id="arrange-description" type="text" class="w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm" />
+                </div>
+                <div>
+                  <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1 font-gaming">Blocks (one per line in correct order)</label>
+                  <textarea id="arrange-blocks" rows="5" class="w-full px-3 py-2 bg-dark/60 border border-gray-600 rounded-lg text-white text-sm resize-y" placeholder="line 1\nline 2\nline 3"></textarea>
+                  <p class="text-[11px] text-gray-400 mt-1">We'll save the order you enter as the correct order.</p>
+                </div>
+              </div>
+
               <div class="flex space-x-3 pt-2">
                 <button id="save-custom-question" class="px-4 py-2 bg-primary text-dark font-gaming rounded-lg hover:brightness-110 text-sm">Add Question</button>
                 <button id="cancel-custom-question" class="px-4 py-2 bg-gray-600 text-white font-gaming rounded-lg hover:bg-gray-500 text-sm">Cancel</button>
