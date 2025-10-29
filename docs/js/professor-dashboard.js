@@ -17,6 +17,9 @@ class ProfessorDashboard {
     this.loadingExisting = false;
     // Charts
     this._charts = { strand: null, progress: null };
+    // Pagination
+    this.pageSize = 10;
+    this.visibleCount = 10;
     this.init();
   }
 
@@ -104,6 +107,17 @@ class ProfessorDashboard {
     document.getElementById('filter-strand')?.addEventListener('change', () => this.filterStudents());
     document.getElementById('filter-year')?.addEventListener('change', () => this.filterStudents());
     document.getElementById('sort-by')?.addEventListener('change', () => this.filterStudents());
+
+    // Pagination controls
+    this.paginationInfoEl = document.getElementById('students-pagination-info');
+    this.paginationBarEl = document.getElementById('students-pagination');
+    this.loadMoreBtn = document.getElementById('students-load-more-btn');
+    this.loadMoreBtn?.addEventListener('click', () => {
+      const total = this.filteredStudents.length;
+      this.visibleCount = Math.min(this.visibleCount + this.pageSize, total);
+      this.renderStudentsTable();
+      this.renderAnalytics();
+    });
 
     // Mobile logout hookup (in case DOMContentLoaded runs before init)
     const mobileLogout = document.getElementById('mobile-logout-btn');
@@ -617,6 +631,7 @@ class ProfessorDashboard {
       if (!studentsData) {
         this.students = [];
         this.filteredStudents = [];
+        this.visibleCount = 0;
         this.renderStudentsTable();
         this.renderAnalytics();
         return;
@@ -656,6 +671,7 @@ class ProfessorDashboard {
       });
 
       this.filteredStudents = [...this.students];
+      this.visibleCount = Math.min(this.pageSize, this.filteredStudents.length);
       this.renderStudentsTable();
       this.renderAnalytics();
 
@@ -773,6 +789,7 @@ class ProfessorDashboard {
     ];
 
     this.filteredStudents = [...this.students];
+    this.visibleCount = Math.min(this.pageSize, this.filteredStudents.length);
     this.renderStudentsTable();
   }
 
@@ -822,6 +839,8 @@ class ProfessorDashboard {
       }
     });
 
+    // Reset pagination for new filter result
+    this.visibleCount = Math.min(this.pageSize, this.filteredStudents.length);
     this.renderStudentsTable();
     this.renderAnalytics();
   }
@@ -829,8 +848,11 @@ class ProfessorDashboard {
   renderStudentsTable() {
     const tbody = document.getElementById('students-table-body');
     if (!tbody) return;
-    
-    if (this.filteredStudents.length === 0) {
+
+    const total = this.filteredStudents.length;
+    const dataToRender = this.filteredStudents.slice(0, Math.max(0, this.visibleCount));
+
+    if (total === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="7" class="py-8 text-center text-gray-400">
@@ -838,10 +860,21 @@ class ProfessorDashboard {
           </td>
         </tr>
       `;
+      // Hide pagination when no data
+      if (this.paginationBarEl) this.paginationBarEl.style.display = 'none';
       return;
     }
 
-    tbody.innerHTML = this.filteredStudents.map(student => `
+    if (dataToRender.length === 0) {
+      // In case visibleCount is 0 for some reason, render nothing but keep footer consistent
+      tbody.innerHTML = '';
+      if (this.paginationInfoEl) this.paginationInfoEl.textContent = `Showing 0 of ${total}`;
+      if (this.paginationBarEl) this.paginationBarEl.style.display = (total > this.pageSize) ? 'flex' : 'none';
+      if (this.loadMoreBtn) this.loadMoreBtn.style.display = (0 < total) ? 'inline-block' : 'none';
+      return;
+    }
+
+    tbody.innerHTML = dataToRender.map(student => `
       <tr class="border-b border-gray-700 hover:bg-dark/20">
         <td class="py-3 px-4 font-mono">${student.studentId}</td>
         <td class="py-3 px-4">${student.fullName}</td>
@@ -882,6 +915,12 @@ class ProfessorDashboard {
         </td>
       </tr>
     `).join('');
+
+    // Update pagination bar visibility and info
+    const showing = dataToRender.length;
+    if (this.paginationInfoEl) this.paginationInfoEl.textContent = `Showing ${showing} of ${total}`;
+    if (this.paginationBarEl) this.paginationBarEl.style.display = (total > this.pageSize) ? 'flex' : 'none';
+    if (this.loadMoreBtn) this.loadMoreBtn.style.display = (showing < total) ? 'inline-block' : 'none';
   }
 
   calculateProgress(student) {
