@@ -624,9 +624,12 @@ class ProfessorDashboard {
         return;
       }
 
-      const studentsRef = this.database.ref('students');
-      const snapshot = await studentsRef.once('value');
-      const studentsData = snapshot.val();
+      const [studentsSnap, careerSnap] = await Promise.all([
+        this.database.ref('students').once('value'),
+        this.database.ref('student_career_stats').once('value').catch(() => ({ val: () => null }))
+      ]);
+      const studentsData = studentsSnap.val();
+      const careerData = careerSnap && typeof careerSnap.val === 'function' ? (careerSnap.val() || {}) : {};
 
       if (!studentsData) {
         this.students = [];
@@ -639,6 +642,8 @@ class ProfessorDashboard {
 
       this.students = Object.keys(studentsData).map(studentId => {
         const student = studentsData[studentId];
+        const rawCareer = careerData[studentId] || null;
+        const career = this.normalizeCareer(rawCareer);
         let strand = student.strand;
         let year = student.year;
         if (!strand && !year && student.strandYear) {
@@ -664,9 +669,10 @@ class ProfessorDashboard {
             isFirstLogin: !student.lastLogin
           },
           gameData: {
-            totalPoints: student.totalPoints || 0,
+            totalPoints: (career?.totalPoints || student.totalPoints || 0),
             courseProgress: student.courseProgress || {}
-          }
+          },
+          career
         };
       });
 
@@ -685,6 +691,20 @@ class ProfessorDashboard {
         this.renderAnalytics();
       }
     }
+  }
+
+  // Normalize various shapes of career stats into a common object
+  normalizeCareer(statsData) {
+    if (!statsData || typeof statsData !== 'object') return null;
+    const rawCareer = statsData.careerStats || statsData.career || statsData;
+    const totalPoints = rawCareer.totalPoints || statsData.totalPoints || 0;
+    const courseCompletionStatus = rawCareer.courseCompletionStatus || statsData.courseCompletionStatus || {};
+    const totalSessions = rawCareer.totalSessions || statsData.totalSessions || 0;
+    const averageAccuracy = rawCareer.averageAccuracy || statsData.averageAccuracy || 0;
+    const totalQuestions = rawCareer.totalQuestions || statsData.totalQuestions || 0;
+    const totalCorrectAnswers = rawCareer.totalCorrectAnswers || statsData.totalCorrectAnswers || 0;
+    const highestStreak = rawCareer.highestStreak || statsData.highestStreak || 0;
+    return { totalPoints, courseCompletionStatus, totalSessions, averageAccuracy, totalQuestions, totalCorrectAnswers, highestStreak };
   }
 
   async ensureFirebaseAuth() {
@@ -924,11 +944,24 @@ class ProfessorDashboard {
   }
 
   calculateProgress(student) {
-    if (!student.gameData || !student.gameData.courseProgress) return 0;
-    const courses = Object.values(student.gameData.courseProgress);
-    if (courses.length === 0) return 0;
-    const totalProgress = courses.reduce((sum, course) => sum + (course.progress || 0), 0);
-    return Math.round(totalProgress / courses.length);
+    // Use detailed per-course progress if available
+    if (student?.gameData?.courseProgress) {
+      const courses = Object.values(student.gameData.courseProgress);
+      if (courses.length > 0) {
+        const totalProgress = courses.reduce((sum, course) => sum + (course.progress || 0), 0);
+        return Math.round(totalProgress / courses.length);
+      }
+    }
+    // Fallback: derive from career courseCompletionStatus if present
+    if (student?.career?.courseCompletionStatus && typeof student.career.courseCompletionStatus === 'object') {
+      const entries = Object.values(student.career.courseCompletionStatus);
+      const total = entries.length;
+      if (total > 0) {
+        const completed = entries.filter(Boolean).length;
+        return Math.round((completed / total) * 100);
+      }
+    }
+    return 0;
   }
 
   /* =============================
@@ -972,6 +1005,16 @@ class ProfessorDashboard {
     if (bar) bar.style.width = `${an.avgProgress}%`;
     setText('an-active-7d', an.active7d);
     setText('an-avg-points', an.avgPoints);
+
+    // Optional insights: low progress and inactive 14d
+    const lowProgressCount = Array.isArray(an.bands) ? (an.bands[0] || 0) : 0; // <25%
+    const now = Date.now();
+    const inactive14 = students.filter(s => {
+      if (!s.accountStatus?.lastLogin) return true; // never logged in counts as inactive
+      return (now - new Date(s.accountStatus.lastLogin).getTime()) > 14*24*60*60*1000;
+    }).length;
+    setText('an-insight-low-progress', `${lowProgressCount} at-risk (progress < 25%)`);
+    setText('an-insight-inactive14', `${inactive14} inactive (no login in 14+ days)`);
 
     // Charts
     if (window.Chart) {

@@ -153,6 +153,65 @@
         </button>
       </div>
 
+      <!-- Analytics Overview -->
+      <section id="analytics-section" class="neon-border bg-cardBg rounded-xl p-6 mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-gaming text-2xl text-primary flex items-center space-x-2">
+            <span>📊</span><span>Analytics Overview</span>
+          </h2>
+          <span class="text-xs text-gray-400 font-mono">Auto-updates with filters</span>
+        </div>
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="border border-gray-700 rounded-lg p-4 bg-dark/40">
+            <p class="text-xs text-gray-400 font-mono mb-1">Total Students</p>
+            <p id="an-total-students" class="text-2xl font-gaming text-accent">0</p>
+          </div>
+          <div class="border border-gray-700 rounded-lg p-4 bg-dark/40">
+            <p class="text-xs text-gray-400 font-mono mb-1">Average Progress</p>
+            <div class="w-full bg-gray-700 rounded-full h-2 mb-2">
+              <div id="an-avg-progress-bar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+            </div>
+            <p id="an-avg-progress" class="text-2xl font-gaming text-primary">0%</p>
+          </div>
+          <div class="border border-gray-700 rounded-lg p-4 bg-dark/40">
+            <p class="text-xs text-gray-400 font-mono mb-1">Active Last 7 Days</p>
+            <p id="an-active-7d" class="text-2xl font-gaming text-cyan">0</p>
+          </div>
+          <div class="border border-gray-700 rounded-lg p-4 bg-dark/40">
+            <p class="text-xs text-gray-400 font-mono mb-1">Average Points</p>
+            <p id="an-avg-points" class="text-2xl font-gaming text-yellow-300">0</p>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="border border-gray-700 rounded-lg p-4 bg-dark/40">
+            <p class="text-xs text-gray-400 font-mono mb-3">Strand / Course Distribution</p>
+            <canvas id="chart-strand" height="160"></canvas>
+          </div>
+          <div class="border border-gray-700 rounded-lg p-4 bg-dark/40">
+            <p class="text-xs text-gray-400 font-mono mb-3">Progress Bands</p>
+            <canvas id="chart-progress" height="160"></canvas>
+          </div>
+        </div>
+
+        <!-- Insights -->
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="border border-yellow-600/40 rounded-lg p-4 bg-yellow-900/10" title="At-Risk Students: learners whose average progress is below 25%. Calculated from course progress when available, otherwise from course completion data.">
+            <p class="text-xs text-yellow-300 font-mono mb-1 flex items-center space-x-2">
+              <span>At-Risk Students</span>
+              <span aria-label="info" class="text-yellow-300/80 cursor-help">ℹ️</span>
+            </p>
+            <p id="an-insight-low-progress" class="text-sm text-gray-200">—</p>
+          </div>
+          <div class="border border-gray-600 rounded-lg p-4 bg-dark/30">
+            <p class="text-xs text-gray-400 font-mono mb-1">Inactive (14+ days)</p>
+            <p id="an-insight-inactive14" class="text-sm text-gray-200">—</p>
+          </div>
+        </div>
+      </section>
+
       <!-- Student List -->
       <div class="neon-border bg-cardBg rounded-xl p-6">
         <div class="flex justify-between items-center mb-6">
