@@ -13,9 +13,41 @@
       this.initialized = false;
     }
 
+    async tryLoadRuntimeEnv() {
+      // Attempt to load a runtime-injected env script produced during deployment
+      // Expected shape: window.SCI_HIGH = { FIREBASE: { apiKey, authDomain, databaseURL, projectId, storageBucket, messagingSenderId, appId } }
+      try {
+        if (window.SCI_HIGH && window.SCI_HIGH.FIREBASE) return true;
+        const base = (window.__APP_BASE__ || '/');
+        const candidates = [
+          './config/runtime-env.js',
+          'config/runtime-env.js',
+          base + 'config/runtime-env.js'
+        ];
+        for (const src of candidates) {
+          try {
+            await new Promise((resolve, reject) => {
+              const s = document.createElement('script');
+              s.src = src + `?_v=${Date.now()}`;
+              s.async = true;
+              s.onload = resolve;
+              s.onerror = reject;
+              document.head.appendChild(s);
+            });
+            if (window.SCI_HIGH && window.SCI_HIGH.FIREBASE) return true;
+          } catch(_) { /* try next */ }
+        }
+      } catch(_) { /* ignore */ }
+      return false;
+    }
+
     async loadConfig() {
       // 0) Prefer injected runtime globals if present (set by CI or inline script)
       try {
+        if (!(window.SCI_HIGH && window.SCI_HIGH.FIREBASE) && !(window.env && window.env.FIREBASE)) {
+          // Try to load runtime env produced by GitHub Actions/Pages using secrets
+          await this.tryLoadRuntimeEnv();
+        }
         const injected = (window && (window.SCI_HIGH && window.SCI_HIGH.FIREBASE)) || (window && window.env && window.env.FIREBASE);
         if (injected && typeof injected === 'object') {
           const raw = injected;
@@ -38,18 +70,14 @@
         }
       } catch {}
 
-      // Candidate paths (include local overrides and base-aware variants)
+      // Candidate paths (include local overrides only on localhost)
       const base = (window.__APP_BASE__ || '/');
-      const candidates = [
-        // Local developer override file (optional, can be gitignored)
-        './config/env-config.local.json',
-        'config/env-config.local.json',
-        base + 'config/env-config.local.json',
-        // Standard config
-        './config/env-config.json',
-        'config/env-config.json',
-        base + 'config/env-config.json'
-      ];
+      const isLocalhost = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname);
+      const candidates = [];
+      if (isLocalhost) {
+        candidates.push('./config/env-config.local.json','config/env-config.local.json', base + 'config/env-config.local.json');
+      }
+      candidates.push('./config/env-config.json','config/env-config.json', base + 'config/env-config.json');
 
       let lastError = null;
       for (const url of candidates) {
