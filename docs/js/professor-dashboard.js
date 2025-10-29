@@ -1134,7 +1134,7 @@ class ProfessorDashboard {
     // Strand distribution
     const strandCounts = {};
     students.forEach(s => {
-      const key = s.academicInfo?.strand || 'N/A';
+      const key = this.getStrandOrCourseLabel(s);
       strandCounts[key] = (strandCounts[key] || 0) + 1;
     });
 
@@ -1146,6 +1146,44 @@ class ProfessorDashboard {
     });
 
     return { total, avgProgress, active7d, avgPoints, strandCounts, bands };
+  }
+
+  // Prefer explicit strand; if missing, use normalized course for college to avoid 'N/A' in analytics
+  getStrandOrCourseLabel(student) {
+    try {
+      const info = student?.academicInfo || {};
+      let strand = (info.strand || '').trim();
+      const course = (info.course || '').trim();
+      const level = (info.level || '').toLowerCase();
+      // If we already have a clear strand, use it
+      if (strand && strand !== 'N/A') return this.normalizeStrandName(strand);
+      // Fall back: for college or when strand missing, try course text
+      if (course) return this.normalizeStrandName(course);
+      // Last resort: try yearLevel if it embeds the course/strand
+      const yl = (info.yearLevel || '').trim();
+      if (yl) return this.normalizeStrandName(yl);
+      return 'N/A';
+    } catch(_) {
+      return 'N/A';
+    }
+  }
+
+  // Map common course/strand strings to canonical short labels
+  normalizeStrandName(text) {
+    const t = String(text || '').toUpperCase();
+    // Common aliases for college
+    if (t.includes('BSCS') || t.includes('COMPUTER SCIENCE')) return 'BSCS';
+    if (t.includes('BS IT') || t.includes('BSIT') || t.includes('INFORMATION TECHNOLOGY')) return 'BSIT';
+    // SHS strands
+    if (t.includes('ICT')) return 'ICT';
+    if (t.includes('STEM')) return 'STEM';
+    if (t.includes('ABM')) return 'ABM';
+    if (t.includes('HUMSS')) return 'HUMSS';
+    // If text looks like a short label already, return as-is (trim to avoid long phrases)
+    if (t.length <= 8) return t || 'N/A';
+    // Try to extract a reasonable token from long course names
+    const token = t.split(/\s+/)[0];
+    return token || 'N/A';
   }
 
   renderAnalytics() {
