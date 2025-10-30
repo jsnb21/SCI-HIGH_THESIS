@@ -32,109 +32,79 @@ export default class ResultScreen extends BaseScene {
 
     create() {
         super.create();
-        
-        // Calculate ranking based on correct/wrong ratio
+
+        // Calculate rank
         const totalQuestions = this.correctAnswers + this.wrongAnswers;
         const accuracy = totalQuestions > 0 ? (this.correctAnswers / totalQuestions) * 100 : 0;
-        
         let rank = 'F';
         let rankColor = '#ff0000';
-        // No separate glow color needed; glow effects removed
-        if (accuracy >= 95) {
-            rank = 'S';
-            rankColor = '#ffd700';
-        } else if (accuracy >= 90) {
-            rank = 'A';
-            rankColor = '#00ff00';
-        } else if (accuracy >= 80) {
-            rank = 'B';
-            rankColor = '#00ffff';
-        } else if (accuracy >= 70) {
-            rank = 'C';
-            rankColor = '#ffff00';
-        } else if (accuracy >= 60) {
-            rank = 'D';
-            rankColor = '#ff8000';
-        } else if (accuracy >= 50) {
-            rank = 'E';
-            rankColor = '#ff4000';
-        }
+        if (accuracy >= 95) { rank = 'S'; rankColor = '#ffd700'; }
+        else if (accuracy >= 90) { rank = 'A'; rankColor = '#00ff00'; }
+        else if (accuracy >= 80) { rank = 'B'; rankColor = '#00ffff'; }
+        else if (accuracy >= 70) { rank = 'C'; rankColor = '#ffff00'; }
+        else if (accuracy >= 60) { rank = 'D'; rankColor = '#ff8000'; }
+        else if (accuracy >= 50) { rank = 'E'; rankColor = '#ff4000'; }
 
-        // Use QuizScene scaling system
+        // Scale info
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2;
-        
-        // Mobile detection matching QuizScene
         const scaleInfo = getScaleInfo(this);
         const isMobile = scaleInfo.width < 900 || scaleInfo.isMobile;
-        const isSmallMobile = scaleInfo.width < 500;
         const aspect = this.scale.height / (this.scale.width || 1);
         const isTallMobile = (isMobile || scaleInfo.isPortrait) && aspect > 1.85;
         const TALL_MOBILE_FONT_REDUCE = 0.94;
-
-        // Mobile sizing in GAME UNITS matching QuizScene
-        const MOBILE_MAX_WIDTH_RATIO = 0.98;
         const MOBILE_MAX_HEIGHT_RATIO = 0.9;
 
-        // Content width spanning full screen like QuizScene questions
+        // Content size
         let contentWidth = isMobile ? this.scale.width * 0.98 : this.scale.width * 0.95;
-        if (isTallMobile) {
-            contentWidth = this.scale.width * 0.95;
-        }
+        if (isTallMobile) contentWidth = this.scale.width * 0.95;
 
-        // Calculate content dimensions
         let titleFontPx = isMobile ? 52 : 42;
         let statFontPx = isMobile ? 32 : 28;
         let rankFontPx = isMobile ? 120 : 150;
-        
         if (isTallMobile) {
             titleFontPx = Math.round(titleFontPx * TALL_MOBILE_FONT_REDUCE);
             statFontPx = Math.round(statFontPx * TALL_MOBILE_FONT_REDUCE);
             rankFontPx = Math.round(rankFontPx * TALL_MOBILE_FONT_REDUCE);
         }
 
-    // Compute Bloom's analysis (if available)
-    const bloomAnalysis = this.computeBloomAnalysis();
-    const bloomEnabled = true; // always show all 6 categories for consistency
-
-    // Layout dimensions - fixed Bloom section height to prevent overlap across devices
+        const bloomAnalysis = this.computeBloomAnalysis();
+        const bloomEnabled = true;
         const titleHeight = isMobile ? 80 : 100;
         const statRowHeight = isMobile ? 45 : 50;
         const statGap = isMobile ? 25 : 30;
         const rankSize = isMobile ? 100 : 140;
-    const bloomHeaderHeight = isMobile ? 34 : 40;
-    const bloomPanelHeight = bloomEnabled ? (isMobile ? 320 : 360) : 0;
+        const bloomHeaderHeight = isMobile ? 34 : 40;
+        const bloomPanelHeight = bloomEnabled ? (isMobile ? 260 : 300) : 0;
+        const contentHeight = titleHeight + (5 * statRowHeight) + (4 * statGap) + 200 + bloomPanelHeight;
 
-    const contentHeight = titleHeight + (5 * statRowHeight) + (4 * statGap) + 200 + bloomPanelHeight; // Extra padding for button + Bloom panel
-
-        // Create main container matching QuizScene
+        // Container and background
         this.resultContainer = this.add.container(centerX, centerY);
-        
-        // Determine scaling like QuizScene for full-width layout
-        let targetScale = 1;
-        if (isMobile) {
-            const maxHeight = this.scale.height * MOBILE_MAX_HEIGHT_RATIO;
-            if (contentHeight > maxHeight) {
-                targetScale = Math.min(targetScale, maxHeight / contentHeight);
-            }
-            // No width constraint since we want full width
-            const MIN_MOBILE_SCALE = 0.7; // Allow smaller scale for full-width
-            targetScale = Math.max(targetScale, MIN_MOBILE_SCALE);
-        }
-        if (isTallMobile) {
-            targetScale *= 0.9;
-        }
-
-        // Create background like QuizScene - navy blue rectangle with 80% opacity
         const resultBox = this.add.graphics();
-        resultBox.fillStyle(0x1a237e, 0.8); // Navy blue color
+        resultBox.fillStyle(0x1a237e, 0.8);
         resultBox.fillRoundedRect(-contentWidth/2, -contentHeight/2, contentWidth, contentHeight, 8);
         this.resultContainer.add(resultBox);
 
-        // Apply scaling to container
+        // Scale container
+        let targetScale = 1;
+        if (isMobile) {
+            const maxHeight = this.scale.height * MOBILE_MAX_HEIGHT_RATIO;
+            if (contentHeight > maxHeight) targetScale = Math.min(targetScale, maxHeight / contentHeight);
+            targetScale = Math.max(targetScale, 0.7);
+        }
+        if (isTallMobile) targetScale *= 0.9;
         this.resultContainer.setScale(targetScale);
-        
-        // Create stats data for left side
+
+        // Title
+        const titleText = 'RESULTS';
+        const title = this.add.text(0, -contentHeight/2 + titleHeight/2, titleText, {
+            fontFamily: 'Arial', fontSize: `${titleFontPx}px`, fontWeight: '900', color: '#ffffff',
+            stroke: '#000000', strokeThickness: 4, align: 'center'
+        }).setOrigin(0.5);
+        this.resultContainer.add(title);
+
+        // Stats (left)
+        this.statElements = [];
         const statsData = [
             { label: 'Correct Answers', value: this.correctAnswers, color: '#00ff88', icon: '✓' },
             { label: 'Wrong Answers', value: this.wrongAnswers, color: '#ff4444', icon: '✗' },
@@ -142,122 +112,36 @@ export default class ResultScreen extends BaseScene {
             { label: 'Accuracy', value: `${accuracy.toFixed(0)}%`, color: accuracy >= 80 ? '#00ff88' : accuracy >= 60 ? '#ffaa00' : '#ff4444', icon: '🎯' },
             { label: 'TOTAL SCORE', value: this.totalScore, color: '#ffd700', icon: '' }
         ];
-
-        // Layout positions - adjusted for full-width container
-        const leftSideX = -contentWidth * 0.3; // Stats positioned on left side
-        const rightSideX = contentWidth * 0.3; // Rank positioned on right side  
-        const statsStartY = -contentHeight/2 + titleHeight + 40; // Proper spacing after title
-
-        // Create title (no glow)
-        const titleText = 'RESULTS';
-        const title = this.add.text(0, -contentHeight/2 + titleHeight/2, titleText, {
-            fontFamily: 'Arial',
-            fontSize: `${titleFontPx}px`,
-            fontWeight: '900',
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 4,
-            align: 'center',
-            shadow: { offsetX: 0, offsetY: 0, color: '#000000', blur: 0, fill: false }
-        }).setOrigin(0.5);
-        this.resultContainer.add([title]);
-
-        // Store elements for animation
-        this.statElements = [];
-        this.rankElements = [];
-
-        // Create stats on left side with fixed positioning
+        const leftSideX = -contentWidth * 0.3;
+        const rightSideX = contentWidth * 0.3;
+        const statsStartY = -contentHeight/2 + titleHeight + 40;
         statsData.forEach((stat, index) => {
             const yPos = statsStartY + (index * (statRowHeight + statGap));
-            
-            // Icon positioned (no glow)
-            const iconText = this.add.text(leftSideX - 50, yPos, stat.icon, {
-                fontFamily: 'Arial',
-                fontSize: `${statFontPx}px`,
-                fontWeight: 'bold',
-                color: stat.color
-            }).setOrigin(0, 0.5);
-
-            // Label text positioned next to icon with enhanced styling
-            const labelText = this.add.text(leftSideX - 10, yPos, stat.label, {
-                fontFamily: 'Arial',
-                fontSize: `${statFontPx}px`,
-                fontWeight: '800',
-                color: '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 2,
-                shadow: {
-                    offsetX: 2,
-                    offsetY: 2,
-                    color: '#000000',
-                    blur: 4,
-                    fill: true
-                }
-            }).setOrigin(0, 0.5);
-
-            // Value positioned far right (no glow)
-            const valueText = this.add.text(leftSideX + 420, yPos, stat.value.toString(), {
-                fontFamily: 'Arial',
-                fontSize: `${statFontPx}px`,
-                fontWeight: '900',
-                color: stat.color,
-                stroke: '#000000',
-                strokeThickness: 2
-            }).setOrigin(1, 0.5);
-
-            // Special styling for TOTAL SCORE with dramatic effects
+            const iconText = this.add.text(leftSideX - 50, yPos, stat.icon, { fontFamily: 'Arial', fontSize: `${statFontPx}px`, fontWeight: 'bold', color: stat.color }).setOrigin(0,0.5);
+            const labelText = this.add.text(leftSideX - 10, yPos, stat.label, { fontFamily:'Arial', fontSize:`${statFontPx}px`, fontWeight:'800', color:'#ffffff', stroke:'#000000', strokeThickness:2 }).setOrigin(0,0.5);
+            const valueText = this.add.text(leftSideX + 420, yPos, stat.value.toString(), { fontFamily:'Arial', fontSize:`${statFontPx}px`, fontWeight:'900', color: stat.color, stroke:'#000000', strokeThickness:2 }).setOrigin(1,0.5);
             if (stat.label === 'TOTAL SCORE') {
-                labelText.x = leftSideX - 10; // Keep same alignment as other labels
-                valueText.x = leftSideX + 420; // Keep same alignment as other values
-                labelText.setFontSize(`${Math.floor(statFontPx * 1.2)}px`);
-                labelText.setStyle({ fontWeight: '900', color: '#ffd700', stroke: '#ff8800', strokeThickness: 3 });
-                valueText.setFontSize(`${Math.floor(statFontPx * 1.4)}px`);
-                valueText.setStyle({ fontWeight: '900', color: '#ffd700', stroke: '#ff8800', strokeThickness: 3 });
+                labelText.setFontSize(`${Math.floor(statFontPx * 1.2)}px`).setStyle({ fontWeight:'900', color:'#ffd700', stroke:'#ff8800', strokeThickness:3 });
+                valueText.setFontSize(`${Math.floor(statFontPx * 1.4)}px`).setStyle({ fontWeight:'900', color:'#ffd700', stroke:'#ff8800', strokeThickness:3 });
             }
-
             this.resultContainer.add([iconText, labelText, valueText]);
             this.statElements.push({ icon: iconText, label: labelText, value: valueText });
         });
 
-    // Create rank on right side (no glow layers)
-        const rankCenterY = statsStartY + (2 * (statRowHeight + statGap)); // Center with middle stat (Highest Streak)
+        // Rank (right)
+        const rankCenterY = statsStartY + (2 * (statRowHeight + statGap));
+        const rankText = this.add.text(rightSideX, rankCenterY, rank, { fontFamily:'Arial', fontSize:`${rankFontPx}px`, fontWeight:'900', color: rankColor, stroke:'#000000', strokeThickness:6 }).setOrigin(0.5);
+        this.rankText = rankText;
+        const rankLabel = this.add.text(rightSideX, rankCenterY - rankSize/2 - 40, 'RANK', { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx * 1.2)}px`, fontWeight:'800', color:'#ffffff', stroke:'#000000', strokeThickness:2 }).setOrigin(0.5);
+        this.rankLabel = rankLabel;
+        this.resultContainer.add([rankText, rankLabel]);
+        this.rankElements = [rankText, rankLabel];
 
-    // Removed filled background circles behind rank letter (no bg circles)
-        
-    // Borders removed (no outer/inner stroke circles)
-
-        // Rank text (no glow)
-        const rankText = this.add.text(rightSideX, rankCenterY, rank, {
-            fontFamily: 'Arial',
-            fontSize: `${rankFontPx}px`,
-            fontWeight: '900',
-            color: rankColor,
-            stroke: '#000000',
-            strokeThickness: 6
-        }).setOrigin(0.5);
-    this.rankText = rankText;
-
-        // "RANK" label (no glow)
-        const rankLabel = this.add.text(rightSideX, rankCenterY - rankSize/2 - 40, 'RANK', {
-            fontFamily: 'Arial',
-            fontSize: `${Math.floor(statFontPx * 1.2)}px`,
-            fontWeight: '800',
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 2
-        }).setOrigin(0.5);
-    this.rankLabel = rankLabel;
-
-    this.resultContainer.add([rankText, rankLabel]);
-    this.rankElements = [rankText, rankLabel];
-
-        // Bloom's Taxonomy Analysis Panel (radar + chips)
+        // Bloom panel (bars only)
         if (bloomEnabled) {
-            const panelYStart = (-contentHeight/2) + titleHeight + (5 * (statRowHeight + statGap)) + 20; // below stats
+            const panelYStart = (-contentHeight/2) + titleHeight + (5 * (statRowHeight + statGap)) + 20;
             const panelWidth = contentWidth - 24;
             const panelHeight = bloomPanelHeight;
-
-            // Panel background
             const bloomBg = this.add.graphics();
             bloomBg.fillStyle(0x0b1024, 0.92);
             bloomBg.fillRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 10);
@@ -265,111 +149,39 @@ export default class ResultScreen extends BaseScene {
             bloomBg.strokeRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 10);
             this.resultContainer.add(bloomBg);
 
-            const panelLeft = -panelWidth/2;
-            const panelRight = panelWidth/2;
-
-            // Header
-            const header = this.add.text(-panelWidth/2 + 14, panelYStart + 10, "Bloom's Analysis", {
-                fontFamily: 'Arial', fontSize: `${Math.floor(statFontPx * 0.95)}px`, fontWeight: '900', color: '#F4CE14', stroke: '#000000', strokeThickness: 2
-            }).setOrigin(0, 0);
+            const header = this.add.text(-panelWidth/2 + 14, panelYStart + 10, "Bloom's Analysis", { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.95)}px`, fontWeight:'900', color:'#F4CE14', stroke:'#000000', strokeThickness:2 }).setOrigin(0,0);
             this.resultContainer.add(header);
 
-            // Radar chart (left)
             const margin = 18;
-            const radarSize = isMobile ? 160 : 190;
-            const radarCx = -panelWidth/2 + margin + radarSize/2;
-            const radarCy = panelYStart + bloomHeaderHeight + 20 + radarSize/2;
-            const axes = 6;
-            const ringSteps = [0.2, 0.4, 0.6, 0.8, 1.0];
-            const g = this.add.graphics();
-            g.lineStyle(1, 0x223776, 1);
-
-            const axisAngle = (idx) => -Math.PI/2 + (idx * 2*Math.PI/axes); // start at top
-            const pointAt = (ratio, idx) => {
-                const r = (radarSize/2) * ratio;
-                const a = axisAngle(idx);
-                return { x: radarCx + Math.cos(a) * r, y: radarCy + Math.sin(a) * r };
-            };
-
-            // Rings
-            ringSteps.forEach(step => {
-                g.beginPath();
-                const first = pointAt(step, 0);
-                g.moveTo(first.x, first.y);
-                for (let i=1;i<axes;i++){
-                    const p = pointAt(step, i);
-                    g.lineTo(p.x, p.y);
-                }
-                g.closePath();
-                g.strokePath();
-            });
-
-            // Axes
-            for (let i=0;i<axes;i++){
-                g.beginPath();
-                g.moveTo(radarCx, radarCy);
-                const p = pointAt(1, i);
-                g.lineTo(p.x, p.y);
-                g.strokePath();
-            }
-            this.resultContainer.add(g);
-
-            // Data polygon
-            const data = bloomAnalysis.rows; // six items ordered by computeBloomAnalysis
-            const poly = this.add.graphics();
-            poly.fillStyle(0x4a90e2, 0.25);
-            poly.lineStyle(2, 0x6db2ff, 0.9);
-            poly.beginPath();
-            let firstPoint = null;
-            data.forEach((row, i) => {
-                const ratio = Math.max(0, Math.min(1, row.acc/100));
-                const p = pointAt(ratio, i);
-                if (i===0){ poly.moveTo(p.x, p.y); firstPoint = p; }
-                else poly.lineTo(p.x, p.y);
-            });
-            if (firstPoint) poly.lineTo(firstPoint.x, firstPoint.y);
-            poly.closePath();
-            poly.fillPath();
-            poly.strokePath();
-            this.resultContainer.add(poly);
-
-            // Omit radar axis labels to avoid overlap with right-side chip labels.
-
-            // Chips (right)
-            const chipsX = radarCx + radarSize/2 + 30;
-            const labelColW = 120; // fixed label column so bars start later
-            const statsRightX = panelRight - margin; // right-aligned stats column
+            const panelLeft = -panelWidth/2;
+            const panelRight = panelWidth/2;
+            const chipsX = panelLeft + margin;
+            const labelColW = isMobile ? 140 : 160;
+            const statsRightX = panelRight - margin;
             const rowGap = isMobile ? 30 : 34;
             let chipY = panelYStart + bloomHeaderHeight + 14;
 
+            const data = bloomAnalysis.rows;
             data.forEach((row, idx) => {
                 const acc = row.acc;
                 const attempts = row.correct + row.wrong;
-
                 const name = this.add.text(chipsX, chipY, row.label, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.8)}px`, fontWeight:'800', color:'#ffffff' }).setOrigin(0,0.5);
                 const trackH = isMobile ? 12 : 14;
                 const trackX = chipsX + labelColW;
-                // limit bar length aggressively: min 120px, max 38% of panel width, never exceeding space before stats column
-                const maxTrackW = Math.max(120, (statsRightX - 90) - trackX);
-                const trackW = Math.max(120, Math.min(maxTrackW, panelWidth * 0.38));
+                const available = Math.max(100, (statsRightX - 90) - trackX);
+                const trackW = Math.max(120, Math.min(available, panelWidth * 0.6));
                 const track = this.add.rectangle(trackX, chipY, trackW, trackH, 0x101935).setOrigin(0,0.5);
                 track.setStrokeStyle(1, 0x243166);
-
-                // Shorten fill to 85% of track width so text never collides
-                const barRoom = trackW * 0.85;
+                const barRoom = trackW * 0.88;
                 const fillW = barRoom * Math.max(0, Math.min(1, acc/100));
                 const fill = this.add.rectangle(trackX, chipY, 1, trackH, acc >= 80 ? 0x2ecc71 : acc >= 60 ? 0xf1c40f : 0xff6b6b).setOrigin(0,0.5);
                 this.tweens.add({ targets: fill, displayWidth: fillW, duration: 450, delay: 50*idx, ease:'Cubic.easeOut' });
-
                 const attemptsText = attempts > 0 ? `${row.correct}/${row.wrong}` : '0/0';
-                // Right align stats so they never overflow or overlap the bar
                 const stats = this.add.text(statsRightX, chipY, `${acc}%  ${attemptsText}`, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.7)}px`, fontWeight:'700', color:'#cfe2ff' }).setOrigin(1,0.5);
-
                 this.resultContainer.add([name, track, fill, stats]);
                 chipY += rowGap;
             });
 
-            // Target suggestion card (bottom)
             const t = bloomAnalysis.target;
             if (t) {
                 const cardPad = 10;
@@ -382,7 +194,6 @@ export default class ResultScreen extends BaseScene {
                 card.lineStyle(2, 0x1e2a5a, 1);
                 card.strokeRoundedRect(-cardW/2, cardY - cardH/2, cardW, cardH, 8);
                 this.resultContainer.add(card);
-
                 const tip = `🎯 Focus next: ${t.label} — ${t.acc}% accuracy (${t.correct}/${t.correct + t.wrong}). ${t.tip}`;
                 const suggestion = this.add.text(0, cardY, tip, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx * 0.78)}px`, fontWeight:'800', color:'#d6e6ff', align:'center', wordWrap:{ width: cardW - 2*cardPad } }).setOrigin(0.5);
                 this.resultContainer.add(suggestion);
