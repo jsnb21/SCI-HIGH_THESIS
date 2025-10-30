@@ -265,6 +265,9 @@ export default class ResultScreen extends BaseScene {
             bloomBg.strokeRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 10);
             this.resultContainer.add(bloomBg);
 
+            const panelLeft = -panelWidth/2;
+            const panelRight = panelWidth/2;
+
             // Header
             const header = this.add.text(-panelWidth/2 + 14, panelYStart + 10, "Bloom's Analysis", {
                 fontFamily: 'Arial', fontSize: `${Math.floor(statFontPx * 0.95)}px`, fontWeight: '900', color: '#F4CE14', stroke: '#000000', strokeThickness: 2
@@ -336,13 +339,17 @@ export default class ResultScreen extends BaseScene {
                 const angle = axisAngle(i);
                 const originX = Math.cos(angle) > 0.15 ? 0 : (Math.cos(angle) < -0.15 ? 1 : 0.5);
                 const originY = Math.sin(angle) > 0.15 ? 0 : (Math.sin(angle) < -0.15 ? 1 : 0.5);
-                const lbl = this.add.text(p.x, p.y, row.label, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.65)}px`, fontWeight:'800', color:'#dbe7ff' }).setOrigin(originX, originY);
+                // Clamp labels so they don't bleed outside the panel
+                const clampedX = Math.max(panelLeft + 8, Math.min(panelRight - 8, p.x));
+                const clampedY = Math.max(panelYStart + 8, Math.min(panelYStart + panelHeight - 8, p.y));
+                const lbl = this.add.text(clampedX, clampedY, row.label, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.65)}px`, fontWeight:'800', color:'#dbe7ff' }).setOrigin(originX, originY);
                 this.resultContainer.add(lbl);
             });
 
             // Chips (right)
             const chipsX = radarCx + radarSize/2 + 30;
-            const chipTrackW = panelWidth - (chipsX + margin);
+            // Compute track width relative to panel right edge to avoid overshoot
+            const chipTrackMaxW = Math.max(120, (panelRight - margin) - (chipsX + 140));
             const rowGap = isMobile ? 30 : 34;
             let chipY = panelYStart + bloomHeaderHeight + 14;
 
@@ -353,15 +360,17 @@ export default class ResultScreen extends BaseScene {
                 const name = this.add.text(chipsX, chipY, row.label, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.8)}px`, fontWeight:'800', color:'#ffffff' }).setOrigin(0,0.5);
                 const trackH = isMobile ? 12 : 14;
                 const trackX = chipsX + 140;
-                const track = this.add.rectangle(trackX, chipY, chipTrackW - 160, trackH, 0x101935).setOrigin(0,0.5);
+                const track = this.add.rectangle(trackX, chipY, chipTrackMaxW, trackH, 0x101935).setOrigin(0,0.5);
                 track.setStrokeStyle(1, 0x243166);
 
-                const fillW = (chipTrackW - 160) * Math.max(0, Math.min(1, acc/100));
+                // Slightly shorten bars to leave breathing room near the right edge
+                const barRoom = chipTrackMaxW * 0.9;
+                const fillW = barRoom * Math.max(0, Math.min(1, acc/100));
                 const fill = this.add.rectangle(trackX, chipY, 1, trackH, acc >= 80 ? 0x2ecc71 : acc >= 60 ? 0xf1c40f : 0xff6b6b).setOrigin(0,0.5);
                 this.tweens.add({ targets: fill, displayWidth: fillW, duration: 450, delay: 50*idx, ease:'Cubic.easeOut' });
 
                 const attemptsText = attempts > 0 ? `${row.correct}/${row.wrong}` : '0/0';
-                const stats = this.add.text(trackX + (chipTrackW - 160) + 10, chipY, `${acc}%  ${attemptsText}`, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.7)}px`, fontWeight:'700', color:'#cfe2ff' }).setOrigin(0,0.5);
+                const stats = this.add.text(trackX + barRoom + 14, chipY, `${acc}%  ${attemptsText}`, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.7)}px`, fontWeight:'700', color:'#cfe2ff' }).setOrigin(0,0.5);
 
                 this.resultContainer.add([name, track, fill, stats]);
                 chipY += rowGap;
