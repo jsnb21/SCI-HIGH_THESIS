@@ -1674,8 +1674,14 @@ async function initPasswordResetAdmin() {
   // verify professor role
   let isProfessor = false;
   try {
-    const roleSnap = await firebase.database().ref(`roles/professors/${user.uid}`).once('value');
-    isProfessor = roleSnap.exists() && roleSnap.val() === true;
+    const db = firebase.database();
+    const [roleSnap, legacySnap] = await Promise.all([
+      db.ref(`roles/professors/${user.uid}`).once('value'),
+      db.ref(`professors/${user.uid}`).once('value')
+    ]);
+    const roleOk = roleSnap.exists() && roleSnap.val() === true;
+    const legacyOk = legacySnap.exists() && legacySnap.val() != null;
+    isProfessor = !!(roleOk || legacyOk);
   } catch (e) {
     // ignore; treat as not professor
   }

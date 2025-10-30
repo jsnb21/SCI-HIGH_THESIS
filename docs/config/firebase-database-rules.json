@@ -137,30 +137,30 @@
 
     "password_resets": {
       "requests": {
-        ".read": "auth != null && root.child('roles/professors').child(auth.uid).val() === true",
+        ".read": "auth != null && (root.child('roles/professors').child(auth.uid).val() === true || root.child('professors').child(auth.uid).val() != null)",
         "$requestId": {
-          ".write": "auth != null && ( !data.exists() || root.child('roles/professors').child(auth.uid).val() === true )",
+          ".write": "auth != null && ( !data.exists() || root.child('roles/professors').child(auth.uid).val() === true || root.child('professors').child(auth.uid).val() != null )",
           ".validate": "newData.hasChildren(['studentId','createdAt','status']) && newData.child('studentId').isString() && newData.child('status').isString() && newData.child('createdAt').isString()"
         }
       },
       "approved": {
         ".read": false,
         "$studentId": {
-          ".write": "auth != null && root.child('roles/professors').child(auth.uid).val() === true",
+          ".write": "auth != null && (root.child('roles/professors').child(auth.uid).val() === true || root.child('professors').child(auth.uid).val() != null)",
           ".validate": "newData.isBoolean()"
         }
       },
       "codes": {
         "$studentId": {
-          ".read": "auth != null && (root.child('roles/professors').child(auth.uid).val() === true || root.child('password_resets/approved').child($studentId).val() === true)",
-          ".write": "auth != null && root.child('roles/professors').child(auth.uid).val() === true",
+          ".read": "auth != null && (root.child('roles/professors').child(auth.uid).val() === true || root.child('professors').child(auth.uid).val() != null || root.child('password_resets/approved').child($studentId).val() === true)",
+          ".write": "auth != null && (root.child('roles/professors').child(auth.uid).val() === true || root.child('professors').child(auth.uid).val() != null)",
           ".validate": "newData.hasChildren(['codeHash','salt','iterations','issuedAt','expiresAt','used']) && !newData.child('rawCode').exists()"
         }
       },
       "history": {
-        ".read": "auth != null && root.child('roles/professors').child(auth.uid).val() === true",
+        ".read": "auth != null && (root.child('roles/professors').child(auth.uid).val() === true || root.child('professors').child(auth.uid).val() != null)",
         "$entryId": {
-          ".write": "auth != null && root.child('roles/professors').child(auth.uid).val() === true",
+          ".write": "auth != null && (root.child('roles/professors').child(auth.uid).val() === true || root.child('professors').child(auth.uid).val() != null)",
           ".validate": "newData.hasChildren(['studentId','issuedBy','issuedAt','expiresAt']) && newData.child('studentId').isString() && newData.child('issuedBy').isString() && newData.child('issuedAt').isString() && newData.child('expiresAt').isString()"
         }
       }
