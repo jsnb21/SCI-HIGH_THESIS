@@ -169,19 +169,35 @@ export default class ResultScreen extends BaseScene {
             data.forEach((row, idx) => {
                 const acc = row.acc;
                 const attempts = row.correct + row.wrong;
+
+                // Left label
                 const name = this.add.text(chipsX, chipY, row.label, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.8)}px`, fontWeight:'800', color:'#ffffff' }).setOrigin(0,0.5);
+
+                // Right stats (created first so we can measure its width)
+                const attemptsText = attempts > 0 ? `${row.correct}/${row.wrong}` : '0/0';
+                const stats = this.add.text(
+                    statsRightX,
+                    chipY,
+                    `${acc}%  ${attemptsText}`,
+                    { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.7)}px`, fontWeight:'700', color:'#cfe2ff' }
+                ).setOrigin(1,0.5);
+
+                // Track placed to end just before stats with a very small gap
+                const STAT_GAP_PX = isMobile ? 6 : 8;
                 const trackH = isMobile ? 12 : 14;
                 const trackX = chipsX + labelColW;
-                const available = Math.max(100, (statsRightX - 90) - trackX);
-                const trackW = Math.max(120, Math.min(available, panelWidth * 0.55));
+                const trackMaxByStats = Math.max(80, (statsRightX - STAT_GAP_PX - stats.width) - trackX);
+                const trackW = Math.max(120, Math.min(panelWidth * 0.55, trackMaxByStats));
                 const track = this.add.rectangle(trackX, chipY, trackW, trackH, 0x101935).setOrigin(0,0.5);
                 track.setStrokeStyle(1, 0x243166);
-                const barRoom = trackW * 0.88;
-                const fillW = barRoom * Math.max(0, Math.min(1, acc/100));
+
+                // Fill width aims to end close to stats while still proportional to accuracy
+                const proportional = trackW * Math.max(0, Math.min(1, acc/100));
+                const maxFillByStats = (statsRightX - STAT_GAP_PX - stats.width) - trackX;
+                const fillW = Math.max(0, Math.min(proportional, maxFillByStats, trackW * 0.98));
                 const fill = this.add.rectangle(trackX, chipY, 1, trackH, acc >= 80 ? 0x2ecc71 : acc >= 60 ? 0xf1c40f : 0xff6b6b).setOrigin(0,0.5);
                 this.tweens.add({ targets: fill, displayWidth: fillW, duration: 450, delay: 50*idx, ease:'Cubic.easeOut' });
-                const attemptsText = attempts > 0 ? `${row.correct}/${row.wrong}` : '0/0';
-                const stats = this.add.text(statsRightX, chipY, `${acc}%  ${attemptsText}`, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.7)}px`, fontWeight:'700', color:'#cfe2ff' }).setOrigin(1,0.5);
+
                 this.resultContainer.add([name, track, fill, stats]);
                 chipY += rowGap;
             });
