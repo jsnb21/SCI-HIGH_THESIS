@@ -1553,7 +1553,8 @@ class ProfessorDashboard {
     try {
       // Issue a one-time reset code the professor can share with the student
       const { rawCode, record } = await issueOneTimeResetCode(studentId);
-      this.showInfo(`One-time reset code issued for ${studentId}:\n\n${rawCode}\n\nExpires: ${record.expiresAt}\nShare this code with the student to let them set a new password.`, { title: 'Reset Code Issued' });
+      const readableExpiry = new Date(record.expiresAt).toLocaleString();
+      this.showInfo(`One-time reset code issued for ${studentId}:\n\n${rawCode}\n\nExpires: ${readableExpiry}\nShare this code with the student to let them set a new password.`, { title: 'Reset Code Issued' });
     } catch (error) {
       this.showError('Failed to reset password: ' + error.message);
     }
@@ -1737,12 +1738,14 @@ async function initPasswordResetAdmin() {
     if (!studentId) { if (approveResultEl) approveResultEl.textContent = 'Student ID is required'; return; }
     try {
       const { rawCode, record } = await issueOneTimeResetCode(studentId);
+      const readableExpiry = new Date(record.expiresAt).toLocaleString();
       if (approveResultEl) {
         approveResultEl.innerHTML = `
-          <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded">
-            <div class="font-semibold">Reset code issued</div>
-            <div class="text-sm">Share this code with the student: <span class="font-mono">${rawCode}</span></div>
-            <div class="text-xs text-gray-600">Expires: ${record.expiresAt}</div>
+          <div class="mt-2 p-3 bg-green-900/40 border border-green-500/60 rounded">
+            <div class="font-semibold text-green-100">Reset code issued</div>
+            <div class="text-sm text-green-50 mt-1">Share this code with the student:</div>
+            <div class="mt-1 inline-block px-3 py-2 rounded bg-black/50 border border-green-400 text-green-200 font-mono text-lg tracking-widest">${rawCode}</div>
+            <div class="text-xs text-green-200 mt-2">Expires: ${readableExpiry}</div>
           </div>`;
       }
       // mark a pending request as approved if exists
@@ -1768,12 +1771,15 @@ async function initPasswordResetAdmin() {
       const snap = await firebase.database().ref('password_resets/history').limitToLast(20).once('value');
       const val = snap.val() || {};
       const entries = Object.entries(val).sort((a,b)=> (b[1]?.issuedAt||'').localeCompare(a[1]?.issuedAt||''));
-      historyList.innerHTML = entries.map(([k,v]) => `
+      historyList.innerHTML = entries.map(([k,v]) => {
+        const issuedAt = v.issuedAt ? new Date(v.issuedAt).toLocaleString() : '';
+        const expiresAt = v.expiresAt ? new Date(v.expiresAt).toLocaleString() : '';
+        return `
         <li class="text-xs text-gray-300 flex justify-between border-b border-gray-700 py-1">
           <span>${v.studentId}</span>
-          <span class="text-gray-500">${v.issuedAt} → ${v.expiresAt}</span>
-        </li>
-      `).join('') || '<li class="text-gray-500">None</li>';
+          <span class="text-gray-500">${issuedAt} → ${expiresAt}</span>
+        </li>`;
+      }).join('') || '<li class="text-gray-500">None</li>';
     } catch (e) {
       historyList.innerHTML = '<li class="text-red-600">Failed to load history</li>';
     }
@@ -1784,7 +1790,7 @@ async function initPasswordResetAdmin() {
 async function issueOneTimeResetCode(studentId) {
   if (!window.firebase || !firebase.database) throw new Error('Firebase not initialized');
   // Generate a short human-friendly code, then store a hashed version
-  const rawCode = generateReadableCode(8); // e.g., 8 chars
+  const rawCode = generateNumericCode(6); // 6-digit numeric code
   const saltBytes = crypto.getRandomValues(new Uint8Array(16));
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey('raw', enc.encode(rawCode), 'PBKDF2', false, ['deriveBits']);
@@ -1803,10 +1809,9 @@ async function issueOneTimeResetCode(studentId) {
   return { rawCode, record };
 }
 
-function generateReadableCode(length=8) {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no confusing chars
+function generateNumericCode(length = 6) {
   let out = '';
-  for (let i=0;i<length;i++) out += alphabet[Math.floor(Math.random()*alphabet.length)];
+  for (let i = 0; i < length; i++) out += Math.floor(Math.random() * 10).toString();
   return out;
 }
 
