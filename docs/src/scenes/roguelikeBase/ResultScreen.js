@@ -333,23 +333,12 @@ export default class ResultScreen extends BaseScene {
             poly.strokePath();
             this.resultContainer.add(poly);
 
-            // Category labels around the radar
-            data.forEach((row, i) => {
-                const p = pointAt(1.12, i);
-                const angle = axisAngle(i);
-                const originX = Math.cos(angle) > 0.15 ? 0 : (Math.cos(angle) < -0.15 ? 1 : 0.5);
-                const originY = Math.sin(angle) > 0.15 ? 0 : (Math.sin(angle) < -0.15 ? 1 : 0.5);
-                // Clamp labels so they don't bleed outside the panel
-                const clampedX = Math.max(panelLeft + 8, Math.min(panelRight - 8, p.x));
-                const clampedY = Math.max(panelYStart + 8, Math.min(panelYStart + panelHeight - 8, p.y));
-                const lbl = this.add.text(clampedX, clampedY, row.label, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.65)}px`, fontWeight:'800', color:'#dbe7ff' }).setOrigin(originX, originY);
-                this.resultContainer.add(lbl);
-            });
+            // Omit radar axis labels to avoid overlap with right-side chip labels.
 
             // Chips (right)
             const chipsX = radarCx + radarSize/2 + 30;
-            // Compute track width relative to panel right edge to avoid overshoot
-            const chipTrackMaxW = Math.max(120, (panelRight - margin) - (chipsX + 140));
+            const labelColW = 120; // fixed label column so bars start later
+            const statsRightX = panelRight - margin; // right-aligned stats column
             const rowGap = isMobile ? 30 : 34;
             let chipY = panelYStart + bloomHeaderHeight + 14;
 
@@ -359,18 +348,22 @@ export default class ResultScreen extends BaseScene {
 
                 const name = this.add.text(chipsX, chipY, row.label, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.8)}px`, fontWeight:'800', color:'#ffffff' }).setOrigin(0,0.5);
                 const trackH = isMobile ? 12 : 14;
-                const trackX = chipsX + 140;
-                const track = this.add.rectangle(trackX, chipY, chipTrackMaxW, trackH, 0x101935).setOrigin(0,0.5);
+                const trackX = chipsX + labelColW;
+                // limit bar length aggressively: min 120px, max 38% of panel width, never exceeding space before stats column
+                const maxTrackW = Math.max(120, (statsRightX - 90) - trackX);
+                const trackW = Math.max(120, Math.min(maxTrackW, panelWidth * 0.38));
+                const track = this.add.rectangle(trackX, chipY, trackW, trackH, 0x101935).setOrigin(0,0.5);
                 track.setStrokeStyle(1, 0x243166);
 
-                // Slightly shorten bars to leave breathing room near the right edge
-                const barRoom = chipTrackMaxW * 0.9;
+                // Shorten fill to 85% of track width so text never collides
+                const barRoom = trackW * 0.85;
                 const fillW = barRoom * Math.max(0, Math.min(1, acc/100));
                 const fill = this.add.rectangle(trackX, chipY, 1, trackH, acc >= 80 ? 0x2ecc71 : acc >= 60 ? 0xf1c40f : 0xff6b6b).setOrigin(0,0.5);
                 this.tweens.add({ targets: fill, displayWidth: fillW, duration: 450, delay: 50*idx, ease:'Cubic.easeOut' });
 
                 const attemptsText = attempts > 0 ? `${row.correct}/${row.wrong}` : '0/0';
-                const stats = this.add.text(trackX + barRoom + 14, chipY, `${acc}%  ${attemptsText}`, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.7)}px`, fontWeight:'700', color:'#cfe2ff' }).setOrigin(0,0.5);
+                // Right align stats so they never overflow or overlap the bar
+                const stats = this.add.text(statsRightX, chipY, `${acc}%  ${attemptsText}`, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.7)}px`, fontWeight:'700', color:'#cfe2ff' }).setOrigin(1,0.5);
 
                 this.resultContainer.add([name, track, fill, stats]);
                 chipY += rowGap;
