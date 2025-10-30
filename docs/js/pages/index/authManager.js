@@ -9,6 +9,8 @@
       // Password hashing defaults
       this.pwdIterations = 100000;
       this.pwdSaltBytes = 16;
+      this.resetCodeIterations = 100000;
+      this.resetCodeSaltBytes = 16;
     }
 
     async initializeAuth() {
@@ -407,6 +409,88 @@
           return { success: true };
         }
       } catch (e) { return { success: false, error: e?.message || 'Failed to set password' }; }
+    }
+
+    // ===== Password reset: student side =====
+    async requestPasswordReset(studentId) {
+      try {
+        if (!studentId) return { success: false, error: 'Missing studentId' };
+        if (typeof firebase !== 'undefined' && firebase.database) {
+          await this.ensureAuthenticated();
+          const reqRef = firebase.database().ref('password_resets/requests').push();
+          await reqRef.set({
+            studentId,
+            createdAt: new Date().toISOString(),
+            status: 'pending'
+          });
+          return { success: true, requestId: reqRef.key };
+        } else {
+          // Offline: store locally for demo
+          const local = JSON.parse(localStorage.getItem('sci_high_local_reset_requests') || '[]');
+          const req = { id: 'local_' + Date.now(), studentId, createdAt: new Date().toISOString(), status: 'pending' };
+          local.push(req);
+          localStorage.setItem('sci_high_local_reset_requests', JSON.stringify(local));
+          return { success: true, requestId: req.id };
+        }
+      } catch (e) { return { success: false, error: e?.message || 'Failed to request reset' }; }
+    }
+
+    async resetPasswordWithCode(studentId, rawCode, newPassword) {
+      try {
+        if (!studentId || !rawCode || !newPassword) return { success: false, error: 'Missing inputs' };
+        if (typeof firebase !== 'undefined' && firebase.database) {
+          await this.ensureAuthenticated();
+          const codeSnap = await firebase.database().ref(`password_resets/codes/${studentId}`).once('value');
+          if (!codeSnap.exists()) return { success: false, error: 'No active reset code. Ask your professor for a code.' };
+          const codeObj = codeSnap.val();
+          if (codeObj.used) return { success: false, error: 'This reset code has already been used.' };
+          if (codeObj.expiresAt && Date.now() > Date.parse(codeObj.expiresAt)) return { success: false, error: 'Reset code expired. Ask for a new one.' };
+          // verify code
+          const enc = new TextEncoder();
+          const pwdKey = await crypto.subtle.importKey('raw', enc.encode(rawCode), 'PBKDF2', false, ['deriveBits']);
+          const saltBytes = this.base64ToBytes(codeObj.salt);
+          const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: saltBytes, iterations: codeObj.iterations || this.resetCodeIterations }, pwdKey, 256);
+          const calcHash = this.bytesToBase64(new Uint8Array(bits));
+          if (calcHash !== codeObj.codeHash) return { success: false, error: 'Invalid code.' };
+          // set new password
+          const setRes = await this.setStudentPassword(studentId, newPassword);
+          if (!setRes.success) return setRes;
+          // mark used
+          await firebase.database().ref(`password_resets/codes/${studentId}`).update({ used: true, usedAt: new Date().toISOString() });
+          // best-effort: mark a pending request for this student as fulfilled
+          try {
+            const reqSnap = await firebase.database().ref('password_resets/requests').orderByChild('studentId').equalTo(studentId).once('value');
+            if (reqSnap.exists()) {
+              const reqs = reqSnap.val() || {};
+              const keys = Object.keys(reqs).filter(k => reqs[k]?.status === 'approved' || reqs[k]?.status === 'pending');
+              if (keys.length) {
+                const key = keys[0];
+                await firebase.database().ref(`password_resets/requests/${key}`).update({ status: 'fulfilled', fulfilledAt: new Date().toISOString() });
+              }
+            }
+          } catch (_) {}
+          return { success: true };
+        } else {
+          // Offline local
+          const localCodes = JSON.parse(localStorage.getItem('sci_high_local_reset_codes') || '{}');
+          const entry = localCodes[studentId];
+          if (!entry) return { success: false, error: 'No local reset code found.' };
+          if (entry.used) return { success: false, error: 'Reset code already used.' };
+          if (entry.expiresAt && Date.now() > Date.parse(entry.expiresAt)) return { success: false, error: 'Reset code expired.' };
+          const enc = new TextEncoder();
+          const pwdKey = await crypto.subtle.importKey('raw', enc.encode(rawCode), 'PBKDF2', false, ['deriveBits']);
+          const saltBytes = this.base64ToBytes(entry.salt);
+          const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: saltBytes, iterations: entry.iterations || this.resetCodeIterations }, pwdKey, 256);
+          const calcHash = this.bytesToBase64(new Uint8Array(bits));
+          if (calcHash !== entry.codeHash) return { success: false, error: 'Invalid code.' };
+          const setRes = await this.setStudentPassword(studentId, newPassword);
+          if (!setRes.success) return setRes;
+          entry.used = true; entry.usedAt = new Date().toISOString();
+          localCodes[studentId] = entry;
+          localStorage.setItem('sci_high_local_reset_codes', JSON.stringify(localCodes));
+          return { success: true };
+        }
+      } catch (e) { return { success: false, error: e?.message || 'Failed to reset password' }; }
     }
 
     async registerGeneral(formData) {

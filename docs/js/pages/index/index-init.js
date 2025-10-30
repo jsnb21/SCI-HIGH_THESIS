@@ -198,6 +198,53 @@
       }
     });
 
+    // Forgot password toggle
+    const forgotToggle = document.getElementById('forgot-password-toggle');
+    const forgotPanel = document.getElementById('forgot-password-panel');
+    forgotToggle?.addEventListener('click', () => {
+      if (!forgotPanel) return;
+      const hidden = forgotPanel.classList.contains('hidden');
+      if (hidden) forgotPanel.classList.remove('hidden'); else forgotPanel.classList.add('hidden');
+    });
+
+    // Request password reset
+    document.getElementById('request-reset-btn')?.addEventListener('click', async () => {
+      if (!currentStudentId) { window.showError('Please verify your Student ID first.'); return; }
+      try {
+        const res = await window.authManager.requestPasswordReset(currentStudentId);
+        if (res.success) {
+          window.showInfo('Reset request sent. Ask your professor to approve and give you a reset code.', { title: 'Request sent' });
+        } else {
+          window.showError(res.error || 'Failed to submit reset request');
+        }
+      } catch (e) {
+        window.showError('Failed to submit reset request: ' + (e?.message || e));
+      }
+    });
+
+    // Submit reset code
+    document.getElementById('submit-reset-code-btn')?.addEventListener('click', async () => {
+      const code = (document.getElementById('reset-code-input')?.value || '').trim();
+      const np = (document.getElementById('reset-new-password')?.value || '').trim();
+      const npc = (document.getElementById('reset-new-password-confirm')?.value || '').trim();
+      if (!currentStudentId) { window.showError('Please verify your Student ID first.'); return; }
+      if (!code || code.length < 6) { window.showError('Enter your 6-digit reset code.'); return; }
+      if (!np || np.length < 6) { window.showError('New password must be at least 6 characters.'); return; }
+      if (np !== npc) { window.showError('New password and confirm do not match.'); return; }
+      try {
+        const res = await window.authManager.resetPasswordWithCode(currentStudentId, code, np);
+        if (res.success) {
+          window.showSuccess('Password updated! You can now log in.', { title: 'Password Reset' });
+          const pwdInput = document.getElementById('student-login-password');
+          if (pwdInput) pwdInput.value = np;
+        } else {
+          window.showError(res.error || 'Reset failed');
+        }
+      } catch (e) {
+        window.showError('Reset failed: ' + (e?.message || e));
+      }
+    });
+
     function showStudentProfileStep(existingData) {
       document.getElementById('student-id-step').classList.add('hidden');
       document.getElementById('student-found-step').classList.add('hidden');

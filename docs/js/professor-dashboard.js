@@ -1551,9 +1551,9 @@ class ProfessorDashboard {
     });
     if (!confirmed) return;
     try {
-      const newPassword = 'Student123!';
-      // In production, integrate with auth backend
-      this.showSuccess(`Password reset! New password: ${newPassword}`);
+      // Issue a one-time reset code the professor can share with the student
+      const { rawCode, record } = await issueOneTimeResetCode(studentId);
+      this.showInfo(`One-time reset code issued for ${studentId}:\n\n${rawCode}\n\nExpires: ${record.expiresAt}\nShare this code with the student to let them set a new password.`, { title: 'Reset Code Issued' });
     } catch (error) {
       this.showError('Failed to reset password: ' + error.message);
     }
@@ -1612,4 +1612,117 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('mobile-logout-btn')?.addEventListener('click', () => {
     dashboard.logoutUser();
   });
+
+  // Initialize Password Reset Admin panel if present
+  try { initPasswordResetAdmin(); } catch (e) { console.warn('Password reset admin init failed:', e); }
 });
+
+// ================= Password Reset Admin Panel (Professor) =================
+async function initPasswordResetAdmin() {
+  const container = document.getElementById('resetRequestsPanel');
+  if (!container) return; // panel not present in HTML
+
+  const listEl = container.querySelector('[data-reset-requests]');
+  const refreshBtn = container.querySelector('[data-refresh-resets]');
+  const approveForm = container.querySelector('[data-approve-form]');
+  const approveStudentIdInput = container.querySelector('[data-approve-studentId]');
+  const approveResultEl = container.querySelector('[data-approve-result]');
+
+  const renderList = (requests) => {
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    const entries = Object.entries(requests || {});
+    if (!entries.length) {
+      listEl.innerHTML = '<li class="text-gray-500">No reset requests</li>';
+      return;
+    }
+    entries.sort((a,b)=> (b[1]?.createdAt||'').localeCompare(a[1]?.createdAt||''));
+    for (const [key, req] of entries) {
+      const li = document.createElement('li');
+      li.className = 'py-2 border-b border-gray-700';
+      li.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="font-semibold text-sm">${req.studentId || 'unknown'}</div>
+            <div class="text-xs text-gray-500">${req.createdAt || ''}</div>
+          </div>
+          <div>
+            <span class="px-2 py-1 text-[10px] rounded ${req.status==='pending'?'bg-yellow-100 text-yellow-800': req.status==='approved'?'bg-blue-100 text-blue-800': req.status==='fulfilled'?'bg-green-100 text-green-800':'bg-gray-100 text-gray-700'}">${req.status||'pending'}</span>
+          </div>
+        </div>`;
+      listEl.appendChild(li);
+    }
+  };
+
+  async function loadRequests() {
+    try {
+      const snap = await firebase.database().ref('password_resets/requests').once('value');
+      renderList(snap.val() || {});
+    } catch (e) {
+      console.error('Failed to load reset requests', e);
+      if (listEl) listEl.innerHTML = '<li class="text-red-600">Failed to load requests</li>';
+    }
+  }
+
+  refreshBtn?.addEventListener('click', loadRequests);
+  await loadRequests();
+
+  approveForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (approveResultEl) approveResultEl.textContent = '';
+    const studentId = approveStudentIdInput?.value?.trim();
+    if (!studentId) { if (approveResultEl) approveResultEl.textContent = 'Student ID is required'; return; }
+    try {
+      const { rawCode, record } = await issueOneTimeResetCode(studentId);
+      if (approveResultEl) {
+        approveResultEl.innerHTML = `
+          <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded">
+            <div class="font-semibold">Reset code issued</div>
+            <div class="text-sm">Share this code with the student: <span class="font-mono">${rawCode}</span></div>
+            <div class="text-xs text-gray-600">Expires: ${record.expiresAt}</div>
+          </div>`;
+      }
+      // mark a pending request as approved if exists
+      try {
+        const reqSnap = await firebase.database().ref('password_resets/requests').orderByChild('studentId').equalTo(studentId).once('value');
+        if (reqSnap.exists()) {
+          const reqs = reqSnap.val() || {};
+          const key = Object.keys(reqs).find(k => reqs[k]?.status === 'pending');
+          if (key) await firebase.database().ref(`password_resets/requests/${key}`).update({ status: 'approved', approvedAt: new Date().toISOString() });
+        }
+      } catch (_) {}
+      await loadRequests();
+    } catch (err) {
+      if (approveResultEl) approveResultEl.textContent = err?.message || 'Failed to issue code';
+    }
+  });
+}
+
+async function issueOneTimeResetCode(studentId) {
+  if (!window.firebase || !firebase.database) throw new Error('Firebase not initialized');
+  // Generate a short human-friendly code, then store a hashed version
+  const rawCode = generateReadableCode(8); // e.g., 8 chars
+  const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(rawCode), 'PBKDF2', false, ['deriveBits']);
+  const iterations = 100000;
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: saltBytes, iterations }, key, 256);
+  const codeHash = bytesToBase64(new Uint8Array(bits));
+  const expiresAt = new Date(Date.now() + 1000*60*10).toISOString(); // 10 minutes
+  const record = { codeHash, salt: bytesToBase64(saltBytes), iterations, issuedAt: new Date().toISOString(), expiresAt, used: false };
+  await firebase.database().ref(`password_resets/codes/${studentId}`).set(record);
+  return { rawCode, record };
+}
+
+function generateReadableCode(length=8) {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no confusing chars
+  let out = '';
+  for (let i=0;i<length;i++) out += alphabet[Math.floor(Math.random()*alphabet.length)];
+  return out;
+}
+
+function bytesToBase64(bytes) {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
