@@ -1704,11 +1704,16 @@ async function initPasswordResetAdmin() {
     for (const [key, req] of entries) {
       const li = document.createElement('li');
       li.className = 'py-2 border-b border-gray-700';
+      const clickable = req.status === 'pending';
+      const actionBtn = clickable ? `<button data-issue-for="${req.studentId}" class="ml-3 px-2 py-1 bg-primary text-dark rounded text-[11px] font-gaming hover:brightness-110">Issue code</button>` : '';
       li.innerHTML = `
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="font-semibold text-sm">${req.studentId || 'unknown'}</div>
-            <div class="text-xs text-gray-500">${req.createdAt || ''}</div>
+        <div class="flex items-center justify-between ${clickable ? 'cursor-pointer hover:bg-dark/30 rounded px-2 py-1 -mx-2' : ''}" ${clickable ? `data-req-student-id="${req.studentId}"` : ''}>
+          <div class="flex items-center">
+            <div>
+              <div class="font-semibold text-sm">${req.studentId || 'unknown'}</div>
+              <div class="text-xs text-gray-500">${req.createdAt || ''}</div>
+            </div>
+            ${actionBtn}
           </div>
           <div>
             <span class="px-2 py-1 text-[10px] rounded ${req.status==='pending'?'bg-yellow-100 text-yellow-800': req.status==='approved'?'bg-blue-100 text-blue-800': req.status==='fulfilled'?'bg-green-100 text-green-800':'bg-gray-100 text-gray-700'}">${req.status||'pending'}</span>
@@ -1716,6 +1721,41 @@ async function initPasswordResetAdmin() {
         </div>`;
       listEl.appendChild(li);
     }
+
+    // Click-to-approve/issue handlers
+    listEl.querySelectorAll('[data-req-student-id], [data-issue-for]')?.forEach(el => {
+      const sid = el.getAttribute('data-req-student-id') || el.getAttribute('data-issue-for');
+      el.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!sid) return;
+        try {
+          const { rawCode, record } = await issueOneTimeResetCode(sid);
+          const readableExpiry = new Date(record.expiresAt).toLocaleString();
+          if (approveResultEl) {
+            approveResultEl.innerHTML = `
+              <div class="mt-2 p-3 bg-green-900/40 border border-green-500/60 rounded">
+                <div class="font-semibold text-green-100">Reset code issued for ${sid}</div>
+                <div class="text-sm text-green-50 mt-1">Share this code with the student:</div>
+                <div class="mt-1 inline-block px-3 py-2 rounded bg-black/50 border border-green-400 text-green-200 font-mono text-lg tracking-widest">${rawCode}</div>
+                <div class="text-xs text-green-200 mt-2">Expires: ${readableExpiry}</div>
+              </div>`;
+          }
+          // mark a pending request as approved if exists
+          try {
+            const reqSnap = await firebase.database().ref('password_resets/requests').orderByChild('studentId').equalTo(sid).once('value');
+            if (reqSnap.exists()) {
+              const reqs = reqSnap.val() || {};
+              const key = Object.keys(reqs).find(k => reqs[k]?.status === 'pending');
+              if (key) await firebase.database().ref(`password_resets/requests/${key}`).update({ status: 'approved', approvedAt: new Date().toISOString() });
+            }
+          } catch (_) {}
+          await loadRequests();
+        } catch (err) {
+          if (approveResultEl) approveResultEl.textContent = err?.message || 'Failed to issue code';
+        }
+      });
+    });
   };
 
   async function loadRequests() {
@@ -1730,6 +1770,17 @@ async function initPasswordResetAdmin() {
 
   refreshBtn?.addEventListener('click', loadRequests);
   await loadRequests();
+
+  // Hide manual input form and guide the user to click pending requests
+  if (approveForm) {
+    const titleP = container.querySelector('p.text-xs.text-gray-400.font-mono.mb-2 + form')?.previousElementSibling;
+    // Keep the header text but hide the form controls; show hint below
+    approveForm.style.display = 'none';
+    const hint = document.createElement('div');
+    hint.className = 'text-xs text-gray-400 mt-2';
+    hint.textContent = 'Tip: Click a pending request in the list to approve and issue a reset code.';
+    (approveResultEl?.parentElement || container).insertBefore(hint, (approveResultEl||null));
+  }
 
   approveForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
