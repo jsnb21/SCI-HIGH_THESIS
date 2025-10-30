@@ -1628,6 +1628,63 @@ async function initPasswordResetAdmin() {
   const approveStudentIdInput = container.querySelector('[data-approve-studentId]');
   const approveResultEl = container.querySelector('[data-approve-result]');
 
+  // Ensure Firebase is initialized and user has professor role before proceeding
+  const statusMessage = (msg, css = 'text-yellow-400') => {
+    if (listEl) listEl.innerHTML = `<li class="${css}">${msg}</li>`;
+  };
+
+  // wait for firebase initialize
+  async function waitForFirebase(timeoutMs = 5000) {
+    const start = Date.now();
+    while (!(window.firebase && firebase.apps && firebase.apps.length > 0)) {
+      if (Date.now() - start > timeoutMs) break;
+      await new Promise(r => setTimeout(r, 150));
+    }
+    return !!(window.firebase && firebase.apps && firebase.apps.length > 0);
+  }
+
+  // wait for auth user
+  async function getAuthUser(timeoutMs = 5000) {
+    if (!window.firebase || !firebase.auth) return null;
+    const existing = firebase.auth().currentUser;
+    if (existing) return existing;
+    return new Promise(resolve => {
+      let done = false;
+      const off = firebase.auth().onAuthStateChanged(u => {
+        if (!done) { done = true; off(); resolve(u); }
+      });
+      setTimeout(() => { if (!done) { done = true; try { off(); } catch {} resolve(null); } }, timeoutMs);
+    });
+  }
+
+  const fbReady = await waitForFirebase();
+  if (!fbReady) {
+    statusMessage('Firebase is not initialized. Try reloading the page.', 'text-red-500');
+    return;
+  }
+
+  const user = await getAuthUser();
+  if (!user || user.isAnonymous) {
+    statusMessage('Sign in as a professor to view and approve reset requests.', 'text-yellow-400');
+    // keep form disabled if not signed in
+    approveForm?.addEventListener('submit', (e) => { e.preventDefault(); });
+    return;
+  }
+
+  // verify professor role
+  let isProfessor = false;
+  try {
+    const roleSnap = await firebase.database().ref(`roles/professors/${user.uid}`).once('value');
+    isProfessor = roleSnap.exists() && roleSnap.val() === true;
+  } catch (e) {
+    // ignore; treat as not professor
+  }
+  if (!isProfessor) {
+    statusMessage('You do not have permission to manage password reset requests. Ensure your UID is listed under roles/professors.', 'text-red-400');
+    approveForm?.addEventListener('submit', (e) => { e.preventDefault(); });
+    return;
+  }
+
   const renderList = (requests) => {
     if (!listEl) return;
     listEl.innerHTML = '';
