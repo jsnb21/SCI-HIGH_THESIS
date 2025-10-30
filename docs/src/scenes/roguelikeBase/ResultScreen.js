@@ -258,51 +258,120 @@ export default class ResultScreen extends BaseScene {
             const panelYStart = (-contentHeight/2) + titleHeight + (5 * (statRowHeight + statGap)) + 20; // below stats
             // Panel background
             const bloomBg = this.add.graphics();
-            bloomBg.fillStyle(0x0b1024, 0.85);
+            bloomBg.fillStyle(0x0b1024, 0.9);
             const panelWidth = contentWidth - 24;
-            const panelHeight = bloomPanelHeight;
-            bloomBg.fillRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 8);
+            const panelHeight = bloomPanelHeight + 10; // a little extra breathing room
+            bloomBg.fillRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 10);
+            // subtle border
+            bloomBg.lineStyle(2, 0x1e2a5a, 1);
+            bloomBg.strokeRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 10);
             this.resultContainer.add(bloomBg);
 
             // Header
-            const header = this.add.text(0, panelYStart + 10, "Bloom's Analysis", {
+            const header = this.add.text(-panelWidth/2 + 14, panelYStart + 10, "Bloom's Analysis", {
                 fontFamily: 'Arial',
-                fontSize: `${Math.floor(statFontPx * 0.9)}px`,
-                fontWeight: '800',
+                fontSize: `${Math.floor(statFontPx * 0.95)}px`,
+                fontWeight: '900',
                 color: '#F4CE14',
                 stroke: '#000000',
                 strokeThickness: 2
-            }).setOrigin(0.5, 0);
+            }).setOrigin(0, 0);
             this.resultContainer.add(header);
 
-            // Rows: category label, bar for mistakes (wrong), and accuracy text
-            const maxWrong = Math.max(1, ...bloomAnalysis.rows.map(r => r.wrong));
-            const barMaxWidth = panelWidth * 0.5;
-            const rowStartX = -panelWidth/2 + 16;
-            let rowY = panelYStart + bloomHeaderHeight + 6;
+            // Legend (top-right)
+            const legendY = panelYStart + 12;
+            const legendX = panelWidth/2 - 160;
+            const legendBoxH = isMobile ? 10 : 12;
+            const legendTextSize = `${Math.floor(statFontPx * 0.75)}px`;
+            const lg1 = this.add.rectangle(legendX, legendY + legendBoxH/2, 18, legendBoxH, 0x2ecc71).setOrigin(0, 0.5);
+            const lt1 = this.add.text(lg1.x + 24, legendY, 'Correct', { fontFamily:'Arial', fontSize: legendTextSize, color:'#b9f8cf'}).setOrigin(0,0);
+            const lg2 = this.add.rectangle(lt1.x + lt1.width + 18, legendY + legendBoxH/2, 18, legendBoxH, 0xff5252).setOrigin(0, 0.5);
+            const lt2 = this.add.text(lg2.x + 24, legendY, 'Wrong', { fontFamily:'Arial', fontSize: legendTextSize, color:'#ffbdbd'}).setOrigin(0,0);
+            this.resultContainer.add([lg1, lt1, lg2, lt2]);
 
-            bloomAnalysis.rows.forEach(row => {
+            // Rows: stacked bars (correct vs wrong) scaled by total questions per category
+            const totals = bloomAnalysis.rows.map(r => r.correct + r.wrong);
+            const maxTotal = Math.max(1, ...totals);
+            const barMaxWidth = Math.min(panelWidth - 260, panelWidth * 0.68); // leave room for label + badges
+            const rowStartX = -panelWidth/2 + 16;
+            let rowY = panelYStart + bloomHeaderHeight + 12;
+
+            bloomAnalysis.rows.forEach((row, idx) => {
+                const total = Math.max(1, row.correct + row.wrong);
+                const acc = row.acc; // already rounded
+
+                // Label
                 const label = this.add.text(rowStartX, rowY, row.label, {
-                    fontFamily: 'Arial', fontSize: `${Math.floor(statFontPx * 0.8)}px`, fontWeight: '700', color: '#ffffff'
+                    fontFamily: 'Arial', fontSize: `${Math.floor(statFontPx * 0.85)}px`, fontWeight: '800', color: '#ffffff'
                 }).setOrigin(0, 0.5);
-                const barWidth = (row.wrong / maxWrong) * barMaxWidth;
-                const barX = rowStartX + 180;
-                const bar = this.add.rectangle(barX, rowY, Math.max(4, barWidth), isMobile ? 10 : 12, 0xff5252).setOrigin(0, 0.5);
-                bar.setStrokeStyle(1, 0x771d1d);
-                const metrics = this.add.text(barX + barMaxWidth + 12, rowY, `${row.wrong} wrong • ${row.acc}%`, {
-                    fontFamily: 'Arial', fontSize: `${Math.floor(statFontPx * 0.8)}px`, fontWeight: '700', color: '#ffb3b3'
-                }).setOrigin(1, 0.5);
-                this.resultContainer.add([label, bar, metrics]);
-                rowY += bloomRowHeight;
+
+                // Track
+                const trackX = rowStartX + 180;
+                const trackH = isMobile ? 14 : 16;
+                const track = this.add.rectangle(trackX, rowY, barMaxWidth, trackH, 0x101935).setOrigin(0, 0.5);
+                track.setStrokeStyle(1, 0x243166);
+
+                // Correct segment (green)
+                const correctW = barMaxWidth * (total / maxTotal) * (row.correct / total);
+                const wrongW = barMaxWidth * (total / maxTotal) * (row.wrong / total);
+
+                const barCorrect = this.add.rectangle(trackX, rowY, 1, trackH, 0x2ecc71).setOrigin(0, 0.5);
+                const barWrong = this.add.rectangle(trackX, rowY, 1, trackH, 0xff5252).setOrigin(0, 0.5);
+                barWrong.x = trackX; // will shift after correct fills
+
+                // Accuracy pill on the right
+                const pillX = trackX + barMaxWidth + 16;
+                const pillW = 82;
+                const pillH = isMobile ? 22 : 24;
+                const accColor = acc >= 80 ? 0x2ecc71 : acc >= 60 ? 0xf1c40f : 0xff6b6b;
+                const pillBg = this.add.rectangle(pillX, rowY, pillW, pillH, accColor, 1).setOrigin(0, 0.5);
+                pillBg.setStrokeStyle(2, 0x0a0a0a, 0.35);
+                pillBg.setCornerRadius?.(pillH/2);
+                // Fallback rounded look for Phaser < 3.80 (no setCornerRadius)
+                if (!pillBg.setCornerRadius) {
+                    // draw rounded via graphics overlay
+                    const g = this.add.graphics();
+                    g.fillStyle(accColor, 1);
+                    g.fillRoundedRect(pillX, rowY - pillH/2, pillW, pillH, pillH/2);
+                    this.resultContainer.add(g);
+                    pillBg.setVisible(false);
+                }
+                const pillText = this.add.text(pillX + pillW/2, rowY, `${acc}%`, {
+                    fontFamily:'Arial', fontSize:`${Math.floor(statFontPx * 0.75)}px`, fontWeight:'900', color:'#0b1024'
+                }).setOrigin(0.5);
+
+                // Counts (small): c/w
+                const countText = this.add.text(pillX + pillW + 8, rowY, `${row.correct}/${row.wrong}`, {
+                    fontFamily:'Arial', fontSize:`${Math.floor(statFontPx * 0.7)}px`, fontWeight:'700', color:'#cfe2ff'
+                }).setOrigin(0, 0.5);
+
+                this.resultContainer.add([label, track, barCorrect, barWrong, pillBg, pillText, countText]);
+
+                // Animate segments
+                this.tweens.add({ targets: barCorrect, displayWidth: Math.max(0, correctW), duration: 500, delay: 40*idx, ease:'Cubic.easeOut' });
+                this.tweens.add({ targets: barWrong, x: trackX + Math.max(0, correctW), displayWidth: Math.max(0, wrongW), duration: 500, delay: 40*idx+80, ease:'Cubic.easeOut' });
+
+                rowY += bloomRowHeight + 2;
             });
 
-            // Target suggestion
+            // Target suggestion card
             const t = bloomAnalysis.target;
             if (t) {
-                const tipText = `Target: ${t.label} — ${t.wrong} mistakes, ${t.acc}% accuracy. ${t.tip}`;
-                const suggestion = this.add.text(0, panelYStart + panelHeight - 10, tipText, {
-                    fontFamily: 'Arial', fontSize: `${Math.floor(statFontPx * 0.75)}px`, fontWeight: '700', color: '#cde8ff', align: 'center', wordWrap: { width: panelWidth - 20 }
-                }).setOrigin(0.5, 1);
+                const tipPad = 10;
+                const cardY = panelYStart + panelHeight - (isMobile ? 32 : 36);
+                const cardW = panelWidth - 28;
+                const cardH = isMobile ? 34 : 38;
+                const card = this.add.graphics();
+                card.fillStyle(0x11204a, 0.95);
+                card.fillRoundedRect(-cardW/2, cardY - cardH/2, cardW, cardH, 8);
+                card.lineStyle(2, 0x1e2a5a, 1);
+                card.strokeRoundedRect(-cardW/2, cardY - cardH/2, cardW, cardH, 8);
+                this.resultContainer.add(card);
+
+                const tip = `🎯 Target: ${t.label} — ${t.wrong} wrong, ${t.acc}% accuracy. ${t.tip}`;
+                const suggestion = this.add.text(0, cardY, tip, {
+                    fontFamily: 'Arial', fontSize: `${Math.floor(statFontPx * 0.78)}px`, fontWeight: '800', color: '#d6e6ff', align: 'center', wordWrap: { width: cardW - 2*tipPad }
+                }).setOrigin(0.5);
                 this.resultContainer.add(suggestion);
             }
         }
