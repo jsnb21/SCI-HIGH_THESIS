@@ -1696,6 +1696,26 @@ async function initPasswordResetAdmin() {
       if (approveResultEl) approveResultEl.textContent = err?.message || 'Failed to issue code';
     }
   });
+
+  // Load recent history
+  const historyList = document.getElementById('reset-history-list');
+  async function loadHistory() {
+    if (!historyList) return;
+    try {
+      const snap = await firebase.database().ref('password_resets/history').limitToLast(20).once('value');
+      const val = snap.val() || {};
+      const entries = Object.entries(val).sort((a,b)=> (b[1]?.issuedAt||'').localeCompare(a[1]?.issuedAt||''));
+      historyList.innerHTML = entries.map(([k,v]) => `
+        <li class="text-xs text-gray-300 flex justify-between border-b border-gray-700 py-1">
+          <span>${v.studentId}</span>
+          <span class="text-gray-500">${v.issuedAt} → ${v.expiresAt}</span>
+        </li>
+      `).join('') || '<li class="text-gray-500">None</li>';
+    } catch (e) {
+      historyList.innerHTML = '<li class="text-red-600">Failed to load history</li>';
+    }
+  }
+  await loadHistory();
 }
 
 async function issueOneTimeResetCode(studentId) {
@@ -1710,7 +1730,13 @@ async function issueOneTimeResetCode(studentId) {
   const codeHash = bytesToBase64(new Uint8Array(bits));
   const expiresAt = new Date(Date.now() + 1000*60*10).toISOString(); // 10 minutes
   const record = { codeHash, salt: bytesToBase64(saltBytes), iterations, issuedAt: new Date().toISOString(), expiresAt, used: false };
-  await firebase.database().ref(`password_resets/codes/${studentId}`).set(record);
+  const db = firebase.database();
+  await db.ref(`password_resets/codes/${studentId}`).set(record);
+  // Set approved index so student client can read hashed code for verification
+  await db.ref(`password_resets/approved/${studentId}`).set(true);
+  // Append to history for audit
+  const uid = (firebase.auth && firebase.auth().currentUser) ? firebase.auth().currentUser.uid : 'unknown';
+  await db.ref('password_resets/history').push({ studentId, issuedBy: uid, issuedAt: record.issuedAt, expiresAt });
   return { rawCode, record };
 }
 

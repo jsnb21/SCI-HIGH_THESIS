@@ -415,6 +415,15 @@
     async requestPasswordReset(studentId) {
       try {
         if (!studentId) return { success: false, error: 'Missing studentId' };
+        // Client-side soft throttle (2 minutes)
+        try {
+          const key = `sci_high_reset_last_${studentId}`;
+          const last = parseInt(localStorage.getItem(key) || '0', 10);
+          if (Date.now() - last < 2*60*1000) {
+            return { success: false, error: 'Please wait a couple of minutes before requesting again.' };
+          }
+          localStorage.setItem(key, String(Date.now()));
+        } catch(_) {}
         if (typeof firebase !== 'undefined' && firebase.database) {
           await this.ensureAuthenticated();
           const reqRef = firebase.database().ref('password_resets/requests').push();
@@ -457,6 +466,8 @@
           if (!setRes.success) return setRes;
           // mark used
           await firebase.database().ref(`password_resets/codes/${studentId}`).update({ used: true, usedAt: new Date().toISOString() });
+          // remove approved index so codes are no longer readable by student
+          try { await firebase.database().ref(`password_resets/approved/${studentId}`).remove(); } catch(_) {}
           // best-effort: mark a pending request for this student as fulfilled
           try {
             const reqSnap = await firebase.database().ref('password_resets/requests').orderByChild('studentId').equalTo(studentId).once('value');
