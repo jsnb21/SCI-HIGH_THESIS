@@ -182,19 +182,21 @@ export default class ResultScreen extends BaseScene {
                     { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.7)}px`, fontWeight:'700', color:'#cfe2ff' }
                 ).setOrigin(1,0.5);
 
-                // Track placed to end just before stats with a very small gap
-                const STAT_GAP_PX = isMobile ? 6 : 8;
+                // Track placed to end just before stats with a minimal gap
+                const STAT_GAP_PX = isMobile ? 4 : 4;
                 const trackH = isMobile ? 12 : 14;
                 const trackX = chipsX + labelColW;
                 const trackMaxByStats = Math.max(80, (statsRightX - STAT_GAP_PX - stats.width) - trackX);
-                const trackW = Math.max(120, Math.min(panelWidth * 0.55, trackMaxByStats));
+                // Let the track extend close to the stats (up to ~85% of panel),
+                // but never beyond the measured space before the stats text.
+                const trackW = Math.max(120, Math.min(panelWidth * 0.85, trackMaxByStats));
                 const track = this.add.rectangle(trackX, chipY, trackW, trackH, 0x101935).setOrigin(0,0.5);
                 track.setStrokeStyle(1, 0x243166);
 
                 // Fill width aims to end close to stats while still proportional to accuracy
                 const proportional = trackW * Math.max(0, Math.min(1, acc/100));
                 const maxFillByStats = (statsRightX - STAT_GAP_PX - stats.width) - trackX;
-                const fillW = Math.max(0, Math.min(proportional, maxFillByStats, trackW * 0.98));
+                const fillW = Math.max(0, Math.min(proportional, maxFillByStats, trackW * 0.99));
                 const fill = this.add.rectangle(trackX, chipY, 1, trackH, acc >= 80 ? 0x2ecc71 : acc >= 60 ? 0xf1c40f : 0xff6b6b).setOrigin(0,0.5);
                 this.tweens.add({ targets: fill, displayWidth: fillW, duration: 450, delay: 50*idx, ease:'Cubic.easeOut' });
 
