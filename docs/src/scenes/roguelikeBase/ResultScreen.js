@@ -140,7 +140,11 @@ export default class ResultScreen extends BaseScene {
         // Bloom panel (bars only)
         if (bloomEnabled) {
             const panelYStart = (-contentHeight/2) + titleHeight + (5 * (statRowHeight + statGap)) + 20;
-            const panelWidth = contentWidth - 24;
+            // Make analytics panel narrower than the main content to reduce horizontal footprint
+            const panelWidth = Math.max(
+                520, // minimum to keep labels readable
+                Math.min(contentWidth - 100, contentWidth * (isMobile ? 0.86 : 0.7))
+            );
             const panelHeight = bloomPanelHeight;
             const bloomBg = this.add.graphics();
             bloomBg.fillStyle(0x0b1024, 0.92);
@@ -169,7 +173,7 @@ export default class ResultScreen extends BaseScene {
                 const trackH = isMobile ? 12 : 14;
                 const trackX = chipsX + labelColW;
                 const available = Math.max(100, (statsRightX - 90) - trackX);
-                const trackW = Math.max(120, Math.min(available, panelWidth * 0.6));
+                const trackW = Math.max(120, Math.min(available, panelWidth * 0.55));
                 const track = this.add.rectangle(trackX, chipY, trackW, trackH, 0x101935).setOrigin(0,0.5);
                 track.setStrokeStyle(1, 0x243166);
                 const barRoom = trackW * 0.88;
