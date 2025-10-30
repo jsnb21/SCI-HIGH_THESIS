@@ -3886,6 +3886,20 @@ export default class MainGameplay extends BaseScene {
             startTime: this.sessionStartTime
         };
 
+        // Include Bloom's taxonomy stats for ResultScreen if available
+        if (this.sessionBloomStats) {
+            try {
+                const bs = this.sessionBloomStats;
+                const out = {};
+                Object.keys(bs).forEach(k => {
+                    const c = Math.max(0, (bs[k]?.correct || 0));
+                    const t = Math.max(0, (bs[k]?.total || 0));
+                    out[String(k).toLowerCase()] = { correct: c, wrong: Math.max(0, t - c) };
+                });
+                resultData.bloomStats = out;
+            } catch (_) { /* ignore transformation errors */ }
+        }
+
         // Remove desktop DOM HUD (and reveal Phaser HUD again for other scenes) before switching
         this.removeDesktopHud();
         

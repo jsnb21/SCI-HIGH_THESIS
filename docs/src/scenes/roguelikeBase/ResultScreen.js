@@ -15,6 +15,12 @@ export default class ResultScreen extends BaseScene {
         this.totalScore = data.totalScore || 0;
         this.courseTopic = data.courseTopic || 'Unknown';
         this.courseCompleted = data.courseCompleted || false;
+        // Optional: Bloom's taxonomy analytics
+        // Accept either aggregated stats per category or raw per-question results
+        // bloomStats format: { remembering:{correct: n, wrong: m}, understanding:{...}, ... }
+        // questionResults format: [{ bloom: 'remembering'|'understanding'|'applying'|'analyzing'|'evaluating'|'creating', correct: boolean }, ...]
+        this.bloomStatsRaw = data.bloomStats || null;
+        this.questionResults = Array.isArray(data.questionResults) ? data.questionResults : [];
         
     }
 
@@ -87,13 +93,21 @@ export default class ResultScreen extends BaseScene {
             rankFontPx = Math.round(rankFontPx * TALL_MOBILE_FONT_REDUCE);
         }
 
-        // Layout dimensions - fix broken layout
+    // Compute Bloom's analysis (if available)
+    const bloomAnalysis = this.computeBloomAnalysis();
+    const bloomRows = bloomAnalysis.rows.length;
+
+    // Layout dimensions - fix broken layout and include Bloom's section height if present
         const titleHeight = isMobile ? 80 : 100;
         const statRowHeight = isMobile ? 45 : 50;
         const statGap = isMobile ? 25 : 30;
         const rankSize = isMobile ? 100 : 140;
-        
-        const contentHeight = titleHeight + (5 * statRowHeight) + (4 * statGap) + 200; // Extra padding for button
+    const bloomRowHeight = isMobile ? 28 : 30;
+    const bloomHeaderHeight = isMobile ? 30 : 34;
+    const bloomSectionPadding = 24;
+    const bloomPanelHeight = bloomRows > 0 ? (bloomHeaderHeight + (bloomRows * bloomRowHeight) + bloomSectionPadding) : 0;
+
+    const contentHeight = titleHeight + (5 * statRowHeight) + (4 * statGap) + 200 + bloomPanelHeight; // Extra padding for button + Bloom panel
 
         // Create main container matching QuizScene
         this.resultContainer = this.add.container(centerX, centerY);
@@ -239,6 +253,60 @@ export default class ResultScreen extends BaseScene {
     this.resultContainer.add([rankText, rankLabel]);
     this.rankElements = [rankText, rankLabel];
 
+        // Bloom's Taxonomy Analysis Panel (full width, placed below stats and rank)
+        if (bloomRows > 0) {
+            const panelYStart = (-contentHeight/2) + titleHeight + (5 * (statRowHeight + statGap)) + 20; // below stats
+            // Panel background
+            const bloomBg = this.add.graphics();
+            bloomBg.fillStyle(0x0b1024, 0.85);
+            const panelWidth = contentWidth - 24;
+            const panelHeight = bloomPanelHeight;
+            bloomBg.fillRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 8);
+            this.resultContainer.add(bloomBg);
+
+            // Header
+            const header = this.add.text(0, panelYStart + 10, "Bloom's Analysis", {
+                fontFamily: 'Arial',
+                fontSize: `${Math.floor(statFontPx * 0.9)}px`,
+                fontWeight: '800',
+                color: '#F4CE14',
+                stroke: '#000000',
+                strokeThickness: 2
+            }).setOrigin(0.5, 0);
+            this.resultContainer.add(header);
+
+            // Rows: category label, bar for mistakes (wrong), and accuracy text
+            const maxWrong = Math.max(1, ...bloomAnalysis.rows.map(r => r.wrong));
+            const barMaxWidth = panelWidth * 0.5;
+            const rowStartX = -panelWidth/2 + 16;
+            let rowY = panelYStart + bloomHeaderHeight + 6;
+
+            bloomAnalysis.rows.forEach(row => {
+                const label = this.add.text(rowStartX, rowY, row.label, {
+                    fontFamily: 'Arial', fontSize: `${Math.floor(statFontPx * 0.8)}px`, fontWeight: '700', color: '#ffffff'
+                }).setOrigin(0, 0.5);
+                const barWidth = (row.wrong / maxWrong) * barMaxWidth;
+                const barX = rowStartX + 180;
+                const bar = this.add.rectangle(barX, rowY, Math.max(4, barWidth), isMobile ? 10 : 12, 0xff5252).setOrigin(0, 0.5);
+                bar.setStrokeStyle(1, 0x771d1d);
+                const metrics = this.add.text(barX + barMaxWidth + 12, rowY, `${row.wrong} wrong • ${row.acc}%`, {
+                    fontFamily: 'Arial', fontSize: `${Math.floor(statFontPx * 0.8)}px`, fontWeight: '700', color: '#ffb3b3'
+                }).setOrigin(1, 0.5);
+                this.resultContainer.add([label, bar, metrics]);
+                rowY += bloomRowHeight;
+            });
+
+            // Target suggestion
+            const t = bloomAnalysis.target;
+            if (t) {
+                const tipText = `Target: ${t.label} — ${t.wrong} mistakes, ${t.acc}% accuracy. ${t.tip}`;
+                const suggestion = this.add.text(0, panelYStart + panelHeight - 10, tipText, {
+                    fontFamily: 'Arial', fontSize: `${Math.floor(statFontPx * 0.75)}px`, fontWeight: '700', color: '#cde8ff', align: 'center', wordWrap: { width: panelWidth - 20 }
+                }).setOrigin(0.5, 1);
+                this.resultContainer.add(suggestion);
+            }
+        }
+
         // Create back button - position it at the bottom with proper spacing
         const buttonY = contentHeight/2 - 60; // Proper bottom positioning
         const buttonWidth = isMobile ? 280 : 360;
@@ -366,6 +434,64 @@ export default class ResultScreen extends BaseScene {
                 ease: 'Back.out'
             });
         });
+    }
+
+    computeBloomAnalysis() {
+        // Merge data from either provided aggregate stats or per-question results
+        const categories = ['remembering','understanding','applying','analyzing','evaluating','creating'];
+        const labelMap = {
+            remembering: 'Remembering',
+            understanding: 'Understanding',
+            applying: 'Applying',
+            analyzing: 'Analyzing',
+            evaluating: 'Evaluating',
+            creating: 'Creating'
+        };
+        const tips = {
+            remembering: 'Review flashcards or key terms; focus on definitions and recall.',
+            understanding: 'Paraphrase concepts and explain in your own words.',
+            applying: 'Practice applying rules or formulas to new problems.',
+            analyzing: 'Break problems into parts; look for patterns and relationships.',
+            evaluating: 'Compare solutions and justify choices with criteria.',
+            creating: 'Build something new from concepts; combine ideas into a solution.'
+        };
+
+        const agg = {};
+        categories.forEach(c => { agg[c] = { correct: 0, wrong: 0 }; });
+
+        if (this.bloomStatsRaw) {
+            categories.forEach(c => {
+                const s = this.bloomStatsRaw[c];
+                if (s) {
+                    agg[c].correct += Math.max(0, s.correct|0);
+                    agg[c].wrong += Math.max(0, s.wrong|0);
+                }
+            });
+        }
+
+        if (Array.isArray(this.questionResults) && this.questionResults.length) {
+            this.questionResults.forEach(q => {
+                const cat = (q.bloom || '').toLowerCase();
+                if (!agg[cat]) return;
+                if (q.correct) agg[cat].correct++; else agg[cat].wrong++;
+            });
+        }
+
+        const rows = categories
+            .map(c => ({ key: c, label: labelMap[c], correct: agg[c].correct, wrong: agg[c].wrong }))
+            .filter(r => (r.correct + r.wrong) > 0)
+            .map(r => ({ ...r, acc: Math.round((r.correct / Math.max(1, r.correct + r.wrong)) * 100) }));
+
+        // Choose target: category with highest wrong count; tie-breaker: lowest accuracy
+        let target = null;
+        rows.forEach(r => {
+            if (!target) { target = r; return; }
+            if (r.wrong > target.wrong) target = r;
+            else if (r.wrong === target.wrong && r.acc < target.acc) target = r;
+        });
+        if (target) target.tip = tips[target.key];
+
+        return { rows, target };
     }
 
     createRankGlowAnimation() {
