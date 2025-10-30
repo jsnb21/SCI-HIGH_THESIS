@@ -164,7 +164,47 @@
             if (window.firebaseConfig) { await window.firebaseConfig.initializeFirebase(); return true; }
           } catch (error) { console.warn(`Failed to load config from ${configPath}:`, error.message); continue; }
         }
-        console.warn('Firebase configuration could not be loaded from any path');
+        // Fallback 1: try env-config.json
+        try {
+          const cacheBuster = `?_v=${Date.now()}`;
+          const res = await fetch((base + 'config/env-config.json').replace(/\/+$/, '') + cacheBuster, { cache: 'no-store' });
+          if (res.ok) {
+            const envConfig = await res.json();
+            const firebaseConfig = {
+              apiKey: envConfig.apiKey || envConfig.FIREBASE_API_KEY,
+              authDomain: envConfig.authDomain || envConfig.FIREBASE_AUTH_DOMAIN,
+              databaseURL: envConfig.databaseURL || envConfig.FIREBASE_DATABASE_URL,
+              projectId: envConfig.projectId || envConfig.FIREBASE_PROJECT_ID,
+              storageBucket: envConfig.storageBucket || envConfig.FIREBASE_STORAGE_BUCKET,
+              messagingSenderId: envConfig.messagingSenderId || envConfig.FIREBASE_MESSAGING_SENDER_ID,
+              appId: envConfig.appId || envConfig.FIREBASE_APP_ID
+            };
+            if (firebaseConfig.apiKey && (firebaseConfig.databaseURL || firebaseConfig.projectId)) {
+              firebase.initializeApp(firebaseConfig);
+              return true;
+            }
+          }
+        } catch (e) { console.warn('env-config.json load failed:', e?.message || e); }
+
+        // Fallback 2: known default config (same as leaderboards/professor)
+        try {
+          const fallbackConfig = {
+            apiKey: 'AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28',
+            authDomain: 'sci-high-website.firebaseapp.com',
+            databaseURL: 'https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app',
+            projectId: 'sci-high-website',
+            storageBucket: 'sci-high-website.appspot.com',
+            messagingSenderId: '451463202515',
+            appId: '1:451463202515:web:e7f9c7bf69c04c685ef626'
+          };
+          firebase.initializeApp(fallbackConfig);
+          console.info('[authManager] Initialized with fallback Firebase config.');
+          return true;
+        } catch (e) {
+          console.error('[authManager] Fallback Firebase init failed:', e);
+        }
+
+        console.warn('Firebase configuration could not be loaded from any path or fallback');
         return false;
       } catch (error) { console.warn('Firebase initialization failed:', error.message); return false; }
     }
