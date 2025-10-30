@@ -81,13 +81,17 @@
     document.getElementById('student-complete-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
+      const pwd = (formData.get('password') || '').trim();
+      const cpwd = (formData.get('confirmPassword') || '').trim();
+      if (!pwd || pwd.length < 6) { window.showError('Password must be at least 6 characters long.', { title: 'Weak Password' }); return; }
+      if (pwd !== cpwd) { window.showError('Passwords do not match. Please re-enter the same password.', { title: 'Password Mismatch' }); return; }
       const strand = formData.get('strand');
       const year = formData.get('year');
       const strandYear = `${year} Year ${strand}`;
       const profileData = { studentId: currentStudentId, firstName: formData.get('firstName').trim(), lastName: formData.get('lastName').trim(), department: formData.get('department'), strandYear, strand, year };
       try {
         await window.authManager.firebaseInitPromise;
-        const result = await window.authManager.loginStudentWithProfile(currentStudentId, profileData);
+        const result = await window.authManager.loginStudentWithProfile(currentStudentId, profileData, pwd);
         if (result.success) {
           window.showSuccess('Welcome! Your profile has been set up successfully. Your progress will be saved automatically.', { title: '🎉 Profile Complete!' }).then(() => {
             loginModal.classList.add('hidden'); window.authManager.redirectToGame();
@@ -95,7 +99,7 @@
         } else { window.showError('Profile setup failed: ' + result.error, { title: 'Setup Failed' }); }
       } catch (error) {
         console.warn('Firebase profile setup failed, trying offline mode:', error);
-        const offlineResult = window.authManager.loginStudentOfflineWithProfile(currentStudentId, profileData);
+        const offlineResult = window.authManager.loginStudentOfflineWithProfile(currentStudentId, profileData, pwd);
         if (offlineResult.success) {
           window.showInfo('Welcome! Your profile has been set up in offline mode. Progress will be saved locally.', { title: '📱 Offline Mode' }).then(() => {
             loginModal.classList.add('hidden'); window.authManager.redirectToGame();
@@ -107,15 +111,47 @@
     document.getElementById('login-existing-student').addEventListener('click', async () => {
       try {
         await window.authManager.firebaseInitPromise;
-        const result = await window.authManager.loginStudent(currentStudentId);
+        const pwdInput = document.getElementById('student-login-password');
+        const password = pwdInput ? (pwdInput.value || '').trim() : '';
+        const result = await window.authManager.loginStudent(currentStudentId, password);
         if (result.success) {
           window.showSuccess('Welcome back! Your progress has been loaded.', { title: '👋 Welcome Back!' }).then(() => {
             loginModal.classList.add('hidden'); window.authManager.redirectToGame();
           });
-        } else { window.showError('Login failed: ' + result.error, { title: 'Student Login Failed' }); }
+        } else if (result.needsPasswordSetup) {
+          // Prompt user to set a new password for existing account without one
+          let newPwd = '';
+          let confirmPwd = '';
+          try {
+            newPwd = prompt('Set a new password for your account (min 6 characters):') || '';
+            if (!newPwd || newPwd.length < 6) { throw new Error('Password must be at least 6 characters.'); }
+            confirmPwd = prompt('Confirm your new password:') || '';
+            if (newPwd !== confirmPwd) { throw new Error('Passwords do not match.'); }
+          } catch (e) {
+            window.showError(e.message || 'Password setup cancelled.', { title: 'Password Setup' });
+            return;
+          }
+          const setRes = await window.authManager.setStudentPassword(currentStudentId, newPwd);
+          if (setRes.success) {
+            const retry = await window.authManager.loginStudent(currentStudentId, newPwd);
+            if (retry.success) {
+              window.showSuccess('Password set! Logging you in...', { title: '🔐 Secured' }).then(() => {
+                loginModal.classList.add('hidden'); window.authManager.redirectToGame();
+              });
+            } else {
+              window.showError('Login failed after setting password: ' + (retry.error || 'Unknown error'), { title: 'Login Failed' });
+            }
+          } else {
+            window.showError('Failed to set password: ' + (setRes.error || 'Unknown error'), { title: 'Password Setup Failed' });
+          }
+        } else {
+          window.showError('Login failed: ' + result.error, { title: 'Student Login Failed' });
+        }
       } catch (error) {
         console.warn('Firebase login failed, trying offline mode:', error);
-        const offlineResult = window.authManager.loginStudentOffline(currentStudentId);
+        const pwdInput = document.getElementById('student-login-password');
+        const password = pwdInput ? (pwdInput.value || '').trim() : '';
+        const offlineResult = window.authManager.loginStudentOffline(currentStudentId, password);
         if (offlineResult.success) {
           window.showInfo('Welcome! You are playing in offline mode. Progress will be saved locally.', { title: '📱 Offline Mode' }).then(() => {
             loginModal.classList.add('hidden'); window.authManager.redirectToGame();

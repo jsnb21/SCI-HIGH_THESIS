@@ -445,7 +445,7 @@
           <div class="text-center mb-4 sm:mb-6 md:mb-8">
             <h2 class="font-gaming text-xl sm:text-2xl md:text-3xl font-bold mb-2 text-accent">🎓 Student Portal</h2>
             <p class="text-gray-300 text-sm sm:text-base">Enter your Student ID to begin your adventure</p>
-            <p class="text-xs sm:text-sm text-gray-400 mt-2">✨ New student? An account will be created automatically for you!</p>
+            <p class="text-xs sm:text-sm text-gray-400 mt-2">✨ New student? Complete your profile and set a password to create your account.</p>
           </div>
           
           <div class="max-w-2xl mx-auto px-2 sm:px-0">
@@ -481,6 +481,16 @@
                   <div>
                     <label class="block text-gray-300 text-sm mb-2">Last Name *</label>
                     <input type="text" name="lastName" required placeholder="Enter your last name" 
+                           class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Create Password *</label>
+                    <input type="password" name="password" id="student-register-password" required minlength="6" placeholder="At least 6 characters" 
+                           class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-gray-300 text-sm mb-2">Confirm Password *</label>
+                    <input type="password" name="confirmPassword" id="student-register-password-confirm" required minlength="6" placeholder="Re-enter your password" 
                            class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-accent focus:outline-none">
                   </div>
                 </div>
@@ -532,8 +542,13 @@
                   <div id="student-profile-preview" class="text-left space-y-2 text-gray-300 max-w-md mx-auto">
                     <!-- Profile details will be inserted here -->
                   </div>
+                  <div class="mt-4 max-w-md mx-auto text-left space-y-2">
+                    <label class="block text-gray-300 text-sm mb-1">Password</label>
+                    <input type="password" id="student-login-password" placeholder="Enter your password" class="w-full px-4 py-3 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:outline-none">
+                    <p id="student-login-hint" class="text-xs text-gray-400">If this is your first time logging in and your account has no password yet, you'll be asked to set one.</p>
+                  </div>
                   <button type="button" id="login-existing-student" class="mt-4 px-8 py-3 font-gaming text-white bg-gradient-to-r from-green-500 to-green-600 rounded-lg transform transition-all duration-300 hover:scale-105">
-                    🚀 Continue Adventure
+                    � Login
                   </button>
                 </div>
               </div>
@@ -541,10 +556,10 @@
             
             <!-- Help Section -->
             <div class="text-center mt-6 pt-6 border-t border-gray-600">
-              <p class="text-gray-400 text-sm">📋 Only your Student ID is needed - no password required!</p>
+              <p class="text-gray-400 text-sm">� Student accounts now use passwords for security. Keep your password safe.</p>
               <div class="mt-4 p-3 bg-dark/30 rounded-lg">
                 <hr class="my-2 border-gray-600">
-                <p class="text-cyan text-xs">💡 Or try any Student ID (XX-XXXX-XXX format) to create a new account!</p>
+                <p class="text-cyan text-xs">💡 New here? Enter a valid Student ID (XX-XXXX-XXX) to create your account.</p>
               </div>
             </div>
           </div>

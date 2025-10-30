@@ -6,6 +6,9 @@
       this.userType = null;
       this.firebaseInitialized = false;
       this.firebaseInitPromise = this.initializeAuth();
+      // Password hashing defaults
+      this.pwdIterations = 100000;
+      this.pwdSaltBytes = 16;
     }
 
     async initializeAuth() {
@@ -204,16 +207,32 @@
           await this.ensureAuthenticated();
           const studentsSnapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
           if (!studentsSnapshot.exists()) {
-            const newStudent = await this.createStudentAccount(studentId);
-            if (newStudent.success) {
-              this.currentUser = { uid: newStudent.docId, studentId, type: 'student', profile: newStudent.studentData };
-              localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
-              this.userType = 'student'; this.updateProfessorTabVisibility(); this.updateUserInterface();
-              return { success: true, user: this.currentUser, isNewAccount: true };
-            } else { throw new Error(newStudent.error); }
+            // Do not auto-create accounts here anymore; require profile completion flow
+            return { success: false, error: `No account found for ${studentId}. Please complete your profile to register.`, needsRegistration: true };
           }
           const studentData = Object.values(studentsSnapshot.val())[0];
           const studentKey = Object.keys(studentsSnapshot.val())[0];
+
+          // Password verification
+          try {
+            const authSnap = await firebase.database().ref(`students/${studentKey}/auth`).once('value');
+            const auth = authSnap.exists() ? authSnap.val() : null;
+            if (auth && auth.passwordHash) {
+              if (!password) {
+                return { success: false, error: 'Password required to login.', code: 'PASSWORD_REQUIRED' };
+              }
+              const verified = await this.verifyPassword(password, auth);
+              if (!verified) {
+                return { success: false, error: 'Invalid password. Please try again.' };
+              }
+            } else {
+              // No password set yet for this account
+              return { success: false, error: 'This account has no password yet. Please set one to secure your account.', needsPasswordSetup: true };
+            }
+          } catch (e) {
+            console.warn('Password verification error:', e?.message || e);
+          }
+
           let careerStatsData = null;
           try { const careerStatsSnapshot = await firebase.database().ref(`student_career_stats/${studentId}`).once('value'); if (careerStatsSnapshot.exists()) { careerStatsData = careerStatsSnapshot.val(); } } catch {}
           const mergedStudentData = { ...studentData };
@@ -231,19 +250,22 @@
           return { success: true, user: this.currentUser };
         } else {
           const localStudents = JSON.parse(localStorage.getItem('sci_high_local_students') || '{}');
-          if (!localStudents[studentId]) {
-            localStudents[studentId] = this.createLocalStudentAccount(studentId);
-            localStorage.setItem('sci_high_local_students', JSON.stringify(localStudents));
-            this.currentUser = { uid: 'local_' + studentId.replace(/-/g, '_'), studentId, type: 'student', profile: localStudents[studentId] };
-            localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
-            this.userType = 'student'; this.updateProfessorTabVisibility(); this.updateUserInterface();
-            return { success: true, user: this.currentUser, isNewAccount: true };
-          } else {
-            this.currentUser = { uid: 'local_' + studentId.replace(/-/g, '_'), studentId, type: 'student', profile: localStudents[studentId] };
-            localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
-            this.userType = 'student'; this.updateProfessorTabVisibility();
-            return { success: true, user: this.currentUser };
+          const local = localStudents[studentId];
+          if (!local) {
+            return { success: false, error: 'No local account found. Please register first.', needsRegistration: true };
           }
+          // Check offline auth if present
+          if (local.auth && local.auth.passwordHash) {
+            if (!password) return { success: false, error: 'Password required to login.', code: 'PASSWORD_REQUIRED' };
+            const ok = await this.verifyPassword(password, local.auth);
+            if (!ok) return { success: false, error: 'Invalid password.' };
+          } else {
+            return { success: false, error: 'This offline account has no password yet. Please set one during profile completion.', needsPasswordSetup: true };
+          }
+          this.currentUser = { uid: 'local_' + studentId.replace(/-/g, '_'), studentId, type: 'student', profile: local };
+          localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+          this.userType = 'student'; this.updateProfessorTabVisibility();
+          return { success: true, user: this.currentUser };
         }
       } catch (error) {
         console.error('Student login error:', error);
@@ -316,6 +338,75 @@
         this.userType = 'general'; this.updateProfessorTabVisibility(); this.updateUserInterface();
         return { success: true, user: this.currentUser };
       } catch (error) { return { success: false, error: error.message }; }
+    }
+
+    // ===== Password hashing helpers =====
+    async generateSalt(bytes = this.pwdSaltBytes) {
+      const salt = new Uint8Array(bytes);
+      (self.crypto || window.crypto).getRandomValues(salt);
+      return salt;
+    }
+
+    bytesToBase64(bytes) {
+      let binary = '';
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) binary += String.fromCharCode(bytes[i]);
+      return btoa(binary);
+    }
+
+    base64ToBytes(base64) {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes;
+    }
+
+    async derivePasswordHash(password, saltBase64 = null, iterations = this.pwdIterations) {
+      const enc = new TextEncoder();
+      const pwdKey = await (crypto.subtle).importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+      const saltBytes = saltBase64 ? this.base64ToBytes(saltBase64) : await this.generateSalt();
+      const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: saltBytes, iterations }, pwdKey, 256);
+      const hashBytes = new Uint8Array(bits);
+      return {
+        passwordHash: this.bytesToBase64(hashBytes),
+        salt: this.bytesToBase64(saltBytes),
+        iterations,
+        algo: 'PBKDF2-SHA-256'
+      };
+    }
+
+    async verifyPassword(password, stored) {
+      try {
+        const { passwordHash, salt, iterations } = stored || {};
+        if (!passwordHash || !salt || !iterations) return false;
+        const derived = await this.derivePasswordHash(password, salt, iterations);
+        return derived.passwordHash === passwordHash;
+      } catch { return false; }
+    }
+
+    async setStudentPassword(studentId, password) {
+      try {
+        if (!studentId || !password) return { success: false, error: 'Missing studentId or password' };
+        if (typeof firebase !== 'undefined' && firebase.database) {
+          await this.ensureAuthenticated();
+          const studentsSnapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
+          if (!studentsSnapshot.exists()) return { success: false, error: 'Account not found' };
+          const studentKey = Object.keys(studentsSnapshot.val())[0];
+          const auth = await this.derivePasswordHash(password);
+          await firebase.database().ref(`students/${studentKey}/auth`).set({ ...auth, updatedAt: new Date().toISOString() });
+          return { success: true };
+        } else {
+          // Offline storage
+          const localStudents = JSON.parse(localStorage.getItem('sci_high_local_students') || '{}');
+          const local = localStudents[studentId];
+          if (!local) return { success: false, error: 'Local account not found' };
+          const auth = await this.derivePasswordHash(password);
+          local.auth = { ...auth, updatedAt: new Date().toISOString() };
+          localStudents[studentId] = local;
+          localStorage.setItem('sci_high_local_students', JSON.stringify(localStudents));
+          return { success: true };
+        }
+      } catch (e) { return { success: false, error: e?.message || 'Failed to set password' }; }
     }
 
     async registerGeneral(formData) {
@@ -470,17 +561,27 @@
 
   // Offline helpers injection
   window.authManager.createOfflineTestAccounts = function() {
-    this.loginStudentOffline = function(studentId) {
-      this.currentUser = { uid: 'offline_' + studentId, studentId, type: 'student', profile: { studentId, fullName: `Student ${studentId}`, isOffline: true } };
+    this.loginStudentOffline = async function(studentId, password) {
+      const localStudents = JSON.parse(localStorage.getItem('sci_high_local_students') || '{}');
+      const local = localStudents[studentId];
+      if (!local) return { success: false, error: 'No local account found. Please register first.', needsRegistration: true };
+      if (local.auth && local.auth.passwordHash) {
+        if (!password) return { success: false, error: 'Password required.', code: 'PASSWORD_REQUIRED' };
+        const ok = await this.verifyPassword(password, local.auth);
+        if (!ok) return { success: false, error: 'Invalid password.' };
+      } else {
+        return { success: false, error: 'No password set for this offline account.', needsPasswordSetup: true };
+      }
+      this.currentUser = { uid: 'offline_' + studentId, studentId, type: 'student', profile: { ...local, isOffline: true } };
       this.userType = 'student'; localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
-      return { success: true, user: this.currentUser, isNewAccount: true };
+      return { success: true, user: this.currentUser };
     };
     this.loginGeneralOffline = function(email) {
       this.currentUser = { uid: 'offline_' + email.replace('@','_'), email, type: 'general', profile: { fullName: 'Offline User', email, isOffline: true } };
       this.userType = 'general'; localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
       return { success: true, user: this.currentUser };
     };
-    this.getStudentProfile = async function(studentId) {
+  this.getStudentProfile = async function(studentId) {
       try {
         if (typeof firebase !== 'undefined' && firebase.database) {
           await this.ensureAuthenticated();
@@ -549,7 +650,7 @@
       } catch(_) { /* ignore */ }
       return null;
     };
-    this.loginStudentWithProfile = async function(studentId, profileData) {
+    this.loginStudentWithProfile = async function(studentId, profileData, password) {
       try {
         if (typeof firebase !== 'undefined' && firebase.database) {
           await this.ensureAuthenticated();
@@ -571,6 +672,10 @@
               profileCompleted: true,
               needsProfileCompletion: false
             });
+            if (password) {
+              const auth = await this.derivePasswordHash(password);
+              await studentsRef.child(studentKey).child('auth').set({ ...auth, updatedAt: new Date().toISOString() });
+            }
           } else {
             const newStudentData = {
               studentId,
@@ -590,20 +695,29 @@
             };
             const newRef = await studentsRef.push(newStudentData);
             studentKey = newRef.key;
+            if (password) {
+              const auth = await this.derivePasswordHash(password);
+              await studentsRef.child(studentKey).child('auth').set({ ...auth, updatedAt: new Date().toISOString() });
+            }
           }
           this.currentUser = { uid: studentKey, studentId, type: 'student', profile: { studentId, firstName: profileData.firstName, lastName: profileData.lastName, fullName: `${profileData.firstName} ${profileData.lastName}`, department: profileData.department, strandYear: profileData.strandYear, profileCompleted: true } };
           this.userType = 'student'; localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
           return { success: true, user: this.currentUser };
         }
       } catch (error) { console.warn('Firebase loginStudentWithProfile failed:', error); }
-      return this.loginStudentOfflineWithProfile(studentId, profileData);
+      return this.loginStudentOfflineWithProfile(studentId, profileData, password);
     };
-    this.loginStudentOfflineWithProfile = function(studentId, profileData) {
+    this.loginStudentOfflineWithProfile = async function(studentId, profileData, password) {
       const studentData = { studentId, firstName: profileData.firstName, lastName: profileData.lastName, fullName: `${profileData.firstName} ${profileData.lastName}` , department: profileData.department, strandYear: profileData.strandYear, isOffline: true, profileCompleted: true, createdAt: new Date().toISOString(), lastLogin: new Date().toISOString() };
       const offlineStudents = JSON.parse(localStorage.getItem('sci_high_offline_students') || '[]');
       const existingIndex = offlineStudents.findIndex(s => s.studentId === studentId);
       if (existingIndex >= 0) offlineStudents[existingIndex] = { ...offlineStudents[existingIndex], ...studentData }; else offlineStudents.push(studentData);
       localStorage.setItem('sci_high_offline_students', JSON.stringify(offlineStudents));
+      // also store password in structured local store for login
+      const localStudents = JSON.parse(localStorage.getItem('sci_high_local_students') || '{}');
+      const auth = password ? await this.derivePasswordHash(password) : null;
+      localStudents[studentId] = { ...(localStudents[studentId] || {}), ...studentData, ...(auth ? { auth: { ...auth, updatedAt: new Date().toISOString() } } : {}) };
+      localStorage.setItem('sci_high_local_students', JSON.stringify(localStudents));
       this.currentUser = { uid: 'offline_' + studentId, studentId, type: 'student', profile: studentData };
       this.userType = 'student'; localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
       return { success: true, user: this.currentUser };
