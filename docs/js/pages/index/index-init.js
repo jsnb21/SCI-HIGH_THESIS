@@ -119,21 +119,21 @@
             loginModal.classList.add('hidden'); window.authManager.redirectToGame();
           });
         } else if (result.needsPasswordSetup) {
-          // Prompt user to set a new password for existing account without one
-          let newPwd = '';
-          let confirmPwd = '';
-          try {
-            newPwd = prompt('Set a new password for your account (min 6 characters):') || '';
-            if (!newPwd || newPwd.length < 6) { throw new Error('Password must be at least 6 characters.'); }
-            confirmPwd = prompt('Confirm your new password:') || '';
-            if (newPwd !== confirmPwd) { throw new Error('Passwords do not match.'); }
-          } catch (e) {
-            window.showError(e.message || 'Password setup cancelled.', { title: 'Password Setup' });
+          // Use the entered password to set as new password after confirmation
+          if (!password || password.length < 6) {
+            window.showError('Please enter a password (min 6 characters) to set for this account, then click Login again.', { title: 'Password Required' });
             return;
           }
-          const setRes = await window.authManager.setStudentPassword(currentStudentId, newPwd);
+          let confirmed = true;
+          if (typeof window.modernConfirm === 'function') {
+            confirmed = await window.modernConfirm('Use the entered password as your account password?', { title: 'Set Password', confirmText: 'Yes, set this password', cancelText: 'Cancel' });
+          } else {
+            confirmed = confirm('Use the entered password as your account password?');
+          }
+          if (!confirmed) return;
+          const setRes = await window.authManager.setStudentPassword(currentStudentId, password);
           if (setRes.success) {
-            const retry = await window.authManager.loginStudent(currentStudentId, newPwd);
+            const retry = await window.authManager.loginStudent(currentStudentId, password);
             if (retry.success) {
               window.showSuccess('Password set! Logging you in...', { title: '🔐 Secured' }).then(() => {
                 loginModal.classList.add('hidden'); window.authManager.redirectToGame();
@@ -151,11 +151,36 @@
         console.warn('Firebase login failed, trying offline mode:', error);
         const pwdInput = document.getElementById('student-login-password');
         const password = pwdInput ? (pwdInput.value || '').trim() : '';
-        const offlineResult = window.authManager.loginStudentOffline(currentStudentId, password);
+        const offlineResult = await window.authManager.loginStudentOffline(currentStudentId, password);
         if (offlineResult.success) {
           window.showInfo('Welcome! You are playing in offline mode. Progress will be saved locally.', { title: '📱 Offline Mode' }).then(() => {
             loginModal.classList.add('hidden'); window.authManager.redirectToGame();
           });
+        } else if (offlineResult.needsPasswordSetup) {
+          if (!password || password.length < 6) {
+            window.showError('Please enter a password (min 6 characters) to set for this offline account, then click Login again.', { title: 'Password Required' });
+            return;
+          }
+          let confirmed = true;
+          if (typeof window.modernConfirm === 'function') {
+            confirmed = await window.modernConfirm('Use the entered password as your account password?', { title: 'Set Password', confirmText: 'Yes, set this password', cancelText: 'Cancel' });
+          } else {
+            confirmed = confirm('Use the entered password as your account password?');
+          }
+          if (!confirmed) return;
+          const setRes = await window.authManager.setStudentPassword(currentStudentId, password);
+          if (setRes.success) {
+            const retry = await window.authManager.loginStudentOffline(currentStudentId, password);
+            if (retry.success) {
+              window.showSuccess('Password set for offline account! Logging you in...', { title: '🔐 Secured' }).then(() => {
+                loginModal.classList.add('hidden'); window.authManager.redirectToGame();
+              });
+            } else {
+              window.showError('Offline login failed after setting password: ' + (retry.error || 'Unknown error'), { title: 'Login Failed' });
+            }
+          } else {
+            window.showError('Failed to set password: ' + (setRes.error || 'Unknown error'), { title: 'Password Setup Failed' });
+          }
         } else { window.showError('Login failed: Unable to authenticate', { title: 'Authentication Error' }); }
       }
     });
