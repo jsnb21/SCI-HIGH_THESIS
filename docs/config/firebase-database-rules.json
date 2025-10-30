@@ -146,15 +146,15 @@
       "approved": {
         ".read": false,
         "$studentId": {
-          ".write": "auth != null && (root.child('roles/professors').child(auth.uid).val() === true || root.child('professors').child(auth.uid).val() != null)",
-          ".validate": "newData.isBoolean()"
+          ".write": "auth != null && (root.child('roles/professors').child(auth.uid).val() === true || root.child('professors').child(auth.uid).val() != null || (data.val() === true && (!newData.exists() || newData.val() === false)))",
+          ".validate": "!newData.exists() || newData.isBoolean()"
         }
       },
       "codes": {
         "$studentId": {
           ".read": "auth != null && (root.child('roles/professors').child(auth.uid).val() === true || root.child('professors').child(auth.uid).val() != null || root.child('password_resets/approved').child($studentId).val() === true)",
           ".write": "auth != null && (root.child('roles/professors').child(auth.uid).val() === true || root.child('professors').child(auth.uid).val() != null)",
-          ".validate": "newData.hasChildren(['codeHash','salt','iterations','issuedAt','expiresAt','used']) && !newData.child('rawCode').exists()"
+          ".validate": "!newData.exists() || (newData.hasChildren(['codeHash','salt','iterations','issuedAt','expiresAt','used']) && !newData.child('rawCode').exists())"
         }
       },
       "history": {

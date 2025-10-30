@@ -464,22 +464,8 @@
           // set new password
           const setRes = await this.setStudentPassword(studentId, newPassword);
           if (!setRes.success) return setRes;
-          // mark used
-          await firebase.database().ref(`password_resets/codes/${studentId}`).update({ used: true, usedAt: new Date().toISOString() });
-          // remove approved index so codes are no longer readable by student
+          // clear approved flag so codes are no longer readable by student
           try { await firebase.database().ref(`password_resets/approved/${studentId}`).remove(); } catch(_) {}
-          // best-effort: mark a pending request for this student as fulfilled
-          try {
-            const reqSnap = await firebase.database().ref('password_resets/requests').orderByChild('studentId').equalTo(studentId).once('value');
-            if (reqSnap.exists()) {
-              const reqs = reqSnap.val() || {};
-              const keys = Object.keys(reqs).filter(k => reqs[k]?.status === 'approved' || reqs[k]?.status === 'pending');
-              if (keys.length) {
-                const key = keys[0];
-                await firebase.database().ref(`password_resets/requests/${key}`).update({ status: 'fulfilled', fulfilledAt: new Date().toISOString() });
-              }
-            }
-          } catch (_) {}
           return { success: true };
         } else {
           // Offline local
