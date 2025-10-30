@@ -81,6 +81,19 @@
     document.getElementById('student-complete-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
+      const firstNameRaw = (formData.get('firstName') || '').trim();
+      const lastNameRaw = (formData.get('lastName') || '').trim();
+      const nameRegex = /^[A-Za-z\s]+$/;
+      if (!nameRegex.test(firstNameRaw)) {
+        window.showError('First Name can only contain letters and spaces.', { title: 'Invalid First Name' });
+        return;
+      }
+      if (!nameRegex.test(lastNameRaw)) {
+        window.showError('Last Name can only contain letters and spaces.', { title: 'Invalid Last Name' });
+        return;
+      }
+      const firstName = firstNameRaw.replace(/\s+/g, ' ');
+      const lastName = lastNameRaw.replace(/\s+/g, ' ');
       const pwd = (formData.get('password') || '').trim();
       const cpwd = (formData.get('confirmPassword') || '').trim();
       if (!pwd || pwd.length < 6) { window.showError('Password must be at least 6 characters long.', { title: 'Weak Password' }); return; }
@@ -88,7 +101,7 @@
       const strand = formData.get('strand');
       const year = formData.get('year');
       const strandYear = `${year} Year ${strand}`;
-      const profileData = { studentId: currentStudentId, firstName: formData.get('firstName').trim(), lastName: formData.get('lastName').trim(), department: formData.get('department'), strandYear, strand, year };
+      const profileData = { studentId: currentStudentId, firstName, lastName, department: formData.get('department'), strandYear, strand, year };
       try {
         await window.authManager.firebaseInitPromise;
         const result = await window.authManager.loginStudentWithProfile(currentStudentId, profileData, pwd);
