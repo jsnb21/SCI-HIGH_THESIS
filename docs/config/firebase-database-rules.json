@@ -107,6 +107,21 @@
         }
       }
     },
+    
+    "feedbacks": {
+      ".read": "auth != null && (root.child('roles/professors').child(auth.uid).val() === true || root.child('professors').child(auth.uid).val() != null)",
+      "$entryId": {
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['message','createdAt','senderUid','senderType']) && newData.child('message').isString() && newData.child('message').val().length > 0 && newData.child('message').val().length <= 2000 && newData.child('createdAt').isString() && newData.child('senderUid').isString() && newData.child('senderType').isString() && (newData.child('senderType').val() === 'student' || newData.child('senderType').val() === 'general')"
+      }
+    },
+    
+    "feedback_email_queue": {
+      "$entryId": {
+        ".write": "auth != null",
+        ".read": false
+      }
+    },
 
     "story_progress": {
       ".indexOn": ["studentId"],
