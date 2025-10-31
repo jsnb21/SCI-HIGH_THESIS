@@ -115,7 +115,7 @@
   }
 
   // Optional: EmailJS support if configured (window.EMAILJS_*). This is best-effort.
-  async function tryEmailSend(toEmails, subject, text){
+  async function tryEmailSend(toEmails, subject, text, meta){
     try {
       const pub = window.EMAILJS_PUBLIC_KEY; const service = window.EMAILJS_SERVICE_ID; const template = window.EMAILJS_TEMPLATE_ID;
       if (!pub || !service || !template) return false;
@@ -128,7 +128,19 @@
       }
       if (!window.emailjs) return false;
       window.emailjs.init(pub);
-      const payload = { to_email: toEmails.join(','), subject, message: text, page: location.href };
+      const payload = {
+        to_email: toEmails.join(','),
+        subject,
+        message: text,
+        page: location.href,
+        // Optional extended fields to use in your EmailJS template
+        sender_name: meta?.sender_name || '',
+        sender_type: meta?.sender_type || '',
+        sender_email: meta?.sender_email || '',
+        student_id: meta?.student_id || '',
+        created_at: meta?.created_at || '',
+        feedback_id: meta?.feedback_id || ''
+      };
       await window.emailjs.send(service, template, payload);
       return true;
     } catch(_) { return false; }
@@ -144,10 +156,32 @@
       const saved = await pushFeedback(msg);
       // Attempt email delivery (best effort)
       const recipients = getAllEmailsOnPage();
-      const subject = 'SCI-HIGH Website Feedback';
-      const body = `${saved.senderName} (${saved.senderType}${saved.studentId?(':'+saved.studentId):''})\n\n${msg}\n\nSent: ${new Date(saved.createdAt).toLocaleString()}`;
+      const localTime = new Date(saved.createdAt).toLocaleString();
+      const subject = `[SCI-HIGH] Feedback | ${saved.senderName}${saved.studentId ? ` (${saved.studentId})` : ''}`;
+      const body = [
+        'New website feedback received.',
+        '',
+        `From       : ${saved.senderName}`,
+        `Role       : ${saved.senderType}` + (saved.studentId ? ` (${saved.studentId})` : ''),
+        saved.senderEmail ? `Email      : ${saved.senderEmail}` : null,
+        `When       : ${localTime}`,
+        `Page       : ${location.href}`,
+        `Feedback ID: ${saved.key}`,
+        '',
+        'Message:',
+        msg,
+        '',
+        '— SCI-HIGH Website'
+      ].filter(Boolean).join('\n');
       let emailed = false;
-      if (recipients.length) emailed = await tryEmailSend(recipients, subject, body);
+      if (recipients.length) emailed = await tryEmailSend(recipients, subject, body, {
+        sender_name: saved.senderName,
+        sender_type: saved.senderType,
+        sender_email: saved.senderEmail,
+        student_id: saved.studentId,
+        created_at: saved.createdAt,
+        feedback_id: saved.key
+      });
       if (!emailed && recipients.length && window.FEEDBACK_MAILTO_FALLBACK_ENABLED === true) {
         // Optional fallback: open mail client for the first address
         const mailto = `mailto:${encodeURIComponent(recipients[0])}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
