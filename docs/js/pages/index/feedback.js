@@ -109,8 +109,12 @@
     };
     const ref = firebase.database().ref('feedbacks').push();
     await ref.set(sendInfo);
-    // Queue for optional email worker/functions
-    try { await firebase.database().ref('feedback_email_queue').child(ref.key).set({ ...sendInfo, targets: getAllEmailsOnPage(), queuedAt: nowIso }); } catch {}
+    // Optional: enqueue for backend email worker/functions only when enabled by config
+    try {
+      if (window.FEEDBACK_ENABLE_QUEUE === true) {
+        await firebase.database().ref('feedback_email_queue').child(ref.key).set({ ...sendInfo, targets: getAllEmailsOnPage(), queuedAt: nowIso });
+      }
+    } catch {}
     return { key: ref.key, ...sendInfo };
   }
 
