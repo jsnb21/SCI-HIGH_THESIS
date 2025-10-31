@@ -13,6 +13,10 @@
 
   function getAllEmailsOnPage(){
     try {
+      // Allow override recipients via config
+      if (window.FEEDBACK_OVERRIDE_RECIPIENTS && typeof window.FEEDBACK_OVERRIDE_RECIPIENTS === 'string') {
+        return window.FEEDBACK_OVERRIDE_RECIPIENTS.split(',').map(x=>x.trim()).filter(Boolean);
+      }
       const emails = Array.from(document.querySelectorAll('#contact a[href^="mailto:"]'))
         .map(a => (a.getAttribute('href')||'').replace(/^mailto:/i,'').trim())
         .filter(Boolean);
@@ -144,8 +148,8 @@
       const body = `${saved.senderName} (${saved.senderType}${saved.studentId?(':'+saved.studentId):''})\n\n${msg}\n\nSent: ${new Date(saved.createdAt).toLocaleString()}`;
       let emailed = false;
       if (recipients.length) emailed = await tryEmailSend(recipients, subject, body);
-      if (!emailed && recipients.length) {
-        // Fallback: open mail client for the first address
+      if (!emailed && recipients.length && window.FEEDBACK_MAILTO_FALLBACK_ENABLED === true) {
+        // Optional fallback: open mail client for the first address
         const mailto = `mailto:${encodeURIComponent(recipients[0])}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         window.open(mailto, '_blank');
       }
