@@ -28,20 +28,62 @@
     statusEl.style.color = type === 'error' ? '#f87171' : type === 'success' ? '#86efac' : '#cbd5e1';
   }
 
+  let roleWatchStarted = false;
   function guardByRole(){
     try {
       const am = window.authManager;
-      if (!am || !am.currentUser) { btn.disabled = true; policyEl && (policyEl.textContent = 'Login as Student or General User to send feedback.'); return 'blocked'; }
-      const t = am.userType;
-      if (t !== 'student' && t !== 'general') { btn.disabled = true; policyEl && (policyEl.textContent = 'Only Students and General Users can send feedback.'); return 'blocked'; }
-      btn.disabled = false; return 'ok';
-    } catch(_) { return 'ok'; }
+      const hasUser = !!(am && am.currentUser);
+      const t = am?.userType || null;
+      if (!hasUser || (t !== 'student' && t !== 'general')) {
+        btn.disabled = true;
+        policyEl && (policyEl.textContent = hasUser ? 'Only Students and General Users can send feedback.' : 'Login as Student or General User to send feedback.');
+        if (!roleWatchStarted) {
+          roleWatchStarted = true;
+          // Re-evaluate periodically to catch late auth initialization/login
+          let checks = 0;
+          const iv = setInterval(() => {
+            const state = guardByRole();
+            checks++;
+            if (state === 'ok' || checks > 120) { clearInterval(iv); }
+          }, 500);
+          // Also react to localStorage changes (another tab/login flow)
+          try {
+            window.addEventListener('storage', (e) => {
+              if (e && e.key === 'sci_high_user') { setTimeout(() => guardByRole(), 50); }
+            });
+          } catch(_) {}
+        }
+        return 'blocked';
+      }
+      btn.disabled = false;
+      policyEl && (policyEl.textContent = '');
+      return 'ok';
+    } catch(_) { btn.disabled = false; return 'ok'; }
   }
+  // initial check (may disable, but a watcher will re-enable after login)
   guardByRole();
 
   async function ensureFirebase(){
     if (typeof firebase !== 'undefined' && firebase.database) return true;
     try { if (window.authManager && window.authManager.firebaseInitPromise) { await window.authManager.firebaseInitPromise; return true; } } catch {}
+    // As a safety net, attempt to load minimal Firebase SDKs if not present yet
+    try {
+      if (typeof firebase === 'undefined') {
+        await new Promise((resolve, reject) => {
+          const scripts = [
+            'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
+            'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js',
+            'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js'
+          ];
+          let loaded = 0;
+          scripts.forEach(src => { const s = document.createElement('script'); s.src = src; s.onload = () => { if (++loaded === scripts.length) resolve(); }; s.onerror = reject; document.head.appendChild(s); });
+        });
+      }
+      if (window.authManager && typeof window.authManager.initializeFirebaseWithConfig === 'function') {
+        await window.authManager.initializeFirebaseWithConfig();
+      }
+      return (typeof firebase !== 'undefined' && firebase.database);
+    } catch(_) {}
     return false;
   }
 
@@ -89,6 +131,7 @@
   }
 
   btn.addEventListener('click', async () => {
+    // Recheck at click time to reflect latest role
     if (guardByRole() === 'blocked') { showStatus('Please login as Student or General User.', 'error'); return; }
     const msg = (ta.value || '').trim();
     if (!msg) { showStatus('Please enter a message.', 'error'); ta.focus(); return; }
