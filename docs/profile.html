@@ -71,33 +71,37 @@
     </nav>
 
     <main class="flex-grow relative z-10 px-4 sm:px-6 py-8 sm:py-12">
-      <div class="max-w-6xl mx-auto">
-        <div class="mb-8 sm:mb-12 text-center">
-          <h1 class="font-gaming text-3xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-cyan">⚙️ Profile Settings</h1>
-          <p class="text-gray-300 mt-2">Update your display name and academic details used by the game and leaderboards.</p>
+      <div class="max-w-7xl mx-auto">
+        <!-- Hero header -->
+        <section class="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0B132B]/70 to-[#111827]/70 p-6 sm:p-8 shadow-xl shadow-black/30 backdrop-blur-md mb-8">
+          <div class="flex items-start sm:items-center gap-4 sm:gap-6">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center text-2xl">⚙️</div>
+            <div class="flex-1">
+              <h1 class="font-gaming text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-cyan">Profile Settings</h1>
+              <p class="text-gray-300 text-sm sm:text-base mt-1">Update your name and academic details, manage your password, or remove your account.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Top nav bar -->
+        <div class="rounded-xl border border-primary/30 bg-black/30 backdrop-blur-sm p-2 sm:p-3 mb-4">
+          <nav class="flex flex-wrap items-center justify-center gap-2">
+            <button id="tab-details" class="tabbar-btn">🧾 Details</button>
+            <button id="tab-security" class="tabbar-btn muted">🔒 Security</button>
+          </nav>
         </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
-          <!-- Left nav -->
-          <aside class="md:col-span-1">
-            <div class="neon-border rounded-xl backdrop-blur-sm p-4 bg-dark/60">
-              <nav class="space-y-2">
-                <button id="tab-details" class="w-full text-left px-4 py-2 rounded-lg bg-primary/20 text-white font-gaming hover:bg-primary/30 transition">Details</button>
-                <button id="tab-security" class="w-full text-left px-4 py-2 rounded-lg bg-white/10 text-gray-200 hover:bg-white/15 font-gaming transition">Security</button>
-              </nav>
-            </div>
-          </aside>
-
-          <!-- Main content -->
-          <section class="md:col-span-3 space-y-6">
+        <!-- Content panels -->
+        <section class="space-y-6">
             <!-- Details panel -->
-            <div id="panel-details" class="neon-border rounded-xl backdrop-blur-sm p-6 bg-dark/50 divide-y divide-white/10 mt-2 md:mt-2">
+            <div id="panel-details" class="card-dark divide-y divide-white/10">
+              <div class="section-header">Your Information</div>
               <div class="py-4 flex items-start justify-between gap-4">
                 <div>
                   <div class="text-gray-300 text-sm">Full Name</div>
                   <div id="display-fullName" class="text-lg sm:text-xl font-semibold text-white">—</div>
                 </div>
-                <button class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-gray-200" data-edit="fullName" aria-label="Edit full name">✏️</button>
+                <button class="ghost-btn" data-edit="fullName" aria-label="Edit full name">✏️</button>
               </div>
 
               <div class="py-4 flex items-start justify-between gap-4">
@@ -105,7 +109,7 @@
                   <div class="text-gray-300 text-sm">Department</div>
                   <div id="display-department" class="text-lg font-medium text-white">—</div>
                 </div>
-                <button class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-gray-200" data-edit="department" aria-label="Edit department">✏️</button>
+                <button class="ghost-btn" data-edit="department" aria-label="Edit department">✏️</button>
               </div>
 
               <div class="py-4 flex items-start justify-between gap-4">
@@ -113,7 +117,7 @@
                   <div class="text-gray-300 text-sm">Strand/Course</div>
                   <div id="display-strand" class="text-lg font-medium text-white">—</div>
                 </div>
-                <button class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-gray-200" data-edit="strand" aria-label="Edit strand or course">✏️</button>
+                <button class="ghost-btn" data-edit="strand" aria-label="Edit strand or course">✏️</button>
               </div>
 
               <div class="py-4 flex items-start justify-between gap-4">
@@ -121,87 +125,86 @@
                   <div class="text-gray-300 text-sm">Year</div>
                   <div id="display-year" class="text-lg font-medium text-white">—</div>
                 </div>
-                <button class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-gray-200" data-edit="year" aria-label="Edit year level">✏️</button>
+                <button class="ghost-btn" data-edit="year" aria-label="Edit year level">✏️</button>
               </div>
 
-              <div class="pt-6 flex items-center gap-3">
-                <a href="./index.html" class="px-6 py-3 font-gaming text-gray-200 bg-white/10 border border-white/20 rounded-lg hover:bg-white/15 transition-colors">Back</a>
+              <div class="pt-4">
+                <a href="./index.html" class="btn-soft">← Back to Home</a>
               </div>
             </div>
 
             <!-- Security panel -->
-            <div id="panel-security" class="neon-border rounded-xl backdrop-blur-sm p-6 bg-dark/50 hidden mt-2 md:mt-2">
-              <h2 class="font-gaming text-xl text-white mb-4">Security</h2>
+            <div id="panel-security" class="card-dark hidden">
+              <div class="section-header">Security</div>
               
               <!-- Student flows -->
               <div id="sec-student-group" class="space-y-6">
                 <!-- Password reset request (student) -->
-                <div class="p-4 rounded-lg bg-black/30 border border-white/10">
-                <h3 class="font-gaming text-lg text-white mb-2">Request Password Reset Code</h3>
-                <p class="text-gray-300 text-sm mb-3">Enter your student number to request a reset code from your professor. A soft cooldown applies.</p>
-                <div class="flex flex-col sm:flex-row gap-3">
-                  <input id="sec-studentId" type="text" placeholder="e.g., 24-2024-001" class="flex-1 px-4 py-2 rounded bg-black/40 border border-white/10 text-white cursor-not-allowed" readonly />
-                  <button id="btn-request-reset" class="px-4 py-2 rounded bg-cyan text-dark font-gaming">Request Code</button>
-                </div>
+                <div class="sub-card">
+                  <h3 class="sub-title">Request Password Reset Code</h3>
+                  <p class="text-gray-300 text-sm mb-3">Your professor will approve your code. A soft cooldown applies.</p>
+                  <div class="flex flex-col sm:flex-row gap-3">
+                    <input id="sec-studentId" type="text" placeholder="e.g., 24-2024-001" class="flex-1 input-dark cursor-not-allowed" readonly />
+                    <button id="btn-request-reset" class="btn-accent">Request Code</button>
+                  </div>
                 </div>
 
                 <!-- Reset with code (student) -->
-                <div class="p-4 rounded-lg bg-black/30 border border-white/10">
-                <h3 class="font-gaming text-lg text-white mb-2">Reset Password with Code</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input id="sec-reset-studentId" type="text" placeholder="Student Number" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white cursor-not-allowed" readonly />
-                  <input id="sec-reset-code" type="text" placeholder="Reset Code" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
-                  <input id="sec-new-password" type="password" placeholder="New Password" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
-                  <input id="sec-new-password2" type="password" placeholder="Confirm New Password" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
-                </div>
-                <div class="mt-3">
-                  <button id="btn-reset-password" class="px-5 py-2 rounded bg-primary text-dark font-gaming">Set New Password</button>
-                </div>
+                <div class="sub-card">
+                  <h3 class="sub-title">Reset Password with Code</h3>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input id="sec-reset-studentId" type="text" placeholder="Student Number" class="input-dark cursor-not-allowed" readonly />
+                    <input id="sec-reset-code" type="text" placeholder="Reset Code" class="input-dark" />
+                    <input id="sec-new-password" type="password" placeholder="New Password" class="input-dark" />
+                    <input id="sec-new-password2" type="password" placeholder="Confirm New Password" class="input-dark" />
+                  </div>
+                  <div class="mt-3">
+                    <button id="btn-reset-password" class="btn-primary">Set New Password</button>
+                  </div>
                 </div>
               </div>
 
               <!-- General flows -->
               <div id="sec-general-group" class="space-y-6 hidden">
                 <!-- Send reset email -->
-                <div class="p-4 rounded-lg bg-black/30 border border-white/10">
-                  <h3 class="font-gaming text-lg text-white mb-2">Send Password Reset Email</h3>
+                <div class="sub-card">
+                  <h3 class="sub-title">Send Password Reset Email</h3>
                   <div class="flex flex-col sm:flex-row gap-3">
-                    <input id="sec-general-email" type="email" placeholder="Email" class="flex-1 px-4 py-2 rounded bg-black/40 border border-white/10 text-white cursor-not-allowed" readonly />
-                    <button id="btn-general-send-reset" class="px-4 py-2 rounded bg-cyan text-dark font-gaming">Send Email</button>
+                    <input id="sec-general-email" type="email" placeholder="Email" class="flex-1 input-dark cursor-not-allowed" readonly />
+                    <button id="btn-general-send-reset" class="btn-accent">Send Email</button>
                   </div>
                   <p class="text-gray-400 text-xs mt-2">We'll send a secure link to your email to change your password.</p>
                 </div>
 
                 <!-- Change password directly (requires recent login) -->
-                <div class="p-4 rounded-lg bg-black/30 border border-white/10">
-                  <h3 class="font-gaming text-lg text-white mb-2">Change Password</h3>
+                <div class="sub-card">
+                  <h3 class="sub-title">Change Password</h3>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input id="gen-current-password" type="password" placeholder="Current Password" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
-                    <input id="gen-new-password" type="password" placeholder="New Password" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
-                    <input id="gen-new-password2" type="password" placeholder="Confirm New Password" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
+                    <input id="gen-current-password" type="password" placeholder="Current Password" class="input-dark" />
+                    <input id="gen-new-password" type="password" placeholder="New Password" class="input-dark" />
+                    <input id="gen-new-password2" type="password" placeholder="Confirm New Password" class="input-dark" />
                   </div>
                   <div class="mt-3">
-                    <button id="btn-general-change-password" class="px-5 py-2 rounded bg-primary text-dark font-gaming">Update Password</button>
+                    <button id="btn-general-change-password" class="btn-primary">Update Password</button>
                   </div>
                   <p class="text-gray-400 text-xs mt-2">If you're asked to sign in again, use the reset email instead.</p>
                 </div>
               </div>
 
               <!-- Danger zone: Delete account -->
-              <div class="p-4 rounded-lg bg-red-900/20 border border-red-500/30">
-                <h3 class="font-gaming text-lg text-red-300 mb-2">Danger Zone</h3>
+              <div class="sub-card border-red-500/40 bg-red-900/20">
+                <h3 class="sub-title text-red-300">Danger Zone</h3>
                 <p class="text-red-200 text-sm mb-3">Delete your account and all related data. This action cannot be undone.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input id="sec-delete-identifier" type="text" placeholder="Student Number or Email" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white cursor-not-allowed" readonly />
-                  <input id="sec-delete-confirm" type="text" placeholder="Type DELETE to confirm" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
+                  <input id="sec-delete-identifier" type="text" placeholder="Student Number or Email" class="input-dark cursor-not-allowed" readonly />
+                  <input id="sec-delete-confirm" type="text" placeholder="Type DELETE to confirm" class="input-dark" />
                 </div>
                 <div class="mt-3">
-                  <button id="btn-delete-account" class="px-5 py-2 rounded bg-red-500 text-white font-gaming hover:bg-red-600">Delete Account</button>
+                  <button id="btn-delete-account" class="btn-danger">Delete Account</button>
                 </div>
               </div>
             </div>
           </section>
-        </div>
       </div>
     </main>
 

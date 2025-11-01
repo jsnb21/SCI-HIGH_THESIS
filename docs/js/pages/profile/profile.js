@@ -297,17 +297,13 @@
       if (tab === 'security') {
         panelDetails.classList.add('hidden');
         panelSecurity.classList.remove('hidden');
-        tabDetails.classList.remove('bg-primary/30');
-        tabDetails.classList.add('bg-white/10','text-gray-200');
-        tabSecurity.classList.remove('bg-white/10','text-gray-200');
-        tabSecurity.classList.add('bg-primary/20');
+        tabDetails.classList.add('muted');
+        tabSecurity.classList.remove('muted');
       } else {
         panelDetails.classList.remove('hidden');
         panelSecurity.classList.add('hidden');
-        tabSecurity.classList.remove('bg-primary/30');
-        tabSecurity.classList.add('bg-white/10','text-gray-200');
-        tabDetails.classList.remove('bg-white/10','text-gray-200');
-        tabDetails.classList.add('bg-primary/20');
+        tabSecurity.classList.add('muted');
+        tabDetails.classList.remove('muted');
       }
     }
     tabDetails && tabDetails.addEventListener('click', () => activate('details'));

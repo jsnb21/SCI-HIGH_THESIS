@@ -60,6 +60,10 @@
 #assistant-toggle { animation: assistant-glow 3s ease-in-out infinite alternate; }
 @keyframes assistant-glow { from { box-shadow: 0 0 20px rgba(156, 39, 176, 0.3); } to { box-shadow: 0 0 30px rgba(156, 39, 176, 0.6), 0 0 40px rgba(0, 188, 212, 0.3); } }
 
+/* Profile/settings button hover: rotate gear + soft glow */
+#settings-btn > span { display: inline-block; transition: transform .25s ease, text-shadow .25s ease; }
+#settings-btn:hover > span { transform: rotate(90deg) scale(1.2); text-shadow: 0 0 8px rgba(244, 206, 20, 0.7), 0 0 14px rgba(244, 206, 20, 0.4); }
+
 /* Loading dots animation */
 #send-loading { animation: loading-dots 1.5s ease-in-out infinite; }
 @keyframes loading-dots { 0%, 20% { color: rgba(255, 255, 255, 0.3); } 40% { color: rgba(255, 255, 255, 1); } 60%, 100% { color: rgba(255, 255, 255, 0.3); } }
@@ -84,3 +88,135 @@
   .container { padding-left: 1rem; padding-right: 1rem; }
   h1 { font-size: 2rem; line-height: 1.2; }
 }
+
+/* --- Profile page redesigned components --- */
+.card-dark {
+  border: 1px solid rgba(255,255,255,0.12);
+  background: linear-gradient(145deg, rgba(11,19,43,0.75), rgba(17,24,39,0.7));
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03);
+  backdrop-filter: blur(8px);
+}
+
+.sub-card {
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.35);
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.section-header {
+  font-family: var(--gaming-font, 'Orbitron', sans-serif);
+  font-size: 1.1rem;
+  letter-spacing: 0.03em;
+  color: #e5e7eb;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.sub-title {
+  font-family: var(--gaming-font, 'Orbitron', sans-serif);
+  font-size: 1.05rem;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.ghost-btn {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: #e5e7eb;
+  transition: transform 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+.ghost-btn:hover {
+  background: rgba(255,255,255,0.12);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+}
+
+.btn-soft {
+  display: inline-block;
+  padding: 0.625rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+  color: #e5e7eb;
+}
+.btn-soft:hover { background: rgba(255,255,255,0.12); }
+
+.btn-primary {
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.6rem;
+  background: #F5C518; /* primary */
+  color: #0b132b;
+  font-family: var(--gaming-font, 'Orbitron', sans-serif);
+}
+.btn-primary:hover { filter: brightness(1.05); }
+
+.btn-accent {
+  padding: 0.5rem 1rem;
+  border-radius: 0.6rem;
+  background: #11cdef; /* cyan/accent */
+  color: #0b132b;
+  font-family: var(--gaming-font, 'Orbitron', sans-serif);
+}
+.btn-accent:hover { filter: brightness(1.06); }
+
+.btn-danger {
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.6rem;
+  background: #ef4444;
+  color: #fff;
+  font-family: var(--gaming-font, 'Orbitron', sans-serif);
+}
+.btn-danger:hover { background: #dc2626; }
+
+.input-dark {
+  width: 100%;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.4);
+  color: #fff;
+}
+.input-dark::placeholder { color: rgba(229,231,235,0.6); }
+
+.sidebar-btn {
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.6rem;
+  width: 100%;
+  color: #fff;
+  text-align: left;
+  font-family: var(--gaming-font, 'Orbitron', sans-serif);
+  border: 1px solid rgba(245,197,24,0.35);
+  background: rgba(245,197,24,0.18);
+  transition: background 150ms ease, transform 150ms ease;
+}
+.sidebar-btn:hover { transform: translateX(2px); background: rgba(245,197,24,0.26); }
+.sidebar-btn.muted {
+  border-color: rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+}
+.sidebar-btn.muted:hover { background: rgba(255,255,255,0.12); }
+
+/* Horizontal tab bar buttons for profile */
+.tabbar-btn {
+  padding: 0.55rem 0.95rem;
+  border-radius: 0.6rem;
+  color: #fff;
+  font-family: var(--gaming-font, 'Orbitron', sans-serif);
+  border: 1px solid rgba(245,197,24,0.35);
+  background: rgba(245,197,24,0.18);
+  transition: background 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+.tabbar-btn:hover { transform: translateY(-1px); background: rgba(245,197,24,0.26); box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
+.tabbar-btn.muted {
+  border-color: rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+}
+.tabbar-btn.muted:hover { background: rgba(255,255,255,0.12); }
+
