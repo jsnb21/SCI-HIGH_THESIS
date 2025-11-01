@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script>window.__APP_BASE__ = '%BASE_URL%';</script>
+  <link rel="preload" as="image" href="public/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="public/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="public/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="public/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="apple-touch-icon" href="public/assets/img/Website/SCI-HIGH_ICON.png" />
+    <link rel="manifest" href="site.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SCI-HIGH: Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- Site-wide styles (defines .game-bg and shared UI) -->
+  <link rel="stylesheet" href="public/assets/css/index.css" />
+    <script defer src="js/notifications.js"></script>
+    <script defer src="js/maintenanceToast.js"></script>
+    <!-- Auth manager reused to populate greeting and session -->
+    <script defer src="js/pages/index/authManager.js"></script>
+    <script defer src="js/pages/profile/profile.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#F4CE14',
+              accent: '#379777',
+              dark: '#1a1a2e',
+              light: '#16213e',
+              cyan: '#00bcd4',
+              textColor: '#ffffff',
+              cardBg: 'rgba(22, 33, 62, 0.8)'
+            },
+            fontFamily: {
+              gaming: ['Orbitron','monospace'],
+              body: ['Exo 2','sans-serif']
+            }
+          }
+        }
+      };
+    </script>
+  </head>
+  <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed min-h-screen flex flex-col">
+    <nav class="relative z-50 bg-gradient-to-r from-dark/95 to-light/95 backdrop-blur-md border-b-2 border-primary/30 py-3 sm:py-4 sticky top-0">
+      <div class="max-w-6xl mx-auto px-3 sm:px-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2 sm:space-x-4">
+            <a href="./index.html" class="font-gaming text-base sm:text-xl font-bold text-primary">SCI-HIGH</a>
+          </div>
+          <div class="hidden md:flex space-x-4 lg:space-x-8 items-center flex-wrap">
+            <a href="./index.html#home" class="gaming-nav-link text-textColor hover:text-primary transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
+              <span class="relative z-10">Home</span>
+              <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </a>
+            <a href="./news.html" class="gaming-nav-link text-textColor hover:text-cyan transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
+              <span class="relative z-10">News</span>
+              <div class="absolute inset-0 bg-cyan/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </a>
+            <span id="user-greeting" class="flex items-center gap-2 text-textColor font-gaming text-sm uppercase tracking-wider hidden max-w-48 truncate">
+              <span id="greeting-text" class="truncate" title="">Hello, User!</span>
+            </span>
+            <a id="logout-btn" class="gaming-nav-link text-textColor hover:text-red-400 transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative hidden" href="#" onclick="logoutUser && logoutUser(); return false;">
+              <span class="relative z-10">🚪 Logout</span>
+              <div class="absolute inset-0 bg-red-500/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="flex-grow relative z-10 px-4 sm:px-6 py-8 sm:py-12">
+      <div class="max-w-6xl mx-auto">
+        <div class="mb-8 sm:mb-12 text-center">
+          <h1 class="font-gaming text-3xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-cyan">⚙️ Profile Settings</h1>
+          <p class="text-gray-300 mt-2">Update your display name and academic details used by the game and leaderboards.</p>
+        </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+          <!-- Left nav -->
+          <aside class="md:col-span-1">
+            <div class="neon-border rounded-xl backdrop-blur-sm p-4 bg-dark/60">
+              <nav class="space-y-2">
+                <button id="tab-details" class="w-full text-left px-4 py-2 rounded-lg bg-primary/20 text-white font-gaming hover:bg-primary/30 transition">Details</button>
+                <button id="tab-security" class="w-full text-left px-4 py-2 rounded-lg bg-white/10 text-gray-200 hover:bg-white/15 font-gaming transition">Security</button>
+              </nav>
+            </div>
+          </aside>
+
+          <!-- Main content -->
+          <section class="md:col-span-3 space-y-6">
+            <!-- Details panel -->
+            <div id="panel-details" class="neon-border rounded-xl backdrop-blur-sm p-6 bg-dark/50 divide-y divide-white/10 mt-2 md:mt-2">
+              <div class="py-4 flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-gray-300 text-sm">Full Name</div>
+                  <div id="display-fullName" class="text-lg sm:text-xl font-semibold text-white">—</div>
+                </div>
+                <button class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-gray-200" data-edit="fullName" aria-label="Edit full name">✏️</button>
+              </div>
+
+              <div class="py-4 flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-gray-300 text-sm">Department</div>
+                  <div id="display-department" class="text-lg font-medium text-white">—</div>
+                </div>
+                <button class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-gray-200" data-edit="department" aria-label="Edit department">✏️</button>
+              </div>
+
+              <div class="py-4 flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-gray-300 text-sm">Strand/Course</div>
+                  <div id="display-strand" class="text-lg font-medium text-white">—</div>
+                </div>
+                <button class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-gray-200" data-edit="strand" aria-label="Edit strand or course">✏️</button>
+              </div>
+
+              <div class="py-4 flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-gray-300 text-sm">Year</div>
+                  <div id="display-year" class="text-lg font-medium text-white">—</div>
+                </div>
+                <button class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-gray-200" data-edit="year" aria-label="Edit year level">✏️</button>
+              </div>
+
+              <div class="pt-6 flex items-center gap-3">
+                <a href="./index.html" class="px-6 py-3 font-gaming text-gray-200 bg-white/10 border border-white/20 rounded-lg hover:bg-white/15 transition-colors">Back</a>
+              </div>
+            </div>
+
+            <!-- Security panel -->
+            <div id="panel-security" class="neon-border rounded-xl backdrop-blur-sm p-6 bg-dark/50 hidden mt-2 md:mt-2">
+              <h2 class="font-gaming text-xl text-white mb-4">Security</h2>
+              
+              <!-- Student flows -->
+              <div id="sec-student-group" class="space-y-6">
+                <!-- Password reset request (student) -->
+                <div class="p-4 rounded-lg bg-black/30 border border-white/10">
+                <h3 class="font-gaming text-lg text-white mb-2">Request Password Reset Code</h3>
+                <p class="text-gray-300 text-sm mb-3">Enter your student number to request a reset code from your professor. A soft cooldown applies.</p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                  <input id="sec-studentId" type="text" placeholder="e.g., 24-2024-001" class="flex-1 px-4 py-2 rounded bg-black/40 border border-white/10 text-white cursor-not-allowed" readonly />
+                  <button id="btn-request-reset" class="px-4 py-2 rounded bg-cyan text-dark font-gaming">Request Code</button>
+                </div>
+                </div>
+
+                <!-- Reset with code (student) -->
+                <div class="p-4 rounded-lg bg-black/30 border border-white/10">
+                <h3 class="font-gaming text-lg text-white mb-2">Reset Password with Code</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input id="sec-reset-studentId" type="text" placeholder="Student Number" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white cursor-not-allowed" readonly />
+                  <input id="sec-reset-code" type="text" placeholder="Reset Code" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
+                  <input id="sec-new-password" type="password" placeholder="New Password" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
+                  <input id="sec-new-password2" type="password" placeholder="Confirm New Password" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
+                </div>
+                <div class="mt-3">
+                  <button id="btn-reset-password" class="px-5 py-2 rounded bg-primary text-dark font-gaming">Set New Password</button>
+                </div>
+                </div>
+              </div>
+
+              <!-- General flows -->
+              <div id="sec-general-group" class="space-y-6 hidden">
+                <!-- Send reset email -->
+                <div class="p-4 rounded-lg bg-black/30 border border-white/10">
+                  <h3 class="font-gaming text-lg text-white mb-2">Send Password Reset Email</h3>
+                  <div class="flex flex-col sm:flex-row gap-3">
+                    <input id="sec-general-email" type="email" placeholder="Email" class="flex-1 px-4 py-2 rounded bg-black/40 border border-white/10 text-white cursor-not-allowed" readonly />
+                    <button id="btn-general-send-reset" class="px-4 py-2 rounded bg-cyan text-dark font-gaming">Send Email</button>
+                  </div>
+                  <p class="text-gray-400 text-xs mt-2">We'll send a secure link to your email to change your password.</p>
+                </div>
+
+                <!-- Change password directly (requires recent login) -->
+                <div class="p-4 rounded-lg bg-black/30 border border-white/10">
+                  <h3 class="font-gaming text-lg text-white mb-2">Change Password</h3>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input id="gen-current-password" type="password" placeholder="Current Password" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
+                    <input id="gen-new-password" type="password" placeholder="New Password" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
+                    <input id="gen-new-password2" type="password" placeholder="Confirm New Password" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
+                  </div>
+                  <div class="mt-3">
+                    <button id="btn-general-change-password" class="px-5 py-2 rounded bg-primary text-dark font-gaming">Update Password</button>
+                  </div>
+                  <p class="text-gray-400 text-xs mt-2">If you're asked to sign in again, use the reset email instead.</p>
+                </div>
+              </div>
+
+              <!-- Danger zone: Delete account -->
+              <div class="p-4 rounded-lg bg-red-900/20 border border-red-500/30">
+                <h3 class="font-gaming text-lg text-red-300 mb-2">Danger Zone</h3>
+                <p class="text-red-200 text-sm mb-3">Delete your account and all related data. This action cannot be undone.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input id="sec-delete-identifier" type="text" placeholder="Student Number or Email" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white cursor-not-allowed" readonly />
+                  <input id="sec-delete-confirm" type="text" placeholder="Type DELETE to confirm" class="px-4 py-2 rounded bg-black/40 border border-white/10 text-white" />
+                </div>
+                <div class="mt-3">
+                  <button id="btn-delete-account" class="px-5 py-2 rounded bg-red-500 text-white font-gaming hover:bg-red-600">Delete Account</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <!-- Reusable Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+      <div class="absolute inset-0 bg-black/60"></div>
+      <div class="relative mx-auto mt-24 max-w-md w-[90%] bg-[#0B132B] border border-white/10 rounded-xl shadow-2xl p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 id="modal-title" class="font-gaming text-lg text-white">Edit</h3>
+          <button id="modal-close" class="text-gray-300 hover:text-white">✕</button>
+        </div>
+        <div id="modal-input-container" class="space-y-2"></div>
+        <div class="mt-4 flex justify-end gap-2">
+          <button id="modal-cancel" class="px-4 py-2 rounded bg-white/10 text-gray-200 hover:bg-white/15">Cancel</button>
+          <button id="modal-save" class="px-5 py-2 rounded bg-primary text-dark font-gaming">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Second Confirmation Modal: Account Deletion -->
+    <div id="confirm-delete-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+      <div class="absolute inset-0 bg-black/70"></div>
+      <div class="relative mx-auto mt-24 max-w-lg w-[92%] bg-[#1B0E0E] border border-red-500/40 rounded-xl shadow-2xl p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-gaming text-xl text-red-300">Confirm Permanent Deletion</h3>
+          <button id="confirm-del-close" class="text-red-200 hover:text-red-100">✕</button>
+        </div>
+        <div class="space-y-3 text-red-100">
+          <p class="leading-relaxed">This action is irreversible. The following data linked to the entered student number/email will be deleted:</p>
+          <ul class="list-disc list-inside text-red-200/90">
+            <li>Student profile and authentication data</li>
+            <li>Career stats and leaderboard entries</li>
+            <li>Gameplay saves and progress</li>
+            <li>Password reset records</li>
+          </ul>
+          <p class="text-sm text-red-200/80">If this account was created using Firebase Authentication, the auth user will also be removed where possible.</p>
+        </div>
+        <div class="mt-5 flex justify-end gap-2">
+          <button id="confirm-del-cancel" class="px-4 py-2 rounded bg-white/10 text-gray-200 hover:bg-white/15">Cancel</button>
+          <button id="confirm-del-proceed" class="px-5 py-2 rounded bg-red-500 text-white font-gaming hover:bg-red-600">Yes, permanently delete</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="relative z-10 bg-gradient-to-r from-dark to-light border-t-2 border-primary/30 py-10 mt-auto">
+      <div class="max-w-6xl mx-auto px-6 text-center">
+        <h3 class="font-gaming text-lg font-bold text-primary">SCI-HIGH</h3>
+        <p class="text-gray-400 text-sm">&copy; 2025 SCI-HIGH Thesis Project</p>
+      </div>
+    </footer>
+  </body>
+</html>

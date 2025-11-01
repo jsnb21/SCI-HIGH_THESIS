@@ -587,11 +587,16 @@
       const greetingText = document.getElementById('greeting-text');
       const logoutBtn = document.getElementById('logout-btn');
       const loginBtn = document.getElementById('login-btn');
+      const settingsBtn = document.getElementById('settings-btn');
+      const mobileSettingsBtn = document.getElementById('mobile-settings-btn');
       if (!userGreeting || !greetingText || !logoutBtn || !loginBtn) return;
       if (this.currentUser && this.userType !== 'guest') {
         userGreeting.classList.remove('hidden');
         logoutBtn.classList.remove('hidden');
         loginBtn.classList.add('hidden');
+        if (settingsBtn) settingsBtn.classList.remove('hidden');
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (mobileSettingsBtn) mobileSettingsBtn.classList.remove('hidden');
         let greetingMessage = '';
         let fullName = this.currentUser.profile?.fullName || this.currentUser.name || '';
         let displayName = fullName;
@@ -610,6 +615,8 @@
         userGreeting.classList.add('hidden');
         logoutBtn.classList.add('hidden');
         loginBtn.classList.remove('hidden');
+        if (settingsBtn) settingsBtn.classList.add('hidden');
+        if (mobileSettingsBtn) mobileSettingsBtn.classList.add('hidden');
       }
     }
 
