@@ -53,6 +53,8 @@
   <script defer src="js/maintenanceToast.js"></script>
   <!-- Notifications fallback extracted -->
   <script defer src="js/pages/index/notifications-fallback.js"></script>
+  <!-- General users: small helper for forgot password/reset email -->
+  <script defer src="js/pages/index/general-forgot.js"></script>
   <!-- Profile settings controller removed; using dedicated profile page -->
   <!-- Tailwind runtime config extracted (non-deferred to apply during parse like original) -->
   <script src="js/pages/index/tailwind-config.js"></script>
@@ -626,6 +628,16 @@
                 <button type="submit" class="w-full px-6 py-3 font-gaming text-white bg-gradient-to-r from-cyan to-blue-500 rounded-lg transform transition-all duration-300 hover:scale-105">
                   Login
                 </button>
+                <div class="text-center">
+                  <button type="button" id="general-forgot-toggle" class="text-sm text-cyan hover:text-accent underline">Forgot password?</button>
+                </div>
+                <div id="general-forgot-panel" class="hidden mt-2 p-3 bg-dark/30 border border-gray-700 rounded-lg">
+                  <div class="space-y-2">
+                    <input id="general-forgot-email" type="email" placeholder="Enter your email" class="w-full px-3 py-2 bg-dark/50 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400">
+                    <button id="general-send-reset-btn" type="button" class="w-full px-4 py-2 bg-cyan/30 hover:bg-cyan/40 rounded text-sm">Send reset email</button>
+                    <p class="text-xs text-gray-400">We'll send a secure link to your email to change your password.</p>
+                  </div>
+                </div>
               </form>
             </div>
 
