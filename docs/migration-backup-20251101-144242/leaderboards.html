@@ -1,0 +1,2039 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+  <script>window.__APP_BASE__ = '%BASE_URL%';</script>
+  <link rel="preload" as="image" href="public/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="public/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="public/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="public/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="apple-touch-icon" href="public/assets/img/Website/SCI-HIGH_ICON.png" />
+  <link rel="manifest" href="site.webmanifest" />
+  <meta name="theme-color" content="#0f1524" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SCI-HIGH: Global Leaderboards</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Gaming Feel -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- Modern Notification System -->
+  <script defer src="assets/js/notifications.js"></script>
+  <!-- Reusable Maintenance Toast module -->
+  <script defer src="assets/js/maintenanceToast.js"></script>
+    <script>
+      // Suppress SES security warnings (they're informational only)
+      const originalConsoleWarn = console.warn;
+      console.warn = function(...args) {
+        const message = args.join(' ');
+        // Only suppress SES-related warnings
+        if (message.includes('SES') || message.includes('lockdown-install.js') || message.includes('Removing intrinsics')) {
+          return; // Suppress SES warnings
+        }
+        originalConsoleWarn.apply(console, args);
+      };
+    </script>
+    <script>
+      // Fallback functions in case notifications.js hasn't loaded yet
+      window.ensureNotifications = function() {
+        if (typeof window.modernConfirm === 'undefined') {
+          // Silent fallback to native dialogs; notifications.js will override after init
+          window.modernConfirm = function(message, options = {}) {
+            return Promise.resolve(confirm(message));
+          };
+          window.modernAlert = function(message, options = {}) {
+            alert(message);
+            return Promise.resolve(true);
+          };
+          window.showSuccess = function(message, options = {}) {
+            alert('✅ ' + message);
+            return Promise.resolve(true);
+          };
+          window.showError = function(message, options = {}) {
+            alert('❌ ' + message);
+            return Promise.resolve(true);
+          };
+          window.showWarning = function(message, options = {}) {
+            alert('⚠️ ' + message);
+            return Promise.resolve(true);
+          };
+          window.showInfo = function(message, options = {}) {
+            alert('ℹ️ ' + message);
+            return Promise.resolve(true);
+          };
+        }
+      };
+
+      // Ensure notifications are available after DOM is ready (notifications.js auto-inits too)
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => window.ensureNotifications());
+      } else {
+        window.ensureNotifications();
+      }
+    </script>
+    <script>
+      // Initialize maintenance toast on Leaderboards page
+      (function(){
+        try {
+          if (window.MaintenanceToast && typeof window.MaintenanceToast.init === 'function') {
+            window.MaintenanceToast.init();
+          }
+        } catch(e) { /* ignore */ }
+      })();
+    </script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#F4CE14', // yellow
+              accent: '#379777', // green
+              dark: '#1a1a2e',   // darker navy
+              light: '#16213e',  // dark blue
+              purple: '#9c27b0', // gaming purple
+              cyan: '#00bcd4',   // gaming cyan
+              textColor: '#ffffff',
+              cardBg: 'rgba(22, 33, 62, 0.8)',
+            },
+            fontFamily: {
+              gaming: ['Orbitron', 'monospace'],
+              body: ['Exo 2', 'sans-serif'],
+            },
+            animation: {
+              'pulse-glow': 'pulse-glow 2s ease-in-out infinite alternate',
+              'float': 'float 6s ease-in-out infinite',
+              'slide-in': 'slide-in 0.8s ease-out',
+              'bounce-in': 'bounce-in 1s ease-out',
+              'rank-glow': 'rank-glow 3s ease-in-out infinite',
+            }
+          }
+        }
+      }
+    </script>
+    <script>
+      // Lightweight on-demand Chart.js loader (prevents ReferenceError if not bundled)
+      window.ensureChartJs = function(){
+        return new Promise((resolve,reject)=>{
+          if (window.Chart) return resolve(window.Chart);
+          const existing = document.querySelector('script[data-chartjs]');
+          if (existing){
+            existing.addEventListener('load', ()=> resolve(window.Chart));
+            existing.addEventListener('error', ()=> reject(new Error('Chart.js failed to load (existing tag).')));
+            return;
+          }
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+          s.async = true;
+          s.setAttribute('data-chartjs','true');
+          s.onload = ()=> window.Chart ? resolve(window.Chart) : reject(new Error('Chart.js loaded but Chart undefined'));
+          s.onerror = ()=> reject(new Error('Chart.js network load error'));
+          document.head.appendChild(s);
+        });
+      };
+      // Apply a global white text theme for all charts once Chart is available
+      window.applyChartWhiteTheme = function(){
+        if(!window.Chart) return;
+        const d = window.Chart.defaults;
+        d.color = '#ffffff';
+        d.font = d.font || {}; // keep existing family if Chart sets one later
+        if(d.plugins){
+          if(d.plugins.legend && d.plugins.legend.labels){
+            d.plugins.legend.labels.color = '#ffffff';
+          }
+          if(d.plugins.title){ d.plugins.title.color = '#ffffff'; }
+          if(d.plugins.tooltip){ /* tooltip text inherits defaults.color */ }
+        }
+      };
+    </script>
+  <link rel="stylesheet" href="public/assets/assets/css/leaderboards.css" />
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <!-- Lightweight custom charts - no external dependencies needed -->
+  </head>
+  <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed min-h-screen flex flex-col">
+    <!-- Particle Background Effect -->
+    <div id="particles" class="fixed inset-0 pointer-events-none z-0"></div>
+    
+    <!-- Gaming HUD Navigation -->
+    <nav class="relative z-50 bg-gradient-to-r from-dark/90 to-light/90 backdrop-blur-md border-b-2 border-primary/30 py-4 sticky top-0">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2 sm:space-x-4">
+            <!-- Removed buko_productions branding logo -->
+            <span class="font-gaming text-lg sm:text-xl font-bold text-primary">SCI-HIGH</span>
+          </div>
+          
+          <!-- Mobile menu button -->
+          <div class="md:hidden">
+            <button id="mobile-menu-btn" type="button" class="text-textColor hover:text-primary focus:outline-none focus:text-primary transition-colors duration-300" aria-controls="mobile-menu" aria-expanded="false">
+              <span class="sr-only">Open main menu</span>
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Desktop navigation -->
+          <div class="hidden md:flex space-x-8">
+            <a href="./index.html" class="gaming-nav-link text-textColor hover:text-primary transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
+              <span class="relative z-10">Home</span>
+              <div class="absolute inset-0 bg-primary/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </a>
+            <a href="./news.html" class="gaming-nav-link text-textColor hover:text-cyan transition-all duration-300 font-gaming text-sm uppercase tracking-wider relative">
+              <span class="relative z-10">News</span>
+              <div class="absolute inset-0 bg-cyan/20 transform skew-x-12 scale-x-0 transition-transform duration-300 hover:scale-x-100"></div>
+            </a>
+          </div>
+        </div>
+        
+        <!-- Mobile navigation menu -->
+        <div class="md:hidden" id="mobile-menu" style="display: none;">
+          <div class="px-3 pt-3 pb-4 space-y-2 bg-gradient-to-br from-dark/98 to-light/98 backdrop-blur-xl rounded-xl mt-3 border-2 border-primary/40 shadow-xl shadow-primary/20">
+            <a href="./index.html" class="block px-4 py-3 text-textColor hover:text-primary hover:bg-primary/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-primary/30">
+              <span class="flex items-center">
+                <span class="mr-2">🏠</span> Home
+              </span>
+            </a>
+            <a href="./news.html" class="block px-4 py-3 text-textColor hover:text-cyan hover:bg-cyan/10 font-gaming text-sm uppercase tracking-wider transition-all duration-300 rounded-lg border border-transparent hover:border-cyan/30">
+              <span class="flex items-center">
+                <span class="mr-2">📰</span> News
+              </span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    
+    <!-- Main content wrapper with flex-grow to push footer down -->
+    <div class="flex-grow relative z-10">
+      <!-- Hero Section -->
+      <section class="py-12 sm:py-16 px-4 sm:px-6">
+        <div class="max-w-6xl mx-auto text-center">
+          <div class="mb-8 sm:mb-12 animate-bounce-in">
+            <h1 class="font-gaming text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-cyan mb-4 sm:mb-6">
+              🏆 Global Leaderboards
+            </h1>
+            <p class="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-6 sm:mb-8 px-4">
+              Compete with programmers worldwide and climb the ranks in the ultimate coding challenge!
+            </p>
+          </div>
+          
+          <!-- Gaming Filter Buttons -->
+          <div class="flex flex-wrap justify-center gap-2 sm:gap-4 mb-8 sm:mb-12 animate-slide-in px-2 sm:px-4">
+            <button class="filter-btn px-3 xs:px-4 sm:px-8 py-2 sm:py-3 font-gaming text-xs sm:text-sm uppercase tracking-wider rounded-xl font-bold text-dark bg-gradient-to-r from-primary to-yellow-300 transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50 border-2 border-primary touch-manipulation" data-filter="overall">
+              <span class="relative z-10">🌟 Overall</span>
+            </button>
+            <button class="filter-btn px-3 xs:px-4 sm:px-8 py-2 sm:py-3 font-gaming text-xs sm:text-sm uppercase tracking-wider rounded-xl font-bold text-textColor bg-gradient-to-r from-accent to-cyan transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-accent/50 border-2 border-accent/50 touch-manipulation" data-filter="college">
+              <span class="relative z-10">🎓 College</span>
+            </button>
+            <button class="filter-btn px-3 xs:px-4 sm:px-8 py-2 sm:py-3 font-gaming text-xs sm:text-sm uppercase tracking-wider rounded-xl font-bold text-textColor bg-gradient-to-r from-purple to-pink-500 transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple/50 border-2 border-purple/50 touch-manipulation" data-filter="seniorhigh">
+              <span class="relative z-10">📚 Senior High</span>
+            </button>
+            <button class="filter-btn px-3 xs:px-4 sm:px-8 py-2 sm:py-3 font-gaming text-xs sm:text-sm uppercase tracking-wider rounded-xl font-bold text-textColor bg-gradient-to-r from-cyan to-blue-500 transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-cyan/50 border-2 border-cyan/50 touch-manipulation" data-filter="juniorhigh">
+              <span class="relative z-10">🎒 Junior High</span>
+            </button>
+          </div>
+          
+          <!-- Students Only Notice -->
+          <div class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-400/50 rounded-lg p-4 mb-8 text-center">
+            <p class="text-blue-300 font-gaming">
+              <span class="text-yellow-300">🎓</span> Student Leaderboard <span class="text-yellow-300">🎓</span>
+            </p>
+            <p class="text-gray-300 text-sm mt-1">Only registered students appear on the leaderboards. Scores are linked to official student records.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Leaderboard Section -->
+      <section class="px-6 pb-16">
+        <div class="max-w-6xl mx-auto">
+          
+          <div class="neon-border rounded-xl backdrop-blur-sm p-8">
+            <div class="flex items-center justify-between mb-8">
+              <h2 class="font-gaming text-2xl font-bold text-primary flex items-center gap-3">
+                <span class="text-3xl">⚔️</span>
+                Battle Rankings
+              </h2>
+              <div class="flex items-center gap-4 text-sm text-gray-400">
+                <span class="flex items-center gap-2">
+                  <div class="w-3 h-3 bg-primary rounded-full animate-pulse"></div>
+                  Live Updates
+                </span>
+                <span id="player-count">Loading...</span>
+              </div>
+            </div>
+
+            <!-- Featured Players Section (Top 3) -->
+            <div id="featured-players" class="mt-8 mb-8">
+              <div class="neon-border rounded-xl shadow-xl overflow-hidden backdrop-blur-sm bg-dark/50">
+                <div class="bg-gradient-to-r from-dark via-light to-dark text-white p-6 border-b-2 border-primary/30">
+                  <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-primary to-yellow-300 rounded-lg flex items-center justify-center neon-border">
+                      <span role="img" aria-label="Achievements" class="text-5xl drop-shadow-sm select-none">🏅</span>
+                    </div>
+                    <div>
+                      <h2 class="font-gaming text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Top Champions</h2>
+                      <p class="text-gray-300 font-body text-sm">The elite warriors leading the leaderboards</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Player Cards Grid -->
+                <div id="player-cards-container" class="p-6">
+                  <div id="player-cards-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Player cards will be inserted here by JavaScript -->
+                  </div>
+                  
+                  <!-- Loading State for Player Cards -->
+                  <div id="player-cards-loading" class="text-center py-8">
+                    <div class="flex flex-col items-center space-y-3">
+                      <div class="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <p class="text-gray-400 font-gaming text-sm">Loading champions...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div id="leaderboard-list" class="mt-8">
+              <div id="lb-loading" class="text-center py-16">
+                <div class="flex flex-col items-center space-y-4">
+                  <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  <p class="text-gray-400 font-gaming">Loading leaderboard...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Player Profile Modal -->
+    <div id="player-profile-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
+      <div class="neon-border rounded-xl shadow-2xl max-w-7xl w-full mx-4 max-h-[95vh] overflow-y-auto">
+        <div class="relative">
+          <!-- Header Section with Avatar and Basic Info -->
+          <div id="profile-header" class="relative bg-gradient-to-r from-dark via-light to-dark text-white p-8 rounded-t-xl">
+            <!-- Close button -->
+            <button onclick="closePlayerProfile()" class="absolute top-4 right-4 text-white hover:text-primary text-3xl font-gaming font-bold z-10 transition-colors duration-300">&times;</button>
+            
+            <!-- Player Info Container -->
+            <div class="flex flex-col lg:flex-row items-start lg:items-end gap-6">
+              <!-- Avatar Section -->
+              <div class="flex-shrink-0">
+                <div class="w-32 h-32 bg-gradient-to-br from-primary to-yellow-300 rounded-xl shadow-lg flex items-center justify-center neon-border">
+                  <div id="player-avatar" class="w-24 h-24 bg-dark rounded-full flex items-center justify-center text-primary text-3xl font-gaming font-bold">
+                    <!-- Avatar will be generated from player name -->
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Player Info -->
+              <div class="flex-grow">
+                <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+                  <!-- Name and Location -->
+                  <div>
+                    <h2 id="profile-player-name" class="font-gaming text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Player Name</h2>
+                    <p id="profile-department" class="text-xl opacity-90 flex items-center gap-2">
+                      <span class="inline-block w-6 h-4 bg-primary rounded shadow"></span>
+                      Department
+                    </p>
+                  </div>
+                  
+                  <!-- Rankings -->
+                  <div class="flex gap-8">
+                    <div class="text-center">
+                      <div class="text-sm opacity-75 font-gaming">Global Rank</div>
+                      <div id="global-rank" class="text-2xl font-gaming font-bold text-primary">#0</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-sm opacity-75 font-gaming">Department Rank</div>
+                      <div id="dept-rank" class="text-2xl font-gaming font-bold text-accent">#0</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Stats Bar -->
+                <div class="mt-6 grid grid-cols-2 lg:grid-cols-5 gap-4 text-center">
+                  <div class="bg-cardBg rounded-lg p-3 neon-border">
+                    <div class="text-xs opacity-75 font-gaming">Ranked Score</div>
+                    <div id="ranked-score" class="text-lg font-gaming font-bold text-primary">0</div>
+                  </div>
+                  <div class="bg-cardBg rounded-lg p-3 neon-border">
+                    <div class="text-xs opacity-75 font-gaming">Accuracy</div>
+                    <div id="accuracy" class="text-lg font-gaming font-bold text-accent">0%</div>
+                  </div>
+                  <div class="bg-cardBg rounded-lg p-3 neon-border">
+                    <div class="text-xs opacity-75 font-gaming">Quiz Count</div>
+                    <div id="quiz-count" class="text-lg font-gaming font-bold text-cyan">0</div>
+                  </div>
+                  <div class="bg-cardBg rounded-lg p-3 neon-border">
+                    <div class="text-xs opacity-75 font-gaming">Total Score</div>
+                    <div id="total-score" class="text-lg font-gaming font-bold text-purple">0</div>
+                  </div>
+                  <div class="bg-cardBg rounded-lg p-3 neon-border">
+                    <div class="text-xs opacity-75 font-gaming">Max Combo</div>
+                    <div id="max-combo" class="text-lg font-gaming font-bold text-primary">0</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Grade/Level Bar -->
+          <div class="bg-cardBg px-8 py-4 border-b border-primary/30">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <div class="text-sm font-gaming font-medium text-primary">Level Progress</div>
+                <div class="flex items-center gap-2">
+                  <div id="level-badges" class="flex gap-1">
+                    <!-- Level badges will be generated here -->
+                  </div>
+                </div>
+              </div>
+              <!-- Removed Total Play Time (no data) -->
+            </div>
+          </div>
+          
+          <!-- Main Content -->
+          <div class="p-8 bg-cardBg">
+            <div id="profile-content" class="space-y-8">
+              <!-- Content will be loaded here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+    
+    <!-- Gaming Footer -->
+    <footer class="relative z-10 bg-gradient-to-r from-dark to-light border-t-2 border-primary/30 py-12 mt-auto">
+      <div class="max-w-6xl mx-auto px-6 text-center">
+        <div class="flex items-center justify-center space-x-4 mb-6">
+          <img src="assets/img/Website/buko_productions-logo.png" alt="Buko Productions" class="w-16 h-16" />
+          <div>
+            <h3 class="font-gaming text-2xl font-bold text-primary">SCI-HIGH</h3>
+            <p class="text-gray-400 text-sm">Level up your knowledge!</p>
+          </div>
+        </div>
+        <div class="w-32 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full mb-6"></div>
+        <p class="text-gray-400 font-gaming">&copy; 2025 SCI-HIGH Thesis Project. All rights reserved. Game on! 🎮</p>
+      </div>
+    </footer>
+    
+    <script>
+      // Firebase initialization is centralized in firebaseClient.js
+      async function initializeFirebase() {
+        const mod = await import('./assets/js/leaderboards/firebaseClient.js');
+        return mod.initFirebase();
+      }
+
+      // Initialize Firebase when page loads and wait for completion
+      let db;
+      let firebaseInitialized = false;
+      const firebaseInitPromise = initializeFirebase().then(() => {
+        db = window.db; // Use the database instance created after initialization
+        firebaseInitialized = true;
+      }).catch(error => {
+        console.error('Failed to initialize Firebase:', error);
+        throw error;
+      });
+
+      // Removed mini-contest pop-up listener
+
+      // Helper function to ensure Firebase is ready before using database (delegates to firebaseClient)
+      async function ensureFirebaseReady() {
+        const mod = await import('./assets/js/leaderboards/firebaseClient.js');
+        return mod.ensureFirebaseReady();
+      }
+
+      // Helper function to format course names properly
+      function formatCourseName(courseTopic) {
+        if (!courseTopic || courseTopic === 'unknown') {
+          return 'Unknown Course';
+        }
+        
+        const courseMap = {
+          'python': 'Python Programming',
+          'java': 'Java Development',
+          'csharp': 'C# Programming',
+          'cpp': 'C++ Programming',
+          'c': 'C Programming',
+          'webdesign': 'Web Design'
+        };
+        
+        return courseMap[courseTopic.toLowerCase()] || courseTopic.charAt(0).toUpperCase() + courseTopic.slice(1);
+      }
+
+      // Load Career Stats Data via dataService with injected db provider
+      async function loadCareerStatsData(filter = 'overall') {
+        try {
+          const [fb, dataMod, cacheMod] = await Promise.all([
+            import('./assets/js/leaderboards/firebaseClient.js'),
+            import('./assets/js/leaderboards/dataService.js'),
+            import('./assets/js/leaderboards/cache.js')
+          ]);
+          const cache = cacheMod.default || (window && window.leaderboardCache);
+          const key = `career:${filter}`;
+          const ttlMs = 30000; // 30s cache to avoid double fetches on quick filter changes
+          if (cache && typeof cache.cached === 'function') {
+            return await cache.cached(key, ttlMs, () => dataMod.loadCareerStatsAggregated(() => fb.ensureFirebaseReady(), filter));
+          }
+          // Fallback: no cache available
+          return await dataMod.loadCareerStatsAggregated(() => fb.ensureFirebaseReady(), filter);
+        } catch (error) {
+          console.error('Error loading career stats data:', error);
+          return [];
+        }
+      }
+
+      // Rendering moved to renderService.js (imported where used)
+
+      // Enhanced Fetch Leaderboard using Career Stats
+      async function fetchLeaderboard(filter) {
+        try {
+          const renderMod = await import('./assets/js/leaderboards/renderService.js');
+          const data = await loadCareerStatsData(filter);
+          renderMod.renderPlayerCards(data.slice(0, 3));
+          renderMod.renderLeaderboard(data);
+        } catch (error) {
+          console.error('Error fetching career stats leaderboard:', error);
+          console.error('Error details:', error.message);
+          
+          // Show error message in list container
+          const leaderboardList = document.getElementById('leaderboard-list');
+          if (leaderboardList) {
+            leaderboardList.innerHTML = `<div class="text-center py-8 text-red-400">⚠️ Database error: ${error.message}</div>`;
+          }
+          
+          // Show error in player cards
+          const loading = document.getElementById('player-cards-loading');
+          if (loading) {
+            loading.innerHTML = `<p class="text-red-400 text-center font-gaming">Database Error: ${error.message}</p>`;
+            loading.style.display = 'block';
+          }
+        }
+      }
+
+      // State-driven filter logic with URL sync
+      (function(){
+        const VALID = new Set(['overall','college','seniorhigh','juniorhigh']);
+        const defaultFilter = 'overall';
+
+        function getFilterFromURL(){
+          try {
+            const params = new URLSearchParams(window.location.search);
+            const f = (params.get('filter') || '').toLowerCase();
+            return VALID.has(f) ? f : defaultFilter;
+          } catch(_) { return defaultFilter; }
+        }
+
+        function setURLFilter(filter, replace){
+          try {
+            const url = new URL(window.location.href);
+            if (filter === defaultFilter) {
+              url.searchParams.delete('filter');
+            } else {
+              url.searchParams.set('filter', filter);
+            }
+            const newUrl = url.toString();
+            if (replace) window.history.replaceState({ filter }, '', newUrl);
+            else window.history.pushState({ filter }, '', newUrl);
+          } catch(_){}
+        }
+
+        function setActiveButton(filter){
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('bg-primary', 'text-dark'));
+          const activeBtn = document.querySelector(`.filter-btn[data-filter="${filter}"]`);
+          if (activeBtn) activeBtn.classList.add('bg-primary', 'text-dark');
+        }
+
+        function toggleSections(filter){
+          const dept = document.getElementById('department-leaderboard');
+          const glob = document.getElementById('global-leaderboard');
+          if (!dept || !glob) return;
+          if (filter === 'overall') {
+            glob.classList.remove('hidden');
+            dept.classList.add('hidden');
+          } else {
+            glob.classList.remove('hidden'); // keep global visible by default
+            dept.classList.remove('hidden');
+            const subtitle = document.getElementById('department-subtitle');
+            if (subtitle) {
+              const label = filter === 'college' ? 'College Leaders' : filter === 'seniorhigh' ? 'Senior High Leaders' : 'Junior High Leaders';
+              subtitle.textContent = `Elite warriors of the department • ${label}`;
+            }
+          }
+        }
+
+        async function applyFilter(filter, options = { fromPopState: false }){
+          const f = VALID.has(filter) ? filter : defaultFilter;
+          setActiveButton(f);
+          toggleSections(f);
+          if (!options.fromPopState) setURLFilter(f, false);
+          await fetchLeaderboard(f);
+          // If department filter, auto-jump to Top 3 section
+          if (f !== 'overall') {
+            const el = document.getElementById('featured-players');
+            if (el) {
+              // account for sticky nav ~72px; adjust if header size changes
+              const headerOffset = 80;
+              const rect = el.getBoundingClientRect();
+              const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+              const targetY = rect.top + scrollTop - headerOffset;
+              window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+            }
+          }
+        }
+
+        // Wire clicks
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const f = btn.dataset.filter;
+            applyFilter(f);
+          });
+        });
+
+        // Hydrate initial state from URL (no history push)
+        const initialFilter = getFilterFromURL();
+        setActiveButton(initialFilter);
+        toggleSections(initialFilter);
+        setURLFilter(initialFilter, true); // normalize URL (replace state)
+        fetchLeaderboard(initialFilter);
+
+        // Handle back/forward
+        window.addEventListener('popstate', (ev) => {
+          const f = (ev && ev.state && ev.state.filter) ? ev.state.filter : getFilterFromURL();
+          applyFilter(f, { fromPopState: true });
+        });
+      })();
+
+      // Add missing functions for leaderboard API
+      async function addScore(userId, playerName, score, department = 'Unknown', gameData = {}) {
+        try {
+          // Gate page-level submissions after contest end
+          if (window.__miniContestActive === false) {
+            // Silent no-op when contest has ended (no pop-up on this page)
+            return { success: false, reason: 'contest-ended' };
+          }
+          // Ensure Firebase is ready before using database
+          const { ensureFirebaseReady } = await import('./assets/js/leaderboards/firebaseClient.js');
+          const database = await ensureFirebaseReady();
+          
+          const scoreData = {
+            name: playerName,
+            score: score,
+            department: department,
+            timestamp: Date.now(),
+            submissionDate: new Date().toISOString(),
+            gameData: gameData
+          };
+
+          await database.ref('leaderboards/' + userId).set(scoreData);
+          return { success: true, data: scoreData };
+        } catch (error) {
+          console.error('Error adding score:', error);
+          throw error;
+        }
+      }
+
+      async function updateBestScore(userId, playerName, score, department = 'Unknown', gameData = {}) {
+        try {
+          // Gate page-level submissions after contest end
+          if (window.__miniContestActive === false) {
+            // Silent no-op when contest has ended (no pop-up on this page)
+            return { success: false, reason: 'contest-ended' };
+          }
+          // Ensure Firebase is ready before using database
+          const { ensureFirebaseReady } = await import('./assets/js/leaderboards/firebaseClient.js');
+          const database = await ensureFirebaseReady();
+          
+          const snapshot = await database.ref('leaderboards/' + userId).once('value');
+          const existingData = snapshot.val();
+          
+          if (!existingData || score > existingData.score) {
+            await addScore(userId, playerName, score, department, gameData);
+            return { 
+              success: true, 
+              isNewBest: true, 
+              previousBest: existingData ? existingData.score : 0,
+              newBest: score
+            };
+          } else {
+            return {
+              success: true,
+              isNewBest: false,
+              currentBest: existingData.score,
+              submittedScore: score
+            };
+          }
+        } catch (error) {
+          console.error('Error updating best score:', error);
+          throw error;
+        }
+      }
+
+      async function getPlayerBestScore(userId) {
+        try {
+          // Ensure Firebase is ready before using database
+          const { ensureFirebaseReady } = await import('./assets/js/leaderboards/firebaseClient.js');
+          const database = await ensureFirebaseReady();
+          
+          const snapshot = await database.ref('leaderboards/' + userId).once('value');
+          const data = snapshot.val();
+          return data ? data.score : 0;
+        } catch (error) {
+          console.error('Error getting player best score:', error);
+          return 0;
+        }
+      }
+
+      // Make functions globally accessible for game integration
+      window.leaderboardAPI = {
+        addScore,
+        updateBestScore,
+        getPlayerBestScore,
+        fetchLeaderboard
+      };
+
+      // Enhanced Player Profile with Career Stats
+      async function showPlayerProfile(userId) {
+        
+        // Show modal with animation
+        const modal = document.getElementById('player-profile-modal');
+        modal.classList.remove('hidden');
+        
+        // Add modal enter animation to the modal content
+        const modalContent = modal.querySelector('.neon-border');
+        if (modalContent) {
+          modalContent.classList.add('modal-enter');
+        }
+        
+        // Show loading state
+        document.getElementById('profile-content').innerHTML = `
+          <div class="text-center py-8">
+            <div class="flex flex-col items-center space-y-4">
+              <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <p class="text-gray-300 font-gaming">Loading warrior profile...</p>
+            </div>
+          </div>
+        `;
+        
+        try {
+          // Ensure Firebase is ready before using database
+          const database = await ensureFirebaseReady();
+          
+          // Fetch career stats data
+          const careerStatsSnapshot = await database.ref('student_career_stats/' + userId).once('value');
+          const careerStatsData = careerStatsSnapshot.val();
+          
+          if (careerStatsData && careerStatsData.careerStats && careerStatsData.studentInfo) {
+            await renderPlayerProfileWithCareerStats(careerStatsData, userId);
+          } else {
+            document.getElementById('profile-content').innerHTML = `
+              <div class="text-center py-8">
+                <div class="text-red-400 font-gaming text-lg">⚠️ Career stats not found</div>
+                <p class="text-gray-400 mt-2">This student might not have completed any quiz sessions yet.</p>
+              </div>
+            `;
+          }
+        } catch (error) {
+          console.error('Error loading career stats profile:', error);
+          document.getElementById('profile-content').innerHTML = `
+            <div class="text-center py-8">
+              <div class="text-red-400 font-gaming text-lg">⚠️ Error loading profile</div>
+              <p class="text-gray-400 mt-2">${error.message}</p>
+            </div>
+          `;
+        }
+      }
+
+      function closePlayerProfile() {
+        document.getElementById('player-profile-modal').classList.add('hidden');
+      }
+
+      // Function to calculate player rankings
+      async function calculatePlayerRankings(studentId, currentPlayerScore, currentPlayerDepartment) {
+        try {
+          // Load all career stats data for ranking calculation
+          const allCareerStatsData = await loadCareerStatsData('overall');
+          
+          // Calculate global rank
+          const globalRank = allCareerStatsData.findIndex(player => player.studentId === studentId) + 1;
+          
+          // Calculate department rank
+          const departmentPlayers = allCareerStatsData.filter(player => 
+            player.department === currentPlayerDepartment
+          );
+          const departmentRank = departmentPlayers.findIndex(player => player.studentId === studentId) + 1;
+          
+          return {
+            globalRank: globalRank > 0 ? globalRank : '?',
+            departmentRank: departmentRank > 0 ? departmentRank : '?'
+          };
+        } catch (error) {
+          console.error('Error calculating rankings:', error);
+          return {
+            globalRank: '?',
+            departmentRank: '?'
+          };
+        }
+      }
+
+      // New Enhanced Player Profile with Career Stats
+      async function renderPlayerProfileWithCareerStats(careerStatsData, studentId) {
+        const career = careerStatsData.careerStats;
+        const info = careerStatsData.studentInfo;
+        const recentSessions = careerStatsData.recentSessions || {};
+        
+        // Generate avatar initials
+        let initials = '??';
+        const fullName = info.fullName || 'Unknown Student';
+        if (fullName && fullName.trim().length > 0) {
+          const words = fullName.trim().split(' ').filter(word => word.length > 0);
+          if (words.length > 0) {
+            initials = words.map(word => word[0] ? word[0].toUpperCase() : '').join('').substring(0, 2);
+          }
+        }
+        
+        // Calculate course completion stats
+        const completionStatus = career.courseCompletionStatus || {};
+        const totalCourses = Object.keys(completionStatus).length;
+        const completedCourses = Object.values(completionStatus).filter(Boolean).length;
+        const completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
+        
+        // Format department display
+        let department = 'Unknown';
+        if (careerStatsData.department) {
+          department = careerStatsData.department;
+        }
+        
+        // Update header information
+        document.getElementById('player-avatar').textContent = initials;
+        document.getElementById('profile-player-name').textContent = fullName;
+        document.getElementById('profile-department').innerHTML = `
+          <span class="inline-block w-6 h-4 bg-primary rounded shadow"></span>
+          ${department}
+        `;
+        
+        // Calculate and update rankings dynamically
+        const rankings = await calculatePlayerRankings(studentId, career.totalPoints || 0, department);
+        document.getElementById('global-rank').textContent = '#' + rankings.globalRank;
+        document.getElementById('dept-rank').textContent = '#' + rankings.departmentRank;
+        
+        // Update stats with career data
+        // Safe setter helper to avoid null dereference when legacy IDs are removed
+        const safeSetText = (id, value) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = value;
+        };
+
+        safeSetText('ranked-score', (career.totalPoints || 0).toLocaleString());
+        safeSetText('accuracy', (career.averageAccuracy || 0).toFixed(1) + '%');
+        safeSetText('quiz-count', career.totalSessions || 0);
+        safeSetText('total-score', (career.totalPoints || 0).toLocaleString());
+        // Removed total-questions display
+        safeSetText('max-combo', career.highestStreak || 0);
+        // total-playtime element was removed from DOM; guard its update
+        const playTimeEl = document.getElementById('total-playtime');
+        if (playTimeEl) playTimeEl.textContent = formatPlayTime(career.totalPlayTime || 0);
+        
+  // Derive achievements using shared utility (dynamic import for code splitting)
+  let derivedAchievements;
+  try {
+    const { evaluateAchievements } = await import('./src/services/achievementsUtil.js');
+    const career = careerStatsData.careerStats || {};
+    const recentSessions = careerStatsData.recentSessions || {};
+    const existingAchv = (careerStatsData.careerStats && careerStatsData.careerStats.achievements) || {};
+    derivedAchievements = evaluateAchievements(career, recentSessions, existingAchv);
+  } catch (e) {
+    console.warn('Failed to load shared achievementsUtil, falling back to legacy deriveAchievements:', e);
+    derivedAchievements = deriveAchievements(careerStatsData, studentId);
+  }
+  // Store globally for filter use
+  window.__currentProfileAchievements = derivedAchievements;
+  // Persist newly unlocked achievements (fire and forget)
+  persistUnlockedAchievements(studentId, derivedAchievements.unlocked);
+  // Generate level badges based on unlocked achievements count
+  generateLevelBadges(derivedAchievements.unlocked.length);
+        
+        // Create enhanced profile content with career stats
+        const content = document.getElementById('profile-content');
+        content.innerHTML = `
+          <!-- Achievements & Badges -->
+          <div class="bg-cardBg p-6 rounded-lg neon-border mb-6">
+            <h3 class="text-xl font-bold text-primary mb-2 flex items-center gap-2 font-gaming">
+              <span>🏅</span>
+              <span>Achievements & Badges</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-primary/20 border border-primary/30 text-primary tracking-wide">${derivedAchievements.unlocked.length}/${derivedAchievements.all.length} UNLOCKED</span>
+            </h3>
+            <div class="flex gap-2 mb-4 text-[11px] font-gaming">
+              <button data-achv-filter="unlocked" class="achv-filter-btn px-3 py-1 rounded border border-primary/40 bg-primary/20 text-primary font-semibold shadow-inner shadow-primary/30">Unlocked</button>
+              <button data-achv-filter="locked" class="achv-filter-btn px-3 py-1 rounded border border-light/30 hover:bg-light/10 text-gray-300">Locked</button>
+              <button data-achv-filter="all" class="achv-filter-btn px-3 py-1 rounded border border-light/30 hover:bg-light/10 text-gray-300">All</button>
+            </div>
+            <div class="flex items-center flex-wrap gap-3 mb-4 text-[10px] font-mono">
+              <span class="px-2 py-0.5 rounded bg-gray-700/40 border border-gray-600 text-gray-300">Legend:</span>
+              <span class="px-2 py-0.5 rounded bg-fuchsia-500/20 border border-fuchsia-400 text-fuchsia-300">Mythic</span>
+              <span class="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400 text-amber-300">Epic</span>
+              <span class="px-2 py-0.5 rounded bg-purple-500/20 border border-purple-400 text-purple-300">Rare</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400 text-emerald-300">Common</span>
+              <span class="px-2 py-0.5 rounded bg-blue-500/20 border border-blue-400 text-blue-300">Uncommon</span>
+            </div>
+            <div class="flex flex-wrap gap-4" id="achievement-badges">${generateAchievementBadges(derivedAchievements,'unlocked')}</div>
+            ${derivedAchievements.unlocked.length === 0 ? '<p class="text-gray-400 text-sm mt-2">No achievements yet. Complete quizzes and improve stats to earn your first badge!</p>' : ''}
+          </div>
+
+          <!-- Course Completion Progress -->
+          <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <h3 class="text-xl font-bold text-primary mb-4 flex items-center gap-2 font-gaming">
+              <span class="text-primary">🎓</span>
+              Course Completion Progress
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
+              ${generateCourseCompletionBadges(completionStatus)}
+            </div>
+            <div class="mt-4">
+              <div class="flex justify-between text-sm text-gray-400 mb-2">
+                <span>Overall Progress</span>
+                <span>${completedCourses}/${totalCourses} courses (${completionPercentage}%)</span>
+              </div>
+              <div class="w-full bg-gray-700 rounded-full h-3">
+                <div class="bg-gradient-to-r from-accent to-cyan h-3 rounded-full transition-all duration-300" style="width: ${completionPercentage}%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Career Statistics Overview -->
+          <div class="grid lg:grid-cols-2 gap-6">
+            <!-- Career Performance Chart -->
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-accent mb-4 font-gaming">Career Performance</h3>
+              <div class="relative h-64 mb-4 bg-dark/50 rounded-lg flex items-center justify-center overflow-hidden">
+                <canvas id="careerChart" class="max-w-full max-h-full"></canvas>
+                <div id="careerChartFallback" class="text-gray-400 text-center absolute inset-0 flex flex-col items-center justify-center">
+                  <div class="text-4xl mb-2">📈</div>
+                  <div>Loading performance chart...</div>
+                </div>
+              </div>
+              <div class="text-sm text-gray-300 text-center">
+                Total Sessions: ${career.totalSessions || 0} • Best Streak: ${career.highestStreak || 0}
+              </div>
+            </div>
+
+            <!-- Recent Session Activity -->
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-cyan mb-4 font-gaming">Recent Activity</h3>
+              <div class="space-y-3 max-h-64 overflow-y-auto">
+                ${generateRecentSessionsDisplay(recentSessions)}
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Career Statistics -->
+          <div class="grid lg:grid-cols-2 gap-6">
+            <!-- Performance Metrics -->
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-purple mb-4 font-gaming">Performance Metrics</h3>
+              <div class="relative h-64 mb-4 bg-dark/50 rounded-lg flex items-center justify-center overflow-hidden">
+                <canvas id="performanceRadar" class="max-w-full max-h-full"></canvas>
+                <div id="radarChartFallback" class="text-gray-400 text-center absolute inset-0 flex flex-col items-center justify-center">
+                  <div class="text-4xl mb-2">🎯</div>
+                  <div>Loading skill assessment...</div>
+                </div>
+              </div>
+              <div class="text-sm text-gray-300 text-center">
+                Comprehensive skill assessment
+              </div>
+            </div>
+
+            <!-- Course Progress Breakdown -->
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-primary mb-4 font-gaming">Course Progress</h3>
+              <div class="space-y-3">
+                ${generateCourseProgressBars(completionStatus, career)}
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloom Taxonomy Performance -->
+          <div class="grid lg:grid-cols-2 gap-6">
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-primary mb-4 font-gaming flex items-center gap-2">
+                <span>🧠</span> Bloom Level Distribution
+              </h3>
+              <div class="relative h-64 mb-4 bg-dark/50 rounded-lg flex items-center justify-center overflow-hidden">
+                <canvas id="bloomDistributionChart" class="max-w-full max-h-full"></canvas>
+                <div id="bloomDistributionFallback" class="text-gray-400 text-center absolute inset-0 flex flex-col items-center justify-center">
+                  <div class="text-4xl mb-2">🧠</div>
+                  <div>Loading Bloom data...</div>
+                </div>
+              </div>
+              <div class="text-sm text-gray-300 text-center" id="bloom-distribution-summary">Cognitive engagement overview</div>
+            </div>
+            <div class="bg-cardBg p-6 rounded-lg neon-border">
+              <h3 class="text-lg font-semibold text-accent mb-4 font-gaming flex items-center gap-2">
+                <span>🎯</span> Bloom Accuracy by Level
+              </h3>
+              <div class="relative h-64 mb-4 bg-dark/50 rounded-lg flex items-center justify-center overflow-hidden">
+                <canvas id="bloomAccuracyChart" class="max-w-full max-h-full"></canvas>
+                <div id="bloomAccuracyFallback" class="text-gray-400 text-center absolute inset-0 flex flex-col items-center justify-center">
+                  <div class="text-4xl mb-2">🎯</div>
+                  <div>Loading accuracy data...</div>
+                </div>
+              </div>
+              <div class="text-sm text-gray-300 text-center" id="bloom-accuracy-summary">Accuracy per cognitive level</div>
+            </div>
+          </div>
+
+          <!-- Career Summary (moved below Bloom charts) -->
+          <div class="bg-cardBg p-6 rounded-lg neon-border mt-6">
+            <h3 class="text-lg font-semibold text-cyan mb-4 font-gaming">Career Summary</h3>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-primary font-gaming">${(career.totalPoints || 0).toLocaleString()}</div>
+                <div class="text-sm text-gray-400">Total Points</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-accent font-gaming">${career.totalSessions || 0}</div>
+                <div class="text-sm text-gray-400">Total Sessions</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-cyan font-gaming">${(career.averageAccuracy || 0).toFixed(1)}%</div>
+                <div class="text-sm text-gray-400">Average Accuracy</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-purple font-gaming">${career.highestStreak || 0}</div>
+                <div class="text-sm text-gray-400">Best Streak</div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Initialize charts with career stats data
+        setTimeout(async () => {
+          try {
+            const chartsMod = await import('./assets/js/leaderboards/chartsService.js');
+            chartsMod.initializeCareerStatsCharts(career, completionStatus, recentSessions);
+          } catch (e) { console.warn('[Charts] init failed:', e); }
+          // Load Chart.js if needed, then build Bloom charts
+          window.ensureChartJs().then(async ()=>{
+            try {
+              window.applyChartWhiteTheme && window.applyChartWhiteTheme();
+              const chartsMod = await import('./assets/js/leaderboards/chartsService.js');
+              chartsMod.buildBloomChartsFromCareer(career);
+            } catch(e) { console.warn('Bloom charts skipped:', e); }
+          }).catch(err=>{
+            console.warn('[BloomCharts] Chart.js not available:', err.message);
+          });
+        }, 100);
+      }
+
+      function renderPlayerProfile(playerData) {
+        // Restore sanitized Firebase keys if they exist
+        const gameData = playerData.gameData || {};
+        const topicPoints = restoreFirebaseKeys(gameData.topicPoints || {});
+        
+        // Calculate additional stats
+        const submissionDate = playerData.submissionDate ? new Date(playerData.submissionDate).toLocaleDateString() : 'Unknown';
+        const playTimeFormatted = formatPlayTime(gameData.playTime || 0);
+        
+        // Calculate derived statistics
+        const totalTopicPoints = Object.values(topicPoints).reduce((sum, points) => sum + points, 0);
+        const averageTopicScore = totalTopicPoints > 0 ? Math.round(totalTopicPoints / Object.keys(topicPoints).length) : 0;
+        const estimatedQuizCount = Math.floor(totalTopicPoints / 100) || 1; // Estimate based on points
+        const estimatedTotalQuestions = estimatedQuizCount * 10; // Estimate 10 questions per quiz
+        const estimatedAccuracy = Math.min(95, Math.max(60, 70 + (playerData.score / 100))); // Estimate accuracy
+        const maxCombo = Math.floor(playerData.score / 50) || 1; // Estimate max combo
+        
+        // Generate avatar initials
+        const initials = playerData.name.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
+        
+        // Update header information
+        document.getElementById('player-avatar').textContent = initials;
+        document.getElementById('profile-player-name').textContent = playerData.name;
+        document.getElementById('profile-department').innerHTML = `
+          <span class="inline-block w-6 h-4 bg-primary rounded shadow"></span>
+          ${playerData.department || 'Unknown'}
+        `;
+        
+        // Update rankings (calculate proper rankings based on score)
+        // For now, use a simple approximation until we can get proper user ID
+        const estimatedGlobalRank = Math.max(1, Math.floor((5000 - playerData.score) / 10) + 1);
+        const estimatedDeptRank = Math.max(1, Math.floor((2000 - playerData.score) / 15) + 1);
+        document.getElementById('global-rank').textContent = '#' + estimatedGlobalRank;
+        document.getElementById('dept-rank').textContent = '#' + estimatedDeptRank;
+        
+    // Update stats (guard missing elements)
+    const safeSetText2 = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    safeSetText2('ranked-score', playerData.score.toLocaleString());
+    safeSetText2('accuracy', estimatedAccuracy.toFixed(1) + '%');
+    safeSetText2('quiz-count', estimatedQuizCount);
+    safeSetText2('total-score', (gameData.totalPoints || playerData.score).toLocaleString());
+    // Removed total-questions estimated display
+    safeSetText2('max-combo', maxCombo);
+    // total-playtime element removed
+        
+        // Generate level badges
+        generateLevelBadges(gameData.achievementCount || 0);
+        
+        // Update main content area
+        const content = document.getElementById('profile-content');
+        content.innerHTML = `
+          <!-- Badges Section -->
+          <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <h3 class="text-xl font-bold text-primary mb-4 flex items-center gap-2 font-gaming">
+              <span class="text-primary">🏆</span>
+              Badges & Achievements
+            </h3>
+            <div id="badges-container" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 min-h-[100px]">
+              ${generateAchievementBadges(gameData.achievementCount || 0)}
+            </div>
+            ${(gameData.achievementCount || 0) === 0 ? '<p class="text-gray-400 text-center mt-4">No badges earned yet. Keep playing to unlock achievements!</p>' : ''}
+          </div>
+
+          <!-- Performance Charts Section (wider full-width charts on large screens) -->
+          <div class="grid lg:grid-cols-2 gap-6">
+            <!-- Topic Performance Chart -->
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
+              <h3 class="text-lg font-semibold text-accent mb-4 font-gaming">Topic Performance</h3>
+              ${Object.keys(topicPoints).length > 0 ? `
+                <div class="relative h-80 mb-4 bg-white rounded-lg p-4 w-full">
+                  <canvas id="topicChart"></canvas>
+                </div>
+                <div class="text-sm text-gray-300 text-center">
+                  Best Topic: ${getBestTopic(topicPoints)} • Average: ${averageTopicScore} pts
+                </div>
+              ` : `
+                <div class="h-64 flex items-center justify-center text-gray-400">
+                  <div class="text-center">
+                    <div class="text-4xl mb-2">📊</div>
+                    <div>No topic data available</div>
+                  </div>
+                </div>
+              `}
+            </div>
+
+            <!-- Score Analysis Chart -->
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
+              <h3 class="text-lg font-semibold text-cyan mb-4 font-gaming">Score Analysis</h3>
+              <div class="relative h-80 mb-4 bg-white rounded-lg p-4 w-full">
+                <canvas id="scoreChart"></canvas>
+              </div>
+              <div class="text-sm text-gray-300 text-center">
+                Total Contribution Analysis
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Statistics (wider charts) -->
+          <div class="grid lg:grid-cols-2 gap-6">
+            <!-- Performance Metrics -->
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
+              <h3 class="text-lg font-semibold text-purple mb-4 font-gaming">Performance Radar</h3>
+              <div class="relative h-[28rem] mb-4 bg-white rounded-lg p-2 w-full flex items-center justify-center">
+                <canvas id="radarChart" class="w-full h-full"></canvas>
+              </div>
+              <div class="text-sm text-gray-300 text-center">
+                Overall performance across all metrics
+              </div>
+            </div>
+
+            <!-- Course Progress -->
+            ${gameData.courseProgress ? `
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
+              <h3 class="text-lg font-semibold text-primary mb-4 font-gaming">Course Progress</h3>
+              <div class="relative h-80 mb-4 bg-white rounded-lg p-4 w-full">
+                <canvas id="progressChart" class="w-full h-full"></canvas>
+              </div>
+              <div class="text-sm text-gray-300 text-center">
+                ${formatCourseProgress(gameData.courseProgress)}
+              </div>
+            </div>
+            ` : `
+            <div class="bg-cardBg p-6 rounded-lg neon-border lg:col-span-2">
+              <h3 class="text-lg font-semibold text-accent mb-4 font-gaming">Recent Activity</h3>
+              <div class="space-y-3">
+                <div class="flex items-center gap-3 p-3 bg-dark/50 rounded neon-border">
+                  <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-dark font-bold">
+                    ${playerData.score >= 1000 ? 'S' : playerData.score >= 500 ? 'A' : 'B'}
+                  </div>
+                  <div>
+                    <div class="font-medium text-primary">Best Score Achieved</div>
+                    <div class="text-sm text-gray-400">${submissionDate} • ${playerData.score} points</div>
+                  </div>
+                </div>
+                <div class="text-center text-gray-400 mt-4">
+                  More activity data will appear as you play more games!
+                </div>
+              </div>
+            </div>
+            `}
+          </div>
+
+          <!-- Topic Breakdown Table -->
+          ${Object.keys(topicPoints).length > 0 ? `
+          <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <h3 class="text-lg font-semibold text-primary mb-4 font-gaming">Topic Performance Breakdown</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b border-primary/30">
+                    <th class="text-left py-2 px-4 text-primary font-gaming">Topic</th>
+                    <th class="text-center py-2 px-4 text-accent font-gaming">Score</th>
+                    <th class="text-center py-2 px-4 text-cyan font-gaming">Percentage</th>
+                    <th class="text-center py-2 px-4 text-purple font-gaming">Rank</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${Object.entries(topicPoints)
+                    .sort(([,a], [,b]) => b - a)
+                    .map(([topic, points], index) => `
+                    <tr class="border-b border-primary/20 hover:bg-dark/30">
+                      <td class="py-3 px-4">
+                        <div class="flex items-center gap-2">
+                          <div class="w-3 h-3 rounded-full" style="background-color: ${getTopicColor(topic)}"></div>
+                          <span class="font-medium text-gray-200">${formatTopicName(topic)}</span>
+                        </div>
+                      </td>
+                      <td class="text-center py-3 px-4 font-bold text-primary">${points}</td>
+                      <td class="text-center py-3 px-4 text-gray-300">${((points / totalTopicPoints) * 100).toFixed(1)}%</td>
+                      <td class="text-center py-3 px-4">
+                        <span class="inline-block px-2 py-1 rounded text-sm ${index === 0 ? 'bg-primary/20 text-primary' : index < 3 ? 'bg-accent/20 text-accent' : 'bg-gray-600/20 text-gray-300'}">
+                          #${index + 1}
+                        </span>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          ` : ''}
+
+          <!-- Player Statistics Summary -->
+          <div class="bg-cardBg p-6 rounded-lg neon-border">
+            <h3 class="text-lg font-semibold text-cyan mb-4 font-gaming">Player Summary</h3>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-primary font-gaming">${playerData.score}</div>
+                <div class="text-sm text-gray-400">Highest Score</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-accent font-gaming">${gameData.achievementCount || 0}</div>
+                <div class="text-sm text-gray-400">Achievements</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-cyan font-gaming">${Object.keys(topicPoints).length}</div>
+                <div class="text-sm text-gray-400">Topics Mastered</div>
+              </div>
+              <div class="bg-dark/50 p-4 rounded text-center neon-border">
+                <div class="text-2xl font-bold text-purple font-gaming">${playTimeFormatted}</div>
+                <div class="text-sm text-gray-400">Time Invested</div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Create charts after DOM is updated, ensuring Chart.js is loaded (reuse same loader as Bloom)
+        setTimeout(async () => {
+          const launchCharts = async () => {
+            try { const chartsMod = await import('./assets/js/leaderboards/chartsService.js'); chartsMod.createPlayerCharts(playerData, topicPoints, gameData); } catch(e){ console.warn('[PlayerCharts] build failed:', e); }
+          };
+          if(window.Chart){ window.applyChartWhiteTheme && window.applyChartWhiteTheme(); launchCharts(); }
+          else {
+            window.ensureChartJs().then(()=>{ window.applyChartWhiteTheme && window.applyChartWhiteTheme(); launchCharts(); })
+              .catch(err=> console.warn('[PlayerCharts] Chart.js load failed:', err.message));
+          }
+        }, 100);
+      }
+
+      // Chart Creation Functions
+
+      function createPlayerCharts(playerData, topicPoints, gameData) {
+        // Create Topic Performance Chart (Doughnut)
+        if (Object.keys(topicPoints).length > 0) {
+          createTopicChart(topicPoints);
+        }
+
+        // Create Score Analysis Chart (Bar)
+        createScoreChart(playerData, gameData);
+
+        // Create Course Progress Chart (if data available)
+        if (gameData.courseProgress) {
+          createProgressChart(gameData.courseProgress);
+        }
+
+        // Create Performance Radar Chart
+        createRadarChart(playerData, gameData, topicPoints);
+      }
+
+      function createTopicChart(topicPoints) {
+        const ctx = document.getElementById('topicChart');
+        if (!ctx) return;
+
+        const topics = Object.keys(topicPoints);
+        const scores = Object.values(topicPoints);
+        
+        // Generate colors for each topic
+        const colors = generateChartColors(topics.length);
+
+        const chart = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: topics.map(topic => formatTopicName(topic)),
+            datasets: [{
+              data: scores,
+              backgroundColor: colors.backgrounds,
+              borderColor: colors.borders,
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  padding: 15,
+                  usePointStyle: true,
+                  color: '#ffffff'
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const label = context.label || '';
+                    const value = context.parsed;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    return `${label}: ${value} pts (${percentage}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      function createScoreChart(playerData, gameData) {
+        const ctx = document.getElementById('scoreChart');
+        if (!ctx) return;
+
+        // Create score breakdown data
+        const totalScore = playerData.score;
+        const achievementBonus = (gameData.achievementCount || 0) * 100; // Estimate
+        const baseScore = totalScore - achievementBonus;
+        const timeBonus = Math.max(0, totalScore * 0.1); // Estimate
+
+        const chart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Base Score', 'Achievement Bonus', 'Time Bonus'],
+            datasets: [{
+              label: 'Score Breakdown',
+              data: [baseScore, achievementBonus, timeBonus],
+              backgroundColor: [
+                'rgba(244, 206, 20, 0.8)',   // primary
+                'rgba(55, 151, 119, 0.8)',   // accent
+                'rgba(69, 71, 75, 0.8)'      // dark
+              ],
+              borderColor: [
+                'rgb(244, 206, 20)',
+                'rgb(55, 151, 119)',
+                'rgb(69, 71, 75)'
+              ],
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return `${context.label}: ${context.parsed.y} points`;
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { color: '#ffffff' },
+                title: { display: true, text: 'Points', color:'#ffffff' }
+              },
+              x: { ticks: { color:'#ffffff' } }
+            }
+          }
+        });
+      }
+
+      function createProgressChart(courseProgress) {
+        const ctx = document.getElementById('progressChart');
+        if (!ctx) return;
+
+        const courses = Object.keys(courseProgress);
+        const completed = courses.map(course => courseProgress[course] ? 1 : 0);
+        
+        const chart = new Chart(ctx, {
+          type: 'polarArea',
+          data: {
+            labels: courses.map(course => formatCourseName(course)),
+            datasets: [{
+              data: completed,
+              backgroundColor: completed.map(status => 
+                status ? 'rgba(55, 151, 119, 0.7)' : 'rgba(231, 76, 60, 0.7)'
+              ),
+              borderColor: completed.map(status => 
+                status ? 'rgb(55, 151, 119)' : 'rgb(231, 76, 60)'
+              ),
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  padding: 10,
+                  usePointStyle: true,
+                  color:'#ffffff'
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const status = context.parsed ? 'Completed' : 'In Progress';
+                    return `${context.label}: ${status}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              r: {
+                display: false
+              }
+            }
+          }
+        });
+      }
+
+      function createRadarChart(playerData, gameData, topicPoints) {
+        const ctx = document.getElementById('radarChart');
+        if (!ctx) return;
+
+        // Normalize values to 0-10 scale for radar chart
+        const maxScore = Math.max(playerData.score, 1000);
+        const maxAchievements = Math.max(gameData.achievementCount || 1, 10);
+        const maxPlayTime = Math.max(gameData.playTime || 1, 7200); // 2 hours max
+        const maxTopics = Math.max(Object.keys(topicPoints).length, 6);
+
+        const normalizedScore = (playerData.score / maxScore) * 10;
+        const normalizedAchievements = ((gameData.achievementCount || 0) / maxAchievements) * 10;
+        const normalizedPlayTime = ((gameData.playTime || 0) / maxPlayTime) * 10;
+        const normalizedTopics = (Object.keys(topicPoints).length / maxTopics) * 10;
+        const normalizedConsistency = Object.keys(topicPoints).length > 0 ? 
+          (Math.min(...Object.values(topicPoints)) / Math.max(...Object.values(topicPoints))) * 10 : 0;
+
+        const chart = new Chart(ctx, {
+          type: 'radar',
+          data: {
+            labels: ['Score', 'Achievements', 'Experience', 'Diversity', 'Consistency'],
+            datasets: [{
+              label: 'Performance Metrics',
+              data: [normalizedScore, normalizedAchievements, normalizedPlayTime, normalizedTopics, normalizedConsistency],
+              backgroundColor: 'rgba(244, 206, 20, 0.2)',
+              borderColor: 'rgb(244, 206, 20)',
+              borderWidth: 2,
+              pointBackgroundColor: 'rgb(244, 206, 20)',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: 'rgb(244, 206, 20)'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { top: 30, bottom: 30, left: 30, right: 30 } },
+            plugins: {
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              r: {
+                beginAtZero: true,
+                max: 10,
+                ticks: {
+                  display: false
+                },
+                pointLabels: { color: '#ffffff', font: { size: 14 } },
+                angleLines: { color: 'rgba(255,255,255,0.25)' },
+                grid: { color: 'rgba(255,255,255,0.15)' }
+              }
+            }
+          }
+        });
+      }
+
+      // Bloom chart builders moved to chartsService.js
+
+      // Utility Functions for Charts
+      function generateChartColors(count) {
+        const baseColors = [
+          { bg: 'rgba(244, 206, 20, 0.8)', border: 'rgb(244, 206, 20)' },   // primary
+          { bg: 'rgba(55, 151, 119, 0.8)', border: 'rgb(55, 151, 119)' },   // accent
+          { bg: 'rgba(69, 71, 75, 0.8)', border: 'rgb(69, 71, 75)' },       // dark
+          { bg: 'rgba(52, 152, 219, 0.8)', border: 'rgb(52, 152, 219)' },   // blue
+          { bg: 'rgba(155, 89, 182, 0.8)', border: 'rgb(155, 89, 182)' },   // purple
+          { bg: 'rgba(231, 76, 60, 0.8)', border: 'rgb(231, 76, 60)' },     // red
+        ];
+
+        const backgrounds = [];
+        const borders = [];
+
+        for (let i = 0; i < count; i++) {
+          const colorIndex = i % baseColors.length;
+          backgrounds.push(baseColors[colorIndex].bg);
+          borders.push(baseColors[colorIndex].border);
+        }
+
+        return { backgrounds, borders };
+      }
+
+      function formatCourseName(course) {
+        return course.replace(/_/g, ' ')
+                    .replace(/\b\w/g, l => l.toUpperCase());
+      }
+
+      // Additional helper functions for osu!-style profile
+      function generateLevelBadges(achievementCount) {
+        const levelContainer = document.getElementById('level-badges');
+        levelContainer.innerHTML = '';
+        
+        // Generate level badges based on achievement count
+        const levels = ['D', 'C', 'B', 'A', 'S', 'SS'];
+        const currentLevel = Math.min(Math.floor(achievementCount / 2), levels.length - 1);
+        
+        for (let i = 0; i <= currentLevel; i++) {
+          const badge = document.createElement('div');
+          badge.className = `w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
+            i === currentLevel ? 'bg-primary' : 'bg-accent'
+          }`;
+          badge.textContent = levels[i];
+          levelContainer.appendChild(badge);
+        }
+      }
+
+      function generateAchievementBadges(achievementCount) {
+        // Old function replaced by new achievements system; kept for backward compatibility
+        return '';
+      }
+
+      // Legacy deriveAchievements removed; shared utility used instead (fallback defined above if dynamic import fails).
+
+      async function persistUnlockedAchievements(studentId, achievementsState) {
+        if (!studentId || !achievementsState || achievementsState.length === 0) return;
+        try {
+          const database = await ensureFirebaseReady();
+          const ref = database.ref(`student_career_stats/${studentId}/achievements`);
+          const snapshot = await ref.once('value');
+          const existing = snapshot.val() || {};
+          const updates = {};
+          let changed = false;
+          achievementsState.forEach(a => {
+            if (!existing[a.id]) {
+              updates[a.id] = {
+                name: a.name,
+                tier: a.tier,
+                unlockedAt: Date.now()
+              };
+              changed = true;
+            }
+          });
+          if (changed) {
+            await ref.update(updates);
+          }
+        } catch (e) {
+          console.warn('Could not persist achievements:', e.message);
+        }
+      }
+
+      function generateAchievementBadges(achievementsState, filter = 'unlocked') {
+        if (!achievementsState) return '';
+        const { unlocked = [], locked = [] } = achievementsState.unlocked ? achievementsState : { unlocked: [], locked: [], ...achievementsState };
+        const rarityStyles = {
+          'Mythic': 'border-fuchsia-400 text-fuchsia-300 bg-fuchsia-500/10 shadow-[0_0_6px_rgba(255,0,255,0.4)]',
+          'Epic': 'border-amber-400 text-amber-300 bg-amber-500/10',
+          'Rare': 'border-purple-400 text-purple-300 bg-purple-500/10',
+          'Uncommon': 'border-blue-400 text-blue-300 bg-blue-500/10',
+          'Common': 'border-emerald-400 text-emerald-300 bg-emerald-500/10'
+        };
+        const order = ['Mythic','Epic','Rare','Uncommon','Common'];
+
+        function card(a, isLocked) {
+          const style = rarityStyles[a.tier] || 'border-primary/30 text-primary bg-primary/10';
+          return `
+            <div class="group relative">
+              <div class="w-24 h-24 rounded-xl flex flex-col items-center justify-center text-center p-2 shadow-md transition cursor-pointer border ${style} ${isLocked ? 'opacity-40 grayscale hover:opacity-60' : 'hover:shadow-primary/40'} bg-gradient-to-br from-dark/60 to-light/20">
+                <span class="text-2xl mb-1">${a.icon}</span>
+                <span class="text-[10px] font-semibold leading-tight line-clamp-2">${a.name}</span>
+                <span class="absolute top-1 right-1 text-[9px] px-1 rounded bg-black/60 border border-white/10">${a.tier}</span>
+                ${isLocked ? `<div class='absolute inset-0 flex items-center justify-center'><span class='text-lg'>🔒</span></div>` : ''}
+                ${isLocked ? `<div class='absolute bottom-0 left-0 right-0 h-2 bg-black/40 rounded-b overflow-hidden'><div class='h-full bg-primary' style='width:${a.percent}%'></div></div>` : ''}
+              </div>
+              <div class="absolute hidden group-hover:block z-50 left-1/2 -translate-x-1/2 mt-2 w-52 p-2 text-xs bg-dark/95 border border-primary/30 rounded shadow-lg">
+                <p class="font-bold text-primary mb-1 flex items-center gap-1">${a.icon} ${a.name}</p>
+                <p class="text-gray-300 leading-snug mb-1">${a.description}</p>
+                <p class="text-[10px] text-gray-400">${isLocked ? `Progress: ${Math.min(a.progress, a.goal)}/${a.goal} (${a.percent}%)` : 'Unlocked'}</p>
+                ${isLocked ? `<div class='w-full h-1.5 bg-gray-700 rounded mt-1'><div class='h-full bg-primary rounded' style='width:${a.percent}%'></div></div>` : ''}
+              </div>
+            </div>`;
+        }
+
+        let ordered = [];
+        order.forEach(r => {
+          const unlockedGroup = unlocked.filter(a=>a.tier===r);
+          const lockedGroup = locked.filter(a=>a.tier===r);
+          if (filter === 'unlocked') {
+            unlockedGroup.forEach(a=>ordered.push(card(a,false)));
+          } else if (filter === 'locked') {
+            lockedGroup.forEach(a=>ordered.push(card(a,true)));
+          } else { // all
+            unlockedGroup.forEach(a=>ordered.push(card(a,false)));
+            lockedGroup.forEach(a=>ordered.push(card(a,true)));
+          }
+        });
+        return ordered.join('');
+      }
+
+      // Event delegation for achievement filter buttons
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.achv-filter-btn');
+        if (!btn) return;
+        const mode = btn.getAttribute('data-achv-filter');
+        const container = document.getElementById('achievement-badges');
+        if (!container || !window.__currentProfileAchievements) return;
+        // Update active button styles
+        document.querySelectorAll('.achv-filter-btn').forEach(b => {
+          b.classList.remove('bg-primary/20','text-primary','border-primary/40','font-semibold','shadow-inner','shadow-primary/30');
+          b.classList.add('text-gray-300');
+        });
+        btn.classList.add('bg-primary/20','text-primary','border-primary/40','font-semibold','shadow-inner','shadow-primary/30');
+        btn.classList.remove('text-gray-300');
+        container.innerHTML = generateAchievementBadges(window.__currentProfileAchievements, mode);
+      });
+
+      function getBestTopic(topicPoints) {
+        if (Object.keys(topicPoints).length === 0) return 'None';
+        const [bestTopic] = Object.entries(topicPoints).reduce((a, b) => a[1] > b[1] ? a : b);
+        return formatTopicName(bestTopic);
+      }
+
+      function getTopicColor(topic) {
+        const colors = {
+          'python': '#3776ab',
+          'java': '#f89820',
+          'C': '#00599c',
+          'C++': '#00599c',
+          'C_plus_plus_': '#00599c',
+          'C#': '#239120',
+          'C_sharp_': '#239120',
+          'csharp': '#239120',
+          'webdesign': '#e34c26',
+          'webDesign': '#e34c26',
+          'javascript': '#f7df1e',
+          'html': '#e34c26',
+          'css': '#1572b6'
+        };
+        return colors[topic] || '#6b7280';
+      }
+      function restoreFirebaseKeys(obj) {
+        if (!obj || typeof obj !== 'object') return {};
+        
+        const restored = {};
+        for (const [key, value] of Object.entries(obj)) {
+          const restoredKey = key
+            .replace(/_sharp_/g, '#')
+            .replace(/_plus_/g, '+')
+            .replace(/_dot_/g, '.')
+            .replace(/_dollar_/g, '$')
+            .replace(/_slash_/g, '/')
+            .replace(/_lbracket_/g, '[')
+            .replace(/_rbracket_/g, ']');
+          
+          restored[restoredKey] = value;
+        }
+        return restored;
+      }
+
+      function formatTopicName(topic) {
+        // Convert topic names to readable format
+        const topicMap = {
+          'C': 'C Programming',
+          'C++': 'C++',
+          'C#': 'C#',
+          'csharp': 'C#',
+          'java': 'Java',
+          'python': 'Python',
+          'webdesign': 'Web Design',
+          'webDesign': 'Web Design'
+        };
+        return topicMap[topic] || topic.charAt(0).toUpperCase() + topic.slice(1);
+      }
+
+      function formatPlayTime(seconds) {
+        if (!seconds || seconds === 0) return 'No data';
+        
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        
+        if (hours > 0) {
+          return `${hours}h ${minutes}m`;
+        } else if (minutes > 0) {
+          return `${minutes}m`;
+        } else {
+          return `${seconds}s`;
+        }
+      }
+
+      function formatCourseProgress(progress) {
+        if (!progress || typeof progress !== 'object') return 'No data';
+        
+        const completed = Object.values(progress).filter(Boolean).length;
+        const total = Object.keys(progress).length;
+        
+        if (total === 0) return 'No data';
+        
+        const percentage = Math.round((completed / total) * 100);
+        return `${completed}/${total} courses (${percentage}%)`;
+      }
+
+      // Close modal when clicking outside
+      document.getElementById('player-profile-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closePlayerProfile();
+        }
+      });
+
+      // Close modal with Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closePlayerProfile();
+        }
+      });
+
+      // Test functions for the buttons
+      function testUpdateBestScore() {
+        const userId = 'testUser_' + Date.now();
+        const name = 'Test Player';
+        const score = Math.floor(Math.random() * 5000) + 1000; // Random score between 1000-6000
+        const department = 'College of Computer Studies';
+        
+        updateBestScore(userId, name, score, department).then(result => {
+          showInfo(`Test Result: ${result.isNewBest ? 'New Best Score!' : 'Score not better than existing'}\nScore: ${score}`, {
+            title: 'Test Result'
+          });
+          fetchLeaderboard('overall'); // Refresh the display
+        }).catch(error => {
+          showError('Error: ' + error.message, { title: 'Test Error' });
+        });
+      }
+
+      function testGameIntegration() {
+        // Simulate what the game would send
+        const score = Math.floor(Math.random() * 10000) + 1500;
+        const gameData = {
+          userId: 'game_player_' + Date.now(),
+          playerName: 'Advanced Player',
+          score: score,
+          department: 'College of Computer Studies',
+          gameStats: {
+            totalQuizzes: 12,
+            correctAnswers: 89,
+            comboScore: 25,
+            playTime: 4800, // 80 minutes
+            topicPoints: {
+              'python': Math.floor(score * 0.28),
+              'java': Math.floor(score * 0.24),
+              'C_sharp_': Math.floor(score * 0.20), // Sanitized C# key
+              'webdesign': Math.floor(score * 0.15),
+              'C': Math.floor(score * 0.08),
+              'C_plus_plus_': Math.floor(score * 0.05)
+            },
+            achievementCount: 9,
+            courseProgress: {
+              'intro_to_programming': true,
+              'data_structures': true,
+              'web_development': true,
+              'algorithms': true,
+              'advanced_topics': Math.random() > 0.5,
+              'software_engineering': Math.random() > 0.3,
+              'machine_learning': Math.random() > 0.8
+            }
+          }
+        };
+        
+        
+        // Use addScore with enhanced data structure (with Firebase ready check)
+        const userId = gameData.userId;
+        const scoreData = {
+          name: gameData.playerName,
+          score: gameData.score,
+          department: gameData.department,
+          timestamp: Date.now(),
+          submissionDate: new Date().toISOString(),
+          gameData: {
+            totalPoints: gameData.score,
+            topicPoints: gameData.gameStats.topicPoints,
+            achievementCount: gameData.gameStats.achievementCount,
+            playTime: gameData.gameStats.playTime,
+            courseProgress: gameData.gameStats.courseProgress
+          }
+        };
+        
+        // Ensure Firebase is ready before using database
+        ensureFirebaseReady()
+          .then(database => database.ref('leaderboards/' + userId).set(scoreData))
+          .then(() => {
+            showSuccess(`Game Integration Test: Advanced player created!\nScore: ${gameData.score}\nClick the player name to view detailed profile with charts.`, {
+              title: '🎮 Game Integration Test'
+            });
+            fetchLeaderboard('overall');
+          })
+          .catch(error => {
+            console.error('Game integration error:', error);
+            showError('Integration Error: ' + error.message, { title: 'Integration Error' });
+          });
+      }
+
+      // Function to test student score submission (for development)
+      async function testStudentScore(studentId, score) {
+        try {
+          // Ensure Firebase is ready before using database
+          const database = await ensureFirebaseReady();
+          
+          // Check if student exists first
+          const studentsSnapshot = await database.ref('students').orderByChild('studentId').equalTo(studentId).once('value');
+          
+          if (!studentsSnapshot.exists()) {
+            console.error('Student not found:', studentId);
+            showWarning(`Student ${studentId} not found in the database. Please create the student first using developer tools.`, {
+              title: 'Student Not Found'
+            });
+            return;
+          }
+          
+          const studentData = Object.values(studentsSnapshot.val())[0];
+          
+          await addScore(studentId, studentData.name, score, 'Test Department');
+          showSuccess(`Score submitted successfully for ${studentData.name}!`, {
+            title: 'Score Submitted'
+          });
+          fetchLeaderboard('overall');
+        } catch (error) {
+          console.error('Error testing student score:', error);
+          showError('Error: ' + error.message, { title: 'Submission Error' });
+        }
+      }
+
+      // Helper Functions for Career Stats Display
+      
+      function generateCourseCompletionBadges(completionStatus) {
+        const courses = {
+          python: { name: 'Python', color: 'bg-blue-500', icon: '🐍' },
+          java: { name: 'Java', color: 'bg-orange-500', icon: '☕' },
+          csharp: { name: 'C#', color: 'bg-purple-500', icon: '💎' },
+          cpp: { name: 'C++', color: 'bg-green-500', icon: '⚡' },
+          c: { name: 'C', color: 'bg-gray-500', icon: '🔧' },
+          webdesign: { name: 'Web Design', color: 'bg-pink-500', icon: '🎨' }
+        };
+        
+        return Object.entries(courses).map(([courseKey, course]) => {
+          const isCompleted = completionStatus[courseKey] || false;
+          return `
+            <div class="bg-dark/50 p-3 rounded-lg text-center transition-all duration-300 ${isCompleted ? 'neon-border-success' : 'neon-border opacity-50'}">
+              <div class="text-2xl mb-1">${course.icon}</div>
+              <div class="text-xs font-gaming text-gray-300">${course.name}</div>
+              <div class="text-xs mt-1 ${isCompleted ? 'text-green-400' : 'text-gray-500'}">
+                ${isCompleted ? '✅ Complete' : '⏳ Pending'}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      
+      function generateCourseProgressBars(completionStatus, careerStats = null) {
+        const courses = {
+          python: { name: 'Python Programming', color: 'bg-blue-400' },
+          java: { name: 'Java Development', color: 'bg-orange-400' },
+          csharp: { name: 'C# Programming', color: 'bg-purple-400' },
+          cpp: { name: 'C++ Programming', color: 'bg-green-400' },
+          c: { name: 'C Programming', color: 'bg-gray-400' },
+          webdesign: { name: 'Web Design', color: 'bg-pink-400' }
+        };
+        
+        return Object.entries(courses).map(([courseKey, course]) => {
+          const isCompleted = completionStatus[courseKey] || false;
+          let percentage = 0;
+          let statusText = 'Not Started';
+          let sessionsInfo = '';
+          
+          // Calculate actual progress based on sessions
+          if (careerStats && careerStats.coursesCompleted) {
+            // Look for the course by key or by formatted name
+            const courseData = careerStats.coursesCompleted[courseKey] || 
+                              careerStats.coursesCompleted[course.name] ||
+                              careerStats.coursesCompleted[course.name.toLowerCase()];
+                              
+            if (courseData && courseData.completedCount > 0) {
+              const sessionsCompleted = courseData.completedCount;
+              // Assume 3 intensities = 100% completion, but show progress even for partial completion
+              percentage = isCompleted ? 100 : Math.min((sessionsCompleted / 3) * 100, 90); // Cap at 90% unless fully completed
+              
+              sessionsInfo = `${sessionsCompleted} session${sessionsCompleted > 1 ? 's' : ''} completed`;
+              
+              if (isCompleted) {
+                statusText = '100% Complete';
+              } else if (sessionsCompleted >= 2) {
+                statusText = `${Math.round(percentage)}% (Intensity ${sessionsCompleted})`;
+              } else {
+                statusText = `${Math.round(percentage)}% (Intensity ${sessionsCompleted})`;
+              }
+            }
+          } else if (isCompleted) {
+            percentage = 100;
+            statusText = '100% Complete';
+          }
+          
+          const progressColor = isCompleted ? 'text-green-400' : percentage > 0 ? 'text-yellow-400' : 'text-gray-500';
+          
+          return `
+            <div class="space-y-2">
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-300">${course.name}</span>
+                <span class="${progressColor}">${statusText}</span>
+              </div>
+              <div class="w-full bg-gray-700 rounded-full h-2">
+                <div class="${course.color} h-2 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
+              </div>
+              ${sessionsInfo ? `<div class="text-xs text-gray-400">${sessionsInfo}</div>` : ''}
+            </div>
+          `;
+        }).join('');
+      }
+      
+      function generateRecentSessionsDisplay(recentSessions) {
+        if (!recentSessions || Object.keys(recentSessions).length === 0) {
+          return `
+            <div class="text-center text-gray-400 py-8">
+              <div class="text-4xl mb-2">📚</div>
+              <div>No recent sessions</div>
+              <div class="text-sm">Complete some quizzes to see activity here!</div>
+            </div>
+          `;
+        }
+        
+        // Get the last 5 sessions
+        const sessions = Object.entries(recentSessions)
+          .sort(([,a], [,b]) => new Date(b.timestamp) - new Date(a.timestamp))
+          .slice(0, 5);
+        
+        return sessions.map(([sessionId, session]) => {
+          const date = new Date(session.timestamp).toLocaleDateString();
+          const accuracy = session.accuracyPercentage || 0;
+          const scoreColor = accuracy >= 80 ? 'text-green-400' : accuracy >= 60 ? 'text-yellow-400' : 'text-red-400';
+          
+          // Use courseTopic instead of course, and format it nicely
+          const courseName = session.courseTopic || 'Unknown';
+          const formattedCourseName = formatCourseName(courseName);
+          
+          return `
+            <div class="flex items-center gap-3 p-3 bg-dark/50 rounded neon-border">
+              <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-dark font-bold">
+                ${formattedCourseName.charAt(0).toUpperCase()}
+              </div>
+              <div class="flex-1">
+                <div class="font-medium text-primary">${formattedCourseName}</div>
+                <div class="text-xs text-gray-400">${date} • ${(session.correctAnswers || 0) + (session.wrongAnswers || 0)} questions</div>
+              </div>
+              <div class="text-right">
+                <div class="font-bold ${scoreColor}">${accuracy.toFixed(1)}%</div>
+                <div class="text-xs text-gray-400">${session.totalScore || 0} pts</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      
+      // Chart initializers moved to chartsService.js
+
+      // Revamped Career Performance (multi-metric line/area using Chart.js)
+      // createCareerLineChart moved to chartsService.js
+
+      // Revamped Performance Metrics Radar using Chart.js
+      // createPerformanceRadarChart moved to chartsService.js
+
+      // Enhanced API for external access
+      window.leaderboardAPI = {
+        loadCareerStatsData,
+        fetchLeaderboard,
+        showPlayerProfile: showPlayerProfile
+      };
+
+      // Make test function available globally
+      window.testStudentScore = testStudentScore;
+
+      // Mobile menu functionality
+      document.addEventListener('DOMContentLoaded', () => {
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        // Removed MINI-CONTEST countdown initialization
+        
+        if (mobileMenuBtn && mobileMenu) {
+          mobileMenuBtn.addEventListener('click', () => {
+            const isHidden = mobileMenu.style.display === 'none' || !mobileMenu.style.display;
+            mobileMenu.style.display = isHidden ? 'block' : 'none';
+            
+            // Update aria-expanded
+            mobileMenuBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            
+            // Update icon
+            const svg = mobileMenuBtn.querySelector('svg');
+            if (svg) {
+              if (isHidden) {
+                svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />';
+              } else {
+                svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />';
+              }
+            }
+          });
+          
+          // Close mobile menu when clicking on a link
+          const mobileLinks = mobileMenu.querySelectorAll('a, button');
+          mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+              mobileMenu.style.display = 'none';
+              mobileMenuBtn.setAttribute('aria-expanded', 'false');
+              const svg = mobileMenuBtn.querySelector('svg');
+              if (svg) {
+                svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />';
+              }
+            });
+          });
+        }
+      });
+    </script>
+    <!-- AOS animations loader for leaderboards -->
+    <script defer src="assets/js/leaderboards/aos-init.js"></script>
+  </body>
+</html>
+

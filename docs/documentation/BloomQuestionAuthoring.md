@@ -4,7 +4,7 @@ This guide shows how to write quiz questions that the game can render and that c
 
 ## Where to put questions
 
-- Path: `docs/public/data/quizzes/<course>.json` (e.g., `python.json`, `java.json`)
+- Path: `docs/assets/data/quizzes/<course>.json` (e.g., `python.json`, `java.json`)
 - Structure: Top-level intensities, each with arrays by question type
   - `intensity1`: basics/fundamentals
   - `intensity2`: intermediate application and syntax workouts
@@ -137,7 +137,7 @@ Tagging tip:
 
 ## Testing your additions
 
-1) Add questions to `docs/public/data/quizzes/<course>.json` under the desired intensity.
+1) Add questions to `docs/assets/data/quizzes/<course>.json` under the desired intensity.
 2) Run the dev server and play a short session for that course.
 3) Confirm: questions render correctly, answers are recognized, and Bloom counts increment in the graphs after a few items.
 

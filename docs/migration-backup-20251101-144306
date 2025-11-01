@@ -70,14 +70,14 @@ export default defineConfig({
           // Ensure js root exists
           mkdirSync('./dist/js', { recursive: true });
           // Individual utility files
-          if (existsSync('./assets/js/notifications.js')) copyFileSync('./assets/js/notifications.js', './dist/assets/js/notifications.js');
-          if (existsSync('./assets/js/maintenanceToast.js')) copyFileSync('./assets/js/maintenanceToast.js', './dist/assets/js/maintenanceToast.js');
+          if (existsSync('./js/notifications.js')) copyFileSync('./js/notifications.js', './dist/js/notifications.js');
+          if (existsSync('./js/maintenanceToast.js')) copyFileSync('./js/maintenanceToast.js', './dist/js/maintenanceToast.js');
           // Professor dashboard script (served as plain script)
-          if (existsSync('./assets/js/professor-dashboard.js')) copyFileSync('./assets/js/professor-dashboard.js', './dist/assets/js/professor-dashboard.js');
+          if (existsSync('./js/professor-dashboard.js')) copyFileSync('./js/professor-dashboard.js', './dist/js/professor-dashboard.js');
           // Page-specific scripts (kept as plain scripts vs bundling)
-          copyDir('./assets/js/pages', './dist/assets/js/pages');
+          copyDir('./js/pages', './dist/js/pages');
           // Leaderboards page modules used via dynamic import()
-          copyDir('./assets/js/leaderboards', './dist/assets/js/leaderboards');
+          copyDir('./js/leaderboards', './dist/js/leaderboards');
         } catch (error) {
           console.error('Failed to copy static resources:', error);
         }
@@ -134,4 +134,3 @@ export default defineConfig({
     }
   ]
 });
-
