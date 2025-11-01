@@ -580,7 +580,8 @@
       });
     }
 
-    isAuthenticated() { return this.currentUser !== null; }
+  // Consider guests as NOT authenticated for entry flows on the homepage
+  isAuthenticated() { return this.currentUser !== null && this.userType !== 'guest'; }
 
     redirectToGame() {
       sessionStorage.setItem('sci_high_authenticated', 'true');
