@@ -10,7 +10,8 @@ export default defineConfig({
       input: [
         './docs/index.html',
         './docs/game.html',
-        './docs/leaderboards.html'
+        './docs/leaderboards.html',
+        './docs/profile.html'
       ],
     },
   },

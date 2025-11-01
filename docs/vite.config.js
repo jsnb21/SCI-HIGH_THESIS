@@ -37,7 +37,8 @@ export default defineConfig({
           news: './news.html',
         'professor-dashboard': './professor-dashboard.html',
         developer: './developer.html',
-        admin: './admin.html'
+        admin: './admin.html',
+        profile: './profile.html'
       },
     },
   },
