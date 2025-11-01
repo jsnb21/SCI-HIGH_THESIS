@@ -548,7 +548,7 @@ export default class MainMenu extends Phaser.Scene {
         this.quitConfirmGroup.add(dialogBg);
         
         // Confirmation text
-        const confirmText = this.add.text(baseX, baseY - 50, 'Logout Confirmation', {
+    const confirmText = this.add.text(baseX, baseY - 50, 'Quit Game?', {
             ...DEFAULT_TEXT_STYLE,
             fontSize: '28px',
             color: '#F4CE14',
@@ -559,7 +559,7 @@ export default class MainMenu extends Phaser.Scene {
         this.quitConfirmGroup.add(confirmText);
         
         // Message text
-        const messageText = this.add.text(baseX, baseY - 10, 'Are you sure you want to logout?\nYour progress has been saved automatically.', {
+    const messageText = this.add.text(baseX, baseY - 10, 'Do you want to return to the home page?\nYour progress is saved automatically.', {
             ...DEFAULT_TEXT_STYLE,
             fontSize: '18px',
             color: '#ffffff',
@@ -582,7 +582,7 @@ export default class MainMenu extends Phaser.Scene {
         yesBg.strokeRoundedRect(baseX - btnSpacing - btnWidth / 2, baseY + 50 - btnHeight / 2, btnWidth, btnHeight, 16);
         this.quitConfirmGroup.add(yesBg);
         
-        const yesBtn = this.add.text(baseX - btnSpacing, baseY + 50, 'Yes, Logout', {
+    const yesBtn = this.add.text(baseX - btnSpacing, baseY + 50, 'Yes, Quit', {
             ...DEFAULT_TEXT_STYLE,
             fontSize: '24px',
             color: '#ff4444',
@@ -631,24 +631,7 @@ export default class MainMenu extends Phaser.Scene {
         // Use debounced click handler for Yes button
         const debouncedYesClick = createDebouncedClickHandler(() => {
             confirmSound.play();
-            
-            // Clear all user data and logout
-            localStorage.removeItem('sci_high_user');
-            localStorage.removeItem('sci_high_user_type');
-            sessionStorage.removeItem('sci_high_authenticated');
-            sessionStorage.removeItem('sci_high_user_type');
-            
-            // Clear any other game-specific storage
-            const keysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && (key.startsWith('sci_high_') || key.startsWith('sciHigh'))) {
-                    keysToRemove.push(key);
-                }
-            }
-            keysToRemove.forEach(key => localStorage.removeItem(key));
-            
-            // Redirect to login page
+            // Return to home page without logging out
             window.location.href = 'index.html';
         }, 300);
         
