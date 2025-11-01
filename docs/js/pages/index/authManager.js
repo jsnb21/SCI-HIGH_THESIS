@@ -6,6 +6,11 @@
       this.userType = null;
       this.firebaseInitialized = false;
       this.firebaseInitPromise = this.initializeAuth();
+      // Ready gate so pages can wait before enabling UI
+      this._readyResolve = null;
+      this.ready = new Promise((res)=>{ this._readyResolve = res; });
+      window.authReadyPromise = this.ready;
+      window.awaitAuthReady = () => (window.authReadyPromise || Promise.resolve());
       // Password hashing defaults
       this.pwdIterations = 100000;
       this.pwdSaltBytes = 16;
@@ -52,9 +57,17 @@
         this.updateUserInterface();
         this.maybeShowWelcomeBack();
         this.firebaseInitialized = true;
+        try {
+          this._readyResolve && this._readyResolve({ success: true, user: this.currentUser, userType: this.userType });
+          window.dispatchEvent(new CustomEvent('sci-high-auth-ready', { detail: { user: this.currentUser, userType: this.userType } }));
+        } catch(_) {}
       } catch (error) {
         console.error('❌ AuthManager initialization failed:', error);
         this.firebaseInitialized = false;
+        try {
+          this._readyResolve && this._readyResolve({ success: false, error: error?.message || 'init failed' });
+          window.dispatchEvent(new CustomEvent('sci-high-auth-ready', { detail: { success: false, error: error?.message || 'init failed' } }));
+        } catch(_) {}
       }
     }
 
