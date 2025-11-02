@@ -71,8 +71,8 @@ export default class ResultScreen extends BaseScene {
         const bloomAnalysis = this.computeBloomAnalysis();
         const bloomEnabled = true;
         const titleHeight = isMobile ? 80 : 100;
-        const statRowHeight = isMobile ? 45 : 50;
-        const statGap = isMobile ? 25 : 30;
+    const statRowHeight = isMobile ? 48 : 54;
+    const statGap = isMobile ? 32 : 44; // increased gaps so UI isn't too tight
         const rankSize = isMobile ? 100 : 140;
         const bloomHeaderHeight = isMobile ? 34 : 40;
         const bloomPanelHeight = bloomEnabled ? (isMobile ? 260 : 300) : 0;
@@ -112,14 +112,15 @@ export default class ResultScreen extends BaseScene {
             { label: 'Accuracy', value: `${accuracy.toFixed(0)}%`, color: accuracy >= 80 ? '#00ff88' : accuracy >= 60 ? '#ffaa00' : '#ff4444', icon: '🎯' },
             { label: 'TOTAL SCORE', value: this.totalScore, color: '#ffd700', icon: '' }
         ];
-        const leftSideX = -contentWidth * 0.3;
-        const rightSideX = contentWidth * 0.3;
+    const leftSideX = -contentWidth * 0.32;
+    const rightSideX = contentWidth * 0.32;
+    const valueX = leftSideX + Math.round(contentWidth * 0.36); // dynamic value column based on content width
         const statsStartY = -contentHeight/2 + titleHeight + 40;
         statsData.forEach((stat, index) => {
             const yPos = statsStartY + (index * (statRowHeight + statGap));
             const iconText = this.add.text(leftSideX - 50, yPos, stat.icon, { fontFamily: 'Arial', fontSize: `${statFontPx}px`, fontWeight: 'bold', color: stat.color }).setOrigin(0,0.5);
             const labelText = this.add.text(leftSideX - 10, yPos, stat.label, { fontFamily:'Arial', fontSize:`${statFontPx}px`, fontWeight:'800', color:'#ffffff', stroke:'#000000', strokeThickness:2 }).setOrigin(0,0.5);
-            const valueText = this.add.text(leftSideX + 420, yPos, stat.value.toString(), { fontFamily:'Arial', fontSize:`${statFontPx}px`, fontWeight:'900', color: stat.color, stroke:'#000000', strokeThickness:2 }).setOrigin(1,0.5);
+            const valueText = this.add.text(valueX, yPos, stat.value.toString(), { fontFamily:'Arial', fontSize:`${statFontPx}px`, fontWeight:'900', color: stat.color, stroke:'#000000', strokeThickness:2 }).setOrigin(1,0.5);
             if (stat.label === 'TOTAL SCORE') {
                 labelText.setFontSize(`${Math.floor(statFontPx * 1.2)}px`).setStyle({ fontWeight:'900', color:'#ffd700', stroke:'#ff8800', strokeThickness:3 });
                 valueText.setFontSize(`${Math.floor(statFontPx * 1.4)}px`).setStyle({ fontWeight:'900', color:'#ffd700', stroke:'#ff8800', strokeThickness:3 });
@@ -137,15 +138,12 @@ export default class ResultScreen extends BaseScene {
         this.resultContainer.add([rankText, rankLabel]);
         this.rankElements = [rankText, rankLabel];
 
-        // Bloom panel (bars only)
+        // Simplified Bloom suggestion card: show only the "Focus next" suggestion
         if (bloomEnabled) {
-            const panelYStart = (-contentHeight/2) + titleHeight + (5 * (statRowHeight + statGap)) + 20;
-            // Make analytics panel narrower than the main content to reduce horizontal footprint
-            const panelWidth = Math.max(
-                520, // minimum to keep labels readable
-                Math.min(contentWidth - 100, contentWidth * (isMobile ? 0.86 : 0.7))
-            );
-            const panelHeight = bloomPanelHeight;
+            const panelYStart = (-contentHeight/2) + titleHeight + (5 * (statRowHeight + statGap)) + 28;
+            const panelWidth = Math.min(contentWidth - 120, 640);
+            const panelHeight = isMobile ? 86 : 100;
+
             const bloomBg = this.add.graphics();
             bloomBg.fillStyle(0x0b1024, 0.92);
             bloomBg.fillRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 10);
@@ -153,73 +151,24 @@ export default class ResultScreen extends BaseScene {
             bloomBg.strokeRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 10);
             this.resultContainer.add(bloomBg);
 
-            const header = this.add.text(-panelWidth/2 + 14, panelYStart + 10, "Bloom's Analysis", { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.95)}px`, fontWeight:'900', color:'#F4CE14', stroke:'#000000', strokeThickness:2 }).setOrigin(0,0);
+            const header = this.add.text(-panelWidth/2 + 14, panelYStart + 10, "Focus next", { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.95)}px`, fontWeight:'900', color:'#F4CE14', stroke:'#000000', strokeThickness:2 }).setOrigin(0,0);
             this.resultContainer.add(header);
 
-            const margin = 18;
-            const panelLeft = -panelWidth/2;
-            const panelRight = panelWidth/2;
-            const chipsX = panelLeft + margin;
-            const labelColW = isMobile ? 140 : 160;
-            const statsRightX = panelRight - margin;
-            const rowGap = isMobile ? 30 : 34;
-            let chipY = panelYStart + bloomHeaderHeight + 14;
-
-            const data = bloomAnalysis.rows;
-            data.forEach((row, idx) => {
-                const acc = row.acc;
-                const attempts = row.correct + row.wrong;
-
-                // Left label
-                const name = this.add.text(chipsX, chipY, row.label, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.8)}px`, fontWeight:'800', color:'#ffffff' }).setOrigin(0,0.5);
-
-                // Right stats (created first so we can measure its width)
-                const attemptsText = attempts > 0 ? `${row.correct}/${row.wrong}` : '0/0';
-                const stats = this.add.text(
-                    statsRightX,
-                    chipY,
-                    `${acc}%  ${attemptsText}`,
-                    { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.7)}px`, fontWeight:'700', color:'#cfe2ff' }
-                ).setOrigin(1,0.5);
-
-                // Track placed to end just before stats with a minimal gap
-                const STAT_GAP_PX = isMobile ? 4 : 4;
-                const trackH = isMobile ? 12 : 14;
-                const trackX = chipsX + labelColW;
-                const trackMaxByStats = Math.max(80, (statsRightX - STAT_GAP_PX - stats.width) - trackX);
-                // Let the track extend close to the stats (up to ~85% of panel),
-                // but never beyond the measured space before the stats text.
-                const trackW = Math.max(120, Math.min(panelWidth * 0.85, trackMaxByStats));
-                const track = this.add.rectangle(trackX, chipY, trackW, trackH, 0x101935).setOrigin(0,0.5);
-                track.setStrokeStyle(1, 0x243166);
-
-                // Fill width aims to end close to stats while still proportional to accuracy
-                const proportional = trackW * Math.max(0, Math.min(1, acc/100));
-                const maxFillByStats = (statsRightX - STAT_GAP_PX - stats.width) - trackX;
-                const fillW = Math.max(0, Math.min(proportional, maxFillByStats, trackW * 0.99));
-                const fill = this.add.rectangle(trackX, chipY, 1, trackH, acc >= 80 ? 0x2ecc71 : acc >= 60 ? 0xf1c40f : 0xff6b6b).setOrigin(0,0.5);
-                this.tweens.add({ targets: fill, displayWidth: fillW, duration: 450, delay: 50*idx, ease:'Cubic.easeOut' });
-
-                this.resultContainer.add([name, track, fill, stats]);
-                chipY += rowGap;
-            });
-
             const t = bloomAnalysis.target;
-            if (t) {
-                const cardPad = 10;
-                const cardW = panelWidth - 28;
-                const cardH = isMobile ? 36 : 40;
-                const cardY = panelYStart + panelHeight - cardH/2 - 10;
-                const card = this.add.graphics();
-                card.fillStyle(0x11204a, 0.95);
-                card.fillRoundedRect(-cardW/2, cardY - cardH/2, cardW, cardH, 8);
-                card.lineStyle(2, 0x1e2a5a, 1);
-                card.strokeRoundedRect(-cardW/2, cardY - cardH/2, cardW, cardH, 8);
-                this.resultContainer.add(card);
-                const tip = `🎯 Focus next: ${t.label} — ${t.acc}% accuracy (${t.correct}/${t.correct + t.wrong}). ${t.tip}`;
-                const suggestion = this.add.text(0, cardY, tip, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx * 0.78)}px`, fontWeight:'800', color:'#d6e6ff', align:'center', wordWrap:{ width: cardW - 2*cardPad } }).setOrigin(0.5);
-                this.resultContainer.add(suggestion);
-            }
+            const cardPad = 12;
+            const cardW = panelWidth - 28;
+            const cardH = isMobile ? 44 : 52;
+            const cardY = panelYStart + panelHeight/2 + 6;
+            const card = this.add.graphics();
+            card.fillStyle(0x11204a, 0.95);
+            card.fillRoundedRect(-cardW/2, cardY - cardH/2, cardW, cardH, 8);
+            card.lineStyle(2, 0x1e2a5a, 1);
+            card.strokeRoundedRect(-cardW/2, cardY - cardH/2, cardW, cardH, 8);
+            this.resultContainer.add(card);
+
+            const tip = t ? `🎯 Focus next: ${t.label} — ${t.acc}% accuracy (${t.correct}/${t.correct + t.wrong}). ${t.tip}` : '🎯 No recommendations available';
+            const suggestion = this.add.text(0, cardY, tip, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx * 0.82)}px`, fontWeight:'800', color:'#d6e6ff', align:'center', wordWrap:{ width: cardW - 2*cardPad } }).setOrigin(0.5);
+            this.resultContainer.add(suggestion);
         }
 
         // Create back button - position it at the bottom with proper spacing
