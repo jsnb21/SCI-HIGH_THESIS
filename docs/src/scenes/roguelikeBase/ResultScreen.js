@@ -140,34 +140,36 @@ export default class ResultScreen extends BaseScene {
 
         // Simplified Bloom suggestion card: show only the "Focus next" suggestion
         if (bloomEnabled) {
+            // Wider, roomier Focus panel to avoid cramped layout
             const panelYStart = (-contentHeight/2) + titleHeight + (5 * (statRowHeight + statGap)) + 28;
-            const panelWidth = Math.min(contentWidth - 120, 640);
-            const panelHeight = isMobile ? 86 : 100;
+            const panelWidth = Math.min(Math.max(contentWidth - 80, 520), contentWidth * 0.95); // prefer wider nearly-full width but cap
+            const panelHeight = isMobile ? 110 : 140;
 
             const bloomBg = this.add.graphics();
             bloomBg.fillStyle(0x0b1024, 0.92);
-            bloomBg.fillRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 10);
+            bloomBg.fillRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 12);
             bloomBg.lineStyle(2, 0x1e2a5a, 1);
-            bloomBg.strokeRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 10);
+            bloomBg.strokeRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 12);
             this.resultContainer.add(bloomBg);
 
-            const header = this.add.text(-panelWidth/2 + 14, panelYStart + 10, "Focus next", { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.95)}px`, fontWeight:'900', color:'#F4CE14', stroke:'#000000', strokeThickness:2 }).setOrigin(0,0);
+            const header = this.add.text(-panelWidth/2 + 18, panelYStart + 12, "Focus next", { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*1.02)}px`, fontWeight:'900', color:'#F4CE14', stroke:'#000000', strokeThickness:2 }).setOrigin(0,0);
             this.resultContainer.add(header);
 
             const t = bloomAnalysis.target;
-            const cardPad = 12;
-            const cardW = panelWidth - 28;
-            const cardH = isMobile ? 44 : 52;
+            const cardPad = 14;
+            const cardW = panelWidth - 36;
+            const cardH = isMobile ? 60 : 78;
             const cardY = panelYStart + panelHeight/2 + 6;
             const card = this.add.graphics();
-            card.fillStyle(0x11204a, 0.95);
-            card.fillRoundedRect(-cardW/2, cardY - cardH/2, cardW, cardH, 8);
+            card.fillStyle(0x11204a, 0.96);
+            card.fillRoundedRect(-cardW/2, cardY - cardH/2, cardW, cardH, 10);
             card.lineStyle(2, 0x1e2a5a, 1);
-            card.strokeRoundedRect(-cardW/2, cardY - cardH/2, cardW, cardH, 8);
+            card.strokeRoundedRect(-cardW/2, cardY - cardH/2, cardW, cardH, 10);
             this.resultContainer.add(card);
 
             const tip = t ? `🎯 Focus next: ${t.label} — ${t.acc}% accuracy (${t.correct}/${t.correct + t.wrong}). ${t.tip}` : '🎯 No recommendations available';
-            const suggestion = this.add.text(0, cardY, tip, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx * 0.82)}px`, fontWeight:'800', color:'#d6e6ff', align:'center', wordWrap:{ width: cardW - 2*cardPad } }).setOrigin(0.5);
+            // Left-align text inside the card with ample padding so it wraps naturally
+            const suggestion = this.add.text(-cardW/2 + cardPad, cardY, tip, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx * 0.9)}px`, fontWeight:'700', color:'#d6e6ff', align:'left', wordWrap:{ width: cardW - 2*cardPad } }).setOrigin(0,0.5);
             this.resultContainer.add(suggestion);
         }
 
