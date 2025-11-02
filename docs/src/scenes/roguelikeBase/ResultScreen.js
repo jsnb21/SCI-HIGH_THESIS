@@ -137,67 +137,88 @@ export default class ResultScreen extends BaseScene {
         this.resultContainer.add([rankText, rankLabel]);
         this.rankElements = [rankText, rankLabel];
 
-        // Bloom panel: simplified — render only a compact 'Focus next' card
-        // Heavy per-category bars and tweens removed to improve responsiveness.
+        // Bloom panel (bars only)
         if (bloomEnabled) {
             const panelYStart = (-contentHeight/2) + titleHeight + (5 * (statRowHeight + statGap)) + 20;
-            const panelWidth = Math.min(contentWidth - 80, isMobile ? this.scale.width * 0.92 : contentWidth * 0.6);
-            const panelHeight = isMobile ? 80 : 90;
+            // Make analytics panel narrower than the main content to reduce horizontal footprint
+            const panelWidth = Math.max(
+                520, // minimum to keep labels readable
+                Math.min(contentWidth - 100, contentWidth * (isMobile ? 0.86 : 0.7))
+            );
+            const panelHeight = bloomPanelHeight;
+            const bloomBg = this.add.graphics();
+            bloomBg.fillStyle(0x0b1024, 0.92);
+            bloomBg.fillRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 10);
+            bloomBg.lineStyle(2, 0x1e2a5a, 1);
+            bloomBg.strokeRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 10);
+            this.resultContainer.add(bloomBg);
 
-            // Background card
-            const bloomCard = this.add.graphics();
-            bloomCard.fillStyle(0x0b1024, 0.94);
-            bloomCard.fillRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 10);
-            bloomCard.lineStyle(2, 0x1e2a5a, 1);
-            bloomCard.strokeRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 10);
-            this.resultContainer.add(bloomCard);
-
-            // Header
-            const header = this.add.text(-panelWidth/2 + 14, panelYStart + 10, "Learning suggestion", { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.95)}px`, fontWeight:'900', color:'#F4CE14', stroke:'#000000', strokeThickness:2 }).setOrigin(0,0);
+            const header = this.add.text(-panelWidth/2 + 14, panelYStart + 10, "Bloom's Analysis", { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.95)}px`, fontWeight:'900', color:'#F4CE14', stroke:'#000000', strokeThickness:2 }).setOrigin(0,0);
             this.resultContainer.add(header);
 
-            // Focus next summary (compact, no per-row work or animations)
+            const margin = 18;
+            const panelLeft = -panelWidth/2;
+            const panelRight = panelWidth/2;
+            const chipsX = panelLeft + margin;
+            const labelColW = isMobile ? 140 : 160;
+            const statsRightX = panelRight - margin;
+            const rowGap = isMobile ? 30 : 34;
+            let chipY = panelYStart + bloomHeaderHeight + 14;
+
+            const data = bloomAnalysis.rows;
+            data.forEach((row, idx) => {
+                const acc = row.acc;
+                const attempts = row.correct + row.wrong;
+
+                // Left label
+                const name = this.add.text(chipsX, chipY, row.label, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.8)}px`, fontWeight:'800', color:'#ffffff' }).setOrigin(0,0.5);
+
+                // Right stats (created first so we can measure its width)
+                const attemptsText = attempts > 0 ? `${row.correct}/${row.wrong}` : '0/0';
+                const stats = this.add.text(
+                    statsRightX,
+                    chipY,
+                    `${acc}%  ${attemptsText}`,
+                    { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.7)}px`, fontWeight:'700', color:'#cfe2ff' }
+                ).setOrigin(1,0.5);
+
+                // Track placed to end just before stats with a minimal gap
+                const STAT_GAP_PX = isMobile ? 4 : 4;
+                const trackH = isMobile ? 12 : 14;
+                const trackX = chipsX + labelColW;
+                const trackMaxByStats = Math.max(80, (statsRightX - STAT_GAP_PX - stats.width) - trackX);
+                // Let the track extend close to the stats (up to ~85% of panel),
+                // but never beyond the measured space before the stats text.
+                const trackW = Math.max(120, Math.min(panelWidth * 0.85, trackMaxByStats));
+                const track = this.add.rectangle(trackX, chipY, trackW, trackH, 0x101935).setOrigin(0,0.5);
+                track.setStrokeStyle(1, 0x243166);
+
+                // Fill width aims to end close to stats while still proportional to accuracy
+                const proportional = trackW * Math.max(0, Math.min(1, acc/100));
+                const maxFillByStats = (statsRightX - STAT_GAP_PX - stats.width) - trackX;
+                const fillW = Math.max(0, Math.min(proportional, maxFillByStats, trackW * 0.99));
+                const fill = this.add.rectangle(trackX, chipY, 1, trackH, acc >= 80 ? 0x2ecc71 : acc >= 60 ? 0xf1c40f : 0xff6b6b).setOrigin(0,0.5);
+                this.tweens.add({ targets: fill, displayWidth: fillW, duration: 450, delay: 50*idx, ease:'Cubic.easeOut' });
+
+                this.resultContainer.add([name, track, fill, stats]);
+                chipY += rowGap;
+            });
+
             const t = bloomAnalysis.target;
             if (t) {
-                const attempts = t.correct + t.wrong;
-                const label = `🎯 Focus: ${t.label} — ${t.acc}% (${t.correct}/${Math.max(1, attempts)})`;
-                const tipShort = t.tip || '';
-
-                const labelText = this.add.text( -panelWidth/2 + 16, panelYStart + 36, label, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.82)}px`, fontWeight:'800', color:'#d6e6ff' }).setOrigin(0,0);
-                const tipText = this.add.text( -panelWidth/2 + 16, panelYStart + 56, tipShort, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.7)}px`, fontWeight:'700', color:'#cfe2ff', wordWrap:{ width: panelWidth - 32 } }).setOrigin(0,0);
-                this.resultContainer.add([labelText, tipText]);
-
-                // Practice button (quick 3-question drill)
-                const practiceW = isMobile ? 120 : 140;
-                const practiceH = isMobile ? 36 : 40;
-                const practiceX = (panelWidth/2) - practiceW/2 - 12; // place at right side of card
-                const practiceY = panelYStart + panelHeight/2 - practiceH/2 - 6;
-                const practiceBg = this.add.rectangle(practiceX, practiceY, practiceW, practiceH, 0x2c3e50).setOrigin(0.5);
-                practiceBg.setStrokeStyle(2, 0x4a90e2);
-                const practiceText = this.add.text(practiceX, practiceY, 'Practice 3', { fontFamily:'Arial', fontSize:`${isMobile?14:16}px`, fontWeight:'800', color:'#ffffff' }).setOrigin(0.5);
-                practiceBg.setInteractive({ useHandCursor: true })
-                    .on('pointerover', () => { practiceBg.setFillStyle(0x4a90e2); practiceText.setScale(1.03); })
-                    .on('pointerout', () => { practiceBg.setFillStyle(0x2c3e50); practiceText.setScale(1); })
-                    .on('pointerdown', () => {
-                        try { this.sound.play && this.sound.play('se_confirm'); } catch(e){}
-                        // Build practice questions (try cached questions first)
-                        const targetKey = (t.key || t.label || '').toLowerCase();
-                        const practiceQuestions = this.getPracticeQuestions(targetKey, 3);
-                        if (practiceQuestions && practiceQuestions.length) {
-                            this.scene.start('CustomQuizScene', { topic: targetKey, questions: practiceQuestions });
-                        } else {
-                            // Fallback: start CustomQuizScene with topic only (uses defaults)
-                            this.scene.start('CustomQuizScene', { topic: targetKey });
-                        }
-                    });
-                // Start hidden; animate in sequence alongside other UI elements
-                practiceBg.setAlpha(0).setScale(0.9);
-                practiceText.setAlpha(0).setScale(0.9);
-                this.resultContainer.add([practiceBg, practiceText]);
-                this.practiceButtonElements = [practiceBg, practiceText];
-            } else {
-                const msg = this.add.text(0, panelYStart + panelHeight/2, "No additional learning suggestions.", { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*0.82)}px`, fontWeight:'800', color:'#d6e6ff' }).setOrigin(0.5);
-                this.resultContainer.add(msg);
+                const cardPad = 10;
+                const cardW = panelWidth - 28;
+                const cardH = isMobile ? 36 : 40;
+                const cardY = panelYStart + panelHeight - cardH/2 - 10;
+                const card = this.add.graphics();
+                card.fillStyle(0x11204a, 0.95);
+                card.fillRoundedRect(-cardW/2, cardY - cardH/2, cardW, cardH, 8);
+                card.lineStyle(2, 0x1e2a5a, 1);
+                card.strokeRoundedRect(-cardW/2, cardY - cardH/2, cardW, cardH, 8);
+                this.resultContainer.add(card);
+                const tip = `🎯 Focus next: ${t.label} — ${t.acc}% accuracy (${t.correct}/${t.correct + t.wrong}). ${t.tip}`;
+                const suggestion = this.add.text(0, cardY, tip, { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx * 0.78)}px`, fontWeight:'800', color:'#d6e6ff', align:'center', wordWrap:{ width: cardW - 2*cardPad } }).setOrigin(0.5);
+                this.resultContainer.add(suggestion);
             }
         }
 
@@ -327,17 +348,6 @@ export default class ResultScreen extends BaseScene {
                 duration: 400,
                 ease: 'Back.out'
             });
-            // Also reveal practice button if it exists
-            if (this.practiceButtonElements) {
-                this.tweens.add({
-                    targets: this.practiceButtonElements,
-                    alpha: 1,
-                    scaleX: 1,
-                    scaleY: 1,
-                    duration: 400,
-                    ease: 'Back.out'
-                });
-            }
         });
     }
 
@@ -401,68 +411,6 @@ export default class ResultScreen extends BaseScene {
         if (target) target.tip = tips[target.key];
 
         return { rows, target, total: totalAnswered };
-    }
-
-    /**
-     * Try to build up to `count` practice questions matching a bloom/topic key from the game's cached questions JSON.
-     * Returns an array of question objects suitable for `CustomQuizScene` or null if none found.
-     */
-    getPracticeQuestions(targetKey, count = 3) {
-        try {
-            let raw = null;
-            if (this.cache && this.cache.json && typeof this.cache.json.get === 'function') {
-                raw = this.cache.json.get('questions');
-            } else if (this.cache && typeof this.cache.get === 'function') {
-                raw = this.cache.get('questions');
-            }
-            if (!raw) return null;
-
-            let arr = [];
-            if (Array.isArray(raw)) arr = raw.slice();
-            else if (raw && typeof raw === 'object') arr = Object.values(raw);
-            if (!arr.length) return null;
-
-            const matches = arr.filter(q => {
-                try {
-                    const bloom = ((q.bloom || q.bloomTarget || q.bloomLevel || q.tag || (q.tags && q.tags.join && q.tags.join(' ')) || q.topic) || '').toString().toLowerCase();
-                    if (!bloom) return false;
-                    return bloom.indexOf((targetKey || '').toString().toLowerCase()) !== -1;
-                } catch (e) { return false; }
-            });
-
-            const picked = [];
-            for (const q of matches) {
-                if (picked.length >= count) break;
-                picked.push({
-                    id: q.id || q._id || q.key || null,
-                    question: q.question || q.prompt || q.text || 'Practice question',
-                    options: q.options || q.choices || q.answers || ['True','False'],
-                    correctIndex: (typeof q.correctIndex === 'number') ? q.correctIndex : (typeof q.answerIndex === 'number' ? q.answerIndex : 0),
-                    topic: q.topic || q.subject || null,
-                    bloom: q.bloom || q.bloomTarget || q.bloomLevel || null
-                });
-            }
-
-            // If not enough matches, try to fill with randoms
-            if (picked.length < count) {
-                const others = arr.filter(q => !matches.includes(q));
-                for (let i = 0; i < others.length && picked.length < count; i++) {
-                    const q = others[i];
-                    picked.push({
-                        id: q.id || q._id || q.key || null,
-                        question: q.question || q.prompt || q.text || 'Practice question',
-                        options: q.options || q.choices || q.answers || ['True','False'],
-                        correctIndex: (typeof q.correctIndex === 'number') ? q.correctIndex : (typeof q.answerIndex === 'number' ? q.answerIndex : 0),
-                        topic: q.topic || q.subject || null,
-                        bloom: q.bloom || q.bloomTarget || q.bloomLevel || null
-                    });
-                }
-            }
-
-            return picked.length ? picked.slice(0, count) : null;
-        } catch (e) {
-            return null;
-        }
     }
 
     createRankGlowAnimation() {
