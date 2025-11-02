@@ -152,8 +152,8 @@ export default class ResultScreen extends BaseScene {
             bloomBg.strokeRoundedRect(-panelWidth/2, panelYStart, panelWidth, panelHeight, 12);
             this.resultContainer.add(bloomBg);
 
-            const header = this.add.text(-panelWidth/2 + 18, panelYStart + 12, "Focus next", { fontFamily:'Arial', fontSize:`${Math.floor(statFontPx*1.02)}px`, fontWeight:'900', color:'#F4CE14', stroke:'#000000', strokeThickness:2 }).setOrigin(0,0);
-            this.resultContainer.add(header);
+            // removed separate header to avoid visual overlap with the suggestion text;
+            // the suggestion card includes the "Focus next" label inline
 
             const t = bloomAnalysis.target;
             const cardPad = 14;
