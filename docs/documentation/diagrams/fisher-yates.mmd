@@ -1,0 +1,44 @@
+%% Fisher–Yates Shuffle (Unbiased In-place Randomization)
+%% Context: Use for shuffling answers, enemy spawns, or loot tables in main_gameplay.js
+%% Complexity: O(n), Space: O(1), Requires uniform RNG on [0, i]
+
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'background': '#ffffff',
+    'textColor': '#000000',
+    'primaryTextColor': '#000000',
+    'edgeLabelBackground': '#ffffff',
+    'lineColor': '#111111',
+    'fontFamily': 'Inter, Segoe UI, Arial, Helvetica, sans-serif',
+    'fontSize': '16px'
+  },
+  'flowchart': {
+    'htmlLabels': false,
+    'padding': 12,
+    'nodeSpacing': 40,
+    'rankSpacing': 50
+  }
+}}%%
+flowchart TD
+  A((Start)) --> B["i = n - 1 (last index)"]
+  B --> C{Is i > 0?}
+  C -- "No" --> Z([Done])
+  C -- "Yes" --> D["j = random integer in   [0, i]"]
+  D --> E["Swap a[i] ↔ a[j]"]
+  E --> F["i = i - 1"]
+  F --> C
+
+  %% subgraph Notes
+    %% N1["• In-place: swaps happen inside the same array\n• Unbiased if j is uniform over [0, i]\n• Each permutation has equal probability\n• Perfect for shuffling quiz answers or spawn orders"]
+  %% end
+
+  %% Global white theme for dark backgrounds (white nodes, dark borders, black text)
+  classDef default fill:#ffffff,stroke:#111111,color:#000000,stroke-width:1.5px
+  linkStyle default stroke:#111111,color:#000000,stroke-width:1.5px
+
+  %% Node-specific + step styling with dark borders for readability
+  style A fill:#ffffff,stroke:#111111,color:#000000
+  style Z fill:#ffffff,stroke:#111111,color:#000000
+  classDef step fill:#ffffff,stroke:#111111,color:#000000,stroke-width:1.5px
+  class B,C,D,E,F step
