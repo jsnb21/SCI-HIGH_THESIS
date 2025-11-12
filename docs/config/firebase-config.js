@@ -174,20 +174,34 @@
         return;
       }
 
-      const config = await this.loadConfig();
-      
+      let config = await this.loadConfig();
+
       if (!config) {
+        const baseLocal = (window.__APP_BASE__ || '/');
         const isLocalhost = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname);
         console.error('❌ Firebase API key is required but not configured.');
         console.error('Accepted formats in env-config(.local).json:');
         console.error('  { "apiKey": "YOUR_KEY" }  // preferred');
         console.error('  { "FIREBASE_API_KEY": "YOUR_KEY", "FIREBASE_AUTH_DOMAIN": "...", etc } // legacy supported');
-        console.error('Looked in paths: ./config/, config/, ' + base + 'config/');
+        console.error('Looked in paths: ./config/, config/, ' + baseLocal + 'config/');
         if (isLocalhost) {
-          console.warn('Running on localhost without Firebase credentials. Proceeding without initialization. Some features will be disabled.');
-          return; // allow app to continue locally
+          // Developer-friendly fallback: use project defaults embedded in services for local tools (admin/preview/etc.)
+          // Note: These are already present in repo service files. This avoids no-app errors during local development.
+          const fallback = {
+            apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
+            authDomain: "sci-high-website.firebaseapp.com",
+            databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "sci-high-website",
+            storageBucket: "sci-high-website.appspot.com",
+            messagingSenderId: "451463202515",
+            appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
+          };
+          console.warn('Using fallback Firebase config for localhost. For production, configure env-config.json.');
+          this.config = fallback;
+          config = fallback;
+        } else {
+          throw new Error('Firebase API key not configured. Add apiKey or FIREBASE_API_KEY to env-config.json');
         }
-        throw new Error('Firebase API key not configured. Add apiKey or FIREBASE_API_KEY to env-config.json');
       }
 
       try {

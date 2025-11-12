@@ -384,6 +384,237 @@
     } catch (e) { setStatus('Reset failed: ' + e.message, 'error'); }
   }
 
+  // Delete User Account (by Student ID or Email)
+  async function mapEmailToStudentId(db, email) {
+    try {
+      const snap = await db.ref('students').orderByChild('email').equalTo(email).once('value');
+      if (snap.exists()) {
+        const val = snap.val();
+        const firstKey = Object.keys(val)[0];
+        return val[firstKey]?.studentId || null;
+      }
+    } catch(_) {}
+    return null;
+  }
+
+  async function deleteLeaderboardsByStudentId(db, studentId) {
+    try {
+      const lbSnap = await db.ref('leaderboards').orderByChild('studentId').equalTo(studentId).once('value');
+      if (lbSnap.exists()) {
+        const updates = {};
+        Object.keys(lbSnap.val()).forEach(k => { updates[`leaderboards/${k}`] = null; });
+        if (Object.keys(updates).length) await db.ref().update(updates);
+      }
+    } catch(_) {}
+  }
+
+  async function deleteByStudentId(studentId) {
+    const db = await ensureFirebaseReady();
+    const id = (studentId || '').trim();
+    if (!id) throw new Error('Student ID required');
+
+    // Remove from students (records keyed by push key)
+    try {
+      const studentsSnapshot = await db.ref('students').orderByChild('studentId').equalTo(id).once('value');
+      if (studentsSnapshot.exists()) {
+        const updates = {};
+        Object.keys(studentsSnapshot.val()).forEach(k => { updates[`students/${k}`] = null; });
+        if (Object.keys(updates).length) await db.ref().update(updates);
+      }
+    } catch(_) {}
+
+    // Remove career stats
+    try { await db.ref(`student_career_stats/${id}`).remove(); } catch(_) {}
+
+    // Remove story progress
+    try { await db.ref(`story_progress/${id}`).remove(); } catch(_) {}
+
+    // Remove gameplay data entries
+    try {
+      const gpSnap = await db.ref('gameplay_data').orderByChild('studentId').equalTo(id).once('value');
+      if (gpSnap.exists()) {
+        const updates = {};
+        Object.keys(gpSnap.val()).forEach(k => { updates[`gameplay_data/${k}`] = null; });
+        if (Object.keys(updates).length) await db.ref().update(updates);
+      }
+    } catch(_) {}
+
+    // Remove leaderboard entries (if any)
+    try { await deleteLeaderboardsByStudentId(db, id); } catch(_) {}
+
+    // Remove password reset artifacts
+    try { await db.ref(`password_resets/approved/${id}`).remove(); } catch(_) {}
+    try { await db.ref(`password_resets/codes/${id}`).remove(); } catch(_) {}
+    try {
+      const reqSnap = await db.ref('password_resets/requests').once('value');
+      if (reqSnap.exists()) {
+        const updates = {};
+        Object.entries(reqSnap.val()).forEach(([k, v]) => { if (v && v.studentId === id) updates[`password_resets/requests/${k}`] = null; });
+        if (Object.keys(updates).length) await db.ref().update(updates);
+      }
+    } catch(_) {}
+
+    return true;
+  }
+
+  async function deleteByEmail(email) {
+    const db = await ensureFirebaseReady();
+    const em = (email || '').trim().toLowerCase();
+    if (!em) throw new Error('Email required');
+
+    // Remove general_users by email -> uid(s)
+    try {
+      const guSnap = await db.ref('general_users').orderByChild('email').equalTo(em).once('value');
+      if (guSnap.exists()) {
+        const updates = {};
+        Object.keys(guSnap.val()).forEach(uid => { updates[`general_users/${uid}`] = null; });
+        if (Object.keys(updates).length) await db.ref().update(updates);
+      }
+    } catch(_) {}
+
+    // Remove professors by email -> uid(s)
+    try {
+      const profSnap = await db.ref('professors').orderByChild('email').equalTo(em).once('value');
+      if (profSnap.exists()) {
+        const updates = {};
+        Object.keys(profSnap.val()).forEach(uid => { updates[`professors/${uid}`] = null; });
+        if (Object.keys(updates).length) await db.ref().update(updates);
+      }
+    } catch(_) {}
+
+    // If this email is tied to a student profile, map to studentId and cascade delete
+    try {
+      const studentId = await mapEmailToStudentId(db, em);
+      if (studentId) { await deleteByStudentId(studentId); }
+    } catch(_) {}
+
+    return true;
+  }
+
+  // Build a detailed preview for deletion
+  async function buildDeletePreview(ident) {
+    const db = await ensureFirebaseReady();
+    const id = (ident || '').trim();
+    const isEmail = /@/.test(id);
+    const preview = {
+      identifier: id,
+      resolvedStudentId: null,
+      student: { exists: false, keys: [], name: null, department: null },
+      counts: {
+        careerStats: 0,
+        storyProgress: 0,
+        gameplayData: 0,
+        leaderboards: 0,
+        resetRequests: 0,
+        resetApproved: 0,
+        resetCodes: 0
+      },
+      generalUsers: { count: 0, uids: [], names: [] },
+      professors: { count: 0, uids: [], names: [] }
+    };
+
+    if (isEmail) {
+      // General users by email
+      try {
+        const gu = await db.ref('general_users').orderByChild('email').equalTo(id.toLowerCase()).once('value');
+        if (gu.exists()) {
+          const val = gu.val();
+          preview.generalUsers.count = Object.keys(val).length;
+          preview.generalUsers.uids = Object.keys(val);
+          preview.generalUsers.names = Object.values(val).map(v => v?.fullName || v?.email || '');
+        }
+      } catch(_) {}
+      // Professors by email
+      try {
+        const pr = await db.ref('professors').orderByChild('email').equalTo(id.toLowerCase()).once('value');
+        if (pr.exists()) {
+          const val = pr.val();
+          preview.professors.count = Object.keys(val).length;
+          preview.professors.uids = Object.keys(val);
+          preview.professors.names = Object.values(val).map(v => v?.fullName || v?.email || '');
+        }
+      } catch(_) {}
+      // Map to studentId via students.email
+      try {
+        const studentId = await mapEmailToStudentId(db, id.toLowerCase());
+        if (studentId) preview.resolvedStudentId = studentId;
+      } catch(_) {}
+    } else {
+      preview.resolvedStudentId = id;
+    }
+
+    if (preview.resolvedStudentId) {
+      const sid = preview.resolvedStudentId;
+      // Students by studentId
+      try {
+        const st = await db.ref('students').orderByChild('studentId').equalTo(sid).once('value');
+        if (st.exists()) {
+          const val = st.val();
+          preview.student.exists = true;
+          preview.student.keys = Object.keys(val);
+          const first = val[preview.student.keys[0]] || {};
+          preview.student.name = first.fullName || `${first.firstName || ''} ${first.lastName || ''}`.trim() || null;
+          preview.student.department = first.department || null;
+        }
+      } catch(_) {}
+      // Career stats
+      try { const cs = await db.ref(`student_career_stats/${sid}`).once('value'); preview.counts.careerStats = cs.exists() ? 1 : 0; } catch(_) {}
+      // Story progress
+      try { const sp = await db.ref(`story_progress/${sid}`).once('value'); preview.counts.storyProgress = sp.exists() ? Object.keys(sp.val()||{}).length : 0; } catch(_) {}
+      // Gameplay data count
+      try { const gp = await db.ref('gameplay_data').orderByChild('studentId').equalTo(sid).once('value'); preview.counts.gameplayData = gp.exists() ? Object.keys(gp.val()).length : 0; } catch(_) {}
+      // Leaderboards count
+      try { const lb = await db.ref('leaderboards').orderByChild('studentId').equalTo(sid).once('value'); preview.counts.leaderboards = lb.exists() ? Object.keys(lb.val()).length : 0; } catch(_) {}
+      // Password resets
+      try { const ap = await db.ref(`password_resets/approved/${sid}`).once('value'); preview.counts.resetApproved = ap.exists() ? 1 : 0; } catch(_) {}
+      try { const cd = await db.ref(`password_resets/codes/${sid}`).once('value'); preview.counts.resetCodes = cd.exists() ? 1 : 0; } catch(_) {}
+      try {
+        const rq = await db.ref('password_resets/requests').once('value');
+        if (rq.exists()) {
+          const val = rq.val();
+          preview.counts.resetRequests = Object.values(val).filter(v => v && v.studentId === sid).length;
+        }
+      } catch(_) {}
+    }
+
+    return preview;
+  }
+
+  function renderDeletePreview(preview) {
+    const identEl = document.getElementById('preview-ident');
+    const studentEl = document.getElementById('preview-student');
+    const studentRecEl = document.getElementById('preview-student-records');
+    const userRecEl = document.getElementById('preview-user-records');
+    const otherEl = document.getElementById('preview-other');
+    if (identEl) identEl.textContent = preview.identifier;
+    if (studentEl) studentEl.textContent = preview.resolvedStudentId ? `Resolved Student ID: ${preview.resolvedStudentId}` : 'No Student ID found';
+    if (studentRecEl) {
+      studentRecEl.innerHTML = '';
+      const rows = [];
+      rows.push(`<div>Students: ${preview.student.exists ? 'FOUND' : 'not found'} ${preview.student.name ? '(' + preview.student.name + ')' : ''}</div>`);
+      rows.push(`<div>Career Stats: ${preview.counts.careerStats}</div>`);
+      rows.push(`<div>Story Progress entries: ${preview.counts.storyProgress}</div>`);
+      rows.push(`<div>Gameplay Data entries: ${preview.counts.gameplayData}</div>`);
+      rows.push(`<div>Leaderboards entries: ${preview.counts.leaderboards}</div>`);
+      studentRecEl.innerHTML = rows.join('');
+    }
+    if (userRecEl) {
+      userRecEl.innerHTML = '';
+      const rows = [];
+      rows.push(`<div>General Users: ${preview.generalUsers.count}${preview.generalUsers.names.length ? ' (' + preview.generalUsers.names.slice(0,2).join(', ') + (preview.generalUsers.names.length>2 ? ', …' : '') + ')' : ''}</div>`);
+      rows.push(`<div>Professors: ${preview.professors.count}${preview.professors.names.length ? ' (' + preview.professors.names.slice(0,2).join(', ') + (preview.professors.names.length>2 ? ', …' : '') + ')' : ''}</div>`);
+      userRecEl.innerHTML = rows.join('');
+    }
+    if (otherEl) {
+      otherEl.innerHTML = '';
+      const rows = [];
+      rows.push(`<div>Password Reset (approved): ${preview.counts.resetApproved}</div>`);
+      rows.push(`<div>Password Reset (codes): ${preview.counts.resetCodes}</div>`);
+      rows.push(`<div>Password Reset requests: ${preview.counts.resetRequests}</div>`);
+      otherEl.innerHTML = rows.join('');
+    }
+  }
+
   // Wire up
   document.addEventListener('DOMContentLoaded', async () => {
     await loadAdminPassword();
@@ -414,5 +645,39 @@
     document.getElementById('btn-reset-single').addEventListener('click', () => { const id = $('#single-student-id').value.trim(); if (!id) { alert('Enter a Student ID.'); return; } const label = document.getElementById('confirm-student-id'); if (label) label.textContent = id; const blk = document.getElementById('confirm-reset-single'); if (blk) blk.classList.remove('hidden'); });
     document.getElementById('btn-cancel-reset-single').addEventListener('click', () => { const blk = document.getElementById('confirm-reset-single'); if (blk) blk.classList.add('hidden'); });
     document.getElementById('btn-confirm-reset-single').addEventListener('click', resetSingleStudent);
+
+    // Delete User wiring
+    // Delete User modal wiring
+    const delBtn = document.getElementById('btn-delete-user');
+    const delIdentInput = document.getElementById('del-identifier');
+    const modal = document.getElementById('delete-user-modal');
+    const closeX = document.getElementById('btn-close-delete-modal');
+    const modalCancel = document.getElementById('btn-cancel-delete-user');
+    const modalConfirm = document.getElementById('btn-confirm-delete-user');
+    if (delBtn && delIdentInput && modal && closeX && modalCancel && modalConfirm) {
+      delBtn.addEventListener('click', async () => {
+        const ident = (delIdentInput.value || '').trim();
+        if (!ident) { alert('Enter a Student ID or Email.'); return; }
+        try {
+          setStatus('Building deletion preview...');
+          const preview = await buildDeletePreview(ident);
+          renderDeletePreview(preview);
+          setStatus('Preview ready. Review details before confirming.', 'success');
+          modal.classList.remove('hidden');
+        } catch(e) { setStatus('Failed to build preview: ' + (e?.message || 'Unknown error'), 'error'); }
+      });
+      const hideModal = () => modal.classList.add('hidden');
+      closeX.addEventListener('click', hideModal);
+      modalCancel.addEventListener('click', hideModal);
+      modalConfirm.addEventListener('click', async () => {
+        const ident = (delIdentInput.value || '').trim();
+        hideModal();
+        try {
+          setStatus('Deleting user data...');
+          if (/@/.test(ident)) { await deleteByEmail(ident); } else { await deleteByStudentId(ident); }
+          setStatus('User data deleted.', 'success');
+        } catch(e) { setStatus('Delete failed: ' + (e?.message || 'Unknown error'), 'error'); }
+      });
+    }
   });
 })();

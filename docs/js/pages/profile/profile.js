@@ -254,8 +254,22 @@
           if (uid && window.authManager?.userType === 'general') { await db.ref(`general_users/${uid}`).remove(); }
         } catch(_) {}
 
-        // Attempt auth user deletion (may require re-auth; ignore failure)
-        try { await firebase.auth().currentUser?.delete(); } catch(_) {}
+        // Attempt auth user deletion: reauthenticate first when possible
+        try {
+          const user = firebase.auth().currentUser;
+          if (user) {
+            // If we have the email and this looks like Email/Password user, ask for password
+            const email = user.email || ((qs && qs('sec-general-email')) ? (qs('sec-general-email').value||'').trim() : '');
+            if (email && firebase.auth.EmailAuthProvider) {
+              const pwd = prompt('To permanently delete your account, please enter your password:');
+              if (pwd) {
+                const cred = firebase.auth.EmailAuthProvider.credential(email, pwd);
+                await user.reauthenticateWithCredential(cred);
+              }
+            }
+            await user.delete();
+          }
+        } catch(_) { /* If deletion fails (e.g., wrong password or not recent), we still removed DB data */ }
 
         return { success: true };
       } else {

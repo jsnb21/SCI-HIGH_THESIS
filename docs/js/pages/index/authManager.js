@@ -559,7 +559,45 @@
         localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
         this.userType = 'general'; this.updateProfessorTabVisibility(); this.updateUserInterface();
         return { success: true, message: 'Account created successfully!', user: this.currentUser };
-      } catch (error) { return { success: false, error: error.message }; }
+      } catch (error) {
+        // If the email already exists, attempt to sign the user in with the provided password
+        if (error && (error.code === 'auth/email-already-in-use' || /email.*already.*in use/i.test(error.message || ''))) {
+          try {
+            const signIn = await firebase.auth().signInWithEmailAndPassword(formData.email, formData.password);
+            const user = signIn.user;
+            // Ensure a general_users profile exists
+            const ref = firebase.database().ref('general_users').child(user.uid);
+            const snap = await ref.once('value');
+            if (!snap.exists()) {
+              await ref.set({
+                fullName: formData.fullName,
+                email: formData.email,
+                department: formData.department || 'General',
+                strandYear: formData.year || 'None',
+                createdAt: new Date().toISOString(),
+                gameData: { totalPoints: 0, achievements: [], courseProgress: {} }
+              });
+            } else {
+              // Optionally update basic profile fields if blank
+              const val = snap.val() || {};
+              const patch = {};
+              if (!val.fullName && formData.fullName) patch.fullName = formData.fullName;
+              if (!val.department && formData.department) patch.department = formData.department;
+              if (!val.strandYear && formData.year) patch.strandYear = formData.year;
+              if (Object.keys(patch).length) { patch.updatedAt = new Date().toISOString(); await ref.update(patch); }
+            }
+            this.currentUser = { uid: user.uid, email: user.email, type: 'general', profile: { fullName: formData.fullName || (snap && snap.val()?.fullName) || user.email, email: user.email, department: formData.department || 'General', strandYear: formData.year || 'None' } };
+            localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
+            this.userType = 'general'; this.updateProfessorTabVisibility(); this.updateUserInterface();
+            return { success: true, message: 'Signed into existing account.', user: this.currentUser, reused: true };
+          } catch (signInErr) {
+            // Could be wrong password; offer password reset path
+            try { await firebase.auth().sendPasswordResetEmail(formData.email); } catch(_) {}
+            return { success: false, error: 'Email is already registered. We sent a password reset link to your email. Please reset your password and sign in.' , code: 'EMAIL_IN_USE_RESET_SENT' };
+          }
+        }
+        return { success: false, error: error.message };
+      }
     }
 
     createGuestSession() {

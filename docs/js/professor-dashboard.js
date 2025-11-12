@@ -865,9 +865,21 @@ class ProfessorDashboard {
         this.database = window.firebase.database();
         this.isFirebaseInitialized = true;
         try {
+          // Debounced connectivity warning to avoid transient false-positives during startup
+          this._connWarnTimer = null;
           this.database.ref('.info/connected').on('value', (snapshot) => {
-            if (snapshot.val() !== true) {
-              this.showWarning('Connection to Firebase lost. Some features may not work properly.');
+            const connected = snapshot.val() === true;
+            if (connected) {
+              if (this._connWarnTimer) { clearTimeout(this._connWarnTimer); this._connWarnTimer = null; }
+              // Optionally, inform on restore. Keep quiet by default to reduce noise.
+              return;
+            }
+            if (!this._connWarnTimer) {
+              this._connWarnTimer = setTimeout(() => {
+                // If another 'connected' event fired, timer would have been cleared
+                this.showWarning('Connection to Firebase lost. Some features may not work properly.');
+                this._connWarnTimer = null;
+              }, 2000); // wait 2s to avoid flashing on initial connect
             }
           });
         } catch(_) {}
