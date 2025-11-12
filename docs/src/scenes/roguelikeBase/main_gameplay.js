@@ -2135,8 +2135,11 @@ export default class MainGameplay extends BaseScene {
 
     showIntensityNotification() {
         // Don't show the dramatic intensity notification for custom quizzes
+        // Accept multiple possible courseTopic formats (e.g. 'custom', 'custom-<id>')
+        // and also guard if a customQuiz object is present on the scene.
         try {
-            if (String(this.courseTopic || '').toLowerCase() === 'custom') return;
+            const topic = String(this.courseTopic || '').toLowerCase();
+            if (topic === 'custom' || topic.includes('custom') || this.customQuiz) return;
         } catch (_) {}
 
         // Create dramatic notification
