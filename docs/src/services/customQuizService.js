@@ -1,4 +1,5 @@
 // customQuizService.js
+import authService from './authService.js';
 // Service to load professor-created custom quizzes from Firebase Realtime Database or localStorage fallback
 // Assumptions:
 // 1. Firebase has been initialized elsewhere (similar to authService) and is accessible via window.firebase
@@ -58,6 +59,15 @@ class CustomQuizService {
    * @returns {Promise<{questions: Array, meta: Object} | null>}
    */
   async loadCustomQuiz({ professorId, quizId }) {
+    // Ensure Firebase is ready and user is authenticated (anonymous ok)
+    try {
+      const ok = await authService.ensureFirebaseInitialized();
+      if (ok) {
+        // Best-effort auth; if it fails, we'll still fall back to local cache
+        try { await authService.ensureAuthenticated(); } catch (_) {}
+      }
+    } catch (_) {}
+
     // Try firebase first
     const db = this.ensureFirebase();
     if (db) {
@@ -121,19 +131,59 @@ class CustomQuizService {
       const id = q.id || hashId({ question: q.question, options: q.options, correctIndex: q.correctIndex, topic, bloom, difficulty });
       return { ...q, id, topic, bloom, difficulty, estSec };
     };
+    // Helpers to validate structures
+    const isValidMC = (q) => Array.isArray(q?.options || q?.choices) && typeof (q?.correctIndex ?? q?.answerIndex) === 'number';
+    const isValidSyntax = (q) => (q?.type === 'syntaxBlock') || (Array.isArray(q?.blocks) && q.blocks.length > 0 && typeof q.blocks[0] === 'object' && ('code' in q.blocks[0]));
+    const isValidArrange = (q) => (q?.type === 'codeArrangement') || (Array.isArray(q?.blocks) && Array.isArray(q?.correctOrder) && q.correctOrder.length === q.blocks.length);
+    const isValidPrecedence = (q) => (q?.type === 'drag-and-drop') && q?.options && Array.isArray(q.options.dragItems) && Array.isArray(q.options.dropZones);
+
     // Case 1: Already an array (legacy flat format)
     if (Array.isArray(rawQuestions)) {
-      return rawQuestions.map(q => attachMeta({
-        question: q.question || q.text || 'Untitled Question',
-        options: q.options || q.choices || [],
-        correctIndex: typeof q.correctIndex === 'number' ? q.correctIndex : (q.answerIndex || 0),
-        type: q.type || 'multiple-choice',
-        bloom: q.bloom || q.bloomLevel || q.bloomTarget,
-        topic: q.topic,
-        difficulty: q.difficulty,
-        estSec: q.estSec,
-        id: q.id,
-      }));
+      const out = [];
+      rawQuestions.forEach((q) => {
+        if (isValidMC(q)) {
+          out.push(attachMeta({
+            question: q.question || q.text || 'Untitled Question',
+            options: q.options || q.choices || [],
+            correctIndex: typeof q.correctIndex === 'number' ? q.correctIndex : (q.answerIndex || 0),
+            type: q.type || 'multiple-choice',
+            bloom: q.bloom || q.bloomLevel || q.bloomTarget,
+            topic: q.topic,
+            difficulty: q.difficulty,
+            estSec: q.estSec,
+            id: q.id,
+          }));
+        } else if (isValidSyntax(q)) {
+          out.push(attachMeta({
+            question: q.question || 'Select the Correct Syntax',
+            instruction: q.instruction || 'Tap the Block with the Correct Syntax',
+            blocks: Array.isArray(q.blocks) ? q.blocks.map(b => ({ ...b })) : (q.blocks || []),
+            type: 'syntaxBlock',
+            bloom: q.bloom || q.bloomLevel || q.bloomTarget,
+            topic: q.topic,
+            difficulty: q.difficulty,
+            estSec: q.estSec,
+            id: q.id,
+          }));
+        } else if (isValidArrange(q)) {
+          out.push(attachMeta({
+            question: q.question || 'Arrange the Code Blocks in the Correct Order',
+            blocks: Array.isArray(q.blocks) ? q.blocks.slice() : [],
+            correctOrder: Array.isArray(q.correctOrder) ? q.correctOrder.slice() : [],
+            type: 'codeArrangement',
+            isDragDrop: true,
+            bloom: q.bloom || q.bloomLevel || q.bloomTarget,
+            topic: q.topic,
+            difficulty: q.difficulty,
+            estSec: q.estSec,
+            id: q.id,
+          }));
+        } else if (isValidPrecedence(q)) {
+          // Keep precedence type as-is; QuizScene has a converter path
+          out.push(attachMeta({ ...q }));
+        }
+      });
+      return out;
     }
     // Case 2: Passed full quiz object with intensity* structure
     if (rawQuestions && typeof rawQuestions === 'object') {
@@ -158,10 +208,55 @@ class CustomQuizService {
             }
           });
         }
+        // syntaxBlock arrays
+        if (Array.isArray(node.syntaxBlock)) {
+          node.syntaxBlock.forEach(q => {
+            if (isValidSyntax(q)) {
+              collected.push(attachMeta({
+                question: q.question || 'Select the Correct Syntax',
+                instruction: q.instruction || 'Tap the Block with the Correct Syntax',
+                blocks: Array.isArray(q.blocks) ? q.blocks.map(b => ({ ...b })) : (q.blocks || []),
+                type: 'syntaxBlock',
+                bloom: q.bloom || q.bloomLevel || q.bloomTarget,
+                topic: q.topic,
+                difficulty: q.difficulty,
+                estSec: q.estSec,
+                id: q.id,
+              }));
+            }
+          });
+        }
+        // codeArrangement arrays
+        if (Array.isArray(node.codeArrangement)) {
+          node.codeArrangement.forEach(q => {
+            if (isValidArrange(q)) {
+              collected.push(attachMeta({
+                question: q.question || 'Arrange the Code Blocks in the Correct Order',
+                blocks: Array.isArray(q.blocks) ? q.blocks.slice() : [],
+                correctOrder: Array.isArray(q.correctOrder) ? q.correctOrder.slice() : [],
+                type: 'codeArrangement',
+                isDragDrop: true,
+                bloom: q.bloom || q.bloomLevel || q.bloomTarget,
+                topic: q.topic,
+                difficulty: q.difficulty,
+                estSec: q.estSec,
+                id: q.id,
+              }));
+            }
+          });
+        }
+        // dragDrop arrays (precedence)
+        if (Array.isArray(node.dragDrop)) {
+          node.dragDrop.forEach(q => {
+            if (isValidPrecedence(q)) {
+              collected.push(attachMeta({ ...q }));
+            }
+          });
+        }
         // Any direct questions array fallback
         if (Array.isArray(node.questions)) {
           node.questions.forEach(q => {
-            if (q && (q.options || q.choices)) {
+            if (isValidMC(q)) {
               collected.push(attachMeta({
                 question: q.question || 'Untitled Question',
                 options: q.options || q.choices || [],
@@ -173,6 +268,33 @@ class CustomQuizService {
                 estSec: q.estSec,
                 id: q.id,
               }));
+            } else if (isValidSyntax(q)) {
+              collected.push(attachMeta({
+                question: q.question || 'Select the Correct Syntax',
+                instruction: q.instruction || 'Tap the Block with the Correct Syntax',
+                blocks: Array.isArray(q.blocks) ? q.blocks.map(b => ({ ...b })) : (q.blocks || []),
+                type: 'syntaxBlock',
+                bloom: q.bloom || q.bloomLevel || q.bloomTarget,
+                topic: q.topic,
+                difficulty: q.difficulty,
+                estSec: q.estSec,
+                id: q.id,
+              }));
+            } else if (isValidArrange(q)) {
+              collected.push(attachMeta({
+                question: q.question || 'Arrange the Code Blocks in the Correct Order',
+                blocks: Array.isArray(q.blocks) ? q.blocks.slice() : [],
+                correctOrder: Array.isArray(q.correctOrder) ? q.correctOrder.slice() : [],
+                type: 'codeArrangement',
+                isDragDrop: true,
+                bloom: q.bloom || q.bloomLevel || q.bloomTarget,
+                topic: q.topic,
+                difficulty: q.difficulty,
+                estSec: q.estSec,
+                id: q.id,
+              }));
+            } else if (isValidPrecedence(q)) {
+              collected.push(attachMeta({ ...q }));
             }
           });
         }

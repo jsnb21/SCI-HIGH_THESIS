@@ -246,26 +246,71 @@ export default class QuizScene extends BaseScene {
 
     loadCustomQuizQuestion() {
         if (!this.customQuiz || !Array.isArray(this.customQuiz.questions)) return;
-        const remaining = this.customQuiz.questions.filter((q, idx) => !this.customQuizAnswered.has(idx));
-        if (remaining.length === 0) {
-            // All answered; simple recycle or end early
+
+        // Guards to detect valid question shapes per type
+        const isValidMC = (q) => Array.isArray(q?.options) && typeof q?.correctIndex === 'number';
+        const isValidSyntax = (q) => (q?.type === 'syntaxBlock') || (Array.isArray(q?.blocks) && q.blocks.length > 0 && typeof q.blocks[0] === 'object' && ('code' in q.blocks[0]));
+        const isValidArrange = (q) => (q?.type === 'codeArrangement') || (Array.isArray(q?.blocks) && Array.isArray(q?.correctOrder) && q.correctOrder.length === q.blocks.length);
+        const isValidPrecedence = (q) => (q?.type === 'drag-and-drop') && q?.options && Array.isArray(q.options.dragItems) && Array.isArray(q.options.dropZones);
+
+        // Build pool of unanswered and valid questions (accept MC, syntaxBlock, codeArrangement, or precedence drag-and-drop)
+        const unanswered = this.customQuiz.questions
+            .map((q, idx) => ({ q, idx }))
+            .filter(({ idx }) => !this.customQuizAnswered.has(idx));
+
+        // If all answered, reset and start over
+        if (unanswered.length === 0) {
             this.customQuizAnswered.clear();
         }
-        const pool = this.customQuiz.questions.filter((q, idx) => !this.customQuizAnswered.has(idx));
-        if (pool.length === 0) return; // Still nothing
-        const idxInPool = Math.floor(Math.random() * pool.length);
-        const question = pool[idxInPool];
-        // Track index globally
-        const globalIndex = this.customQuiz.questions.indexOf(question);
-        this.customQuizAnswered.add(globalIndex);
-        // Normalize shape expected by existing UI
-        this.currentQuestion = {
-            question: question.question || 'Untitled Question',
-            options: question.options || [],
-            correctIndex: typeof question.correctIndex === 'number' ? question.correctIndex : 0,
-            type: 'multiple-choice'
-        };
-        // Build minimal quizData format used by createQuizInterface / answer handlers
+
+        const pool = this.customQuiz.questions
+            .map((q, idx) => ({ q, idx }))
+            .filter(({ idx, q }) => !this.customQuizAnswered.has(idx) && (isValidMC(q) || isValidSyntax(q) || isValidArrange(q) || isValidPrecedence(q)));
+
+        if (pool.length === 0) {
+            // No valid questions remain in custom quiz
+            return;
+        }
+
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        const q = pick.q;
+        this.customQuizAnswered.add(pick.idx);
+
+        // Normalize without losing type-specific fields
+        let normalized = null;
+        if (isValidMC(q)) {
+            normalized = {
+                question: q.question || 'Untitled Question',
+                options: q.options.slice(),
+                correctIndex: typeof q.correctIndex === 'number' ? q.correctIndex : 0,
+                type: q.type || 'multiple-choice',
+                id: q.id
+            };
+            // Optional shuffle will happen later via randomizeAnswerChoices()
+        } else if (isValidSyntax(q)) {
+            normalized = {
+                question: q.question || 'Select the Correct Syntax',
+                instruction: q.instruction || 'Tap the Block with the Correct Syntax',
+                blocks: Array.isArray(q.blocks) ? q.blocks.map(b => ({ ...b })) : (q.blocks || []),
+                type: 'syntaxBlock',
+                id: q.id
+            };
+        } else if (isValidArrange(q)) {
+            normalized = {
+                question: q.question || 'Arrange the Code Blocks in the Correct Order',
+                blocks: Array.isArray(q.blocks) ? q.blocks.slice() : [],
+                correctOrder: Array.isArray(q.correctOrder) ? q.correctOrder.slice() : [],
+                type: 'codeArrangement',
+                isDragDrop: true,
+                id: q.id
+            };
+        } else if (isValidPrecedence(q)) {
+            // Keep original structure for precedence type; UI has a converter path
+            normalized = { ...q };
+        }
+
+        this.currentQuestion = normalized;
+        // Minimal quizData for compatibility
         this.quizData = { questions: [ this.currentQuestion ] };
     }
 

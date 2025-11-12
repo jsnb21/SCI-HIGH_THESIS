@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import customQuizService from '../../services/customQuizService.js';
+import authService from '../../services/authService.js';
 import LoadingScreen from '../../ui/LoadingScreen.js';
 
 /**
@@ -75,27 +76,43 @@ export default class CustomQuizSelectScene extends Phaser.Scene {
       this.fetchQuizzes();
       return;
     }
-    if (window.firebase && typeof window.firebase.auth === 'function') {
-      // Show subtle waiting message
-      this.statusText.setText('Waiting for authentication...');
-      const unsubscribe = window.firebase.auth().onAuthStateChanged(user => {
-        if (user) {
+
+    // Proactively initialize Firebase and sign in anonymously to satisfy rules on localhost
+    (async () => {
+      try {
+        const ok = await authService.ensureFirebaseInitialized();
+        if (ok) {
+          await authService.ensureAuthenticated();
           this.statusText.setText('Loading quizzes...');
-          unsubscribe();
           this.fetchQuizzes();
-        } else {
-          // Keep listening briefly, but provide a timeout fallback
+          return;
         }
-      });
-      // Safety timeout in case no user appears (e.g., student not logged in through this window)
-      this.time.delayedCall(4000, () => {
-        if (!this.getAuthUser() && this.statusText.text.includes('Waiting')) {
-          this.statusText.setText('Not signed in. Return and login.');
-        }
-      });
-    } else {
-      this.statusText.setText('Firebase auth not available.');
-    }
+      } catch (_) {
+        // Fall back to listener approach below
+      }
+
+      if (window.firebase && typeof window.firebase.auth === 'function') {
+        // Show subtle waiting message
+        this.statusText.setText('Waiting for authentication...');
+        const unsubscribe = window.firebase.auth().onAuthStateChanged(user => {
+          if (user) {
+            this.statusText.setText('Loading quizzes...');
+            unsubscribe();
+            this.fetchQuizzes();
+          } else {
+            // Keep listening briefly, but provide a timeout fallback
+          }
+        });
+        // Safety timeout in case no user appears
+        this.time.delayedCall(4000, () => {
+          if (!this.getAuthUser() && this.statusText.text.includes('Waiting')) {
+            this.statusText.setText('Not signed in. Return and login.');
+          }
+        });
+      } else {
+        this.statusText.setText('Firebase auth not available.');
+      }
+    })();
   }
 
   async fetchQuizzes() {
