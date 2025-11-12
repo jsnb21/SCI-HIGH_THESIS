@@ -76,6 +76,10 @@ export default class CustomQuizSelectScene extends Phaser.Scene {
 
     // Wait for auth state reliably instead of immediate read (prevents race if scene loads before auth ready)
     this.waitForAuthThenLoad();
+
+    // Ensure we clean up listeners/timers when leaving the scene
+    this.events.on('shutdown', this.onShutdown, this);
+    this.events.on('destroy', this.onShutdown, this);
   }
 
   renderSearchBarAndPanel() {
@@ -496,5 +500,26 @@ export default class CustomQuizSelectScene extends Phaser.Scene {
       this.bg.tilePositionY -= 0.5;
       this.bg.tilePositionX -= 0.2;
     }
+  }
+
+  onShutdown() {
+    // Remove keyboard listener
+    if (this.keyDownHandler) {
+      try { this.input.keyboard.off('keydown', this.keyDownHandler); } catch (_) {}
+      this.keyDownHandler = null;
+    }
+    // Remove wheel listener
+    if (this.wheelHandler) {
+      try { this.input.off('wheel', this.wheelHandler); } catch (_) {}
+      this.wheelHandler = null;
+    }
+    // Stop caret timer and destroy caret
+    if (this.caretTimer) { try { this.caretTimer.remove(false); } catch (_) {} this.caretTimer = null; }
+    if (this.caretText) { try { this.caretText.destroy(); } catch (_) {} this.caretText = null; }
+    // Hide/destroy loading overlay elements
+    if (this.loadingOverlay) { try { this.loadingOverlay.destroy(); } catch (_) {} this.loadingOverlay = null; }
+    if (this.loadingText) { try { this.loadingText.destroy(); } catch (_) {} this.loadingText = null; }
+    // Clear list container and items
+    this.clearList();
   }
 }
