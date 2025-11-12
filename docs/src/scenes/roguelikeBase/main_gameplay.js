@@ -2134,6 +2134,11 @@ export default class MainGameplay extends BaseScene {
     }
 
     showIntensityNotification() {
+        // Don't show the dramatic intensity notification for custom quizzes
+        try {
+            if (String(this.courseTopic || '').toLowerCase() === 'custom') return;
+        } catch (_) {}
+
         // Create dramatic notification
         const centerX = this.scale.width / 2;
         const centerY = this.scale.height / 2;
