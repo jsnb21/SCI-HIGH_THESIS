@@ -36,7 +36,9 @@ export default class DomHudManager {
 
     const vw = (typeof window !== 'undefined') ? window.innerWidth : this.scene.scale.width;
     const isMobileLike = vw < 768;
-    const baseHeight = isMobileLike ? 128 : 120;
+  // Keep a taller wrapper for layout (pause button under course name), but make the
+  // visual background fully transparent so it never covers the playfield.
+  const baseHeight = isMobileLike ? 128 : 120;
 
     const wrapper = document.createElement('div');
     wrapper.id = 'desktop-game-hud';
@@ -45,7 +47,10 @@ export default class DomHudManager {
       display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
       padding: (isMobileLike ? '12px 16px 6px 16px' : '10px 24px 6px 24px'), boxSizing: 'border-box',
       fontFamily: 'Arial, sans-serif', zIndex: '9999', pointerEvents: 'none',
-      background: 'linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.25))', overflow: 'hidden'
+      // No overlay: fully transparent background for the HUD wrapper
+      background: 'transparent',
+      backgroundImage: 'none',
+      overflow: 'hidden'
     });
 
     const buildTextRow = (labelText, id, fontSizePx, color) => {
@@ -184,7 +189,7 @@ export default class DomHudManager {
     wrapper.style.top = top + 'px';
     wrapper.style.width = width + 'px';
     wrapper.style.overflow = 'hidden';
-    // Update height and font sizes responsively
+  // Update height and font sizes responsively
     this._updateResponsiveStyles();
     // If width momentarily measures as 0 during resize, schedule a follow-up update
     if (width <= 0 && typeof window !== 'undefined') {
