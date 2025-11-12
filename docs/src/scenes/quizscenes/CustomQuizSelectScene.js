@@ -34,15 +34,27 @@ export default class CustomQuizSelectScene extends Phaser.Scene {
     this.allQuizzes = [];
     this.wheelHandler = null;
     this.currentUser = null;
+    // Loading overlay
+    this.loadingOverlay = null;
+    this.loadingText = null;
   }
 
   preload() {
     this.load.font('Caprasimo-Regular', 'assets/font/Caprasimo-Regular.ttf');
+    // Background texture used across scenes
+    this.load.image('BinaryBG', 'assets/img/bg/BinaryBG.png');
   }
 
   create() {
     // Background color aligned with the design (deep purple)
     this.cameras.main.setBackgroundColor('#2a1b4b');
+
+    // Scrolling binary background behind all UI
+    const { width, height } = this.scale;
+    this.bg = this.add.tileSprite(0, 0, width, height, 'BinaryBG').setOrigin(0, 0);
+    this.bg.setDepth(-10);
+  // Reduce opacity for a softer background presence
+  this.bg.setAlpha(0.175);
 
     // Shared back button component
     const backBtn = createBackButton(this, 'ComputerLab');
@@ -52,12 +64,15 @@ export default class CustomQuizSelectScene extends Phaser.Scene {
     // Visual search bar and list panel
     this.renderSearchBarAndPanel();
 
-    // Status text just below the search bar
-    this.statusText = this.add.text(this.scale.width / 2, this.panelMetrics.y - 28, 'Loading quizzes...', {
+    // Status text (used for errors/info). Hidden during loading overlay.
+    this.statusText = this.add.text(this.scale.width / 2, this.panelMetrics.y - 28, '', {
       fontFamily: 'Caprasimo-Regular',
       fontSize: '26px',
       color: '#ffeb3b'
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setVisible(false);
+
+    // Show dim loading overlay
+    this.showLoadingOverlay('Loading Quizzes...');
 
     // Wait for auth state reliably instead of immediate read (prevents race if scene loads before auth ready)
     this.waitForAuthThenLoad();
@@ -234,11 +249,8 @@ export default class CustomQuizSelectScene extends Phaser.Scene {
       }
 
       if (window.firebase && typeof window.firebase.auth === 'function') {
-        // Show subtle waiting message
-        this.statusText.setText('Waiting for authentication...');
         const unsubscribe = window.firebase.auth().onAuthStateChanged(user => {
           if (user) {
-            this.statusText.setText('Loading quizzes...');
             unsubscribe();
             this.fetchQuizzes();
           } else {
@@ -247,12 +259,14 @@ export default class CustomQuizSelectScene extends Phaser.Scene {
         });
         // Safety timeout in case no user appears
         this.time.delayedCall(4000, () => {
-          if (!this.getAuthUser() && this.statusText.text.includes('Waiting')) {
-            this.statusText.setText('Not signed in. Return and login.');
+          if (!this.getAuthUser()) {
+            this.hideLoadingOverlay();
+            this.statusText.setText('Not signed in. Return and login.').setVisible(true);
           }
         });
       } else {
-        this.statusText.setText('Firebase auth not available.');
+        this.hideLoadingOverlay();
+        this.statusText.setText('Firebase auth not available.').setVisible(true);
       }
     })();
   }
@@ -274,7 +288,8 @@ export default class CustomQuizSelectScene extends Phaser.Scene {
       // Attempt global read of all customQuizzes (rules allow auth != null)
       const snapshot = await db.ref('customQuizzes').once('value');
       if (!snapshot.exists()) {
-        this.statusText.setText('No custom quizzes available.');
+        this.hideLoadingOverlay();
+        this.statusText.setText('No custom quizzes available.').setVisible(true);
         return;
       }
       const allByProf = snapshot.val();
@@ -287,22 +302,53 @@ export default class CustomQuizSelectScene extends Phaser.Scene {
         }
       });
       if (!flattened.length) {
-        this.statusText.setText('No custom quizzes available.');
+        this.hideLoadingOverlay();
+        this.statusText.setText('No custom quizzes available.').setVisible(true);
         return;
       }
       // Sort newest first by meta.createdAtMs or createdAt timestamp
       flattened.sort((a, b) => this.getQuizTimestamp(b) - this.getQuizTimestamp(a));
-      this.statusText.setText('');
+      this.statusText.setText('').setVisible(false);
       this.allQuizzes = flattened;
       this.applyFilter(this.searchQuery);
+      this.hideLoadingOverlay();
     } catch (e) {
       console.error('Failed to load quizzes', e);
       if (e && /permission_denied/i.test(e.message || '')) {
-        this.statusText.setText('Access denied. (Rules not deployed?)');
+        this.hideLoadingOverlay();
+        this.statusText.setText('Access denied. (Rules not deployed?)').setVisible(true);
       } else {
-        this.statusText.setText('Failed to load quizzes.');
+        this.hideLoadingOverlay();
+        this.statusText.setText('Failed to load quizzes.').setVisible(true);
       }
     }
+  }
+
+  showLoadingOverlay(message = 'Loading...') {
+    const { width, height } = this.scale;
+    if (!this.loadingOverlay) {
+      this.loadingOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6)
+        .setDepth(9998);
+    } else {
+      this.loadingOverlay.setSize(width, height).setPosition(width / 2, height / 2).setVisible(true);
+    }
+    if (!this.loadingText) {
+      this.loadingText = this.add.text(width / 2, height / 2, message, {
+        fontFamily: 'Caprasimo-Regular',
+        fontSize: '44px',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 6,
+        align: 'center'
+      }).setOrigin(0.5).setDepth(9999);
+    } else {
+      this.loadingText.setText(message).setPosition(width / 2, height / 2).setVisible(true);
+    }
+  }
+
+  hideLoadingOverlay() {
+    if (this.loadingOverlay) this.loadingOverlay.setVisible(false);
+    if (this.loadingText) this.loadingText.setVisible(false);
   }
 
   getQuizTimestamp(entry) {
@@ -442,5 +488,13 @@ export default class CustomQuizSelectScene extends Phaser.Scene {
         questions: normalized
       }
     }, 1200);
+  }
+
+  update() {
+    if (this.bg) {
+      // Subtle parallax scroll, matching other scenes
+      this.bg.tilePositionY -= 0.5;
+      this.bg.tilePositionX -= 0.2;
+    }
   }
 }
