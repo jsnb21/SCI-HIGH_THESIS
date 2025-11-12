@@ -253,28 +253,55 @@ export default class QuizScene extends BaseScene {
         const isValidArrange = (q) => (q?.type === 'codeArrangement') || (Array.isArray(q?.blocks) && Array.isArray(q?.correctOrder) && q.correctOrder.length === q.blocks.length);
         const isValidPrecedence = (q) => (q?.type === 'drag-and-drop') && q?.options && Array.isArray(q.options.dragItems) && Array.isArray(q.options.dropZones);
 
-        // Build pool of unanswered and valid questions (accept MC, syntaxBlock, codeArrangement, or precedence drag-and-drop)
-        const unanswered = this.customQuiz.questions
+        // Build pool of indices that are valid and not yet answered
+        const validIndices = this.customQuiz.questions
             .map((q, idx) => ({ q, idx }))
-            .filter(({ idx }) => !this.customQuizAnswered.has(idx));
+            .filter(({ idx, q }) => (isValidMC(q) || isValidSyntax(q) || isValidArrange(q) || isValidPrecedence(q)))
+            .map(({ idx }) => idx);
 
-        // If all answered, reset and start over
-        if (unanswered.length === 0) {
+        if (validIndices.length === 0) return; // nothing usable
+
+        // If we've answered all valid questions, reset the answered tracker
+        const unansweredIndices = validIndices.filter(idx => !this.customQuizAnswered.has(idx));
+        if (unansweredIndices.length === 0) {
             this.customQuizAnswered.clear();
         }
 
-        const pool = this.customQuiz.questions
-            .map((q, idx) => ({ q, idx }))
-            .filter(({ idx, q }) => !this.customQuizAnswered.has(idx) && (isValidMC(q) || isValidSyntax(q) || isValidArrange(q) || isValidPrecedence(q)));
+        // Initialize a shuffled queue (Fisher-Yates) to avoid repeats and clumping
+        if (!Array.isArray(this.customQuizQueue) || this.customQuizQueue.length === 0) {
+            // Use the set of not-yet-answered indices if available, otherwise all valid indices
+            const source = validIndices.filter(idx => !this.customQuizAnswered.has(idx));
+            // If nothing left (shouldn't happen due to clear above), use all valid
+            const poolIndices = source.length ? source.slice() : validIndices.slice();
 
-        if (pool.length === 0) {
-            // No valid questions remain in custom quiz
-            return;
+            // Fisher-Yates shuffle
+            for (let i = poolIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const tmp = poolIndices[i];
+                poolIndices[i] = poolIndices[j];
+                poolIndices[j] = tmp;
+            }
+
+            // Avoid immediate repeat of last shown custom question (if present)
+            if (typeof this.lastCustomQuizIdx === 'number' && poolIndices.length > 1 && poolIndices[0] === this.lastCustomQuizIdx) {
+                // swap with next
+                const tmp = poolIndices[0];
+                poolIndices[0] = poolIndices[1];
+                poolIndices[1] = tmp;
+            }
+
+            this.customQuizQueue = poolIndices;
         }
 
-        const pick = pool[Math.floor(Math.random() * pool.length)];
-        const q = pick.q;
-        this.customQuizAnswered.add(pick.idx);
+        // Pop next index from queue
+        const nextIdx = this.customQuizQueue.shift();
+        if (typeof nextIdx !== 'number') return;
+
+        const q = this.customQuiz.questions[nextIdx];
+        // Mark answered to avoid repeats across cycles
+        this.customQuizAnswered.add(nextIdx);
+        // Remember last displayed to prevent immediate repeat on queue refill
+        this.lastCustomQuizIdx = nextIdx;
 
         // Normalize without losing type-specific fields
         let normalized = null;
