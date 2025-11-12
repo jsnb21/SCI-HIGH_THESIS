@@ -61,6 +61,14 @@ export default class ComputerLab extends Phaser.Scene {
     }
 
     async create() {
+        // Defensive: ensure any gameplay DOM HUD from previous scenes is removed
+        try {
+            if (typeof window !== 'undefined') window.__sciHighDomHudDisabled = true; // block HUD while in ComputerLab
+            const hud = (typeof document !== 'undefined') ? document.getElementById('desktop-game-hud') : null;
+            if (hud && hud.parentNode) hud.parentNode.removeChild(hud);
+            const styleEl = (typeof document !== 'undefined') ? document.getElementById('hudPauseBtnStyle') : null;
+            if (styleEl && styleEl.parentNode) styleEl.parentNode.removeChild(styleEl);
+        } catch (_) {}
 
         // Set up scrolling binary background (same as MainHub)
         const { width, height } = this.scale;
@@ -459,5 +467,13 @@ export default class ComputerLab extends Phaser.Scene {
             }
             this.pointsDisplay = null;
         }
+
+        // Extra safety: remove any DOM HUD that might still be attached from gameplay
+        try {
+            const hud = (typeof document !== 'undefined') ? document.getElementById('desktop-game-hud') : null;
+            if (hud && hud.parentNode) hud.parentNode.removeChild(hud);
+            const styleEl = (typeof document !== 'undefined') ? document.getElementById('hudPauseBtnStyle') : null;
+            if (styleEl && styleEl.parentNode) styleEl.parentNode.removeChild(styleEl);
+        } catch (_) {}
     }
 }

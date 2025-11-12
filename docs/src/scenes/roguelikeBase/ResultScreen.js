@@ -32,6 +32,8 @@ export default class ResultScreen extends BaseScene {
 
     create() {
         super.create();
+        // Disable DOM HUD on results screen
+        try { if (typeof window !== 'undefined') window.__sciHighDomHudDisabled = true; } catch (_) {}
 
         // Calculate rank
         const totalQuestions = this.correctAnswers + this.wrongAnswers;

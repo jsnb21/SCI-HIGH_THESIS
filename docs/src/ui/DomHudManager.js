@@ -20,6 +20,12 @@ export default class DomHudManager {
 
   init() {
     if (typeof document === 'undefined') return;
+    // Global guard: allow only when gameplay scenes explicitly enable it
+    try {
+      if (typeof window !== 'undefined' && window.__sciHighDomHudDisabled) {
+        return; // Do not create HUD wrapper when disabled
+      }
+    } catch (_) {}
     if (document.getElementById('desktop-game-hud')) {
       this.domHudWrapper = document.getElementById('desktop-game-hud');
       this.domHudActive = true;

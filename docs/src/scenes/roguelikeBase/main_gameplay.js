@@ -319,6 +319,8 @@ export default class MainGameplay extends BaseScene {
 
     create() {
         super.create(); // Call BaseScene create method
+        // Enable DOM HUD globally for gameplay scenes
+        try { if (typeof window !== 'undefined') window.__sciHighDomHudDisabled = false; } catch (_) {}
         // Phase 0: lightweight debug hooks (no behavior change)
         try {
             // eslint-disable-next-line global-require, import/no-unresolved
@@ -3974,8 +3976,9 @@ export default class MainGameplay extends BaseScene {
         resultData.strandYear = finalStudentData.strandYear;
         
         
-    // Go to ResultScreen (ensure HUD removed first)
-    this.removeDomHud();
+        // Go to ResultScreen (ensure HUD removed first)
+        try { if (typeof window !== 'undefined') window.__sciHighDomHudDisabled = true; } catch (_) {}
+        this.removeDomHud();
     this.scene.start('ResultScreen', resultData);
         
         // Also upload the data to Firebase in the background
@@ -4405,6 +4408,17 @@ export default class MainGameplay extends BaseScene {
         if (this._timer) { try { this._timer.destroy(); } catch (_) {} this._timer = null; }
         if (this.timerEvent) { try { this.timerEvent.remove(); } catch (_) {} this.timerEvent = null; }
         if (this.countdownEvent) { try { this.countdownEvent.remove(); } catch (_) {} this.countdownEvent = null; }
+        // Remove resize listeners that could recreate HUD after scene ends
+        try {
+            if (this.scale && this.scale.off && this.onResizeEvent) {
+                this.scale.off('resize', this.onResizeEvent, this);
+            }
+        } catch (_) {}
+        // Cancel any scheduled resize RAF/timeout callbacks
+        try { if (this._resizeRaf) { cancelAnimationFrame(this._resizeRaf); this._resizeRaf = null; } } catch (_) {}
+        try { if (this._resizeTimer) { clearTimeout(this._resizeTimer); this._resizeTimer = null; } } catch (_) {}
+        // Ensure DOM HUD is fully removed so it can't resurface on fullscreen/resize
+        try { if (typeof this.removeDomHud === 'function') this.removeDomHud(); } catch (_) {}
         // Defensive: ensure streak is reset if scene ends abruptly
         if (typeof this.resetStreak === 'function') this.resetStreak();
         // Defensive: also clear any active power-up states
