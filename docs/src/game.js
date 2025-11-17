@@ -68,7 +68,6 @@ const config = {
     StartUp,
     MainMenu,
     /* UI Scenes */
-    CardRewardScene,
     NotificationScene,
     /* Main Scenes */
     Intro,
