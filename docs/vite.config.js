@@ -79,6 +79,16 @@ export default defineConfig({
           copyDir('./js/pages', './dist/js/pages');
           // Leaderboards page modules used via dynamic import()
           copyDir('./js/leaderboards', './dist/js/leaderboards');
+          // Provide firebaseInit.js for plain scripts that dynamic-import from '../src/services/firebaseInit.js'
+          // These scripts are copied raw and expect the original relative path to exist at runtime.
+          const firebaseInitSrc = './src/services/firebaseInit.js';
+          if (existsSync(firebaseInitSrc)) {
+            mkdirSync('./dist/src/services', { recursive: true });
+            copyFileSync(firebaseInitSrc, './dist/src/services/firebaseInit.js');
+            console.log('✅ Copied firebaseInit.js to dist/src/services/ for runtime dynamic imports');
+          } else {
+            console.warn('firebaseInit.js not found at ./src/services/firebaseInit.js; dynamic import will 404');
+          }
         } catch (error) {
           console.error('Failed to copy static resources:', error);
         }
