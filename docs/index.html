@@ -12,6 +12,8 @@
   <link rel="apple-touch-icon" href="public/assets/img/Website/SCI-HIGH_ICON.png" />
   <link rel="manifest" href="site.webmanifest" />
   <meta name="theme-color" content="#0f1524" />
+  <!-- App Version (single source of truth for static pages) -->
+  <meta name="app-version" content="v1.0" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
     <title>SCI-HIGH: A Byte-Size Learning Adventure!</title>
   <!-- Optional: runtime AI key (local only; do not commit real keys) -->
@@ -75,6 +77,8 @@
     })();
   </script>
   <link rel="stylesheet" href="public/assets/css/index.css" />
+  <!-- Shared version sync -->
+  <script defer src="js/version.js"></script>
   </head>
   <body class="font-body game-bg text-textColor m-0 p-0 leading-relaxed">
     <!-- Auth gate overlay: prevents interaction until session is ready -->
@@ -300,6 +304,15 @@
           <!-- Replaced tagline text with SCI-HIGH logo image -->
           <div class="flex justify-center mb-3 sm:mb-4 animate-bounce-in px-2" style="animation-delay: 0.2s;">
             <img src="assets/img/logo/SCI-HIGH_LOGO.png" alt="SCI-HIGH Logo" class="h-[5.625rem] xs:h-[6.75rem] sm:h-[11.25rem] md:h-[15.75rem] object-contain drop-shadow-lg transition-transform duration-300 ease-out hover:scale-110" />
+          </div>
+
+          <!-- Version indicator just below the SCI-HIGH logo -->
+          <div class="flex justify-center mb-4">
+            <span class="inline-flex items-center gap-2 text-xs sm:text-sm font-gaming text-gray-300 bg-white/5 border border-white/10 rounded-full px-3 py-1" aria-label="Application version">
+              <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+              <span>Version</span>
+              <span class="app-version">v1.0</span>
+            </span>
           </div>
           
           <p class="text-sm xs:text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-6 sm:mb-12 px-4 sm:px-6 animate-bounce-in leading-relaxed" style="animation-delay: 0.4s;">
