@@ -35,7 +35,6 @@ import CustomQuizSelectScene from './scenes/quizscenes/CustomQuizSelectScene.js'
 import BaseLibraryScene from './scenes/libraryScenes/baseLibraryScene.js';
 
 // UI Scenes
-import CardRewardScene from './scenes/ui/CardRewardScene.js';
 import NotificationScene from './scenes/ui/NotificationScene.js';
 
 const config = {
