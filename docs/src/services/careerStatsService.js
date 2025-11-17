@@ -1,18 +1,10 @@
 // Career Stats Service for SCI-HIGH Game
 // Handles student career statistics and session tracking
+// Firebase initialization now delegated to centralized firebaseInit.js
+import { ensureFirebaseApp, getFirebaseDatabase } from './firebaseInit.js';
 
 class CareerStatsService {
     constructor() {
-        this.firebaseConfig = {
-            apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
-            authDomain: "sci-high-website.firebaseapp.com",
-            databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "sci-high-website",
-            storageBucket: "sci-high-website.appspot.com",
-            messagingSenderId: "451463202515",
-            appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
-        };
-        
         this.isFirebaseInitialized = false;
         this.database = null;
         this.initializationPromise = null;
@@ -56,74 +48,22 @@ class CareerStatsService {
 
     async initializeFirebase() {
         try {
-            
             if (!navigator.onLine) {
                 throw new Error('No internet connection detected');
             }
-            
-            if (typeof window.firebase === 'undefined') {
-                await this.loadFirebaseScripts();
-            }
-            
-            let retries = 0;
-            while (typeof window.firebase === 'undefined' && retries < 10) {
-                await new Promise(resolve => setTimeout(resolve, 300));
-                retries++;
-            }
-            
-            if (typeof window.firebase === 'undefined') {
-                throw new Error('Firebase failed to load after multiple attempts');
-            }
-            
-            if (!window.firebase.apps.length) {
-                window.firebase.initializeApp(this.firebaseConfig);
-            }
-            
-            this.database = window.firebase.database();
+
+            // Centralized init (handles script loading + config resolution)
+            await ensureFirebaseApp();
+            this.database = await getFirebaseDatabase();
+
+            // Connection test
             await this.database.ref('.info/connected').once('value');
-            
             this.isFirebaseInitialized = true;
         } catch (error) {
             console.error('Failed to initialize Firebase for CareerStatsService:', error);
             this.isFirebaseInitialized = false;
             throw error;
         }
-    }
-
-    async loadFirebaseScripts() {
-        return new Promise((resolve, reject) => {
-            if (typeof window.firebase !== 'undefined') {
-                resolve();
-                return;
-            }
-
-            const scripts = [
-                'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
-                'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js'
-            ];
-            
-            let loaded = 0;
-            const timeout = setTimeout(() => {
-                reject(new Error('Firebase script loading timeout'));
-            }, 10000);
-            
-            scripts.forEach(src => {
-                const script = document.createElement('script');
-                script.src = src;
-                script.onload = () => {
-                    loaded++;
-                    if (loaded === scripts.length) {
-                        clearTimeout(timeout);
-                        resolve();
-                    }
-                };
-                script.onerror = () => {
-                    clearTimeout(timeout);
-                    reject(new Error(`Failed to load Firebase script: ${src}`));
-                };
-                document.head.appendChild(script);
-            });
-        });
     }
 
     // Update student career stats with new session data

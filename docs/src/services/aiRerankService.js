@@ -354,6 +354,7 @@ const aiRerankService = {
         pairs = discovered;
         saveCachedPairs(pairs);
       }
+      
     } else if (overridePairs) {
       // Even with an override, append discovered models as backups to avoid hard failures
       const discovered = await discoverAvailablePairs(apiKey);

@@ -8,6 +8,7 @@ import TutorialManager from '../components/TutorialManager.js';
 import { COMPUTER_LAB_TUTORIAL_STEPS } from '../components/TutorialConfig.js';
 import LoadingScreen from '../ui/LoadingScreen.js';
 import { playExclusiveBGM, updateSoundVolumes } from '../audioUtils.js';
+import { firebaseService } from '../services/firebaseInit.js';
 
 export default class ComputerLab extends Phaser.Scene {
     constructor() {
@@ -20,16 +21,8 @@ export default class ComputerLab extends Phaser.Scene {
         this.database = null;
         this.initializationPromise = null;
 
-        // Firebase config (match MainHub)
-        this.firebaseConfig = {
-            apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
-            authDomain: "sci-high-website.firebaseapp.com",
-            databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "sci-high-website",
-            storageBucket: "sci-high-website.appspot.com",
-            messagingSenderId: "451463202515",
-            appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
-        };
+        // Firebase config removed; centralized service handles resolution
+        this.firebaseConfig = null;
     }
 
     preload() {
@@ -163,21 +156,8 @@ export default class ComputerLab extends Phaser.Scene {
     async initializeFirebase() {
         try {
             if (!navigator.onLine) throw new Error('No internet connection detected');
-            if (typeof window.firebase === 'undefined') {
-                await this.loadFirebaseScripts();
-            }
-            let retries = 0;
-            while (typeof window.firebase === 'undefined' && retries < 10) {
-                await new Promise(r => setTimeout(r, 300));
-                retries++;
-            }
-            if (typeof window.firebase === 'undefined') {
-                throw new Error('Firebase failed to load after multiple attempts');
-            }
-            if (!window.firebase.apps.length) {
-                window.firebase.initializeApp(this.firebaseConfig);
-            }
-            this.database = window.firebase.database();
+            await firebaseService.ensureFirebase();
+            this.database = await firebaseService.getDatabase();
             await this.database.ref('.info/connected').once('value');
             this.isFirebaseInitialized = true;
         } catch (err) {
@@ -187,27 +167,7 @@ export default class ComputerLab extends Phaser.Scene {
         }
     }
 
-    async loadFirebaseScripts() {
-        return new Promise((resolve, reject) => {
-            if (typeof window.firebase !== 'undefined') return resolve();
-            const scripts = [
-                'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
-                'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js'
-            ];
-            let loaded = 0;
-            const timeout = setTimeout(() => reject(new Error('Firebase script loading timeout')), 10000);
-            scripts.forEach(src => {
-                const s = document.createElement('script');
-                s.src = src;
-                s.onload = () => {
-                    loaded++;
-                    if (loaded === scripts.length) { clearTimeout(timeout); resolve(); }
-                };
-                s.onerror = () => { clearTimeout(timeout); reject(new Error(`Failed to load Firebase script: ${src}`)); };
-                document.head.appendChild(s);
-            });
-        });
-    }
+    // loadFirebaseScripts removed; firebaseService handles script loading
 
     async checkStudentDataInFirebase() {
         try {

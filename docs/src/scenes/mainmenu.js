@@ -16,6 +16,8 @@ import {
     createDebouncedClickHandler
 } from '../utils/mobileUtils.js';
 
+import { firebaseService } from '../services/firebaseInit.js';
+
 export default class MainMenu extends Phaser.Scene {
     constructor() {
         super('MainMenu');
@@ -23,115 +25,20 @@ export default class MainMenu extends Phaser.Scene {
         // Firebase initialization properties
         this.isFirebaseInitialized = false;
         this.database = null;
-        this.initializationPromise = null;
-        
-        // Firebase config
-        this.firebaseConfig = {
-            apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
-            authDomain: "sci-high-website.firebaseapp.com",
-            databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "sci-high-website",
-            storageBucket: "sci-high-website.appspot.com",
-            messagingSenderId: "451463202515",
-            appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
-        };
+        this.initializationPromise = null; // retained for compatibility, not used now
     }
 
     async ensureFirebaseInitialized() {
-        if (this.isFirebaseInitialized) {
-            return true;
-        }
-        
-        if (!this.initializationPromise) {
-            this.initializationPromise = this.initializeFirebase();
-        }
-        
+        if (this.isFirebaseInitialized) return true;
         try {
-            await this.initializationPromise;
+            await firebaseService.ensureFirebase();
+            this.database = firebaseService.getDatabase();
+            this.isFirebaseInitialized = !!this.database;
             return this.isFirebaseInitialized;
         } catch (error) {
             console.warn('Firebase initialization failed in MainMenu:', error.message);
             return false;
         }
-    }
-
-    async initializeFirebase() {
-        try {
-            
-            // First check if we have internet connectivity
-            if (!navigator.onLine) {
-                throw new Error('No internet connection detected');
-            }
-            
-            // Check if Firebase is already loaded
-            if (typeof window.firebase === 'undefined') {
-                await this.loadFirebaseScripts();
-            }
-            
-            // Wait a bit for Firebase to be available
-            let retries = 0;
-            while (typeof window.firebase === 'undefined' && retries < 10) {
-                await new Promise(resolve => setTimeout(resolve, 300));
-                retries++;
-            }
-            
-            if (typeof window.firebase === 'undefined') {
-                throw new Error('Firebase failed to load after multiple attempts - check your internet connection');
-            }
-            
-            // Initialize Firebase app if not already done
-            if (!window.firebase.apps.length) {
-                window.firebase.initializeApp(this.firebaseConfig);
-            }
-            
-            // Test Firebase connection
-            this.database = window.firebase.database();
-            
-            // Try a simple connection test
-            await this.database.ref('.info/connected').once('value');
-            
-            this.isFirebaseInitialized = true;
-        } catch (error) {
-            console.error('Failed to initialize Firebase for MainMenu:', error);
-            this.isFirebaseInitialized = false;
-            throw error;
-        }
-    }
-
-    async loadFirebaseScripts() {
-        return new Promise((resolve, reject) => {
-            if (typeof window.firebase !== 'undefined') {
-                resolve();
-                return;
-            }
-
-            const scripts = [
-                'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
-                'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js'
-            ];
-            
-            let loaded = 0;
-            const timeout = setTimeout(() => {
-                reject(new Error('Firebase script loading timeout'));
-            }, 10000);
-            
-            scripts.forEach(src => {
-                const script = document.createElement('script');
-                script.src = src;
-                script.onload = () => {
-                    loaded++;
-                    if (loaded === scripts.length) {
-                        clearTimeout(timeout);
-                        resolve();
-                    }
-                };
-                script.onerror = () => {
-                    clearTimeout(timeout);
-                    reject(new Error(`Failed to load Firebase script: ${src}`));
-                };
-                document.head.appendChild(script);
-            });
-        });
     }
 
     async checkStudentDataInFirebase() {

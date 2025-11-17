@@ -1,5 +1,8 @@
 /* Professor Dashboard logic extracted from professor-dashboard.html and enhanced with analytics */
 
+// Centralized Firebase usage via firebaseInit.js
+import { ensureFirebaseApp, getFirebaseDatabase } from '../src/services/firebaseInit.js';
+
 class ProfessorDashboard {
   constructor() {
     this.students = [];
@@ -779,115 +782,33 @@ class ProfessorDashboard {
 
   async initializeFirebase() {
     try {
-      // If already initialized elsewhere, reuse it
-      if (window.firebase?.apps?.length) {
-        this.database = window.firebase.database();
-        this.isFirebaseInitialized = true;
-        return;
+      if (!navigator.onLine) {
+        throw new Error('No internet connection detected');
       }
+      // Centralized init (loads scripts + resolves config)
+      await ensureFirebaseApp();
+      this.database = await getFirebaseDatabase();
+      this.isFirebaseInitialized = true;
 
-      // Prefer site-wide config manager if available (used on leaderboards)
-      const maybeInitViaManager = async () => {
-        if (window.firebaseConfig && typeof window.firebaseConfig.initializeFirebase === 'function') {
-          try {
-            await window.firebaseConfig.initializeFirebase();
-            return true;
-          } catch (e) {
-            console.warn('[professor-dashboard] Site firebaseConfig initialize failed:', e?.message || e);
+      // Connectivity listener (debounced) similar to previous implementation
+      try {
+        this._connWarnTimer = null;
+        this.database.ref('.info/connected').on('value', (snapshot) => {
+          const connected = snapshot.val() === true;
+          if (connected) {
+            if (this._connWarnTimer) { clearTimeout(this._connWarnTimer); this._connWarnTimer = null; }
+            return;
           }
-        } else {
-          // Try to dynamically load it
-          try {
-            await new Promise((resolve, reject) => {
-              const s = document.createElement('script');
-              s.src = './config/firebase-config.js';
-              s.async = true;
-              s.onload = resolve;
-              s.onerror = reject;
-              document.head.appendChild(s);
-            });
-            if (window.firebaseConfig && typeof window.firebaseConfig.initializeFirebase === 'function') {
-              await window.firebaseConfig.initializeFirebase();
-              return true;
-            }
-          } catch (_) { /* fallthrough */ }
-        }
-        return false;
-      };
-
-      const initedByManager = await maybeInitViaManager();
-
-      if (!initedByManager && (!window.firebase?.apps?.length)) {
-        // Fallback to env-config.json direct
-        try {
-          const cacheBuster = `?_v=${Date.now()}`;
-          const res = await fetch('./config/env-config.json' + cacheBuster, { cache: 'no-store' });
-          if (res.ok) {
-            const envConfig = await res.json();
-            const firebaseConfig = {
-              apiKey: envConfig.apiKey || envConfig.FIREBASE_API_KEY,
-              authDomain: envConfig.authDomain || envConfig.FIREBASE_AUTH_DOMAIN,
-              databaseURL: envConfig.databaseURL || envConfig.FIREBASE_DATABASE_URL,
-              projectId: envConfig.projectId || envConfig.FIREBASE_PROJECT_ID,
-              storageBucket: envConfig.storageBucket || envConfig.FIREBASE_STORAGE_BUCKET,
-              messagingSenderId: envConfig.messagingSenderId || envConfig.FIREBASE_MESSAGING_SENDER_ID,
-              appId: envConfig.appId || envConfig.FIREBASE_APP_ID
-            };
-            if (firebaseConfig.apiKey && (firebaseConfig.databaseURL || firebaseConfig.projectId)) {
-              window.firebase.initializeApp(firebaseConfig);
-            }
+          if (!this._connWarnTimer) {
+            this._connWarnTimer = setTimeout(() => {
+              this.showWarning('Connection to Firebase lost. Some features may not work properly.');
+              this._connWarnTimer = null;
+            }, 2000);
           }
-        } catch (e) {
-          console.warn('[professor-dashboard] env-config.json load failed:', e?.message || e);
-        }
-      }
-
-      // Final fallback identical to leaderboards client
-      if (!window.firebase?.apps?.length) {
-        const fallbackConfig = {
-          apiKey: 'AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28',
-          authDomain: 'sci-high-website.firebaseapp.com',
-          databaseURL: 'https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app',
-          projectId: 'sci-high-website',
-          storageBucket: 'sci-high-website.appspot.com',
-          messagingSenderId: '451463202515',
-          appId: '1:451463202515:web:e7f9c7bf69c04c685ef626'
-        };
-        try {
-          window.firebase.initializeApp(fallbackConfig);
-          console.info('[professor-dashboard] Initialized with fallback Firebase config.');
-        } catch (e) {
-          console.error('[professor-dashboard] Fallback Firebase init failed:', e);
-        }
-      }
-
-      if (window.firebase?.apps?.length) {
-        this.database = window.firebase.database();
-        this.isFirebaseInitialized = true;
-        try {
-          // Debounced connectivity warning to avoid transient false-positives during startup
-          this._connWarnTimer = null;
-          this.database.ref('.info/connected').on('value', (snapshot) => {
-            const connected = snapshot.val() === true;
-            if (connected) {
-              if (this._connWarnTimer) { clearTimeout(this._connWarnTimer); this._connWarnTimer = null; }
-              // Optionally, inform on restore. Keep quiet by default to reduce noise.
-              return;
-            }
-            if (!this._connWarnTimer) {
-              this._connWarnTimer = setTimeout(() => {
-                // If another 'connected' event fired, timer would have been cleared
-                this.showWarning('Connection to Firebase lost. Some features may not work properly.');
-                this._connWarnTimer = null;
-              }, 2000); // wait 2s to avoid flashing on initial connect
-            }
-          });
-        } catch(_) {}
-      } else {
-        this.isFirebaseInitialized = false;
-      }
+        });
+      } catch (_) {}
     } catch (error) {
-      console.error('Firebase initialization error:', error);
+      console.error('[professor-dashboard] Firebase initialization error:', error);
       this.isFirebaseInitialized = false;
     }
   }
