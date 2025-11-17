@@ -32,7 +32,8 @@ export default class MainMenu extends Phaser.Scene {
         if (this.isFirebaseInitialized) return true;
         try {
             await firebaseService.ensureFirebase();
-            this.database = firebaseService.getDatabase();
+            // Ensure we await the database Promise; without await we store a Promise instead of the DB instance
+            this.database = await firebaseService.getDatabase();
             this.isFirebaseInitialized = !!this.database;
             return this.isFirebaseInitialized;
         } catch (error) {
