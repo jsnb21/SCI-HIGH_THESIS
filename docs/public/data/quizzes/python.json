@@ -288,9 +288,9 @@
         "question": "Select the Correct Syntax",
         "instruction": "Tap the Block with the Correct Syntax",
         "blocks": [
-          { "code": "if 5 > 3 {\n    print(\"Hello World\");\n}", "correct": false },
-          { "code": "if 5 > 3:\n    print(\"Hello World\")", "correct": true },
-          { "code": "if (5 > 3) {\n    print(\"Hello World\");\n}", "correct": false }
+          { "code": "if 5 > 3 {\n  print(\"Hello World\");\n}", "correct": false },
+          { "code": "if 5 > 3:\n  print(\"Hello World\")", "correct": true },
+          { "code": "if (5 > 3) {\n  print(\"Hello World\");\n}", "correct": false }
         ],
         "bloomTarget": "understanding"
       },
@@ -299,8 +299,8 @@
         "question": "Select the Correct Syntax",
         "instruction": "If/elif/else structure printing size category",
         "blocks": [
-          { "code": "if n > 10:\n    print('large')\nelif n > 5:\n    print('medium')\nelse:\n    print('small')", "correct": true },
-          { "code": "if n > 10 then:\n    print('large')\nelseif n > 5:\n    print('medium')\nelse print('small')", "correct": false },
+          { "code": "if n > 10:\n  print('large')\nelif n > 5:\n  print('medium')\nelse:\n  print('small')", "correct": true },
+          { "code": "if n > 10 then:\n  print('large')\nelseif n > 5:\n  print('medium')\nelse print('small')", "correct": false },
           { "code": "if (n > 10) { print('large') } else if (n > 5) { print('medium') } else { print('small') }", "correct": false }
         ],
         "bloomTarget": "creating"
@@ -310,8 +310,8 @@
         "question": "Select the Correct Syntax",
         "instruction": "Write to a file using a context manager",
         "blocks": [
-          { "code": "with open('out.txt','w') as f:\n    f.write('hello')", "correct": true },
-          { "code": "with open 'out.txt' as f:\n    write(f, 'hello')", "correct": false },
+          { "code": "with open('out.txt','w') as f:\n  f.write('hello')", "correct": true },
+          { "code": "with open 'out.txt' as f:\n  write(f, 'hello')", "correct": false },
           { "code": "file f = open('out.txt','w'); f.write('hello'); close(f);", "correct": false }
         ],
         "bloomTarget": "creating"
@@ -332,8 +332,8 @@
         "question": "Select the Correct Syntax",
         "instruction": "Function with a default argument",
         "blocks": [
-          { "code": "def greet(name='World'):\n    print(f'Hello {name}')", "correct": true },
-          { "code": "def greet(name: 'World'):\n    print('Hello ' + name)", "correct": false },
+          { "code": "def greet(name='World'):\n  print(f'Hello {name}')", "correct": true },
+          { "code": "def greet(name: 'World'):\n  print('Hello ' + name)", "correct": false },
           { "code": "function greet(name='World') { print('Hello ' + name) }", "correct": false }
         ],
         "bloomTarget": "understanding"
@@ -356,8 +356,8 @@
         "question": "Select the code block that fixes the error and prints Yes",
         "instruction": "Missing colon after if and required indentation",
         "blocks": [
-          { "code": "if True:\n    print(\"Yes\")", "correct": true },
-          { "code": "if True\n    print(\"Yes\")", "correct": false },
+          { "code": "if True:\n  print(\"Yes\")", "correct": true },
+          { "code": "if True\n  print(\"Yes\")", "correct": false },
           { "code": "if True:\nprint(\"Yes\")", "correct": false }
         ],
         "bloomTarget": "understanding"
@@ -368,9 +368,9 @@
         "question": "Select the code block that prints Equal",
         "instruction": "Given x = 5 and y = 10, choose the code that prints Equal (correct conditional and syntax)",
         "blocks": [
-          { "code": "x = 5\ny = 10\nif x * 2 == y:\n    print(\"Equal\")\nelse:\n    print(\"Not Equal\")", "correct": true },
-          { "code": "x = 5\ny = 10\nif x * 2 = y:\n    print(\"Equal\")\nelse:\n    print(\"Not Equal\")", "correct": false },
-          { "code": "x = 5\ny = 10\nif x * 2 != y:\n    print(\"Equal\")\nelse:\n    print(\"Not Equal\")", "correct": false }
+          { "code": "x = 5\ny = 10\nif x * 2 == y:\n  print(\"Equal\")\nelse:\n  print(\"Not Equal\")", "correct": true },
+          { "code": "x = 5\ny = 10\nif x * 2 = y:\n  print(\"Equal\")\nelse:\n  print(\"Not Equal\")", "correct": false },
+          { "code": "x = 5\ny = 10\nif x * 2 != y:\n  print(\"Equal\")\nelse:\n  print(\"Not Equal\")", "correct": false }
         ],
         "bloomTarget": "understanding"
       }
@@ -380,9 +380,9 @@
         "question": "Select the code block that prints Equal (short version)",
         "instruction": "Use a concise function; a=7, b=7 should output Equal",
         "blocks": [
-          { "code": "def compare(a,b):\n    return 'Equal' if a == b else 'Not Equal'\nprint(compare(7,7))", "correct": true },
-          { "code": "def compare(a,b):\n    if a = b:\n        return 'Equal'\n    else:\n        return 'Not Equal'\nprint(compare(7,7))", "correct": false },
-          { "code": "def compare(a,b):\n    if a != b:\n        return 'Equal'\n    return 'Not Equal'\nprint(compare(7,7))", "correct": false }
+          { "code": "def compare(a,b):\n  return 'Equal' if a == b else 'Not Equal'\nprint(compare(7,7))", "correct": true },
+          { "code": "def compare(a,b):\n  if a = b:\n    return 'Equal'\n  else:\n    return 'Not Equal'\nprint(compare(7,7))", "correct": false },
+          { "code": "def compare(a,b):\n  if a != b:\n    return 'Equal'\n  return 'Not Equal'\nprint(compare(7,7))", "correct": false }
         ],
         "bloomTarget": "understanding"
       }
@@ -395,8 +395,8 @@
         "question": "Select the Correct Syntax",
         "instruction": "Choose the valid for loop printing numbers 0-4",
         "blocks": [
-          { "code": "for i in range(5):\n    print(i)", "correct": true },
-          { "code": "for (i = 0; i < 5; i++)\n    print(i)", "correct": false },
+          { "code": "for i in range(5):\n  print(i)", "correct": true },
+          { "code": "for (i = 0; i < 5; i++)\n  print(i)", "correct": false },
           { "code": "loop i in 0..5 { print(i) }", "correct": false }
         ],
         "bloomTarget": "analyzing"
@@ -406,8 +406,8 @@
         "question": "Select the Correct Syntax",
         "instruction": "Choose the valid if/else structure",
         "blocks": [
-          { "code": "if x > 10:\n    print('big')\nelse:\n    print('small')", "correct": true },
-          { "code": "if (x > 10) then\n    print('big')\nelse print('small')", "correct": false },
+          { "code": "if x > 10:\n  print('big')\nelse:\n  print('small')", "correct": true },
+          { "code": "if (x > 10) then\n  print('big')\nelse print('small')", "correct": false },
           { "code": "if x > 10 { print('big') } else { print('small') }", "correct": false }
         ],
         "bloomTarget": "analyzing"
@@ -417,7 +417,7 @@
         "question": "Select the Correct Syntax",
         "instruction": "Function that returns sum of a and b",
         "blocks": [
-          { "code": "def add(a, b):\n    return a + b", "correct": true },
+          { "code": "def add(a, b):\n  return a + b", "correct": true },
           { "code": "function add(a,b) => a + b", "correct": false },
           { "code": "def add(a,b) { return a + b }", "correct": false }
         ],
@@ -439,8 +439,8 @@
         "question": "Select the Correct Syntax",
         "instruction": "Open a file and read text",
         "blocks": [
-          { "code": "with open('data.txt','r') as f:\n    text = f.read()", "correct": true },
-          { "code": "with open 'data.txt' as f:\n    text = f.read()", "correct": false },
+          { "code": "with open('data.txt','r') as f:\n  text = f.read()", "correct": true },
+          { "code": "with open 'data.txt' as f:\n  text = f.read()", "correct": false },
           { "code": "file f = open('data.txt'); text = f.read();", "correct": false }
         ],
         "bloomTarget": "analyzing"
@@ -450,7 +450,7 @@
         "question": "Select the Correct Syntax",
         "instruction": "Dictionary iteration printing keys",
         "blocks": [
-          { "code": "for k in data.keys():\n    print(k)", "correct": true },
+          { "code": "for k in data.keys():\n  print(k)", "correct": true },
           { "code": "for (k : data.keys()) { print(k) }", "correct": false },
           { "code": "foreach k in data { print k }", "correct": false }
         ],
@@ -461,8 +461,8 @@
         "question": "Select the Correct Syntax",
         "instruction": "Try/except catching ValueError",
         "blocks": [
-          { "code": "try:\n    v = int(s)\nexcept ValueError:\n    print('bad')", "correct": true },
-          { "code": "catch ValueError as e:\n    v = int(s)\nelse:\n    print('bad')", "correct": false },
+          { "code": "try:\n  v = int(s)\nexcept ValueError:\n  print('bad')", "correct": true },
+          { "code": "catch ValueError as e:\n  v = int(s)\nelse:\n  print('bad')", "correct": false },
           { "code": "try { v = int(s) } catch(ValueError) { print('bad') }", "correct": false }
         ],
         "bloomTarget": "creating"
@@ -472,8 +472,8 @@
         "question": "Select the Correct Syntax",
         "instruction": "Class with __init__ storing name",
         "blocks": [
-          { "code": "class User:\n    def __init__(self,name):\n        self.name = name", "correct": true },
-          { "code": "class User(name):\n    init { self.name = name }", "correct": false },
+          { "code": "class User:\n  def __init__(self,name):\n    self.name = name", "correct": true },
+          { "code": "class User(name):\n  init { self.name = name }", "correct": false },
           { "code": "class User { def __init__(self,name): self.name = name }", "correct": false }
         ],
         "bloomTarget": "creating"
@@ -527,9 +527,9 @@
         "question": "Select the Correct Syntax",
         "instruction": "Use enumerate in a loop",
         "blocks": [
-          { "code": "for i, val in enumerate(items):\n    print(i, val)", "correct": true },
-          { "code": "for (i, val) in items.enumerate():\n    print(i, val)", "correct": false },
-          { "code": "foreach (i, val) of items:\n    print(i, val)", "correct": false }
+          { "code": "for i, val in enumerate(items):\n  print(i, val)", "correct": true },
+          { "code": "for (i, val) in items.enumerate():\n  print(i, val)", "correct": false },
+          { "code": "foreach (i, val) of items:\n  print(i, val)", "correct": false }
         ],
         "bloomTarget": "analyzing"
       },
@@ -593,9 +593,9 @@
         "question": "Select the Correct Syntax",
         "instruction": "Read JSON from a file",
         "blocks": [
-          { "code": "import json\nwith open('data.json') as f:\n    data = json.load(f)", "correct": true },
-          { "code": "include json\nwith open('data.json') as f:\n    data = f.json()", "correct": false },
-          { "code": "using json:\n    data = json.read('data.json')", "correct": false }
+          { "code": "import json\nwith open('data.json') as f:\n  data = json.load(f)", "correct": true },
+          { "code": "include json\nwith open('data.json') as f:\n  data = f.json()", "correct": false },
+          { "code": "using json:\n  data = json.read('data.json')", "correct": false }
         ],
         "bloomTarget": "analyzing"
       },
@@ -604,9 +604,9 @@
         "question": "Select the Correct Syntax",
         "instruction": "Write JSON to a file",
         "blocks": [
-          { "code": "import json\nwith open('out.json','w') as f:\n    json.dump(data, f)", "correct": true },
-          { "code": "import json\nwith open('out.json','w') as f:\n    f.write(json.dumps(data), f)", "correct": false },
-          { "code": "using json:\n    write('out.json', data)", "correct": false }
+          { "code": "import json\nwith open('out.json','w') as f:\n  json.dump(data, f)", "correct": true },
+          { "code": "import json\nwith open('out.json','w') as f:\n  f.write(json.dumps(data), f)", "correct": false },
+          { "code": "using json:\n  write('out.json', data)", "correct": false }
         ],
         "bloomTarget": "creating"
       },
@@ -615,9 +615,9 @@
         "question": "Select the Correct Syntax",
         "instruction": "for/else construct searching for a value",
         "blocks": [
-          { "code": "for x in items:\n    if x == 3:\n        break\nelse:\n    print('not found')", "correct": true },
-          { "code": "for x in items:\n    if x == 3:\n        stop\nelse:\n    print('not found')", "correct": false },
-          { "code": "foreach x in items:\n    if x == 3:\n        break\notherwise:\n    print('not found')", "correct": false }
+          { "code": "for x in items:\n  if x == 3:\n    break\nelse:\n  print('not found')", "correct": true },
+          { "code": "for x in items:\n  if x == 3:\n    stop\nelse:\n  print('not found')", "correct": false },
+          { "code": "foreach x in items:\n  if x == 3:\n    break\notherwise:\n  print('not found')", "correct": false }
         ],
         "bloomTarget": "analyzing"
       },
@@ -626,7 +626,7 @@
         "question": "Select the Correct Syntax",
         "instruction": "while loop decreasing to zero",
         "blocks": [
-          { "code": "while n > 0:\n    n -= 1", "correct": true },
+          { "code": "while n > 0:\n  n -= 1", "correct": true },
           { "code": "while (n > 0) { n-- }", "correct": false },
           { "code": "while n > 0 do n = n - 1", "correct": false }
         ],
@@ -637,9 +637,9 @@
         "question": "Select the Correct Syntax",
         "instruction": "Use zip to iterate two lists",
         "blocks": [
-          { "code": "for a, b in zip(A, B):\n    print(a, b)", "correct": true },
-          { "code": "for (a, b) of zip(A, B) {\n    print(a, b)\n}", "correct": false },
-          { "code": "foreach a,b in A.zip(B):\n    print a, b", "correct": false }
+          { "code": "for a, b in zip(A, B):\n  print(a, b)", "correct": true },
+          { "code": "for (a, b) of zip(A, B) {\n  print(a, b)\n}", "correct": false },
+          { "code": "foreach a,b in A.zip(B):\n  print a, b", "correct": false }
         ],
         "bloomTarget": "analyzing"
       },
@@ -703,9 +703,9 @@
         "question": "Select the Correct Syntax",
         "instruction": "Use a context manager with encoding",
         "blocks": [
-          { "code": "with open('data.txt', 'r', encoding='utf-8') as f:\n    text = f.read()", "correct": true },
-          { "code": "with open('data.txt', encoding='utf-8') as f:\n    text = f.read('r')", "correct": false },
-          { "code": "open with('data.txt','r','utf-8') as f:\n    text = f.read()", "correct": false }
+          { "code": "with open('data.txt', 'r', encoding='utf-8') as f:\n  text = f.read()", "correct": true },
+          { "code": "with open('data.txt', encoding='utf-8') as f:\n  text = f.read('r')", "correct": false },
+          { "code": "open with('data.txt','r','utf-8') as f:\n  text = f.read()", "correct": false }
         ],
         "bloomTarget": "creating"
       },
@@ -725,8 +725,8 @@
         "question": "Select the Correct Syntax",
         "instruction": "Try/except/else/finally structure",
         "blocks": [
-          { "code": "try:\n    x = int(s)\nexcept ValueError:\n    x = 0\nelse:\n    print('ok')\nfinally:\n    print('done')", "correct": true },
-          { "code": "try:\n    x = int(s)\nelse\n    print('ok')\ncatch ValueError:\n    x = 0\nfinally:\n    print('done')", "correct": false },
+          { "code": "try:\n  x = int(s)\nexcept ValueError:\n  x = 0\nelse:\n  print('ok')\nfinally:\n  print('done')", "correct": true },
+          { "code": "try:\n  x = int(s)\nelse\n  print('ok')\ncatch ValueError:\n  x = 0\nfinally:\n  print('done')", "correct": false },
           { "code": "try { x = int(s) } catch(ValueError) { x = 0 } then { print('ok') } finally { print('done') }", "correct": false }
         ],
         "bloomTarget": "analyzing"
@@ -736,8 +736,8 @@
         "question": "Select the Correct Syntax",
         "instruction": "Define a class with __str__",
         "blocks": [
-          { "code": "class User:\n    def __init__(self, name):\n        self.name = name\n    def __str__(self):\n        return self.name", "correct": true },
-          { "code": "class User(name):\n    def toString(self): return name", "correct": false },
+          { "code": "class User:\n  def __init__(self, name):\n    self.name = name\n  def __str__(self):\n    return self.name", "correct": true },
+          { "code": "class User(name):\n  def toString(self): return name", "correct": false },
           { "code": "class User { __str__(self): return self.name }", "correct": false }
         ],
         "bloomTarget": "understanding"
@@ -747,9 +747,9 @@
         "question": "Select the Correct Syntax",
         "instruction": "@property getter",
         "blocks": [
-          { "code": "class Point:\n    def __init__(self,x,y):\n        self._x = x\n    @property\n    def x(self):\n        return self._x", "correct": true },
-          { "code": "class Point:\n    property x { get: return _x }", "correct": false },
-          { "code": "class Point:\n    def property x(self): return self._x", "correct": false }
+          { "code": "class Point:\n  def __init__(self,x,y):\n    self._x = x\n  @property\n  def x(self):\n    return self._x", "correct": true },
+          { "code": "class Point:\n  property x { get: return _x }", "correct": false },
+          { "code": "class Point:\n  def property x(self): return self._x", "correct": false }
         ],
         "bloomTarget": "analyzing"
       },
@@ -758,8 +758,8 @@
         "question": "Select the Correct Syntax",
         "instruction": "Define a staticmethod",
         "blocks": [
-          { "code": "class Math:\n    @staticmethod\n    def add(a,b):\n        return a+b", "correct": true },
-          { "code": "class Math:\n    static def add(a,b): return a+b", "correct": false },
+          { "code": "class Math:\n  @staticmethod\n  def add(a,b):\n    return a+b", "correct": true },
+          { "code": "class Math:\n  static def add(a,b): return a+b", "correct": false },
           { "code": "class Math { static add(a,b) { return a+b } }", "correct": false }
         ],
         "bloomTarget": "understanding"
@@ -791,9 +791,9 @@
         "question": "Select the Correct Syntax",
         "instruction": "Enumerate with start index 1",
         "blocks": [
-          { "code": "for i, v in enumerate(items, start=1):\n    print(i, v)", "correct": true },
-          { "code": "for i, v in enumerate(items, 1= start):\n    print(i, v)", "correct": false },
-          { "code": "for i, v of enumerate(items, from=1):\n    print(i, v)", "correct": false }
+          { "code": "for i, v in enumerate(items, start=1):\n  print(i, v)", "correct": true },
+          { "code": "for i, v in enumerate(items, 1= start):\n  print(i, v)", "correct": false },
+          { "code": "for i, v of enumerate(items, from=1):\n  print(i, v)", "correct": false }
         ],
         "bloomTarget": "creating"
       },
@@ -846,9 +846,9 @@
         "question": "Select the Correct Syntax",
         "instruction": "for loop with continue",
         "blocks": [
-          { "code": "for x in nums:\n    if x % 2 == 1:\n        continue\n    print(x)", "correct": true },
-          { "code": "for x in nums:\n    if x % 2 == 1:\n        skip\n    print(x)", "correct": false },
-          { "code": "foreach x in nums:\n    if x % 2 == 1 then continue\n    print x", "correct": false }
+          { "code": "for x in nums:\n  if x % 2 == 1:\n    continue\n  print(x)", "correct": true },
+          { "code": "for x in nums:\n  if x % 2 == 1:\n    skip\n  print(x)", "correct": false },
+          { "code": "foreach x in nums:\n  if x % 2 == 1 then continue\n  print x", "correct": false }
         ],
         "bloomTarget": "analyzing"
       },
@@ -857,8 +857,8 @@
         "question": "Select the Correct Syntax",
         "instruction": "Define a function with type hints",
         "blocks": [
-          { "code": "def add(a: int, b: int) -> int:\n    return a + b", "correct": true },
-          { "code": "def add(int a, int b) -> int:\n    return a + b", "correct": false },
+          { "code": "def add(a: int, b: int) -> int:\n  return a + b", "correct": true },
+          { "code": "def add(int a, int b) -> int:\n  return a + b", "correct": false },
           { "code": "int add(a, b): return a + b", "correct": false }
         ],
         "bloomTarget": "understanding"
@@ -901,9 +901,9 @@
         "question": "Select the Correct Syntax",
         "instruction": "Open file and iterate lines",
         "blocks": [
-          { "code": "with open('data.txt') as f:\n    for line in f:\n        print(line.strip())", "correct": true },
-          { "code": "with open('data.txt') as f:\n    foreach line of f:\n        print(line.strip())", "correct": false },
-          { "code": "open 'data.txt' as f:\n    for line in f:\n        print(line)", "correct": false }
+          { "code": "with open('data.txt') as f:\n  for line in f:\n    print(line.strip())", "correct": true },
+          { "code": "with open('data.txt') as f:\n  foreach line of f:\n    print(line.strip())", "correct": false },
+          { "code": "open 'data.txt' as f:\n  for line in f:\n    print(line)", "correct": false }
         ],
         "bloomTarget": "creating"
       },
