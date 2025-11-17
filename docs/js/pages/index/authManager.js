@@ -20,8 +20,15 @@
 
     async initializeAuth() {
       try {
-        if (typeof firebase === 'undefined') {
-          await this.loadFirebase();
+        // Centralized Firebase initialization via firebaseInit.js
+        if (typeof firebase === 'undefined' || !firebase?.apps?.length) {
+          try {
+            const { ensureFirebaseApp } = await import('../../../src/services/firebaseInit.js');
+            await ensureFirebaseApp();
+          } catch (e) {
+            console.warn('[AuthManager] firebaseInit dynamic import failed; falling back to legacy script load:', e?.message || e);
+            await this._fallbackLegacyFirebaseLoad();
+          }
         }
         await this.ensureFirebaseReady();
         const savedUser = localStorage.getItem('sci_high_user');
@@ -134,92 +141,33 @@
     }
 
     async loadFirebase() {
-      return new Promise(async (resolve, reject) => {
+      // Deprecated legacy loader retained for minimal fallback; now delegates to firebaseInit.js
+      return this._fallbackLegacyFirebaseLoad();
+    }
+
+    async initializeFirebaseWithConfig() { /* Deprecated: replaced by centralized firebaseInit.js */ return true; }
+
+    async _fallbackLegacyFirebaseLoad() {
+      // Minimal legacy script injection if firebaseInit.js import failed
+      return new Promise((resolve, reject) => {
         if (typeof firebase !== 'undefined') { resolve(); return; }
         const scripts = [
           'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
           'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js',
           'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js'
         ];
-        let loaded = 0;
+        let loaded = 0; let failed = false;
         scripts.forEach(src => {
           const script = document.createElement('script');
-          script.src = src;
-          script.onload = async () => {
-            loaded++;
-            if (loaded === scripts.length) {
-              try { await this.initializeFirebaseWithConfig(); resolve(); } catch (error) { reject(error); }
-            }
-          };
-          script.onerror = () => reject(new Error(`Failed to load Firebase script: ${src}`));
-          document.head.appendChild(script);
+          script.src = src; script.async = true;
+            script.onload = () => {
+              if (failed) return; loaded++;
+              if (loaded === scripts.length) { resolve(); }
+            };
+            script.onerror = () => { if (!failed) { failed = true; reject(new Error('Failed to load Firebase core scripts')); } };
+            document.head.appendChild(script);
         });
       });
-    }
-
-    async initializeFirebaseWithConfig() {
-      try {
-        if (window.firebaseConfig) {
-          try { await window.firebaseConfig.initializeFirebase(); return true; } catch (error) { console.warn('Firebase config exists but initialization failed:', error.message); return false; }
-        }
-  const base = (window.__APP_BASE__ || '/');
-  const configPaths = ['./config/firebase-config.js', base + 'config/firebase-config.js', 'config/firebase-config.js'];
-        for (const configPath of configPaths) {
-          try {
-            const existingScript = document.querySelector(`script[src*="firebase-config.js"]`);
-            if (existingScript) { await new Promise(r=>setTimeout(r,500)); if (window.firebaseConfig) { await window.firebaseConfig.initializeFirebase(); return true; } continue; }
-            const script = document.createElement('script');
-            script.src = configPath; script.id = 'firebase-config-script';
-            await new Promise((resolve, reject) => {
-              script.onload = () => { setTimeout(() => { if (window.firebaseConfig) resolve(); else reject(new Error('Config loaded but firebaseConfig not available')); }, 100); };
-              script.onerror = reject; document.head.appendChild(script);
-            });
-            if (window.firebaseConfig) { await window.firebaseConfig.initializeFirebase(); return true; }
-          } catch (error) { console.warn(`Failed to load config from ${configPath}:`, error.message); continue; }
-        }
-        // Fallback 1: try env-config.json
-        try {
-          const cacheBuster = `?_v=${Date.now()}`;
-          const res = await fetch((base + 'config/env-config.json').replace(/\/+$/, '') + cacheBuster, { cache: 'no-store' });
-          if (res.ok) {
-            const envConfig = await res.json();
-            const firebaseConfig = {
-              apiKey: envConfig.apiKey || envConfig.FIREBASE_API_KEY,
-              authDomain: envConfig.authDomain || envConfig.FIREBASE_AUTH_DOMAIN,
-              databaseURL: envConfig.databaseURL || envConfig.FIREBASE_DATABASE_URL,
-              projectId: envConfig.projectId || envConfig.FIREBASE_PROJECT_ID,
-              storageBucket: envConfig.storageBucket || envConfig.FIREBASE_STORAGE_BUCKET,
-              messagingSenderId: envConfig.messagingSenderId || envConfig.FIREBASE_MESSAGING_SENDER_ID,
-              appId: envConfig.appId || envConfig.FIREBASE_APP_ID
-            };
-            if (firebaseConfig.apiKey && (firebaseConfig.databaseURL || firebaseConfig.projectId)) {
-              firebase.initializeApp(firebaseConfig);
-              return true;
-            }
-          }
-        } catch (e) { console.warn('env-config.json load failed:', e?.message || e); }
-
-        // Fallback 2: known default config (same as leaderboards/professor)
-        try {
-          const fallbackConfig = {
-            apiKey: 'AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28',
-            authDomain: 'sci-high-website.firebaseapp.com',
-            databaseURL: 'https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app',
-            projectId: 'sci-high-website',
-            storageBucket: 'sci-high-website.appspot.com',
-            messagingSenderId: '451463202515',
-            appId: '1:451463202515:web:e7f9c7bf69c04c685ef626'
-          };
-          firebase.initializeApp(fallbackConfig);
-          console.info('[authManager] Initialized with fallback Firebase config.');
-          return true;
-        } catch (e) {
-          console.error('[authManager] Fallback Firebase init failed:', e);
-        }
-
-        console.warn('Firebase configuration could not be loaded from any path or fallback');
-        return false;
-      } catch (error) { console.warn('Firebase initialization failed:', error.message); return false; }
     }
 
     async loginProfessor(email, password) {
@@ -698,7 +646,14 @@
 
     async createProfessorUser(email, password, fullName, institution = 'SCI-HIGH University') {
       try {
-        if (typeof firebase === 'undefined') { await this.loadFirebase(); }
+        if (typeof firebase === 'undefined' || !firebase?.apps?.length) {
+          try {
+            const { ensureFirebaseApp } = await import('../../../src/services/firebaseInit.js');
+            await ensureFirebaseApp();
+          } catch (e) {
+            await this._fallbackLegacyFirebaseLoad();
+          }
+        }
         if (!firebase.auth || !firebase.database) { throw new Error('Firebase services not available'); }
         const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;

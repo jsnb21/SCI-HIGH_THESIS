@@ -3,15 +3,11 @@
 
 class AuthService {
     constructor() {
-        this.firebaseConfig = {
-            apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
-            authDomain: "sci-high-website.firebaseapp.com",
-            databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "sci-high-website",
-            storageBucket: "sci-high-website.appspot.com",
-            messagingSenderId: "451463202515",
-            appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
-        };
+        // Do not embed API keys here. Prefer runtime-injected config from
+        // `docs/config/firebase-config.js` (window.firebaseConfig) or env files.
+        // If you need a local override, create `docs/config/env-config.local.json`
+        // or provide FIREBASE_* values via query/localStorage when developing.
+        this.firebaseConfig = null;
         
         this.isFirebaseInitialized = false;
         this.auth = null;
@@ -47,9 +43,19 @@ class AuthService {
                 await this.loadFirebaseScripts();
             }
             
-            // Initialize Firebase if not already done
-            if (!window.firebase.apps.length) {
-                window.firebase.initializeApp(this.firebaseConfig);
+            // Prefer centralized runtime config loader if available. The repository
+            // includes `docs/config/firebase-config.js` which exposes `window.firebaseConfig`.
+            if (window.firebaseConfig && typeof window.firebaseConfig.initializeFirebase === 'function') {
+                // Let the centralized loader initialize Firebase (it will choose runtime/env/local candidates)
+                await window.firebaseConfig.initializeFirebase();
+            } else {
+                // Fallback: initialize with any config provided on this instance (legacy)
+                if (!this.firebaseConfig) {
+                    throw new Error('Firebase config not provided and runtime loader not available');
+                }
+                if (!window.firebase.apps.length) {
+                    window.firebase.initializeApp(this.firebaseConfig);
+                }
             }
             
             this.auth = window.firebase.auth();

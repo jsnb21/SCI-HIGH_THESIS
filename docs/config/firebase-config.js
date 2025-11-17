@@ -184,24 +184,6 @@
         console.error('  { "apiKey": "YOUR_KEY" }  // preferred');
         console.error('  { "FIREBASE_API_KEY": "YOUR_KEY", "FIREBASE_AUTH_DOMAIN": "...", etc } // legacy supported');
         console.error('Looked in paths: ./config/, config/, ' + baseLocal + 'config/');
-        if (isLocalhost) {
-          // Developer-friendly fallback: use project defaults embedded in services for local tools (admin/preview/etc.)
-          // Note: These are already present in repo service files. This avoids no-app errors during local development.
-          const fallback = {
-            apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
-            authDomain: "sci-high-website.firebaseapp.com",
-            databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "sci-high-website",
-            storageBucket: "sci-high-website.appspot.com",
-            messagingSenderId: "451463202515",
-            appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
-          };
-          console.warn('Using fallback Firebase config for localhost. For production, configure env-config.json.');
-          this.config = fallback;
-          config = fallback;
-        } else {
-          throw new Error('Firebase API key not configured. Add apiKey or FIREBASE_API_KEY to env-config.json');
-        }
       }
 
       try {

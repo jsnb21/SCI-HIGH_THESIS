@@ -4,6 +4,8 @@ import { playExclusiveBGM, updateSoundVolumes } from '../../audioUtils.js';
 import DomHudManager from '../../ui/DomHudManager.js';
 import TimerController from '../../components/TimerController.js';
 import PauseManager from '../../components/PauseManager.js';
+// Centralized Firebase initialization (replaces hardcoded config in this scene)
+import { ensureFirebaseApp, getFirebaseDatabase } from '../../services/firebaseInit.js';
 
 export default class MainGameplay extends BaseScene {
     constructor() {
@@ -4265,60 +4267,25 @@ export default class MainGameplay extends BaseScene {
 
     async initializeFirebase() {
         try {
-            
-            // Firebase config
-            const firebaseConfig = {
-                apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
-                authDomain: "sci-high-website.firebaseapp.com",
-                databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-                projectId: "sci-high-website",
-                storageBucket: "sci-high-website.appspot.com",
-                messagingSenderId: "451463202515",
-                appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
-            };
-            
-            
-            // First check if we have internet connectivity
+            // Basic connectivity guard
             if (!navigator.onLine) {
                 throw new Error('No internet connection detected');
             }
-            
-            // Check if Firebase is already loaded
-            if (typeof window.firebase === 'undefined') {
-                await this.loadFirebaseScripts();
-            } else {
-            }
-            
-            // Wait a bit for Firebase to be available
-            let retries = 0;
-            while (typeof window.firebase === 'undefined' && retries < 10) {
-                await new Promise(resolve => setTimeout(resolve, 500)); // Increased wait time
-                retries++;
-            }
-            
-            if (typeof window.firebase === 'undefined') {
-                throw new Error('Firebase failed to load after multiple attempts - check your internet connection');
-            }
-            
-            // Initialize Firebase app if not already done
-            if (!window.firebase.apps.length) {
-                window.firebase.initializeApp(firebaseConfig);
-            } else {
-            }
-            
-            // Test Firebase connection
-            this.database = window.firebase.database();
-            
-            // Try a simple connection test
+
+            // Use centralized initialization (firebaseInit.js)
+            await ensureFirebaseApp();
+            this.database = await getFirebaseDatabase();
+
+            // Simple connection test
             await this.database.ref('.info/connected').once('value');
-            
+
             this.isFirebaseInitialized = true;
         } catch (error) {
             console.error('=== FIREBASE INITIALIZATION FAILED ===');
             console.error('Error details:', error);
             console.error('Error stack:', error.stack);
             this.isFirebaseInitialized = false;
-            throw error;
+            throw error; // propagate so callers can fallback to local storage
         }
     }
 

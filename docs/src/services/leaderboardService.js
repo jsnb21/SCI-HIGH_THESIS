@@ -1,18 +1,10 @@
 // Leaderboard Service for SCI-HIGH Game
 // Handles communication between the game and Firebase leaderboard
+// Firebase initialization now delegated to centralized firebaseInit.js
+import { ensureFirebaseApp, getFirebaseDatabase } from './firebaseInit.js';
 
 class LeaderboardService {
     constructor() {
-        this.firebaseConfig = {
-            apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
-            authDomain: "sci-high-website.firebaseapp.com",
-            databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "sci-high-website",
-            storageBucket: "sci-high-website.appspot.com",
-            messagingSenderId: "451463202515",
-            appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
-        };
-        
         this.isFirebaseInitialized = false;
         this.db = null;
         this.initializationPromise = null;
@@ -88,97 +80,22 @@ class LeaderboardService {
 
     async initializeFirebase() {
         try {
-            
-            // First check if we have internet connectivity
             if (!navigator.onLine) {
                 throw new Error('No internet connection detected');
             }
-            
-            // Check if Firebase is already loaded
-            if (typeof window.firebase === 'undefined') {
-                await this.loadFirebaseScripts();
-            }
-            
-            // Wait a bit for Firebase to be available
-            let retries = 0;
-            while (typeof window.firebase === 'undefined' && retries < 10) {
-                await new Promise(resolve => setTimeout(resolve, 300));
-                retries++;
-            }
-            
-            if (typeof window.firebase === 'undefined') {
-                throw new Error('Firebase failed to load after multiple attempts - check your internet connection');
-            }
-            
-            // Initialize Firebase if not already done
-            if (!window.firebase.apps.length) {
-                window.firebase.initializeApp(this.firebaseConfig);
-            }
-            
-            // Test Firebase connection
-            this.db = window.firebase.database();
-            
-            // Try a simple connection test
+
+            // Centralized init (handles script loading + config resolution)
+            await ensureFirebaseApp();
+            this.db = await getFirebaseDatabase();
+
+            // Connection test
             await this.db.ref('.info/connected').once('value');
-            
             this.isFirebaseInitialized = true;
         } catch (error) {
             console.error('Failed to initialize Firebase:', error);
             this.isFirebaseInitialized = false;
             throw error;
         }
-    }
-
-    async loadFirebaseScripts() {
-        return new Promise((resolve, reject) => {
-            // Check if Firebase is already loaded
-            if (typeof window.firebase !== 'undefined') {
-                resolve();
-                return;
-            }
-
-            // Load Firebase scripts dynamically
-            const scripts = [
-                'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
-                'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js'
-            ];
-            
-            let loaded = 0;
-            let hasError = false;
-            const timeout = setTimeout(() => {
-                if (!hasError) {
-                    hasError = true;
-                    reject(new Error('Firebase script loading timeout - check your internet connection'));
-                }
-            }, 10000); // 10 second timeout
-            
-            const handleLoad = () => {
-                loaded++;
-                if (loaded === scripts.length && !hasError) {
-                    clearTimeout(timeout);
-                    // Wait a bit for Firebase to initialize
-                    setTimeout(() => resolve(), 200);
-                }
-            };
-            
-            const handleError = (src) => {
-                if (!hasError) {
-                    hasError = true;
-                    clearTimeout(timeout);
-                    console.error(`Failed to load Firebase script: ${src}`);
-                    reject(new Error(`Failed to load Firebase script from CDN - check your internet connection`));
-                }
-            };
-            
-            scripts.forEach((src) => {
-                const script = document.createElement('script');
-                script.src = src;
-                script.onload = handleLoad;
-                script.onerror = () => handleError(src);
-                script.async = true;
-                document.head.appendChild(script);
-            });
-        });
     }
 
     // Sanitize object keys for Firebase (remove invalid characters)

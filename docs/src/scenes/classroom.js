@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 // Removed char1, char2, char3, char4, char5 import as we use chibi versions loaded in preload()
 import { createBackButton } from '../components/buttons/backbutton';
+import { firebaseService } from '../services/firebaseInit.js';
 import Carousel from '../ui/carouselUI';
 import VNDialogueBox from '../ui/VNDialogueBox';
 import { onceOnlyFlags } from '../gameManager';
@@ -25,17 +26,8 @@ export default class Classroom extends Phaser.Scene {
         this.isFirebaseInitialized = false;
         this.database = null;
         this.initializationPromise = null;
-        
-        // Firebase config
-        this.firebaseConfig = {
-            apiKey: "AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28",
-            authDomain: "sci-high-website.firebaseapp.com",
-            databaseURL: "https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "sci-high-website",
-            storageBucket: "sci-high-website.appspot.com",
-            messagingSenderId: "451463202515",
-            appId: "1:451463202515:web:e7f9c7bf69c04c685ef626"
-        };
+        // Config is no longer hard-coded; will be resolved dynamically from injected globals or env-config files.
+        this.firebaseConfig = null;
     }
 
     async ensureFirebaseInitialized() {
@@ -58,39 +50,10 @@ export default class Classroom extends Phaser.Scene {
 
     async initializeFirebase() {
         try {
-            
-            // First check if we have internet connectivity
-            if (!navigator.onLine) {
-                throw new Error('No internet connection detected');
-            }
-            
-            // Check if Firebase is already loaded
-            if (typeof window.firebase === 'undefined') {
-                await this.loadFirebaseScripts();
-            }
-            
-            // Wait a bit for Firebase to be available
-            let retries = 0;
-            while (typeof window.firebase === 'undefined' && retries < 10) {
-                await new Promise(resolve => setTimeout(resolve, 300));
-                retries++;
-            }
-            
-            if (typeof window.firebase === 'undefined') {
-                throw new Error('Firebase failed to load after multiple attempts - check your internet connection');
-            }
-            
-            // Initialize Firebase app if not already done
-            if (!window.firebase.apps.length) {
-                window.firebase.initializeApp(this.firebaseConfig);
-            }
-            
-            // Test Firebase connection
-            this.database = window.firebase.database();
-            
-            // Try a simple connection test
+            if (!navigator.onLine) throw new Error('No internet connection detected');
+            await firebaseService.ensureFirebase();
+            this.database = await firebaseService.getDatabase();
             await this.database.ref('.info/connected').once('value');
-            
             this.isFirebaseInitialized = true;
         } catch (error) {
             console.error('Failed to initialize Firebase for Classroom:', error);
@@ -99,27 +62,7 @@ export default class Classroom extends Phaser.Scene {
         }
     }
 
-    async loadFirebaseScripts() {
-        const scripts = [
-            'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js',
-            'https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js'
-        ];
-
-        try {
-            for (const src of scripts) {
-                await new Promise((resolve, reject) => {
-                    const script = document.createElement('script');
-                    script.src = src;
-                    script.onload = resolve;
-                    script.onerror = () => reject(new Error(`Failed to load ${src}`));
-                    document.head.appendChild(script);
-                });
-            }
-        } catch (error) {
-            console.error('Error loading Firebase scripts:', error);
-            throw error;
-        }
-    }
+    // loadFirebaseScripts removed; centralized firebaseService manages script loading
 
     async checkStudentDataInFirebase() {
         try {

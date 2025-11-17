@@ -54,23 +54,51 @@ async function _doInitialize() {
     }
   }
 
-  // If still no app, fallback to known public config used by leaderboard service
+  // If still no app, attempt to load developer/local env config instead of embedding keys.
+  // Provide configuration via one of:
+  //  1) runtime script exposing window.SCI_HIGH.FIREBASE (CI/CD injection)
+  //  2) ./config/env-config.local.json (gitignored; developer machine only)
+  //  3) ./config/env-config.json (committed without secrets or with limited public keys)
   if (firebase.apps.length === 0) {
-    const fallbackConfig = {
-      apiKey: 'AIzaSyD-Q2woACHgMCTVwd6aX-IUzLovE0ux-28',
-      authDomain: 'sci-high-website.firebaseapp.com',
-      databaseURL: 'https://sci-high-website-default-rtdb.asia-southeast1.firebasedatabase.app',
-      projectId: 'sci-high-website',
-      storageBucket: 'sci-high-website.appspot.com',
-      messagingSenderId: '451463202515',
-      appId: '1:451463202515:web:e7f9c7bf69c04c685ef626'
+    const cacheBuster = `?_v=${Date.now()}`;
+    const tryInitFrom = async (path) => {
+      try {
+        const res = await fetch(path + cacheBuster, { cache: 'no-store' });
+        if (!res.ok) return false;
+        const raw = await res.json();
+        const cfg = {
+          apiKey: raw.apiKey || raw.FIREBASE_API_KEY,
+          authDomain: raw.authDomain || raw.FIREBASE_AUTH_DOMAIN,
+          databaseURL: raw.databaseURL || raw.FIREBASE_DATABASE_URL,
+          projectId: raw.projectId || raw.FIREBASE_PROJECT_ID,
+          storageBucket: raw.storageBucket || raw.FIREBASE_STORAGE_BUCKET,
+          messagingSenderId: raw.messagingSenderId || raw.FIREBASE_MESSAGING_SENDER_ID,
+          appId: raw.appId || raw.FIREBASE_APP_ID
+        };
+        if (!cfg.apiKey || !(cfg.databaseURL || cfg.projectId)) return false;
+        firebase.initializeApp(cfg);
+        console.info(`[firebaseClient] Initialized Firebase using ${path}`);
+        return true;
+      } catch (_) { return false; }
     };
-    try {
-      firebase.initializeApp(fallbackConfig);
-      console.info('[firebaseClient] Initialized with leaderboard fallback config.');
-    } catch (err) {
-      console.error('[firebaseClient] Failed to initialize Firebase with fallback config:', err);
-      throw err;
+
+    const base = (window.__APP_BASE__ || '/');
+    const candidates = [
+      './config/env-config.local.json',
+      'config/env-config.local.json',
+      base + 'config/env-config.local.json',
+      './config/env-config.json',
+      'config/env-config.json',
+      base + 'config/env-config.json'
+    ];
+    let initialized = false;
+    for (const p of candidates) {
+      // Skip duplicate attempts if already initialized by earlier candidate
+      if (firebase.apps.length) { initialized = true; break; }
+      if (await tryInitFrom(p)) { initialized = true; break; }
+    }
+    if (!initialized && firebase.apps.length === 0) {
+      console.warn('[firebaseClient] No Firebase app initialized. Supply runtime config or env-config(.local).json.');
     }
   }
 
