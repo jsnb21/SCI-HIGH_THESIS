@@ -26,15 +26,15 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: docs/package.json
+          cache-dependency-path: package.json
 
       - name: Inject runtime config (AI + Firebase)
         shell: bash
         run: |
-          mkdir -p docs/config
+          mkdir -p config
 
           # AI key (optional) and feature flags
-          cat << 'EOF' > docs/config/ai-key.js
+          cat << 'EOF' > config/ai-key.js
           // Auto-generated at deploy time. Do not commit.
           window.SCI_HIGH = window.SCI_HIGH || {};
           window.SCI_HIGH.GOOGLE_AI_API_KEY = '${{ secrets.SCI_HIGH_GOOGLE_AI_API_KEY }}';
@@ -43,7 +43,7 @@ jobs:
           EOF
 
           # env-config.json for fetch-based loading
-          cat << 'EOF' > docs/config/env-config.json
+          cat << 'EOF' > config/env-config.json
           {
             "geminiApiKey": "${{ secrets.SCI_HIGH_GOOGLE_AI_API_KEY }}",
             "apiKey": "${{ secrets.FIREBASE_API_KEY }}",
@@ -57,7 +57,7 @@ jobs:
           EOF
 
           # Global injection fallback (file name supported by loader)
-          cat << 'EOF' > docs/config/firebase-init.js
+          cat << 'EOF' > config/firebase-init.js
           // Auto-generated at deploy time. Do not commit.
           window.SCI_HIGH = window.SCI_HIGH || {};
           window.SCI_HIGH.FIREBASE = {
@@ -72,7 +72,7 @@ jobs:
           EOF
 
           # Alternate runtime env filename (also supported by loader)
-          cat << 'EOF' > docs/config/runtime-env.js
+          cat << 'EOF' > config/runtime-env.js
           window.SCI_HIGH = window.SCI_HIGH || {};
           window.SCI_HIGH.FIREBASE = {
             apiKey: "${{ secrets.FIREBASE_API_KEY }}",
@@ -85,12 +85,10 @@ jobs:
           };
           EOF
 
-      - name: Install dependencies (docs)
-        working-directory: docs
+      - name: Install dependencies
         run: npm ci
 
-      - name: Build (docs)
-        working-directory: docs
+      - name: Build
         run: npm run build
 
       - name: Configure GitHub Pages
@@ -99,7 +97,7 @@ jobs:
       - name: Upload artifact (dist)
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/dist
+          path: ./dist
 
   deploy:
     environment:
