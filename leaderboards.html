@@ -468,18 +468,6 @@
       // Load Career Stats Data via dataService with injected db provider
       async function loadCareerStatsData(filter = 'overall') {
         try {
-
-          if (!window.SCI_HIGH?.FIREBASE) {
-            try {
-              const res = await fetch('./config/env-config.json');
-              const envConfig = await res.json();
-              window.SCI_HIGH = window.SCI_HIGH || {};
-              window.SCI_HIGH.FIREBASE = envConfig;
-            } catch (err) {
-              console.warn('Could not fetch fallback ./config/env-config.json:', err);
-            }
-          }
-
           const [fb, dataMod, cacheMod] = await Promise.all([
             import('./js/leaderboards/firebaseClient.js'),
             import('./js/leaderboards/dataService.js'),
