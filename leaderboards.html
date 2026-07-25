@@ -145,6 +145,15 @@
       };
     </script>
   <link rel="stylesheet" href="public/assets/css/leaderboards.css" />
+    <!-- Optional: runtime Firebase config injected by CI. Guard-load if present. -->
+    <script>
+      (function(){
+        var s = document.createElement('script');
+        s.src = 'config/firebase-init.js';
+        s.onerror = function(){ /* optional file; ignore missing */ };
+        document.currentScript.parentNode.insertBefore(s, document.currentScript);
+      })();
+    </script>
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>

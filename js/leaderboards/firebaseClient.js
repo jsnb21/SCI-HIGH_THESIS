@@ -5,6 +5,75 @@ let _db = null;
 let _initialized = false;
 let _initPromise = null;
 
+function normalizeFirebaseConfig(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const cfg = {
+    apiKey: raw.apiKey || raw.FIREBASE_API_KEY,
+    authDomain: raw.authDomain || raw.FIREBASE_AUTH_DOMAIN,
+    databaseURL: raw.databaseURL || raw.FIREBASE_DATABASE_URL,
+    projectId: raw.projectId || raw.FIREBASE_PROJECT_ID,
+    storageBucket: raw.storageBucket || raw.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: raw.messagingSenderId || raw.FIREBASE_MESSAGING_SENDER_ID,
+    appId: raw.appId || raw.FIREBASE_APP_ID
+  };
+  if (!cfg.apiKey || !(cfg.databaseURL || cfg.projectId)) return null;
+  return cfg;
+}
+
+function resolveInjectedFirebaseConfig() {
+  const sources = [
+    window.__FIREBASE_CONFIG__,
+    window.SCI_HIGH && window.SCI_HIGH.FIREBASE,
+    window.firebaseConfig && window.firebaseConfig.config
+  ];
+  for (const source of sources) {
+    const cfg = normalizeFirebaseConfig(source);
+    if (cfg) return cfg;
+  }
+  return null;
+}
+
+async function loadScriptOnce(src) {
+  const existing = document.querySelector(`script[src="${src}"]`);
+  if (existing) {
+    if (existing.dataset.loaded === 'true') return true;
+    await new Promise((resolve, reject) => {
+      existing.addEventListener('load', resolve, { once: true });
+      existing.addEventListener('error', reject, { once: true });
+    });
+    return true;
+  }
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.onload = () => {
+      s.dataset.loaded = 'true';
+      resolve();
+    };
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+  return true;
+}
+
+async function tryLoadRuntimeFirebaseInit() {
+  if (resolveInjectedFirebaseConfig()) return true;
+  const base = (window.__APP_BASE__ || '/');
+  const candidates = [
+    './config/firebase-init.js',
+    'config/firebase-init.js',
+    base + 'config/firebase-init.js'
+  ];
+  for (const src of candidates) {
+    try {
+      await loadScriptOnce(src);
+      if (resolveInjectedFirebaseConfig()) return true;
+    } catch (_) { /* try next */ }
+  }
+  return false;
+}
+
 async function tryLoadSiteFirebaseConfig() {
   if (window.firebaseConfig && typeof window.firebaseConfig.initializeFirebase === 'function') {
     return true;
@@ -54,28 +123,27 @@ async function _doInitialize() {
     }
   }
 
-  // If still no app, attempt to load developer/local env config instead of embedding keys.
-  // Provide configuration via one of:
-  //  1) runtime script exposing window.SCI_HIGH.FIREBASE (CI/CD injection)
+  // If still no app, attempt runtime injection or env-config files.
+  // Priority:
+  //  1) window.SCI_HIGH.FIREBASE / firebase-init.js (CI/CD injection)
   //  2) ./config/env-config.local.json (gitignored; developer machine only)
-  //  3) ./config/env-config.json (committed without secrets or with limited public keys)
+  //  3) ./config/env-config.json
   if (firebase.apps.length === 0) {
+    await tryLoadRuntimeFirebaseInit();
+    const injectedCfg = resolveInjectedFirebaseConfig();
+    if (injectedCfg) {
+      firebase.initializeApp(injectedCfg);
+      console.info('[firebaseClient] Initialized Firebase using injected runtime config');
+    }
+
     const cacheBuster = `?_v=${Date.now()}`;
     const tryInitFrom = async (path) => {
       try {
         const res = await fetch(path + cacheBuster, { cache: 'no-store' });
         if (!res.ok) return false;
         const raw = await res.json();
-        const cfg = {
-          apiKey: raw.apiKey || raw.FIREBASE_API_KEY,
-          authDomain: raw.authDomain || raw.FIREBASE_AUTH_DOMAIN,
-          databaseURL: raw.databaseURL || raw.FIREBASE_DATABASE_URL,
-          projectId: raw.projectId || raw.FIREBASE_PROJECT_ID,
-          storageBucket: raw.storageBucket || raw.FIREBASE_STORAGE_BUCKET,
-          messagingSenderId: raw.messagingSenderId || raw.FIREBASE_MESSAGING_SENDER_ID,
-          appId: raw.appId || raw.FIREBASE_APP_ID
-        };
-        if (!cfg.apiKey || !(cfg.databaseURL || cfg.projectId)) return false;
+        const cfg = normalizeFirebaseConfig(raw);
+        if (!cfg) return false;
         firebase.initializeApp(cfg);
         console.info(`[firebaseClient] Initialized Firebase using ${path}`);
         return true;
@@ -91,9 +159,8 @@ async function _doInitialize() {
       'config/env-config.json',
       base + 'config/env-config.json'
     ];
-    let initialized = false;
+    let initialized = firebase.apps.length > 0;
     for (const p of candidates) {
-      // Skip duplicate attempts if already initialized by earlier candidate
       if (firebase.apps.length) { initialized = true; break; }
       if (await tryInitFrom(p)) { initialized = true; break; }
     }

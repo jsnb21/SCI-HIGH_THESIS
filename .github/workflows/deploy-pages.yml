@@ -30,60 +30,133 @@ jobs:
 
       - name: Inject runtime config (AI + Firebase)
         shell: bash
+        env:
+          SCI_HIGH_GOOGLE_AI_API_KEY: ${{ secrets.SCI_HIGH_GOOGLE_AI_API_KEY }}
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
         run: |
           mkdir -p config
 
+          sanitize_secret() {
+            printf '%s' "$1" | sed -e 's/^["'"'"']*//' -e 's/["'"'"']*$//'
+          }
+
+          AI_KEY="$(sanitize_secret "$SCI_HIGH_GOOGLE_AI_API_KEY")"
+          FB_API_KEY="$(sanitize_secret "$FIREBASE_API_KEY")"
+          FB_AUTH_DOMAIN="$(sanitize_secret "$FIREBASE_AUTH_DOMAIN")"
+          FB_DATABASE_URL="$(sanitize_secret "$FIREBASE_DATABASE_URL")"
+          FB_PROJECT_ID="$(sanitize_secret "$FIREBASE_PROJECT_ID")"
+          FB_STORAGE_BUCKET="$(sanitize_secret "$FIREBASE_STORAGE_BUCKET")"
+          FB_MESSAGING_SENDER_ID="$(sanitize_secret "$FIREBASE_MESSAGING_SENDER_ID")"
+          FB_APP_ID="$(sanitize_secret "$FIREBASE_APP_ID")"
+
+          export AI_KEY FB_API_KEY FB_AUTH_DOMAIN FB_DATABASE_URL FB_PROJECT_ID FB_STORAGE_BUCKET FB_MESSAGING_SENDER_ID FB_APP_ID
+
           # AI key (optional) and feature flags
-          cat << 'EOF' > config/ai-key.js
+          cat > config/ai-key.js << EOF
           // Auto-generated at deploy time. Do not commit.
           window.SCI_HIGH = window.SCI_HIGH || {};
-          window.SCI_HIGH.GOOGLE_AI_API_KEY = '${{ secrets.SCI_HIGH_GOOGLE_AI_API_KEY }}';
+          window.SCI_HIGH.GOOGLE_AI_API_KEY = '${AI_KEY}';
           // Keep aggregates off by default in public deploys; flip to true if desired
           window.SCI_HIGH.ALLOW_FIREBASE_AGGREGATE_SYNC = false;
           EOF
 
           # env-config.json for fetch-based loading
-          cat << 'EOF' > config/env-config.json
-          {
-            "geminiApiKey": "${{ secrets.SCI_HIGH_GOOGLE_AI_API_KEY }}",
-            "apiKey": "${{ secrets.FIREBASE_API_KEY }}",
-            "authDomain": "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-            "databaseURL": "${{ secrets.FIREBASE_DATABASE_URL }}",
-            "projectId": "${{ secrets.FIREBASE_PROJECT_ID }}",
-            "storageBucket": "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-            "messagingSenderId": "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-            "appId": "${{ secrets.FIREBASE_APP_ID }}"
-          }
-          EOF
+          node << 'NODE'
+          const fs = require('fs');
+          const cfg = {
+            geminiApiKey: process.env.AI_KEY,
+            apiKey: process.env.FB_API_KEY,
+            authDomain: process.env.FB_AUTH_DOMAIN,
+            databaseURL: process.env.FB_DATABASE_URL,
+            projectId: process.env.FB_PROJECT_ID,
+            storageBucket: process.env.FB_STORAGE_BUCKET,
+            messagingSenderId: process.env.FB_MESSAGING_SENDER_ID,
+            appId: process.env.FB_APP_ID
+          };
+          fs.writeFileSync('config/env-config.json', JSON.stringify(cfg, null, 2) + '\n');
+          NODE
 
           # Global injection fallback (file name supported by loader)
-          cat << 'EOF' > config/firebase-init.js
+          cat > config/firebase-init.js << EOF
           // Auto-generated at deploy time. Do not commit.
           window.SCI_HIGH = window.SCI_HIGH || {};
           window.SCI_HIGH.FIREBASE = {
-            apiKey: "${{ secrets.FIREBASE_API_KEY }}",
-            authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-            databaseURL: "${{ secrets.FIREBASE_DATABASE_URL }}",
-            projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
-            storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-            messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-            appId: "${{ secrets.FIREBASE_APP_ID }}"
+            apiKey: "${FB_API_KEY}",
+            authDomain: "${FB_AUTH_DOMAIN}",
+            databaseURL: "${FB_DATABASE_URL}",
+            projectId: "${FB_PROJECT_ID}",
+            storageBucket: "${FB_STORAGE_BUCKET}",
+            messagingSenderId: "${FB_MESSAGING_SENDER_ID}",
+            appId: "${FB_APP_ID}"
           };
           EOF
 
           # Alternate runtime env filename (also supported by loader)
-          cat << 'EOF' > config/runtime-env.js
+          cat > config/runtime-env.js << EOF
           window.SCI_HIGH = window.SCI_HIGH || {};
           window.SCI_HIGH.FIREBASE = {
-            apiKey: "${{ secrets.FIREBASE_API_KEY }}",
-            authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-            databaseURL: "${{ secrets.FIREBASE_DATABASE_URL }}",
-            projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
-            storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-            messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-            appId: "${{ secrets.FIREBASE_APP_ID }}"
+            apiKey: "${FB_API_KEY}",
+            authDomain: "${FB_AUTH_DOMAIN}",
+            databaseURL: "${FB_DATABASE_URL}",
+            projectId: "${FB_PROJECT_ID}",
+            storageBucket: "${FB_STORAGE_BUCKET}",
+            messagingSenderId: "${FB_MESSAGING_SENDER_ID}",
+            appId: "${FB_APP_ID}"
           };
           EOF
+
+          # Site-wide firebaseConfig manager used by game/admin pages
+          cat > config/firebase-config.js << EOF
+          // Auto-generated at deploy time. Do not commit.
+          (function () {
+            var cfg = {
+              apiKey: "${FB_API_KEY}",
+              authDomain: "${FB_AUTH_DOMAIN}",
+              databaseURL: "${FB_DATABASE_URL}",
+              projectId: "${FB_PROJECT_ID}",
+              storageBucket: "${FB_STORAGE_BUCKET}",
+              messagingSenderId: "${FB_MESSAGING_SENDER_ID}",
+              appId: "${FB_APP_ID}"
+            };
+            window.SCI_HIGH = window.SCI_HIGH || {};
+            window.SCI_HIGH.FIREBASE = window.SCI_HIGH.FIREBASE || cfg;
+            window.firebaseConfig = {
+              config: cfg,
+              _initialized: false,
+              isInitialized: function () {
+                return this._initialized || (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0);
+              },
+              initializeFirebase: async function () {
+                if (this.isInitialized()) {
+                  this._initialized = true;
+                  return firebase.app();
+                }
+                if (typeof firebase === 'undefined') {
+                  throw new Error('Firebase SDK not loaded');
+                }
+                var activeCfg = (window.SCI_HIGH && window.SCI_HIGH.FIREBASE) || this.config;
+                if (!activeCfg || !activeCfg.apiKey) {
+                  throw new Error('No Firebase configuration available');
+                }
+                if (firebase.apps.length === 0) {
+                  firebase.initializeApp(activeCfg);
+                }
+                this._initialized = true;
+                return firebase.app();
+              }
+            };
+          })();
+          EOF
+
+          node -e "JSON.parse(require('fs').readFileSync('config/env-config.json','utf8')); console.log('✅ env-config.json is valid JSON')"
+          test -s config/firebase-init.js
+          test -s config/firebase-config.js
 
       - name: Install dependencies
         run: npm ci
