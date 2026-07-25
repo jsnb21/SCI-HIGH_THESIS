@@ -1,137 +1,86 @@
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+# ==========================================
+# API Keys, Secrets & Sensitive Config
+# ==========================================
+config/
+*.key
+*.secret
+.env
+.env*
+admin-password.txt
 
-# Build outputs
-dist/
-build/
-
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS generated files
+# ==========================================
+# Environment & System Specific Files
+# ==========================================
+# macOS
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
+
+# Windows
 Thumbs.db
+ehthumbs.db
+
+# IDEs and Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+
+# ==========================================
+# Dependencies & Caches
+# ==========================================
+node_modules/
+jspm_packages/
+.npm
+.eslintcache
+.node_repl_history
+.fusebox/
+
+# ==========================================
+# Build Outputs & Logs
+# ==========================================
+dist/
+dist-ssr/
+build/
+.next
+.nuxt
+.vuepress/dist
+.serverless
+.dynamodb/
+*.local
+*.tgz
+.yarn-integrity
 
 # Logs
 logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Runtime data
+# Runtime data & Testing
 pids/
 *.pid
 *.seed
 *.pid.lock
-
-# Coverage directory used by tools like istanbul
 coverage/
 *.lcov
-
-# nyc test coverage
 .nyc_output/
 
-# Dependency directories
-jspm_packages/
+# ==========================================
+# Specific Project Files & Diagrams
+# ==========================================
+config/env-config.json
 
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variables file
-.env
-
-# next.js build output
-.next
-
-# nuxt.js build output
-.nuxt
-
-# vuepress build output
-.vuepress/dist
-
-# Serverless directories
-.serverless
-
-# FuseBox cache
-.fusebox/
-
-# DynamoDB Local files
-.dynamodb/
-package-lock.json
-package.json
-docs/config/env-config.json
-docs/diagrams/achievements_diagram.md
-docs/diagrams/achievements_diagram.mmd
-docs/diagrams/achievements_diagram.png
-docs/diagrams/achievements_diagram.svg
-docs/diagrams/adaptive_reranking_diagram.md
-docs/diagrams/adaptive_reranking_diagram.mmd
-docs/diagrams/adaptive_reranking_diagram.optimized.svg
-docs/diagrams/adaptive_reranking_diagram.png
-docs/diagrams/adaptive_reranking_diagram.svg
-docs/diagrams/architecture_v3.mmd
-docs/diagrams/architecture_v3.png
-docs/diagrams/architecture_v3.svg
-docs/diagrams/architecture_v3_explanation.md
-docs/diagrams/data_dictionary.md
-docs/diagrams/db_schema.md
-docs/diagrams/db_schema.mmd
-docs/diagrams/db_schema.png
-docs/diagrams/db_schema.svg
-docs/diagrams/diagrams_explanation.md
-docs/diagrams/gameplay_sequence.mmd
-docs/diagrams/gameplay_sequence.png
-docs/diagrams/gameplay_sequence.svg
-docs/diagrams/gameplay_sequence_explanation.md
-docs/diagrams/main_gameplay.mmd
-docs/diagrams/main_gameplay.optimized.svg
-docs/diagrams/main_gameplay.png
-docs/diagrams/main_gameplay.svg
-docs/diagrams/main_gameplay_diagram.md
-docs/diagrams/test.mmd
-docs/diagrams/test.svg
-diagrams/achievements_leaderboards.md
-diagrams/achievements_leaderboards.mmd
-diagrams/adaptive_reranking.md
-diagrams/adaptive_reranking_diagram.mmd
-diagrams/architecture.mmd
-diagrams/difficulty_heuristics.md
-diagrams/difficulty_heuristics.mmd
-diagrams/mastery_service.md
-diagrams/mastery_service.mmd
-diagrams/offline_sync.md
-diagrams/offline_sync.mmd
-diagrams/randomization.md
-diagrams/randomization.mmd
-diagrams/system_flow.clean.mmd
-docs/diagrams/firebase_er_diagram.md
-docs/diagrams/firebase_er_diagram.mmd
-docs/diagrams/main_gameplay_redesigned.clean.mmd
-docs/diagrams/main_gameplay_redesigned.mmd
-docs/diagrams/main_gameplay_redesigned.sanitized.mmd
-docs/diagrams/main_gameplay_redesigned.sanitized.svg
-docs/diagrams/system_flow.md
-docs/diagrams/system_flow.svg
+# Diagrams (Root & Moved Files)
+diagrams/
