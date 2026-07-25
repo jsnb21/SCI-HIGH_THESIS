@@ -1,6 +1,5 @@
 # API Keys and Sensitive Configuration
-config/api-key.txt
-config/ai-key.js
+config/
 *.key
 *.secret
 .env*
