@@ -28,10 +28,9 @@ jobs:
           cache: 'npm'
           cache-dependency-path: package.json
 
-      - name: Inject runtime config (AI + Firebase)
+      - name: Inject Firebase runtime config
         shell: bash
         env:
-          SCI_HIGH_GOOGLE_AI_API_KEY: ${{ secrets.SCI_HIGH_GOOGLE_AI_API_KEY }}
           FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
           FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
@@ -46,7 +45,6 @@ jobs:
             printf '%s' "$1" | sed -e 's/^["'"'"']*//' -e 's/["'"'"']*$//'
           }
 
-          AI_KEY="$(sanitize_secret "$SCI_HIGH_GOOGLE_AI_API_KEY")"
           FB_API_KEY="$(sanitize_secret "$FIREBASE_API_KEY")"
           FB_AUTH_DOMAIN="$(sanitize_secret "$FIREBASE_AUTH_DOMAIN")"
           FB_DATABASE_URL="$(sanitize_secret "$FIREBASE_DATABASE_URL")"
@@ -55,22 +53,12 @@ jobs:
           FB_MESSAGING_SENDER_ID="$(sanitize_secret "$FIREBASE_MESSAGING_SENDER_ID")"
           FB_APP_ID="$(sanitize_secret "$FIREBASE_APP_ID")"
 
-          export AI_KEY FB_API_KEY FB_AUTH_DOMAIN FB_DATABASE_URL FB_PROJECT_ID FB_STORAGE_BUCKET FB_MESSAGING_SENDER_ID FB_APP_ID
-
-          # AI key (optional) and feature flags
-          cat > config/ai-key.js << EOF
-          // Auto-generated at deploy time. Do not commit.
-          window.SCI_HIGH = window.SCI_HIGH || {};
-          window.SCI_HIGH.GOOGLE_AI_API_KEY = '${AI_KEY}';
-          // Keep aggregates off by default in public deploys; flip to true if desired
-          window.SCI_HIGH.ALLOW_FIREBASE_AGGREGATE_SYNC = false;
-          EOF
+          export FB_API_KEY FB_AUTH_DOMAIN FB_DATABASE_URL FB_PROJECT_ID FB_STORAGE_BUCKET FB_MESSAGING_SENDER_ID FB_APP_ID
 
           # env-config.json for fetch-based loading
           node << 'NODE'
           const fs = require('fs');
           const cfg = {
-            geminiApiKey: process.env.AI_KEY,
             apiKey: process.env.FB_API_KEY,
             authDomain: process.env.FB_AUTH_DOMAIN,
             databaseURL: process.env.FB_DATABASE_URL,

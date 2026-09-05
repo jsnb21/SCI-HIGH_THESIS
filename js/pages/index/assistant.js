@@ -7,6 +7,8 @@
       this.isRecording = false;
       this.currentRecognition = null;
       this.apiKey = '';
+      // Direct browser-to-provider AI calls stay disabled until a trusted backend proxy exists.
+      this.remoteAIEnabled = false;
       // Prefer stable v1 endpoints; fall back to other variants if needed
       this.apiEndpoints = [
         'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent',
@@ -111,21 +113,9 @@
       this.init();
     }
 
-    init(){ this.loadApiKeyFromFile(); this.setupSecurityMeasures(); this.bindEvents(); this.setupAutoResponses(); }
+    init(){ this.updateAIStatus(false); this.setupSecurityMeasures(); this.bindEvents(); this.setupAutoResponses(); }
     async loadApiKeyFromFile(){
-      try {
-        try {
-          const injected = window?.SCI_HIGH?.GOOGLE_AI_API_KEY || window?.env?.GOOGLE_AI_API_KEY;
-          if (injected && this.validateApiKey(injected)) { this.apiKey = injected; this.keyExpiry = Date.now() + this.maxKeyAge; this.updateAIStatus(true); this.primeModels(); return; }
-        } catch {}
-  const base = (window.__APP_BASE__ || '/');
-  const possible = [this.configFile,'./config/env-config.json', base + 'config/env-config.json','config/env-config.json'];
-        let ok = false;
-        for (const path of possible) {
-          try { const response = await fetch(path); if (response.ok) { const cfg = await response.json(); if (cfg.geminiApiKey && cfg.geminiApiKey !== 'YOUR_GEMINI_API_KEY_HERE' && this.validateApiKey(cfg.geminiApiKey)) { this.apiKey = cfg.geminiApiKey; this.keyExpiry = Date.now() + this.maxKeyAge; ok = true; break; } } } catch {}
-        }
-        if (ok) { this.updateAIStatus(true); this.primeModels(); return; } else { console.warn('⚠️ Could not load API key config file. Manual entry will be required.'); }
-      } catch (e) { console.warn('⚠️ Error loading API key from file:', e.message); }
+      this.clearApiKey();
       this.updateAIStatus(false);
     }
     updateAIStatus(hasApiKey){
@@ -328,7 +318,7 @@
         return;
       }
       // 2) Otherwise defer to AI if key exists; else use built-in fallback
-      if (this.apiKey && this.apiKey.length>0) { this.generateAIResponse(userMessage); } else { this.generateFallbackResponse(message); }
+      if (this.remoteAIEnabled && this.apiKey && this.apiKey.length>0) { this.generateAIResponse(userMessage); } else { this.generateFallbackResponse(message); }
     }
 
     getLocalAnswer(message){

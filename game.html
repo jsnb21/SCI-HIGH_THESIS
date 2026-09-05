@@ -13,9 +13,6 @@
   <meta name="theme-color" content="#0f1524" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     
-    <!-- Optional: runtime AI key (local only; do not commit real keys) -->
-    <!-- Copy config/ai-key.example.js -> config/ai-key.js and add your key; safe to omit in prod -->
-    <script src="config/ai-key.js"></script>
     <!-- Optional: runtime Firebase config injected by CI. Safe to omit locally. -->
     <script>
       (function(){
@@ -69,13 +66,6 @@
     <!-- Authentication Check -->
     <script>
       function checkAuthentication() {
-        // Allow direct access for admin bypass links
-        try {
-          const p = new URLSearchParams(window.location.search);
-          const isBypassLink = (p.get('admin') === '1') && (p.get('maintenance') === 'off' || p.get('bypass') === '1');
-          if (isBypassLink) return true;
-        } catch {}
-
         const savedUser = localStorage.getItem('sci_high_user');
         const isSessionAuthed = sessionStorage.getItem('sci_high_authenticated') === 'true';
         // Prefer session flag, but allow persisted user fallback so opening game.html in a new tab works
@@ -104,25 +94,6 @@
         <button onclick="window.location.href='index.html'" style="background:linear-gradient(to right,#F4CE14,#FFD700);color:#1a1a2e;border:none;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer;">Return to Home</button>
       </div>
     </div>
-    <!-- Admin bypass ribbon (hidden by default) -->
-    <div id="bypass-ribbon" style="display:none;position:fixed;top:8px;right:8px;z-index:10003;background:linear-gradient(90deg,#8b5cf6,#ec4899);color:#fff;padding:6px 10px;border-radius:8px;font-family:'Orbitron', monospace;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.4)">Maintenance BYPASS</div>
-    <!-- Admin bypass auth overlay -->
-    <div id="bypass-auth-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);color:#fff;z-index:10004;align-items:center;justify-content:center;text-align:center;padding:20px;font-family: 'Orbitron', monospace;">
-      <div style="max-width:420px;margin:auto;padding:20px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;backdrop-filter:blur(6px)">
-        <h3 style="font-size:20px;margin-bottom:10px;color:#F4CE14">Admin Verification</h3>
-        <p style="opacity:.85;margin-bottom:12px">Enter the admin password to bypass maintenance and load the game.</p>
-        <input id="bypass-pass" type="password" placeholder="Admin password" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;outline:none" />
-        <div style="display:flex;align-items:center;gap:8px;margin:8px 0 4px 0;justify-content:center">
-          <input id="bypass-show" type="checkbox" />
-          <label for="bypass-show" style="font-size:12px;opacity:.9">Show password</label>
-        </div>
-        <div id="bypass-pass-error" style="display:none;color:#fda4af;font-size:12px;margin:6px 0">Incorrect password. Try again.</div>
-        <div style="display:flex;gap:10px;justify-content:center;margin-top:10px">
-          <button id="bypass-submit" style="background:linear-gradient(to right,#8b5cf6,#ec4899);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer">Continue</button>
-          <button id="bypass-cancel" style="background:transparent;color:#ddd;border:1px solid rgba(255,255,255,0.25);padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer">Cancel</button>
-        </div>
-      </div>
-    </div>
     <!-- Authentication overlay -->
     <div id="auth-overlay">
   <!-- Removed buko_productions branding logo -->
@@ -143,84 +114,6 @@
     <!-- Debug notify button removed -->
 
     <script>
-      // Admin maintenance bypass helpers
-      function shouldBypassMaintenance(){
-        try {
-          const params = new URLSearchParams(window.location.search);
-          const admin = params.get('admin') === '1';
-          const bypass = params.get('bypass') === '1' || params.get('maintenance') === 'off';
-          const lsBypass = (localStorage.getItem('SCI_BYPASS_MAINT') === '1');
-          return (admin && bypass) || lsBypass;
-        } catch { return false; }
-      }
-      function showBypassRibbon(){
-        const r = document.getElementById('bypass-ribbon');
-        if (r) r.style.display = 'block';
-      }
-      function getQueryParam(key){ try { return new URLSearchParams(window.location.search).get(key); } catch { return null; } }
-      function forceBypassPrompt(){ return getQueryParam('prompt') === '1'; }
-      function isBypassAuthorized(){
-        try {
-          return sessionStorage.getItem('SCI_BYPASS_AUTH') === '1';
-        } catch { return false; }
-      }
-      function hideMaintenanceOverlay(){
-        try {
-          const ov = document.getElementById('maintenance-overlay');
-          if (ov) ov.style.display = 'none';
-        } catch {}
-      }
-      let __bypassPwCache = null;
-      async function loadAdminPassword(){
-        if (__bypassPwCache !== null) return __bypassPwCache;
-        try {
-          const res = await fetch('./admin-password.txt?_=' + Date.now(), { cache: 'no-store' });
-          if (!res.ok) throw new Error('admin-password.txt not found');
-          const raw = await res.text();
-          const firstLine = raw.split(/\r?\n/).map(l => l.trim()).find(l => l && !l.startsWith('#')) || '';
-          __bypassPwCache = firstLine;
-          return __bypassPwCache;
-        } catch {
-          __bypassPwCache = '';
-          return __bypassPwCache;
-        }
-      }
-      function promptBypassPassword(){
-        const overlay = document.getElementById('bypass-auth-overlay');
-        const input = document.getElementById('bypass-pass');
-        const show = document.getElementById('bypass-show');
-        const err = document.getElementById('bypass-pass-error');
-        const submit = document.getElementById('bypass-submit');
-        const cancel = document.getElementById('bypass-cancel');
-        if (!overlay) return Promise.resolve(false);
-        overlay.style.display = 'flex';
-        input.value = '';
-        err.style.display = 'none';
-        show.checked = false; input.type = 'password';
-        const cleanup = () => {
-          overlay.style.display = 'none';
-          submit.onclick = null; cancel.onclick = null; show.onchange = null;
-        };
-        show.onchange = () => { input.type = show.checked ? 'text' : 'password'; };
-        return new Promise((resolve) => {
-          cancel.onclick = () => { cleanup(); resolve(false); };
-          submit.onclick = async () => {
-            const serverPw = await loadAdminPassword();
-            const ok = serverPw && (input.value.trim() === serverPw.trim());
-            if (!ok) { err.style.display = 'block'; return; }
-            sessionStorage.setItem('SCI_BYPASS_AUTH', '1');
-            cleanup();
-            resolve(true);
-          };
-        });
-      }
-      async function ensureBypassAuthorized(){
-        if (!shouldBypassMaintenance()) return false;
-        try { if (forceBypassPrompt()) sessionStorage.removeItem('SCI_BYPASS_AUTH'); } catch {}
-        if (sessionStorage.getItem('SCI_BYPASS_AUTH') === '1') return true;
-        return await promptBypassPassword();
-      }
-
       // Robust loader that waits for the module preloader Vite rewrites in production
       async function loadGameBundle(){
         // Wait for the module preloader to define window.__loadGame
@@ -235,22 +128,8 @@
       }
 
       // Maintenance check - if active, block game
-      // If bypass already authorized (previous session in this tab), hide overlay immediately
-      (function immediateBypassUi(){
-        try {
-          if (shouldBypassMaintenance() && isBypassAuthorized()) {
-            showBypassRibbon();
-            hideMaintenanceOverlay();
-          }
-        } catch {}
-      })();
-
       (async function checkMaintenance(){
         try {
-          if (shouldBypassMaintenance()) {
-            const ok = await ensureBypassAuthorized();
-            if (ok) { showBypassRibbon(); hideMaintenanceOverlay(); return; }
-          }
           if (!window.firebaseConfig) return; // config manager
           if (!window.firebaseConfig.isInitialized()) { await window.firebaseConfig.initializeFirebase(); }
           if (firebase && firebase.auth && !firebase.auth().currentUser) {
@@ -263,7 +142,6 @@
           const endsAtMs = val.endsAtMs ?? (val.endsAt ? Date.parse(val.endsAt) : 0);
           const active = !!(val.enabled && (!startsAtMs || now >= startsAtMs) && (!endsAtMs || now < endsAtMs));
           if (active) {
-            if (shouldBypassMaintenance() && isBypassAuthorized()) { return; }
             const ov = document.getElementById('maintenance-overlay');
             const msg = document.getElementById('maint-msg');
             const ends = document.getElementById('maint-ends');
@@ -356,22 +234,8 @@
       // Load the game only if maintenance is NOT active
       document.addEventListener('DOMContentLoaded', () => {
       (async function loadGameWithMaintenanceGate() {
-        // Bypass: load game immediately for admins or when local override is set
-        try {
-          if (typeof shouldBypassMaintenance === 'function' && shouldBypassMaintenance()) {
-            const ok = await ensureBypassAuthorized();
-            if (ok) {
-              showBypassRibbon();
-              hideMaintenanceOverlay();
-              await loadGameBundle();
-              return;
-            }
-          }
-        } catch {}
-
         const showOverlay = (val) => {
           try {
-            if (shouldBypassMaintenance() && isBypassAuthorized()) { return; }
             const ov = document.getElementById('maintenance-overlay');
             const msg = document.getElementById('maint-msg');
             const ends = document.getElementById('maint-ends');

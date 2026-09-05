@@ -35,9 +35,6 @@ export default defineConfig({
         game: './game.html',
         leaderboards: './leaderboards.html',
         news: './news.html',
-        'professor-dashboard': './professor-dashboard.html',
-        developer: './developer.html',
-        admin: './admin.html',
         profile: './profile.html'
       },
     },
@@ -78,10 +75,6 @@ export default defineConfig({
           if (existsSync('./js/maintenanceToast.js')) {
             copyFileSync('./js/maintenanceToast.js', './dist/js/maintenanceToast.js');
           }
-          if (existsSync('./js/professor-dashboard.js')) {
-            copyFileSync('./js/professor-dashboard.js', './dist/js/professor-dashboard.js');
-          }
-
           // Script directories
           copyDir('./js/pages', './dist/js/pages');
           copyDir('./js/leaderboards', './dist/js/leaderboards');
@@ -118,10 +111,6 @@ export default defineConfig({
             console.log('✅ Config files copied to dist/config/');
           }
 
-          // Optional password file copy
-          if (existsSync('./admin-password.txt')) {
-            copyFileSync('./admin-password.txt', './dist/admin-password.txt');
-          }
         } catch (error) {
           console.warn('Some config files could not be copied:', error.message);
         }

@@ -226,11 +226,8 @@ async function fetchWithTimeout(resource, options = {}) {
 }
 
 function getApiKey() {
-  try {
-    // Read from global injected config if present; never hardcode secrets.
-    const key = window?.SCI_HIGH?.GOOGLE_AI_API_KEY || window?.env?.GOOGLE_AI_API_KEY || null;
-    return key;
-  } catch { return null; }
+  // Remote AI is disabled until requests are routed through a trusted backend.
+  return null;
 }
 
 function getModelEndpointPairsOverride() {

@@ -172,12 +172,6 @@
 
     async loginProfessor(email, password) {
       try {
-        if (email === 'professor@sci-high.edu' && password === 'Prof123!') {
-          this.currentUser = { uid: 'prof_sample_123', email, type: 'professor', profile: { fullName: 'Dr. Sample Professor', email, institution: 'SCI-HIGH University', isVerified: true } };
-          localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
-          this.userType = 'professor'; this.updateProfessorTabVisibility(); this.updateUserInterface();
-          return { success: true, user: this.currentUser };
-        }
         if (typeof firebase !== 'undefined' && firebase.auth) {
           const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
           const user = userCredential.user;
@@ -195,17 +189,6 @@
 
     async loginStudent(studentId, password = null) {
       try {
-        const sampleStudents = {
-          '24-2024-001': { profile: { studentId: '24-2024-001', fullName: 'Juan Dela Cruz', academicInfo: { level: 'college', course: 'BS Computer Science', yearLevel: '3rd Year' }, accountStatus: { isFirstLogin: false, createdBy: 'prof_sample', lastLogin: new Date().toISOString() }, gameData: { totalPoints: 850, courseProgress: { python: { progress: 75, completed: 8, total: 12 }, javascript: { progress: 60, completed: 6, total: 10 } } } } },
-          '24-2024-002': { profile: { studentId: '24-2024-002', fullName: 'Maria Santos', academicInfo: { level: 'college', course: 'BS Information Technology', yearLevel: '2nd Year' }, accountStatus: { isFirstLogin: false, createdBy: 'prof_sample', lastLogin: new Date().toISOString() }, gameData: { totalPoints: 1200, courseProgress: { python: { progress: 90, completed: 11, total: 12 }, webdesign: { progress: 85, completed: 9, total: 10 } } } } },
-          '24-2024-003': { profile: { studentId: '24-2024-003', fullName: 'Pedro Garcia', academicInfo: { level: 'shs', strand: 'STEM', yearLevel: 'Grade 12' }, accountStatus: { isFirstLogin: true, createdBy: 'prof_sample', lastLogin: null }, gameData: { totalPoints: 300, courseProgress: { python: { progress: 30, completed: 3, total: 12 } } } } }
-        };
-        if (sampleStudents[studentId]) {
-          this.currentUser = { uid: 'stud_' + studentId.replace(/-/g, '_'), studentId, type: 'student', profile: sampleStudents[studentId].profile };
-          localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
-          this.userType = 'student'; this.updateProfessorTabVisibility(); this.updateUserInterface();
-          return { success: true, user: this.currentUser };
-        }
         if (typeof firebase !== 'undefined' && firebase.database) {
           await this.ensureAuthenticated();
           const studentsSnapshot = await firebase.database().ref('students').orderByChild('studentId').equalTo(studentId).once('value');
@@ -620,77 +603,7 @@
       }
     }
 
-    async createAdminUser() {
-      try {
-        await this.ensureAuthenticated();
-        const adminData = { fullName: 'System Administrator', email: 'admin@sci-high.edu', isAdmin: true, type: 'admin', createdAt: new Date().toISOString(), lastLogin: new Date().toISOString(), permissions: ['read','write','delete','admin'] };
-        if (typeof firebase !== 'undefined' && firebase.database) {
-          const adminRef = firebase.database().ref('professors').child('admin_system');
-          await adminRef.set(adminData);
-        } else if (typeof firebase !== 'undefined' && firebase.firestore) {
-          const adminRef = firebase.firestore().collection('professors').doc('admin_system');
-          await adminRef.set(adminData);
-        }
-        this.currentUser = { uid: 'admin_system', type: 'admin', profile: adminData };
-        localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
-        this.userType = 'admin'; this.updateProfessorTabVisibility(); this.updateUserInterface();
-        return this.currentUser;
-      } catch (error) {
-        console.error('Error creating admin user:', error);
-        this.currentUser = { uid: 'admin_' + Date.now(), type: 'admin', profile: { fullName: 'System Administrator', email: 'admin@sci-high.edu', isAdmin: true } };
-        localStorage.setItem('sci_high_user', JSON.stringify(this.currentUser));
-        this.userType = 'admin'; this.updateProfessorTabVisibility(); this.updateUserInterface();
-        return this.currentUser;
-      }
-    }
-
-    async createProfessorUser(email, password, fullName, institution = 'SCI-HIGH University') {
-      try {
-        if (typeof firebase === 'undefined' || !firebase?.apps?.length) {
-          try {
-            const { ensureFirebaseApp } = await import('../../../src/services/firebaseInit.js');
-            await ensureFirebaseApp();
-          } catch (e) {
-            await this._fallbackLegacyFirebaseLoad();
-          }
-        }
-        if (!firebase.auth || !firebase.database) { throw new Error('Firebase services not available'); }
-        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-        const user = userCredential.user;
-        const professorData = { fullName, email, institution, isVerified: true, type: 'professor', createdAt: new Date().toISOString(), lastLogin: new Date().toISOString(), permissions: ['read','write'], classes: [], students: [] };
-        let retries = 3;
-        while (retries > 0) {
-          try { await firebase.database().ref('professors').child(user.uid).set(professorData); break; }
-          catch (databaseError) { console.error(`Database write attempt failed (${4-retries}/3):`, databaseError); retries--; if (retries === 0) { throw databaseError; } await new Promise(r=>setTimeout(r,1000)); }
-        }
-        return { success: true, uid: user.uid, email, profile: professorData };
-      } catch (error) {
-        console.error('Error creating professor user:', error);
-        return { success: false, error: error.message, code: error.code || 'unknown' };
-      }
-    }
   }
-
-  // Expose debug helpers and instantiate
-  window.debugAuth = async () => {
-    try {
-      if (typeof firebase !== 'undefined') {
-        if (firebase.auth) {
-          if (!firebase.auth().currentUser) { await firebase.auth().signInAnonymously(); }
-          if (firebase.database) {
-            const testRef = firebase.database().ref('test/debug');
-            await testRef.set({ timestamp: new Date().toISOString() });
-            await testRef.once('value');
-          }
-        }
-      }
-    } catch (error) { console.error('❌ Debug failed:', error); }
-  };
-
-  window.debugStudentLogin = async (studentId = '20-0774-140') => {
-    try { const result = await window.authManager.loginStudent(studentId); return result; }
-    catch (error) { console.error('❌ Student login debug failed:', error); return { success: false, error: error.message }; }
-  };
 
   window.authManager = new AuthManager();
 

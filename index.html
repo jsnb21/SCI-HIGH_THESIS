@@ -16,17 +16,6 @@
   <meta name="app-version" content="v1.0" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
     <title>SCI-HIGH: A Byte-Size Learning Adventure!</title>
-  <!-- Optional: runtime AI key (local only; do not commit real keys) -->
-  <!-- Copy config/ai-key.example.js -> config/ai-key.js and add your key; safe to omit in prod -->
-  <!-- Guard-load to avoid 404 in production when file is missing -->
-  <script>
-    (function(){
-      var s = document.createElement('script');
-      s.src = 'config/ai-key.js';
-      s.onerror = function(){ /* optional file; ignore missing */ };
-      document.currentScript.parentNode.insertBefore(s, document.currentScript);
-    })();
-  </script>
   <!-- Optional: runtime Firebase web config (injected by CI). Guard-load if present. -->
   <script>
     (function(){
@@ -1100,36 +1089,6 @@
       </div>
     </section>
 
-    <!-- DEV MODE Panel - Hidden by default -->
-    <div id="dev-panel" class="fixed bottom-4 right-4 z-[200] hidden">
-      <div class="neon-border bg-cardBg rounded-lg p-4 max-w-xs">
-        <h3 class="font-gaming text-primary text-sm mb-3">🔧 Dev Mode</h3>
-        <div class="space-y-2">
-          <button onclick="createAdminUser()" class="w-full px-3 py-1 bg-purple text-white text-xs rounded hover:bg-purple/80">
-            Admin Account
-          </button>
-          <button onclick="createSampleProfessor()" class="w-full px-3 py-1 bg-primary text-dark text-xs rounded hover:bg-yellow-300">
-            Professor Account
-          </button>
-          <button onclick="createSampleStudent()" class="w-full px-3 py-1 bg-accent text-white text-xs rounded hover:bg-green-600">
-            Student Account
-          </button>
-          <button onclick="createSampleGeneral()" class="w-full px-3 py-1 bg-cyan text-white text-xs rounded hover:bg-blue-500">
-            General Account
-          </button>
-          <button onclick="createSampleCareerStats()" class="w-full px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700">
-            📊 Career Stats Data
-          </button>
-          <button onclick="logoutUser()" class="w-full px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">
-            Logout
-          </button>
-          <button onclick="document.getElementById('dev-panel').classList.add('hidden')" class="w-full px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700">
-            Close Panel
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- Gaming Footer -->
     <footer class="relative z-10 bg-gradient-to-r from-dark to-light border-t-2 border-primary/30 py-12">
       <div class="max-w-6xl mx-auto px-6 text-center">
@@ -1165,7 +1124,6 @@
     <script defer src="js/pages/index/index-init.js"></script>
     <script defer src="js/pages/index/assistant.js"></script>
     <script defer src="js/pages/index/news.js"></script>
-    <script defer src="js/pages/index/dev.js"></script>
     <script defer src="js/pages/index/aos-init.js"></script>
       <!-- Cache-bust feedback.js to ensure latest email formatting is loaded -->
       <script defer src="js/pages/index/feedback.js?v=20251031-2"></script>

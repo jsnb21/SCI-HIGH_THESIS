@@ -69,6 +69,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # Runtime data & Testing
+plan/
 pids/
 *.pid
 *.seed
