@@ -23,11 +23,22 @@
 
   // Data helpers
   function getCurrentUser(){
-    try { return window.authManager && window.authManager.currentUser ? window.authManager.currentUser : JSON.parse(localStorage.getItem('sci_high_user')||'null'); }
+    try {
+      if (!window.authManager?.sessionVerified) return null;
+      const firebaseUser = window.firebase?.auth?.().currentUser;
+      const appUser = window.authManager.currentUser;
+      return firebaseUser && appUser?.uid === firebaseUser.uid ? appUser : null;
+    }
     catch(_) { return null; }
   }
   function setCurrentUser(user){
-    try { if (!user) return; localStorage.setItem('sci_high_user', JSON.stringify(user)); if (window.authManager) { window.authManager.currentUser = user; window.authManager.userType = user.type || window.authManager.userType; window.authManager.updateUserInterface && window.authManager.updateUserInterface(); } }
+    try {
+      const current = getCurrentUser();
+      if (!user || !current || user.uid !== current.uid || user.type !== current.type) return;
+      localStorage.setItem('sci_high_user', JSON.stringify(user));
+      window.authManager.currentUser = user;
+      window.authManager.updateUserInterface?.();
+    }
     catch(_) {}
   }
 
@@ -61,10 +72,8 @@
 
   function getUserType(){
     try {
-      if (window.authManager && window.authManager.userType) return window.authManager.userType;
-      const u = getCurrentUser();
-      return (u?.type) || 'general';
-    } catch { return 'general'; }
+      return window.authManager?.sessionVerified ? window.authManager.userType : null;
+    } catch { return null; }
   }
 
   function updateDisplay(){
@@ -194,98 +203,36 @@
   }
 
   async function deleteAccountData(identifier){
-    // identifier may be studentId or email
     try {
-      if (typeof firebase !== 'undefined' && firebase.database) {
-        await (window.authManager?.ensureAuthenticated?.() || Promise.resolve());
-        const db = firebase.database();
-        const isEmail = /@/.test(identifier);
-        let studentId = identifier;
-        if (isEmail) {
-          // try to map email -> studentId if exists in students by email field
-          try {
-            const snap = await db.ref('students').orderByChild('email').equalTo(identifier).once('value');
-            if (snap.exists()) {
-              const val = snap.val();
-              const firstKey = Object.keys(val)[0];
-              studentId = val[firstKey]?.studentId || identifier;
-            }
-          } catch(_) {}
-        }
+      const authUser = await window.authManager?.ensureAuthenticated?.();
+      const appUser = getCurrentUser();
+      if (!authUser || !appUser || authUser.uid !== appUser.uid) throw new Error('Verified account required');
 
-        // Remove from students
-        try {
-          const studentsSnapshot = await db.ref('students').orderByChild('studentId').equalTo(studentId).once('value');
-          if (studentsSnapshot.exists()) {
-            const updates = {};
-            Object.keys(studentsSnapshot.val()).forEach(k => { updates[`students/${k}`] = null; });
-            await db.ref().update(updates);
-          }
-        } catch(_) {}
-
-        // Remove career stats
-        try { await db.ref(`student_career_stats/${studentId}`).remove(); } catch(_) {}
-
-        // Remove gameplay data entries tied to studentId
-        try {
-          const gpSnap = await db.ref('gameplay_data').orderByChild('studentId').equalTo(studentId).once('value');
-          if (gpSnap.exists()) {
-            const updates = {};
-            Object.keys(gpSnap.val()).forEach(k => { updates[`gameplay_data/${k}`] = null; });
-            await db.ref().update(updates);
-          }
-        } catch(_) {}
-
-        // Remove password reset artifacts
-        try { await db.ref(`password_resets/approved/${studentId}`).remove(); } catch(_) {}
-        try { await db.ref(`password_resets/codes/${studentId}`).remove(); } catch(_) {}
-        try {
-          const reqSnap = await db.ref('password_resets/requests').once('value');
-          if (reqSnap.exists()) {
-            const updates = {};
-            Object.entries(reqSnap.val()).forEach(([k, v]) => { if (v && v.studentId === studentId) updates[`password_resets/requests/${k}`] = null; });
-            if (Object.keys(updates).length) await db.ref().update(updates);
-          }
-        } catch(_) {}
-
-        // If it's a general account by email, remove general_users by current uid if available
-        try {
-          const uid = window.authManager?.currentUser?.uid;
-          if (uid && window.authManager?.userType === 'general') { await db.ref(`general_users/${uid}`).remove(); }
-        } catch(_) {}
-
-        // Attempt auth user deletion: reauthenticate first when possible
-        try {
-          const user = firebase.auth().currentUser;
-          if (user) {
-            // If we have the email and this looks like Email/Password user, ask for password
-            const email = user.email || ((qs && qs('sec-general-email')) ? (qs('sec-general-email').value||'').trim() : '');
-            if (email && firebase.auth.EmailAuthProvider) {
-              const pwd = prompt('To permanently delete your account, please enter your password:');
-              if (pwd) {
-                const cred = firebase.auth.EmailAuthProvider.credential(email, pwd);
-                await user.reauthenticateWithCredential(cred);
-              }
-            }
-            await user.delete();
-          }
-        } catch(_) { /* If deletion fails (e.g., wrong password or not recent), we still removed DB data */ }
-
-        return { success: true };
-      } else {
-        // Offline/local deletion
-        try {
-          const localStudents = JSON.parse(localStorage.getItem('sci_high_local_students') || '{}');
-          if (localStudents[identifier]) { delete localStudents[identifier]; localStorage.setItem('sci_high_local_students', JSON.stringify(localStudents)); }
-        } catch(_) {}
-        try {
-          const localCodes = JSON.parse(localStorage.getItem('sci_high_local_reset_codes') || '{}');
-          if (localCodes[identifier]) { delete localCodes[identifier]; localStorage.setItem('sci_high_local_reset_codes', JSON.stringify(localCodes)); }
-        } catch(_) {}
-        // Clear session caches
-        try { localStorage.removeItem('studentInfo'); localStorage.removeItem('recentStudentData'); } catch(_) {}
-        return { success: true };
+      const expectedIdentifier = appUser.type === 'student' ? appUser.studentId : authUser.email;
+      if (!expectedIdentifier || identifier.toLowerCase() !== String(expectedIdentifier).toLowerCase()) {
+        throw new Error('Account identifier does not match the signed-in account');
       }
+      if (appUser.type !== 'student' && appUser.type !== 'general') {
+        throw new Error('Privileged accounts must be deleted by another administrator');
+      }
+
+      const password = prompt('To permanently delete your account, enter your current password:');
+      if (!password) throw new Error('Password confirmation is required');
+      const credential = firebase.auth.EmailAuthProvider.credential(authUser.email, password);
+      await authUser.reauthenticateWithCredential(credential);
+
+      const updates = {};
+      if (appUser.type === 'student') {
+        updates[`students/${authUser.uid}`] = null;
+        updates[`student_career_stats/${authUser.uid}`] = null;
+        updates[`leaderboards/${authUser.uid}`] = null;
+        updates[`gameplay_data/${authUser.uid}`] = null;
+      } else {
+        updates[`general_users/${authUser.uid}`] = null;
+      }
+      await firebase.database().ref().update(updates);
+      await authUser.delete();
+      return { success: true };
     } catch(e){ return { success: false, error: e?.message || 'Deletion failed' }; }
   }
 
@@ -442,5 +389,18 @@
     });
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  async function initAfterAuth(){
+    try {
+      const result = await (window.authReadyPromise || Promise.resolve({ success: false }));
+      if (!result?.success || !window.authManager?.sessionVerified) {
+        window.location.replace('index.html');
+        return;
+      }
+      init();
+    } catch (_) {
+      window.location.replace('index.html');
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAfterAuth); else initAfterAuth();
 })();

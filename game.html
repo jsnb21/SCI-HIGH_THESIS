@@ -40,45 +40,50 @@
       };
     </script>
     <script>
-      (async function(){
-        try {
-          if(!window.firebaseConfig){ console.error('firebaseConfig manager missing'); return; }
-          if(!window.firebaseConfig.isInitialized()) {
-            await window.firebaseConfig.initializeFirebase();
-          }
-          // Optional: ensure some auth state (anonymous) so rules with auth != null work
-          if (firebase && firebase.auth && !firebase.auth().currentUser) {
-            try { await firebase.auth().signInAnonymously(); } catch(_) {}
-          }
-        
-        } catch (e) {
-          console.error('Firebase init sequence failed', e);
-          try {
-            const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname);
-            if (isLocal) {
-              console.info('[DEV] Continuing without Firebase (offline/limited mode).');
-            }
-          } catch {}
+      // Real accounts are authorized from Firebase state. Guest mode is explicitly unauthenticated.
+      window.__authGatePromise = (async function () {
+        const cached = (() => {
+          try { return JSON.parse(localStorage.getItem('sci_high_user') || 'null'); } catch { return null; }
+        })();
+        const guestAllowed = sessionStorage.getItem('sci_high_guest') === 'true' && cached?.type === 'guest';
+        if (guestAllowed) return { type: 'guest' };
+
+        if (!window.firebaseConfig) throw new Error('Firebase configuration is unavailable');
+        if (!window.firebaseConfig.isInitialized()) await window.firebaseConfig.initializeFirebase();
+
+        const firebaseUser = await new Promise((resolve, reject) => {
+          let settled = false;
+          const timer = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            unsubscribe();
+            reject(new Error('Authentication check timed out'));
+          }, 8000);
+          const unsubscribe = firebase.auth().onAuthStateChanged(user => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            unsubscribe();
+            resolve(user || null);
+          }, reject);
+        });
+
+        if (!firebaseUser || firebaseUser.isAnonymous) throw new Error('A verified account is required');
+
+        const token = await firebaseUser.getIdTokenResult(true);
+        const claimedRole = String(token.claims?.role || '').toLowerCase();
+        const privileged = token.claims?.admin === true || token.claims?.professor === true || claimedRole === 'admin' || claimedRole === 'professor';
+        if (!privileged) {
+          const [student, general] = await Promise.all([
+            firebase.database().ref(`students/${firebaseUser.uid}`).once('value'),
+            firebase.database().ref(`general_users/${firebaseUser.uid}`).once('value')
+          ]);
+          if (!student.exists() && !general.exists()) throw new Error('No authorized application profile exists for this account');
         }
+
+        sessionStorage.setItem('sci_high_session_uid', firebaseUser.uid);
+        return { type: privileged ? claimedRole || (token.claims.admin ? 'admin' : 'professor') : 'user', uid: firebaseUser.uid };
       })();
-    </script>
-
-    <!-- Authentication Check -->
-    <script>
-      function checkAuthentication() {
-        const savedUser = localStorage.getItem('sci_high_user');
-        const isSessionAuthed = sessionStorage.getItem('sci_high_authenticated') === 'true';
-        // Prefer session flag, but allow persisted user fallback so opening game.html in a new tab works
-        if (isSessionAuthed && savedUser) return true;
-        if (savedUser) return true; // fallback: user previously logged in
-
-        alert('Please log in to access the game.');
-        window.location.href = 'index.html';
-        return false;
-      }
-      if (!checkAuthentication()) {
-        document.documentElement.innerHTML = '<body style="background: #1a1a2e; color: white; text-align: center; padding: 50px;"><h1>Redirecting to login...</h1></body>';
-      }
     </script>
     
   <link rel="stylesheet" href="public/assets/css/game.css" />
@@ -132,9 +137,6 @@
         try {
           if (!window.firebaseConfig) return; // config manager
           if (!window.firebaseConfig.isInitialized()) { await window.firebaseConfig.initializeFirebase(); }
-          if (firebase && firebase.auth && !firebase.auth().currentUser) {
-            try { await firebase.auth().signInAnonymously(); } catch(e) {}
-          }
           const snap = await firebase.database().ref('system/maintenance').once('value');
           const val = snap.val() || {};
           const now = Date.now();
@@ -234,6 +236,15 @@
       // Load the game only if maintenance is NOT active
       document.addEventListener('DOMContentLoaded', () => {
       (async function loadGameWithMaintenanceGate() {
+        try {
+          await window.__authGatePromise;
+        } catch (error) {
+          console.warn('Game access denied:', error?.message || error);
+          const overlay = document.getElementById('auth-overlay');
+          if (overlay) overlay.style.display = 'flex';
+          return;
+        }
+
         const showOverlay = (val) => {
           try {
             const ov = document.getElementById('maintenance-overlay');
@@ -254,9 +265,6 @@
           }
           if (!window.firebaseConfig.isInitialized()) {
             await window.firebaseConfig.initializeFirebase();
-          }
-          if (window.firebase && firebase.auth && !firebase.auth().currentUser) {
-            try { await firebase.auth().signInAnonymously(); } catch {}
           }
           const snap = await firebase.database().ref('system/maintenance').once('value');
           const val = snap.val() || {};

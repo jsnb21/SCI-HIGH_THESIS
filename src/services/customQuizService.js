@@ -59,11 +59,11 @@ class CustomQuizService {
    * @returns {Promise<{questions: Array, meta: Object} | null>}
    */
   async loadCustomQuiz({ professorId, quizId }) {
-    // Ensure Firebase is ready and user is authenticated (anonymous ok)
+    // Ensure Firebase is ready. Remote reads require a verified Firebase account.
     try {
       const ok = await authService.ensureFirebaseInitialized();
       if (ok) {
-        // Best-effort auth; if it fails, we'll still fall back to local cache
+        // Best-effort remote auth; failures fall back only to the local quiz cache.
         try { await authService.ensureAuthenticated(); } catch (_) {}
       }
     } catch (_) {}

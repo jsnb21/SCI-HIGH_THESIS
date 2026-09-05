@@ -222,7 +222,8 @@ export default class CustomQuizSelectScene extends Phaser.Scene {
   getAuthUser() {
     try {
       if (window.firebase && typeof window.firebase.auth === 'function') {
-        return window.firebase.auth().currentUser;
+        const user = window.firebase.auth().currentUser;
+        return user && !user.isAnonymous ? user : null;
       }
       return null;
     } catch (e) {
@@ -238,7 +239,7 @@ export default class CustomQuizSelectScene extends Phaser.Scene {
       return;
     }
 
-    // Proactively initialize Firebase and sign in anonymously to satisfy rules on localhost
+    // Proactively initialize Firebase and require the verified session established at login.
     (async () => {
       try {
         const ok = await authService.ensureFirebaseInitialized();
@@ -254,7 +255,7 @@ export default class CustomQuizSelectScene extends Phaser.Scene {
 
       if (window.firebase && typeof window.firebase.auth === 'function') {
         const unsubscribe = window.firebase.auth().onAuthStateChanged(user => {
-          if (user) {
+          if (user && !user.isAnonymous) {
             unsubscribe();
             this.fetchQuizzes();
           } else {

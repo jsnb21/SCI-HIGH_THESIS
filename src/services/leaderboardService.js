@@ -98,6 +98,14 @@ class LeaderboardService {
         }
     }
 
+    getVerifiedFirebaseUser() {
+        const user = window.firebase?.auth?.().currentUser;
+        if (!user || user.isAnonymous) {
+            throw new Error('A verified Firebase account is required for leaderboard writes');
+        }
+        return user;
+    }
+
     // Sanitize object keys for Firebase (remove invalid characters)
     sanitizeFirebaseKeys(obj) {
         if (typeof obj !== 'object' || obj === null) {
@@ -173,7 +181,6 @@ class LeaderboardService {
         }
 
         const {
-            userId,
             playerName,
             studentId = '',
             score,
@@ -182,11 +189,12 @@ class LeaderboardService {
         } = playerData;
 
         // Validate input
-        if (!userId || !playerName || score < 0) {
+        if (!playerName || score < 0) {
             throw new Error('Invalid player data');
         }
 
         try {
+            const authUser = this.getVerifiedFirebaseUser();
             const scoreData = {
                 name: playerName,
                 studentId: studentId,
@@ -202,7 +210,7 @@ class LeaderboardService {
                 }
             };
 
-            await this.db.ref('leaderboards/' + userId).set(scoreData);
+            await this.db.ref('leaderboards/' + authUser.uid).set(scoreData);
             return { success: true, data: scoreData };
         } catch (error) {
             console.error('Error submitting score:', error);
@@ -230,10 +238,9 @@ class LeaderboardService {
             return this.saveToLocalStorage(playerData);
         }
 
-        const { userId } = playerData;
-        
         try {
-            const snapshot = await this.db.ref('leaderboards/' + userId).once('value');
+            const authUser = this.getVerifiedFirebaseUser();
+            const snapshot = await this.db.ref('leaderboards/' + authUser.uid).once('value');
             const existingData = snapshot.val();
             
             if (!existingData || playerData.score > existingData.score) {
@@ -268,7 +275,8 @@ class LeaderboardService {
         }
 
         try {
-            const snapshot = await this.db.ref('leaderboards/' + userId).once('value');
+            const authUser = this.getVerifiedFirebaseUser();
+            const snapshot = await this.db.ref('leaderboards/' + authUser.uid).once('value');
             const data = snapshot.val();
             return data ? data.score : 0;
         } catch (error) {

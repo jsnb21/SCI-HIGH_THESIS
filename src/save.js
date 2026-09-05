@@ -37,17 +37,21 @@ const saveService = new SaveService();
 function getCurrentUserData() {
     const userData = localStorage.getItem('sci_high_user');
     const userType = localStorage.getItem('sci_high_user_type');
+    const firebaseUser = (typeof window !== 'undefined' && window.firebase?.auth)
+        ? window.firebase.auth().currentUser
+        : null;
     
-    if (!userData || !userType) {
+    if (!userData || !userType || !firebaseUser || firebaseUser.isAnonymous) {
         return null;
     }
     
     try {
         const user = JSON.parse(userData);
+        if (!user?.uid || user.uid !== firebaseUser.uid) return null;
         return {
             user,
             userType,
-            userId: getUserId(user, userType)
+            userId: firebaseUser.uid
         };
     } catch (error) {
         console.error('Error parsing user data:', error);
@@ -139,7 +143,7 @@ async function saveGame() {
         try {
             const docRef = saveService.firestore
                 .collection('users')
-                .doc(`${userData.userType}_${userData.userId}`)
+                .doc(userData.userId)
                 .collection('gameData')
                 .doc('saveData');
 
@@ -161,7 +165,7 @@ async function hasExistingSave() {
         try {
             const docRef = saveService.firestore
                 .collection('users')
-                .doc(`${userData.userType}_${userData.userId}`)
+                .doc(userData.userId)
                 .collection('gameData')
                 .doc('saveData');
                 
@@ -193,7 +197,7 @@ async function loadGame() {
         try {
             const docRef = saveService.firestore
                 .collection('users')
-                .doc(`${userData.userType}_${userData.userId}`)
+                .doc(userData.userId)
                 .collection('gameData')
                 .doc('saveData');
                 
@@ -241,7 +245,7 @@ async function clearCurrentUserSave() {
         try {
             const docRef = saveService.firestore
                 .collection('users')
-                .doc(`${userData.userType}_${userData.userId}`)
+                .doc(userData.userId)
                 .collection('gameData')
                 .doc('saveData');
                 
@@ -264,7 +268,7 @@ async function syncSaveDataOnLogin() {
     try {
         const docRef = saveService.firestore
             .collection('users')
-            .doc(`${userData.userType}_${userData.userId}`)
+            .doc(userData.userId)
             .collection('gameData')
             .doc('saveData');
             

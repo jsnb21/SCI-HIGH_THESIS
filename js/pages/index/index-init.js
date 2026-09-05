@@ -71,11 +71,8 @@
         return;
       }
       currentStudentId = studentId;
-      try {
-        const studentData = await window.authManager.getStudentProfile(studentId);
-        if (studentData) { showStudentFoundStep(studentData); }
-        else { showStudentProfileStep(null); }
-      } catch (error) { console.warn('Error checking student profile:', error); showStudentProfileStep(null); }
+      // Do not enumerate student records before authentication. Show a neutral sign-in step.
+      showStudentFoundStep({ studentId, fullName: 'Student account', department: 'Sign in required', strandYear: '—' });
     });
 
     document.getElementById('student-complete-form').addEventListener('submit', async (e) => {
@@ -96,7 +93,7 @@
       const lastName = lastNameRaw.replace(/\s+/g, ' ');
       const pwd = (formData.get('password') || '').trim();
       const cpwd = (formData.get('confirmPassword') || '').trim();
-      if (!pwd || pwd.length < 6) { window.showError('Password must be at least 6 characters long.', { title: 'Weak Password' }); return; }
+      if (!pwd || pwd.length < 8) { window.showError('Password must be at least 8 characters long.', { title: 'Weak Password' }); return; }
       if (pwd !== cpwd) { window.showError('Passwords do not match. Please re-enter the same password.', { title: 'Password Mismatch' }); return; }
       const strand = formData.get('strand');
       const year = formData.get('year');
@@ -111,13 +108,8 @@
           });
         } else { window.showError('Profile setup failed: ' + result.error, { title: 'Setup Failed' }); }
       } catch (error) {
-        console.warn('Firebase profile setup failed, trying offline mode:', error);
-        const offlineResult = window.authManager.loginStudentOfflineWithProfile(currentStudentId, profileData, pwd);
-        if (offlineResult.success) {
-          window.showInfo('Welcome! Your profile has been set up in offline mode. Progress will be saved locally.', { title: '📱 Offline Mode' }).then(() => {
-            loginModal.classList.add('hidden'); window.authManager.redirectToGame();
-          });
-        } else { window.showError('Profile setup failed: Unable to save profile', { title: 'Setup Error' }); }
+        console.error('Student profile setup failed:', error);
+        window.showError('Profile setup failed: ' + (error?.message || 'Unable to create a verified account'), { title: 'Setup Error' });
       }
     });
 
@@ -131,71 +123,17 @@
           window.showSuccess('Welcome back! Your progress has been loaded.', { title: '👋 Welcome Back!' }).then(() => {
             loginModal.classList.add('hidden'); window.authManager.redirectToGame();
           });
-        } else if (result.needsPasswordSetup) {
-          // Use the entered password to set as new password after confirmation
-          if (!password || password.length < 6) {
-            window.showError('Please enter a password (min 6 characters) to set for this account, then click Login again.', { title: 'Password Required' });
-            return;
-          }
-          let confirmed = true;
-          if (typeof window.modernConfirm === 'function') {
-            confirmed = await window.modernConfirm('Use the entered password as your account password?', { title: 'Set Password', confirmText: 'Yes, set this password', cancelText: 'Cancel' });
-          } else {
-            confirmed = confirm('Use the entered password as your account password?');
-          }
-          if (!confirmed) return;
-          const setRes = await window.authManager.setStudentPassword(currentStudentId, password);
-          if (setRes.success) {
-            const retry = await window.authManager.loginStudent(currentStudentId, password);
-            if (retry.success) {
-              window.showSuccess('Password set! Logging you in...', { title: '🔐 Secured' }).then(() => {
-                loginModal.classList.add('hidden'); window.authManager.redirectToGame();
-              });
-            } else {
-              window.showError('Login failed after setting password: ' + (retry.error || 'Unknown error'), { title: 'Login Failed' });
-            }
-          } else {
-            window.showError('Failed to set password: ' + (setRes.error || 'Unknown error'), { title: 'Password Setup Failed' });
-          }
         } else {
           window.showError('Login failed: ' + result.error, { title: 'Student Login Failed' });
         }
       } catch (error) {
-        console.warn('Firebase login failed, trying offline mode:', error);
-        const pwdInput = document.getElementById('student-login-password');
-        const password = pwdInput ? (pwdInput.value || '').trim() : '';
-        const offlineResult = await window.authManager.loginStudentOffline(currentStudentId, password);
-        if (offlineResult.success) {
-          window.showInfo('Welcome! You are playing in offline mode. Progress will be saved locally.', { title: '📱 Offline Mode' }).then(() => {
-            loginModal.classList.add('hidden'); window.authManager.redirectToGame();
-          });
-        } else if (offlineResult.needsPasswordSetup) {
-          if (!password || password.length < 6) {
-            window.showError('Please enter a password (min 6 characters) to set for this offline account, then click Login again.', { title: 'Password Required' });
-            return;
-          }
-          let confirmed = true;
-          if (typeof window.modernConfirm === 'function') {
-            confirmed = await window.modernConfirm('Use the entered password as your account password?', { title: 'Set Password', confirmText: 'Yes, set this password', cancelText: 'Cancel' });
-          } else {
-            confirmed = confirm('Use the entered password as your account password?');
-          }
-          if (!confirmed) return;
-          const setRes = await window.authManager.setStudentPassword(currentStudentId, password);
-          if (setRes.success) {
-            const retry = await window.authManager.loginStudentOffline(currentStudentId, password);
-            if (retry.success) {
-              window.showSuccess('Password set for offline account! Logging you in...', { title: '🔐 Secured' }).then(() => {
-                loginModal.classList.add('hidden'); window.authManager.redirectToGame();
-              });
-            } else {
-              window.showError('Offline login failed after setting password: ' + (retry.error || 'Unknown error'), { title: 'Login Failed' });
-            }
-          } else {
-            window.showError('Failed to set password: ' + (setRes.error || 'Unknown error'), { title: 'Password Setup Failed' });
-          }
-        } else { window.showError('Login failed: Unable to authenticate', { title: 'Authentication Error' }); }
+        console.error('Student login failed:', error);
+        window.showError('Login failed: ' + (error?.message || 'Unable to authenticate'), { title: 'Authentication Error' });
       }
+    });
+
+    document.getElementById('register-new-student')?.addEventListener('click', () => {
+      window.showInfo('Student accounts are provisioned by an administrator. Contact your school administrator for access.', { title: 'Account provisioning required' });
     });
 
     // Forgot password toggle
@@ -303,13 +241,8 @@
         if (result.success) { loginModal.classList.add('hidden'); window.authManager.redirectToGame(); }
         else { window.showError('Login failed: ' + result.error, { title: 'General Login Failed' }); }
       } catch (error) {
-        console.warn('Firebase login failed, trying offline mode:', error);
-        const offlineResult = window.authManager.loginGeneralOffline(formData.get('email'));
-        if (offlineResult.success) {
-          window.showInfo('Welcome! You are playing in offline mode. Progress will be saved locally.', { title: '📱 Offline Mode' }).then(() => {
-            loginModal.classList.add('hidden'); window.authManager.redirectToGame();
-          });
-        } else { window.showError('Login failed: Unable to authenticate', { title: 'Authentication Error' }); }
+        console.error('General login failed:', error);
+        window.showError('Login failed: ' + (error?.message || 'Unable to authenticate'), { title: 'Authentication Error' });
       }
     });
 
@@ -362,7 +295,6 @@
           await window.authManager.ensureAuthenticated();
           try {
             if (window.firebaseConfig && !window.firebaseConfig.isInitialized()) { await window.firebaseConfig.initializeFirebase(); }
-            if (window.firebase && firebase.auth && !firebase.auth().currentUser) { try { await firebase.auth().signInAnonymously(); } catch {} }
           } catch (e) { console.warn('Firebase init before maintenance watcher failed:', e?.message || e); }
           const setBtnState = (active) => {
             if (!startGameBtn) return;

@@ -4108,7 +4108,13 @@ export default class MainGameplay extends BaseScene {
             
             // Upload to Firebase
             if (this.database) {
-                const gameplayRef = this.database.ref('gameplay_data');
+                const authUser = window.firebase?.auth?.().currentUser;
+                if (!authUser || authUser.isAnonymous) {
+                    console.warn('Verified Firebase account unavailable; storing gameplay locally');
+                    this.storeScoreLocally(gameplayData);
+                    return;
+                }
+                const gameplayRef = this.database.ref(`gameplay_data/${authUser.uid}`);
                 const result = await gameplayRef.push(gameplayData);
                 
                 // Verify the upload by reading it back

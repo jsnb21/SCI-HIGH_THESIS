@@ -11,15 +11,21 @@
   function closeModal(){ if(modal) modal.classList.add('hidden'); }
 
   function getCurrentUser(){
-    try { return window.authManager && window.authManager.currentUser ? window.authManager.currentUser : JSON.parse(localStorage.getItem('sci_high_user')||'null'); }
+    try {
+      if (!window.authManager?.sessionVerified) return null;
+      const firebaseUser = window.firebase?.auth?.().currentUser;
+      return firebaseUser?.uid === window.authManager.currentUser?.uid ? window.authManager.currentUser : null;
+    }
     catch(_) { return null; }
   }
 
   function setCurrentUser(user){
     try {
       if (!user) return;
+      const current = getCurrentUser();
+      if (!current || user.uid !== current.uid || user.type !== current.type) return;
       localStorage.setItem('sci_high_user', JSON.stringify(user));
-      if (window.authManager) { window.authManager.currentUser = user; window.authManager.userType = user.type || window.authManager.userType; }
+      window.authManager.currentUser = user;
     } catch(_){ /* ignore */ }
   }
 

@@ -66,6 +66,14 @@ class CareerStatsService {
         }
     }
 
+    getVerifiedFirebaseUser() {
+        const user = window.firebase?.auth?.().currentUser;
+        if (!user || user.isAnonymous) {
+            throw new Error('A verified Firebase account is required for career statistics');
+        }
+        return user;
+    }
+
     // Update student career stats with new session data
     async updateCareerStats(studentId, studentName, sessionData, additionalData = {}) {
         try {
@@ -105,7 +113,9 @@ class CareerStatsService {
                 throw new Error('Firebase not initialized');
             }
 
-            const statsRef = this.database.ref(`student_career_stats/${studentId}`);
+            const authUser = this.getVerifiedFirebaseUser();
+
+            const statsRef = this.database.ref(`student_career_stats/${authUser.uid}`);
             
             // Get current stats
             const currentStatsSnapshot = await statsRef.once('value');
@@ -322,14 +332,15 @@ class CareerStatsService {
     }
 
     // Get student career stats
-    async getCareerStats(studentId) {
+    async getCareerStats(_studentId) {
         try {
             const isInitialized = await this.ensureFirebaseInitialized();
             if (!isInitialized) {
                 throw new Error('Firebase not initialized');
             }
 
-            const statsRef = this.database.ref(`student_career_stats/${studentId}`);
+            const authUser = this.getVerifiedFirebaseUser();
+            const statsRef = this.database.ref(`student_career_stats/${authUser.uid}`);
             const snapshot = await statsRef.once('value');
             
             return snapshot.val() || null;

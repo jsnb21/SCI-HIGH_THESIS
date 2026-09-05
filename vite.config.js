@@ -35,6 +35,7 @@ export default defineConfig({
         game: './game.html',
         leaderboards: './leaderboards.html',
         news: './news.html',
+        'professor-dashboard': './professor-dashboard.html',
         profile: './profile.html'
       },
     },
@@ -74,6 +75,9 @@ export default defineConfig({
           }
           if (existsSync('./js/maintenanceToast.js')) {
             copyFileSync('./js/maintenanceToast.js', './dist/js/maintenanceToast.js');
+          }
+          if (existsSync('./js/professor-dashboard.js')) {
+            copyFileSync('./js/professor-dashboard.js', './dist/js/professor-dashboard.js');
           }
           // Script directories
           copyDir('./js/pages', './dist/js/pages');

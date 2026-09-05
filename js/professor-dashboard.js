@@ -29,21 +29,21 @@ class ProfessorDashboard {
   async init() {
     // Initialize Firebase first
     await this.initializeFirebase();
-    // Ensure Firebase auth user (silent) before continuing (optional for rules that require auth)
-    await this.ensureFirebaseAuth();
-    
-    // Check if user is authenticated professor or admin
-    const savedUser = localStorage.getItem('sci_high_user');
-    if (!savedUser) {
-      window.location.href = 'index.html';
-      return;
-    }
+    const authUser = await this.ensureFirebaseAuth();
+    if (!authUser || authUser.isAnonymous) return this.denyAccess('A verified Firebase account is required.');
 
-    this.currentUser = JSON.parse(savedUser);
-    if (!this.currentUser || (this.currentUser.type !== 'professor' && this.currentUser.type !== 'admin')) {
-      window.location.href = 'index.html';
-      return;
-    }
+    const tokenResult = await authUser.getIdTokenResult(true);
+    const claimRole = String(tokenResult.claims?.role || '').toLowerCase();
+    const role = tokenResult.claims?.admin === true || claimRole === 'admin'
+      ? 'admin'
+      : tokenResult.claims?.professor === true || claimRole === 'professor'
+        ? 'professor'
+        : null;
+    if (!role) return this.denyAccess('Your account does not have a server-issued professor or administrator role.');
+
+    const profileSnapshot = await this.database.ref(`professors/${authUser.uid}`).once('value');
+    const profile = profileSnapshot.exists() ? profileSnapshot.val() : {};
+    this.currentUser = { uid: authUser.uid, email: authUser.email || null, type: role, profile };
 
     this.setupUI();
     this.setupEventListeners();
@@ -54,6 +54,16 @@ class ProfessorDashboard {
     this.renderAnalytics();
   }
 
+  denyAccess(message) {
+    console.warn('Professor dashboard access denied:', message);
+    try {
+      localStorage.removeItem('sci_high_user');
+      localStorage.removeItem('sci_high_user_type');
+      sessionStorage.removeItem('sci_high_session_uid');
+    } catch {}
+    window.location.replace('index.html');
+  }
+
   setupUI() {
     const nameEl = document.getElementById('professor-name');
     if (nameEl && this.currentUser?.profile?.fullName) {
@@ -61,20 +71,21 @@ class ProfessorDashboard {
     }
   }
 
-  logoutUser() {
+  async logoutUser() {
     try {
+      await window.firebase?.auth?.().signOut();
       localStorage.removeItem('sci_high_user');
-      sessionStorage.removeItem('sci_high_authenticated');
-      sessionStorage.removeItem('sci_high_user_type');
+      localStorage.removeItem('sci_high_user_type');
+      sessionStorage.removeItem('sci_high_session_uid');
     } finally {
-      window.location.href = 'index.html';
+      window.location.replace('index.html');
     }
   }
 
   setupEventListeners() {
     // Logout buttons
     const logoutBtn = document.getElementById('logout-btn');
-    logoutBtn?.addEventListener('click', () => this.logoutUser());
+      logoutBtn?.addEventListener('click', () => { void this.logoutUser(); });
 
     // Quick action buttons  
     const analyticsBtn = document.getElementById('view-analytics-btn');
@@ -816,14 +827,14 @@ class ProfessorDashboard {
   async loadStudents() {
     try {
       if (!this.isFirebaseInitialized) {
-        console.warn('Firebase not initialized, loading sample data');
-        this.loadSampleData();
+        this.clearStudentData();
         this.renderAnalytics();
+        this.showError('Student data is unavailable because Firebase initialization failed.');
         return;
       }
 
       // 1) Fetch career stats first (primary source)
-      const careerSnap = await this.database.ref('student_career_stats').once('value').catch(() => ({ val: () => null }));
+      const careerSnap = await this.database.ref('student_career_stats').once('value');
       const careerData = careerSnap && typeof careerSnap.val === 'function' ? (careerSnap.val() || {}) : {};
 
       // Build initial list from career only
@@ -940,8 +951,8 @@ class ProfessorDashboard {
       if (error && /permission_denied/.test(error.message)) {
         this.showError('Access denied to students data. Ensure this account is authenticated and has professor privileges.');
       } else {
-        this.showError('Failed to load students from database. Loading sample data instead.');
-        this.loadSampleData();
+        this.showError('Failed to load students from the database. Access remains denied.');
+        this.clearStudentData();
         this.renderAnalytics();
       }
     }
@@ -962,23 +973,17 @@ class ProfessorDashboard {
   }
 
   async ensureFirebaseAuth() {
-    if (!this.isFirebaseInitialized || !window.firebase?.auth) return;
-    return new Promise(resolve => {
+    if (!this.isFirebaseInitialized || !window.firebase?.auth) return null;
+    return new Promise((resolve, reject) => {
       let resolved = false;
-      window.firebase.auth().onAuthStateChanged(user => {
+      const unsubscribe = window.firebase.auth().onAuthStateChanged(user => {
         if (!resolved) {
           resolved = true;
-          if (user) {
-            user.getIdTokenResult?.().then(r=>{
-              console.log('Firebase auth user loaded. Claims:', r.claims);
-            }).catch(err=>console.warn('Failed to read token claims', err));
-          } else {
-            console.log('No Firebase auth user (public/anonymous mode)');
-          }
+          unsubscribe();
           resolve(user || null);
         }
-      });
-      setTimeout(()=>{ if(!resolved){ resolved=true; resolve(null);} }, 3000);
+      }, reject);
+      setTimeout(()=>{ if(!resolved){ resolved=true; unsubscribe(); resolve(null);} }, 8000);
     });
   }
 
@@ -1010,58 +1015,8 @@ class ProfessorDashboard {
     return { strand, year };
   }
 
-  loadSampleData() {
-    this.students = [
-      {
-        id: 'stud_sample_001',
-        studentId: '24-2024-001',
-        fullName: 'Juan Dela Cruz',
-        academicInfo: {
-          level: 'college',
-          strand: 'BSCS',
-          year: '3rd',
-          course: 'BS Computer Science',
-          yearLevel: '3rd Year'
-        },
-        accountStatus: {
-          createdBy: 'sample',
-          lastLogin: new Date(Date.now() - 5*24*60*60*1000).toISOString(),
-          isFirstLogin: false
-        },
-        gameData: {
-          totalPoints: 850,
-          courseProgress: {
-            python: { progress: 75, completed: 8, total: 12 },
-            javascript: { progress: 60, completed: 6, total: 10 }
-          }
-        }
-      },
-      {
-        id: 'stud_sample_002',
-        studentId: '24-2024-002',
-        fullName: 'Maria Santos',
-        academicInfo: {
-          level: 'college',
-          strand: 'BSIT',
-          year: '2nd',
-          course: 'BS Information Technology',
-          yearLevel: '2nd Year'
-        },
-        accountStatus: {
-          createdBy: 'sample',
-          lastLogin: new Date(Date.now() - 12*24*60*60*1000).toISOString(),
-          isFirstLogin: false
-        },
-        gameData: {
-          totalPoints: 1200,
-          courseProgress: {
-            python: { progress: 90, completed: 11, total: 12 },
-            webdesign: { progress: 85, completed: 9, total: 10 }
-          }
-        }
-      }
-    ];
-
+  clearStudentData() {
+    this.students = [];
     this.filteredStudents = [...this.students];
     this.visibleCount = Math.min(this.pageSize, this.filteredStudents.length);
     this.renderStudentsTable();
@@ -1476,21 +1431,8 @@ class ProfessorDashboard {
   }
 
   async resetPassword(studentId) {
-    const confirmed = await window.modernConfirm?.('Reset password for this student?', {
-      title: 'Reset Password',
-      type: 'warning',
-      confirmText: 'Yes, Reset',
-      cancelText: 'Cancel'
-    });
-    if (!confirmed) return;
-    try {
-      // Issue a one-time reset code the professor can share with the student
-      const { rawCode, record } = await issueOneTimeResetCode(studentId);
-      const readableExpiry = new Date(record.expiresAt).toLocaleString();
-      this.showInfo(`One-time reset code issued for ${studentId}:\n\n${rawCode}\n\nExpires: ${readableExpiry}\nShare this code with the student to let them set a new password.`, { title: 'Reset Code Issued' });
-    } catch (error) {
-      this.showError('Failed to reset password: ' + error.message);
-    }
+    void studentId;
+    this.showError('Student password recovery is disabled until the trusted backend reset workflow is deployed.');
   }
 }
 
@@ -1547,12 +1489,13 @@ window.addEventListener('DOMContentLoaded', () => {
     dashboard.logoutUser();
   });
 
-  // Initialize Password Reset Admin panel if present
-  try { initPasswordResetAdmin(); } catch (e) { console.warn('Password reset admin init failed:', e); }
+  // Legacy reset-code administration is disabled until a trusted recovery service is deployed.
 });
 
 // ================= Password Reset Admin Panel (Professor) =================
 async function initPasswordResetAdmin() {
+  throw new Error('Legacy password-reset administration is disabled.');
+  /* istanbul ignore next -- retained temporarily for migration reference only */
   const container = document.getElementById('resetRequestsPanel');
   if (!container) return; // panel not present in HTML
 
@@ -1772,25 +1715,8 @@ async function initPasswordResetAdmin() {
 }
 
 async function issueOneTimeResetCode(studentId) {
-  if (!window.firebase || !firebase.database) throw new Error('Firebase not initialized');
-  // Generate a short human-friendly code, then store a hashed version
-  const rawCode = generateNumericCode(6); // 6-digit numeric code
-  const saltBytes = crypto.getRandomValues(new Uint8Array(16));
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey('raw', enc.encode(rawCode), 'PBKDF2', false, ['deriveBits']);
-  const iterations = 100000;
-  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: saltBytes, iterations }, key, 256);
-  const codeHash = bytesToBase64(new Uint8Array(bits));
-  const expiresAt = new Date(Date.now() + 1000*60*10).toISOString(); // 10 minutes
-  const record = { codeHash, salt: bytesToBase64(saltBytes), iterations, issuedAt: new Date().toISOString(), expiresAt, used: false };
-  const db = firebase.database();
-  await db.ref(`password_resets/codes/${studentId}`).set(record);
-  // Set approved index so student client can read hashed code for verification
-  await db.ref(`password_resets/approved/${studentId}`).set(true);
-  // Append to history for audit
-  const uid = (firebase.auth && firebase.auth().currentUser) ? firebase.auth().currentUser.uid : 'unknown';
-  await db.ref('password_resets/history').push({ studentId, issuedBy: uid, issuedAt: record.issuedAt, expiresAt });
-  return { rawCode, record };
+  void studentId;
+  throw new Error('Legacy reset codes are disabled.');
 }
 
 function generateNumericCode(length = 6) {
