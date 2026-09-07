@@ -4115,7 +4115,8 @@ export default class MainGameplay extends BaseScene {
                     return;
                 }
                 const gameplayRef = this.database.ref(`gameplay_data/${authUser.uid}`);
-                const result = await gameplayRef.push(gameplayData);
+                const { submissionFor } = await import('../../services/gameplaySubmission.js');
+                const result = await gameplayRef.push(submissionFor(authUser, gameplayData, window.firebase));
                 
                 // Verify the upload by reading it back
                 try {
@@ -4182,6 +4183,8 @@ export default class MainGameplay extends BaseScene {
 
     // Store score data locally when Firebase upload fails
     storeScoreLocally(gameplayData) {
+        const account = window.firebase?.auth?.().currentUser;
+        gameplayData.ownerUid = account && !account.isAnonymous && sessionStorage.getItem('sci_high_guest') !== 'true' ? account.uid : null;
         try {
             const localScores = JSON.parse(localStorage.getItem('pendingScores') || '[]');
             localScores.push({
@@ -4215,6 +4218,7 @@ export default class MainGameplay extends BaseScene {
 
     // Upload any scores that were stored locally
     async uploadPendingScores() {
+        if (sessionStorage.getItem('sci_high_guest') === 'true') return;
         try {
             const pendingScores = JSON.parse(localStorage.getItem('pendingScores') || '[]');
             if (pendingScores.length === 0) return;
@@ -4225,12 +4229,17 @@ export default class MainGameplay extends BaseScene {
                 return;
             }
             
-            const gameplayRef = this.database.ref('gameplay_data');
+            const authUser = window.firebase?.auth?.().currentUser;
+            if (!authUser || authUser.isAnonymous) return;
+            const { submissionFor } = await import('../../services/gameplaySubmission.js');
+            const gameplayRef = this.database.ref('gameplay_data/' + authUser.uid);
             const uploadedScores = [];
             
             for (const score of pendingScores) {
+                // Old or another account's queued reports require explicit migration.
+                if (score.ownerUid !== authUser.uid) continue;
                 try {
-                    await gameplayRef.push(score);
+                    await gameplayRef.push(submissionFor(authUser, score, window.firebase));
                     uploadedScores.push(score);
                 } catch (uploadError) {
                     console.error('Failed to upload pending score:', uploadError);

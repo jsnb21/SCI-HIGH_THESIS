@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: package.json
 
@@ -38,6 +38,7 @@ jobs:
           FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
           FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          FIREBASE_APP_CHECK_SITE_KEY: ${{ vars.FIREBASE_APP_CHECK_SITE_KEY }}
         run: |
           mkdir -p config
 
@@ -65,7 +66,8 @@ jobs:
             projectId: process.env.FB_PROJECT_ID,
             storageBucket: process.env.FB_STORAGE_BUCKET,
             messagingSenderId: process.env.FB_MESSAGING_SENDER_ID,
-            appId: process.env.FB_APP_ID
+            appId: process.env.FB_APP_ID,
+            appCheckSiteKey: process.env.FIREBASE_APP_CHECK_SITE_KEY || ''
           };
           fs.writeFileSync('config/env-config.json', JSON.stringify(cfg, null, 2) + '\n');
           NODE
@@ -151,6 +153,21 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Setup Java for Firebase emulators
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Verify Firebase authorization before publishing
+        run: |
+          npm ci --prefix functions
+          npm run test:rules
+
+      - name: Verify backend authorization
+        run: |
+          npm test --prefix functions
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v4

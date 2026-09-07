@@ -113,12 +113,7 @@
       }
     } catch {}
 
-    // Ensure auth for reads/writes under rules requiring auth
-    try {
-      if (global.firebase.auth && !global.firebase.auth().currentUser) {
-        await global.firebase.auth().signInAnonymously();
-      }
-    } catch {}
+    // Maintenance is an explicitly public read; do not change the auth session.
     return true;
   }
 

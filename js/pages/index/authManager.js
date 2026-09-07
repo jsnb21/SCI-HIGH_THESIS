@@ -315,7 +315,9 @@
       }
     }
 
-    createGuestSession() {
+    async createGuestSession() {
+      await this.firebaseInitPromise;
+      if (window.firebase?.auth && firebase.auth().currentUser) await firebase.auth().signOut();
       this.clearSession();
       this.currentUser = { uid: `guest_${Date.now()}`, type: 'guest', profile: { fullName: 'Guest Player', isGuest: true } };
       this.userType = 'guest';

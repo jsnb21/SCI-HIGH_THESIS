@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test:rules": "firebase emulators:exec --project demo-sci-high --only database,firestore,storage \"node --test --test-concurrency=1 tests/security/rules.test.js functions/tests/backend-emulator.test.js\"",
     "build": "vite build",
     "preview": "vite preview",
     "clean-logs": "node remove-logs/remove-console-logs.cjs",
@@ -13,6 +14,8 @@
     "clean-logs:file": "node remove-logs/remove-console-logs.cjs"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.2",
+    "firebase-tools": "15.29.0",
     "vite": "^6.3.5"
   },
   "dependencies": {

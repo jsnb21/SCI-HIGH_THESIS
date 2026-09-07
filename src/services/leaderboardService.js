@@ -162,108 +162,11 @@ class LeaderboardService {
 
     // Submit score to leaderboard
     async submitScore(playerData) {
-        // Stop writes after contest ends
-        try {
-            const active = await this.isContestActive();
-            if (!active) {
-                return { success: false, reason: 'contest-ended', message: 'Mini-contest period has ended. Score submissions are closed.' };
-            }
-        } catch (_) {}
-        // Guests should not write to Firebase; use local storage fallback
-        if (this.isGuestUser()) {
-            console.info('LeaderboardService: Guest user, saving to local storage only');
-            return this.saveToLocalStorage(playerData);
-        }
-
-        const isInitialized = await this.ensureFirebaseInitialized();
-        if (!isInitialized) {
-            throw new Error('Firebase initialization failed - leaderboard service unavailable');
-        }
-
-        const {
-            playerName,
-            studentId = '',
-            score,
-            department = 'Unknown',
-            gameData = {}
-        } = playerData;
-
-        // Validate input
-        if (!playerName || score < 0) {
-            throw new Error('Invalid player data');
-        }
-
-        try {
-            const authUser = this.getVerifiedFirebaseUser();
-            const scoreData = {
-                name: playerName,
-                studentId: studentId,
-                score: score,
-                department: department,
-                timestamp: Date.now(),
-                submissionDate: new Date().toISOString(),
-                gameData: {
-                    totalPoints: gameData.totalPoints || score,
-                    topicPoints: this.sanitizeFirebaseKeys(gameData.topicPoints || {}),
-                    achievementCount: gameData.achievementCount || 0,
-                    playTime: gameData.playTime || 0
-                }
-            };
-
-            await this.db.ref('leaderboards/' + authUser.uid).set(scoreData);
-            return { success: true, data: scoreData };
-        } catch (error) {
-            console.error('Error submitting score:', error);
-            throw error;
-        }
+        this.saveToLocalStorage(playerData);
+        return { success: false, localOnly: true, reason: 'score-verification-required' };
     }
 
-    // Update score only if it's better than current best
-    async updateBestScore(playerData) {
-        // Stop writes after contest ends
-        try {
-            const active = await this.isContestActive();
-            if (!active) {
-                return { success: false, reason: 'contest-ended', message: 'Mini-contest period has ended. Score submissions are closed.' };
-            }
-        } catch (_) {}
-        // Guests should not write to Firebase
-        if (this.isGuestUser()) {
-            return this.saveToLocalStorage(playerData);
-        }
-
-        const isInitialized = await this.ensureFirebaseInitialized();
-        if (!isInitialized) {
-            console.warn('Firebase not available, using local storage fallback');
-            return this.saveToLocalStorage(playerData);
-        }
-
-        try {
-            const authUser = this.getVerifiedFirebaseUser();
-            const snapshot = await this.db.ref('leaderboards/' + authUser.uid).once('value');
-            const existingData = snapshot.val();
-            
-            if (!existingData || playerData.score > existingData.score) {
-                await this.submitScore(playerData);
-                return { 
-                    success: true, 
-                    isNewBest: true, 
-                    previousBest: existingData ? existingData.score : 0,
-                    newBest: playerData.score
-                };
-            } else {
-                return {
-                    success: true,
-                    isNewBest: false,
-                    currentBest: existingData.score,
-                    submittedScore: playerData.score
-                };
-            }
-        } catch (error) {
-            console.error('Error updating best score:', error);
-            throw error;
-        }
-    }
+    async updateBestScore(playerData) { return this.submitScore(playerData); }
 
     // Get player's current best score
     async getPlayerBestScore(userId) {
@@ -276,7 +179,7 @@ class LeaderboardService {
 
         try {
             const authUser = this.getVerifiedFirebaseUser();
-            const snapshot = await this.db.ref('leaderboards/' + authUser.uid).once('value');
+            const snapshot = await this.db.ref('public_leaderboards/' + authUser.uid).once('value');
             const data = snapshot.val();
             return data ? data.score : 0;
         } catch (error) {
@@ -296,7 +199,7 @@ class LeaderboardService {
         }
 
         try {
-            const snapshot = await this.db.ref('leaderboards')
+            const snapshot = await this.db.ref('public_leaderboards')
                 .orderByChild('score')
                 .limitToLast(100)
                 .once('value');

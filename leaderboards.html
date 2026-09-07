@@ -618,69 +618,10 @@
       })();
 
       // Add missing functions for leaderboard API
-      async function addScore(userId, playerName, score, department = 'Unknown', gameData = {}) {
-        try {
-          // Gate page-level submissions after contest end
-          if (window.__miniContestActive === false) {
-            // Silent no-op when contest has ended (no pop-up on this page)
-            return { success: false, reason: 'contest-ended' };
-          }
-          // Ensure Firebase is ready before using database
-          const { ensureFirebaseReady } = await import('./js/leaderboards/firebaseClient.js');
-          const database = await ensureFirebaseReady();
-          
-          const scoreData = {
-            name: playerName,
-            score: score,
-            department: department,
-            timestamp: Date.now(),
-            submissionDate: new Date().toISOString(),
-            gameData: gameData
-          };
-
-          await database.ref('leaderboards/' + userId).set(scoreData);
-          return { success: true, data: scoreData };
-        } catch (error) {
-          console.error('Error adding score:', error);
-          throw error;
-        }
+      async function addScore() {
+        return { success: false, reason: 'score-verification-required' };
       }
-
-      async function updateBestScore(userId, playerName, score, department = 'Unknown', gameData = {}) {
-        try {
-          // Gate page-level submissions after contest end
-          if (window.__miniContestActive === false) {
-            // Silent no-op when contest has ended (no pop-up on this page)
-            return { success: false, reason: 'contest-ended' };
-          }
-          // Ensure Firebase is ready before using database
-          const { ensureFirebaseReady } = await import('./js/leaderboards/firebaseClient.js');
-          const database = await ensureFirebaseReady();
-          
-          const snapshot = await database.ref('leaderboards/' + userId).once('value');
-          const existingData = snapshot.val();
-          
-          if (!existingData || score > existingData.score) {
-            await addScore(userId, playerName, score, department, gameData);
-            return { 
-              success: true, 
-              isNewBest: true, 
-              previousBest: existingData ? existingData.score : 0,
-              newBest: score
-            };
-          } else {
-            return {
-              success: true,
-              isNewBest: false,
-              currentBest: existingData.score,
-              submittedScore: score
-            };
-          }
-        } catch (error) {
-          console.error('Error updating best score:', error);
-          throw error;
-        }
-      }
+      async function updateBestScore() { return addScore(); }
 
       async function getPlayerBestScore(userId) {
         try {
@@ -688,7 +629,7 @@
           const { ensureFirebaseReady } = await import('./js/leaderboards/firebaseClient.js');
           const database = await ensureFirebaseReady();
           
-          const snapshot = await database.ref('leaderboards/' + userId).once('value');
+          const snapshot = await database.ref('public_leaderboards/' + userId).once('value');
           const data = snapshot.val();
           return data ? data.score : 0;
         } catch (error) {
@@ -733,7 +674,7 @@
           const database = await ensureFirebaseReady();
           
           // Fetch career stats data
-          const careerStatsSnapshot = await database.ref('student_career_stats/' + userId).once('value');
+          const careerStatsSnapshot = await database.ref('public_leaderboards/' + userId).once('value');
           const careerStatsData = careerStatsSnapshot.val();
           
           if (careerStatsData && careerStatsData.careerStats && careerStatsData.studentInfo) {
@@ -1549,31 +1490,8 @@
 
       // Legacy deriveAchievements removed; shared utility used instead (fallback defined above if dynamic import fails).
 
-      async function persistUnlockedAchievements(studentId, achievementsState) {
-        if (!studentId || !achievementsState || achievementsState.length === 0) return;
-        try {
-          const database = await ensureFirebaseReady();
-          const ref = database.ref(`student_career_stats/${studentId}/achievements`);
-          const snapshot = await ref.once('value');
-          const existing = snapshot.val() || {};
-          const updates = {};
-          let changed = false;
-          achievementsState.forEach(a => {
-            if (!existing[a.id]) {
-              updates[a.id] = {
-                name: a.name,
-                tier: a.tier,
-                unlockedAt: Date.now()
-              };
-              changed = true;
-            }
-          });
-          if (changed) {
-            await ref.update(updates);
-          }
-        } catch (e) {
-          console.warn('Could not persist achievements:', e.message);
-        }
+      async function persistUnlockedAchievements() {
+        // Published achievements are managed by the trusted backend.
       }
 
       function generateAchievementBadges(achievementsState, filter = 'unlocked') {
@@ -1741,121 +1659,8 @@
       });
 
       // Test functions for the buttons
-      function testUpdateBestScore() {
-        const userId = 'testUser_' + Date.now();
-        const name = 'Test Player';
-        const score = Math.floor(Math.random() * 5000) + 1000; // Random score between 1000-6000
-        const department = 'College of Computer Studies';
-        
-        updateBestScore(userId, name, score, department).then(result => {
-          showInfo(`Test Result: ${result.isNewBest ? 'New Best Score!' : 'Score not better than existing'}\nScore: ${score}`, {
-            title: 'Test Result'
-          });
-          fetchLeaderboard('overall'); // Refresh the display
-        }).catch(error => {
-          showError('Error: ' + error.message, { title: 'Test Error' });
-        });
-      }
+      // Development score submission helpers removed.
 
-      function testGameIntegration() {
-        // Simulate what the game would send
-        const score = Math.floor(Math.random() * 10000) + 1500;
-        const gameData = {
-          userId: 'game_player_' + Date.now(),
-          playerName: 'Advanced Player',
-          score: score,
-          department: 'College of Computer Studies',
-          gameStats: {
-            totalQuizzes: 12,
-            correctAnswers: 89,
-            comboScore: 25,
-            playTime: 4800, // 80 minutes
-            topicPoints: {
-              'python': Math.floor(score * 0.28),
-              'java': Math.floor(score * 0.24),
-              'C_sharp_': Math.floor(score * 0.20), // Sanitized C# key
-              'webdesign': Math.floor(score * 0.15),
-              'C': Math.floor(score * 0.08),
-              'C_plus_plus_': Math.floor(score * 0.05)
-            },
-            achievementCount: 9,
-            courseProgress: {
-              'intro_to_programming': true,
-              'data_structures': true,
-              'web_development': true,
-              'algorithms': true,
-              'advanced_topics': Math.random() > 0.5,
-              'software_engineering': Math.random() > 0.3,
-              'machine_learning': Math.random() > 0.8
-            }
-          }
-        };
-        
-        
-        // Use addScore with enhanced data structure (with Firebase ready check)
-        const userId = gameData.userId;
-        const scoreData = {
-          name: gameData.playerName,
-          score: gameData.score,
-          department: gameData.department,
-          timestamp: Date.now(),
-          submissionDate: new Date().toISOString(),
-          gameData: {
-            totalPoints: gameData.score,
-            topicPoints: gameData.gameStats.topicPoints,
-            achievementCount: gameData.gameStats.achievementCount,
-            playTime: gameData.gameStats.playTime,
-            courseProgress: gameData.gameStats.courseProgress
-          }
-        };
-        
-        // Ensure Firebase is ready before using database
-        ensureFirebaseReady()
-          .then(database => database.ref('leaderboards/' + userId).set(scoreData))
-          .then(() => {
-            showSuccess(`Game Integration Test: Advanced player created!\nScore: ${gameData.score}\nClick the player name to view detailed profile with charts.`, {
-              title: '🎮 Game Integration Test'
-            });
-            fetchLeaderboard('overall');
-          })
-          .catch(error => {
-            console.error('Game integration error:', error);
-            showError('Integration Error: ' + error.message, { title: 'Integration Error' });
-          });
-      }
-
-      // Function to test student score submission (for development)
-      async function testStudentScore(studentId, score) {
-        try {
-          // Ensure Firebase is ready before using database
-          const database = await ensureFirebaseReady();
-          
-          // Check if student exists first
-          const studentsSnapshot = await database.ref('students').orderByChild('studentId').equalTo(studentId).once('value');
-          
-          if (!studentsSnapshot.exists()) {
-            console.error('Student not found:', studentId);
-            showWarning(`Student ${studentId} not found in the database. Please create the student first using developer tools.`, {
-              title: 'Student Not Found'
-            });
-            return;
-          }
-          
-          const studentData = Object.values(studentsSnapshot.val())[0];
-          
-          await addScore(studentId, studentData.name, score, 'Test Department');
-          showSuccess(`Score submitted successfully for ${studentData.name}!`, {
-            title: 'Score Submitted'
-          });
-          fetchLeaderboard('overall');
-        } catch (error) {
-          console.error('Error testing student score:', error);
-          showError('Error: ' + error.message, { title: 'Submission Error' });
-        }
-      }
-
-      // Helper Functions for Career Stats Display
-      
       function generateCourseCompletionBadges(completionStatus) {
         const courses = {
           python: { name: 'Python', color: 'bg-blue-500', icon: '🐍' },
@@ -1999,7 +1804,7 @@
       };
 
       // Make test function available globally
-      window.testStudentScore = testStudentScore;
+
 
       // Mobile menu functionality
       document.addEventListener('DOMContentLoaded', () => {

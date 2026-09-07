@@ -5,10 +5,12 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 initializeApp();
 
+export { exportStudentRecords, resetStudentProgress, deleteOwnAccount } from './studentOperations.js';
+
 const ALLOWED_ROLES = new Set(['admin', 'professor', 'student', 'general']);
 
 function requireAdministrator(request) {
-  if (!request.auth) throw new HttpsError('unauthenticated', 'Sign-in is required.');
+  if (!request.auth || request.auth.token?.firebase?.sign_in_provider === 'anonymous') throw new HttpsError('unauthenticated', 'Sign-in is required.');
   const token = request.auth.token || {};
   const role = typeof token.role === 'string' ? token.role.toLowerCase() : '';
   if (token.admin !== true && role !== 'admin') {

@@ -221,17 +221,10 @@
       const credential = firebase.auth.EmailAuthProvider.credential(authUser.email, password);
       await authUser.reauthenticateWithCredential(credential);
 
-      const updates = {};
-      if (appUser.type === 'student') {
-        updates[`students/${authUser.uid}`] = null;
-        updates[`student_career_stats/${authUser.uid}`] = null;
-        updates[`leaderboards/${authUser.uid}`] = null;
-        updates[`gameplay_data/${authUser.uid}`] = null;
-      } else {
-        updates[`general_users/${authUser.uid}`] = null;
-      }
-      await firebase.database().ref().update(updates);
-      await authUser.delete();
+      await authUser.getIdToken(true);
+      const { callTrustedOperation } = await import('../../../src/services/trustedOperations.js');
+      await callTrustedOperation('deleteOwnAccount');
+      await firebase.auth().signOut();
       return { success: true };
     } catch(e){ return { success: false, error: e?.message || 'Deletion failed' }; }
   }

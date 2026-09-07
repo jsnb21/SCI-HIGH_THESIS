@@ -2,6 +2,7 @@
 
 // Centralized Firebase usage via firebaseInit.js
 import { ensureFirebaseApp, getFirebaseDatabase } from '../src/services/firebaseInit.js';
+import { callTrustedOperation } from '../src/services/trustedOperations.js';
 
 class ProfessorDashboard {
   constructor() {
@@ -23,7 +24,7 @@ class ProfessorDashboard {
     // Pagination
     this.pageSize = 10;
     this.visibleCount = 10;
-    this.init();
+    this.init().catch(error => this.denyAccess(error.message));
   }
 
   async init() {
@@ -834,8 +835,19 @@ class ProfessorDashboard {
       }
 
       // 1) Fetch career stats first (primary source)
-      const careerSnap = await this.database.ref('student_career_stats').once('value');
-      const careerData = careerSnap && typeof careerSnap.val === 'function' ? (careerSnap.val() || {}) : {};
+      const authUser = await this.ensureFirebaseAuth();
+      if (!authUser || authUser.isAnonymous) throw new Error('Sign in required');
+      const token = await authUser.getIdTokenResult(true);
+      let careerData = {};
+      if (token.claims.admin === true || token.claims.role === 'admin') {
+        careerData = (await this.database.ref('student_career_stats').once('value')).val() || {};
+      } else {
+        const assigned = (await this.database.ref('professor_students/' + authUser.uid).once('value')).val() || {};
+        await Promise.all(Object.keys(assigned).filter(uid => assigned[uid] === true).map(async uid => {
+          const snap = await this.database.ref('student_career_stats/' + uid).once('value');
+          if (snap.exists()) careerData[uid] = snap.val();
+        }));
+      }
 
       // Build initial list from career only
       const buildName = (sid, sObj, cObj) => {
@@ -896,8 +908,11 @@ class ProfessorDashboard {
       let studentsData = null;
       if (needsEnrichment) {
         try {
-          const studentsSnap = await this.database.ref('students').once('value');
-          studentsData = studentsSnap.val() || null;
+          studentsData = {};
+          await Promise.all(Object.keys(careerData).map(async uid => {
+            const snap = await this.database.ref('students/' + uid).once('value');
+            if (snap.exists()) studentsData[uid] = snap.val();
+          }));
         } catch(_) { /* optional enrichment */ }
       }
 
@@ -1344,35 +1359,25 @@ class ProfessorDashboard {
     }
   }
 
-  exportFilteredToCSV() {
-    const rows = [
-      ['Student ID','Full Name','Strand','Year','Progress %','Total Points','Last Login']
-    ];
-    const data = this.filteredStudents.length ? this.filteredStudents : this.students;
-    data.forEach(s => {
-      rows.push([
-        s.studentId,
-        s.fullName,
-        s.academicInfo?.strand || '',
-        s.academicInfo?.year || s.academicInfo?.yearLevel || '',
-        String(this.calculateProgress(s)),
-        String(s.gameData?.totalPoints || 0),
-        s.accountStatus?.lastLogin ? new Date(s.accountStatus.lastLogin).toISOString() : ''
-      ]);
-    });
-
-    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
-    link.download = `students-${stamp}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    this.showSuccess('Exported CSV for current list.');
+  async exportFilteredToCSV() {
+    try {
+      const selected = this.filteredStudents.length ? this.filteredStudents : this.students;
+      const { rows } = await callTrustedOperation('exportStudentRecords', { uids:selected.map(s => s.id) });
+      const fields = ['studentId','fullName','department','strandYear','totalPoints'];
+      // Prefix spreadsheet formulas so exported names cannot execute in spreadsheet apps.
+      const cell = value => {
+        const raw = String(value ?? '');
+        const safe = /^[=+@\\-\\t\\r\\n]/.test(raw) ? "'" + raw : raw;
+        return '"' + safe.replaceAll('"','""') + '"';
+      };
+      const csv = [fields.join(','), ...rows.map(row => fields.map(f => cell(row[f])).join(','))].join('\\r\\n');
+      const url = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'students.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) { this.showError(error.message); }
   }
 
   showSuccess(message) {
@@ -1399,35 +1404,14 @@ class ProfessorDashboard {
     }
   }
 
-  async resetProgress(studentId) {
-    const confirmed = await window.modernConfirm?.('Reset all progress for this student? This action cannot be undone.', {
-      title: 'Reset Student Progress',
-      type: 'warning',
-      confirmText: 'Yes, Reset',
-      cancelText: 'Cancel'
-    });
+  async resetProgress(uid) {
+    const confirmed = await window.modernConfirm?.('Reset this student’s official progress?', {title:'Reset Progress',type:'warning'});
     if (!confirmed) return;
-
     try {
-      if (this.isFirebaseInitialized) {
-        const studentRef = this.database.ref(`students/${studentId}`);
-        await studentRef.update({
-          totalPoints: 0,
-          courseProgress: {},
-          lastUpdated: new Date().toISOString()
-        });
-      }
-      const student = this.students.find(s => s.id === studentId);
-      if (student) {
-        student.gameData = { totalPoints: 0, courseProgress: {} };
-        this.renderStudentsTable();
-        this.renderAnalytics();
-      }
-      this.showSuccess('Student progress has been reset successfully.');
-    } catch (error) {
-      console.error('Error resetting student progress:', error);
-      this.showError('Failed to reset student progress: ' + error.message);
-    }
+      await callTrustedOperation('resetStudentProgress', {uid});
+      await this.loadStudents();
+      this.showSuccess('Student progress was reset.');
+    } catch (error) { this.showError(error.message); }
   }
 
   async resetPassword(studentId) {
@@ -1491,242 +1475,3 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Legacy reset-code administration is disabled until a trusted recovery service is deployed.
 });
-
-// ================= Password Reset Admin Panel (Professor) =================
-async function initPasswordResetAdmin() {
-  throw new Error('Legacy password-reset administration is disabled.');
-  /* istanbul ignore next -- retained temporarily for migration reference only */
-  const container = document.getElementById('resetRequestsPanel');
-  if (!container) return; // panel not present in HTML
-
-  const listEl = container.querySelector('[data-reset-requests]');
-  const refreshBtn = container.querySelector('[data-refresh-resets]');
-  const approveForm = container.querySelector('[data-approve-form]');
-  const approveStudentIdInput = container.querySelector('[data-approve-studentId]');
-  const approveResultEl = container.querySelector('[data-approve-result]');
-
-  // Ensure Firebase is initialized and user has professor role before proceeding
-  const statusMessage = (msg, css = 'text-yellow-400') => {
-    if (listEl) listEl.innerHTML = `<li class="${css}">${msg}</li>`;
-  };
-
-  // wait for firebase initialize
-  async function waitForFirebase(timeoutMs = 5000) {
-    const start = Date.now();
-    while (!(window.firebase && firebase.apps && firebase.apps.length > 0)) {
-      if (Date.now() - start > timeoutMs) break;
-      await new Promise(r => setTimeout(r, 150));
-    }
-    return !!(window.firebase && firebase.apps && firebase.apps.length > 0);
-  }
-
-  // wait for auth user
-  async function getAuthUser(timeoutMs = 5000) {
-    if (!window.firebase || !firebase.auth) return null;
-    const existing = firebase.auth().currentUser;
-    if (existing) return existing;
-    return new Promise(resolve => {
-      let done = false;
-      const off = firebase.auth().onAuthStateChanged(u => {
-        if (!done) { done = true; off(); resolve(u); }
-      });
-      setTimeout(() => { if (!done) { done = true; try { off(); } catch {} resolve(null); } }, timeoutMs);
-    });
-  }
-
-  const fbReady = await waitForFirebase();
-  if (!fbReady) {
-    statusMessage('Firebase is not initialized. Try reloading the page.', 'text-red-500');
-    return;
-  }
-
-  const user = await getAuthUser();
-  if (!user || user.isAnonymous) {
-    statusMessage('Sign in as a professor to view and approve reset requests.', 'text-yellow-400');
-    // keep form disabled if not signed in
-    approveForm?.addEventListener('submit', (e) => { e.preventDefault(); });
-    return;
-  }
-
-  // verify professor role
-  let isProfessor = false;
-  try {
-    const db = firebase.database();
-    const [roleSnap, legacySnap] = await Promise.all([
-      db.ref(`roles/professors/${user.uid}`).once('value'),
-      db.ref(`professors/${user.uid}`).once('value')
-    ]);
-    const roleOk = roleSnap.exists() && roleSnap.val() === true;
-    const legacyOk = legacySnap.exists() && legacySnap.val() != null;
-    isProfessor = !!(roleOk || legacyOk);
-  } catch (e) {
-    // ignore; treat as not professor
-  }
-  if (!isProfessor) {
-    statusMessage('You do not have permission to manage password reset requests. Ensure your UID is listed under roles/professors.', 'text-red-400');
-    approveForm?.addEventListener('submit', (e) => { e.preventDefault(); });
-    return;
-  }
-
-  const renderList = (requests) => {
-    if (!listEl) return;
-    listEl.innerHTML = '';
-    const entries = Object.entries(requests || {});
-    if (!entries.length) {
-      listEl.innerHTML = '<li class="text-gray-500">No reset requests</li>';
-      return;
-    }
-    entries.sort((a,b)=> (b[1]?.createdAt||'').localeCompare(a[1]?.createdAt||''));
-    for (const [key, req] of entries) {
-      const li = document.createElement('li');
-      li.className = 'py-2 border-b border-gray-700';
-      const clickable = req.status === 'pending';
-      const actionBtn = clickable ? `<button data-issue-for="${req.studentId}" class="ml-3 px-2 py-1 bg-primary text-dark rounded text-[11px] font-gaming hover:brightness-110">Issue code</button>` : '';
-      li.innerHTML = `
-        <div class="flex items-center justify-between ${clickable ? 'cursor-pointer hover:bg-dark/30 rounded px-2 py-1 -mx-2' : ''}" ${clickable ? `data-req-student-id="${req.studentId}"` : ''}>
-          <div class="flex items-center">
-            <div>
-              <div class="font-semibold text-sm">${req.studentId || 'unknown'}</div>
-              <div class="text-xs text-gray-500">${req.createdAt || ''}</div>
-            </div>
-            ${actionBtn}
-          </div>
-          <div>
-            <span class="px-2 py-1 text-[10px] rounded ${req.status==='pending'?'bg-yellow-100 text-yellow-800': req.status==='approved'?'bg-blue-100 text-blue-800': req.status==='fulfilled'?'bg-green-100 text-green-800':'bg-gray-100 text-gray-700'}">${req.status||'pending'}</span>
-          </div>
-        </div>`;
-      listEl.appendChild(li);
-    }
-
-    // Click-to-approve/issue handlers
-    listEl.querySelectorAll('[data-req-student-id], [data-issue-for]')?.forEach(el => {
-      const sid = el.getAttribute('data-req-student-id') || el.getAttribute('data-issue-for');
-      el.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!sid) return;
-        try {
-          const { rawCode, record } = await issueOneTimeResetCode(sid);
-          const readableExpiry = new Date(record.expiresAt).toLocaleString();
-          if (approveResultEl) {
-            approveResultEl.innerHTML = `
-              <div class="mt-2 p-3 bg-green-900/40 border border-green-500/60 rounded">
-                <div class="font-semibold text-green-100">Reset code issued for ${sid}</div>
-                <div class="text-sm text-green-50 mt-1">Share this code with the student:</div>
-                <div class="mt-1 inline-block px-3 py-2 rounded bg-black/50 border border-green-400 text-green-200 font-mono text-lg tracking-widest">${rawCode}</div>
-                <div class="text-xs text-green-200 mt-2">Expires: ${readableExpiry}</div>
-              </div>`;
-          }
-          // mark a pending request as approved if exists
-          try {
-            const reqSnap = await firebase.database().ref('password_resets/requests').orderByChild('studentId').equalTo(sid).once('value');
-            if (reqSnap.exists()) {
-              const reqs = reqSnap.val() || {};
-              const key = Object.keys(reqs).find(k => reqs[k]?.status === 'pending');
-              if (key) await firebase.database().ref(`password_resets/requests/${key}`).update({ status: 'approved', approvedAt: new Date().toISOString() });
-            }
-          } catch (_) {}
-          await loadRequests();
-        } catch (err) {
-          if (approveResultEl) approveResultEl.textContent = err?.message || 'Failed to issue code';
-        }
-      });
-    });
-  };
-
-  async function loadRequests() {
-    try {
-      const snap = await firebase.database().ref('password_resets/requests').once('value');
-      renderList(snap.val() || {});
-    } catch (e) {
-      console.error('Failed to load reset requests', e);
-      if (listEl) listEl.innerHTML = '<li class="text-red-600">Failed to load requests</li>';
-    }
-  }
-
-  refreshBtn?.addEventListener('click', loadRequests);
-  await loadRequests();
-
-  // Hide manual input form and guide the user to click pending requests
-  if (approveForm) {
-    const titleP = container.querySelector('p.text-xs.text-gray-400.font-mono.mb-2 + form')?.previousElementSibling;
-    // Keep the header text but hide the form controls; show hint below
-    approveForm.style.display = 'none';
-    const hint = document.createElement('div');
-    hint.className = 'text-xs text-gray-400 mt-2';
-    hint.textContent = 'Tip: Click a pending request in the list to approve and issue a reset code.';
-    (approveResultEl?.parentElement || container).insertBefore(hint, (approveResultEl||null));
-  }
-
-  approveForm?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (approveResultEl) approveResultEl.textContent = '';
-    const studentId = approveStudentIdInput?.value?.trim();
-    if (!studentId) { if (approveResultEl) approveResultEl.textContent = 'Student ID is required'; return; }
-    try {
-      const { rawCode, record } = await issueOneTimeResetCode(studentId);
-      const readableExpiry = new Date(record.expiresAt).toLocaleString();
-      if (approveResultEl) {
-        approveResultEl.innerHTML = `
-          <div class="mt-2 p-3 bg-green-900/40 border border-green-500/60 rounded">
-            <div class="font-semibold text-green-100">Reset code issued</div>
-            <div class="text-sm text-green-50 mt-1">Share this code with the student:</div>
-            <div class="mt-1 inline-block px-3 py-2 rounded bg-black/50 border border-green-400 text-green-200 font-mono text-lg tracking-widest">${rawCode}</div>
-            <div class="text-xs text-green-200 mt-2">Expires: ${readableExpiry}</div>
-          </div>`;
-      }
-      // mark a pending request as approved if exists
-      try {
-        const reqSnap = await firebase.database().ref('password_resets/requests').orderByChild('studentId').equalTo(studentId).once('value');
-        if (reqSnap.exists()) {
-          const reqs = reqSnap.val() || {};
-          const key = Object.keys(reqs).find(k => reqs[k]?.status === 'pending');
-          if (key) await firebase.database().ref(`password_resets/requests/${key}`).update({ status: 'approved', approvedAt: new Date().toISOString() });
-        }
-      } catch (_) {}
-      await loadRequests();
-    } catch (err) {
-      if (approveResultEl) approveResultEl.textContent = err?.message || 'Failed to issue code';
-    }
-  });
-
-  // Load recent history
-  const historyList = document.getElementById('reset-history-list');
-  async function loadHistory() {
-    if (!historyList) return;
-    try {
-      const snap = await firebase.database().ref('password_resets/history').limitToLast(20).once('value');
-      const val = snap.val() || {};
-      const entries = Object.entries(val).sort((a,b)=> (b[1]?.issuedAt||'').localeCompare(a[1]?.issuedAt||''));
-      historyList.innerHTML = entries.map(([k,v]) => {
-        const issuedAt = v.issuedAt ? new Date(v.issuedAt).toLocaleString() : '';
-        const expiresAt = v.expiresAt ? new Date(v.expiresAt).toLocaleString() : '';
-        return `
-        <li class="text-xs text-gray-300 flex justify-between border-b border-gray-700 py-1">
-          <span>${v.studentId}</span>
-          <span class="text-gray-500">${issuedAt} → ${expiresAt}</span>
-        </li>`;
-      }).join('') || '<li class="text-gray-500">None</li>';
-    } catch (e) {
-      historyList.innerHTML = '<li class="text-red-600">Failed to load history</li>';
-    }
-  }
-  await loadHistory();
-}
-
-async function issueOneTimeResetCode(studentId) {
-  void studentId;
-  throw new Error('Legacy reset codes are disabled.');
-}
-
-function generateNumericCode(length = 6) {
-  let out = '';
-  for (let i = 0; i < length; i++) out += Math.floor(Math.random() * 10).toString();
-  return out;
-}
-
-function bytesToBase64(bytes) {
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary);
-}

@@ -43,7 +43,7 @@
         } else { proceed = confirm(message); }
       } catch (e) { proceed = confirm(message); }
       if (!proceed) return;
-      window.authManager.createGuestSession();
+      await window.authManager.createGuestSession();
       loginModal.classList.add('hidden');
       window.authManager.redirectToGame();
       if (typeof window.showInfo === 'function') { window.showInfo('Guest mode enabled. Progress will only be saved locally.'); }

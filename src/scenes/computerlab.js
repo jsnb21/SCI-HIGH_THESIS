@@ -187,8 +187,10 @@ export default class ComputerLab extends Phaser.Scene {
             if (!studentId) return false;
             const ok = await this.ensureFirebaseInitialized();
             if (!ok) return false;
-            const snap = await this.database.ref('gameplay_data')
-                .orderByChild('studentId').equalTo(studentId).limitToFirst(1).once('value');
+            const authUser = window.firebase?.auth?.().currentUser;
+            if (!authUser || authUser.isAnonymous) return false;
+            const snap = await this.database.ref('gameplay_data/' + authUser.uid)
+                .limitToFirst(1).once('value');
             return snap.exists();
         } catch (e) {
             console.error('❌ ComputerLab: Error checking student data in Firebase:', e);

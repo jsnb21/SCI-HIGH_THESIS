@@ -75,8 +75,10 @@ export default class MainMenu extends Phaser.Scene {
             }
             
             // Search for any gameplay data for this student
-            const gameplayRef = this.database.ref('gameplay_data');
-            const snapshot = await gameplayRef.orderByChild('studentId').equalTo(studentId).limitToFirst(1).once('value');
+            const authUser = window.firebase?.auth?.().currentUser;
+            if (!authUser || authUser.isAnonymous) return false;
+            const gameplayRef = this.database.ref('gameplay_data/' + authUser.uid);
+            const snapshot = await gameplayRef.limitToFirst(1).once('value');
             
             const hasData = snapshot.exists();
             
@@ -87,7 +89,8 @@ export default class MainMenu extends Phaser.Scene {
                     return true;
                 } else {
                     // If Firebase data exists but no localStorage info, extract it from Firebase
-                    const firstRecord = Object.values(snapshot.val())[0];
+                    const stored = Object.values(snapshot.val())[0];
+                    const firstRecord = JSON.parse(stored.payload || '{}');
                     if (firstRecord.firstName && firstRecord.lastName) {
                         const extractedStudentInfo = {
                             firstName: firstRecord.firstName,

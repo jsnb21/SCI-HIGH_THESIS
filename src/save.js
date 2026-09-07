@@ -387,17 +387,17 @@ async function saveStoryProgress(characterName, progressData) {
     }
 
     // Save to Firebase if available
-    if (await saveService.ensureFirebaseReady()) {
+    if (window.firebase?.database) {
         try {
             // Use Realtime Database (since that's what the auth system uses)
             if (typeof window !== 'undefined' && window.firebase && window.firebase.database) {
                 const database = window.firebase.database();
-                const progressRef = database.ref('story_progress');
+                const progressRef = database.ref('story_progress/' + userData.userId);
                 
                 // Create a unique key for this progress entry
-                const progressKey = `${userData.user.studentId || userData.user.uid}_${characterName}`;
+                const progressKey = characterName;
                 
-                await progressRef.child(progressKey).set(storyProgressData);
+                await progressRef.child(progressKey).set({ payload: JSON.stringify(progressData), updatedAt: window.firebase.database.ServerValue.TIMESTAMP });
                 return true;
             } else {
                 console.warn('SaveService: Firebase Realtime Database not available');
@@ -423,16 +423,17 @@ async function loadStoryProgress(characterName, studentId = null) {
     }
 
     // Try to load from Firebase first
-    if (await saveService.ensureFirebaseReady()) {
+    if (window.firebase?.database) {
         try {
             if (typeof window !== 'undefined' && window.firebase && window.firebase.database) {
                 const database = window.firebase.database();
                 const progressKey = `${targetStudentId}_${characterName}`;
-                const snapshot = await database.ref('story_progress').child(progressKey).once('value');
+                if (!userData) return null;
+                const snapshot = await database.ref('story_progress/' + userData.userId).child(characterName).once('value');
                 
                 if (snapshot.exists()) {
                     const data = snapshot.val();
-                    return data.progress;
+                    return JSON.parse(data.payload);
                 }
             }
         } catch (error) {
@@ -468,20 +469,18 @@ async function getAllStoryProgress(studentId = null) {
     const allProgress = {};
 
     // Try to load from Firebase
-    if (await saveService.ensureFirebaseReady()) {
+    if (window.firebase?.database) {
         try {
             if (typeof window !== 'undefined' && window.firebase && window.firebase.database) {
                 const database = window.firebase.database();
-                const snapshot = await database.ref('story_progress')
-                    .orderByChild('studentId')
-                    .equalTo(targetStudentId)
-                    .once('value');
+                if (!userData) return {};
+                const snapshot = await database.ref('story_progress/' + userData.userId).once('value');
                 
                 if (snapshot.exists()) {
                     const data = snapshot.val();
                     Object.keys(data).forEach(key => {
                         const progress = data[key];
-                        allProgress[progress.character] = progress.progress;
+                        allProgress[key] = JSON.parse(progress.payload);
                     });
                     return allProgress;
                 }

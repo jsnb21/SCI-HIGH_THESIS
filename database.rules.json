@@ -1,0 +1,267 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "system": {
+      "maintenance": {
+        ".read": true
+      },
+      "leaderboards": {
+        "contest": {
+          ".read": true
+        }
+      }
+    },
+    "professor_students": {
+      ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.admin == true || auth.token.role == 'admin'))",
+      "$uid": {
+        ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid) && (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.professor == true || auth.token.role == 'professor'))"
+      }
+    },
+    "students": {
+      ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.admin == true || auth.token.role == 'admin'))",
+      ".indexOn": [
+        "studentId"
+      ],
+      "$uid": {
+        ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.admin == true || auth.token.role == 'admin')) || ((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.professor == true || auth.token.role == 'professor')) && root.child('professor_students').child(auth.uid).child($uid).val() == true)",
+        "lastLogin": {
+          ".write": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid) && data.parent().exists() && newData.exists()",
+          ".validate": "newData.isNumber() && newData.val() == now"
+        },
+        "progress": {
+          "lastActivity": {
+            ".write": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid) && root.child('students').child($uid).exists() && newData.exists()",
+            ".validate": "newData.isNumber() && newData.val() == now"
+          }
+        }
+      }
+    },
+    "general_users": {
+      "$uid": {
+        ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.admin == true || auth.token.role == 'admin'))",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid && !data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['fullName','email','department','year','accountType','ownerUid','createdAt','lastLogin'])",
+        "fullName": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val() == auth.token.email"
+        },
+        "department": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "year": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "accountType": {
+          ".validate": "newData.val() == 'general'"
+        },
+        "ownerUid": {
+          ".validate": "newData.val() == auth.uid"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && ((!data.exists() && newData.val() == now) || newData.val() == data.val())"
+        },
+        "lastLogin": {
+          ".validate": "newData.isNumber() && newData.val() == now",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid && root.child('general_users').child($uid).exists() && newData.exists()"
+        },
+        "gameData": {
+          ".validate": "newData.hasChildren(['totalPoints','currentLevel'])",
+          "totalPoints": {
+            ".validate": "newData.val() == 0"
+          },
+          "currentLevel": {
+            ".validate": "newData.val() == 1"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "professors": {
+      "$uid": {
+        ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.admin == true || auth.token.role == 'admin'))"
+      }
+    },
+    "student_career_stats": {
+      ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.admin == true || auth.token.role == 'admin'))",
+      "$uid": {
+        ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.admin == true || auth.token.role == 'admin')) || ((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.professor == true || auth.token.role == 'professor')) && root.child('professor_students').child(auth.uid).child($uid).val() == true)"
+      }
+    },
+    "leaderboards": {
+      ".read": false
+    },
+    "public_leaderboards": {
+      ".read": true
+    },
+    "gameplay_data": {
+      "$uid": {
+        ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.admin == true || auth.token.role == 'admin')) || ((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.professor == true || auth.token.role == 'professor')) && root.child('professor_students').child(auth.uid).child($uid).val() == true)",
+        ".indexOn": [
+          "studentId"
+        ],
+        "$session": {
+          ".write": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid) && !data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['ownerUid','submittedAt','payload'])",
+          "ownerUid": {
+            ".validate": "newData.val() == auth.uid"
+          },
+          "submittedAt": {
+            ".validate": "newData.isNumber() && newData.val() == now"
+          },
+          "payload": {
+            ".validate": "newData.isString() && newData.val().length <= 20000"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "story_progress": {
+      "$uid": {
+        ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid)",
+        "$character": {
+          ".write": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid)",
+          ".validate": "newData.hasChildren(['payload','updatedAt']) && $character.matches(/^[a-zA-Z0-9_-]{1,64}$/)",
+          "payload": {
+            ".validate": "newData.isString() && newData.val().length <= 20000"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber() && newData.val() == now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "feedbacks": {
+      ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.admin == true || auth.token.role == 'admin'))",
+      "$uid": {
+        ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid)",
+        "$id": {
+          ".write": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid) && !data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['message','createdAt','senderUid'])",
+          "message": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1000"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() == now"
+          },
+          "senderUid": {
+            ".validate": "newData.val() == auth.uid"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "customQuizzes": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous'",
+      "$uid": {
+        "$quiz": {
+          ".write": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid) && ((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.professor == true || auth.token.role == 'professor')) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.admin == true || auth.token.role == 'admin')))",
+          ".validate": "newData.hasChildren(['meta','intensity1'])",
+          "meta": {
+            ".validate": "newData.hasChildren(['title','subject','createdAt','createdBy','format'])",
+            "title": {
+              ".validate": "newData.isString() && newData.val().length <= 200"
+            },
+            "subject": {
+              ".validate": "newData.isString() && newData.val().length <= 100"
+            },
+            "createdAt": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "createdBy": {
+              ".validate": "newData.val() == auth.uid"
+            },
+            "format": {
+              ".validate": "newData.val() == 'intensity-schema-v1'"
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "intensity1": {
+            ".validate": "newData.hasChildren()",
+            "$type": {
+              ".validate": "$type == 'multipleChoice' || $type == 'syntaxBlock' || $type == 'codeArrangement'",
+              "$question": {
+                ".validate": "$question.matches(/^(0|[1-9][0-9]?)$/) && newData.hasChildren()",
+                "question": {
+                  ".validate": "newData.isString() && newData.val().length <= 5000"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length <= 200"
+                },
+                "description": {
+                  ".validate": "newData.isString() && newData.val().length <= 5000"
+                },
+                "instruction": {
+                  ".validate": "newData.isString() && newData.val().length <= 5000"
+                },
+                "type": {
+                  ".validate": "newData.val() == 'syntaxBlock'"
+                },
+                "bloomTarget": {
+                  ".validate": "newData.isString() && newData.val().length <= 50"
+                },
+                "correctIndex": {
+                  ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 20"
+                },
+                "options": {
+                  ".validate": "newData.hasChildren(['0','1'])",
+                  "$i": {
+                    ".validate": "$i.matches(/^(0|[1-9]|1[0-9])$/) && newData.isString() && newData.val().length <= 5000"
+                  }
+                },
+                "blocks": {
+                  ".validate": "newData.hasChildren()",
+                  "$i": {
+                    ".validate": "$i.matches(/^(0|[1-9][0-9]?)$/) && ((newData.isString() && newData.val().length <= 5000) || newData.hasChildren(['code','correct']))",
+                    "code": { ".validate": "newData.isString() && newData.val().length <= 5000" },
+                    "correct": { ".validate": "newData.isBoolean()" },
+                    "$other": { ".validate": false }
+                  }
+                },
+                "correctOrder": {
+                  ".validate": "newData.hasChildren()",
+                  "$i": {
+                    ".validate": "$i.matches(/^(0|[1-9][0-9]?)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() < 100"
+                  }
+                },
+                "$other": {
+                  ".validate": false
+                }
+              }
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "mastery_aggregates": {
+      "$uid": {
+        ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid)"
+      }
+    },
+    "security_audit": {
+      ".read": "(auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.token.admin == true || auth.token.role == 'admin'))"
+    },
+    "roles": {},
+    "password_resets": {},
+    "feedback_email_queue": {}
+  }
+}

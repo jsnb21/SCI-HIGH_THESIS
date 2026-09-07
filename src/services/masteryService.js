@@ -135,15 +135,9 @@ class MasteryService {
   }
 
   _maybeSync() {
-    // Optional, best-effort aggregate sync (non-PII). Safe to skip.
-    try {
-      const allowSync = !!(typeof window !== 'undefined' && window.SCI_HIGH && window.SCI_HIGH.ALLOW_FIREBASE_AGGREGATE_SYNC);
-      if (!allowSync) return;
-      if (!this._firebase || !this._userId) return;
-      const mastery = this.getMastery();
-      this._firebase.ref(`mastery_aggregates/${this._userId}`).update({ mastery, updatedAt: nowIso() });
-    } catch {}
+    // Local-only: official aggregates are written exclusively by a trusted backend.
   }
+
 }
 
 const masteryService = new MasteryService();

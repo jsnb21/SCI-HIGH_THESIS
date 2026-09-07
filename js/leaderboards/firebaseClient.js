@@ -171,37 +171,7 @@ async function _doInitialize() {
 
   _db = firebase.database();
 
-  // Ensure anonymous auth for rules that require an authenticated context
-  try {
-    if (!firebase.auth) {
-      await new Promise((resolve, reject) => {
-        const existing = document.querySelector('script[data-fbauth]');
-        if (existing) {
-          existing.addEventListener('load', resolve);
-          existing.addEventListener('error', reject);
-          return;
-        }
-        const s = document.createElement('script');
-        s.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js';
-        s.async = true;
-        s.setAttribute('data-fbauth','true');
-        s.onload = resolve;
-        s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
-    if (firebase.auth) {
-      try {
-        if (!firebase.auth().currentUser) {
-          await firebase.auth().signInAnonymously();
-        }
-      } catch (e) {
-        console.warn('[firebaseClient] Anonymous auth failed or disabled:', e?.message || e);
-      }
-    }
-  } catch (e) {
-    console.warn('[firebaseClient] Failed to prepare Firebase Auth:', e?.message || e);
-  }
+  // Public data reads do not create or replace an authentication session.
   // Wait for connection info to be available (best-effort)
   try {
     const connSnap = await _db.ref('.info/connected').once('value');

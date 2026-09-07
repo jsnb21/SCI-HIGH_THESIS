@@ -70,6 +70,10 @@ export const firebaseService = {
         const res = await fetch(p + cacheBuster, { cache: 'no-store' });
         if (!res.ok) continue;
         const raw = await res.json();
+        if (raw.appCheckSiteKey) {
+          window.SCI_HIGH = window.SCI_HIGH || {};
+          window.SCI_HIGH.APP_CHECK_SITE_KEY = raw.appCheckSiteKey;
+        }
         const cfg = {
           apiKey: raw.apiKey || raw.FIREBASE_API_KEY,
           authDomain: raw.authDomain || raw.FIREBASE_AUTH_DOMAIN,

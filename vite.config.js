@@ -88,6 +88,7 @@ export default defineConfig({
           if (existsSync(firebaseInitSrc)) {
             mkdirSync('./dist/src/services', { recursive: true });
             copyFileSync(firebaseInitSrc, './dist/src/services/firebaseInit.js');
+            copyFileSync('./src/services/trustedOperations.js', './dist/src/services/trustedOperations.js');
             console.log('✅ Copied firebaseInit.js to dist/src/services/');
           } else {
             console.warn('⚠️ firebaseInit.js not found at ./src/services/firebaseInit.js');

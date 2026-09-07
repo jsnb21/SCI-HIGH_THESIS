@@ -105,8 +105,10 @@ export default class MainHub extends Phaser.Scene {
             }
             
             // Search for any gameplay data for this student
-            const gameplayRef = this.database.ref('gameplay_data');
-            const snapshot = await gameplayRef.orderByChild('studentId').equalTo(studentId).limitToFirst(1).once('value');
+            const authUser = window.firebase?.auth?.().currentUser;
+            if (!authUser || authUser.isAnonymous) return false;
+            const gameplayRef = this.database.ref('gameplay_data/' + authUser.uid);
+            const snapshot = await gameplayRef.limitToFirst(1).once('value');
             
             const hasData = snapshot.exists();
             

@@ -156,12 +156,8 @@ export function aggregateCareerStats({ careerData, studentsData, filter = 'overa
 // dbProvider: async () => firebase.database()
 export async function loadCareerStatsAggregated(dbProvider, filter = 'overall') {
   const db = await dbProvider();
-  const [careerSnapshot, studentsSnapshot] = await Promise.all([
-    db.ref('student_career_stats').once('value'),
-    db.ref('students').once('value').catch(() => ({ val: () => null }))
-  ]);
+  const careerSnapshot = await db.ref('public_leaderboards').once('value');
   const careerData = careerSnapshot.val();
   if (!careerData) return [];
-  const studentsData = studentsSnapshot && typeof studentsSnapshot.val === 'function' ? studentsSnapshot.val() : null;
-  return aggregateCareerStats({ careerData, studentsData, filter });
+  return aggregateCareerStats({ careerData, studentsData: null, filter });
 }
