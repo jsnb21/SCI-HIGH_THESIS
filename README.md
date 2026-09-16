@@ -2,7 +2,7 @@
 
 SCI-HIGH is a browser-based educational adventure game that teaches programming through story-driven exploration, quizzes, and game mechanics. It combines an interactive Phaser game with web dashboards for authentication, student progress, leaderboards, professor analytics, and custom quiz authoring.
 
-![Project Banner or Screenshot](https://via.placeholder.com/800x400?text=SCI-HIGH+Project+Screenshot)
+![SCI-HIGH project logo](public/assets/img/mainmenu/SCI-HIGH_LOGO.png)
 
 ---
 
